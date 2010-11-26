@@ -154,32 +154,29 @@ public class OobiumPlugin extends AbstractUIPlugin {
 		
 		String value;
 		
-//		if(!preferences.contains(JAVA_DIR)) {
-//			String value = System.getProperty("java.home");
-//			value = value.substring(0, value.lastIndexOf(File.separator) + 1);
-//			value = value + "lib";
-//			preferences.putValue(JAVA_DIR, value);
-//			System.out.println("java set to default (" + value + ")");
-//		}
-//		Workspace.setJavaDir(preferences.getString(JAVA_DIR));
-	
 		logger.info("setting up workspace");
 		
 		value = Platform.getInstallLocation().getURL().getPath() + "plugins";
 		preferences.setDefault(BUNDLE_REPOS, value);
-		System.out.println("bundle default locations set to (" + value + ")");
 		if(!preferences.contains(BUNDLE_REPOS)) {
 			preferences.setToDefault(BUNDLE_REPOS);
 		}
-		workspace.setBundleRepositories(preferences.getString(BUNDLE_REPOS));
+		String repos = preferences.getString(BUNDLE_REPOS);
+		workspace.setBundleRepositories(repos);
+		if(logger.isLoggingInfo()) {
+			logger.info("workspace bundle repos set to \"" + repos + "\"");
+		}
 
 		value = ResourcesPlugin.getWorkspace().getRoot().getLocation().toOSString();
 		preferences.setDefault(WORKSPACE, value);
-		System.out.println("workspace directory default set to \"" + value + "\"");
 		if(!preferences.contains(WORKSPACE)) {
 			preferences.setToDefault(WORKSPACE);
 		}
-		workspace.setDirectory(preferences.getString(WORKSPACE));
+		String dir = preferences.getString(WORKSPACE);
+		workspace.setDirectory(dir);
+		if(logger.isLoggingInfo()) {
+			logger.info("workspace directory set to \"" + dir + "\"");
+		}
 		
 		String version = context.getBundle().getVersion().toString();
 		logger.info("removing bundles not of version " + version + " from the workspace");
@@ -193,12 +190,6 @@ public class OobiumPlugin extends AbstractUIPlugin {
 			}
 		}
 		logger.info("workspace setup");
-		
-//		if(!preferences.contains(RUNTIME)) {
-//			preferences.putValue(RUNTIME, RUNTIME_FELIX);
-//			System.out.println("runtime set to (" + RUNTIME_FELIX + ")");
-//		}
-//		Workspace.instance.setRuntime(preferences.getString(RUNTIME));
 	}
 
 	@Override
@@ -222,7 +213,7 @@ public class OobiumPlugin extends AbstractUIPlugin {
 								IWorkbenchPage page = getWorkbench().getWorkbenchWindows()[0].getPages()[0];
 								page.showView(ServerView.ID, event.application.name, VIEW_ACTIVATE);
 							} catch(PartInitException e) {
-								e.printStackTrace();
+								logger.warn(e);
 							}
 						}
 					});
