@@ -166,9 +166,9 @@ public class EspCompiler {
 		body.append(" href=\\\"\").append(").append(target).append(").append(\"\\\"");
 		body.append(" onclick=\\\"");
 		if(entries != null && entries.containsKey("confirm")) {
-			body.append("if(confirm('");
-			build(entries.get("confirm").getValue(), body);
-			body.append("')) {");
+			body.append("if(confirm('\").append(h(");
+			build(entries.get("confirm").getValue(), body, true);
+			body.append(")).append(\"')) {");
 		}
 		body.append("var f = document.createElement('form');");
 		body.append("f.style.display = 'none';");
@@ -196,9 +196,9 @@ public class EspCompiler {
 		body.append(" href=\\\"\").append(").append(target).append(").append(\"\\\"");
 		body.append(" onclick=\\\"");
 		if(entries != null && entries.containsKey("confirm")) {
-			body.append("if(confirm('");
-			build(entries.get("confirm").getValue(), body);
-			body.append("')) {");
+			body.append("if(confirm('\").append(h(");
+			build(entries.get("confirm").getValue(), body, true);
+			body.append(")).append(\"')) {");
 		}
 		body.append("var f = document.createElement('form');");
 		body.append("f.style.display = 'none';");
@@ -237,9 +237,9 @@ public class EspCompiler {
 		body.append(" href=\\\"\").append(").append(target).append(").append(\"\\\"");
 		body.append(" onclick=\\\"");
 		if(entries != null && entries.containsKey("confirm")) {
-			body.append("if(confirm('");
-			build(entries.get("confirm").getValue(), body);
-			body.append("')) {");
+			body.append("if(confirm('\").append(h(");
+			build(entries.get("confirm").getValue(), body, true);
+			body.append(")).append(\"')) {");
 		}
 		body.append("var f = document.createElement('form');");
 		body.append("f.style.display = 'none';");
@@ -1546,7 +1546,7 @@ public class EspCompiler {
 				} else if("update".equalsIgnoreCase(action)) {
 					body.append(" value=\\\"Update ");
 				} else {
-					body.append(" value=\\\"\").append(").append(model).append(".isNew() ? \"Create\" : \"Update");
+					body.append(" value=\\\"\").append(").append(model).append(".isNew() ? \"Create \" : \"Update ");
 				}
 				body.append("\").append(titleize(").append(modelName).append(")).append(\"\\\"");
 			}
