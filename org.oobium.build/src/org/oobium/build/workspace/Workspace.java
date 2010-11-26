@@ -764,7 +764,7 @@ public class Workspace {
 	 * @param commaSeparatedRepos a comma separated list of absolute file paths
 	 */
 	public void setBundleRepositories(String commaSeparatedRepos) {
-		String[] sa = commaSeparatedRepos.split("\\s*;\\s*");
+		String[] sa = commaSeparatedRepos.split("\\s*,\\s*");
 		File[] repos = new File[sa.length];
 		for(int i = 0; i < sa.length; i++) {
 			repos[i] = new File(sa[i]);
