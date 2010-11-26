@@ -31,7 +31,6 @@ import org.oobium.build.runner.RunEvent;
 import org.oobium.build.runner.RunEvent.Type;
 import org.oobium.build.runner.RunListener;
 import org.oobium.build.runner.RunnerService;
-import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Workspace;
 import org.oobium.eclipse.views.developer.ConsoleView;
 import org.oobium.eclipse.views.server.ServerView;
@@ -75,7 +74,6 @@ public class OobiumPlugin extends AbstractUIPlugin {
 
 
 	private final Logger logger;
-	private BundleContext context;
 	private Workspace workspace;
 	private ResourceChangeListener listener;
 	
@@ -149,7 +147,6 @@ public class OobiumPlugin extends AbstractUIPlugin {
 	@Override
 	public void start(BundleContext context) throws Exception {
 		super.start(context);
-		this.context = context;
 		logger.setBundle(context.getBundle());
 		
 		loadPreferences();
@@ -182,7 +179,6 @@ public class OobiumPlugin extends AbstractUIPlugin {
 		logger.setBundle(null);
 		instance = null;
 		workspace = null;
-		this.context = null;
 		super.stop(context);
 	}
 	
