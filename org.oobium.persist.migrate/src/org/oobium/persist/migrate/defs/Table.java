@@ -1,6 +1,6 @@
 package org.oobium.persist.migrate.defs;
 
-import static org.oobium.persist.migrate.defs.Column.DATE;
+import static org.oobium.persist.migrate.defs.Column.*;
 import static org.oobium.persist.migrate.defs.Column.TIMESTAMP;
 
 import java.sql.SQLException;
@@ -68,13 +68,13 @@ public class Table {
 		switch(change.ctype) {
 		case AddColumn:
 			AddColumn ac = (AddColumn) change;
-			if("Timestamps".equals(ac.column.name)) {
-				changes.add(new AddColumn(TIMESTAMP, "createdAt", null));
-				changes.add(new AddColumn(TIMESTAMP, "updatedAt", null));
+			if(TIMESTAMPS.equals(ac.column.type)) {
+				changes.add(new AddColumn(TIMESTAMP, "created_at", null));
+				changes.add(new AddColumn(TIMESTAMP, "updated_at", null));
 				return this;
-			} else if("Datestamps".equals(ac.column.name)) {
-				changes.add(new AddColumn(DATE, "createdOn", null));
-				changes.add(new AddColumn(DATE, "updatedOn", null));
+			} else if(DATESTAMPS.equals(ac.column.type)) {
+				changes.add(new AddColumn(DATE, "created_on", null));
+				changes.add(new AddColumn(DATE, "updated_on", null));
 				return this;
 			}
 			break;
@@ -93,12 +93,12 @@ public class Table {
 		case RemoveColumn:
 			RemoveColumn rc = (RemoveColumn) change;
 			if("Timestamps".equals(rc.column)) {
-				changes.add(new RemoveColumn("createdAt"));
-				changes.add(new RemoveColumn("updatedAt"));
+				changes.add(new RemoveColumn("created_at"));
+				changes.add(new RemoveColumn("updated_at"));
 				return this;
 			} else if("Datestamps".equals(rc.column)) {
-				changes.add(new RemoveColumn("createdOn"));
-				changes.add(new RemoveColumn("updatedOn"));
+				changes.add(new RemoveColumn("created_on"));
+				changes.add(new RemoveColumn("updated_on"));
 				return this;
 			}
 			break;
@@ -131,12 +131,12 @@ public class Table {
 				columns.add(fk);
 			}
 		} else {
-			if("Timestamps".equals(column.name)) {
-				columns.add(new Column(TIMESTAMP, "createdAt"));
-				columns.add(new Column(TIMESTAMP, "updatedAt"));
-			} else if("Datestamps".equals(column.name)) {
-				columns.add(new Column(DATE, "createdOn"));
-				columns.add(new Column(DATE, "updatedOn"));
+			if(TIMESTAMPS.equals(column.type)) {
+				columns.add(new Column(TIMESTAMP, "created_at"));
+				columns.add(new Column(TIMESTAMP, "updated_at"));
+			} else if(DATESTAMPS.equals(column.type)) {
+				columns.add(new Column(DATE, "created_on"));
+				columns.add(new Column(DATE, "updated_on"));
 			} else {
 				columns.add(column);
 			}
