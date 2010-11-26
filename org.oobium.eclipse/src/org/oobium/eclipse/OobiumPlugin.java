@@ -42,41 +42,6 @@ import org.osgi.framework.BundleContext;
 
 public class OobiumPlugin extends AbstractUIPlugin {
 
-	private static final String[] OOBIUM_BUNDLES = new String[] {
-//		"org.apache.derby",
-//		"org.apache.derby.client",
-//		"org.mockito",
-//		"com.sun.mail",
-		"org.oobium.utils",
-		"org.oobium.app",
-		"org.oobium.http",
-		"org.oobium.http.impl",
-		"org.oobium.persist",
-		"org.oobium.persist.db",
-		"org.oobium.server",
-		"org.oobium.session.db",
-		"org.oobium.eclipse.esp",
-		"org.oobium.logging",
-		"org.oobium.persist.db.migrate",
-		"org.oobium.test",
-		"org.oobium.cache",
-		"org.oobium.eclipse.connector",
-		"org.oobium.mailer",
-		"org.oobium.persist.db.derby",
-		"org.oobium.persist.db.derby.embedded",
-		"org.oobium.client",
-		"org.oobium.eclipse",
-		"org.oobium.build",
-		"org.oobium.build.console",
-		"org.oobium.build.runner",
-		"org.oobium.app.dev",
-		"org.oobium.cache.file",
-		"org.oobium.console",
-		"org.oobium.events",
-		"org.oobium.manager"
-	};
-	
-	
 	public static final String ID = OobiumPlugin.class.getName();
 	
 	public static final String PREFERENCES = "org.oobium.eclipse.preferences";
@@ -178,17 +143,6 @@ public class OobiumPlugin extends AbstractUIPlugin {
 			logger.info("workspace directory set to \"" + dir + "\"");
 		}
 		
-		String version = context.getBundle().getVersion().toString();
-		logger.info("removing bundles not of version " + version + " from the workspace");
-		for(String name : OOBIUM_BUNDLES) {
-			Bundle[] bundles = workspace.getBundles(name);
-			for(Bundle bundle : bundles) {
-				if(!bundle.version.equals(version)) {
-					logger.info("removing " + bundle + " from the workspace");
-					workspace.remove(bundle);
-				}
-			}
-		}
 		logger.info("workspace setup");
 	}
 
