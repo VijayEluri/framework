@@ -69,10 +69,11 @@ public class ModelGenerator {
 		src.imports.add(SQLException.class.getCanonicalName());
 
 		boolean validate = false;
+		List<String> inits = new ArrayList<String>();
 		for(PropertyDescriptor property : src.properties.values()) {
 			src.imports.addAll(property.imports());
 			if(property.hasInit()) {
-				src.initializers.add(createInitializer(property));
+				inits.add(createInitializer(property));
 			}
 			src.methods.putAll(property.methods());
 			if(property.isRequired()) {
@@ -80,10 +81,12 @@ public class ModelGenerator {
 			}
 		}
 
+		createConstructor(src, inits);
+
 		createOverrideMethods(src, model);
 		
 		if(validate) {
-			src.methods.put("doValidate", createValidateMethod(src));
+			src.methods.put("validateSave", createValidateMethod(src));
 		}
 		
 		src.staticMethods.put("finders", createStaticMethods(model.getSimpleName()));
@@ -95,6 +98,17 @@ public class ModelGenerator {
 		}
 
 		return "/*\n" + classAnnotations + "*/\n" + src.toSource();
+	}
+
+	private static void createConstructor(SourceFile src, List<String> inits) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("\tpublic ").append(src.simpleName).append("() {\n");
+		sb.append("\t\tsuper();\n");
+		for(String init : inits) {
+			sb.append("\t\t").append(init).append(";\n");
+		}
+		sb.append("\t}");
+		src.constructors.put(0, sb.toString());
 	}
 	
 	private static void createOverrideMethods(SourceFile src, ModelDefinition model) {
@@ -120,7 +134,7 @@ public class ModelGenerator {
 	}
 	
 	private static String createInitializer(PropertyDescriptor property) {
-		return "set(" + property.enumProp() + ", \"" + property.init() + "\");";
+		return "set(" + property.enumProp() + ", " + property.init() + ");";
 	}
 	
 	private static String createValidateMethod(SourceFile src) {
