@@ -61,8 +61,8 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 	}
 
 	protected final Logger logger;
-	private String name;
-	private BundleContext context;
+	protected String name;
+	protected BundleContext context;
 
 	public ModuleService() {
 		logger = Logger.getLogger(getClass());
@@ -139,6 +139,9 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 		return logger;
 	}
 
+	/**
+	 * The full name of this module (symbolicName + "_" + version)
+	 */
 	@Override
 	public String getName() {
 		return name;

@@ -61,10 +61,6 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		return appService.get();
 	}
 	
-	public static void set(AppService app) {
-		appService.set(app);
-	}
-	
 	public static PersistServices getPersistServices(Class<? extends AppService> appType) {
 		AppService service = getActivator(appType);
 		if(service != null) {
@@ -72,13 +68,17 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		}
 		return null;
 	}
-
+	
 	public static Router getRouter(Class<? extends AppService> appType) {
 		AppService service = getActivator(appType);
 		if(service != null) {
 			return service.getRouter();
 		}
 		return null;
+	}
+
+	public static void set(AppService app) {
+		appService.set(app);
 	}
 
 
@@ -103,29 +103,6 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 	@Override
 	public void addRoutes(Config config, Router router) {
 		// subclasses to implement if necessary
-	}
-	
-	/**
-	 * Load the configuration for this bundle.  The default implementation fetches
-	 * the configuration using getClass().  Subclasses should override to implements
-	 * alternative behavior.
-	 * @return the configuration
-	 */
-	protected Config loadConfiguration() {
-		return Config.loadConfiguration(getClass());
-	}
-
-	/**
-	 * Load the configuration for the given bundle.  The default implementation using
-	 * the bundle's Activator (as found in the MANIFEST) to load the configuration.
-	 * @param bundle the bundle for which to get the configuration
-	 * @return the configuration
-	 * @throws ClassNotFoundException if the given bundle does have an Activator
-	 */
-	protected Config loadConfiguration(Bundle bundle) throws ClassNotFoundException {
-		String name = (String) bundle.getHeaders().get("Bundle-Activator");
-		Class<?> clazz = bundle.loadClass(name);
-		return Config.loadConfiguration(clazz);
 	}
 	
 	@Override
@@ -170,7 +147,7 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		// allow subclasses to initialize custom trackers
 		initializeServiceTrackers(config);
 	}
-	
+
 	@Override
 	protected void doStop(BundleContext context) throws Exception {
 		if(cacheTracker != null) {
@@ -197,10 +174,15 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		router = null;
 	}
 	
+	@Override
+	public String getPersistClientName() {
+		return getName();
+	}
+	
 	public CacheService getCacheService() {
 		return (cacheTracker != null) ? (CacheService) cacheTracker.getService() : null;
 	}
-
+	
 	/**
 	 * Get the primary persist service from this application's PersistServices
 	 * @return the primary persist service, or null if PersistServices is null
@@ -226,7 +208,7 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 	public PersistServices getPersistServices() {
 		return persistServices;
 	}
-	
+
 	@Override
 	public int getPort() {
 		return port;
@@ -244,7 +226,7 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		}
 		return null;
 	}
-
+	
 	@Override
 	public HttpResponse handle404(HttpRequest request) {
 		if(errorClass404 != null) {
@@ -272,7 +254,7 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		}
 		return Response.serverError(request.getType(), request.getContentTypes());
 	}
-	
+
 	@Override
 	public HttpResponse handleRequest(HttpRequest request) throws Exception {
 		if(logger.isLoggingDebug()) {
@@ -286,7 +268,7 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 				response = handler.routeRequest(request);
 			} else {
 				appService.set(this);
-				persistServices.openSession(getName());
+				persistServices.openSession(getPersistClientName());
 				Model.setLogger(logger);
 				Model.setPersistServices(persistServices);
 				try {
@@ -458,13 +440,13 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 					}
 				}
 				Properties properties = new Properties();
-				properties.setProperty(PersistService.CLIENT, getName());
+				properties.setProperty(PersistService.CLIENT, getPersistClientName());
 				properties.setProperty(PersistService.SERVICE, JsonUtils.toJson(services));
 				getContext().registerService(PersistClient.class.getName(), this, properties);
 			}
 		}
 	}
-
+	
 	protected final void initializeSessionTracker(Config config) throws Exception {
 		String session = config.getString(Config.SESSION);
 		if(!blank(session)) {
@@ -479,7 +461,7 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 			logger.info("sessionTracker not started");
 		}
 	}
-	
+
 	private void loadActionCaches() throws Exception {
 		logger.info("initializing ActionCache classes");
 
@@ -489,6 +471,29 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		for(ActionCache cache : ActionCache.getCaches(classes)) {
 			cache.setHandler(this);
 		}
+	}
+	
+	/**
+	 * Load the configuration for this bundle.  The default implementation fetches
+	 * the configuration using getClass().  Subclasses should override to implements
+	 * alternative behavior.
+	 * @return the configuration
+	 */
+	protected Config loadConfiguration() {
+		return Config.loadConfiguration(getClass());
+	}
+	
+	/**
+	 * Load the configuration for the given bundle.  The default implementation using
+	 * the bundle's Activator (as found in the MANIFEST) to load the configuration.
+	 * @param bundle the bundle for which to get the configuration
+	 * @return the configuration
+	 * @throws ClassNotFoundException if the given bundle does have an Activator
+	 */
+	protected Config loadConfiguration(Bundle bundle) throws ClassNotFoundException {
+		String name = (String) bundle.getHeaders().get("Bundle-Activator");
+		Class<?> clazz = bundle.loadClass(name);
+		return Config.loadConfiguration(clazz);
 	}
 
 	/**

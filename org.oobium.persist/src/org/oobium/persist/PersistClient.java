@@ -16,6 +16,6 @@ public interface PersistClient {
 
 	public abstract BundleContext getContext();
 	
-	public abstract String getName();
+	public abstract String getPersistClientName();
 	
 }

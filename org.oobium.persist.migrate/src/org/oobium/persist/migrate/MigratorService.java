@@ -254,6 +254,8 @@ public abstract class MigratorService extends AppService {
 		version = new Version(version.getMajor(), version.getMinor(), version.getMicro());
 		migVersion = version.toString();
 
+		name = migName + "_" + migVersion;
+		
 		Bundle appBundle;
 		ServiceReference ref = context.getServiceReference(PackageAdmin.class.getName());
 		if(ref == null) {
@@ -272,21 +274,10 @@ public abstract class MigratorService extends AppService {
 	}
 	
 	@Override
-	public String getName() {
+	public String getPersistClientName() {
 		return appName + "_" + appVersion;
 	}
 	
-	@Override
-	public void doStart(BundleContext context) throws Exception {
-
-		super.doStart(context);
-		
-//		MigratorThread migrator = new MigratorThread(this);
-//		migrator.start();
-//		logger.info("migrator thread started");
-	}
-	
-
 	protected void setMigrated(String name, boolean migrated) throws SQLException {
 		if(migrated) {
 			getPersistService().executeUpdate("INSERT INTO system_attrs (name, detail, data) VALUES ('migrated', '" + name + "', NULL)");
@@ -361,11 +352,6 @@ public abstract class MigratorService extends AppService {
 		throw new IllegalStateException("MigrationService is not present - Migration cannot proceed");
 	}
 	
-//	@Override
-//	public String getName() {
-//		return migName + "_" + migVersion;
-//	}
-
 	public PersistService getPersistService() {
 		PersistService service = super.getPersistService();
 		if(service != null) {

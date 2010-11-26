@@ -269,7 +269,7 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		StringBuilder sb = new StringBuilder();
 		sb.append("ALTER TABLE ").append(getSqlSafe(table.name)).append(" ADD");
 		sb.append(" CONSTRAINT ").append(getSqlSafe(fk.name));
-		sb.append(" Foreign Key (").append(getSqlSafe(fk.name)).append(")");
+		sb.append(" Foreign Key (").append(getSqlSafe(fk.column)).append(")");
 		sb.append(" REFERENCES ").append(getSqlSafe(fk.reference)).append(" (id)");
 		switch(fk.options.get("onDelete", ForeignKey.NO_ACTION)) {
 		case CASCADE:

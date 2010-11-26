@@ -80,7 +80,7 @@ public class DbGenerator {
 		if(type != null) {
 			return Character.toUpperCase(type.charAt(0)) + type.substring(1);
 		}
-		return null;
+		return "String";
 	}
 	
 	public static String generate(String name, String version, String type, Collection<ModelDefinition> models) {
@@ -154,12 +154,7 @@ public class DbGenerator {
 				} else if(TIMESTAMPS.equals(column.name)) {
 					sb.append("\t\t\tTimestamps(");
 				} else {
-					String method = getMethod(column.type);
-					if(method != null) {
-						sb.append("\t\t\t").append(method).append("(\"").append(column.name).append("\"");
-					} else {
-						sb.append("\t\t\tcolumn(\"").append(column.type).append("\", \"").append(column.name).append("\"");
-					}
+					sb.append("\t\t\t").append(getMethod(column.type)).append("(\"").append(column.name).append("\"");
 					if(column.options.hasAny()) {
 						appendOptions(sf, sb, column.options);
 					}
