@@ -26,7 +26,7 @@ public @interface Attribute {
 	boolean indexed() default false;
 
 	/**
-	 * <p>Initialize the value of this field when instantiated the Java class.<br/>
+	 * <p>Initialize the value of this field when instantiating the Java class.<br/>
 	 * The value can be any valid Java code that will result in the correct type
 	 * for the field, but should not be null.</p>
 	 * <p>Has no affect on the database schema.</p>
@@ -34,7 +34,7 @@ public @interface Attribute {
 	String init() default "";
 	
 	/**
-	 * The name of this attribute is also the name of the field in the java class.
+	 * The name of the field in the Java class.
 	 * @return the name of this attribute
 	 */
 	String name();
