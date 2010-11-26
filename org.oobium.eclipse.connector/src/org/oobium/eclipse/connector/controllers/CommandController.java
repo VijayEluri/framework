@@ -63,19 +63,20 @@ public class CommandController extends Controller {
 	
 	private void handleImport() {
 		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-		IProjectDescription description = root.getWorkspace().newProjectDescription(param("project"));
 		IProject project = root.getProject(param("project"));
-		if(project.exists()) {
-			description.setLocationURI(null);
-		} else {
-			description.setLocationURI(new File(param("file")).toURI());
-		}
+		IProgressMonitor monitor = new NullProgressMonitor();
 		try {
-			IProgressMonitor monitor = new NullProgressMonitor();
-			project.create(description, monitor);
+			project.create(monitor);
 			project.open(monitor);
-		} catch(CoreException e) {
-			e.printStackTrace();
+		} catch(CoreException e1) {
+			try {
+				IProjectDescription description = root.getWorkspace().newProjectDescription(param("project"));
+				description.setLocationURI(new File(param("file")).toURI());
+				project.create(description, monitor);
+				project.open(monitor);
+			} catch(CoreException e2) {
+				logger.warn(e2);
+			}
 		}
 	}
 	
