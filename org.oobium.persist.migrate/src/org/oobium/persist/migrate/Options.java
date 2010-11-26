@@ -35,7 +35,10 @@ public class Options {
 	}
 	
 	public Map<String, ? extends Object> getMap() {
-		return new HashMap<String, Object>(options);
+		if(options != null) {
+			return new HashMap<String, Object>(options);
+		}
+		return new HashMap<String, Object>(0);
 	}
 	
 	public int size() {
