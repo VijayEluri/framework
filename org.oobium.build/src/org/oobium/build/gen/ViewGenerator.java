@@ -17,7 +17,6 @@ import static org.oobium.utils.StringUtils.varName;
 
 import java.io.File;
 import java.util.LinkedHashMap;
-import java.util.TreeMap;
 
 import org.oobium.build.gen.model.PropertyDescriptor;
 import org.oobium.build.model.ModelAttribute;
@@ -69,6 +68,51 @@ public class ViewGenerator {
 		this.mType = mType;
 	}
 
+	public String generateForm() {
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("import ").append(mPkg).append(".*\n");
+		sb.append('\n');
+		sb.append(mType).append("Form(").append(mType).append(' ').append(mVar).append(')').append('\n');
+		sb.append('\n');
+		sb.append("messages\n");
+		sb.append("form(").append(mVar).append(")\n");
+		for(PropertyDescriptor property : properties.values()) {
+			String var = property.variable();
+			if("createdAt".equals(var) || "updatedAt".equals(var) || "createdOn".equals(var) || "updatedOn".equals(var)) {
+				continue; // not supposed to be user-editable fields
+			}
+			sb.append("\tdiv.field\n");
+			if(Boolean.class.getCanonicalName().equals(property.fullType())) {
+				sb.append("\t\tcheck(").append(var).append(")\n");
+				sb.append("\t\tlabel(").append(var).append(")\n");
+			} else {
+				sb.append("\t\tdiv <- label(").append(var).append(")\n");
+				sb.append("\t\tdiv <- ");
+				if(String.class.getCanonicalName().equals(property.fullType())) {
+					if("password".equalsIgnoreCase(var)) {
+						sb.append("password");
+					} else {
+						sb.append("text");
+					}
+				} else if(Integer.class.getCanonicalName().equals(property.fullType())) {
+					sb.append("number");
+				} else if(Double.class.getCanonicalName().equals(property.fullType())) {
+					sb.append("number");
+				} else if(property.hasMany()) {
+					sb.append("span hasMany");
+				} else {
+					sb.append("input");
+				}
+				sb.append("(").append(var).append(")\n");
+			}
+		}
+		sb.append("\tdiv.actions\n");
+		sb.append("\t\tsubmit\n");
+
+		return sb.toString();
+	}
+
 	public String generateLayout() {
 		StringBuilder sb = new StringBuilder();
 
@@ -116,7 +160,7 @@ public class ViewGenerator {
 
 		return sb.toString();
 	}
-
+	
 	public String generateShowEditView() {
 		StringBuilder sb = new StringBuilder();
 
@@ -129,47 +173,8 @@ public class ViewGenerator {
 		sb.append("view<").append(mType).append("Form>(").append(mVar).append(")\n");
 		sb.append('\n');
 		sb.append("a(").append(mVar).append(", show) Show\n");
-		sb.append("span |\n");
+		sb.append("span  | \n");
 		sb.append("a(").append(mType).append(".class, showAll) Back\n");
-
-		return sb.toString();
-	}
-	
-	public String generateForm() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append("import ").append(mPkg).append(".*\n");
-		sb.append('\n');
-		sb.append(mType).append("Form(").append(mType).append(' ').append(mVar).append(')').append('\n');
-		sb.append('\n');
-		sb.append("messages\n");
-		sb.append("form(").append(mVar).append(")\n");
-		for(PropertyDescriptor property : properties.values()) {
-			sb.append("\tdiv.field\n");
-			if(Boolean.class.getCanonicalName().equals(property.fullType())) {
-				sb.append("\t\tcheck(").append(property.variable()).append(")\n");
-				sb.append("\t\tlabel(").append(property.variable()).append(")\n");
-			} else {
-				sb.append("\t\tdiv <- label(").append(property.variable()).append(")\n");
-				sb.append("\t\tdiv <- ");
-				if(String.class.getCanonicalName().equals(property.fullType())) {
-					if("password".equalsIgnoreCase(property.variable())) {
-						sb.append("password");
-					} else {
-						sb.append("text");
-					}
-				} else if(Integer.class.getCanonicalName().equals(property.fullType())) {
-					sb.append("number");
-				} else if(Double.class.getCanonicalName().equals(property.fullType())) {
-					sb.append("number");
-				} else {
-					sb.append("span TODO");
-				}
-				sb.append("(").append(property.variable()).append(")\n");
-			}
-		}
-		sb.append("\tdiv.actions\n");
-		sb.append("\t\tsubmit\n");
 
 		return sb.toString();
 	}
@@ -199,12 +204,12 @@ public class ViewGenerator {
 		sb.append('\n');
 		for(PropertyDescriptor property : properties.values()) {
 			sb.append("p\n");
-			sb.append("\tb ").append(camelCase(property.variable())).append(":\n");
+			sb.append("\tb ").append(titleize(property.variable())).append(":\n");
 			sb.append("\t+  { ").append(mVar).append(".").append(property.getterName()).append("() }\n");
 		}
 		sb.append('\n');
 		sb.append("a(").append(mVar).append(", showEdit) Edit\n");
-		sb.append("+=  | \n");
+		sb.append("span  | \n");
 		sb.append("a(").append(mType).append(".class, showAll) Back\n");
 
 		return sb.toString();
