@@ -105,7 +105,7 @@ public class ModelGenerator {
 		sb.append("\tpublic ").append(src.simpleName).append("() {\n");
 		sb.append("\t\tsuper();\n");
 		for(String init : inits) {
-			sb.append("\t\t").append(init).append(";\n");
+			sb.append("\t\t").append(init).append('\n');
 		}
 		sb.append("\t}");
 		src.constructors.put(0, sb.toString());
