@@ -1,0 +1,24 @@
+import java.util.*
+
+ShowQueryResults(int id, String query, List<Map<String, Object>> results = null)
+
+- if(hasFlashError()) {
+		messages
+- } else if(results.isEmpty()) {
+			div Empty result set
+- } else {
+		style .alt { background-color: cyan }
+		table
+			tr
+				- for(String k : results.get(0).keySet()) {
+						th { k }
+				- }
+			- for(Map<String, Object> map : results) {
+					tr.{alt()}
+						- for(Object v : map.values()) {
+								td { v }
+						- }
+			- }
+- }
+
+view<Query>(id, query)

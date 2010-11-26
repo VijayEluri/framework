@@ -1,0 +1,16 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Db Tests Plug-in
+Bundle-SymbolicName: org.oobium.persist.db.tests
+Bundle-Version: 1.0.0
+Bundle-Vendor: oobium.org
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Import-Package: org.oobium.persist.db.derby.embedded,
+ org.osgi.framework;version="1.4.0"
+Require-Bundle: org.junit4,
+ org.oobium.persist;bundle-version="1.0.0",
+ org.oobium.persist.db;bundle-version="1.0.0",
+ org.oobium.http;bundle-version="1.0.0",
+ org.apache.derby;bundle-version="1.0.0",
+ org.oobium.logging;bundle-version="1.0.0",
+ org.oobium.utils;bundle-version="1.0.0"

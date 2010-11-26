@@ -1,0 +1,13 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Oobium File Cache
+Bundle-SymbolicName: org.oobium.cache.file
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: oobium.org
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Import-Package: org.oobium.cache,
+ org.oobium.logging,
+ org.osgi.framework;version="1.4.0"
+Bundle-Activator: org.oobium.cache.file.FileCacheService
+Bundle-ActivationPolicy: lazy
+Oobium-Service: org.oobium.cache.file

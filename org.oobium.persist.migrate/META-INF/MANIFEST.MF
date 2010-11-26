@@ -1,0 +1,24 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Migrate Plug-in
+Bundle-SymbolicName: org.oobium.persist.migrate
+Bundle-Version: 1.0.0.qualifier
+Import-Package: org.oobium.app,
+ org.oobium.app.server.controller,
+ org.oobium.app.server.routing,
+ org.oobium.events.models,
+ org.oobium.http,
+ org.oobium.logging,
+ org.oobium.manager,
+ org.oobium.persist,
+ org.oobium.utils,
+ org.oobium.utils.json,
+ org.osgi.framework,
+ org.osgi.service.packageadmin;version="1.2.0",
+ org.osgi.util.tracker;version="1.3.3"
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Export-Package: org.oobium.persist.migrate,
+ org.oobium.persist.migrate.defs,
+ org.oobium.persist.migrate.defs.changes,
+ org.oobium.persist.migrate.defs.columns
+Bundle-Vendor: Oobium.org

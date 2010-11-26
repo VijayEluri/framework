@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Utils Plug-in
+Bundle-SymbolicName: org.oobium.utils
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: oobium.org
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Export-Package: org.oobium.utils,
+ org.oobium.utils.coercion,
+ org.oobium.utils.coercion.coercers,
+ org.oobium.utils.json
+Import-Package: org.oobium.logging

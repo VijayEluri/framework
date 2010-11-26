@@ -1,0 +1,10 @@
+Query(int id, String query = null)
+
+script(defaults)
+
+div(style:"margin-top: 15px")
+	form(action: {pathTo("persist_service", id)}, method: get)
+		label(for: q) Query:
+		text(name: q, value: {h query}, style:"width: 500px")
+		submit#submit(onclick:"$('#submit').hide();$('#executing').show();")
+		img#executing:hidden(src: "/executing.gif")

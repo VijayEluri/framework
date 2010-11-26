@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Console Tests
+Bundle-SymbolicName: org.oobium.console.tests
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: oobium.org
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Require-Bundle: org.oobium.console;bundle-version="1.0.0",
+ org.junit;bundle-version="4.8.1"

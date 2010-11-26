@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Oobium Cache Service
+Bundle-SymbolicName: org.oobium.cache
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: oobium.org
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Export-Package: org.oobium.cache

@@ -1,0 +1,694 @@
+/*******************************************************************************
+ * Copyright (c) 2010 Oobium, Inc.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ * 
+ * Contributors:
+ *     Jeremy Dowdall <jeremy@oobium.com> - initial API and implementation
+ ******************************************************************************/
+package org.oobium.app.server.view;
+
+import static org.oobium.utils.StringUtils.camelCase;
+import static org.oobium.utils.StringUtils.h;
+
+import java.lang.reflect.Constructor;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.oobium.app.server.controller.Action;
+import org.oobium.app.server.controller.Controller;
+import org.oobium.app.server.controller.ICache;
+import org.oobium.app.server.controller.IFlash;
+import org.oobium.app.server.controller.IHelpers;
+import org.oobium.app.server.controller.IParams;
+import org.oobium.app.server.controller.ISessions;
+import org.oobium.app.server.response.Response;
+import org.oobium.app.server.routing.IPathRouting;
+import org.oobium.app.server.routing.IUrlRouting;
+import org.oobium.http.HttpRequest;
+import org.oobium.http.HttpSession;
+import org.oobium.http.constants.ContentType;
+import org.oobium.logging.Logger;
+import org.oobium.persist.Model;
+import org.oobium.utils.json.JsonUtils;
+
+public class View implements ICache, IFlash, IParams, IPathRouting, IUrlRouting, ISessions, IHelpers {
+
+	public static Response render(Class<? extends View> viewClass, HttpRequest request) throws Exception {
+		return render(viewClass, request, new HashMap<String, Object>(0));
+	}
+	
+	public static Response render(Class<? extends View> viewClass, HttpRequest request, Map<String, Object> params) throws Exception {
+		View view = viewClass.newInstance();
+		return render(view, request, params);
+	}
+	
+	public static Response render(View view, HttpRequest request) throws Exception {
+		return render(view, request, new HashMap<String, Object>(0));
+	}
+
+	public static Response render(View view, HttpRequest request, Map<String, Object> params) throws Exception {
+		Controller controller = new Controller(request, params);
+		controller.render(view);
+		return controller.getResponse();
+	}
+	
+
+	private ViewRenderer renderer;
+
+	protected Logger logger;
+	protected Controller controller;
+	protected HttpRequest request;
+	protected Response response;
+
+	private View child;
+	
+	private String layoutName;
+	private Class<? extends View> layout;
+	private int altCount;
+
+	
+	@Override
+	public boolean accepts(ContentType type) {
+		return controller.accepts(type);
+	}
+	
+	@Override
+	public boolean acceptsHtml() {
+		return controller.acceptsHtml();
+	}
+	
+	@Override
+	public boolean acceptsImage() {
+		return controller.acceptsImage();
+	}
+	
+	
+	@Override
+	public boolean acceptsJS() {
+		return controller.acceptsJS();
+	}
+	
+	@Override
+	public boolean acceptsJSON() {
+		return controller.acceptsJSON();
+	}
+	
+	public String alt() {
+		return alt("alt");
+	}
+	
+	public String alt(String s) {
+		return (altCount++ % 2 == 0) ? s : "";
+	}
+	
+	public String concat(String base, String opt, boolean condition) {
+		if(condition) {
+			return base.concat(opt);
+		}
+		return base;
+	}
+	
+	protected void doRenderBody(StringBuilder sb) throws Exception {
+		// subclasses to override if necessary
+	}
+	
+	protected void doRenderMeta(StringBuilder sb) {
+		// subclasses to override if necessary
+	}
+	
+	protected void doRenderScript(StringBuilder sb) {
+		// subclasses to override if necessary
+	}
+	
+	protected void doRenderStyle(StringBuilder sb) {
+		// subclasses to override if necessary
+	}
+	
+	protected void doRenderTitle(StringBuilder sb) {
+		// subclasses to override if necessary
+	}
+	
+	@Override
+	public void expireCache(String key) {
+		controller.expireCache(key);
+	}
+	
+	@Override
+	public String flash(String name) {
+		return controller.flash(name);
+	}
+	
+	@Override
+	public <T> T flash(String name, Class<T> type) {
+		return controller.flash(name, type);
+	}
+
+	@Override
+	public <T> T flash(String name, T defaultValue) {
+		return controller.flash(name, defaultValue);
+	}
+
+	@Override
+	public Action getAction() {
+		return controller.getAction();
+	}
+	
+	@Override
+	public String getActionName() {
+		return controller.getActionName();
+	}
+	
+	@Override
+	public <T extends Model> T getAuthenticated(Class<T> clazz) {
+		return controller.getAuthenticated(clazz);
+	}
+	
+	@Override
+	public String getCache(String key) {
+		return controller.getCache(key);
+	}
+	
+	public View getChild() {
+		return child;
+	}
+	
+	protected String getContent(String name) {
+		return renderer.getContent(name);
+	}
+	
+	@Override
+	public String getControllerName() {
+		return controller.getControllerName();
+	}
+	
+	@Override
+	public String getFlash(String name) {
+		return controller.getFlash(name);
+	}
+	
+	@Override
+	public <T> T getFlash(String name, Class<T> type) {
+		return controller.getFlash(name, type);
+	}
+	
+	@Override
+	public <T> T getFlash(String name, T defaultValue) {
+		return controller.getFlash(name, defaultValue);
+	}
+	
+	@Override
+	public String getFlashError() {
+		return controller.getFlashError();
+	}
+	
+	@Override
+	public String getFlashNotice() {
+		return controller.getFlashNotice();
+	}
+	
+	@Override
+	public String getFlashWarning() {
+		return controller.getFlashWarning();
+	}
+	
+	public View getLayout() {
+		Class<?> layout = this.layout;
+		
+		if(layout == null) {
+			String pname = getClass().getPackage().getName();
+			int ix = pname.lastIndexOf('.');
+			if(layoutName != null) {
+				try {
+					String fname = pname.substring(0, ix) + "._layouts." + layoutName;
+					layout = Class.forName(fname, true, getClass().getClassLoader());
+				} catch(ClassNotFoundException e) {
+					// oh well...
+				}
+			} else {
+				// look for a view specific layout
+				try {
+					String fname = pname.substring(0, ix) + "._layouts." + camelCase(pname.substring(ix+1)) + "Layout";
+					layout = Class.forName(fname, true, getClass().getClassLoader());
+				} catch(ClassNotFoundException e1) {
+					// look for the default view layout (cache...)
+					try {
+						String fname = pname.substring(0, ix) + "._layouts._Layout";
+						layout = Class.forName(fname, true, getClass().getClassLoader());
+					} catch(ClassNotFoundException e2) {
+						// oh well...
+					}
+				}
+			}
+		}
+		
+		if(layout != null) {
+			if(View.class.isAssignableFrom(layout)) {
+				try {
+					Constructor<?> c = layout.getConstructor();
+					return (View) c.newInstance();
+				} catch(Exception e) {
+					// oh well...
+				}
+			}
+		}
+		return null;
+	}
+	
+	@Override
+	public Object getParam(String name) {
+		return controller.getParam(name);
+	}
+	
+	@Override
+	public <T> T getParam(String name, Class<T> clazz) {
+		return controller.getParam(name, clazz);
+	}
+	
+	@Override
+	public <T> T getParam(String name, T defaultValue) {
+		return controller.getParam(name, defaultValue);
+	}
+	
+	@Override
+	public Map<String, Object> getParams() {
+		return controller.getParams();
+	}
+	
+	@Override
+	public HttpSession getSession() {
+		return controller.getSession();
+	}
+	
+	@Override
+	public HttpSession getSession(boolean create) {
+		return controller.getSession(create);
+	}
+
+	public String getTitle() {
+		StringBuilder sb = new StringBuilder();
+		renderTitle(sb);
+		return sb.toString();
+	}
+	
+	public boolean hasChild() {
+		return child != null;
+	}
+	
+	protected boolean hasContent(String name) {
+		return renderer.hasContent(name);
+	}
+	
+	@Override
+	public boolean hasFlash(String name) {
+		return controller.hasFlash(name);
+	}
+	
+	@Override
+	public boolean hasFlashError() {
+		return controller.hasFlashError();
+	}
+	
+	@Override
+	public boolean hasFlashNotice() {
+		return controller.hasFlashNotice();
+	}
+
+	@Override
+	public boolean hasFlashWarning() {
+		return controller.hasFlashWarning();
+	}
+	
+	public boolean hasMeta() {
+		return false;
+	}
+	
+	@Override
+	public boolean hasParam(String name) {
+		return controller.hasParam(name);
+	}
+	
+	@Override
+	public boolean hasParams() {
+		return controller.hasParams();
+	}
+	
+	public boolean hasScript() {
+		return false;
+	}
+	
+	@Override
+	public boolean hasSession() {
+		return controller.hasSession();
+	}
+	
+	public boolean hasStyle() {
+		return false;
+	}
+	
+	public boolean hasTitle() {
+		return false;
+	}
+	
+	@Override
+	public boolean isAction(Action action) {
+		return controller.isAction(action);
+	}
+	
+	@Override
+	public boolean isAuthenticated() {
+		return controller.isAuthenticated();
+	}
+	
+	@Override
+	public boolean isAuthenticated(Model model) {
+		return controller.isAuthenticated(model);
+	}
+	
+	@Override
+	public boolean isXhr() {
+		return controller.isXhr();
+	}
+	
+	protected void messagesBlock(StringBuilder sb) {
+		messagesBlock(sb, true, true, true);
+	}
+
+	protected void messagesBlock(StringBuilder sb, boolean errors, boolean warnings, boolean notices) {
+		if(errors && hasFlashError()) {
+			sb.append("<div class=\"errors\">");
+			sb.append("<ul>");
+			Object error = JsonUtils.toObject(getFlashError());
+			if(error instanceof Iterable<?>) {
+				for(Object o : (Iterable<?>) error) {
+					sb.append("<li>").append(h(o)).append("</li>");
+				}
+			} else {
+				sb.append("<li>").append(h(error)).append("</li>");
+			}
+			sb.append("</ul>");
+			sb.append("</div>");
+		}
+
+		if(warnings && hasFlashWarning()) {
+			sb.append("<div class=\"warnings\">");
+			sb.append("<ul>");
+			Object error = JsonUtils.toObject(getFlashWarning());
+			if(error instanceof Iterable<?>) {
+				for(Object o : (Iterable<?>) error) {
+					sb.append("<li>").append(h(o)).append("</li>");
+				}
+			} else {
+				sb.append("<li>").append(h(error)).append("</li>");
+			}
+			sb.append("</ul>");
+			sb.append("</div>");
+		}
+		
+		if(notices && hasFlashNotice()) {
+			sb.append("<div class=\"notices\">");
+			sb.append("<ul>");
+			Object error = JsonUtils.toObject(getFlashNotice());
+			if(error instanceof Iterable<?>) {
+				for(Object o : (Iterable<?>) error) {
+					sb.append("<li>").append(h(o)).append("</li>");
+				}
+			} else {
+				sb.append("<li>").append(h(error)).append("</li>");
+			}
+			sb.append("</ul>");
+			sb.append("</div>");
+		}
+	}
+
+	@Override
+	public String param(String name) {
+		return controller.param(name);
+	}
+
+	@Override
+	public <T> T param(String name, Class<T> clazz) {
+		return controller.param(name, clazz);
+	}
+
+	@Override
+	public <T> T param(String name, T defaultValue) {
+		return controller.param(name, defaultValue);
+	}
+
+	@Override
+	public Map<String, Object> params() {
+		return controller.params();
+	}
+	
+	@Override
+	public String pathTo(Class<? extends Model> modelClass) {
+		return controller.pathTo(modelClass);
+	}
+	
+	@Override
+	public String pathTo(Class<? extends Model> modelClass, Action action) {
+		return controller.pathTo(modelClass, action);
+	}
+
+	@Override
+	public String pathTo(Model model) {
+		return controller.pathTo(model);
+	}
+	
+	@Override
+	public String pathTo(Model model, Action action) {
+		return controller.pathTo(model, action);
+	}
+	
+	@Override
+	public String pathTo(Model parent, String field) {
+		return controller.pathTo(parent, field);
+	}
+	
+	@Override
+	public String pathTo(Model parent, String field, Action action) {
+		return controller.pathTo(parent, field, action);
+	}
+
+	@Override
+	public String pathTo(String routeName) {
+		return controller.pathTo(routeName);
+	}
+	
+	@Override
+	public String pathTo(String routeName, Model model) {
+		return controller.pathTo(routeName, model);
+	}
+	
+	@Override
+	public String pathTo(String routeName, Object... params) {
+		return controller.pathTo(routeName, params);
+	}
+	
+	protected String putContent(String name, String content) {
+		return renderer.putContent(name, content);
+	}
+
+	void render() {
+		render(renderer.body);
+	}
+	
+	private void render(StringBuilder body) {
+		try {
+			doRenderStyle(renderer.style);
+			doRenderScript(renderer.script);
+			doRenderBody(body);
+		} catch(Exception e) {
+			if(e instanceof RuntimeException) {
+				throw (RuntimeException) e;
+			} else {
+				throw new RuntimeException("Exception thrown during render", e);
+			}
+		}
+	}
+
+	public void renderMeta(StringBuilder sb) {
+		doRenderMeta(sb);
+		if(hasChild()) {
+			child.renderMeta(sb);
+		}
+	}
+
+	public void renderTitle(StringBuilder sb) {
+		if(hasChild() && child.hasTitle()) {
+			child.renderTitle(sb);
+		} else {
+			doRenderTitle(sb);
+		}
+	}
+
+	@Override
+	public void setCache(String key, String value) {
+		controller.setCache(key, value);
+	}
+
+	public void setChild(View child) {
+		this.child = child;
+		this.child.setRenderer(renderer);
+	}
+
+	@Override
+	public void setFlash(String name, Object value) {
+		controller.setFlash(name, value);
+	}
+
+	@Override
+	public void setFlashError(Model model) {
+		controller.setFlashError(model);		
+	}
+
+	@Override
+	public void setFlashError(Model... models) {
+		controller.setFlashError(models);		
+	}
+
+	@Override
+	public void setFlashError(Object value) {
+		controller.setFlashError(value);		
+	}
+
+	@Override
+	public void setFlashNotice(Object value) {
+		controller.setFlashNotice(value);
+	}
+
+	@Override
+	public void setFlashWarning(Object value) {
+		controller.setFlashWarning(value);
+	}
+
+	public void setLayout(Class<? extends View> layout) {
+		this.layout = layout;
+	}
+
+	public void setLayout(String layoutName) {
+		this.layoutName = layoutName;
+	}
+
+	@Override
+	public void setParam(String name, Object value) {
+		controller.setParam(name, value);
+	}
+
+	public void setRenderer(ViewRenderer renderer) {
+		this.renderer = renderer;
+		if(renderer == null) {
+			controller = null;
+			logger = null;
+			request = null;
+			response = null;
+		} else {
+			controller = renderer.controller;
+			logger = controller.getLogger();
+			request = controller.getRequest();
+			response = controller.getResponse();
+		}
+	}
+	
+	@Override
+	public String urlTo(Class<? extends Model> modelClass) {
+		return controller.urlTo(modelClass);
+	}
+	
+	@Override
+	public String urlTo(Class<? extends Model> modelClass, Action action) {
+		return controller.urlTo(modelClass, action);
+	}
+	
+	@Override
+	public String urlTo(Model model) {
+		return controller.urlTo(model);
+	}
+
+	@Override
+	public String urlTo(Model model, Action action) {
+		return controller.urlTo(model, action);
+	}
+
+	@Override
+	public String urlTo(Model parent, String field) {
+		return controller.urlTo(parent, field);
+	}
+
+	@Override
+	public String urlTo(Model parent, String field, Action action) {
+		return controller.urlTo(parent, field, action);
+	}
+
+	@Override
+	public String urlTo(String routeName) {
+		return controller.urlTo(routeName);
+	}
+
+	@Override
+	public String urlTo(String routeName, Model model) {
+		return controller.urlTo(routeName, model);
+	}
+
+	@Override
+	public String urlTo(String routeName, Object... params) {
+		return controller.urlTo(routeName, params);
+	}
+	
+	@Override
+	public ContentType wants() {
+		return controller.wants();
+	}
+
+	@Override
+	public boolean wants(ContentType type) {
+		return controller.wants(type);
+	}
+
+	@Override
+	public boolean wantsHtml() {
+		return controller.wantsHtml();
+	}
+	
+	@Override
+	public boolean wantsImage() {
+		return controller.wantsImage();
+	}
+
+	@Override
+	public boolean wantsJS() {
+		return controller.wantsJS();
+	}
+	
+	@Override
+	public boolean wantsJSON() {
+		return controller.wantsJSON();
+	}
+
+	protected void yield(StringBuilder body) {
+		if(hasChild()) {
+			child.render(body);
+		}
+	}
+	
+	protected void yield(String name, StringBuilder body) {
+		if(body != renderer.body) {
+			logger.warn(new IllegalStateException("named yields cannot be inside contentFor or capture elements"));
+		} else {
+			if(name != null && name.length() > 0) {
+				renderer.addPosition(name);
+			}
+		}
+	}
+	
+	protected void yield(View view, StringBuilder body) {
+		if(view != null) {
+			view.setRenderer(renderer);
+			view.render(body);
+		}
+	}
+	
+}

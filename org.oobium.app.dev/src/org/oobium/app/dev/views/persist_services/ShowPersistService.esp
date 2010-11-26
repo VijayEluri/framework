@@ -1,0 +1,28 @@
+import java.util.*
+import org.oobium.persist.PersistService
+import org.oobium.persist.ServiceInfo
+
+ShowPersistService(int id, PersistService service)
+
+title Persist Service: { service }
+
+- ServiceInfo info = service.getInfo();
+- if(info == null) {
+		div { service }
+- } else {
+		table
+			tr
+				td Name:
+				td { info.getName() }
+			tr
+				td Provider:
+				td { info.getProvider() }
+			tr
+				td Version:
+				td { info.getVersion() }
+			tr
+				td Description:
+				td { info.getDescription() }
+- }
+
+view<Query>(id)

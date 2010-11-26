@@ -1,0 +1,26 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Oobium Manager Bundle
+Bundle-SymbolicName: org.oobium.manager;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Import-Package: org.oobium.app,
+ org.oobium.app.model,
+ org.oobium.app.persist,
+ org.oobium.app.server.controller,
+ org.oobium.app.server.routing,
+ org.oobium.app.server.view,
+ org.oobium.app.workers,
+ org.oobium.events.models,
+ org.oobium.http,
+ org.oobium.http.constants,
+ org.oobium.logging,
+ org.oobium.persist,
+ org.oobium.utils,
+ org.oobium.utils.json,
+ org.osgi.framework;version="1.4.0",
+ org.osgi.service.packageadmin;version="1.2.0"
+Bundle-Activator: org.oobium.manager.ManagerService
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Oobium-Type: application
+Export-Package: org.oobium.manager
+Bundle-Vendor: oobium.org

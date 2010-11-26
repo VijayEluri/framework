@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Oobium Client Plug-in
+Bundle-SymbolicName: org.oobium.client
+Bundle-Version: 1.0.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Import-Package: org.oobium.http,
+ org.oobium.http.constants,
+ org.oobium.logging,
+ org.oobium.utils
+Export-Package: org.oobium.client
+Bundle-Vendor: oobium.org

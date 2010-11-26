@@ -1,0 +1,7 @@
+import java.util.*
+
+ShowUpdateResults(int id, String query, int results)
+
+div The command returned a value of: { results }
+
+view<Query>(id, query)

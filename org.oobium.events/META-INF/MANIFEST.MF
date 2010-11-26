@@ -1,0 +1,24 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Events Module Bundle
+Bundle-SymbolicName: org.oobium.events
+Bundle-Version: 1.0.0.qualifier
+Export-Package: org.oobium.events.models
+Import-Package: org.oobium.app,
+ org.oobium.app.model,
+ org.oobium.app.server.controller,
+ org.oobium.app.server.routing,
+ org.oobium.app.server.view,
+ org.oobium.client,
+ org.oobium.http,
+ org.oobium.http.constants,
+ org.oobium.logging,
+ org.oobium.persist,
+ org.oobium.utils,
+ org.oobium.utils.json,
+ org.osgi.framework;version="1.4.0"
+Bundle-Activator: org.oobium.events.Activator
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Oobium-Type: module
+Bundle-ActivationPolicy: lazy
+Bundle-Vendor: oobium.org

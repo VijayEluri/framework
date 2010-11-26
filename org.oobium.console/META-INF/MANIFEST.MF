@@ -1,0 +1,13 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Console
+Bundle-SymbolicName: org.oobium.console
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: oobium.org
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Require-Bundle: org.eclipse.swt;bundle-version="3.6.0"
+Import-Package: org.oobium.utils,
+ org.oobium.utils.coercion
+Export-Package: org.oobium.console,
+ org.oobium.console.commands,
+ org.oobium.console.functions

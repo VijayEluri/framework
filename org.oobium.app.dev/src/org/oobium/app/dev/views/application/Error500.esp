@@ -1,0 +1,12 @@
+Error500(Exception exception, String trace)
+
+title /Error500
+
+script(jquery-1.4.2.min)
+style
+	.indent { margin-left:15px }
+	.trace  { color: red }
+
+div.trace
+	h3 { exception.getMessage() }
+	div { trace }

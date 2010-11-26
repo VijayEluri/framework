@@ -1,0 +1,15 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Database Session Plug-in
+Bundle-SymbolicName: org.oobium.session.db
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: oobium.org
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Import-Package: org.apache.derby.jdbc,
+ org.oobium.http,
+ org.oobium.logging,
+ org.oobium.utils,
+ org.osgi.framework;version="1.4.0"
+Bundle-Activator: org.oobium.session.db.DbSessionService
+Bundle-ActivationPolicy: lazy
+Oobium-Service: org.oobium.session

@@ -1,0 +1,13 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Tests
+Bundle-SymbolicName: org.oobium.mailer.tests
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: oobium.org
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Require-Bundle: org.oobium.mailer;bundle-version="1.0.0",
+ org.junit4;bundle-version="4.5.0",
+ org.oobium.app;bundle-version="1.0.0",
+ org.oobium.persist;bundle-version="1.0.0",
+ com.sun.mail;bundle-version="1.4.2",
+ org.oobium.utils;bundle-version="1.0.0"

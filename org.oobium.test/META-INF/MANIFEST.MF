@@ -1,0 +1,25 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Test Plug-in
+Bundle-SymbolicName: org.oobium.test
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: oobium.org
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Import-Package: org.oobium.app,
+ org.oobium.app.model,
+ org.oobium.app.server.controller,
+ org.oobium.app.server.routing,
+ org.oobium.app.server.view,
+ org.oobium.http,
+ org.oobium.http.constants,
+ org.oobium.logging,
+ org.oobium.persist,
+ org.oobium.persist.db,
+ org.oobium.persist.db.derby.embedded,
+ org.oobium.persist.migrate,
+ org.oobium.utils,
+ org.oobium.utils.coercion,
+ org.oobium.utils.json,
+ org.osgi.framework;version="1.4.0"
+Require-Bundle: org.junit4;bundle-version="4.3.1"
+Export-Package: org.oobium.test

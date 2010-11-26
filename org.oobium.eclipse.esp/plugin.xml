@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+   <extension
+         point="org.eclipse.core.filebuffers.documentSetup">
+      <participant
+            class="org.oobium.eclipse.esp.editor.EspDocumentSetupParticipant"
+            extensions="esp">
+      </participant>
+   </extension>
+   <extension
+         point="org.eclipse.ui.editors">
+      <editor
+            class="org.oobium.eclipse.esp.editor.EspEditor"
+            extensions="ejs"
+            icon="icons/ejs.png"
+            id="org.oobium.eclipse.esp.editor.EjsEditor"
+            name="EJS Editor">
+      </editor>
+      <editor
+            class="org.oobium.eclipse.esp.editor.EspEditor"
+            extensions="emt"
+            icon="icons/emt.png"
+            id="org.oobium.eclipse.esp.editor.EmtEditor"
+            name="EMT Editor">
+      </editor>
+      <editor
+            class="org.oobium.eclipse.esp.editor.EspEditor"
+            extensions="esp"
+            icon="icons/esp.png"
+            id="org.oobium.eclipse.esp.editor.EspEditor"
+            name="ESP Editor">
+      </editor>
+      <editor
+            class="org.oobium.eclipse.esp.editor.EspEditor"
+            extensions="ess"
+            icon="icons/ess.png"
+            id="org.oobium.eclipse.esp.editor.EssEditor"
+            name="ESS Editor">
+      </editor>
+      <editor
+            class="org.oobium.eclipse.esp.editor.EspEditor"
+            extensions="css"
+            icon="icons/stylesheet.gif"
+            id="org.oobium.eclipse.esp.editor.CssEditor"
+            name="CSS Editor">
+      </editor>
+      <editor
+            class="org.oobium.eclipse.esp.editor.EspEditor"
+            extensions="js, json"
+            icon="icons/javascript.gif"
+            id="org.oobium.eclipse.esp.editor.JsEditor"
+            name="Javascript Editor">
+      </editor>
+   </extension>
+   <extension
+         id="org.oobium.eclipse.esp.EspNature"
+         name="Esp Nature"
+         point="org.eclipse.core.resources.natures">
+      <runtime>
+         <run
+               class="org.oobium.eclipse.esp.EspNature">
+         </run>
+      </runtime>
+      <requires-nature
+            id="org.eclipse.jdt.core.javanature">
+      </requires-nature>
+   </extension>
+</plugin>
