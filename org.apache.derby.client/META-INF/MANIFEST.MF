@@ -1,0 +1,19 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Derby Client
+Bundle-SymbolicName: org.apache.derby.client
+Bundle-Version: 10.5.3.0
+Bundle-Vendor: apache.org
+Export-Package: org.apache.derby.client,
+ org.apache.derby.client.am,
+ org.apache.derby.client.am.stmtcache,
+ org.apache.derby.client.net,
+ org.apache.derby.iapi.services.info,
+ org.apache.derby.iapi.tools.i18n,
+ org.apache.derby.impl.tools.sysinfo,
+ org.apache.derby.jdbc,
+ org.apache.derby.shared.common.error,
+ org.apache.derby.shared.common.i18n,
+ org.apache.derby.shared.common.sanity,
+ org.apache.derby.tools
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
