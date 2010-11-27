@@ -66,13 +66,13 @@ public class CommandController extends Controller {
 		IProject project = root.getProject(param("project"));
 		IProgressMonitor monitor = new NullProgressMonitor();
 		try {
-			project.create(monitor);
+			IProjectDescription description = root.getWorkspace().newProjectDescription(param("project"));
+			description.setLocationURI(new File(param("file")).toURI());
+			project.create(description, monitor);
 			project.open(monitor);
 		} catch(CoreException e1) {
 			try {
-				IProjectDescription description = root.getWorkspace().newProjectDescription(param("project"));
-				description.setLocationURI(new File(param("file")).toURI());
-				project.create(description, monitor);
+				project.create(monitor);
 				project.open(monitor);
 			} catch(CoreException e2) {
 				logger.warn(e2);
