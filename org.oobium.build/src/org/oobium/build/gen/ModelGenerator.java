@@ -24,6 +24,7 @@ import java.util.Map;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 
+import org.oobium.build.BuildBundle;
 import org.oobium.build.gen.model.PropertyDescriptor;
 import org.oobium.build.model.ModelAttribute;
 import org.oobium.build.model.ModelDefinition;
@@ -35,6 +36,7 @@ import org.oobium.build.workspace.Application;
 import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.Workspace;
+import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.persist.Paginator;
 import org.oobium.persist.migrate.Migration;
@@ -286,7 +288,7 @@ public class ModelGenerator {
 
 	private final Workspace workspace;
 	private final Module module;
-	private final int action;
+	private int action;
 	final List<File> files;
 
 	ModelGenerator(Workspace workspace, Module module, int action) {
@@ -325,14 +327,23 @@ public class ModelGenerator {
 			classpath.append(File.separatorChar).append("bin");
 		}
 		
+		if((action & GEN_MODELS) != 0) {
+			action |= GEN_SCHEMA;
+		}
+		
 		if((action & GEN_SCHEMA) != 0) {
 			Bundle migrator = workspace.getBundle(Migration.class.getPackage().getName());
 			if(migrator == null) {
-				throw new IllegalStateException("Migrator Bundle cannot be found");
-			}
-			classpath.append(File.pathSeparatorChar).append(migrator.file.getAbsolutePath());
-			if(migrator.file.isDirectory()) {
-				classpath.append(File.separatorChar).append("bin");
+				if(action == GEN_SCHEMA) { // an explicit request to build the schema and nothing else
+					throw new IllegalStateException("Migrator Bundle cannot be found");
+				}
+				Logger.getLogger(BuildBundle.class).debug("build schema requestd but migrator is not present... continuing anyway");
+				action &= ~GEN_SCHEMA;
+			} else {
+				classpath.append(File.pathSeparatorChar).append(migrator.file.getAbsolutePath());
+				if(migrator.file.isDirectory()) {
+					classpath.append(File.separatorChar).append("bin");
+				}
 			}
 		}
 		
