@@ -1508,6 +1508,9 @@ public class Console extends Composite {
     	if(x != null) {
 	    	int start = 0;
 	    	StringBuilder sb = buffer.getLast().sb;
+	    	if(sb == null) {
+	    		return;
+	    	}
 	    	if(commandLine != null) {
 	    		sb.delete(0, sb.length());
 	    	}
