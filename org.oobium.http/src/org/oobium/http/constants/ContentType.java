@@ -18,6 +18,8 @@ import java.util.Map;
 public enum ContentType {
 
 	ALL("*", "*"),
+	AUDIO("audio", "x-wav", true),
+	AUDIO_WAV("audio", "x-wav", true),
 	CSS("text", "css"),
 	IMG("image", "png", true),
 	IMG_ICO("image", "ico", true),
