@@ -1500,17 +1500,18 @@ public class Console extends Composite {
     		print(String.valueOf(x), def, addNewLine);
     	}
     }
+	
     protected void print(String x, Region def, boolean addNewLine) {
+    	StringBuilder sb = buffer.getLast().sb;
+    	if(sb == null) {
+    		return;
+    	}
     	String commandLine =  null;
     	if(!isCommandRunning() && (addNewLine/* || !blank(x)*/)) {
-    		commandLine = buffer.getLast().sb.toString();
+    		commandLine = sb.toString();
     	}
     	if(x != null) {
 	    	int start = 0;
-	    	StringBuilder sb = buffer.getLast().sb;
-	    	if(sb == null) {
-	    		return;
-	    	}
 	    	if(commandLine != null) {
 	    		sb.delete(0, sb.length());
 	    	}
