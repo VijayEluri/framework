@@ -48,11 +48,6 @@ import org.oobium.persist.ModelDescription;
 @SupportedSourceVersion(SourceVersion.RELEASE_6)
 public class ModelProcessor extends AbstractProcessor {
 
-	public static boolean isValidAction(int action) {
-		return action >= 0 && action <= GEN_SCHEMA;
-	}
-	
-
 	private Logger logger = Logger.getLogger(BuildBundle.class);
 	
 	private static final Set<String> supportedOptions = new TreeSet<String>();
@@ -340,11 +335,6 @@ public class ModelProcessor extends AbstractProcessor {
 	
 	@Override
 	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-		int action = Integer.parseInt(processingEnv.getOptions().get("action"));
-		if(!isValidAction(action)) {
-			return true;
-		}
-		
 		if(!annotations.isEmpty() && !roundEnv.getRootElements().isEmpty()) {
 			Map<ModelDefinition, File> models = new HashMap<ModelDefinition, File>();
 
@@ -370,6 +360,8 @@ public class ModelProcessor extends AbstractProcessor {
 			
 			setOpposites(models.keySet());
 
+			
+			int action = Integer.parseInt(processingEnv.getOptions().get("action"));
 			String path = processingEnv.getOptions().get("path");
 
 			if((action & GEN_MODELS) != 0) {
