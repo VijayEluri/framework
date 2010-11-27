@@ -47,7 +47,9 @@ public class PropertyDescriptor {
 
 	private ModelDefinition model;
 	private ModelRelation opposite;
+	private boolean hasOne;
 	private boolean hasMany;
+	private String relatedType;
 
 	public PropertyDescriptor(ModelAttribute attribute) {
 		this(attribute.getModel().getSimpleName(), attribute.getJavaType(), attribute.getName());
@@ -61,6 +63,8 @@ public class PropertyDescriptor {
 		readOnly = attribute.isReadOnly();
 		unique = attribute.isUnique();
 		virtual = attribute.isVirtual();
+		hasOne = false;
+		relatedType = null;
 		hasMany = false;
 
 		builder = new AttributeBuilder(this);
@@ -78,7 +82,9 @@ public class PropertyDescriptor {
 		readOnly = relation.isReadOnly();
 		unique = relation.isUnique();
 		virtual = relation.isVirtual();
+		hasOne = !relation.hasMany();
 		hasMany = relation.hasMany();
+		relatedType = relation.getType();
 
 		if(relation.hasMany()) {
 			castType = Set.class.getSimpleName();
@@ -108,6 +114,10 @@ public class PropertyDescriptor {
 		} else {
 			primitive = true;
 		}
+	}
+	
+	public String relatedType() {
+		return relatedType;
 	}
 
 	public String castType() {
@@ -180,6 +190,10 @@ public class PropertyDescriptor {
 	
 	public boolean hasOpposite() {
 		return opposite != null;
+	}
+	
+	public boolean hasOne() {
+		return hasOne;
 	}
 	
 	public boolean hasMany() {

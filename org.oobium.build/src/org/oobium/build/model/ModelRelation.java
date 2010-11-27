@@ -27,6 +27,7 @@ public class ModelRelation {
 	private Relation annotation;
 	private boolean hasMany;
 	private ModelRelation opposite;
+	private String relatedType;
 
 	public ModelRelation(ModelDefinition model, Relation annotation, boolean hasMany) {
 		this.model = model;

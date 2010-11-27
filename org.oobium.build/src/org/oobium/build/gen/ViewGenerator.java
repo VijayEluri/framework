@@ -23,6 +23,7 @@ import org.oobium.build.model.ModelAttribute;
 import org.oobium.build.model.ModelDefinition;
 import org.oobium.build.model.ModelRelation;
 import org.oobium.persist.Paginator;
+import org.oobium.utils.StringUtils;
 
 public class ViewGenerator {
 
@@ -95,6 +96,8 @@ public class ViewGenerator {
 					} else {
 						sb.append("text");
 					}
+				} else if(property.hasOne()) {
+					sb.append("select");
 				} else if(Integer.class.getCanonicalName().equals(property.fullType())) {
 					sb.append("number");
 				} else if(Double.class.getCanonicalName().equals(property.fullType())) {
@@ -104,7 +107,13 @@ public class ViewGenerator {
 				} else {
 					sb.append("input");
 				}
-				sb.append("(").append(var).append(")\n");
+				sb.append("(").append(var).append(')');
+				if(property.hasOne()) {
+					String type = StringUtils.simpleName(property.relatedType());
+					sb.append(" <- options(").append(type).append(".findAll())\n");
+				} else {
+					sb.append('\n');
+				}
 			}
 		}
 		sb.append("\tdiv.actions\n");
