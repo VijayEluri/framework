@@ -65,7 +65,13 @@ public class ControllerForCommand extends BuilderCommand {
 			}
 		}
 
-		module.createForModel(getWorkspace(), model, Module.CONTROLLER);
+		File[] files = module.createForModel(getWorkspace(), model, Module.CONTROLLER);
+		for(File file : files) {
+			if(module.getType(file) == Module.CONTROLLER) {
+				String cname = module.getControllerName(file);
+				console.out.println("created controller <a href=\"open controller " + cname + "\">" + cname + "</a>");
+			}
+		}
 		BuilderConsoleActivator.sendRefresh(module, 100);
 	}
 

@@ -65,9 +65,13 @@ public class ViewsForCommand extends BuilderCommand {
 			}
 		}
 
-		File[] views = module.createForModel(getWorkspace(), model, Module.VIEW);
-		for(File view : views) {
-			module.generateView(view);
+		File[] files = module.createForModel(getWorkspace(), model, Module.VIEW);
+		for(File file : files) {
+			if(module.getType(file) == Module.VIEW) {
+				module.generateView(file);
+				String vname = module.getViewName(file);
+				console.out.println("created view <a href=\"open view " + vname + "\">" + vname + "</a>");
+			}
 		}
 		BuilderConsoleActivator.sendRefresh(module, 100);
 	}

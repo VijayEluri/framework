@@ -39,6 +39,9 @@ public class ViewCommand extends BuilderCommand {
 		
 		module.createView(param(0), (paramCount() > 1) ? param(1) : "div hi :)");
 		
+		String vname = module.getViewName(view);
+		console.out.println("created view <a href=\"open view " + vname + "\">" + vname + "</a>");
+
 		BuilderConsoleActivator.sendRefresh(module.file, 500);
 	}
 
