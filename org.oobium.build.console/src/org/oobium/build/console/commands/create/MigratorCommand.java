@@ -30,7 +30,7 @@ public class MigratorCommand extends BuilderCommand {
 		Module module = getModule();
 		Migrator migrator = getWorkspace().getMigratorFor(module);
 		if(migrator != null) {
-			String confirm = flag('f') ? "Y" : ask("This will overwrite the existing migration. Are you sure?[Y/N] ");
+			String confirm = flag('f') ? "Y" : ask("This will overwrite the existing migrator. Are you sure?[Y/N] ");
 			if("Y".equalsIgnoreCase(confirm)) {
 				migrator.delete();
 			} else {
@@ -40,7 +40,7 @@ public class MigratorCommand extends BuilderCommand {
 		} else {
 			File file = module.getMigratorFile();
 			if(file.exists()) {
-				String confirm = flag('f') ? "Y" : ask("This will overwrite the existing migration. Are you sure?[Y/N] ");
+				String confirm = flag('f') ? "Y" : ask("This will overwrite the existing migrator. Are you sure?[Y/N] ");
 				if("Y".equalsIgnoreCase(confirm)) {
 					FileUtils.delete(file);
 				} else {
@@ -53,13 +53,13 @@ public class MigratorCommand extends BuilderCommand {
 		try {
 			migrator = getWorkspace().createMigrator(module);
 			if(migrator != null) {
-				console.out.println("successfully created migration: " + migrator.name);
+				console.out.println("successfully created migrator: " + migrator.name);
 				BuilderConsoleActivator.sendImport(migrator);
 			} else {
-				console.err.println("failed to create migration for " + module.name);
+				console.err.println("failed to create migrator for " + module.name);
 			}
 		} catch(Exception e) {
-			console.err.println("failed to create migration: " + e.getMessage());
+			console.err.println("failed to create migrator: " + e.getMessage());
 		}
 	}
 

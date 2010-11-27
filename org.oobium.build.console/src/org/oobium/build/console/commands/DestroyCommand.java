@@ -17,7 +17,7 @@ import org.oobium.build.console.commands.destroy.BundleCommand;
 import org.oobium.build.console.commands.destroy.ControllerCommand;
 import org.oobium.build.console.commands.destroy.ControllerForCommand;
 import org.oobium.build.console.commands.destroy.MailerCommand;
-import org.oobium.build.console.commands.destroy.MigrationCommand;
+import org.oobium.build.console.commands.destroy.MigratorCommand;
 import org.oobium.build.console.commands.destroy.ModelCommand;
 import org.oobium.build.console.commands.destroy.ModuleCommand;
 import org.oobium.build.console.commands.destroy.ObserverCommand;
@@ -35,7 +35,7 @@ public class DestroyCommand extends BuilderCommand {
 		add(new ControllerCommand());
 		add(new ControllerForCommand());
 		add(new MailerCommand());
-		add(new MigrationCommand());
+		add(new MigratorCommand());
 		add(new ModelCommand());
 		add(new ModuleCommand());
 		add(new ObserverCommand());

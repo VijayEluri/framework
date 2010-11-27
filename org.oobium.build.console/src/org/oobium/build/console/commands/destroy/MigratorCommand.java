@@ -14,7 +14,7 @@ import org.oobium.build.console.BuilderConsoleActivator;
 import org.oobium.build.workspace.Migrator;
 
 
-public class MigrationCommand extends BundleCommand {
+public class MigratorCommand extends BundleCommand {
 
 	@Override
 	public void configure() {
@@ -25,7 +25,7 @@ public class MigrationCommand extends BundleCommand {
 	public void run() {
 		Migrator migration = getWorkspace().getMigratorFor(getModule());
 		if(migration == null) {
-			console.err.println("The active Module does not have a Migration");
+			console.err.println("The active Module does not have a Migrator");
 			return;
 		}
 
