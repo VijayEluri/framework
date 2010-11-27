@@ -1385,6 +1385,18 @@ public class EspCompiler {
 		buildFormField(select, false);
 		body.append(">");
 	}
+
+	/**
+	 * Strip the quotes from an entry value to use it as a Java argument
+	 */
+	private String toArg(String val) {
+		if(val != null && val.length() > 1) {
+			if(val.charAt(0) == '"' && val.charAt(val.length()-1) == '"') {
+				return val.substring(1, val.length()-1);
+			}
+		}
+		return val;
+	}
 	
 	// options<Member>(findAllMembers(), text:"option.getNameLF()", value:"option.getId(), sort:"option.getNameLF()")
 	private void buildSelectOptions(HtmlElement element) {
@@ -1395,9 +1407,9 @@ public class EspCompiler {
 			String selectionGetter = getSelectionGetter(element);
 			if(element.hasEntry("text") || element.hasEntry("value")) {
 				String type = element.hasJavaType() ? element.getJavaType() : "Object";
-				String text = element.hasEntry("text") ? element.getEntry("text").getText() : "String.valueOf(option)";
-				String value = element.hasEntry("value") ? element.getEntry("value").getText() : "option";
-				String title = element.hasEntry("title") ? element.getEntry("title").getText() : null;
+				String text = element.hasEntry("text") ? toArg(element.getEntryValue("text").getText()) : "String.valueOf(option)";
+				String value = element.hasEntry("value") ? toArg(element.getEntryValue("value").getText()) : "option";
+				String title = element.hasEntry("title") ? toArg(element.getEntryValue("title").getText()) : null;
 				if(blank(selectionGetter)) {
 					body.append("for(").append(type).append(" option : ").append(options).append(") {\n");
 					if(blank(title)) {
