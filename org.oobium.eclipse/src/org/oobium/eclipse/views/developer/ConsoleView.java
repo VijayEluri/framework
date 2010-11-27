@@ -504,6 +504,9 @@ public class ConsoleView extends ViewPart {
 					if(project.isOpen() && project.hasNature(OobiumNature.ID)) {
 						File file = project.getLocation().toFile();
 						Bundle bundle = OobiumPlugin.getWorkspace().getModule(file);
+						if(bundle == null) {
+							bundle = OobiumPlugin.getWorkspace().loadBundle(file);
+						}
 						if(bundle != null) {
 							if(bundle.isApplication()) {
 								setApplication(file);
