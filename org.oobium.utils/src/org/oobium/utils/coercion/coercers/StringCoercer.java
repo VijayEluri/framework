@@ -28,6 +28,10 @@ import org.oobium.utils.json.JsonUtils;
 
 public class StringCoercer extends AbstractCoercer {
 
+	public String coerce(byte[] ba, Class<?> toType) {
+		return new String(ba);
+	}
+	
 	public String coerce(JsonModel model, Class<?> toType) {
 		return model.toJson();
 	}

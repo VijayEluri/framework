@@ -140,4 +140,9 @@ public class TypeCoercerTests {
 		assertEquals(obj.size, coerce("{" + type + ",name:\"bob\",size:1}", SerializeTest.class).size);
 	}
 
+	@Test
+	public void testByteArrayToString() throws Exception {
+		assertEquals("hello", coerce("hello".getBytes(), String.class));
+	}
+	
 }

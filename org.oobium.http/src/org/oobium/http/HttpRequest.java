@@ -50,7 +50,7 @@ public interface HttpRequest {
 
 	public abstract Object getParameter(String name);
 
-	public abstract Map<String, String> getParameters();
+	public abstract Map<String, Object> getParameters();
 
 	public abstract String getPath();
 

@@ -34,6 +34,9 @@ public class ArrayCoercer extends AbstractCoercer {
 		}
 		
 		if(object instanceof String) {
+			if(componentType == byte.class) {
+				return ((String) object).getBytes();
+			}
 			object = JsonUtils.toList((String) object);
 		}
 		

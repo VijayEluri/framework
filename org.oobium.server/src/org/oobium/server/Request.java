@@ -71,13 +71,13 @@ public class Request implements HttpRequest {
 	private String fullPath;
 	private HttpRequestHandler handler;
 	private Headers headers;
-	private Map<String, String> parameters;
+	private Map<String, Object> parameters;
 	private Map<String, HttpCookie> cookies;
 	private String host;
 	private int port;
 	private String ipAddress;
 	
-	public Request(Type type, String path, String fullPath, Headers headers, Map<String, String> parameters) {
+	public Request(Type type, String path, String fullPath, Headers headers, Map<String, Object> parameters) {
 		logger = Logger.getLogger(Server.class);
 		
 		this.type = type;
@@ -166,7 +166,7 @@ public class Request implements HttpRequest {
 		return parameters.get(name);
 	}
 	
-	public Map<String, String> getParameters() {
+	public Map<String, Object> getParameters() {
 		return parameters;
 	}
 	
@@ -267,7 +267,7 @@ public class Request implements HttpRequest {
 			}
 			if(contentLength > 0) {
 				if(parameters == null) {
-					parameters = new HashMap<String, String>();
+					parameters = new HashMap<String, Object>();
 				}
 				byte[] content = data.getContent(contentLength);
 				if(isMultipart()) {
@@ -328,6 +328,7 @@ public class Request implements HttpRequest {
 						}
 					} else if(CONTENT_TYPE.key().equalsIgnoreCase(sa2[0])) {
 						type = parse(sa2[1]);
+						parameters.put("data_type", sa2[1]);
 					}
 					l1 = l2 + 2;
 					l2 = findAll(content, l1, b2, CRLN);
@@ -339,13 +340,14 @@ public class Request implements HttpRequest {
 						if(logger.isLoggingInfo()) {
 							logger.info(name + ": adding as byte[]");
 						}
-						parameters.put(name, new String(data));
+						parameters.put(name, data);
 					} else {
 						if(logger.isLoggingInfo()) {
 							logger.info(name + ": adding as String");
 						}
 						parameters.put(name, new String(data));
 					}
+					parameters.put("data_length", Integer.toString(data.length));
 					l1 = l2 = -1;
 				}
 			}

@@ -57,7 +57,7 @@ class RequestHandler implements Runnable {
 			path = path.substring(0, path.length()-1);
 		}
 
-		Map<String, String> parameters = new HashMap<String, String>();
+		Map<String, Object> parameters = new HashMap<String, Object>();
 		if(sa2.length > 1) {
 			String query = sa2[1];
 			for(String s : query.split("&")) {

@@ -618,7 +618,7 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		this.logger = handler.getLogger();
 		this.router = handler.getRouter();
 		
-		Map<String, String> rparams = request.getParameters();
+		Map<String, Object> rparams = request.getParameters();
 		if(rparams != null) {
 			Map<String, Object> params = new HashMap<String, Object>(rparams);
 			if(routeParams != null) {
