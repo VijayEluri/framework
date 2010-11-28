@@ -216,9 +216,18 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 		logger.info("loading Observer classes");
 
 		String pkg = pkg(config.getPathToObservers(pkgPath()));
-		loadClassesInPackage(pkg);
+		for(Class<?> clazz : loadClassesInPackage(pkg)) {
+			if(Observer.class.isAssignableFrom(clazz)) {
+				addObserver(clazz);
+			}
+		}
 	}
 
+	@SuppressWarnings("unchecked")
+	private void addObserver(Class<?> clazz) {
+		Observer.addObserver((Class<? extends Observer<?>>) clazz);
+	}
+	
 	private String pkg(String path) {
 		path = path.trim();
 		if(path.charAt(0) == '/') {

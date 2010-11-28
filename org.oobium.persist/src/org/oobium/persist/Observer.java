@@ -10,6 +10,8 @@
  ******************************************************************************/
 package org.oobium.persist;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -18,25 +20,27 @@ import java.util.Map;
 
 import org.oobium.logging.Logger;
 
-public class Observer {
+public class Observer<T extends Model> {
 
 	private static final Logger slogger = Logger.getLogger(PersistService.class);
 
-	private static final Map<Class<?>, List<Observer>> observerMap = new HashMap<Class<?>, List<Observer>>();
+	private static final Map<Class<?>, List<Observer<? extends Model>>> observerMap = new HashMap<Class<?>, List<Observer<? extends Model>>>();
 
-	public synchronized static void addObserver(Class<? extends Observer> observerClass, Class<? extends Model> modelClass) {
+	public synchronized static void addObserver(Class<? extends Observer<?>> observerClass) {
 		try {
-			Observer observer = observerClass.newInstance();
-			addObserver(observer, modelClass);
+			Observer<?> observer = observerClass.newInstance();
+			addObserver(observer);
 		} catch(Exception e) {
-			slogger.error("error adding cache " + observerClass + ", " + modelClass, e);
+			slogger.error("error adding observer " + observerClass, e);
 			throw new RuntimeException(e);
 		}
 	}
-	
-	protected synchronized static void addObserver(Observer observer, Class<? extends Model> modelClass) {
+
+	@SuppressWarnings("unchecked")
+	private static void addObserverToMap(Observer<?> observer, Class<?> clazz) {
+		Class<? extends Model> modelClass = (Class<? extends Model>) clazz;
 		if(!observerMap.containsKey(modelClass)) {
-			observerMap.put(modelClass, new ArrayList<Observer>());
+			observerMap.put(modelClass, new ArrayList<Observer<?>>());
 		}
 		observerMap.get(modelClass).add(observer);
 		
@@ -44,20 +48,31 @@ public class Observer {
 			slogger.info("added observer (" + observer.getClass().getSimpleName() + ", " + modelClass.getSimpleName() + ")");
 		}
 	}
+	
+	protected synchronized static void addObserver(Observer<? extends Model> observer) {
+		Type type = observer.getClass().getGenericSuperclass();
+		if(type instanceof ParameterizedType) {
+			ParameterizedType pt = (ParameterizedType) type;
+			Class<?> clazz = (Class<?>) pt.getActualTypeArguments()[0];
+			addObserverToMap(observer, clazz);
+		} else {
+			throw new IllegalArgumentException("Observer class must be parameterized");
+		}
+	}
 
 	public synchronized static void removeObservers(Class<?> clazz) {
 		if(Model.class.isAssignableFrom(clazz)) {
-			List<Observer> removed = observerMap.remove(clazz);
+			List<Observer<?>> removed = observerMap.remove(clazz);
 			if(slogger.isLoggingInfo() && removed != null) {
-				for(Observer observer : removed) {
+				for(Observer<?> observer : removed) {
 					slogger.info("removed observer (" + observer.getClass().getSimpleName() + ", " + clazz.getSimpleName() + ")");
 				}
 			}
 		} else if(Observer.class.isAssignableFrom(clazz)) {
-			for(Iterator<List<Observer>> observersIter = observerMap.values().iterator(); observersIter.hasNext(); ) {
-				List<Observer> observers = observersIter.next();
-				for(Iterator<Observer> observerIter = observers.iterator(); observerIter.hasNext(); ) {
-					Observer observer = observerIter.next();
+			for(Iterator<List<Observer<?>>> observersIter = observerMap.values().iterator(); observersIter.hasNext(); ) {
+				List<Observer<?>> observers = observersIter.next();
+				for(Iterator<Observer<?>> observerIter = observers.iterator(); observerIter.hasNext(); ) {
+					Observer<?> observer = observerIter.next();
 					if(observer.getClass() == clazz) {
 						observerIter.remove();
 						if(slogger.isLoggingInfo() && observers != null) {
@@ -72,8 +87,8 @@ public class Observer {
 		}
 	}
 	
-	protected synchronized static void removeObserver(Observer observer, Class<? extends Model> modelClass) {
-		List<Observer> observers = observerMap.get(modelClass);
+	protected synchronized static <T extends Model> void removeObserver(Observer<T> observer, Class<T> modelClass) {
+		List<Observer<?>> observers = observerMap.get(modelClass);
 		if(observers != null) {
 			observers.remove(observer);
 			if(observers.isEmpty()) {
@@ -105,11 +120,13 @@ public class Observer {
 	private static final int BEFORE_VALIDATE_UPDATE	= 15;
 	
 	
-	private static void run(Model model, int method) {
-		List<Observer> observers = observerMap.get(model.getClass());
+	@SuppressWarnings("unchecked")
+	private static <T extends Model> void run(T model, int method) {
+		List<Observer<?>> observers = observerMap.get(model.getClass());
 		if(observers != null && !observers.isEmpty()) {
 			Logger logger = Model.getLogger();
-			for(Observer observer : observers) {
+			for(Observer<?> o : observers) {
+				Observer<T> observer = (Observer<T>) o;
 				observer.logger = logger;
 				switch(method) {
 				case AFTER_CREATE:				observer.afterCreate(model);			break;
@@ -201,35 +218,35 @@ public class Observer {
 	
 	protected Logger logger;
 
-	protected void afterCreate(Model model) {
+	protected void afterCreate(T model) {
 		// subclasses to implement if necessary
 	}
 
-	protected void afterDestroy(Model model) {
+	protected void afterDestroy(T model) {
 		// subclasses to implement if necessary
 	}
 
-	protected void afterSave(Model model) {
+	protected void afterSave(T model) {
 		// subclasses to implement if necessary
 	}
 
-	protected void afterUpdate(Model model) {
+	protected void afterUpdate(T model) {
 		// subclasses to implement if necessary
 	}
 
-	protected void afterValidateCreate(Model model) {
+	protected void afterValidateCreate(T model) {
 		// subclasses to implement if necessary
 	}
 
-	protected void afterValidateDestroy(Model model) {
+	protected void afterValidateDestroy(T model) {
 		// subclasses to implement if necessary
 	}
 
-	protected void afterValidateSave(Model model) {
+	protected void afterValidateSave(T model) {
 		// subclasses to implement if necessary
 	}
 
-	protected void afterValidateUpdate(Model model) {
+	protected void afterValidateUpdate(T model) {
 		// subclasses to implement if necessary
 	}
 
@@ -239,7 +256,7 @@ public class Observer {
 	 * To cancel the save, simply add an error using {@link Model#addError(String)}.
 	 * @param model the model being saved
 	 */
-	protected void beforeCreate(Model model) {
+	protected void beforeCreate(T model) {
 		// subclasses to implement if necessary
 	}
 
@@ -249,7 +266,7 @@ public class Observer {
 	 * To cancel the destroy, simply add an error using {@link Model#addError(String)}.
 	 * @param model the model being destroyed
 	 */
-	protected void beforeDestroy(Model model) {
+	protected void beforeDestroy(T model) {
 		// subclasses to implement if necessary
 	}
 
@@ -260,7 +277,7 @@ public class Observer {
 	 * To cancel the save, simply add an error using {@link Model#addError(String)}.
 	 * @param model the model being saved
 	 */
-	protected void beforeSave(Model model) {
+	protected void beforeSave(T model) {
 		// subclasses to implement if necessary
 	}
 
@@ -270,23 +287,23 @@ public class Observer {
 	 * To cancel the save, simply add an error using {@link Model#addError(String)}.
 	 * @param model the model being saved
 	 */
-	protected void beforeUpdate(Model model) {
+	protected void beforeUpdate(T model) {
 		// subclasses to implement if necessary
 	}
 
-	protected void beforeValidateCreate(Model model) {
+	protected void beforeValidateCreate(T model) {
 		// subclasses to implement if necessary
 	}
 
-	protected void beforeValidateDestroy(Model model) {
+	protected void beforeValidateDestroy(T model) {
 		// subclasses to implement if necessary
 	}
 
-	protected void beforeValidateSave(Model model) {
+	protected void beforeValidateSave(T model) {
 		// subclasses to implement if necessary
 	}
 
-	protected void beforeValidateUpdate(Model model) {
+	protected void beforeValidateUpdate(T model) {
 		// subclasses to implement if necessary
 	}
 

@@ -23,19 +23,14 @@ import org.oobium.client.ClientCallback;
 import org.oobium.client.ClientResponse;
 import org.oobium.events.models.Event;
 import org.oobium.events.models.Listener;
-import org.oobium.persist.Model;
 import org.oobium.persist.Observer;
 import org.oobium.persist.PersistService;
 import org.oobium.utils.json.JsonUtils;
 
-public class EventObserver extends Observer implements ClientCallback {
-
-	static { addObserver(EventObserver.class, Event.class); }
+public class EventObserver extends Observer<Event> implements ClientCallback {
 
 	@Override
-	protected void afterCreate(Model model) {
-		Event event = (Event) model;
-
+	protected void afterCreate(Event event) {
 		System.out.println("afterCreate event: " + event.asString());
 		
 		try {

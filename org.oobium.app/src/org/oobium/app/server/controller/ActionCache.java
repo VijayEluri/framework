@@ -30,6 +30,11 @@ import org.oobium.persist.Model;
 import org.oobium.persist.Observer;
 import org.oobium.utils.StringUtils;
 
+/**
+ * ActionCache is broken.
+ * Observer have been made generic and ActionCache has not been updated yet.
+ * Will be done the first chance I need an ActionCache - submit a bug if you need it sooner.
+ */
 public class ActionCache extends Observer {
 
 	protected static final Logger logger = Logger.getLogger();
@@ -73,7 +78,7 @@ public class ActionCache extends Observer {
 
 			cacheMap.put(cacheClass, cache);
 			
-			addObserver(cache, modelClass);
+			addObserver(cache);
 			
 			for(Action action : actions) {
 				if(!caches.containsKey(controllerClass)) {

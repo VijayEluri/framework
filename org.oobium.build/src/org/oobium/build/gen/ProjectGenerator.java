@@ -829,12 +829,14 @@ public class ProjectGenerator {
 		String name = modelName + "Observer";
 		src.packageName = module.packageName(module.observers);
 		src.simpleName = name;
-		src.superName = Observer.class.getSimpleName();
+		src.superName = Observer.class.getSimpleName() + "<" + modelName + ">";
 		src.imports.add(modelPackage + "." + modelName);
 		src.imports.add(Observer.class.getCanonicalName());
 
-		src.rawSource = "\tstatic { addObserver(" + name + ".class, " + modelName + ".class); }\n\n" +
-						"//\tTODO override methods to implement the desired functionality\n";
+//		src.rawSource = "\tstatic { addObserver(" + name + ".class, " + modelName + ".class); }\n\n" +
+//						"//\tTODO override methods to implement the desired functionality\n";
+
+		src.rawSource = "\t// TODO override methods to implement the desired functionality\n";
 
 		return writeFile(module.observers, name + ".java", src.toSource());
 	}
