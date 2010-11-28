@@ -206,7 +206,7 @@
             </command>
             <command
                   commandId="org.oobium.builder.ui.commands.migrate"
-                  icon="icons/database_lightning.png"
+                  icon="icons/database_go.png"
                   label="Run Migration"
                   style="push">
                <visibleWhen>
