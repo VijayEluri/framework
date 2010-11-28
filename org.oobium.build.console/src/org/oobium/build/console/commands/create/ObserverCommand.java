@@ -66,8 +66,11 @@ public class ObserverCommand extends BuilderCommand {
 				}
 			}
 
-			module.createObserver(modelPackage, modelName);
-
+			File file = module.createObserver(modelPackage, modelName);
+			String name = file.getName();
+			name = name.substring(0, name.length()-5);
+			console.out.println("created observer <a href=\"open observer " + name + "\">" + name + "</a>");
+			
 			BuilderConsoleActivator.sendRefresh(module.file, 1000);
 		}
 	}
