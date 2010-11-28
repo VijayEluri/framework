@@ -339,10 +339,6 @@ public class ModelGenerator {
 			classpath.append(File.separatorChar).append("bin");
 		}
 		
-		if((action & GEN_MODELS) != 0) {
-			action |= GEN_SCHEMA;
-		}
-		
 		if((action & GEN_SCHEMA) != 0) {
 			Bundle migrator = workspace.getBundle(Migration.class.getPackage().getName());
 			if(migrator == null) {
