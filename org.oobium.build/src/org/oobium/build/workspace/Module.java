@@ -915,17 +915,15 @@ public class Module extends Bundle {
 	
 	public File[] getBinEFiles(File...efiles) {
 		File[] binViews = new File[efiles.length];
+		String mailersPath = this.mailers.getAbsolutePath();
 		String viewsPath = this.views.getAbsolutePath();
 		String srcPath = this.src.getAbsolutePath();
 		for(int i = 0; i < efiles.length; i++) {
 			String name = efiles[i].getAbsolutePath();
-			if(name.endsWith(".emt")) {
-				System.out.println("TODO: " + name);
-			} else {
-				name = name.substring(viewsPath.length() + 1, name.length() - 4);
-				String relativePath = viewsPath.substring(srcPath.length());
-				binViews[i] = new File(bin, relativePath + File.separator + name + ".class");
-			}
+			String path = name.endsWith(".emt") ? mailersPath : viewsPath;
+			name = name.substring(path.length() + 1, name.length() - 4);
+			String relativePath = path.substring(srcPath.length());
+			binViews[i] = new File(bin, relativePath + File.separator + name + ".class");
 		}
 		return binViews;
 	}
@@ -959,8 +957,8 @@ public class Module extends Bundle {
 	 * Note that the file may not actually exist on the file system - 
 	 * check using {@link File#exists()}.
 	 * @param name
-	 * @return a {@link File} for the generated efile whether it exists or not; never null
-	 * @throws IllegalArgumentException if the given efile is not actually an efile
+	 * @return a {@link File} for the generated efile whether it exists or not; returns null 
+	 * if the given efile is not actually an efile (typically happens when opening javascript or css files)
 	 */
 	public File getGenFile(File efile) {
 		String name = efile.getName();
@@ -972,7 +970,7 @@ public class Module extends Bundle {
 			String s = gen(efile).getAbsolutePath();
 			return new File(s.substring(0, s.length()-4) + ".java");
 		}
-		throw new IllegalArgumentException("invalid file extension: " + name);
+		return null;
 	}
 	
 	public File getGenMailer(File mailer) {
