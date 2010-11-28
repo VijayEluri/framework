@@ -39,7 +39,7 @@
             class="org.oobium.eclipse.wizards.project.NewProjectWizard"
             finalPerspective="org.eclipse.jdt.ui.JavaPerspective"
             hasPages="true"
-            icon="icons/aspencloud.png"
+            icon="icons/oobium.png"
             id="org.oobium.eclipse.wizards.project.NewProjectWizard"
             name="Oobium Project"
             preferredPerspectives="org.eclipse.jdt.ui.JavaPerspective"
@@ -52,7 +52,7 @@
             category="org.oobium.builder"
             class="org.oobium.eclipse.wizards.migration.NewMigrationWizard"
             hasPages="true"
-            icon="icons/database_lightning.png"
+            icon="icons/database_go.png"
             id="org.oobium.eclipse.wizards.migration.NewMigrationWizard"
             name="Migration"
             project="true">
@@ -64,7 +64,6 @@
             category="org.oobium.builder"
             class="org.oobium.eclipse.wizards.testsuite.NewTestSuiteWizard"
             hasPages="true"
-            icon="icons/database_lightning.png"
             id="org.oobium.eclipse.wizards.testsuite.NewTestSuiteWizard"
             name="Test Suite"
             project="true">
