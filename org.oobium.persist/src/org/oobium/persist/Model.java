@@ -44,6 +44,10 @@ public abstract class Model implements JsonModel {
 	private static final ThreadLocal<PersistServices> persistServices = new ThreadLocal<PersistServices>();
 	
 	
+	public static int count(Class<? extends Model> clazz) throws SQLException {
+		return getPersistService(clazz).count(clazz, null);
+	}
+	
 	public static int count(Class<? extends Model> clazz, String where, Object...values) throws SQLException {
 		return getPersistService(clazz).count(clazz, where, values);
 	}
