@@ -328,6 +328,24 @@ public class EspEditor extends TextEditor {
 			}
 		});
 
+		IFile file = getEResource();
+		if(OobiumCore.isEFile(file)) {
+			buildListener = new IResourceChangeListener() {
+				@Override
+				public void resourceChanged(IResourceChangeEvent event) {
+					IResourceDelta delta = event.getDelta();
+					if(delta != null) {
+						delta = delta.findMember(getJavaResource().getFullPath());
+						if(delta != null) {
+							updateStyleRanges();
+							updateMarkers();
+						}
+					}
+				}
+			};
+			ResourcesPlugin.getWorkspace().addResourceChangeListener(buildListener, IResourceChangeEvent.POST_BUILD);
+		}
+
 		if(document != null) {
 			updateStyleRanges();
 			updateMarkers();
@@ -456,7 +474,7 @@ public class EspEditor extends TextEditor {
 				String genFileName = genFile.getAbsolutePath().substring(project.getLocation().toOSString().length() + 1);
 				jResource = project.getFile(genFileName);
 			}
-		}		
+		}
 		return jResource;
 	}
 	
@@ -485,21 +503,6 @@ public class EspEditor extends TextEditor {
 	protected void initializeEditor() {
 		super.initializeEditor();
 		setSourceViewerConfiguration(new EspSourceViewerConfiguration(this));
-		buildListener = new IResourceChangeListener() {
-			@Override
-			public void resourceChanged(IResourceChangeEvent event) {
-				IResourceDelta delta = event.getDelta();
-				if(delta != null) {
-					delta = delta.findMember(getJavaResource().getFullPath());
-					if(delta != null) {
-						updateStyleRanges();
-						updateMarkers();
-					}
-				}
-			}
-		};
-		
-		ResourcesPlugin.getWorkspace().addResourceChangeListener(buildListener, IResourceChangeEvent.POST_BUILD);
 	}
 	
 	/**
