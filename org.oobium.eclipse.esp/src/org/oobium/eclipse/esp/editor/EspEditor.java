@@ -469,10 +469,12 @@ public class EspEditor extends TextEditor {
 			IFile res = getEResource();
 			IProject project = res.getProject();
 			Module module = OobiumCore.getModule(res);
-			File genFile = module.getGenFile(res.getLocation().toFile());
-			if(genFile != null) {
-				String genFileName = genFile.getAbsolutePath().substring(project.getLocation().toOSString().length() + 1);
-				jResource = project.getFile(genFileName);
+			if(module != null) {
+				File genFile = module.getGenFile(res.getLocation().toFile());
+				if(genFile != null) {
+					String genFileName = genFile.getAbsolutePath().substring(project.getLocation().toOSString().length() + 1);
+					jResource = project.getFile(genFileName);
+				}
 			}
 		}
 		return jResource;
