@@ -49,5 +49,10 @@ public class Column {
 	public Column(String type, String name, Map<String, ? extends Object> options) {
 		this(ColumnType.Column, type, name, options);
 	}
+
+	@Override
+	public String toString() {
+		return name + "<" + type + ">" + " " + options;
+	}
 	
 }

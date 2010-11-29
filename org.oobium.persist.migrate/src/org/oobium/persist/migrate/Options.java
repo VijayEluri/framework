@@ -44,5 +44,10 @@ public class Options {
 	public int size() {
 		return (options != null) ? options.size() : 0;
 	}
+
+	@Override
+	public String toString() {
+		return String.valueOf(options);
+	}
 	
 }
