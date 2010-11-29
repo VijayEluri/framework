@@ -390,7 +390,7 @@ public class ConsoleView extends ViewPart {
 			setSelection(getSite().getPage().getSelection());
 		}
 		
-		getSite().getPage().addSelectionListener(JavaUI.ID_PACKAGES, explorerListener = new ISelectionListener() {
+		getSite().getPage().addSelectionListener(/*JavaUI.ID_PACKAGES, */explorerListener = new ISelectionListener() {
 			@Override
 			public void selectionChanged(IWorkbenchPart part, ISelection selection) {
 				if(isLinked()) {
