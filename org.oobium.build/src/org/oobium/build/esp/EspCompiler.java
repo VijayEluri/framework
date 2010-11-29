@@ -1203,7 +1203,11 @@ public class EspCompiler {
 				}
 				String txt = target.getText();
 				if(txt.endsWith(".class")) {
-					txt = plural(txt.substring(0, txt.length()-6));
+					if(action.equals("showNew")) {
+						txt = txt.substring(0, txt.length()-6);
+					} else {
+						txt = plural(txt.substring(0, txt.length()-6));
+					}
 				}
 				body.append(titleize(txt));
 			} else {
