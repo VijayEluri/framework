@@ -65,7 +65,7 @@ public class Migrator extends Bundle {
 		this.generated = new File(file, "generated");
 		this.genMain = new File(generated, name.replaceAll("\\.", File.separator));
 		this.genMigrations = new File(genMain, "migrations");
-		this.module = name.substring(0, name.length() - 10);
+		this.module = name.substring(0, name.length() - 9);
 	}
 
 	public Bundle getMigratorService(Workspace workspace, Mode mode) {
