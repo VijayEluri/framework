@@ -156,11 +156,11 @@ public abstract class AbstractMigration implements Migration {
 		return Column(BINARY, name, options);
 	}
 
-    public Column Boolean_(String name) {
+    public Column Boolean(String name) {
 		return Column(BOOLEAN, name);
 	}
 
-    public Column Boolean_(String name, Map<String, ? extends Object> options) {
+    public Column Boolean(String name, Map<String, ? extends Object> options) {
 		return Column(BOOLEAN, name, options);
 	}
 

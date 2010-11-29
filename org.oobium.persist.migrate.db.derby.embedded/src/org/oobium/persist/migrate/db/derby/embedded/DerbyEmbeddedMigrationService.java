@@ -97,6 +97,22 @@ public class DerbyEmbeddedMigrationService extends DbMigrationService {
 	}
 	
 	@Override
+	protected String getCreateTableOptionsSql(Table table) {
+		return null;
+	}
+
+	@Override
+	protected String getSqlForPrimitive(String type) {
+		return "0";
+	}
+
+	@Override
+	protected String getSqlSafe(String rawString) {
+		return SqlUtils.safeSqlWord(rawString);
+//		return reservedWords.contains(rawString) ? ("\"" + rawString + "\"") : rawString;
+	}
+	
+	@Override
 	protected String getSqlType(String migrationType) {
 		String type = sqlTypes.get(migrationType);
 		if(type != null) {
@@ -105,17 +121,6 @@ public class DerbyEmbeddedMigrationService extends DbMigrationService {
 		return migrationType;
 	}
 
-	@Override
-	protected String getSqlSafe(String rawString) {
-		return SqlUtils.safeSqlWord(rawString);
-//		return reservedWords.contains(rawString) ? ("\"" + rawString + "\"") : rawString;
-	}
-
-	@Override
-	protected String getCreateTableOptionsSql(Table table) {
-		return null;
-	}
-	
 	@Override
 	public void initializeDatabase(Map<String, ? extends Object> options) {
 //		nothing to do?

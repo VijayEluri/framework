@@ -230,11 +230,13 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		if(column.options.get("unique", false)) {
 			sb.append(" UNIQUE");
 		}
-		if(column.options.has("default")) {
-			sb.append(" DEFAULT ").append(column.options.get("default"));
-		}
 		if(column.options.get("required", false)) {
 			sb.append(" NOT NULL");
+		}
+		if(column.options.has("default")) {
+			sb.append(" DEFAULT ").append(column.options.get("default"));
+		} else if(column.options.has("primitive")) {
+			sb.append(" DEFAULT ").append(getSqlForPrimitive(column.type));
 		}
 		if(column.options.has("check")) {
 			sb.append(" CHECK(").append(column.options.get("check")).append(")");
@@ -346,6 +348,8 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 	protected abstract String getSqlSafe(String rawString);
 
 	protected abstract String getSqlType(String migrationType);
+	
+	protected abstract String getSqlForPrimitive(String type);
 	
 	public void removeColumn(Table table, RemoveColumn change) throws SQLException {
 		throw new UnsupportedOperationException("not yet implemented");
