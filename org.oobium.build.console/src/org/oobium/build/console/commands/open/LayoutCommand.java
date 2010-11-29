@@ -19,13 +19,15 @@ import org.oobium.build.workspace.Module;
 public class LayoutCommand extends BuilderCommand {
 
 	@Override
-	public void configure() {
-		moduleRequired = true;
-	}
-	
-	@Override
 	public void run() {
 		Module module = getModule();
+		if(module == null) {
+			module = getApplication();
+			if(module == null) {
+				console.err.println("bundle is not set to a module and is not within an application");
+				return;
+			}
+		}
 		File layout = module.getLayout();
 		if(layout.exists()) {
 //			console.out.println("opening " + layout);
