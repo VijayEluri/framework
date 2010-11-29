@@ -144,10 +144,10 @@ public class EspCompiler {
 		this.captureLevel = -1;
 	}
 
-	private void appendAttr(String attr, EspPart target) {
-		body.append(' ').append(attr).append('=');
+	private void appendAttr(String name, EspPart value) {
+		body.append(' ').append(name).append('=');
 		int pos = body.length();
-		build(target, body);
+		build(value, body);
 		if(pos < body.length()) {
 			if(body.charAt(pos) != '\\' || (pos+1 < body.length() && body.charAt(pos+1) != '"')) {
 				body.insert(pos, "\\\"");
@@ -381,7 +381,7 @@ public class EspCompiler {
 								}
 								body.append(";display:none\\\"");
 							} else {
-								if(body.charAt(body.length()-1) != '"') {
+								if(body.charAt(body.length()-2) != '\\' || body.charAt(body.length()-1) != '"') {
 									body.append("\\\"");
 								}
 							}
@@ -828,19 +828,7 @@ public class EspCompiler {
 				body.append("\\\"");
 				if(hasValue) {
 					if(input.hasEntry("value")) {
-						body.append(" value=");
-						int pos = body.length();
-						build(input.getEntry("value").getValue(), body);
-						if(pos < body.length()) {
-							if(body.charAt(pos) != '\\' || (pos+1 < body.length() && body.charAt(pos+1) != '"')) {
-								body.insert(pos, "\\\"");
-							}
-							if(body.charAt(body.length()-1) != '"') {
-								body.append("\\\"");
-							}
-						} else {
-							body.append("\\\"\\\"");
-						}
+						appendAttr("value", input.getEntryValue("value"));
 					} else {
 						body.append(" value=\\\"\").append(f(");
 						appendValueGetter(getFormModel(input), fields);

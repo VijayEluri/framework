@@ -524,6 +524,12 @@ public class EspCompilerTests {
 		assertEquals("String formModelName$0 = \"member\";\n" +
 						"__sb__.append(\"<form action=\\\"\").append(h(pathToAll(team, \"members\"))).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /></form>\");", 
 				html("form(member, action:{pathToAll(team, \"members\")}"));
+		
+		assertEquals("__sb__.append(\"<form action=\\\"/test\\\" method=\\\"post\\\"></form>\");",
+				html("form(action: \"/test\", method: post)"));
+		
+		assertEquals("__sb__.append(\"<form action=\\\"\").append(h(pathTo(\"sessions\"))).append(\"\\\" method=\\\"post\\\"></form>\");",
+				html("form(action: {pathTo(\"sessions\")}, method: post)"));
 	}
 
 	@Test
@@ -682,6 +688,10 @@ public class EspCompilerTests {
 		assertEquals("String formModelName$0 = \"member\";\n" +
 						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><input type=\\\"text\\\" id=\\\"\").append(formModelName$0).append(\"[firstName]\\\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\" value=\\\"\\\" /></form>\");",
 				html("form(member, create)\n\ttext(firstName, value:)"));
+
+		assertEquals("String formModelName$0 = \"member\";\n" +
+				"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><input type=\\\"text\\\" id=\\\"\").append(formModelName$0).append(\"[firstName]\\\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\" value=\\\"\").append(h(value)).append(\"\\\" /></form>\");",
+		html("form(member, create)\n\ttext(firstName, value: {value})"));
 	}
 	
 	@Test
