@@ -55,6 +55,7 @@ import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.BuilderRootCommand;
 import org.oobium.build.workspace.Application;
 import org.oobium.build.workspace.Bundle;
+import org.oobium.build.workspace.Migrator;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.WorkspaceEvent;
 import org.oobium.build.workspace.WorkspaceListener;
@@ -309,7 +310,7 @@ public class ConsoleView extends ViewPart {
 	@Override
 	public void dispose() {
 		if(explorerListener != null) {
-			getSite().getPage().removeSelectionListener(JavaUI.ID_PACKAGES, explorerListener);
+			getSite().getPage().removeSelectionListener(/*JavaUI.ID_PACKAGES, */explorerListener);
 			explorerListener = null;
 		}
 		if(workspaceListener != null) {
@@ -503,13 +504,19 @@ public class ConsoleView extends ViewPart {
 				try {
 					if(project.isOpen() && project.hasNature(OobiumNature.ID)) {
 						File file = project.getLocation().toFile();
-						Bundle bundle = OobiumPlugin.getWorkspace().getModule(file);
+						Bundle bundle = OobiumPlugin.getWorkspace().getBundle(file);
 						if(bundle == null) {
 							bundle = OobiumPlugin.getWorkspace().loadBundle(file);
 						}
 						if(bundle != null) {
 							if(bundle.isApplication()) {
 								setApplication(file);
+							} else if(bundle.isMigration()) {
+								Migrator migrator = (Migrator) bundle;
+								Module module = OobiumPlugin.getWorkspace().getModule(migrator.module);
+								if(module != null && module.isApplication()) {
+									setApplication(module.file);
+								}
 							}
 							setProject(file);
 						}
