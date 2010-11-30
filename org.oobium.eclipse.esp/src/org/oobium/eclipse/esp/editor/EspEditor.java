@@ -601,11 +601,14 @@ public class EspEditor extends TextEditor {
 		IFile esp = getEResource();
 		if(OobiumCore.isEFile(esp)) {
 			eSourceFile = OobiumCore.generate(esp, document.get());
-			try {
-				getJavaResource().refreshLocal(IResource.DEPTH_ONE, null);
-				System.out.println("jResource refreshed");
-			} catch (CoreException e1) {
-				e1.printStackTrace();
+			IFile file = getJavaResource();
+			if(file != null) {
+				try {
+					file.refreshLocal(IResource.DEPTH_ONE, null);
+					System.out.println("jResource refreshed");
+				} catch (CoreException e1) {
+					e1.printStackTrace();
+				}
 			}
 		}
 	}
