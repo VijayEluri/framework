@@ -526,7 +526,7 @@ public class EspEditor extends TextEditor {
 			}
 			
 			IFile jfile = getJavaResource();
-			if(!jfile.exists()) {
+			if(jfile == null || !jfile.exists()) {
 				return;
 			}
 			
