@@ -159,7 +159,7 @@ public class Config {
 			l.add(obj);
 			if(o instanceof List<?>) {
 				l.addAll((List<?>) o);
-				return o;
+				return l;
 			}
 			// neither is a list
 			l.add(o);
