@@ -33,6 +33,7 @@ import org.oobium.build.model.ModelDefinition;
 import org.oobium.build.model.ModelRelation;
 import org.oobium.build.util.SourceFile;
 import org.oobium.build.workspace.Bundle;
+import org.oobium.persist.Binary;
 import org.oobium.persist.Text;
 import org.oobium.persist.migrate.AbstractMigration;
 import org.oobium.persist.migrate.Options;
@@ -52,6 +53,8 @@ public class DbGenerator {
 	private static final Map<String, String> migrationTypes;
 	static {
 		migrationTypes = new HashMap<String, String>();
+		migrationTypes.put(Binary.class.getCanonicalName(),			BINARY);
+		migrationTypes.put(byte[].class.getCanonicalName(),			BINARY);
 		migrationTypes.put(String.class.getCanonicalName(),			STRING);
 		migrationTypes.put(Text.class.getCanonicalName(),			TEXT);
 		migrationTypes.put(Integer.class.getCanonicalName(),		INTEGER);
@@ -69,7 +72,6 @@ public class DbGenerator {
 		migrationTypes.put(Time.class.getCanonicalName(),			TIME);
 		migrationTypes.put(Timestamp.class.getCanonicalName(),		TIMESTAMP);
 		migrationTypes.put(BigDecimal.class.getCanonicalName(),		DECIMAL);
-		migrationTypes.put(byte[].class.getCanonicalName(),			BINARY);
 	}
 	
 	/**
@@ -200,12 +202,11 @@ public class DbGenerator {
 				for(int i = 0; i < table.foreignKeys.size(); i++) {
 					ForeignKey fk = table.foreignKeys.get(i);
 					sb.append("\n\t\t").append(var).append(".addForeignKey(\"");
-					sb.append(fk.column).append("\", \"").append(fk.reference);
+					sb.append(fk.column).append("\", \"").append(fk.reference).append('"');
 					if(fk.options.hasAny()) {
 						appendOptions(sf, sb, fk.options);
-						sb.append("\");");
 					}
-					sb.append("\");");
+					sb.append(");");
 				}
 				sb.append("\n\t\t").append(var).append(".update();");
 			}
