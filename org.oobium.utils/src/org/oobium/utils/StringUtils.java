@@ -825,15 +825,15 @@ public class StringUtils {
 		return sb.toString();
 	}
 	
-	private static void optionTag(StringBuilder sb, String text, Object value, Object selection) {
+	private static void optionTag(StringBuilder sb, Object text, Object value, Object selection) {
 		boolean selected = isEqual(value, selection);
-		sb.append("<option title=\"hello\" value=\"").append(f(value)).append('"');
+		sb.append("<option title=\"").append(h(text)).append("\" value=\"").append(f(value)).append('"');
 		if(selected) {
 			sb.append(" selected");
 		}
 		sb.append('>').append(h(text)).append("</options>");
 	}
-		
+	
 	public static String optionTags(Object options) {
 		return optionTags(options, null);
 	}
@@ -850,17 +850,15 @@ public class StringUtils {
 			for(Object option : (Iterable<?>) options) {
 				if(option instanceof Iterable<?>) {
 					Iterator<?> iter = ((Iterable<?>) option).iterator();
-					optionTag(sb, String.valueOf(iter.next()), iter.next(), selection);
+					optionTag(sb, iter.next(), iter.next(), selection);
 				} else if(option instanceof Map<?, ?>) {
 					Map<?,?> map = (Map<?,?>) option;
-					optionTag(sb, String.valueOf(map.get("text")), map.get("value"), selection);
+					optionTag(sb, map.get("text"), map.get("value"), selection);
 				} else if(option != null && option.getClass().isArray()) {
 					Object[] array = (Object[]) option;
-					optionTag(sb, String.valueOf(array[0]), array[1], selection);
+					optionTag(sb, array[0], array[1], selection);
 				} else {
-					String text = String.valueOf(option);
-					String value = underscored(text);
-					optionTag(sb, text, value, selection);
+					optionTag(sb, option, option, selection);
 				}
 			}
 			return sb.toString();
@@ -869,15 +867,13 @@ public class StringUtils {
 			if(options.getClass().getComponentType().isArray()) {
 				StringBuilder sb = new StringBuilder();
 				for(Object[] option : (Object[][]) options) {
-					optionTag(sb, String.valueOf(option[0]), option[1], selection);
+					optionTag(sb, option[0], option[1], selection);
 				}
 				return sb.toString();
 			} else {
 				StringBuilder sb = new StringBuilder();
 				for(Object option : (Object[]) options) {
-					String text = String.valueOf(option);
-					String value = underscored(text);
-					optionTag(sb, text, value, selection);
+					optionTag(sb, option, option, selection);
 				}
 				return sb.toString();
 			}
@@ -955,7 +951,18 @@ public class StringUtils {
 		} else if(singular.equalsIgnoreCase("alumnus")) {
 			return singular.charAt(0) + "lumni";
 		} else if('y' == singular.charAt(singular.length()-1)) {
-			return singular.substring(0, singular.length()-1) + "ies";
+			if(singular.length() > 1) {
+				switch(singular.charAt(singular.length()-2)) {
+				case 'a':
+				case 'e':
+				case 'i':
+				case 'o':
+				case 'u':
+					break;
+				default:
+					return singular.substring(0, singular.length()-1) + "ies";
+				}
+			}
 		} else if('s' == singular.charAt(singular.length()-1)){
 			return singular + "es";
 		}
