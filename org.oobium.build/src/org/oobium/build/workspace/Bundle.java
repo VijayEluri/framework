@@ -865,13 +865,20 @@ public class Bundle implements Comparable<Bundle> {
 		return buildFiles;
 	}
 
+	public String getClasspath() {
+		return StringUtils.join(getClasspathEntries(), File.pathSeparatorChar);
+	}
+
 	public String getClasspath(Workspace workspace) {
 		return StringUtils.join(getClasspathEntries(workspace), File.pathSeparatorChar);
 	}
 
-	public Set<String> getClasspathEntries(Workspace workspace) {
-		Set<String> cp = new LinkedHashSet<String>();
-		if(classpath.isFile()) {
+	public String getClasspath(Workspace workspace, Mode mode) {
+		return StringUtils.join(getClasspathEntries(workspace, mode), File.pathSeparatorChar);
+	}
+
+	private void addClasspathEntries(Set<String> cpes) {
+		if(classpath != null && classpath.isFile()) {
 			try {
 				DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
 				DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
@@ -884,7 +891,7 @@ public class Bundle implements Comparable<Bundle> {
 						String kind = cpe.getAttribute("kind");
 						if("src".equals(kind)) {
 							String path = file.getAbsolutePath() + File.separator + cpe.getAttribute("path");
-							cp.add(path);
+							cpes.add(path);
 						}
 					}
 				}
@@ -892,18 +899,40 @@ public class Bundle implements Comparable<Bundle> {
 				e.printStackTrace();
 			}
 		}
+		
+		if(file.isDirectory()) {
+			cpes.add(file.getAbsolutePath() + File.separator + "bin");
+		} else {
+			cpes.add(file.getAbsolutePath());
+		}
+	}
 
+	public Set<String> getClasspathEntries() {
+		Set<String> cpes = new LinkedHashSet<String>();
+		addClasspathEntries(cpes);
+		return cpes;
+	}
+
+	public Set<String> getClasspathEntries(Workspace workspace) {
+		Set<String> cpes = new LinkedHashSet<String>();
+		addClasspathEntries(cpes);
+		
 		for(Bundle bundle : getDependencies(workspace)) {
-			String path;
-			if(bundle.file.isDirectory()) {
-				path = bundle.file.getAbsolutePath() + File.separator + "bin";
-			} else {
-				path = bundle.file.getAbsolutePath();
-			}
-			cp.add(path);
+			bundle.addClasspathEntries(cpes);
 		}
 
-		return cp;
+		return cpes;
+	}
+
+	public Set<String> getClasspathEntries(Workspace workspace, Mode mode) {
+		Set<String> cpes = new LinkedHashSet<String>();
+		addClasspathEntries(cpes);
+		
+		for(Bundle bundle : getDependencies(workspace, mode)) {
+			bundle.addClasspathEntries(cpes);
+		}
+
+		return cpes;
 	}
 
 	/**

@@ -356,7 +356,7 @@ public class ModelGenerator {
 		}
 		
 //		System.out.println(classpath);
-		for(String cpe : module.getClasspathEntries(workspace)) {
+		for(String cpe : module.getClasspathEntries(workspace, Mode.DEV)) {
 //			System.out.println(cpe);
 			classpath.append(File.pathSeparatorChar).append(cpe);
 		}
