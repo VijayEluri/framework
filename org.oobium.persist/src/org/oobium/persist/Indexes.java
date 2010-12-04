@@ -8,7 +8,7 @@
  * Contributors:
  *     Jeremy Dowdall <jeremy@oobium.com> - initial API and implementation
  ******************************************************************************/
-package org.oobium.app.model;
+package org.oobium.persist;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
