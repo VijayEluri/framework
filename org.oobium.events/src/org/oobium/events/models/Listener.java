@@ -22,10 +22,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.oobium.app.AppService;
-import org.oobium.app.model.Indexes;
 import org.oobium.client.ClientResponse;
 import org.oobium.events.models.ListenerModel;
 import org.oobium.persist.Attribute;
+import org.oobium.persist.Indexes;
 import org.oobium.persist.ModelDescription;
 import org.oobium.persist.PersistService;
 
