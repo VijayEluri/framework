@@ -727,7 +727,7 @@ public class Router implements IPathRouting, IUrlRouting {
 		}
 	}
 	
-	private boolean hasHost(String host) {
+	public boolean hasHost(String host) {
 		if(host != null && host.length() > 0) {
 			for(String h : hosts) {
 				if(h.equals(host)) {
