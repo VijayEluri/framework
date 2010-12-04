@@ -35,6 +35,7 @@ import org.oobium.http.HttpRequestHandler;
 import org.oobium.http.HttpResponse;
 import org.oobium.http.HttpSession;
 import org.oobium.http.HttpSessionService;
+import org.oobium.http.constants.Header;
 import org.oobium.http.constants.StatusCode;
 import org.oobium.persist.Model;
 import org.oobium.persist.PersistClient;
@@ -229,30 +230,36 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 	
 	@Override
 	public HttpResponse handle404(HttpRequest request) {
-		if(errorClass404 != null) {
-			try{
-				Response response = View.render(errorClass404, request);
-				response.setStatus(StatusCode.NOT_FOUND);
-				return response;
-			} catch(Exception e) {
-				logger.error(e);
+		if(router.hasHost(request.getHost())) {
+			if(errorClass404 != null) {
+				try{
+					Response response = View.render(errorClass404, request);
+					response.setStatus(StatusCode.NOT_FOUND);
+					return response;
+				} catch(Exception e) {
+					logger.error(e);
+				}
 			}
+			return Response.notFound(request.getType(), request.getContentTypes());
 		}
-		return Response.notFound(request.getType(), request.getContentTypes());
+		return null;
 	}
 
 	@Override
 	public HttpResponse handle500(HttpRequest request, Exception exception) {
-		if(errorClass500 != null) {
-			try{
-				Response response = View.render(errorClass500, request);
-				response.setStatus(StatusCode.SERVER_ERROR);
-				return response;
-			} catch(Exception e) {
-				logger.error(e);
+		if(router.hasHost(request.getHost())) {
+			if(errorClass500 != null) {
+				try{
+					Response response = View.render(errorClass500, request);
+					response.setStatus(StatusCode.SERVER_ERROR);
+					return response;
+				} catch(Exception e) {
+					logger.error(e);
+				}
 			}
+			return Response.serverError(request.getType(), request.getContentTypes());
 		}
-		return Response.serverError(request.getType(), request.getContentTypes());
+		return null;
 	}
 
 	@Override
