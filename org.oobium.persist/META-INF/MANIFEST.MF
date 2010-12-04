@@ -6,8 +6,7 @@ Bundle-Version: 1.0.0.qualifier
 Bundle-Vendor: oobium.org
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: org.oobium.persist
-Import-Package: org.oobium.http,
- org.oobium.logging,
+Import-Package: org.oobium.logging,
  org.oobium.utils,
  org.oobium.utils.coercion,
  org.oobium.utils.json,
