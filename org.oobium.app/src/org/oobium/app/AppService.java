@@ -35,7 +35,6 @@ import org.oobium.http.HttpRequestHandler;
 import org.oobium.http.HttpResponse;
 import org.oobium.http.HttpSession;
 import org.oobium.http.HttpSessionService;
-import org.oobium.http.constants.Header;
 import org.oobium.http.constants.StatusCode;
 import org.oobium.persist.Model;
 import org.oobium.persist.PersistClient;
