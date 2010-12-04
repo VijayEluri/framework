@@ -35,7 +35,6 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
 
-import org.oobium.app.model.Indexes;
 import org.oobium.build.BuildBundle;
 import org.oobium.build.model.ModelDefinition;
 import org.oobium.build.workspace.Application;
@@ -43,6 +42,7 @@ import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.Workspace;
 import org.oobium.logging.Logger;
+import org.oobium.persist.Indexes;
 import org.oobium.persist.ModelDescription;
 
 @SupportedSourceVersion(SourceVersion.RELEASE_6)
@@ -364,29 +364,29 @@ public class ModelProcessor extends AbstractProcessor {
 			int action = Integer.parseInt(processingEnv.getOptions().get("action"));
 			String path = processingEnv.getOptions().get("path");
 
-			if((action & GEN_MODELS) != 0) {
-				generateModelFiles(path, models);
-				modifySrcFiles(models);
-			}
-			
-			if((action & GEN_VIEWS) != 0) {
-				generateViewFiles(path, models);
-			}
-
-			if((action & GEN_CONTROLLERS) != 0) {
-				boolean webservice = Boolean.parseBoolean(processingEnv.getOptions().get("webservice"));
-				generateControllerFiles(path, models, webservice);
-			}
-			
-			if((action & GEN_SCHEMA) != 0) {
+			switch(action) {
+			case GEN_SCHEMA:
 				String name = processingEnv.getOptions().get("name");
 				String version = processingEnv.getOptions().get("version");
 				String type = processingEnv.getOptions().get("type");
 				generateSchemaFile(name, version, type, path, new ArrayList<ModelDefinition>(models.keySet()));
-			}
-			
-			if((action & GEN_TESTS) != 0) {
+				break;
+			case GEN_TESTS:
 				generateTestFiles(models);
+				break;
+			default:
+				if((action & GEN_MODELS) != 0) {
+					generateModelFiles(path, models);
+					modifySrcFiles(models);
+				}
+				if((action & GEN_VIEWS) != 0) {
+					generateViewFiles(path, models);
+				}
+				if((action & GEN_CONTROLLERS) != 0) {
+					boolean webservice = Boolean.parseBoolean(processingEnv.getOptions().get("webservice"));
+					generateControllerFiles(path, models, webservice);
+				}
+				break;
 			}
 		}
 
