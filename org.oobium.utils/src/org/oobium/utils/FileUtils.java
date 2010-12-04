@@ -143,7 +143,9 @@ public class FileUtils {
 	/**
 	 * Copy the given source File to the given destination File.  If the source File
 	 * is a directory then a deep copy will be performed, including or skipping hidden
-	 * files based on the value of the skipHidden parameter.
+	 * files based on the value of the skipHidden parameter.  If the destination File
+	 * is a directory then the source will be copied to it with the same name as the
+	 * original.
 	 * @param src the source File (method simply returns if null)
 	 * @param dst the destination File (method simply returns if null)
 	 * @param flags bitwise OR'ed flags used to indicate what type of copy
@@ -157,6 +159,9 @@ public class FileUtils {
 	 */
 	public static void copy(File src, File dst, int flags, boolean skipHidden) throws IOException {
 		if(src != null && dst != null) {
+			if(dst.isDirectory()) {
+				dst = new File(dst, src.getName());
+			}
 			if(src.isFile()) {
 				doCopy(src, dst, flags);
 			} else if(src.isDirectory()) {
@@ -599,6 +604,110 @@ public class FileUtils {
 		return readFile(file);
 	}
 
+	/**
+	 * Convenience method for copyJarEntry(src, entryName, dst, OVER_WRITE | PERSIST_LAST_MODIFIED)
+	 * @see #copyJarEntry(File, String, File, int)
+	 */
+	public static void copyJarEntry(File src, String entryName, File dst) throws IOException {
+		copyJarEntry(src, entryName, dst, OVER_WRITE | PERSIST_LAST_MODIFIED);
+	}
+	
+	/**
+	 * Copy the contents of the given jar file's entry to the given destination.<br/>
+	 * If the given destination exists and is a directory, then the jar entry will be
+	 * copied into it, using the entry name as the file name (path separators will be
+	 * adjusted for the current operating system).
+	 * @param src the jar file
+	 * @param entryName the name of the entry in the jar file to be used as the source
+	 * @param dst the destination
+	 * @param flags
+	 */
+	public static void copyJarEntry(File src, String entryName, File dst, int flags) throws IOException {
+		if(!src.isFile()) {
+			return;
+		}
+		if(dst.isDirectory()) {
+			String name = (File.separatorChar != '/') ? entryName.replaceAll("/", File.separator) : entryName;
+			dst = new File(dst, name);
+		}
+		if(dst.exists() && ((flags & OVER_WRITE) != 0)) {
+			if(logger.isLoggingDebug()) {
+				logger.debug("skipping " + dst.getName());
+			}
+			return;
+		} else {
+			if(logger.isLoggingDebug()) {
+				logger.debug("copying jar entry " + dst.getName());
+			}
+		}
+		JarFile jar = null;
+		BufferedInputStream in = null;
+		BufferedOutputStream out = null;
+		try {
+			jar = new JarFile(src);
+			ZipEntry entry = jar.getEntry(entryName);
+			if(entry == null) {
+				return;
+			}
+
+			if(!dst.exists()) {
+				File folder = dst.getParentFile();
+				if(!folder.exists()) {
+					folder.mkdirs();
+				}
+				dst.createNewFile();
+			}
+			
+			in = new BufferedInputStream(jar.getInputStream(entry));
+			out = new BufferedOutputStream(new FileOutputStream(dst));
+
+			byte[] buf = new byte[1024];
+			int len;
+			while((len = in.read(buf)) > 0) {
+				out.write(buf, 0, len);
+			}
+
+			if(flags > 0) {
+				if((flags & EXECUTABLE) != 0) {
+					dst.setExecutable(true);
+				}
+				if((flags & READ_ONLY) != 0) {
+					dst.setReadOnly();
+				}
+				if((flags & PERSIST_LAST_MODIFIED) != 0) {
+					long mod = entry.getTime();
+					if(mod == -1) {
+						dst.setLastModified(src.lastModified());
+					} else {
+						dst.setLastModified(mod);
+					}
+				}
+			}
+		} finally {
+			if(jar != null) {
+				try {
+					jar.close();
+				} catch(IOException e) {
+					// throw away
+				}
+			}
+			if(in != null) {
+				try {
+					in.close();
+				} catch(IOException e) {
+					// throw away
+				}
+			}
+			if(out != null) {
+				try {
+					out.close();
+				} catch(IOException e) {
+					// throw away
+				}
+			}
+		}
+	}
+	
 	public static String readJarEntry(File jarFile, String entryName) {
 		if(!jarFile.isFile()) {
 			return null;
