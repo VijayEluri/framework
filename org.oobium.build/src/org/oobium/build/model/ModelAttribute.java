@@ -13,6 +13,8 @@ package org.oobium.build.model;
 import javax.lang.model.type.MirroredTypeException;
 
 import org.oobium.persist.Attribute;
+import org.oobium.persist.Binary;
+import org.oobium.persist.Text;
 
 
 public class ModelAttribute {
@@ -59,8 +61,11 @@ public class ModelAttribute {
 
 	public String getJavaType() {
 		String type = getType();
-		if("org.oobium.persist.Text".equals(type)) {
+		if(Text.class.getCanonicalName().equals(type)) {
 			return "java.lang.String";
+		}
+		if(Binary.class.getCanonicalName().equals(type)) {
+			return "byte[]";
 		}
 		return type;
 	}
