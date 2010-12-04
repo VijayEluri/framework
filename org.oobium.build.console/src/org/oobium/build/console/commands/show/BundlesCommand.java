@@ -19,6 +19,11 @@ import org.oobium.utils.Config.Mode;
 public class BundlesCommand extends BuilderCommand {
 
 	@Override
+	public void configure() {
+		bundleRequired = true;
+	}
+	
+	@Override
 	public void run() {
 		Bundle[] bundles = null;
 		try {
