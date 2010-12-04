@@ -81,7 +81,7 @@ public class ModelAdapter {
 
 	public Class<?> getClass(String field) {
 		if(attribute.containsKey(field)) {
-			return attribute.get(field).type();
+			return getType(attribute.get(field));
 		} else if(hasOne.containsKey(field)) {
 			return hasOne.get(field).type();
 		} else {
@@ -129,11 +129,11 @@ public class ModelAdapter {
 		}
 		return null;
 	}
-
+	
 	public Set<String> getHasOneFields() {
 		return hasOne.keySet();
 	}
-	
+
 	public Class<? extends Model> getModelClass() {
 		return this.clazz;
 	}
@@ -183,7 +183,7 @@ public class ModelAdapter {
 		}
 		return null;
 	}
-
+	
 	public Set<String> getRelations() {
 		Set<String> rels = new HashSet<String>();
 		rels.addAll(hasOne.keySet());
@@ -204,6 +204,17 @@ public class ModelAdapter {
 			return getRelationClass(through);
 		}
 		return null;
+	}
+
+	private Class<?> getType(Attribute attr) {
+		Class<?> type = attr.type();
+		if(type == Text.class) {
+			return String.class;
+		}
+		if(type == Binary.class) {
+			return byte[].class;
+		}
+		return type;
 	}
 	
 	public boolean hasAttribute(String field) {
