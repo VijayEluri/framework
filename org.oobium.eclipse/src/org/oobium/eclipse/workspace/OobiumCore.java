@@ -44,8 +44,10 @@ import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
 import org.oobium.build.esp.ESourceFile;
 import org.oobium.build.esp.EspDom;
+import org.oobium.build.workspace.Application;
 import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Module;
+import org.oobium.build.workspace.Workspace;
 import org.oobium.eclipse.OobiumPlugin;
 import org.oobium.logging.Logger;
 import org.w3c.dom.NamedNodeMap;
@@ -134,8 +136,12 @@ public class OobiumCore {
 			File projectDir = file.getProject().getLocation().toFile();
 			Bundle bundle = OobiumPlugin.getWorkspace().getBundle(projectDir);
 			if(bundle instanceof Module) {
+				Workspace workspace = OobiumPlugin.getWorkspace();
 				Module module = (Module) bundle;
-				List<File> modified = module.generateModel(OobiumPlugin.getWorkspace(), model);
+				List<File> modified = module.generateModel(workspace, model);
+				if(module.isApplication()) {
+					((Application) module).createSchema(workspace, workspace.getMode());
+				}
 				for(File mfile : modified) {
 					refresh(file.getProject(), mfile, monitor);
 				}
