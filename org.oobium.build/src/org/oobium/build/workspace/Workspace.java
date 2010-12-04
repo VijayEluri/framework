@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.oobium.build.workspace;
 
+import static java.util.Arrays.asList;
 import static org.oobium.utils.StringUtils.blank;
 
 import java.io.File;
@@ -30,7 +31,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.oobium.build.BuildBundle;
 import org.oobium.build.gen.ProjectGenerator;
 import org.oobium.utils.Config;
-import org.oobium.utils.StringUtils;
 import org.oobium.utils.Config.Mode;
 import org.oobium.utils.Config.OsgiRuntime;
 
@@ -73,19 +73,20 @@ public class Workspace {
 
 	private final ReadWriteLock lock;
 	
+	private Mode mode;
 	private Workspace parentWorkspace;
 	private final Map<File, Bundle> bundles;
+	private Map<File, List<File>> repos;
+	private List<File> ibundles;
 	private final Map<File, Application> applications;
-	private File[] bundleRepos;
-	private Set<File> workspaceFiles;
-	private Set<File> bundleRepoFiles;
+//	private Set<File> workspaceFiles;
+//	private Set<File> bundleRepoFiles;
 	private WorkspaceListener[] listeners;
-	private File dir;
+//	private File dir;
 	private File workingDir;
 	
 	private Bundle buildBundle;
 	private Bundle equinoxRuntimeBundle;
-	
 	private Bundle felixRuntimeBundle;
 	private Bundle knopplerFishRuntimeBundle;
 	
@@ -100,12 +101,13 @@ public class Workspace {
 
 	public Workspace(File workingDirectory) {
 		lock = new ReentrantReadWriteLock();
+		mode = Mode.DEV;
 		bundles = new HashMap<File, Bundle>();
 		applications = new HashMap<File, Application>();
 		listeners = new WorkspaceListener[0];
 		setWorkingDirectory(workingDirectory);
 	}
-
+	
 	private Bundle addBundle(File file) {
 		try {
 			File cfile = file.getCanonicalFile();
@@ -122,6 +124,7 @@ public class Workspace {
 				} else if(bundle.name.equals("org.apache.felix.main")) {
 					felixRuntimeBundle = bundle;
 				}
+				System.out.println("added bundle: " + bundle);
 				return bundle;
 			}
 		} catch(IOException e) {
@@ -136,7 +139,7 @@ public class Workspace {
 			listeners[listeners.length-1] = listener;
 		}
 	}
-	
+
 	public Application createApplication(File file, Map<String, String> properties) {
 		if(file != null) {
 			return (Application) loadBundle(ProjectGenerator.createApplication(file, properties));
@@ -158,7 +161,7 @@ public class Workspace {
 		}
 		return null;
 	}
-
+	
 	public TestSuite createTestSuite(Module module, Map<String, String> properties) {
 		if(module != null) {
 			return (TestSuite) loadBundle(ProjectGenerator.createTests(module, properties));
@@ -172,7 +175,7 @@ public class Workspace {
 		}
 		return null;
 	}
-	
+
 	void fireEvent(EventType eventType, Object oldValue, Object newValue) {
 		WorkspaceEvent event = new WorkspaceEvent(eventType, oldValue, newValue);
 		for(WorkspaceListener listener : Arrays.copyOf(this.listeners, this.listeners.length)) {
@@ -333,11 +336,11 @@ public class Workspace {
 			lock.readLock().unlock();
 		}
 	}
-
+	
 	public Bundle getBundle(String name, String version) {
 		return getBundle(name, new Version(version));
 	}
-
+	
 	/**
 	 * Get the bundle that matches the given name and exact version.
 	 * @param name the name of the bundle
@@ -365,17 +368,20 @@ public class Workspace {
 			lock.readLock().unlock();
 		}
 	}
-	
+
 	/**
-	 * Get the bundle repositories that this workspace is currently using.
-	 * The returned array is a copy; modifications to it will not affect the workspace.
-	 * @return an array of File objects; never null
+	 * Get an array of paths for the bundle repositories that this workspace is currently using.
+	 * @return an array of absolute paths; never null
 	 */
-	public File[] getBundleRepositories() {
-		if(bundleRepos != null) {
-			return Arrays.copyOf(bundleRepos, bundleRepos.length);
+	public String[] getBundleRepositories() {
+		if(repos != null) {
+			List<String> repos = new ArrayList<String>();
+			for(File repo : this.repos.keySet()) {
+				repos.add(repo.getAbsolutePath());
+			}
+			return repos.toArray(new String[repos.size()]);
 		}
-		return new File[0];
+		return new String[0];
 	}
 
 	public Bundle[] getBundles() {
@@ -387,13 +393,13 @@ public class Workspace {
 			lock.readLock().unlock();
 		}
 	}
-
+	
 	/**
 	 * Get all the bundles that match the given full name (the name and version range).
 	 * If the fullName does not include a version range, than a version range of [*, *] is used.<br/>
 	 * Does NOT include bundles from the parent workspace.
 	 * @param fullName
-	 * @return the matching {@link Bundle} object
+	 * @return an array of matching {@link Bundle} objects; never null
 	 */
 	public Bundle[] getBundles(String fullName) {
 		if(blank(fullName)) {
@@ -417,22 +423,13 @@ public class Workspace {
 			lock.readLock().unlock();
 		}
 	}
-	
+
 	public Object getData() {
 		return data;
 	}
-	
+
 	public Object getData(String key) {
 		return (data instanceof Map<?,?>) ? ((Map<?,?>) data).get(key) : null;
-	}
-	
-	public File getDirectory() {
-		lock.readLock().lock();
-		try {
-			return dir;
-		} finally {
-			lock.readLock().unlock();
-		}
 	}
 	
 	public Migrator getMigrator(File file) {
@@ -461,6 +458,10 @@ public class Workspace {
 		return getMigrator(new File(module.file.getAbsoluteFile() + ".migrator"));
 	}
 	
+	public Mode getMode() {
+		return mode;
+	}
+	
 	public Module getModule(File file) {
 		Bundle bundle = getBundle(file);
 		if(bundle instanceof Module) {
@@ -471,7 +472,7 @@ public class Workspace {
 		}
 		return null;
 	}
-
+	
 	public Module getModule(String fullName) {
 		Bundle bundle = getBundle(fullName);
 		if(bundle instanceof Module) {
@@ -482,7 +483,7 @@ public class Workspace {
 		}
 		return null;
 	}
-	
+
 	public Module[] getModules() {
 		lock.readLock().lock();
 		try {
@@ -495,25 +496,6 @@ public class Workspace {
 			return modules.toArray(new Module[modules.size()]);
 		} finally {
 			lock.readLock().unlock();
-		}
-	}
-
-	private File[] getOpenProjects() {
-		File dir = new File(this.dir, StringUtils.join(File.separatorChar, ".metadata", ".plugins", "org.eclipse.core.resources", ".projects"));
-		if(dir.isDirectory()) {
-			String[] names = dir.list();
-			List<File> projectFiles = new ArrayList<File>();
-			for(String name : names) {
-				File project = new File(this.dir, name);
-				if(project.exists()) {
-					projectFiles.add(project);
-				}
-			}
-			return projectFiles.toArray(new File[projectFiles.size()]);
-		} else if(this.dir.isDirectory()) {
-			return this.dir.listFiles();
-		} else {
-			return new File[0];
 		}
 	}
 	
@@ -561,35 +543,36 @@ public class Workspace {
 		}
 		return null;
 	}
-
+	
 	public Migrator getTestSuiteFor(Module module) {
 		return getMigrator(new File(module.file.getAbsoluteFile() + ".tests"));
 	}
-	
+
 	/**
 	 * Get the location of the working directory for this workspace.
 	 * The working directory is a location that the system has write access
 	 * to and can be used for building and exporting bundles.
-	 * It is often the same as the workspace directory, but this is not required.
+	 * @return a File for the working directory, or null if it has not been set
 	 */
 	public File getWorkingDirectory() {
+		// TODO lock needed anymore?
 		lock.readLock().lock();
 		try {
-			return (workingDir != null) ? workingDir : dir;
+			return workingDir;
 		} finally {
 			lock.readLock().unlock();
 		}
 	}
 
-	public boolean isSet() {
-		lock.readLock().lock();
-		try {
-			return dir != null;
-		} finally {
-			lock.readLock().unlock();
+	private void addToRepo(File repo, File bundle) {
+		List<File> bundles = repos.get(repo);
+		if(bundles == null) {
+			bundles = new ArrayList<File>();
+			repos.put(repo, bundles);
 		}
+		bundles.add(bundle);
 	}
-
+	
 	public Bundle loadBundle(File file) {
 		if(file == null || !file.exists()) {
 			return null;
@@ -601,16 +584,22 @@ public class Workspace {
 			if(bundle == null) {
 				bundle = addBundle(file);
 				if(bundle != null) {
+					boolean foundRepo = false;
 					File parent = file.getParentFile();
-					if(parent.equals(dir)) {
-						workspaceFiles.add(file);
-					} else if(bundleRepos != null) {
-						for(File repo : bundleRepos) {
+					if(repos != null) {
+						for(File repo : repos.keySet()) {
 							if(parent.equals(repo)) {
-								bundleRepoFiles.add(file);
+								addToRepo(repo, file);
+								foundRepo = true;
 								break;
 							}
 						}
+					}
+					if(!foundRepo) {
+						if(ibundles == null) {
+							ibundles = new ArrayList<File>();
+						}
+						ibundles.add(file);
 					}
 				}
 			}
@@ -619,46 +608,55 @@ public class Workspace {
 			lock.writeLock().unlock();
 		}
 	}
-	
+
+	/**
+	 * Refreshes all bundles and repositories currently loaded in this workspace.
+	 * Independent bundles will be reloaded if they exist, and removed if they don't.
+	 * Repositories (and their contained bundles) will be reloaded if they exist, and
+	 * removed if they don't.
+	 */
 	public void refresh() {
 		List<Bundle> added = new ArrayList<Bundle>();
 		List<Bundle> removed = new ArrayList<Bundle>();
 		lock.writeLock().lock();
 		try {
+			// save state
+			List<File> reposBak = (repos != null) ? new ArrayList<File>(repos.keySet()) : null;
+			List<File> ibundlesBak = (ibundles != null) ? new ArrayList<File>(ibundles) : null;
+			
+			// remove everything
+			removed.addAll(bundles.values());
+			if(repos != null) {
+				File[] files = repos.keySet().toArray(new File[bundles.size()]);
+				for(File repo : files) {
+					doRemoveRepository(repo);
+				}
+			}
 			File[] files = bundles.keySet().toArray(new File[bundles.size()]);
 			for(File file : files) {
-				if(!file.exists()) {
-					removed.add(removeBundle(file));
-				}
+				removeBundle(file);
 			}
 
-			if(dir.isDirectory()) {
-				files = getOpenProjects();
-				for(File file : files) {
-					if(!bundles.containsKey(file)) {
-						workspaceFiles.add(file);
-						added.add(addBundle(file));
+			// add everything back
+			if(reposBak != null) {
+				for(File repo : reposBak) {
+					doAddRepository(repo);
+				}
+			}
+			if(ibundlesBak != null) {
+				for(File file : ibundlesBak) {
+					if(!bundles.containsKey(file)) { // may be part of a repo now...
+						addBundle(file);
 					}
 				}
 			}
-			if(bundleRepos != null) {
-				for(File repo : bundleRepos) {
-					files = getProjects(repo);
-					for(File file : files) {
-						if(!bundles.containsKey(file)) {
-							bundleRepoFiles.add(file);
-							added.add(addBundle(file));
-						}
-					}
-				}
-			}
+			
+			added.addAll(bundles.values());
 		} finally {
 			lock.writeLock().unlock();
 		}
 
-		if(!added.isEmpty() || !removed.isEmpty()) {
-			fireEvent(EventType.Bundles, removed.toArray(), added.toArray());
-		}
+		fireEvent(EventType.Bundles, removed.toArray(), added.toArray());
 	}
 	
 	public void refresh(Bundle bundle) {
@@ -678,11 +676,11 @@ public class Workspace {
 
 		fireEvent(EventType.Bundle, oldBundle, newBundle);
 	}
-
+	
 	public void remove(Bundle bundle) {
 		remove(bundle.file);
 	}
-	
+
 	public void remove(File file) {
 		Bundle oldBundle;
 		lock.writeLock().lock();
@@ -695,10 +693,17 @@ public class Workspace {
 			lock.writeLock().unlock();
 		}
 	}
+
+	private void removeFromRepos(File bundle) {
+		for(List<File> bundles : repos.values()) {
+			if(bundles != null && bundles.remove(bundle)) {
+				return;
+			}
+		}
+	}
 	
 	private Bundle removeBundle(File file) {
-		if(bundleRepoFiles != null) bundleRepoFiles.remove(file);
-		if(workspaceFiles != null) workspaceFiles.remove(file);
+		if(repos != null) removeFromRepos(file);
 		if(applications != null) applications.remove(file);
 		if(bundles != null) return bundles.remove(file);
 		return null;
@@ -717,7 +722,7 @@ public class Workspace {
 			}
 		}
 	}
-
+	
 	public void removeRuntimeBundle(Collection<Bundle> bundles) {
 		Bundle bundle = getBundle(OsgiRuntime.Equinox);
 		if(bundle != null) {
@@ -732,38 +737,85 @@ public class Workspace {
 			bundles.remove(bundle);
 		}
 	}
+
+	private void doAddRepository(File repo) {
+		if(repos != null) {
+			if(repos.containsKey(repo)) {
+				return; // don't add twice
+			}
+		} else {
+			repos = new HashMap<File, List<File>>();
+		}
+		
+		List<File> bundles = new ArrayList<File>(asList(getProjects(repo)));
+		repos.put(repo, bundles);
+
+		for(File bundle : bundles) {
+			addBundle(bundle);
+		}
+	}
 	
-	public void setBundleRepositories(File...repos) {
+	private List<File> doRemoveRepository(File repo) {
+		if(repos != null) {
+			List<File> bundles = repos.get(repo);
+			if(bundles != null) {
+				for(File bundle : bundles) {
+					remove(bundle);
+				}
+			}
+			repos.remove(repo);
+			return bundles;
+		}
+		return new ArrayList<File>(0);
+	}
+	
+	public void addRepository(File repo) {
 		lock.writeLock().lock();
 		try {
-			if(bundleRepoFiles != null) {
-				for(File bundleRepoFile : bundleRepoFiles) {
-					removeBundle(bundleRepoFile);
-				}
-				bundleRepoFiles.clear();
-			}
-			
-			File[] oldValue = (bundleRepos == null) ? new File[0] : bundleRepos;
-			bundleRepos = Arrays.copyOf(repos, repos.length);
-			bundleRepoFiles = new HashSet<File>();
-			
-			for(File repo : bundleRepos) {
-				bundleRepoFiles.addAll(Arrays.asList(getProjects(repo)));
-			}
-			for(File bundleRepoFile : bundleRepoFiles) {
-//				System.out.println(bundleRepoFile.getName());
-				addBundle(bundleRepoFile);
-			}
-			fireEvent(EventType.BundleRepos, oldValue, bundleRepos);
+			doAddRepository(repo);
+			fireEvent(EventType.BundleRepos, null, repo);
+		} finally {
+			lock.writeLock().unlock();
+		}
+	}
+	
+	public void removeRepository(File repo) {
+		lock.writeLock().lock();
+		try {
+			doRemoveRepository(repo);
+			fireEvent(EventType.BundleRepos, repo, null);
 		} finally {
 			lock.writeLock().unlock();
 		}
 	}
 
 	/**
+	 * Set the repositories to the given list of repositories. Removes
+	 * any existing repositories first.
+	 * @param repos
+	 */
+	public void setRepositories(File...repos) {
+		lock.writeLock().lock();
+		try {
+			String[] oldRepos = getBundleRepositories();
+			if(this.repos != null) {
+				for(File repo : this.repos.keySet()) {
+					doRemoveRepository(repo);
+				}
+			}
+			for(File repo : repos) {
+				doAddRepository(repo);
+			}
+			fireEvent(EventType.BundleRepos, oldRepos, getBundleRepositories());
+		} finally {
+			lock.writeLock().unlock();
+		}
+	}
+	
+	/**
 	 * @param commaSeparatedRepos a comma separated list of absolute file paths
 	 */
-	public void setBundleRepositories(String commaSeparatedRepos) {
+	public void setRepositories(String commaSeparatedRepos) {
 		String[] sa = commaSeparatedRepos.split("\\s*,\\s*");
 		File[] repos = new File[sa.length];
 		for(int i = 0; i < sa.length; i++) {
@@ -772,9 +824,9 @@ public class Workspace {
 				throw new IllegalArgumentException("only absolute file paths are permitted (" + commaSeparatedRepos + ")");
 			}
 		}
-		setBundleRepositories(repos);
+		setRepositories(repos);
 	}
-	
+
 	public void setData(Object data) {
 		this.data = data;
 	}
@@ -789,54 +841,9 @@ public class Workspace {
 			data = map;
 		}
 	}
-
-	public void setDirectory(File dir) {
-		setDirectory(dir, false);
-	}
 	
-	public void setDirectory(File dir, boolean force) {
-		if(!force && dir != null && dir.equals(this.dir)) {
-			return;
-		}
-		
-		lock.writeLock().lock();
-		try {
-			if(workspaceFiles != null) {
-				for(File workspaceFile : workspaceFiles.toArray(new File[workspaceFiles.size()])) {
-					removeBundle(workspaceFile);
-				}
-				workspaceFiles.clear();
-			}
-
-			File oldValue = this.dir;
-			this.dir = dir;
-			workspaceFiles = new HashSet<File>();
-
-			if(this.dir != null) {
-				if(!this.dir.exists()) {
-					this.dir.mkdirs();
-				} else if(this.dir.isDirectory()) {
-					workspaceFiles.addAll(Arrays.asList(getOpenProjects()));
-					for(File workspaceFile : workspaceFiles) {
-						addBundle(workspaceFile);
-					}
-				} else {
-					throw new IllegalArgumentException("workspace must be a directory");
-				}
-			}
-			
-			fireEvent(EventType.Workspace, oldValue, this.dir);
-		} finally {
-			lock.writeLock().unlock();
-		}
-	}
-	
-	public void setDirectory(String absolutePath) {
-		setDirectory(new File(absolutePath));
-	}
-
-	public void setDirectory(String absolutePath, boolean force) {
-		setDirectory(new File(absolutePath), force);
+	public void setMode(Mode mode) {
+		this.mode = mode;
 	}
 
 	public void setParent(Workspace workspace) {

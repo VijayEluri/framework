@@ -24,7 +24,6 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IStatusLineManager;
 import org.eclipse.jface.action.IToolBarManager;
@@ -86,7 +85,6 @@ public class ConsoleView extends ViewPart {
 	private Label projectLbl;
 	private ConsolePage consolePage;
 	
-	private String workspace;
 	private String application;
 	private String project;
 	private String[] commandHistory;
@@ -135,7 +133,6 @@ public class ConsoleView extends ViewPart {
 				if(!app.isAbsolute()) {
 					app = new File(((BuilderCommand) event.command).getPwd(), event.command.param(0));
 				}
-				OobiumPlugin.getWorkspace().setDirectory(app.getParentFile());
 				setApplication(app);
 				setProject(app);
 			}
@@ -148,7 +145,6 @@ public class ConsoleView extends ViewPart {
 				if(!app.isAbsolute()) {
 					app = new File(((BuilderCommand) event.command).getPwd(), event.command.param(0));
 				}
-				OobiumPlugin.getWorkspace().setDirectory(app.getParentFile());
 				setProject(app);
 			}
 		});
@@ -224,15 +220,6 @@ public class ConsoleView extends ViewPart {
 			consolePage.getConsole().setCommandHistory(commandHistory);
 		}
 		
-		if(workspace != null) {
-			try {
-				OobiumPlugin.getWorkspace().setDirectory(new File(workspace));
-			} catch(Exception e) {
-				OobiumPlugin.getWorkspace().setDirectory(ResourcesPlugin.getWorkspace().getRoot().getLocation().toFile());
-			}
-		} else {
-			OobiumPlugin.getWorkspace().setDirectory(ResourcesPlugin.getWorkspace().getRoot().getLocation().toFile());
-		}
 		setApplication(application);
 		setProject(project);
 		
@@ -293,7 +280,7 @@ public class ConsoleView extends ViewPart {
 			}
 		});
 
-		root.setPwd(OobiumPlugin.getWorkspace().getDirectory().getAbsolutePath());
+		root.setPwd(ResourcesPlugin.getWorkspace().getRoot().getLocation().toOSString());
 	}
 	
 	private void createToolBar() {
@@ -369,7 +356,6 @@ public class ConsoleView extends ViewPart {
 	
 	@Override
 	public void init(IViewSite site, IMemento memento) throws PartInitException {
-		workspace = (memento == null) ? null : memento.getString("workspace");
 		application = (memento == null) ? null : memento.getString("application");
 		project = (memento == null) ? null : memento.getString("bundle");
 
@@ -407,7 +393,6 @@ public class ConsoleView extends ViewPart {
 	
 	@Override
 	public void saveState(IMemento memento) {
-		memento.putString("workspace", OobiumPlugin.getWorkspace().getDirectory().getAbsolutePath());
 		memento.putString("application", application);
 		memento.putString("bundle", project);
 		memento.putString("history", JsonUtils.toJson(consolePage.getConsole().getCommandHistory()));

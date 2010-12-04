@@ -12,13 +12,14 @@ package org.oobium.eclipse;
 
 import static org.eclipse.ui.IWorkbenchPage.VIEW_ACTIVATE;
 import static org.oobium.build.workspace.Workspace.BUNDLE_REPOS;
-import static org.oobium.build.workspace.Workspace.WORKSPACE;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.ImageRegistry;
@@ -31,11 +32,14 @@ import org.oobium.build.runner.RunEvent;
 import org.oobium.build.runner.RunEvent.Type;
 import org.oobium.build.runner.RunListener;
 import org.oobium.build.runner.RunnerService;
+import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Workspace;
 import org.oobium.eclipse.views.developer.ConsoleView;
 import org.oobium.eclipse.views.server.ServerView;
 import org.oobium.eclipse.workspace.ResourceChangeListener;
 import org.oobium.logging.Logger;
+import org.oobium.utils.Config.OsgiRuntime;
+import org.oobium.utils.FileUtils;
 import org.oobium.utils.json.JsonUtils;
 import org.osgi.framework.BundleContext;
 
@@ -114,42 +118,86 @@ public class OobiumPlugin extends AbstractUIPlugin {
 				preferences.putValue(entry.getKey(), entry.getValue());
 			}
 		}
-		
-		String value;
-		
-		logger.info("setting up workspace");
-		
-		value = Platform.getInstallLocation().getURL().getPath() + "plugins";
-		preferences.setDefault(BUNDLE_REPOS, value);
-		if(!preferences.contains(BUNDLE_REPOS)) {
-			preferences.setToDefault(BUNDLE_REPOS);
-		}
-		String repos = preferences.getString(BUNDLE_REPOS);
-		workspace.setBundleRepositories(repos);
-		if(logger.isLoggingInfo()) {
-			logger.info("workspace bundle repos set to \"" + repos + "\"");
-		}
-
-		value = ResourcesPlugin.getWorkspace().getRoot().getLocation().toOSString();
-		preferences.setDefault(WORKSPACE, value);
-		if(!preferences.contains(WORKSPACE)) {
-			preferences.setToDefault(WORKSPACE);
-		}
-		String dir = preferences.getString(WORKSPACE);
-		workspace.setDirectory(dir);
-		if(logger.isLoggingInfo()) {
-			logger.info("workspace directory set to \"" + dir + "\"");
-		}
-		
-		logger.info("workspace setup");
 	}
 
+	private void setupWorkspace(BundleContext context) {
+		logger.info("setting up workspace");
+
+		String repos = getPreferenceStore().getString(BUNDLE_REPOS);
+		if(repos.length() > 0) {
+			workspace.setRepositories(repos);
+			if(logger.isLoggingDebug()) {
+				logger.debug("workspace bundle repos set to \"" + repos + "\"");
+			}
+		}
+
+		for(org.osgi.framework.Bundle bundle : context.getBundles()) {
+			if(bundle.getState() != org.osgi.framework.Bundle.UNINSTALLED) {
+				String location = bundle.getLocation();
+				if(location.startsWith("reference:file:")) {
+					File file = new File(location.substring(15));
+					Bundle loaded = workspace.loadBundle(file);
+					if(logger.isLoggingDebug()) {
+						if(loaded != null) {
+							logger.debug("loaded " + loaded + " from "+ loaded.file);
+						} else {
+							logger.debug("could not load bundle: "+ file);
+						}
+					}
+				}
+			}
+		}
+		
+		if(workspace.getBundle(OsgiRuntime.Felix) == null) {
+			logger.debug("loading felix bundles");
+			Bundle build = workspace.getBuildBundle();
+			if(build == null) {
+				logger.debug("build bundle not found - cannot load felix bundles");
+			} else {
+				File lib = context.getDataFile("lib");
+				if(!lib.exists()) {
+					lib.mkdirs();
+				}
+				try {
+					if(build.isJar) {
+						FileUtils.copyJarEntry(build.file, "/felix.jar", lib);
+						FileUtils.copyJarEntry(build.file, "/org.apache.felix.log-1.0.0.jar", lib);
+					} else {
+						File src = new File(build.file, "lib");
+						FileUtils.copy(new File(src, "felix.jar"), lib);
+						FileUtils.copy(new File(src, "org.apache.felix.log-1.0.0.jar"), lib);
+					}
+					workspace.addRepository(lib);
+					if(logger.isLoggingDebug()) {
+						logger.debug("felix bundles loaded from " + lib);
+					}
+				} catch(IOException e) {
+					logger.warn("failed to copy felix bundles", e);
+				}
+			}
+		}
+		
+		logger.debug("loading project in the Eclipse workspace");
+		for(IProject project : ResourcesPlugin.getWorkspace().getRoot().getProjects()) {
+			if(project.isOpen()) {
+				workspace.loadBundle(project.getLocation().toFile());
+				if(logger.isLoggingDebug()) {
+					logger.debug("loaded " + project.getName());
+				}
+			}
+		}
+		
+		logger.info("workspace setup complete");
+	}
+	
 	@Override
 	public void start(BundleContext context) throws Exception {
 		super.start(context);
 		logger.setBundle(context.getBundle());
 		
 		loadPreferences();
+
+		setupWorkspace(context);
 		
 		ResourcesPlugin.getWorkspace().addResourceChangeListener(listener = new ResourceChangeListener());
 		
