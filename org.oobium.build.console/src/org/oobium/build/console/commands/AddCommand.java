@@ -13,6 +13,7 @@ package org.oobium.build.console.commands;
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.commands.add.ModuleCommand;
 import org.oobium.build.console.commands.add.NatureCommand;
+import org.oobium.build.console.commands.add.RepositoryCommand;
 
 
 public class AddCommand extends BuilderCommand {
@@ -21,6 +22,7 @@ public class AddCommand extends BuilderCommand {
 	public void configure() {
 		set(new ModuleCommand());
 		add(new NatureCommand());
+		add(new RepositoryCommand());
 	}
 
 }

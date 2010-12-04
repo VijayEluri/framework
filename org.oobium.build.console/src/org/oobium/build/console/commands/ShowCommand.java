@@ -21,6 +21,7 @@ import org.oobium.build.console.commands.show.ModelsCommand;
 import org.oobium.build.console.commands.show.ModulesCommand;
 import org.oobium.build.console.commands.show.NaturesCommand;
 import org.oobium.build.console.commands.show.TestSuitesCommand;
+import org.oobium.build.console.commands.show.VersionCommand;
 import org.oobium.build.console.commands.show.ViewsCommand;
 import org.oobium.build.console.commands.show.WorkspaceCommand;
 
@@ -38,6 +39,7 @@ public class ShowCommand extends BuilderCommand {
 		add(new ModulesCommand());
 		add(new NaturesCommand());
 		add(new TestSuitesCommand());
+		add(new VersionCommand());
 		add(new ViewsCommand());
 		add(new WorkspaceCommand());
 	}

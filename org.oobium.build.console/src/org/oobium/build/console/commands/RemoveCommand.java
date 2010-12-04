@@ -13,6 +13,7 @@ package org.oobium.build.console.commands;
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.commands.remove.ModuleCommand;
 import org.oobium.build.console.commands.remove.NatureCommand;
+import org.oobium.build.console.commands.remove.RepositoryCommand;
 
 
 public class RemoveCommand extends BuilderCommand {
@@ -21,6 +22,7 @@ public class RemoveCommand extends BuilderCommand {
 	public void configure() {
 		set(new ModuleCommand());
 		add(new NatureCommand());
+		add(new RepositoryCommand());
 	}
 
 }

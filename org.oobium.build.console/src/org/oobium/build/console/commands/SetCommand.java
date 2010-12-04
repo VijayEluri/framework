@@ -14,6 +14,7 @@ import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.commands.set.ApplicationCommand;
 import org.oobium.build.console.commands.set.BundleCommand;
 import org.oobium.build.console.commands.set.PromptCommand;
+import org.oobium.build.console.commands.set.RepositoriesCommand;
 
 public class SetCommand extends BuilderCommand {
 
@@ -22,6 +23,7 @@ public class SetCommand extends BuilderCommand {
 		add(new ApplicationCommand());
 		add(new BundleCommand());
 		add(new PromptCommand());
+		add(new RepositoriesCommand());
 	}
 	
 }

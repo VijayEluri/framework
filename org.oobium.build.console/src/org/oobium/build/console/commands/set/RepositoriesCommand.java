@@ -14,7 +14,7 @@ import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
 
-public class BundleReposCommand extends BuilderCommand {
+public class RepositoriesCommand extends BuilderCommand {
 
 	@Override
 	public void configure() {
@@ -26,13 +26,12 @@ public class BundleReposCommand extends BuilderCommand {
 	public void run() {
 		String repos = (paramCount() == 0) ? null : param(0);
 		if(repos != null) {
-			String[] sa = repos.split(";");
+			String[] sa = repos.split(",");
 			File[] fa = new File[sa.length];
 			for(int i = 0; i < sa.length; i++) {
 				fa[i] = new File(sa[i]);
 			}
-			getWorkspace().setBundleRepositories(fa);
-			console.out.println("bundle repositories set successfully");
+			getWorkspace().setRepositories(fa);
 		} else {
 			console.err.println("failed to set project");
 		}
