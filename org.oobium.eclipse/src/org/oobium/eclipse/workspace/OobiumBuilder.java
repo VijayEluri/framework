@@ -72,7 +72,7 @@ public class OobiumBuilder extends IncrementalProjectBuilder {
 						}
 						if("assets".equals(resource.getName())) {
 							OobiumCore.generateAssetList(resource.getProject(), monitor);
-							return false; // all changes to children are handled with compileAssetList
+							return false; // all changes to children are handled with generateAssetList
 						}
 						if(resource.getName().endsWith("bin")) {
 							return false; // handled in UpdaterThread in org.oobium.build.runner
