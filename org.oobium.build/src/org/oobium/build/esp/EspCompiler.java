@@ -65,11 +65,11 @@ public class EspCompiler {
 	private static final String SBNAME = "__sb__";
 
 	
-	static void appendEscaped(StringBuilder sb, String text) {
+	private static void appendEscaped(StringBuilder sb, String text) {
 		appendEscaped(sb, text, 0, text.length());
 	}
 	
-	static void appendEscaped(StringBuilder sb, String text, int s0, int s1) {
+	private static void appendEscaped(StringBuilder sb, String text, int s0, int s1) {
 		for(int j = s0; j < s1; j++) {
 			char c = text.charAt(j);
 			switch(c) {
@@ -80,7 +80,7 @@ public class EspCompiler {
 		}
 	}
 	
-	static void appendEscaped(StringBuilder sb, String text, Map<String, EntryPart> vars) {
+	private static void appendEscaped(StringBuilder sb, String text, Map<String, EntryPart> vars) {
 		if(vars == null) {
 			appendEscaped(sb, text);
 		} else {
@@ -161,8 +161,8 @@ public class EspCompiler {
 	}
 	
 	private void appendCreateJs(String target, Map<String, EntryPart> entries) {
-		String field = (entries != null && entries.containsKey("field")) ? entries.get("field").getValue().getText().trim() : null;
-		String value = (entries != null && entries.containsKey("value")) ? entries.get("value").getValue().getText().trim() : null;
+		String field = (entries != null && entries.get("field") != null) ? entries.get("field").getValue().getText().trim() : null;
+		String value = (entries != null && entries.get("value") != null) ? entries.get("value").getValue().getText().trim() : null;
 		body.append(" href=\\\"\").append(").append(target).append(").append(\"\\\"");
 		body.append(" onclick=\\\"");
 		if(entries != null && entries.containsKey("confirm")) {
@@ -232,8 +232,8 @@ public class EspCompiler {
 	}
 	
 	private void appendUpdateJs(String target, Map<String, EntryPart> entries) {
-		String field = (entries != null && entries.containsKey("field")) ? entries.get("field").getValue().getText().trim() : null;
-		String value = (entries != null && entries.containsKey("value")) ? entries.get("value").getValue().getText().trim() : null;
+		String field = (entries != null && entries.get("field") != null) ? entries.get("field").getValue().getText().trim() : null;
+		String value = (entries != null && entries.get("value") != null) ? entries.get("value").getValue().getText().trim() : null;
 		body.append(" href=\\\"\").append(").append(target).append(").append(\"\\\"");
 		body.append(" onclick=\\\"");
 		if(entries != null && entries.containsKey("confirm")) {
@@ -1143,7 +1143,7 @@ public class EspCompiler {
 			target = link.getArg(0);
 			if(link.getArgs().size() == 1) {
 				if(dom.isEsp()) {
-					action = link.hasEntry("action") ? link.getEntry("action").getValue().getText().trim() : null;
+					action = link.hasEntryValue("action") ? link.getEntry("action").getValue().getText().trim() : null;
 					if("create".equals(action)) {
 						appendCreateJs(target.getText().trim(), link.getEntries());
 					} else if("update".equals(action)) {
@@ -1151,7 +1151,7 @@ public class EspCompiler {
 					} else if("destroy".equals(action)) {
 						appendDeleteJs(target.getText().trim(), link.getEntries());
 					} else {
-						String method = link.hasEntry("method") ? link.getEntry("method").getValue().getText().trim().toLowerCase() : null;
+						String method = link.hasEntryValue("method") ? link.getEntry("method").getValue().getText().trim().toLowerCase() : null;
 						if("post".equals(method)) {
 							appendCreateJs(target.getText().trim(), link.getEntries());
 						} else if("put".equals(method)) {
@@ -1291,7 +1291,7 @@ public class EspCompiler {
 			buildClasses(input);
 			buildAttrs(input, "type", "onkeypress");
 		}
-		if(input.hasEntry("onkeypress")) {
+		if(input.hasEntryValue("onkeypress")) {
 			String f = input.getEntry("onkeypress").getValue().getText();
 			body.append(" onkeypress=\\\"").append(f);
 			if(!f.endsWith(";")) {

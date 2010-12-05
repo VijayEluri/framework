@@ -250,6 +250,10 @@ public class HtmlElement extends EspElement {
 		return (entries != null) && entries.containsKey(name);
 	}
 	
+	public boolean hasEntryValue(String name) {
+		return (entries != null) && entries.containsKey(name) && (entries.get(name).getValue() != null);
+	}
+	
 	public boolean hasId() {
 		return id != null;
 	}
