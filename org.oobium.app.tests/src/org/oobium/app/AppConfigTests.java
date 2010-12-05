@@ -40,7 +40,7 @@ public class AppConfigTests {
 						"dev: {\n" +
 						"	host: \"localhost\",\n" +
 						"	port: 5000,\n" +
-						"	modules: \"org.oobium.app.dev_1.0.0\",\n" +
+						"	modules: \"org.oobium.app.dev_0.5.0\",\n" +
 						"},\n" +
 						"\n" +
 						"test: {\n" +
@@ -72,7 +72,7 @@ public class AppConfigTests {
 		assertEquals("org.test.dev", ((List<?>) config.get(MODULES)).get(1));
 
 		json =	"modules: {\n" +
-				"	\"org.test_1.0.0\": {\n" +
+				"	\"org.test_0.5.0\": {\n" +
 				"		persist: \"org.oobium.persist.db\"\n" +
 				"	}\n" +
 				"},\n" +
@@ -80,15 +80,15 @@ public class AppConfigTests {
 				"dev: {\n" +
 				"	host: \"localhost\",\n" +
 				"	port: 5000,\n" +
-				"	modules: \"org.test.dev_1.0.0\"\n" +
+				"	modules: \"org.test.dev_0.5.0\"\n" +
 				"}";
 		config = Config.loadConfiguration(json);
 		
 		assertTrue(config.get(MODULES) instanceof List<?>);
 		assertEquals(2, ((List<?>) config.get(MODULES)).size());
-		assertEquals("org.test.dev_1.0.0", ((List<?>) config.get(MODULES)).get(1));
+		assertEquals("org.test.dev_0.5.0", ((List<?>) config.get(MODULES)).get(1));
 		assertEquals(5000, config.getPort(DEV));
-		assertEquals("org.test_1.0.0", ((Map<?,?>) ((List<?>) config.get(MODULES)).get(0)).keySet().iterator().next());
+		assertEquals("org.test_0.5.0", ((Map<?,?>) ((List<?>) config.get(MODULES)).get(0)).keySet().iterator().next());
 	}
 	
 }

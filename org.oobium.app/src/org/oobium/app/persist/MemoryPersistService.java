@@ -170,7 +170,7 @@ public class MemoryPersistService implements PersistService {
 			}
 			@Override
 			public String getVersion() {
-				return "1.0.0";
+				return "0.5.0";
 			}
 			@Override
 			public String getDescription() {

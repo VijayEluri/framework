@@ -44,8 +44,7 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 	}
 
 	/**
-	 * @param name
-	 *            Bundle Name and Bundle Version: "bundle_1.0.0"
+	 * @param name Bundle Name and Bundle Version (ie "bundle_1.0.0")
 	 * @return
 	 */
 	public static ModuleService getActivator(String name) {

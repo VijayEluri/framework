@@ -220,8 +220,8 @@ public class ProjectGenerator {
 		sb.append("\thost: \"localhost\",\n");
 		sb.append("\tport: 5000,\n");
 		sb.append("\tmodules: [\n");
-		sb.append("\t\t\"org.oobium.app.dev_1.0.0\",\n");
-		sb.append("\t\t\"org.oobium.manager_1.0.0\"\n");
+		sb.append("\t\t\"org.oobium.app.dev_0.5.0\",\n");
+		sb.append("\t\t\"org.oobium.manager_0.5.0\"\n");
 		sb.append("\t],\n");
 		sb.append("},\n");
 		sb.append('\n');
