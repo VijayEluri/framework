@@ -191,7 +191,7 @@ public class Exporter {
 		List<Bundle> started2 = new ArrayList<Bundle>();
 		for(Bundle bundle : exportedBundles) {
 			if(!bundle.isFramework()) {
-				if(bundle.name.equals("org.oobium.logging")) {
+				if(bundle.name.equals("org.oobium.logging") || bundle.name.equals("org.apache.felix.log")) {
 					started1.add(bundle);
 				} else if(exportedStart.contains(bundle)) {
 					started2.add(bundle);
