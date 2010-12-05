@@ -43,7 +43,6 @@ public class Activator implements BundleActivator {
 
 	public Activator() {
 		instance = this;
-		logListener = new LogHandler();
 	}
 
 	@Override
@@ -53,11 +52,14 @@ public class Activator implements BundleActivator {
 		logTracker = new ServiceTracker(context, LogService.class.getName(), null);
 		logTracker.open();
 
+		logListener = new LogHandler();
+		
 		logReaderTracker = new ServiceTracker(context, LogReaderService.class.getName(), new ServiceTrackerCustomizer() {
 			@Override
 			public Object addingService(ServiceReference arg0) {
 				LogReaderService service = (LogReaderService) context.getService(arg0);
 				service.addLogListener(logListener);
+				
 				return service;
 			}
 			@Override
@@ -82,6 +84,8 @@ public class Activator implements BundleActivator {
 
 		logReaderTracker.close();
 		logReaderTracker = null;
+
+		logListener = null;
 
 		System.out.println("Oobium Logger stopped");
 	}
