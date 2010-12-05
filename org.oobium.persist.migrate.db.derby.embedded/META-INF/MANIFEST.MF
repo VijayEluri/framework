@@ -20,3 +20,4 @@ Import-Package: org.oobium.app.persist,
  org.osgi.framework;version="1.3.0"
 Require-Bundle: org.oobium.persist.migrate
 Bundle-ActivationPolicy: lazy
+Oobium-Service: org.oobium.persist.migrate.db.DbMigrationService
