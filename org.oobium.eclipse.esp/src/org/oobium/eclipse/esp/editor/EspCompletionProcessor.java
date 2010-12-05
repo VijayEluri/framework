@@ -69,7 +69,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 				case HtmlElement:
 					return computeHtmlProposals(doc, element, part, offset);
 				case ImportElement:
-					return computeJavaProposals(doc, element, part, offset);
+					return computeImportProposals(doc, element, part, offset);
 				case JavaElement:
 					return computeJavaProposals(doc, element, part, offset);
 				case StyleElement:
@@ -314,6 +314,41 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 		return new ICompletionProposal[0];
 	}
 
+	private ICompletionProposal[] computeImportProposals(IDocument doc, EspElement element, EspPart part, int espOffset) {
+		int i = espOffset - 1;
+		while(i >= part.getStart() && isJavaImportPart(part.charAt(i))) {
+			i--;
+		}
+		final int start = i + 1;
+		i = espOffset;
+		while(i < part.getEnd() && isJavaImportPart(part.charAt(i))) {
+			i++;
+		}
+		final int end = i;
+		ESourceFile jf = editor.getEspJavaFile();
+		final int javaOffset = jf.getJavaOffset(espOffset - 1);
+		ICompilationUnit cu = (ICompilationUnit) JavaCore.create(editor.getJavaResource());
+		final List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
+		try {
+			((ICompilationUnit) cu).codeComplete(javaOffset + 1, new CompletionRequestor() {
+				@Override
+				public void accept(CompletionProposal completion) {
+					String text;
+					char[] ca = completion.getCompletion();
+					if(ca.length > 0 && ca[ca.length-1] == ';') {
+						text = new String(ca, 0, ca.length-1);
+					} else {
+						text = new String(ca);
+					}
+					proposals.add(new HtmlCompletionProposal(text, start, end-start, text.length(), null, text, null, completion.toString()));
+				}
+			});
+		} catch (JavaModelException e) {
+			e.printStackTrace();
+		}
+		return proposals.toArray(new ICompletionProposal[proposals.size()]);
+	}
+	
 	private ICompletionProposal[] computeJavaProposals(IDocument doc, EspElement element, EspPart part, int espOffset) {
 		int i = espOffset - 1;
 		while(i >= part.getStart() && Character.isLetterOrDigit(part.charAt(i))) {
@@ -375,5 +410,9 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 	
 	public String getErrorMessage() {
 		return "This is the error message";
+	}
+	
+	private boolean isJavaImportPart(char c) {
+		return c == '.' || Character.isJavaIdentifierPart(c);
 	}
 }
