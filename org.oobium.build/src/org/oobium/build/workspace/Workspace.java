@@ -317,10 +317,23 @@ public class Workspace {
 			return null;
 		}
 
+		String name;
+		VersionRange range;
 		int ix = fullName.lastIndexOf('_');
-		String name = (ix == -1) ? fullName : fullName.substring(0, ix);
-		VersionRange range = (ix == -1) ? null : new VersionRange(fullName.substring(ix+1));
-
+		if(ix == -1) {
+			name = fullName;
+			range = null;
+		} else {
+			try {
+				range = new VersionRange(fullName.substring(ix+1));
+				name = fullName.substring(0, ix);
+			} catch(IllegalArgumentException e) {
+				// it may not actually be a version number at the end... oh well
+				name = fullName;
+				range = null;
+			}
+		}
+		
 		lock.readLock().lock();
 		try {
 			for(Bundle bundle : bundles.values()) {
@@ -406,9 +419,22 @@ public class Workspace {
 			return null;
 		}
 
+		String name;
+		VersionRange range;
 		int ix = fullName.lastIndexOf('_');
-		String name = (ix == -1) ? fullName : fullName.substring(0, ix);
-		VersionRange range = (ix == -1) ? null : new VersionRange(fullName.substring(ix+1));
+		if(ix == -1) {
+			name = fullName;
+			range = null;
+		} else {
+			try {
+				range = new VersionRange(fullName.substring(ix+1));
+				name = fullName.substring(0, ix);
+			} catch(IllegalArgumentException e) {
+				// it may not actually be a version number at the end... oh well
+				name = fullName;
+				range = null;
+			}
+		}
 
 		lock.readLock().lock();
 		try {
