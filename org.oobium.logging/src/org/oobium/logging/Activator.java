@@ -10,6 +10,9 @@
  ******************************************************************************/
 package org.oobium.logging;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
@@ -39,12 +42,30 @@ public class Activator implements BundleActivator {
 	private Bundle bundle;
 	private ServiceTracker logTracker;
 	private ServiceTracker logReaderTracker;
+	
+	private List<LogReaderService> services;
 	private LogListener logListener;
 
 	public Activator() {
 		instance = this;
 	}
 
+	private void addService(LogReaderService service) {
+		if(services == null) {
+			services = new ArrayList<LogReaderService>();
+		}
+		services.add(service);
+	}
+	
+	private void removeService(LogReaderService service) {
+		if(services != null) {
+			services.remove(service);
+			if(services.isEmpty()) {
+				services = null;
+			}
+		}
+	}
+	
 	@Override
 	public void start(final BundleContext context) throws Exception {
 		bundle = context.getBundle();
@@ -58,8 +79,8 @@ public class Activator implements BundleActivator {
 			@Override
 			public Object addingService(ServiceReference arg0) {
 				LogReaderService service = (LogReaderService) context.getService(arg0);
+				addService(service);
 				service.addLogListener(logListener);
-				
 				return service;
 			}
 			@Override
@@ -70,6 +91,7 @@ public class Activator implements BundleActivator {
 			public void removedService(ServiceReference arg0, Object arg1) {
 				LogReaderService service = (LogReaderService) arg1;
 				service.removeLogListener(logListener);
+				removeService(service);
 			}
 		});
 		logReaderTracker.open();
@@ -85,6 +107,13 @@ public class Activator implements BundleActivator {
 		logReaderTracker.close();
 		logReaderTracker = null;
 
+		if(services != null) {
+			for(LogReaderService service : services) {
+				service.removeLogListener(logListener);
+			}
+			services.clear();
+			services = null;
+		}
 		logListener = null;
 
 		System.out.println("Oobium Logger stopped");
