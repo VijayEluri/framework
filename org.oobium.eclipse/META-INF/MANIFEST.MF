@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Oobium Eclipse UI Plug-in
 Bundle-SymbolicName: org.oobium.eclipse;singleton:=true
-Bundle-Version: 1.0.0.qualifier
+Bundle-Version: 0.5.0.qualifier
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui,
  org.eclipse.jface.text,
@@ -12,8 +12,8 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.jdt.core,
  org.eclipse.ui.ide,
  org.eclipse.jdt.ui;bundle-version="3.4.0",
- org.oobium.build;bundle-version="1.0.0",
- org.oobium.build.console;bundle-version="1.0.0",
+ org.oobium.build,
+ org.oobium.build.console,
  org.eclipse.core.expressions;bundle-version="3.4.200"
 Export-Package: org.oobium.eclipse,
  org.oobium.eclipse.dialogs,

@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Events Module Bundle
 Bundle-SymbolicName: org.oobium.events
-Bundle-Version: 1.0.0.qualifier
+Bundle-Version: 0.5.0.qualifier
 Export-Package: org.oobium.events.models
 Import-Package: org.oobium.app,
  org.oobium.app.model,

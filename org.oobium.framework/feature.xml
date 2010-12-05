@@ -2,7 +2,7 @@
 <feature
       id="org.oobium.framework"
       label="Oobium Framework"
-      version="1.0.0.qualifier"
+      version="0.5.0.qualifier"
       provider-name="Oobium.org">
 
    <description>

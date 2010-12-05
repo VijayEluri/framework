@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Oobium Build Console
 Bundle-SymbolicName: org.oobium.build.console;singleton:=true
-Bundle-Version: 1.0.0.qualifier
+Bundle-Version: 0.5.0.qualifier
 Bundle-Vendor: oobium.org
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: org.oobium.app,
@@ -22,7 +22,7 @@ Import-Package: org.oobium.app,
  org.osgi.framework;version="1.5.0",
  org.osgi.util.tracker;version="1.4.0"
 Require-Bundle: org.eclipse.swt;bundle-version="3.6.0",
- org.oobium.console;bundle-version="1.0.0";visibility:=reexport
+ org.oobium.console;visibility:=reexport
 Bundle-Activator: org.oobium.build.console.BuilderConsoleActivator
 Export-Package: org.oobium.build.console,
  org.oobium.build.console.commands,
