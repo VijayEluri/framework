@@ -10,11 +10,11 @@
  ******************************************************************************/
 package org.oobium.app.server.view;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.response.Response;
+import org.oobium.app.server.routing.Router;
 import org.oobium.http.HttpRequest;
 
 public class DynamicAsset {
@@ -29,18 +29,10 @@ public class DynamicAsset {
 		throw new IllegalArgumentException("don't know the file extension for " + clazz);
 	}
 	
-	public static Response render(Class<? extends DynamicAsset> ssClass, HttpRequest request, Map<String, Object> params) throws Exception {
-		DynamicAsset ss = ssClass.newInstance();
-		return render(ss, request, params);
-	}
-	
-	public static Response render(DynamicAsset ss, HttpRequest request) throws Exception {
-		return render(ss, request, new HashMap<String, Object>(0));
-	}
-
-	public static Response render(DynamicAsset ss, HttpRequest request, Map<String, Object> params) throws Exception {
-		Controller controller = new Controller(request, params);
-		controller.render(ss);
+	public static Response render(Router router, DynamicAsset asset, HttpRequest request, Map<String, Object> params) throws Exception {
+		Controller controller = new Controller();
+		controller.initialize(router, request, params);
+		controller.render(asset);
 		return controller.getResponse();
 	}
 

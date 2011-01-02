@@ -19,16 +19,11 @@ import org.oobium.app.dev.views.persist_services.ShowPersistService;
 import org.oobium.app.dev.views.persist_services.ShowQueryResults;
 import org.oobium.app.dev.views.persist_services.ShowUpdateResults;
 import org.oobium.app.server.controller.Controller;
-import org.oobium.http.HttpRequest;
 import org.oobium.persist.Model;
 import org.oobium.persist.PersistService;
 import org.oobium.utils.SqlUtils;
 
 public class PersistServicesController extends Controller {
-
-	public PersistServicesController(HttpRequest request, Map<String, Object> routeParams) {
-		super(request, routeParams);
-	}
 
 	@Override
 	public void showAll() throws SQLException {

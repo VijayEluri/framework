@@ -23,7 +23,6 @@ import java.util.Map;
 
 import org.oobium.app.server.controller.Controller;
 import org.oobium.events.models.Event;
-import org.oobium.http.HttpRequest;
 import org.oobium.manager.ManagerService;
 import org.oobium.manager.controllers.workers.InstallWorker;
 import org.oobium.manager.controllers.workers.StartWorker;
@@ -55,10 +54,6 @@ public class BundleController extends Controller {
 	}
 
 	
-	public BundleController(HttpRequest request, Map<String, Object> routeParams) {
-		super(request, routeParams);
-	}
-
 	@Override // POST/URL/[models]
 	public void create() throws SQLException {
 		String location = param("location");

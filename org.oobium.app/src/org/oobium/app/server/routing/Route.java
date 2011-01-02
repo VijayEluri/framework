@@ -69,6 +69,11 @@ public abstract class Route {
 		return pattern.matcher(input);
 	}
 	
+	/**
+	 * @return the params array of this route; can be null
+	 */
+	protected abstract String[][] params();
+	
 	protected void parseRules(String rules, Class<?> clazz, List<String[]> params) {
 		StringBuilder regex = new StringBuilder(rules.length() + 30);
 		

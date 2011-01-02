@@ -12,21 +12,25 @@ package org.oobium.app.server.routing.handlers;
 
 import org.oobium.app.server.response.Response;
 import org.oobium.app.server.routing.RouteHandler;
+import org.oobium.app.server.routing.Router;
 import org.oobium.app.server.view.View;
 import org.oobium.http.HttpRequest;
 
 public class ViewHandler extends RouteHandler {
 
+	public final Router router;
 	public final Class<? extends View> viewClass;
 	
-	public ViewHandler(Class<? extends View> viewClass, String[][] params) {
+	public ViewHandler(Router router, Class<? extends View> viewClass, String[][] params) {
 		super(params);
+		this.router = router;
 		this.viewClass = viewClass;
 	}
 
 	@Override
 	public Response routeRequest(HttpRequest request) throws Exception {
-		return View.render(viewClass, request, getParamMap());
+		View view = viewClass.newInstance();
+		return View.render(router, view, request, getParamMap());
 	}
 
 }

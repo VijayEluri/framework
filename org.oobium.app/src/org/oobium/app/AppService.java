@@ -20,6 +20,7 @@ import java.util.Properties;
 
 import org.oobium.app.server.controller.ActionCache;
 import org.oobium.app.server.response.Response;
+import org.oobium.app.server.routing.AppRouter;
 import org.oobium.app.server.routing.RouteHandler;
 import org.oobium.app.server.routing.Router;
 import org.oobium.app.server.routing.handlers.AssetHandler;
@@ -48,6 +49,7 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Filter;
+import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.util.tracker.ServiceTracker;
@@ -82,7 +84,6 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 	}
 
 
-	private Router router;
 	private int port;
 
 	private PersistServices persistServices;
@@ -100,13 +101,40 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 	// TODO Workers should be in their own bundle and accessed as a service
 	private Map<AppService, Workers> workersMap;
 	
-	@Override
-	public void addRoutes(Config config, Router router) {
-		// subclasses to implement if necessary
+	private ModuleService addModule(ServiceReference reference, Config config) {
+		ModuleService module = (ModuleService) AppService.this.getContext().getService(reference);
+		Config modConfig = config.getModuleConfig(module.getClass());
+		try {
+			logger.info("initializing " + module);
+
+			Router modRouter = module.getRouter();
+			module.addRoutes(modConfig, modRouter);
+			getRouter().add(modRouter);
+
+			module.loadModels(modConfig);
+			module.loadObservers(modConfig);
+			
+			if(module instanceof HttpRequest404Handler) {
+				request404HandlerRegistration.unregister();
+				request404HandlerRegistration = getContext().registerService(HttpRequest404Handler.class.getName(), module, Properties("port", getPort()));
+				logger.info("set port " + getPort() + "'s 404 handler to " + module);
+			}
+			if(module instanceof HttpRequest500Handler) {
+				request500HandlerRegistration.unregister();
+				request500HandlerRegistration = getContext().registerService(HttpRequest500Handler.class.getName(), module, Properties("port", getPort()));
+				logger.info("set port " + getPort() + "'s 500 handler to " + module);
+			}
+			
+			logger.info(module + " initialized successfully");
+			return module;
+		} catch(Exception e1) {
+			logger.error("Error adding routes for " + module + ": " + e1.getMessage(), e1);
+			removeModule(reference, module, config);
+			return null;
+		}
 	}
 	
-	@Override
-	protected void doStart(BundleContext context) throws Exception {
+	final void appStart(BundleContext context) throws Exception {
 		logger.info("configuring in " + Mode.getSystemMode().name() + " mode");
 		
 		Config config = loadConfiguration();
@@ -114,16 +142,20 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		port = config.getPort();
 		String[] hosts = config.getHosts();
 
-		router = new Router(logger, hosts, port);
-		router.addControllerNames(getClass().getClassLoader(), getControllerPaths(config));
+		// allow subclasses to perform custom setup functions
+		setup();
+		
+		router = new AppRouter(this, hosts, port);
 		try {
 			logger.info("initializing routes");
 			addRoutes(config, router);
 			logger.info("routes initialized successfully");
 		} catch(Exception e) {
-			logger.error("Error adding routes: " + e.getMessage(), e);
-			stop(context);
-			throw e;
+			if(logger.isLoggingDebug()) {
+				logger.error("Error adding routes: " + e.getMessage(), e);
+			} else {
+				logger.error("Error adding routes: " + e.getMessage());
+			}
 		}
 
 		loadModels(config);
@@ -147,9 +179,8 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		// allow subclasses to initialize custom trackers
 		initializeServiceTrackers(config);
 	}
-
-	@Override
-	protected void doStop(BundleContext context) throws Exception {
+	
+	final void appStop(BundleContext context) throws Exception {
 		if(cacheTracker != null) {
 			cacheTracker.close();
 			cacheTracker = null;
@@ -174,15 +205,33 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		router = null;
 	}
 	
+	private Filter createModulesFilter(List<String> modules) throws InvalidSyntaxException {
+		StringBuilder sb = new StringBuilder();
+		sb.append("(&(").append(Constants.OBJECTCLASS).append('=').append(ModuleService.class.getName()).append(')');
+		if(modules.size() == 1) {
+			sb.append("(name=").append(modules).append(')');
+		} else {
+			sb.append("(|");
+			for(String module : modules) {
+				sb.append("(name=").append(module).append(')');
+			}
+			sb.append(')');
+		}
+		sb.append(')');
+		
+		Filter filter = context.createFilter(sb.toString());
+		return filter;
+	}
+
+	public CacheService getCacheService() {
+		return (cacheTracker != null) ? (CacheService) cacheTracker.getService() : null;
+	}
+
 	@Override
 	public String getPersistClientName() {
 		return getName();
 	}
-	
-	public CacheService getCacheService() {
-		return (cacheTracker != null) ? (CacheService) cacheTracker.getService() : null;
-	}
-	
+
 	/**
 	 * Get the primary persist service from this application's PersistServices
 	 * @return the primary persist service, or null if PersistServices is null
@@ -193,7 +242,7 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		}
 		return null;
 	}
-
+	
 	/**
 	 * Get the persist service for the given class from this application's PersistServices
 	 * @return the persist service, or null if PersistServices is null
@@ -204,20 +253,20 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		}
 		return null;
 	}
-
+	
 	public PersistServices getPersistServices() {
 		return persistServices;
 	}
-
+	
 	@Override
 	public int getPort() {
 		return port;
 	}
-	
-	public Router getRouter() {
-		return router;
+
+	public AppRouter getRouter() {
+		return (AppRouter) router;
 	}
-	
+
 	@Override
 	public HttpSession getSession(int id, String uuid, boolean create) {
 		HttpSessionService service = (sessionTracker != null) ? (HttpSessionService) sessionTracker.getService() : null;
@@ -229,7 +278,7 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 	
 	@Override
 	public HttpResponse handle404(HttpRequest request) {
-		if(router.hasHost(request.getHost())) {
+		if(getRouter().hasHost(request.getHost())) {
 			if(errorClass404 != null) {
 				try{
 					Response response = View.render(errorClass404, request);
@@ -246,7 +295,7 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 
 	@Override
 	public HttpResponse handle500(HttpRequest request, Exception exception) {
-		if(router.hasHost(request.getHost())) {
+		if(getRouter().hasHost(request.getHost())) {
 			if(errorClass500 != null) {
 				try{
 					Response response = View.render(errorClass500, request);
@@ -260,13 +309,14 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		}
 		return null;
 	}
-
+	
 	@Override
 	public HttpResponse handleRequest(HttpRequest request) throws Exception {
 		if(logger.isLoggingDebug()) {
 			logger.debug("start handleRequest - " + getName() + ":" + request.getPath());
 		}
 		HttpResponse response = null;
+		AppRouter router = getRouter();
 		RouteHandler handler = router.getHandler(request);
 		if(handler != null) {
 			handler.setLogger(logger);
@@ -291,7 +341,7 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		logger.debug("end handleRequest");
 		return response;
 	}
-	
+
 	protected final void initializeCacheTracker(Config config) throws Exception {
 		String cache = config.getString(Config.CACHE);
 		if(!blank(cache)) {
@@ -309,85 +359,17 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 			logger.info("cacheTracker not started");
 		}
 	}
-	
+
 	protected final void initializeModulesTracker(final Config config) throws Exception {
-		Object modules = config.get(Config.MODULES);
-		if(!blank(modules)) {
-			StringBuilder sb = new StringBuilder();
-			sb.append("(&(").append(Constants.OBJECTCLASS).append('=').append(ModuleService.class.getName()).append(')');
-			if(modules instanceof String) {
-				sb.append("(name=").append(modules).append(')');
-			} else if(modules instanceof Map<?, ?>) {
-				Object module = ((Map<?, ?>) modules).keySet().iterator().next();
-				if(module instanceof String) {
-					sb.append("(name=").append(module).append(')');
-				} else {
-					throw new IllegalArgumentException("Configuration option 'modules' must contain a value for 'module'");
-				}
-			} else if(modules instanceof Iterable<?>) {
-				sb.append("(|");
-				for(Object object : (Iterable<?>) modules) {
-					if(!blank(object)) {
-						if(object instanceof String) {
-							sb.append("(name=").append(object).append(')');
-						} else if(object instanceof Map<?, ?>) {
-							Object module = ((Map<?, ?>) object).keySet().iterator().next();
-							if(module instanceof String) {
-								sb.append("(name=").append(module).append(')');
-							} else {
-								throw new IllegalArgumentException("Configuration option 'modules' must contain a value for 'module'");
-							}
-						} else {
-							throw new IllegalArgumentException("Configuration option 'modules' must be either a String or an Array, not a " + object.getClass());
-						}
-					}
-				}
-				sb.append(')');
-			} else {
-				throw new IllegalArgumentException("Configuration option 'modules' must be either a String or an Array, not a " + modules.getClass());
-			}
-			sb.append(')');
-			
+		List<String> modules = config.getModules();
+		if(!modules.isEmpty()) {
 			BundleContext context = getContext();
 
-			Filter filter = context.createFilter(sb.toString());
+			Filter filter = createModulesFilter(modules);
 			moduleTracker = new ServiceTracker(context, filter, new ServiceTrackerCustomizer() {
 				@Override
 				public Object addingService(ServiceReference reference) {
-					ModuleService module = (ModuleService) AppService.this.getContext().getService(reference);
-					Config modConfig = config.getModuleConfig(module.getClass());
-					try {
-						logger.info("initializing " + module);
-						router.addControllerNames(module.getClass().getClassLoader(), module.getControllerPaths(modConfig));
-						module.addRoutes(modConfig, router);
-						module.loadModels(modConfig);
-						module.loadObservers(modConfig);
-						
-						if(module instanceof HttpRequest404Handler) {
-							request404HandlerRegistration.unregister();
-							request404HandlerRegistration = getContext().registerService(HttpRequest404Handler.class.getName(), module, Properties("port", getPort()));
-							logger.info("set port " + getPort() + "'s 404 handler to " + module);
-						}
-						if(module instanceof HttpRequest500Handler) {
-							request500HandlerRegistration.unregister();
-							request500HandlerRegistration = getContext().registerService(HttpRequest500Handler.class.getName(), module, Properties("port", getPort()));
-							logger.info("set port " + getPort() + "'s 500 handler to " + module);
-						}
-						
-						logger.info(module + " initialized successfully");
-						return module;
-					} catch(Exception e1) {
-						logger.error("Error adding routes for " + module + ": " + e1.getMessage(), e1);
-						try {
-							module.removeRoutes(modConfig, router);
-							router.removeControllerNames(module.getControllerPaths(modConfig));
-							module.unloadModels(modConfig);
-							module.unloadObservers(modConfig);
-						} catch(Exception e2) {
-							logger.error("Error removing routes for " + module + ": " + e2.getMessage(), e2);
-						}
-						return null;
-					}
+					return addModule(reference, config);
 				}
 				@Override
 				public void modifiedService(ServiceReference reference, Object service) {
@@ -396,29 +378,7 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 				@Override
 				public void removedService(ServiceReference reference, Object service) {
 					if(service != null) {
-						ModuleService module = (ModuleService) service;
-						Config modConfig = config.getModuleConfig(module.getClass());
-						try {
-							logger.info("unloading " + module);
-							module.removeRoutes(modConfig, router);
-							module.unloadModels(modConfig);
-							module.unloadObservers(modConfig);
-
-							if(reference == request404HandlerRegistration.getReference()) {
-								request404HandlerRegistration.unregister();
-								request404HandlerRegistration = getContext().registerService(HttpRequest404Handler.class.getName(), this, Properties("port", getPort()));
-								logger.info("set port " + getPort() + "'s 404 handler to " + AppService.this);
-							}
-							if(reference == request500HandlerRegistration.getReference()) {
-								request500HandlerRegistration.unregister();
-								request500HandlerRegistration = getContext().registerService(HttpRequest500Handler.class.getName(), this, Properties("port", getPort()));
-								logger.info("set port " + getPort() + "'s 500 handler to " + AppService.this);
-							}
-							
-							logger.info(module + " unloaded successfully");
-						} catch(Exception e2) {
-							logger.error("Error removing routes for " + module + ": " + e2.getMessage(), e2);
-						}
+						removeModule(reference, (ModuleService) service, config);
 					}
 					AppService.this.getContext().ungetService(reference);
 				}
@@ -467,7 +427,7 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 			logger.info("sessionTracker not started");
 		}
 	}
-
+	
 	private void loadActionCaches() throws Exception {
 		logger.info("initializing ActionCache classes");
 
@@ -478,51 +438,49 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 			cache.setHandler(this);
 		}
 	}
-	
-	/**
-	 * Load the configuration for this bundle.  The default implementation fetches
-	 * the configuration using getClass().  Subclasses should override to implements
-	 * alternative behavior.
-	 * @return the configuration
-	 */
-	protected Config loadConfiguration() {
-		return Config.loadConfiguration(getClass());
-	}
-	
-	/**
-	 * Load the configuration for the given bundle.  The default implementation using
-	 * the bundle's Activator (as found in the MANIFEST) to load the configuration.
-	 * @param bundle the bundle for which to get the configuration
-	 * @return the configuration
-	 * @throws ClassNotFoundException if the given bundle does have an Activator
-	 */
-	protected Config loadConfiguration(Bundle bundle) throws ClassNotFoundException {
-		String name = (String) bundle.getHeaders().get("Bundle-Activator");
-		Class<?> clazz = bundle.loadClass(name);
-		return Config.loadConfiguration(clazz);
-	}
 
-	/**
-	 * Top level Applications usually do not need to remove their routes when
-	 * being stopped - override this method if this is not a top-level application
-	 * or there are special circumstances.
-	 * <p>This default implementation does nothing.</p>
-	 */
-	@Override
-	public void removeRoutes(Config config, Router router) {
-		// subclasses to implement if necessary
-	}
+	private void removeModule(ServiceReference reference, ModuleService module, Config config) {
+		Config modConfig = config.getModuleConfig(module.getClass());
+		try {
+			logger.info("unloading " + module);
+			
+			Router modRouter = module.getRouter();
+			if(modRouter != null) {
+				getRouter().remove(modRouter);
+				modRouter.clear();
+			}
+			
+			module.unloadModels(modConfig);
+			module.unloadObservers(modConfig);
 
+			if(reference == request404HandlerRegistration.getReference()) {
+				request404HandlerRegistration.unregister();
+				request404HandlerRegistration = getContext().registerService(HttpRequest404Handler.class.getName(), this, Properties("port", getPort()));
+				logger.info("set port " + getPort() + "'s 404 handler to " + AppService.this);
+			}
+			if(reference == request500HandlerRegistration.getReference()) {
+				request500HandlerRegistration.unregister();
+				request500HandlerRegistration = getContext().registerService(HttpRequest500Handler.class.getName(), this, Properties("port", getPort()));
+				logger.info("set port " + getPort() + "'s 500 handler to " + AppService.this);
+			}
+			
+			logger.info(module + " unloaded successfully");
+		} catch(Exception e2) {
+			logger.error("Error removing " + module + ": " + e2.getMessage(), e2);
+		}
+	}
+	
 	private void setErrorViewClasses(Config config) {
 		Bundle bundle = getContext().getBundle();
 
-		String app = config.getString("app");
 		String base;
-		if(app == null) {
-			base = getClass().getPackage().getName() + ".views.pages.";
+		int ix = name.lastIndexOf('_');
+		if(ix == -1) {
+			base = name;
 		} else {
-			base = getClass().getPackage().getName() + "." + app + ".views.pages.";
+			base = name.substring(0, ix);
 		}
+		base = config.getPathToViews(base).replace('/', '.') + ".pages.";
 
 		try {
 			Class<?> clazz = bundle.loadClass(base + "Error404");

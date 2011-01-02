@@ -11,21 +11,15 @@
 package org.oobium.app.dev.controllers;
 
 import java.sql.SQLException;
-import java.util.Map;
 
 import org.oobium.app.AppService;
 import org.oobium.app.dev.AppDevActivator;
 import org.oobium.app.server.controller.Controller;
 import org.oobium.events.models.Event;
-import org.oobium.http.HttpRequest;
 import org.oobium.manager.ManagerService;
 import org.oobium.utils.json.JsonUtils;
 
 public class NotifyController extends Controller {
-
-	public NotifyController(HttpRequest request, Map<String, Object> routeParams) {
-		super(request, routeParams);
-	}
 
 	@Override
 	public void handleRequest() throws SQLException {

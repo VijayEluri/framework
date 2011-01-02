@@ -21,8 +21,10 @@ import java.util.Properties;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.routing.Router;
 import org.oobium.logging.Logger;
+import org.oobium.persist.Model;
 import org.oobium.persist.Observer;
 import org.oobium.utils.Config;
 import org.oobium.utils.StringUtils;
@@ -30,7 +32,9 @@ import org.oobium.utils.json.JsonUtils;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
 import org.osgi.framework.Version;
+import org.osgi.service.packageadmin.PackageAdmin;
 
 public abstract class ModuleService implements AssetProvider, BundleActivator {
 
@@ -59,30 +63,30 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 		}
 	}
 
+	
 	protected final Logger logger;
 	protected String name;
 	protected BundleContext context;
+	protected Router router;
 
 	public ModuleService() {
 		logger = Logger.getLogger(getClass());
 	}
 
-	/**
-	 * Add this module's routes to the Application's router. Routes can be
-	 * added, removed, and modified later if necessary.<br/>
-	 * Note that a single module may serve multiple applications.
-	 * 
-	 * @param router
-	 *            a Router object belonging to the Application
-	 */
-	public abstract void addRoutes(Config config, Router router);
-
-	protected void doStart(BundleContext context) throws Exception {
-		// subclasses to implement if necessary
+	@SuppressWarnings("unchecked")
+	private void addObserver(Class<?> clazz) {
+		Observer.addObserver((Class<? extends Observer<?>>) clazz);
 	}
-
-	protected void doStop(BundleContext context) throws Exception {
-		// subclasses to implement if necessary
+	
+	/**
+	 * Add this module's routes to the given router. Routes can be
+	 * added and removed later as necessary.
+	 * <p>Note that a single module may serve multiple applications.</p>
+	 * @param config the configuration
+	 * @param router a Router to which routes are to be added
+	 */
+	public void addRoutes(Config config, Router router) {
+		// subclasses to override if necessary
 	}
 
 	@Override
@@ -90,48 +94,69 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 		return JsonUtils.toStringList(StringUtils.getResourceAsString(getClass(), "assets.js"));
 	}
 
+	private Bundle getBundle(PackageAdmin admin, String module) {
+		Bundle[] bundles;
+		int ix = module.lastIndexOf('_');
+		if(ix == -1) {
+			bundles = admin.getBundles(module, null);
+		} else {
+			bundles = admin.getBundles(module.substring(0, ix), module.substring(ix+1));
+		}
+		if(bundles == null || bundles.length == 0) {
+			return null;
+		}
+		return bundles[0];
+	}
+
 	public BundleContext getContext() {
 		return context;
 	}
-
-	List<String> getControllerPaths(Config config) throws Exception {
-		String path = config.getPathToControllers(pkgPath());
-		if(path.charAt(path.length()-1) != '/') {
-			path = path + "/";
+	
+	public Class<? extends Controller> getControllerClass(Class<? extends Model> modelClass) {
+		Config config = loadConfiguration();
+		String controllerName = modelClass.getSimpleName() + "Controller";
+		Class<? extends Controller> controllerClass = getControllerClass(config, controllerName, context.getBundle());
+		if(controllerClass != null) {
+			return controllerClass;
 		}
-		
-		List<String> names = new ArrayList<String>();
-
-		File source = new File(getClass().getProtectionDomain().getCodeSource().getLocation().getPath());
-		if(source.isDirectory()) {
-			source = new File(source, "src/" + path);
-			if(source.exists()) {
-				String pkg = pkg(path);
-				
-				String[] classes = source.list(new FilenameFilter() {
-					@Override
-					public boolean accept(File dir, String name) {
-						return name.endsWith("Controller.java");
-					}
-				});
-				if(classes != null && classes.length > 0) {
-					for(String name : classes) {
-						names.add(pkg + "." + name.substring(0, name.length() - 5));
+		ServiceReference reference = context.getServiceReference(PackageAdmin.class.getName());
+		if(reference != null) {
+			try {
+				PackageAdmin admin = (PackageAdmin) context.getService(reference);
+				for(String module : config.getModules()) {
+					Bundle bundle = getBundle(admin, module);
+					if(bundle != null) {
+						controllerClass = getControllerClass(config, controllerName, bundle);
+						if(controllerClass != null) {
+							return controllerClass;
+						}
 					}
 				}
+			} finally {
+				context.ungetService(reference);
 			}
+		}
+		return null;
+	}
+
+	private Class<? extends Controller> getControllerClass(Config config, String controllerName, Bundle bundle) {
+		String base;
+		int ix = name.lastIndexOf('_');
+		if(ix == -1) {
+			base = name;
 		} else {
-			JarFile jar = new JarFile(source);
-			for(Enumeration<JarEntry> entries = jar.entries(); entries.hasMoreElements(); ) {
-				JarEntry entry = entries.nextElement();
-				String name = entry.getName();
-				if(name.startsWith(path) && name.endsWith(".class") && name.indexOf('$') == -1) {
-					names.add(name.substring(0, name.length() - 6).replace('/', '.'));
-				}
-			}
+			base = name.substring(0, ix);
 		}
-
-		return names;
+		String name = config.getPathToControllers(base).replace('/', '.') + "." + controllerName;
+		try {
+			Class<?> clazz = bundle.loadClass(name);
+			if(Controller.class.isAssignableFrom(clazz)) {
+				return clazz.asSubclass(Controller.class);
+			}
+		} catch(ClassNotFoundException e) {
+			// discard
+		}
+		return null;
 	}
 
 	public Logger getLogger() {
@@ -146,6 +171,13 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 		return name;
 	}
 
+	public Router getRouter() {
+		if(router == null) {
+			router = new Router(this);
+		}
+		return router;
+	}
+	
 	public String getSymbolicName() {
 		return context.getBundle().getSymbolicName();
 	}
@@ -174,7 +206,7 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 
 		File source = new File(getClass().getProtectionDomain().getCodeSource().getLocation().getPath());
 		if(source.isDirectory()) {
-			source = new File(source, "src/" + path);
+			source = new File(source, "src" + File.separator + path.replace('/', File.separatorChar));
 			if(source.exists()) {
 				String[] names = source.list(new FilenameFilter() {
 					@Override
@@ -204,13 +236,36 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 		return classes;
 	}
 	
+	/**
+	 * Load the configuration for this bundle.  The default implementation fetches
+	 * the configuration using getClass().  Subclasses should override to implements
+	 * alternative behavior.
+	 * @return the configuration
+	 */
+	protected Config loadConfiguration() {
+		return Config.loadConfiguration(getClass());
+	}
+
+	/**
+	 * Load the configuration for the given bundle.  The default implementation using
+	 * the bundle's Activator (as found in the MANIFEST) to load the configuration.
+	 * @param bundle the bundle for which to get the configuration
+	 * @return the configuration
+	 * @throws ClassNotFoundException if the given bundle does have an Activator
+	 */
+	protected Config loadConfiguration(Bundle bundle) throws ClassNotFoundException {
+		String name = (String) bundle.getHeaders().get("Bundle-Activator");
+		Class<?> clazz = bundle.loadClass(name);
+		return Config.loadConfiguration(clazz);
+	}
+
 	void loadModels(Config config) throws Exception {
 		logger.info("loading Model classes");
 
 		String pkg = pkg(config.getPathToModels(pkgPath()));
 		loadClassesInPackage(pkg);
 	}
-
+	
 	void loadObservers(Config config) throws Exception {
 		logger.info("loading Observer classes");
 
@@ -222,11 +277,6 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	private void addObserver(Class<?> clazz) {
-		Observer.addObserver((Class<? extends Observer<?>>) clazz);
-	}
-	
 	private String pkg(String path) {
 		path = path.trim();
 		if(path.charAt(0) == '/') {
@@ -235,13 +285,13 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 		if(path.charAt(path.length()-1) == '/') {
 			path = path.substring(0, path.length()-1);
 		}
-		return path.replaceAll("/", ".");
-	}
-
-	private String pkgPath() {
-		return getClass().getPackage().getName().replaceAll("\\.", "/");
+		return path.replace('/', '.');
 	}
 	
+	private String pkgPath() {
+		return getClass().getPackage().getName().replace('.', '/');
+	}
+
 	/**
 	 * Subclasses may override this method to register their own custom
 	 * services. Note that the HttpApplication service for this application has
@@ -257,16 +307,6 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 		// subclasses to implement if necessary
 	}
 
-	/**
-	 * Remove this module's routes to the Application's router. Routes can be
-	 * added, removed, and modified later if necessary.<br/>
-	 * Note that a single module may serve multiple applications.
-	 * 
-	 * @param router
-	 *            a Router object belonging to the Application
-	 */
-	public abstract void removeRoutes(Config config, Router router);
-
 	protected void setName(BundleContext context) throws Exception {
 		Bundle bundle = context.getBundle();
 		String n = bundle.getSymbolicName();
@@ -277,6 +317,10 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 		sb.append(v.getMinor()).append('.');
 		sb.append(v.getMicro());
 		name = sb.toString();
+	}
+
+	protected void setup() {
+		// subclasses to override if necessary
 	}
 
 	@Override
@@ -293,12 +337,16 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 
 		logger.setBundle(context.getBundle());
 		logger.info(toString() + " starting...");
+		
+		if(this instanceof AppService) {
+			((AppService) this).appStart(context);
+		} else {
+			setup();
+		}
 
 		Properties props = new Properties();
 		props.put("name", getName());
 		context.registerService(ModuleService.class.getName(), this, props);
-
-		doStart(context);
 
 		logger.info(toString() + " started");
 	}
@@ -307,7 +355,10 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 	public final void stop(BundleContext context) throws Exception {
 		logger.info(toString() + " stopping");
 
-		doStop(context);
+		teardown();
+		if(this instanceof AppService) {
+			((AppService) this).appStop(context);
+		}
 
 		logger.info(toString() + " stopped");
 		logger.setBundle(null);
@@ -317,6 +368,10 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 		synchronized(activatorsByClass) {
 			activatorsByClass.remove(getClass());
 		}
+	}
+	
+	protected void teardown() {
+		// subclasses to override if necessary
 	}
 
 	@Override

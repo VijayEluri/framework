@@ -10,24 +10,40 @@
  ******************************************************************************/
 package org.oobium.app.server.routes;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
-import static org.oobium.app.server.controller.Action.*;
-import static org.oobium.http.HttpRequest.Type.*;
-import static org.oobium.utils.StringUtils.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.oobium.app.server.controller.Action.create;
+import static org.oobium.app.server.controller.Action.destroy;
+import static org.oobium.app.server.controller.Action.show;
+import static org.oobium.app.server.controller.Action.showAll;
+import static org.oobium.app.server.controller.Action.showEdit;
+import static org.oobium.app.server.controller.Action.showNew;
+import static org.oobium.app.server.controller.Action.update;
+import static org.oobium.http.HttpRequest.Type.GET;
+import static org.oobium.utils.StringUtils.asString;
 
-import java.util.Arrays;
 import java.util.Collections;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.oobium.app.AppService;
 import org.oobium.app.AssetProvider;
 import org.oobium.app.server.controller.Action;
 import org.oobium.app.server.controller.Controller;
+import org.oobium.app.server.routing.AppRouter;
 import org.oobium.app.server.routing.RouteHandler;
-import org.oobium.app.server.routing.Router;
 import org.oobium.app.server.routing.RoutingException;
 import org.oobium.app.server.routing.handlers.AssetHandler;
 import org.oobium.app.server.routing.handlers.AuthorizationHandler;
@@ -40,7 +56,7 @@ import org.oobium.app.server.view.View;
 import org.oobium.http.HttpRequest;
 import org.oobium.http.HttpRequest.Type;
 import org.oobium.http.constants.Header;
-import org.oobium.logging.ILogger;
+import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelDescription;
 import org.oobium.persist.Relation;
@@ -53,17 +69,13 @@ public class RouterTests {
 	public static class Account extends Model {
 		public Account() { set("type", "checking"); set("name", "personal"); }
 	}
-	public static class AccountController extends Controller { 
-		public AccountController(HttpRequest request) { super(request, null); }
-	}
+	public static class AccountController extends Controller { }
 
 	@ModelDescription(hasOne={@Relation(name="cAccount",type=Account.class,opposite="categories")})
 	public static class Category extends Model {
 		public Category() { set("cAccount", "0"); }
 	}
-	public static class CategoryController extends Controller {
-		public CategoryController(HttpRequest request) { super(request, null); }
-	}
+	public static class CategoryController extends Controller { }
 
 	public static class AccountView extends View { }
 	public static class InvalidView extends View { InvalidView(String str) { } }
@@ -73,22 +85,19 @@ public class RouterTests {
 	public static class Member extends Model {
 		public Member() { set("type", "admin"); }
 	}
-	public static class MemberController extends Controller { 
-		public MemberController(HttpRequest request) { super(request, null); }
-	}
+	public static class MemberController extends Controller { }
 
 	@ModelDescription(hasOne={@Relation(name="member",type=Member.class)})
 	public static class Phone extends Model { }
-	public static class PhoneController extends Controller {
-		public PhoneController(HttpRequest request) { super(request, null); }
-	}
+	public static class PhoneController extends Controller { }
 
 	public static class AccountStyles extends StyleSheet { }
 	public static class AccountScripts extends ScriptFile { }
 	
 	
-	private ILogger logger;
-	private Router router;
+	private AppService service;
+	private Logger logger;
+	private AppRouter router;
 	private Account account;
 	private Category category;
 
@@ -112,15 +121,23 @@ public class RouterTests {
 	}
 	
 	@Before
+	@SuppressWarnings("unchecked")
 	public void setUp() {
-		logger = mock(ILogger.class);
-		router = new Router(logger, "localhost", 5555);
-		router.addControllerNames(getClass().getClassLoader(), Arrays.asList(new String[] {
-			AccountController.class.getName(),
-			CategoryController.class.getName(),
-			MemberController.class.getName(),
-			PhoneController.class.getName()
-		}));
+		logger = mock(Logger.class);
+		service = mock(AppService.class);
+		when(service.getLogger()).thenReturn(logger);
+		when(service.getControllerClass(any(Class.class))).thenAnswer(new Answer<Class<? extends Controller>>() {
+			@Override
+			public Class<? extends Controller> answer(InvocationOnMock invocation) throws Throwable {
+				Object arg = invocation.getArguments()[0];
+				if(arg == Account.class)	return AccountController.class;
+				if(arg == Category.class)	return CategoryController.class;
+				if(arg == Member.class)		return MemberController.class;
+				if(arg == Phone.class)		return PhoneController.class;
+				throw new IllegalArgumentException(arg + " is not mapped to a controller");
+			}
+		});
+		router = new AppRouter(service, "localhost", 5555);
 		account = new Account();
 		category = new Category();
 	}
@@ -297,7 +314,7 @@ public class RouterTests {
 	
 	@Test
 	public void testPathErrorLogging() throws Exception {
-		router.addRoute(Category.class, showAll);
+		router.addResource(Category.class, showAll);
 		
 		int i = 0;
 
@@ -363,7 +380,7 @@ public class RouterTests {
 
 	@Test
 	public void testAddModelRoute_ShowAll() throws Exception {
-		router.addRoute(Account.class, Action.showAll);
+		router.addResource(Account.class, Action.showAll);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /accounts -> AccountController#showAll", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -388,7 +405,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoute_ShowAll_WithBasicAuth() throws Exception {
-		router.addRoute(Account.class, Action.showAll);
+		router.addResource(Account.class, Action.showAll);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /accounts -> AccountController#showAll", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -428,7 +445,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoute_Show() throws Exception {
-		router.addRoute(Account.class, Action.show);
+		router.addResource(Account.class, Action.show);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /accounts/(\\d+) -> AccountController#show(id)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -454,7 +471,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoute_ShowEdit() throws Exception {
-		router.addRoute(Account.class, Action.showEdit);
+		router.addResource(Account.class, Action.showEdit);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /accounts/(\\d+)/edit -> AccountController#showEdit(id)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -479,7 +496,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoute_ShowNew() throws Exception {
-		router.addRoute(Account.class, Action.showNew);
+		router.addResource(Account.class, Action.showNew);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /accounts/new -> AccountController#showNew", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -504,7 +521,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoute_Create() throws Exception {
-		router.addRoute(Account.class, Action.create);
+		router.addResource(Account.class, Action.create);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[POST] /accounts -> AccountController#create", router.getRoutes().get(0).toString());
 		assertEquals("/accounts", router.pathTo(Account.class, create));
@@ -529,7 +546,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoute_Update() throws Exception {
-		router.addRoute(Account.class, Action.update);
+		router.addResource(Account.class, Action.update);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[PUT] /accounts/(\\d+) -> AccountController#update(id)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -554,7 +571,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoute_Destroy() throws Exception {
-		router.addRoute(Account.class, Action.destroy);
+		router.addResource(Account.class, Action.destroy);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[DELETE] /accounts/(\\d+) -> AccountController#destroy(id)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -579,7 +596,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoute_Fixed() throws Exception {
-		router.addRoute("my_account", Account.class, Action.show);
+		router.addResource("my_account", Account.class, Action.show);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /my_account -> AccountController#show", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -604,7 +621,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoute_Fixed_EndingSlash() throws Exception {
-		router.addRoute("my_account/", Account.class, Action.show);
+		router.addResource("my_account/", Account.class, Action.show);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /my_account -> AccountController#show", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -629,7 +646,7 @@ public class RouterTests {
 
 	@Test
 	public void testAddModelRoute_DefaultParts() throws Exception {
-		router.addRoute("{models}/{id}", Account.class, Action.show);
+		router.addResource("{models}/{id}", Account.class, Action.show);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /accounts/(\\d+) -> AccountController#show(id)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -654,7 +671,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoute_DefaultPartsReversed() throws Exception {
-		router.addRoute("{id}/{models}", Account.class, Action.show);
+		router.addResource("{id}/{models}", Account.class, Action.show);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /(\\d+)/accounts -> AccountController#show(id)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -679,7 +696,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoute_OnlyParamPart() throws Exception {
-		router.addRoute("?{name=business}", Account.class, Action.show);
+		router.addResource("?{name=business}", Account.class, Action.show);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /accounts/(\\d+) -> AccountController#show(id,name=business)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -704,7 +721,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoute_CustomPart() throws Exception {
-		router.addRoute("{models}/{name:\\w+}", Account.class, Action.show);
+		router.addResource("{models}/{name:\\w+}", Account.class, Action.show);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /accounts/(\\w+) -> AccountController#show(name)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -729,7 +746,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoute_CustomParts() throws Exception {
-		router.addRoute("{type:\\w+}/{models}/{name:\\w+}", Account.class, Action.show);
+		router.addResource("{type:\\w+}/{models}/{name:\\w+}", Account.class, Action.show);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /(\\w+)/accounts/(\\w+) -> AccountController#show(type,name)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -754,7 +771,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoute_Prefix() throws Exception {
-		router.addRoute("prefix/{models}/{name:\\w+}", Account.class, Action.show);
+		router.addResource("prefix/{models}/{name:\\w+}", Account.class, Action.show);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /prefix/accounts/(\\w+) -> AccountController#show(name)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -779,7 +796,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoute_Partial() throws Exception {
-		router.addRoute("{name:\\w+}Account", Account.class, Action.show);
+		router.addResource("{name:\\w+}Account", Account.class, Action.show);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /(\\w+)Account -> AccountController#show(name)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -804,7 +821,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoute_ParamPartRequired() throws Exception {
-		router.addRoute("{models}/new?{type:\\w+}", Account.class, Action.showNew);
+		router.addResource("{models}/new?{type:\\w+}", Account.class, Action.showNew);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /accounts/new\\?type\\=(\\w+) -> AccountController#showNew(type)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -829,7 +846,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoute_ParamPartsGiven_Create() throws Exception {
-		router.addRoute("{models}?{type=checking}{name=personal}", Account.class, Action.create);
+		router.addResource("{models}?{type=checking}{name=personal}", Account.class, Action.create);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[POST] /accounts -> AccountController#create(type=checking,name=personal)", router.getRoutes().get(0).toString());
 		assertEquals("/accounts", router.pathTo(Account.class, create));
@@ -854,7 +871,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoute_ParamPartsGiven_Show() throws Exception {
-		router.addRoute("{models}/{id}?{type=checking}{name=business}", Account.class, Action.show);
+		router.addResource("{models}/{id}?{type=checking}{name=business}", Account.class, Action.show);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /accounts/(\\d+) -> AccountController#show(id,type=checking,name=business)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -879,7 +896,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoute_ParamPartsGiven_ShowNew() throws Exception {
-		router.addRoute("{models}/{id}/new?{type=checking}{name=business}", Account.class, Action.showNew);
+		router.addResource("{models}/{id}/new?{type=checking}{name=business}", Account.class, Action.showNew);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /accounts/(\\d+)/new -> AccountController#showNew(id,type=checking,name=business)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -904,7 +921,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoute_ModelRenamed_Create() throws Exception {
-		router.addRoute("{models=registers}", Account.class, Action.create);
+		router.addResource("{models=registers}", Account.class, Action.create);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[POST] /registers -> AccountController#create", router.getRoutes().get(0).toString());
 		assertEquals("/registers", router.pathTo(Account.class, create));
@@ -929,7 +946,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoute_ModelRenamed_Show() throws Exception {
-		router.addRoute("{models=registers}/{id}", Account.class, Action.show);
+		router.addResource("{models=registers}/{id}", Account.class, Action.show);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /registers/(\\d+) -> AccountController#show(id)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -954,7 +971,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoute_ModelRenamed_ShowNew() throws Exception {
-		router.addRoute("{models=registers}/new", Account.class, Action.showNew);
+		router.addResource("{models=registers}/new", Account.class, Action.showNew);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /registers/new -> AccountController#showNew", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -979,7 +996,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoutes() throws Exception {
-		router.addRoutes(Account.class);
+		router.addResources(Account.class);
 		assertEquals(7, router.getRoutes().size());
 		assertEquals("[GET] /accounts -> AccountController#showAll", 					router.getRoutes().get(0).toString());
 		assertEquals("[GET] /accounts/new -> AccountController#showNew", 				router.getRoutes().get(1).toString());
@@ -999,14 +1016,14 @@ public class RouterTests {
 		assertEquals("/accounts/0/edit", router.pathTo(account, showEdit));
 		assertEquals("/accounts/new", router.pathTo(account, showNew));
 		
-		router.removeRoutes(Account.class);
+		router.removeResources(Account.class);
 		assertEquals(0, router.getRoutes().size());
 	}
 	
 	@Test
 	public void testAddModelRoutesTwice() throws Exception {
-		router.addRoutes(Account.class);
-		router.addRoutes(Account.class);
+		router.addResources(Account.class);
+		router.addResources(Account.class);
 		assertEquals(7, router.getRoutes().size());
 		assertEquals("[GET] /accounts -> AccountController#showAll", 					router.getRoutes().get(0).toString());
 		assertEquals("[GET] /accounts/new -> AccountController#showNew", 				router.getRoutes().get(1).toString());
@@ -1026,14 +1043,14 @@ public class RouterTests {
 		assertEquals("/accounts/0/edit", router.pathTo(account, showEdit));
 		assertEquals("/accounts/new", router.pathTo(account, showNew));
 		
-		router.removeRoutes(Account.class);
+		router.removeResources(Account.class);
 		assertEquals(0, router.getRoutes().size());
 	}
 	
 	@Test
 	public void testAddModelRoutes_AddShowAll() throws Exception {
-		router.addRoutes(Account.class);
-		router.addRoute("{models}/{type:\\w+}", Account.class, showAll);
+		router.addResources(Account.class);
+		router.addResource("{models}/{type:\\w+}", Account.class, showAll);
 		assertEquals(8, router.getRoutes().size());
 		assertEquals("[GET] /accounts -> AccountController#showAll", 					router.getRoutes().get(0).toString());
 		assertEquals("[GET] /accounts/new -> AccountController#showNew", 				router.getRoutes().get(1).toString());
@@ -1053,18 +1070,18 @@ public class RouterTests {
 		assertEquals("/accounts/0/edit", router.pathTo(account, showEdit));
 		assertEquals("/accounts/new", router.pathTo(account, showNew));
 		
-		router.removeRoute("{models}/{type:\\w+}", Account.class, showAll);
+		router.removeResource("{models}/{type:\\w+}", Account.class, showAll);
 		assertEquals(7, router.getRoutes().size());
 		assertEquals("/accounts", router.pathTo(account, showAll));
 		
-		router.removeRoutes(Account.class);
+		router.removeResources(Account.class);
 		assertEquals(0, router.getRoutes().size());
 	}
 	
 	@Test
 	public void testAddShowAll_AddModelRoutes() throws Exception {
-		router.addRoute("{models}/{type:\\w+}", Account.class, showAll);
-		router.addRoutes(Account.class);
+		router.addResource("{models}/{type:\\w+}", Account.class, showAll);
+		router.addResources(Account.class);
 		assertEquals(8, router.getRoutes().size());
 		assertEquals("[GET] /accounts -> AccountController#showAll", 					router.getRoutes().get(0).toString());
 		assertEquals("[GET] /accounts/new -> AccountController#showNew", 				router.getRoutes().get(1).toString());
@@ -1085,16 +1102,16 @@ public class RouterTests {
 		assertEquals("/accounts/0/edit", router.pathTo(account, showEdit));
 		assertEquals("/accounts/new", router.pathTo(account, showNew));
 
-		router.removeRoute("{models}/{type:\\w+}", Account.class, showAll);
+		router.removeResource("{models}/{type:\\w+}", Account.class, showAll);
 		assertEquals(7, router.getRoutes().size());
 
-		router.removeRoutes(Account.class);
+		router.removeResources(Account.class);
 		assertEquals(0, router.getRoutes().size());
 	}
 	
 	@Test
 	public void testAddModelRoutes_Single_Show() throws Exception {
-		router.addRoutes(Account.class, Action.show);
+		router.addResources(Account.class, Action.show);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /accounts/(\\d+) -> AccountController#show(id)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -1111,7 +1128,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoutes_Single_ShowAll() throws Exception {
-		router.addRoutes(Account.class, Action.showAll);
+		router.addResources(Account.class, Action.showAll);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /accounts -> AccountController#showAll", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -1128,7 +1145,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoutes_Multiple() throws Exception {
-		router.addRoutes(Account.class, Action.show, Action.showEdit, Action.create);
+		router.addResources(Account.class, Action.show, Action.showEdit, Action.create);
 		assertEquals(3, router.getRoutes().size());
 		assertEquals("[POST] /accounts -> AccountController#create", 					router.getRoutes().get(0).toString());
 		assertEquals("[GET] /accounts/(\\d+) -> AccountController#show(id)", 			router.getRoutes().get(1).toString());
@@ -1147,22 +1164,22 @@ public class RouterTests {
 	
 	@Test(expected=RoutingException.class)
 	public void testAddModelRoutes_MissingModelAndId() throws Exception {
-		router.addRoutes("path", Account.class);
+		router.addResources("path", Account.class);
 	}
 	
 	@Test(expected=RoutingException.class)
 	public void testAddModelRoutes_MissingId() throws Exception {
-		router.addRoutes("{models}/id", Account.class);
+		router.addResources("{models}/id", Account.class);
 	}
 	
 	@Test(expected=RoutingException.class)
 	public void testAddModelRoutes_MissingModel() throws Exception {
-		router.addRoutes("models/{id}", Account.class);
+		router.addResources("models/{id}", Account.class);
 	}
 	
 	@Test
 	public void testAddModelRoutes_DefaultsParts() throws Exception {
-		router.addRoutes("{models}/{id}", Account.class);
+		router.addResources("{models}/{id}", Account.class);
 		assertEquals(7, router.getRoutes().size());
 		assertEquals("[GET] /accounts -> AccountController#showAll", 					router.getRoutes().get(0).toString());
 		assertEquals("[GET] /accounts/new -> AccountController#showNew", 				router.getRoutes().get(1).toString());
@@ -1185,7 +1202,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoutes_DefaultsPartsReversed() throws Exception {
-		router.addRoutes("{id}/{models}", Account.class);
+		router.addResources("{id}/{models}", Account.class);
 		assertEquals(7, router.getRoutes().size());
 		assertEquals("[GET] /accounts -> AccountController#showAll", 					router.getRoutes().get(0).toString());
 		assertEquals("[GET] /accounts/new -> AccountController#showNew", 				router.getRoutes().get(1).toString());
@@ -1208,7 +1225,7 @@ public class RouterTests {
 	
 	@Test
 	public void testAddModelRoutes_CustomId() throws Exception {
-		router.addRoutes("{models}/{id:\\w+}", Account.class);
+		router.addResources("{models}/{id:\\w+}", Account.class);
 		assertEquals(7, router.getRoutes().size());
 		assertEquals("[GET] /accounts -> AccountController#showAll", 					router.getRoutes().get(0).toString());
 		assertEquals("[GET] /accounts/new -> AccountController#showNew", 				router.getRoutes().get(1).toString());
@@ -1228,13 +1245,13 @@ public class RouterTests {
 		assertEquals("/accounts/0/edit", router.pathTo(account, showEdit));
 		assertEquals("/accounts/new", router.pathTo(account, showNew));
 		
-		router.removeRoutes("{models}/{id:\\w+}", Account.class);
+		router.removeResources("{models}/{id:\\w+}", Account.class);
 		assertEquals(0, router.getRoutes().size());
 	}
 	
 	@Test
 	public void testAddModelRoutes_CustomPartAndId() throws Exception {
-		router.addRoutes("{name:\\w+}/{models}/{id:\\w+}", Account.class);
+		router.addResources("{name:\\w+}/{models}/{id:\\w+}", Account.class);
 		assertEquals(7, router.getRoutes().size());
 		assertEquals("[POST] /(\\w+)/accounts -> AccountController#create(name)", 					router.getRoutes().get(0).toString());
 		assertEquals("[PUT] /(\\w+)/accounts/(\\w+) -> AccountController#update(name,id)", 			router.getRoutes().get(1).toString());
@@ -1254,13 +1271,13 @@ public class RouterTests {
 		assertEquals("/personal/accounts/0/edit", router.pathTo(account, showEdit));
 		assertEquals("/personal/accounts/new", router.pathTo(account, showNew));
 
-		router.removeRoutes("{name:\\w+}/{models}/{id:\\w+}", Account.class);
+		router.removeResources("{name:\\w+}/{models}/{id:\\w+}", Account.class);
 		assertEquals(0, router.getRoutes().size());
 	}
 	
 	@Test
 	public void testAddModelRoutes_Prefix() throws Exception {
-		router.addRoutes("prefix/{models}/{id}", Account.class);
+		router.addResources("prefix/{models}/{id}", Account.class);
 		assertEquals(7, router.getRoutes().size());
 		assertEquals("[GET] /prefix/accounts -> AccountController#showAll", 					router.getRoutes().get(0).toString());
 		assertEquals("[GET] /prefix/accounts/new -> AccountController#showNew", 				router.getRoutes().get(1).toString());
@@ -1280,13 +1297,13 @@ public class RouterTests {
 		assertEquals("/prefix/accounts/0/edit", router.pathTo(account, showEdit));
 		assertEquals("/prefix/accounts/new", router.pathTo(account, showNew));
 
-		router.removeRoutes("prefix/{models}/{id}", Account.class);
+		router.removeResources("prefix/{models}/{id}", Account.class);
 		assertEquals(0, router.getRoutes().size());
 	}
 	
 	@Test
 	public void testAddModelRoutes_Partial() throws Exception {
-		router.addRoutes("{models=account}{id}", Account.class);
+		router.addResources("{models=account}{id}", Account.class);
 		assertEquals(7, router.getRoutes().size());
 		assertEquals("[GET] /account -> AccountController#showAll", 				router.getRoutes().get(0).toString());
 		assertEquals("[GET] /account/new -> AccountController#showNew",				router.getRoutes().get(1).toString());
@@ -1306,13 +1323,13 @@ public class RouterTests {
 		assertEquals("/account0/edit", router.pathTo(account, showEdit));
 		assertEquals("/account/new", router.pathTo(account, showNew));
 
-		router.removeRoutes("{models=account}{id}", Account.class);
+		router.removeResources("{models=account}{id}", Account.class);
 		assertEquals(0, router.getRoutes().size());
 	}
 	
 	@Test
 	public void testAddModelRoutes_PartialAsId() throws Exception {
-		router.addRoutes("{id=type:\\w+}{models=Account}", Account.class);
+		router.addResources("{id=type:\\w+}{models=Account}", Account.class);
 		assertEquals(7, router.getRoutes().size());
 		assertEquals("[GET] /Account -> AccountController#showAll", 					router.getRoutes().get(0).toString());
 		assertEquals("[GET] /Account/new -> AccountController#showNew",					router.getRoutes().get(1).toString());
@@ -1332,13 +1349,13 @@ public class RouterTests {
 		assertEquals("/checkingAccount/edit", router.pathTo(account, showEdit));
 		assertEquals("/Account/new", router.pathTo(account, showNew));
 
-		router.removeRoutes("{id=type:\\w+}{models=Account}", Account.class);
+		router.removeResources("{id=type:\\w+}{models=Account}", Account.class);
 		assertEquals(0, router.getRoutes().size());
 	}
 	
 	@Test
 	public void testAddModelRoutes_ParamPart() throws Exception {
-		router.addRoutes("{models}/{id}?{name:\\w+}", Account.class);
+		router.addResources("{models}/{id}?{name:\\w+}", Account.class);
 		assertEquals(7, router.getRoutes().size());
 		assertEquals("[POST] /accounts\\?name\\=(\\w+) -> AccountController#create(name)", 					router.getRoutes().get(0).toString());
 		assertEquals("[PUT] /accounts/(\\d+)\\?name\\=(\\w+) -> AccountController#update(id,name)", 			router.getRoutes().get(1).toString());
@@ -1358,13 +1375,13 @@ public class RouterTests {
 		assertEquals("/accounts/0/edit?name=personal", router.pathTo(account, showEdit));
 		assertEquals("/accounts/new?name=personal", router.pathTo(account, showNew));
 
-		router.removeRoutes("{models}/{id}?{name:\\w+}", Account.class);
+		router.removeResources("{models}/{id}?{name:\\w+}", Account.class);
 		assertEquals(0, router.getRoutes().size());
 	}
 	
 	@Test
 	public void testAddModelRoutes_ParamPartsGiven() throws Exception {
-		router.addRoutes("{models}/{id}?{type=savings}{name=holiday}", Account.class);
+		router.addResources("{models}/{id}?{type=savings}{name=holiday}", Account.class);
 		assertEquals(7, router.getRoutes().size());
 		assertEquals("[GET] /accounts -> AccountController#showAll(type=savings,name=holiday)", 				router.getRoutes().get(0).toString());
 		assertEquals("[GET] /accounts/new -> AccountController#showNew(type=savings,name=holiday)", 			router.getRoutes().get(1).toString());
@@ -1384,13 +1401,13 @@ public class RouterTests {
 		assertEquals("/accounts/0/edit", router.pathTo(account, showEdit));
 		assertEquals("/accounts/new", router.pathTo(account, showNew));
 
-		router.removeRoutes("{models}/{id}?{type=savings}{name=holiday}", Account.class);
+		router.removeResources("{models}/{id}?{type=savings}{name=holiday}", Account.class);
 		assertEquals(0, router.getRoutes().size());
 	}
 	
 	@Test
 	public void testAddModelRoutes_OnlyParamPartsGiven() throws Exception {
-		router.addRoutes("?{type=savings}{name=holiday}", Account.class);
+		router.addResources("?{type=savings}{name=holiday}", Account.class);
 		assertEquals(7, router.getRoutes().size());
 		assertEquals("[GET] /accounts -> AccountController#showAll(type=savings,name=holiday)", 				router.getRoutes().get(0).toString());
 		assertEquals("[GET] /accounts/new -> AccountController#showNew(type=savings,name=holiday)", 			router.getRoutes().get(1).toString());
@@ -1410,10 +1427,10 @@ public class RouterTests {
 		assertEquals("/accounts/0/edit", router.pathTo(account, showEdit));
 		assertEquals("/accounts/new", router.pathTo(account, showNew));
 
-		router.removeRoutes("?{type=savings}{name=holiday}", Account.class);
+		router.removeResources("?{type=savings}{name=holiday}", Account.class);
 		assertEquals(0, router.getRoutes().size());
 	}
-	
+
 	@Test(expected=IllegalArgumentException.class)
 	public void testNamedRoute_InvalidName() throws Exception {
 		router.add("my{ models }Account");
@@ -1421,7 +1438,7 @@ public class RouterTests {
 	
 	@Test
 	public void testNamedRoute_Model_Fixed() throws Exception {
-		router.add("myAccount").asRoute("account1", Account.class, Action.show);
+		router.add("myAccount").asResource("account1", Account.class, Action.show);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /account1 -> AccountController#show", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -1442,8 +1459,8 @@ public class RouterTests {
 	
 	@Test
 	public void testNamedRoute_Model_Fixed_Twice() throws Exception {
-		router.add("myAccount").asRoute("account1", Account.class, Action.show);
-		router.add("myAccount").asRoute("account1", Account.class, Action.show);
+		router.add("myAccount").asResource("account1", Account.class, Action.show);
+		router.add("myAccount").asResource("account1", Account.class, Action.show);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /account1 -> AccountController#show", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -1464,8 +1481,8 @@ public class RouterTests {
 	
 	@Test
 	public void testNamedRoute_Two_Models_Fixed() throws Exception {
-		router.add("myAccount").asRoute("account1", Account.class, Action.show);
-		router.add("myAccount").asRoute("account2", Account.class, Action.show);
+		router.add("myAccount").asResource("account1", Account.class, Action.show);
+		router.add("myAccount").asResource("account2", Account.class, Action.show);
 		assertEquals(2, router.getRoutes().size());
 		assertEquals("[GET] /account1 -> AccountController#show", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -1486,7 +1503,7 @@ public class RouterTests {
 	
 	@Test
 	public void testNamedRoute_Model_FixedVar() throws Exception {
-		router.add("myAccount").asRoute("{models}/{id=0}", Account.class, Action.show);
+		router.add("myAccount").asResource("{models}/{id=0}", Account.class, Action.show);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /accounts/0 -> AccountController#show(id=0)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -1504,7 +1521,7 @@ public class RouterTests {
 	
 	@Test
 	public void testNamedRoute_Model_Create() throws Exception {
-		router.add("myAccount").asRoute(Account.class, create);
+		router.add("myAccount").asResource(Account.class, create);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[POST] /myAccount -> AccountController#create", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -1523,7 +1540,7 @@ public class RouterTests {
 	
 	@Test
 	public void testNamedRoute_Model_Destroy() throws Exception {
-		router.add("myAccount").asRoute(Account.class, destroy);
+		router.add("myAccount").asResource(Account.class, destroy);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[DELETE] /myAccount/(\\d+) -> AccountController#destroy(id)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -1541,7 +1558,7 @@ public class RouterTests {
 	
 	@Test
 	public void testNamedRoute_Model_Update() throws Exception {
-		router.add("myAccount").asRoute(Account.class, update);
+		router.add("myAccount").asResource(Account.class, update);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[PUT] /myAccount/(\\d+) -> AccountController#update(id)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -1559,7 +1576,7 @@ public class RouterTests {
 	
 	@Test
 	public void testNamedRoute_Model_Show() throws Exception {
-		router.add("myAccount").asRoute(Account.class, show);
+		router.add("myAccount").asResource(Account.class, show);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /myAccount/(\\d+) -> AccountController#show(id)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -1577,7 +1594,7 @@ public class RouterTests {
 	
 	@Test
 	public void testNamedRoute_Model_ShowAll() throws Exception {
-		router.add("myAccount").asRoute(Account.class, showAll);
+		router.add("myAccount").asResource(Account.class, showAll);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /myAccount -> AccountController#showAll", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -1596,7 +1613,7 @@ public class RouterTests {
 	
 	@Test
 	public void testNamedRoute_Model_ShowEdit() throws Exception {
-		router.add("myAccount").asRoute(Account.class, showEdit);
+		router.add("myAccount").asResource(Account.class, showEdit);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /myAccount/(\\d+)/edit -> AccountController#showEdit(id)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -1615,7 +1632,7 @@ public class RouterTests {
 	
 	@Test
 	public void testNamedRoute_Model_ShowNew() throws Exception {
-		router.add("myAccount").asRoute(Account.class, showNew);
+		router.add("myAccount").asResource(Account.class, showNew);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /myAccount/new -> AccountController#showNew", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -1634,7 +1651,7 @@ public class RouterTests {
 	
 	@Test
 	public void testNamedRoute_Model() throws Exception {
-		router.add("myAccount").asRoute(Account.class, showAll);
+		router.add("myAccount").asResource(Account.class, showAll);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /myAccount -> AccountController#showAll", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -1652,7 +1669,7 @@ public class RouterTests {
 	
 	@Test
 	public void testNamedRoute_Model_WithParams() throws Exception {
-		router.add("myAccount").asRoute("{models}/show?{name=business}", Account.class, Action.show);
+		router.add("myAccount").asResource("{models}/show?{name=business}", Account.class, Action.show);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /accounts/show -> AccountController#show(name=business)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -1670,7 +1687,7 @@ public class RouterTests {
 	
 	@Test
 	public void testNamedRoute_Model_OnlyParams() throws Exception {
-		router.add("myAccount").asRoute("?{name=business}", Account.class, Action.show);
+		router.add("myAccount").asResource("?{name=business}", Account.class, Action.show);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /accounts -> AccountController#show(name=business)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -1690,7 +1707,7 @@ public class RouterTests {
 	public void testNestedRoutes() throws Exception {
 		Member member = new Member();
 		Phone phone = new Phone();
-		router.addRoutes(Member.class).hasMany("phones");
+		router.addResources(Member.class).hasMany("phones");
 		assertEquals(10, router.getRoutes().size());
 		assertEquals("[GET] /members -> MemberController#showAll", 						router.getRoutes().get(0).toString());
 		assertEquals("[GET] /members/new -> MemberController#showNew", 					router.getRoutes().get(1).toString());
@@ -1737,7 +1754,7 @@ public class RouterTests {
 	
 	@Test
 	public void testNestedRoutes_Bidi() throws Exception {
-		router.addRoutes(Account.class).hasMany("categories");
+		router.addResources(Account.class).hasMany("categories");
 		assertEquals(10, router.getRoutes().size());
 		assertEquals("[GET] /accounts -> AccountController#showAll", 						router.getRoutes().get(0).toString());
 		assertEquals("[GET] /accounts/new -> AccountController#showNew", 					router.getRoutes().get(1).toString());
@@ -1794,7 +1811,7 @@ public class RouterTests {
 	public void testNestedRoutes_CustomId() throws Exception {
 		Member member = new Member();
 		Phone phone = new Phone();
-		router.addRoutes("{id=type:\\w+}{models=Member}", Member.class).hasMany("phones");
+		router.addResources("{id=type:\\w+}{models=Member}", Member.class).hasMany("phones");
 		assertEquals(10, router.getRoutes().size());
 		assertEquals("[GET] /Member -> MemberController#showAll", 					router.getRoutes().get(0).toString());
 		assertEquals("[GET] /Member/new -> MemberController#showNew",					router.getRoutes().get(1).toString());
@@ -1838,13 +1855,13 @@ public class RouterTests {
 		assertEquals(showAll, ch.action);
 		assertEquals("[[member[type], admin]]", asString(ch.params));
 
-		router.removeRoutes("{id=type:\\w+}{models=Member}", Member.class);
+		router.removeResources("{id=type:\\w+}{models=Member}", Member.class);
 		assertEquals(0, router.getRoutes().size());
 	}
 	
 	@Test
 	public void testNestedRoutes_CustomId_Bidi() throws Exception {
-		router.addRoutes("{id=type:\\w+}{models=Account}", Account.class).hasMany("categories");
+		router.addResources("{id=type:\\w+}{models=Account}", Account.class).hasMany("categories");
 		assertEquals(10, router.getRoutes().size());
 		assertEquals("[GET] /Account -> AccountController#showAll", 					router.getRoutes().get(0).toString());
 		assertEquals("[GET] /Account/new -> AccountController#showNew",					router.getRoutes().get(1).toString());
@@ -1896,13 +1913,13 @@ public class RouterTests {
 		assertEquals(create, ch.action);
 		assertEquals("[[category[cAccount][type], checking]]", asString(ch.params));
 
-		router.removeRoutes("{id=type:\\w+}{models=Account}", Account.class);
+		router.removeResources("{id=type:\\w+}{models=Account}", Account.class);
 		assertEquals(0, router.getRoutes().size());
 	}
 	
 	@Test
 	public void testNamedRoute_Controller() throws Exception {
-		router.add("my_account").asRoute(AccountController.class, showAll);
+		router.add("my_account").asResource(Account.class, showAll);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /my_account -> AccountController#showAll", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -1928,7 +1945,7 @@ public class RouterTests {
 	
 	@Test
 	public void testNamedRoute_Controller_FixedAndWithVariable() throws Exception {
-		router.add("my_account").asRoute("accounts/{name:\\w+}", AccountController.class, Action.show);
+		router.add("my_account").asResource("accounts/{name:\\w+}", Account.class, Action.show);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /accounts/(\\w+) -> AccountController#show(name)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -1955,7 +1972,7 @@ public class RouterTests {
 	
 	@Test
 	public void testNamedRoute_Controller_FixedAndWithIdVariable() throws Exception {
-		router.add("my_account").asRoute("accounts/{id}", AccountController.class, Action.show);
+		router.add("my_account").asResource("accounts/{id}", Account.class, Action.show);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /accounts/(\\d+) -> AccountController#show(id)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -1982,7 +1999,7 @@ public class RouterTests {
 	
 	@Test
 	public void testNamedRoute_Controller_FixedAndWithInvalidVariable() throws Exception {
-		router.add("my_account").asRoute("accounts/{name:\\w+}", AccountController.class, Action.show);
+		router.add("my_account").asResource("accounts/{name:\\w+}", Account.class, Action.show);
 		assertEquals("/#", router.pathTo("my_account", 1.0));
 
 		RouteHandler handler = router.getHandler(request("[GET] /accounts/1.0"));
@@ -1991,7 +2008,7 @@ public class RouterTests {
 	
 	@Test
 	public void testNamedRoute_Controller_FixedAndWithInvalidIdVariable() throws Exception {
-		router.add("my_account").asRoute("accounts/{id}", AccountController.class, Action.show);
+		router.add("my_account").asResource("accounts/{id}", Account.class, Action.show);
 		assertEquals("/#", router.pathTo("my_account", "bob"));
 
 		RouteHandler handler = router.getHandler(request("[GET] /accounts/bob"));
@@ -2000,7 +2017,7 @@ public class RouterTests {
 	
 	@Test
 	public void testNamedRoute_Controller_FixedAndWithParams() throws Exception {
-		router.add("my_account").asRoute("accounts/show?{name=business}", AccountController.class, Action.show);
+		router.add("my_account").asResource("accounts/show?{name=business}", Account.class, Action.show);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /accounts/show -> AccountController#show(name=business)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -2026,9 +2043,9 @@ public class RouterTests {
 	
 	@Test
 	public void testNamedRoute_Controller_OnlyParams() throws Exception {
-		router.add("my_account").asRoute("?{name=business}", AccountController.class, Action.show);
+		router.add("my_account").asResource("?{name=business}", Account.class, Action.show);
 		assertEquals(1, router.getRoutes().size());
-		assertEquals("[GET] /my_account -> AccountController#show(name=business)", router.getRoutes().get(0).toString());
+		assertEquals("[GET] /accounts -> AccountController#show(name=business)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
 		assertEquals("/#", router.pathTo(Account.class, showAll));
 		assertEquals("/#", router.pathTo(Account.class, showNew));
@@ -2039,9 +2056,9 @@ public class RouterTests {
 		assertEquals("/#", router.pathTo(account, showAll));
 		assertEquals("/#", router.pathTo(account, showEdit));
 		assertEquals("/#", router.pathTo(account, showNew));
-		assertEquals("/my_account", router.pathTo("my_account"));
+		assertEquals("/accounts", router.pathTo("my_account"));
 
-		RouteHandler handler = router.getHandler(request("[GET] /my_account"));
+		RouteHandler handler = router.getHandler(request("[GET] /accounts"));
 		assertNotNull(handler);
 		assertEquals(ControllerHandler.class, handler.getClass());
 		ControllerHandler ch = (ControllerHandler) handler;
@@ -2052,7 +2069,7 @@ public class RouterTests {
 	
 	@Test
 	public void testNamedRoute_Controller_NonREST() throws Exception {
-		router.add("my_account").asRoute(AccountController.class, GET);
+		router.add("my_account").asRoute(GET, AccountController.class);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /my_account -> AccountController#handleRequest", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -2078,7 +2095,7 @@ public class RouterTests {
 	
 	@Test
 	public void testNamedRoute_Controller_NonREST_WithRule() throws Exception {
-		router.add("my_account").asRoute("account", AccountController.class, GET);
+		router.add("my_account").asRoute(GET, "account", AccountController.class);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /account -> AccountController#handleRequest", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -2102,9 +2119,10 @@ public class RouterTests {
 		assertEquals("null", asString(ch.params));
 	}
 	
+	@Ignore
 	@Test
 	public void testNamedRoute_Controller_NonREST_Multi() throws Exception {
-		router.add("my_account").asRoutes(AccountController.class, GET, POST);
+//		router.add("my_account").asRoutes(AccountController.class, GET, POST);
 		assertEquals(2, router.getRoutes().size());
 		assertEquals("[GET] /my_account -> AccountController#handleRequest", router.getRoutes().get(0).toString());
 		assertEquals("[POST] /my_account -> AccountController#handleRequest", router.getRoutes().get(1).toString());
@@ -2129,9 +2147,10 @@ public class RouterTests {
 		assertEquals("null", asString(ch.params));
 	}
 	
+	@Ignore
 	@Test
 	public void testNamedRoute_Controller_NonREST_Empty() throws Exception {
-		router.add("my_account").asRoutes(AccountController.class);
+//		router.add("my_account").asRoutes(AccountController.class);
 		assertEquals(5, router.getRoutes().size());
 		assertEquals("[DELETE] /my_account -> AccountController#handleRequest", router.getRoutes().get(0).toString());
 		assertEquals("[GET] /my_account -> AccountController#handleRequest", router.getRoutes().get(1).toString());
@@ -2159,9 +2178,10 @@ public class RouterTests {
 		assertEquals("null", asString(ch.params));
 	}
 	
+	@Ignore
 	@Test
 	public void testNamedRoute_Controller_NonREST_Multi_WithRule() throws Exception {
-		router.add("my_account").asRoutes("account", AccountController.class, GET, POST);
+//		router.add("my_account").asRoutes("account", AccountController.class, GET, POST);
 		assertEquals(2, router.getRoutes().size());
 		assertEquals("[GET] /account -> AccountController#handleRequest", router.getRoutes().get(0).toString());
 		assertEquals("[POST] /account -> AccountController#handleRequest", router.getRoutes().get(1).toString());
@@ -2188,7 +2208,7 @@ public class RouterTests {
 	
 	@Test
 	public void testNamedRoute_Controller_NonREST_Wildcard() throws Exception {
-		router.add("my_account").asRoutes("/account/*", AccountController.class, GET);
+		router.add("my_account").asRoute(GET, "/account/*", AccountController.class);
 		assertEquals(3, router.getRoutes().size());
 		assertEquals("[GET] /account -> AccountController#handleRequest", router.getRoutes().get(0).toString());
 		assertEquals("[GET] /account/(.*) -> AccountController#handleRequest", router.getRoutes().get(1).toString());
@@ -2214,9 +2234,10 @@ public class RouterTests {
 		assertEquals("null", asString(ch.params));
 	}
 	
+	@Ignore
 	@Test
 	public void testNamedRoute_Controller_NonREST_Multi_Wildcard() throws Exception {
-		router.add("my_account").asRoutes("/account/*", AccountController.class);
+//		router.add("my_account").asRoutes("/account/*", AccountController.class);
 		assertEquals(15, router.getRoutes().size());
 		int i = 0;
 		assertEquals("[DELETE] /account -> AccountController#handleRequest", router.getRoutes().get(i++).toString());
@@ -2255,14 +2276,14 @@ public class RouterTests {
 		assertEquals("null", asString(ch.params));
 	}
 
-	@Test(expected=IllegalArgumentException.class)
-	public void testNamedRoute_Controller_NonREST_InvalidWildcard() throws Exception {
-		router.add("my_account").asRoutes("/account*", AccountController.class);
-	}
+//	@Test(expected=IllegalArgumentException.class)
+//	public void testNamedRoute_Controller_NonREST_InvalidWildcard() throws Exception {
+//		router.add("my_account").asRoutes("/account*", AccountController.class);
+//	}
 
 	@Test
 	public void testNamedRoute_View() throws Exception {
-		router.add("my_account").asRoute(AccountView.class);
+		router.add("my_account").asView(AccountView.class);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /my_account -> AccountView", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -2287,24 +2308,24 @@ public class RouterTests {
 	
 	@Test(expected=IllegalArgumentException.class)
 	public void testNamedRoute_View_InvalidClass() throws Exception {
-		router.add("my_account").asRoute(InvalidView.class);
+		router.add("my_account").asView(InvalidView.class);
 	}
 	
 	@Test(expected=IllegalArgumentException.class)
 	public void testNamedRoute_View_InvalidClass_ValidPath() throws Exception {
 		// cannot add a view class as a named route
-		router.add("my_account").asRoute("account", InvalidView.class);
+		router.add("my_account").asView("account", InvalidView.class);
 	}
 	
-	@Test(expected=IllegalArgumentException.class)
-	public void testNamedRoute_View_InvalidArgument() throws Exception {
-		// cannot add a view class and specify an action argument
-		router.add("my_account").asRoute("{models}/show?{name=business}", AccountView.class, Action.show);
-	}
+//	@Test(expected=IllegalArgumentException.class)
+//	public void testNamedRoute_View_InvalidArgument() throws Exception {
+//		// cannot add a view class and specify an action argument
+//		router.add("my_account").asResource("{models}/show?{name=business}", AccountView.class, Action.show);
+//	}
 	
 	@Test
 	public void testNamedRoute_View_FixedAndWithParams() throws Exception {
-		router.add("my_account").asRoute("accounts/show?{name=business}", AccountView.class);
+		router.add("my_account").asView("accounts/show?{name=business}", AccountView.class);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /accounts/show -> AccountView(name=business)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -2329,7 +2350,7 @@ public class RouterTests {
 	
 	@Test
 	public void testNamedRoute_View_OnlyParams() throws Exception {
-		router.add("my_account").asRoute("?{name=business}", AccountView.class);
+		router.add("my_account").asView("?{name=business}", AccountView.class);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /my_account -> AccountView(name=business)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
@@ -2354,7 +2375,7 @@ public class RouterTests {
 
 	@Test
 	public void testRouteStyleSheet() throws Exception {
-		router.addRoute(AccountStyles.class);
+		router.addAsset(AccountStyles.class);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /org/oobium/app/server/routes/router_tests/account_styles.css -> AccountStyles", router.getRoutes().get(0).toString());
 
@@ -2368,7 +2389,7 @@ public class RouterTests {
 	
 	@Test
 	public void testRouteScriptFile() throws Exception {
-		router.addRoute(AccountScripts.class);
+		router.addAsset(AccountScripts.class);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /org/oobium/app/server/routes/router_tests/account_scripts.js -> AccountScripts", router.getRoutes().get(0).toString());
 
@@ -2382,22 +2403,21 @@ public class RouterTests {
 	
 	@Test
 	public void testGetPaths() throws Exception {
-		router.addRoutes(Account.class);
+		router.addResources(Account.class);
 		System.out.println(router.getPaths());
 	}
 
 	@Test
 	public void testPublish() throws Exception {
 		router.setDiscovery("paths");
-		router.addRoute(AccountScripts.class).publish();
+		router.addAsset(AccountScripts.class).publish();
 	}
 
 	@Test
 	public void testImpliedNamedRoute() throws Exception {
-		Controller controller = new Controller();
-		router.addRoute(GET, "/test/route/{name=business}", controller);
+		router.addRoute(GET, "/test/route/{name=business}", AccountController.class);
 		assertEquals(1, router.getRoutes().size());
-		assertEquals("[GET] /test/route/business -> " + controller.getClass().getSimpleName() + "-" + controller.hashCode() + "#handleRequest(name=business)", router.getRoutes().get(0).toString());
+		assertEquals("[GET] /test/route/business -> AccountController#handleRequest(name=business)", router.getRoutes().get(0).toString());
 		assertEquals("/#", router.pathTo(Account.class, create));
 		assertEquals("/#", router.pathTo(Account.class, showAll));
 		assertEquals("/#", router.pathTo(Account.class, showNew));
@@ -2408,14 +2428,40 @@ public class RouterTests {
 		assertEquals("/#", router.pathTo(account, showAll));
 		assertEquals("/#", router.pathTo(account, showEdit));
 		assertEquals("/#", router.pathTo(account, showNew));
-		assertEquals("/test/route/business", router.pathTo("test_route_name"));
+		assertEquals("/test/route/business", router.pathTo("getTestRouteName"));
 
 		RouteHandler handler = router.getHandler(request("[GET] /test/route/business"));
 		assertNotNull(handler);
 		assertEquals(ControllerHandler.class, handler.getClass());
 		ControllerHandler ch = (ControllerHandler) handler;
-		assertEquals(controller, ch.controller);
+		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals("[[name, business]]", asString(ch.params));
+	}
+	
+	@Test
+	public void testImpliedNamedRoute_PseudoRest() throws Exception {
+		router.addRoute("{types:[\\w_]+}", AccountController.class, showAll);
+		assertEquals(1, router.getRoutes().size());
+		assertEquals("[GET] /([\\w_]+) -> AccountController#showAll(types)", router.getRoutes().get(0).toString());
+		assertEquals("/#", router.pathTo(Account.class, create));
+		assertEquals("/#", router.pathTo(Account.class, showAll));
+		assertEquals("/#", router.pathTo(Account.class, showNew));
+		assertEquals("/#", router.pathTo(account, create));
+		assertEquals("/#", router.pathTo(account, destroy));
+		assertEquals("/#", router.pathTo(account, update));
+		assertEquals("/#", router.pathTo(account, show));
+		assertEquals("/#", router.pathTo(account, showAll));
+		assertEquals("/#", router.pathTo(account, showEdit));
+		assertEquals("/#", router.pathTo(account, showNew));
+		assertEquals("/#", router.pathTo("showAllTypes"));
+		assertEquals("/business", router.pathTo("showAllTypes", "business"));
+
+		RouteHandler handler = router.getHandler(request("[GET] /my_business"));
+		assertNotNull(handler);
+		assertEquals(ControllerHandler.class, handler.getClass());
+		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(AccountController.class, ch.controllerClass);
+		assertEquals("[[types, my_business]]", asString(ch.params));
 	}
 	
 }

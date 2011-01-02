@@ -40,8 +40,8 @@ import javax.mail.internet.MimeMessage;
 
 import org.oobium.app.AppService;
 import org.oobium.app.server.controller.Action;
+import org.oobium.app.server.routing.AppRouter;
 import org.oobium.app.server.routing.IUrlRouting;
-import org.oobium.app.server.routing.Router;
 import org.oobium.http.constants.ContentType;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
@@ -71,7 +71,7 @@ public abstract class AbstractMailer implements IUrlRouting {
 //	protected String charset;
 	
 	/**
-	 * The content type for the email. This defaults to “text/plain” but the filename may specify it
+	 * The content type for the email. This defaults to â€œtext/plainâ€� but the filename may specify it
 	 */
 	protected ContentType contentType;
 
@@ -108,7 +108,7 @@ public abstract class AbstractMailer implements IUrlRouting {
 	protected final Logger logger;
 	private final AppService app;
 	private Properties properties;
-	private final Router router;
+	private final AppRouter router;
 	private boolean isRendered;
 
 	public AbstractMailer() {
@@ -200,7 +200,7 @@ public abstract class AbstractMailer implements IUrlRouting {
 				}
 				return properties;
 			}
-			String s = underscored(name).replaceAll("_", ".");
+			String s = underscored(name).replace('_', '.');
 			throw new IllegalStateException("mail." + s + " properties are not configured for: " + app);
 		}
 		throw new IllegalStateException("properties are not configured for: " + app);

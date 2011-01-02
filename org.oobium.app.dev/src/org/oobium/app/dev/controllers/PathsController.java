@@ -20,21 +20,15 @@ import static org.oobium.utils.json.JsonUtils.toJson;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.oobium.app.AppService;
 import org.oobium.app.ModuleService;
 import org.oobium.app.dev.AppDevActivator;
 import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.routing.Router;
-import org.oobium.http.HttpRequest;
 import org.oobium.http.constants.ContentType;
 
 public class PathsController extends Controller {
-
-	public PathsController(HttpRequest request, Map<String, Object> routeParams) {
-		super(request, routeParams);
-	}
 
 	private List<String> filter(List<String> paths) {
 		List<String> filtered = new ArrayList<String>();

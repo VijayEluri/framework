@@ -23,7 +23,6 @@ import org.oobium.persist.Model;
 
 public class ControllerRoute extends Route {
 
-	public final Controller controller;
 	public final Class<? extends Model> modelClass;
 	public final Class<? extends Controller> controllerClass;
 	public final Action action;
@@ -41,7 +40,6 @@ public class ControllerRoute extends Route {
 	private ControllerRoute(Type requestType, String rule, Controller controller, Class<? extends Model> modelClass, Class<? extends Controller> controllerClass, Action action) {
 		super(Route.CONTROLLER, requestType, rule);
 
-		this.controller = controller;
 		this.modelClass = modelClass;
 		this.controllerClass = controllerClass;
 
@@ -65,15 +63,16 @@ public class ControllerRoute extends Route {
 		setString();
 	}
 	
+	@Override
+	protected String[][] params() {
+		return params;
+	}
+	
 	public void setString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append('[').append(requestType).append(']').append(' ');
 		sb.append(isFixed() ? path : pattern.pattern()).append(' ').append('-').append('>').append(' ');
-		if(controller == null) {
-			sb.append(controllerClass.getSimpleName());
-		} else {
-			sb.append(controllerClass.getSimpleName()).append('-').append(controller.hashCode());
-		}
+		sb.append(controllerClass.getSimpleName());
 		sb.append('#');
 		if(action != null) {
 			sb.append(action);

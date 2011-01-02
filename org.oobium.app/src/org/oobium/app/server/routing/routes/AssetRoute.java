@@ -33,6 +33,11 @@ public class AssetRoute extends Route {
 		return provider.getClass().getClassLoader();
 	}
 	
+	@Override
+	protected String[][] params() {
+		return null;
+	}
+	
 	private void setString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append('[').append(requestType).append(']').append(' ');

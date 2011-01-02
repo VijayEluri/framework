@@ -10,7 +10,7 @@
  ******************************************************************************/
 package org.oobium.app.server.routing.handlers;
 
-import static org.oobium.utils.DateUtils.*;
+import static org.oobium.utils.DateUtils.httpDate;
 
 import java.net.URL;
 import java.text.ParseException;
@@ -23,6 +23,7 @@ import org.oobium.http.HttpRequest;
 import org.oobium.http.HttpRequest.Type;
 import org.oobium.http.constants.ContentType;
 import org.oobium.http.constants.Header;
+import org.oobium.utils.Config.Mode;
 
 public class AssetHandler extends RouteHandler {
 
@@ -38,17 +39,20 @@ public class AssetHandler extends RouteHandler {
 
 	@Override
 	public Response routeRequest(HttpRequest request) throws Exception {
-		if(lastModified != null && lastModified.length() > 0) {
+		if(Mode.isNotDEV() && lastModified != null && lastModified.length() > 0) {
 			String ifMod = request.getHeader(Header.IF_MODIFIED_SINCE);
 			if(ifMod != null && ifMod.length() > 0) {
 				try {
 					Date since = httpDate(ifMod);
 					Date last = httpDate(lastModified);
-					if(last.before(since)) {
+					if(!since.after(last)) {
 						return Response.notModified(request.getType());
 					}
 				} catch(ParseException e) {
-					// ignore and fall through
+					if(logger.isLoggingTrace()) {
+						logger.trace(e.getMessage());
+					}
+					// fall through
 				}
 			}
 		}

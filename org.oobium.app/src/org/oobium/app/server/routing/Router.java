@@ -21,45 +21,32 @@ import static org.oobium.http.HttpRequest.Type.DELETE;
 import static org.oobium.http.HttpRequest.Type.GET;
 import static org.oobium.http.HttpRequest.Type.POST;
 import static org.oobium.http.HttpRequest.Type.PUT;
-import static org.oobium.persist.ModelAdapter.getAdapter;
 import static org.oobium.utils.CharStreamUtils.closer;
 import static org.oobium.utils.CharStreamUtils.find;
 import static org.oobium.utils.CharStreamUtils.findAny;
 import static org.oobium.utils.CharStreamUtils.isEqual;
 import static org.oobium.utils.StringUtils.blank;
+import static org.oobium.utils.StringUtils.camelCase;
 import static org.oobium.utils.StringUtils.controllerCanonicalName;
-import static org.oobium.utils.StringUtils.encode;
 import static org.oobium.utils.StringUtils.getResourceAsString;
-import static org.oobium.utils.StringUtils.tableName;
 import static org.oobium.utils.StringUtils.underscored;
-import static org.oobium.utils.StringUtils.varName;
 import static org.oobium.utils.json.JsonUtils.toStringList;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.oobium.app.AssetProvider;
+import org.oobium.app.ModuleService;
 import org.oobium.app.server.controller.Action;
 import org.oobium.app.server.controller.Controller;
-import org.oobium.app.server.response.Response;
-import org.oobium.app.server.routing.handlers.AssetHandler;
-import org.oobium.app.server.routing.handlers.AuthorizationHandler;
-import org.oobium.app.server.routing.handlers.ControllerHandler;
-import org.oobium.app.server.routing.handlers.DynamicAssetHandler;
-import org.oobium.app.server.routing.handlers.ViewHandler;
 import org.oobium.app.server.routing.routes.AssetRoute;
 import org.oobium.app.server.routing.routes.ControllerRoute;
 import org.oobium.app.server.routing.routes.DynamicAssetRoute;
@@ -68,48 +55,61 @@ import org.oobium.app.server.view.DynamicAsset;
 import org.oobium.app.server.view.View;
 import org.oobium.http.HttpRequest;
 import org.oobium.http.HttpRequest.Type;
-import org.oobium.http.HttpResponse;
 import org.oobium.http.constants.Header;
 import org.oobium.logging.ILogger;
 import org.oobium.persist.Model;
 import org.oobium.utils.Base64;
 
-public class Router implements IPathRouting, IUrlRouting {
-
-	private static final String DISCOVERY_DEFAULT = "__discovery__";
+public class Router {
 
 	public static final String UNKNOWN_PATH = "/#";
 	public static final String HOME = "Home";
 
-	private final ILogger logger;
-
-	private final int port;
-	private final String[] hosts;
-	
-	private Map<String, Route[]> routes;
-	private List<Route> patternRoutes;
-	private Map<Type, Map<String, Route>> fixedRoutes;
-	private Map<String, Class<?>> namedClasses;
-	private Map<String, String> hasMany;
-
-	private Map<String, Realm> realms;
-	private Map<Type, Map<String, Realm>> authentications;
-	
-	private Map<String, ClassLoader> controllers;
-
-	private String discoveryHeader;
-	Set<Route> published;
-	
-	public Router(ILogger logger, String host, int port) {
-		this.logger = logger;
-		this.hosts = new String[] { host };
-		this.port = port;
+	static void checkClass(Class<?> clazz) {
+		int modifiers = clazz.getModifiers();
+		if(Modifier.isAbstract(modifiers)) {
+			throw new IllegalArgumentException(clazz.getCanonicalName() + " cannot be routed because it is an abstract class");
+		}
+		if(Modifier.isPrivate(modifiers)) {
+			throw new IllegalArgumentException(clazz.getCanonicalName() + " cannot be routed because it is a private class");
+		}
+		if(clazz != DiscoveryController.class) {
+			try {
+				clazz.getConstructor();
+			} catch(SecurityException e) {
+				throw new IllegalArgumentException(clazz.getCanonicalName() + " cannot be routed", e);
+			} catch(NoSuchMethodException e) {
+				throw new IllegalArgumentException(clazz.getCanonicalName() + " cannot be routed because it does not have a no-args constructor");
+			}
+		}
 	}
 
-	public Router(ILogger logger, String[] hosts, int port) {
-		this.logger = logger;
-		this.hosts = hosts;
-		this.port = port;
+	private static void checkName(String name) {
+		for(int i = 0; i < name.length(); i++) {
+			if(!Character.isLetterOrDigit(name.charAt(i)) && name.charAt(i) != '_') {
+				throw new IllegalArgumentException("name can consist only of letters, digits, and underscores");
+			}
+		}
+	}
+
+	
+	protected final ModuleService service;
+	protected final ILogger logger;
+
+	protected Map<String, Route[]> routes;
+	protected List<Route> patternRoutes;
+	protected Map<Type, Map<String, Route>> fixedRoutes;
+	protected Map<String, Class<?>> namedClasses;
+	protected Map<String, String> hasMany;
+
+	protected Map<Type, Map<String, Realm>> authentications;
+	private Map<String, Realm> realms;
+	
+	Set<Route> published;
+	
+	public Router(ModuleService service) {
+		this.service = service;
+		this.logger = service.getLogger();
 	}
 
 	/**
@@ -119,10 +119,18 @@ public class Router implements IPathRouting, IUrlRouting {
 	 * @throws IllegalArgumentException if the given name is not valid for named routes
 	 */
 	public NamedRoute add(String name) {
-		validateName(name);
+		checkName(name);
 		return new NamedRoute(this, name);
 	}
 
+	public Routed addAsset(Class<? extends DynamicAsset> clazz) {
+		checkClass(clazz);
+		String name = getAssetName(clazz);
+		Route route = new DynamicAssetRoute(GET, name, clazz);
+		addRoute(name, route);
+		return new Routed(this, route);
+	}
+	
 	public Routed addAssetRoutes(AssetProvider provider) {
 		List<String> paths = provider.getAssetList();
 		List<Route> routes = new ArrayList<Route>();
@@ -148,7 +156,7 @@ public class Router implements IPathRouting, IUrlRouting {
 		}
 		return new Routed(this);
 	}
-	
+
 	public void addBasicAuthentication(String path, String realm) {
 		addBasicAuthentication(GET, path, realm);
 	}
@@ -184,44 +192,44 @@ public class Router implements IPathRouting, IUrlRouting {
 		}
 		r.authorize(username, password);
 	}
-
-	public void addControllerNames(ClassLoader loader, Collection<String> controllerNames) {
-		if(controllers == null) {
-			controllers = new LinkedHashMap<String, ClassLoader>();
-		}
-		for(String name : controllerNames) {
-			controllers.put(name, loader);
-		}
-	}
-
+	
 	void addHasMany(String parentKey, String key) {
 		if(hasMany == null) {
 			hasMany = new HashMap<String, String>();
 		}
 		hasMany.put(parentKey, key);
 	}
-	
+
 	void addNamedClass(String name, Class<?> clazz) {
 		if(namedClasses == null) {
 			namedClasses = new HashMap<String, Class<?>>();
 		}
 		namedClasses.put(name, clazz);
 	}
-
-	public Routed addRoute(Class<? extends DynamicAsset> clazz) {
-		validateNoArgsCtor(clazz);
-		String name = "/" + underscored(clazz.getCanonicalName());
-		name = name.replaceAll("\\.", "/") + "." + DynamicAsset.getFileExtension(clazz);
-		Route route = new DynamicAssetRoute(GET, name, clazz);
-		addRoute(name, route);
-		return new Routed(this, route);
+	
+	/**
+	 * Add a single resource route to this router for the given model class and action.
+	 * <p>Refer to the {@link Action} class for details on how the given action denotes the path and request type.</p>
+	 * @param clazz the model class to use as a resource route
+	 * @param action the action that this resource route is for
+	 * @return a Routed object
+	 * @see #addResources(Class)
+	 * @see Action
+	 */
+	public Routed addResource(Class<? extends Model> clazz, Action action) {
+		return addResource(null, clazz, action);
 	}
 
-	public Routed addRoute(Class<? extends Model> clazz, Action action) {
-		return addRoute(null, clazz, action);
-	}
-
-	public Routed addRoute(String path, Class<? extends Model> clazz, Action action) {
+	/**
+	 * Add a single resource route to this router for the given model class and action.
+	 * Unlike {@link #addResource(Class, Action)}, this method allows for overriding the conventional path.
+	 * <p>Refer to the {@link Action} class for details on how the given action denotes the path and request type.</p>
+	 * @param clazz the model class to use as a resource route
+	 * @param action the action that this resource route is for
+	 * @return a Routed object
+	 * @see Action
+	 */
+	public Routed addResource(String path, Class<? extends Model> clazz, Action action) {
 		if(path != null && path.charAt(0) == '?') {
 			path = "/{models}/{id}" + path;
 		}
@@ -238,6 +246,126 @@ public class Router implements IPathRouting, IUrlRouting {
 			throw new IllegalArgumentException("unknown action: " + action);
 		}
 		return new Routed(this, route);
+	}
+	
+	/**
+	 * <p>Add all resource routes for the given model.</p>
+	 * <table>
+	 *   <tr align="left"><th>Verb</th><th>Path</th><th>Action</th><th>Purpose</th></tr>
+	 *   <tr><td>POST</td><td>/{models}</td><td>{@link #create}</td><td>create a new model</td></tr>
+	 *   <tr><td>PUT</td><td>/{models}/{id}</td><td>{@link #update}</td><td>update a specific model</td></tr>
+	 *   <tr><td>DELETE</td><td>/{models}/{id}</td><td>{@link #destroy}</td><td>destroy a specific model</td></tr>
+	 *   <tr><td>GET</td><td>/{models}/{id}</td><td>{@link #show}</td><td>show a specific model</td></tr>
+	 *   <tr><td>GET</td><td>/{models}</td><td>{@link #showAll}</td><td>show all models</td></tr>
+	 *   <tr><td>GET</td><td>/{models}/{id}/edit</td><td>{@link #showEdit}</td><td>return an HTML form to edit a specific model</td></tr>
+	 *   <tr><td>GET</td><td>/{models}/new</td><td>{@link #showNew}</td><td>return an HTML form to create a new model</td></tr>
+	 * </table>
+	 * <p>{models} refers to the plural of the given model name.<br/>
+	 * For example, if the given model class was
+	 * Post.class then the showAll path would be: "/posts" and it purpose would be to show all models of type Post.</p>
+	 * @param clazz the model class for which to add resource routes
+	 * @return a Routes object
+	 * @see Action
+	 */
+	public Routes addResources(Class<? extends Model> clazz) {
+		return addResources(clazz, new Action[0]);
+	}
+
+	/**
+	 * <p>Add resource routes for the given model and the given array of specific actions.</p>
+	 * @param clazz the model class for which to add resource routes
+	 * @param actions the specific actions for which to add resource routes
+	 * @return a Routes object
+	 * @see #addResources(Class)
+	 * @see Action
+	 */
+	public Routes addResources(Class<? extends Model> clazz, Action...actions) {
+		if(actions.length == 0) {
+			actions = Action.values();
+		}
+		List<Routed> routed = new ArrayList<Routed>();
+		for(Action action : actions) {
+			routed.add(addResource(clazz, action));
+		}
+		return new Routes(this, routed, clazz, "/{models}/{id}");
+	}
+	
+	/**
+	 * Add all resource routes for the given model.
+	 * Unlike {@link #addResources(Class)}, this method allows for overriding the conventional path.
+	 * The given path may contain any number of variables ("{name:regex}") and constants ("{name=value}"), 
+	 * and they may be in any order, however it <b>must</b> contain the models variable ("{models}") and, 
+	 * for the model specific routes (update, destroy, show, showEdit), must also contain the id variable ("{id}").
+	 * @param the custom resource path
+	 * @param clazz the model class to use as a resource route
+	 * @return a Routed object
+	 * @see Action
+	 */
+	public Routes addResources(String path, Class<? extends Model> clazz) {
+		return addResources(path, clazz, new Action[0]);
+	}
+	
+	/**
+	 * Add resource routes for the given model and the given array of specific actions.
+	 * Unlike {@link #addResources(Class, Action...)}, this method allows for overriding the conventional path.
+	 * The given path may contain any number of variables ("{name:regex}") and constants ("{name=value}"), 
+	 * and they may be in any order, however it <b>must</b> contain the models variable ("{models}") and, 
+	 * for the model specific routes (update, destroy, show, showEdit), must also contain the id variable ("{id}").
+	 * @param the custom resource path
+	 * @param clazz the model class to use as a resource route
+	 * @param actions the specific actions for which to add resource routes
+	 * @return a Routed object
+	 * @see Action
+	 */
+	public Routes addResources(String path, Class<? extends Model> clazz, Action...actions) {
+		String[] parsedRules = parseRules(path, clazz);
+		
+		if(actions.length == 0) {
+			actions = Action.values();
+		}
+
+		List<Routed> routed = new ArrayList<Routed>();
+		for(Action action : actions) {
+			Routed r = null;
+			switch(action) {
+			case create:	r = addResource(parsedRules[create.ordinal()],	clazz, action); break;
+			case destroy:	r = addResource(parsedRules[destroy.ordinal()],	clazz, action); break;
+			case update:	r = addResource(parsedRules[update.ordinal()], 	clazz, action); break;
+			case show:		r = addResource(parsedRules[show.ordinal()],	clazz, action); break;
+			case showAll:	r = addResource(parsedRules[showAll.ordinal()],	clazz, action); break;
+			case showEdit:	r = addResource(parsedRules[showEdit.ordinal()],clazz, action); break;
+			case showNew:	r = addResource(parsedRules[showNew.ordinal()],	clazz, action); break;
+			default:
+				throw new IllegalArgumentException("unknown action: " + action);
+			}
+			routed.add(r);
+		}
+		return new Routes(this, routed, clazz, path);
+	}
+
+	/**
+	 * Add a route to be handled by the given controller's handleRequest method in response to a
+	 * GET request for the given path. The given path may contain variables and constants.
+	 * @param path the path that this request will handle (may contain variables and constants)
+	 * @param clazz the controller class that will handle the routed request
+	 * @return a Routed object
+	 */
+	public Routed addRoute(String path, Class<? extends Controller> clazz) {
+		return add(getName(GET, path)).asRoute(GET, path, clazz);
+	}
+	
+	/**
+	 * Add a route to be handled by the given controller in response to a
+	 * request for the given path. The request type and controller method are determined by the
+	 * given action. The given path may contain variables and constants.
+	 * @param path the path that this request will handle (may contain variables and constants)
+	 * @param clazz the controller class that will handle the routed request
+	 * @param action the specific action for which to add the route
+	 * @return a Routed object
+	 * @see Action
+	 */
+	public Routed addRoute(String path, Class<? extends Controller> clazz, Action action) {
+		return add(getName(action, path)).asRoute(path, clazz, action);
 	}
 	
 	private void addRoute(String key, Route route) {
@@ -293,7 +421,7 @@ public class Router implements IPathRouting, IUrlRouting {
 		addRoute(key, route);
 		return route;
 	}
-	
+
 	ControllerRoute addRoute(String key, String rule, Class<?> clazz, Action action) {
 		rule = checkRule(rule);
 		Type type;
@@ -315,79 +443,38 @@ public class Router implements IPathRouting, IUrlRouting {
 		return route;
 	}
 	
-	public Routed addRoute(Type requestType, String path, Controller controller) {
-		String name = (path.charAt(0) == '/') ? path.substring(1) : path;
-		name = name.replaceAll("\\{([^\\}^\\:^\\=]+)[\\:\\=]?[^\\}]*\\}", "$1").replaceAll("/", "_");
-		return add(name).asRoute(requestType, path, controller);
+	/**
+	 * Add a route to be handled by the given controller's handleRequest method.
+	 * @param requestType the type of the request this route will handle
+	 * @param path the path that this request will handle (may contain variables and constants)
+	 * @param clazz the controller class that will handle the routed request
+	 * @return a Routed object
+	 */
+	public Routed addRoute(Type requestType, String path, Class<? extends Controller> clazz) {
+		return add(getName(requestType, path)).asRoute(requestType, path, clazz);
+	}
+
+	/**
+	 * Add a view route for the given view class. The new route will render the view in response to
+	 * a GET request with a path of <code>varName(clazz)</code>.<br>
+	 * For example: addView(Home.class) will render the Home view for a "GET /home" request.
+	 * @param clazz the view to be rendered
+	 * @return a Routed object
+	 */
+	public Routed addView(Class<? extends View> clazz) {
+		return add("show" + clazz.getSimpleName()).asView(clazz);
 	}
 	
-	Route addRoute(Type requestType, String key, String rule, Controller controller) {
-		rule = checkRule(rule);
-		Route route = new ControllerRoute(requestType, rule, controller, null);
-		addRoute(key, route);
-		return route;
+	/**
+	 * Add a view route to render the given view class in response to a GET request with the given path.<br>
+	 * @param path the path that this request will handle (may contain constants, but not variables)
+	 * @param clazz the view to be rendered
+	 * @return a Routed object
+	 */
+	public Routed addView(String path, Class<? extends View> clazz) {
+		return add(getName(show, path)).asView(path, clazz);
 	}
 
-	public Routes addRoutes(Class<? extends Model> clazz, Action...actions) {
-		if(actions.length == 0) {
-			actions = Action.values();
-		}
-		List<Routed> routed = new ArrayList<Routed>();
-		for(Action action : actions) {
-			routed.add(addRoute(clazz, action));
-		}
-		return new Routes(this, routed, clazz, "/{models}/{id}");
-	}
-
-	public Routes addRoutes(String path, Class<? extends Model> clazz, Action...actions) {
-		String[] parsedRules = parseRules(path, clazz);
-		
-		if(actions.length == 0) {
-			actions = Action.values();
-		}
-
-		List<Routed> routed = new ArrayList<Routed>();
-		for(Action action : actions) {
-			Routed r = null;
-			switch(action) {
-			case create:	r = addRoute(parsedRules[create.ordinal()],		clazz, action); break;
-			case destroy:	r = addRoute(parsedRules[destroy.ordinal()],	clazz, action); break;
-			case update:	r = addRoute(parsedRules[update.ordinal()], 	clazz, action); break;
-			case show:		r = addRoute(parsedRules[show.ordinal()],		clazz, action); break;
-			case showAll:	r = addRoute(parsedRules[showAll.ordinal()],	clazz, action); break;
-			case showEdit:	r = addRoute(parsedRules[showEdit.ordinal()],	clazz, action); break;
-			case showNew:	r = addRoute(parsedRules[showNew.ordinal()],	clazz, action); break;
-			default:
-				throw new IllegalArgumentException("unknown action: " + action);
-			}
-			routed.add(r);
-		}
-		return new Routes(this, routed, clazz, path);
-	}
-
-	public void applyHeaders(HttpRequest request, HttpResponse response) {
-		if(discoveryHeader != null && request.isHome()) {
-			if(response instanceof Response) {
-				((Response) response).addHeader(Header.API_LOCATION, discoveryHeader);
-			}
-		}
-	}
-	
-	private String asUrl(String path) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("http://").append(hosts[0]);
-		if(port != 80) {
-			sb.append(':').append(port);
-		}
-		if(!blank(path)) {
-			if(path.charAt(0) != '/') {
-				sb.append('/');
-			}
-			sb.append(path);
-		}
-		return sb.toString();
-	}
-	
 	private String checkRule(String rule) {
 		logger.debug(rule);
 		if(rule.charAt(0) != '/') {
@@ -430,10 +517,6 @@ public class Router implements IPathRouting, IUrlRouting {
 			authentications.clear();
 			authentications = null;
 		}
-		if(controllers != null) {
-			controllers.clear();
-			controllers = null;
-		}
 		if(published != null) {
 			published.clear();
 			published = null;
@@ -446,141 +529,33 @@ public class Router implements IPathRouting, IUrlRouting {
 	 * @return a {@link NamedRoute} object if the given name exists; null otherwise
 	 */
 	public NamedRoute get(String name) {
-		validateName(name);
+		checkName(name);
 		if(routes.containsKey(name)) {
 			return new NamedRoute(this, name);
 		}
 		return null;
 	}
+	
+	private String getAssetName(Class<? extends DynamicAsset> clazz) {
+		String name = "/" + underscored(clazz.getCanonicalName());
+		name = name.replace('.', '/') + "." + DynamicAsset.getFileExtension(clazz);
+		return name;
+	}
 
 	private Class<? extends Controller> getControllerClass(Class<?> clazz) {
+		Class<? extends Controller> controllerClass = null;
 		if(Model.class.isAssignableFrom(clazz)) {
-			if(controllers != null) {
-				Pattern p = Pattern.compile("^.*[\\.\\$]" + clazz.getSimpleName() + "Controller$");
-				for(String className : controllers.keySet()) {
-					Matcher m = p.matcher(className);
-					if(m.matches()) {
-						try {
-							return Class.forName(className, true, controllers.get(className)).asSubclass(Controller.class);
-						} catch(ClassNotFoundException e) {
-							// discard and look for the next one
-						}
-					}
-				}
-			}
+			controllerClass = service.getControllerClass(clazz.asSubclass(Model.class));
 		} else if(Controller.class.isAssignableFrom(clazz)) {
-			if((clazz.getModifiers() & Modifier.ABSTRACT) != 0) {
-				throw new UnsupportedOperationException(clazz.getCanonicalName() + " cannot be routed because it is an abstract class");
-			}
-			return clazz.asSubclass(Controller.class);
+			controllerClass = clazz.asSubclass(Controller.class);
 		}
 
+		if(controllerClass != null) {
+			checkClass(controllerClass);
+			return controllerClass;
+		}
+		
 		throw new IllegalArgumentException("could not locate controller class for " + clazz.getSimpleName());
-	}
-	
-	public RouteHandler getHandler(HttpRequest request) {
-		if(port != request.getPort()) {
-			return null;
-		}
-		
-		if(!hasHost(request.getHost())) {
-			return null;
-		}
-		
-		if(authentications != null) {
-			Map<String, Realm> auths = authentications.get(request.getType());
-			if(auths != null) {
-				Realm realm = auths.get(request.getFullPath());
-				if(realm == null) {
-					realm = auths.get(request.getPath());
-				}
-				if(realm != null) {
-					if(!isAuthorized(request, realm)) {
-						return new AuthorizationHandler(realm.name());
-					}
-				}
-			}
-		}
-		
-		if(fixedRoutes != null) {
-			Map<String, Route> fixedRoutes = this.fixedRoutes.get(request.getType());
-			if(fixedRoutes != null) {
-				Route fixedRoute = fixedRoutes.get(request.getFullPath());
-				if(fixedRoute == null) {
-					fixedRoute = fixedRoutes.get(request.getPath());
-				}
-				if(fixedRoute != null) {
-					switch(fixedRoute.type) {
-					case Route.ASSET:
-						AssetRoute ar = (AssetRoute) fixedRoute;
-						return new AssetHandler(ar.loader(), ar.length, ar.lastModified);
-					case Route.AUTHORIZATION:
-						throw new UnsupportedOperationException();
-					case Route.CONTROLLER:
-						ControllerRoute cr = (ControllerRoute) fixedRoute;
-						return new ControllerHandler(cr.controller, cr.controllerClass, cr.action, cr.params);
-					case Route.DYNAMIC_ASSET:
-						DynamicAssetRoute dar = (DynamicAssetRoute) fixedRoute;
-						return new DynamicAssetHandler(dar.assetClass, dar.params);
-					case Route.VIEW:
-						ViewRoute vr = (ViewRoute) fixedRoute;
-						return new ViewHandler(vr.viewClass, vr.params);
-					default:
-						throw new IllegalStateException();
-					}
-				}
-			}
-		}
-		
-		if(patternRoutes != null) {
-			for(Route route : patternRoutes) {
-				if(route.requestType == request.getType()) {
-					Matcher matcher = route.matcher(route.matchOnFullPath ? request.getFullPath() : request.getPath());
-					if(matcher.matches()) {
-						switch(route.type) {
-						case Route.ASSET:
-						case Route.AUTHORIZATION:
-							throw new UnsupportedOperationException();
-						case Route.CONTROLLER:
-							ControllerRoute cr = (ControllerRoute) route;
-							String[][] params;
-							if(cr.params == null) {
-								params = null;
-							} else {
-								params = new String[cr.params.length][];
-								for(int i = 0; i < params.length; i++) {
-									params[i] = new String[] { cr.params[i][0], cr.params[i][1] };
-								}
-								if(matcher.groupCount() > 0) {
-									int group = 1;
-									for(int i = 0; i < params.length; i++) {
-										if(params[i][1] == null) {
-											params[i][1] = matcher.group(group++);
-										}
-									}
-								}
-							}
-							return new ControllerHandler(cr.controller, cr.controllerClass, cr.action, params);
-						case Route.VIEW:
-							ViewRoute vr = (ViewRoute) route;
-							return new ViewHandler(vr.viewClass, vr.params);
-						default:
-							throw new IllegalStateException("unknown route type: " + route.type);
-						}
-					}
-				}
-			}
-		}
-		
-		return null;
-	}
-
-	public String getHost() {
-		return hosts[0];
-	}
-	
-	public String[] getHosts() {
-		return hosts;
 	}
 	
 	String getKey(Class<? extends Model> parent, String field, Action action) {
@@ -593,6 +568,22 @@ public class Router implements IPathRouting, IUrlRouting {
 		} else {
 			return clazz.getName() + ":" + action;
 		}
+	}
+
+	private String getName(Action action, String path) {
+		String name = getName(path);
+		return action.name() + camelCase(name);
+	}
+
+	private String getName(String path) {
+		String name = (path.charAt(0) == '/') ? path.substring(1) : path;
+		name = name.replaceAll("\\{([^\\}^\\:^\\=]+)[\\:\\=]?[^\\}]*\\}", "$1").replace('/', '_');
+		return name;
+	}
+
+	private String getName(Type type, String path) {
+		String name = getName(path);
+		return type.name().toLowerCase() + camelCase(name);
 	}
 	
 	public List<String> getPaths() {
@@ -629,11 +620,7 @@ public class Router implements IPathRouting, IUrlRouting {
 		Collections.sort(paths);
 		return paths;
 	}
-
-	public int getPort() {
-		return port;
-	}
-
+	
 	public List<Route> getRoutes() {
 		List<Route> routes = new ArrayList<Route>();
 		if(fixedRoutes != null) {
@@ -652,7 +639,7 @@ public class Router implements IPathRouting, IUrlRouting {
 		}
 		return routes;
 	}
-	
+
 	public List<Route> getRoutes(Type type) {
 		List<Route> routes = new ArrayList<Route>();
 		if(fixedRoutes != null) {
@@ -676,68 +663,7 @@ public class Router implements IPathRouting, IUrlRouting {
 		}
 		return routes;
 	}
-
-	private String getValue(Model model, char[] ca, int s1, int s2) {
-		int ix = findAny(ca, s1, s2, ':', '=');
-		if(ix == -1) ix = s2;
-		if(ix < s2 && ca[ix] == '=') {
-			String param = new String(ca, ix+1, s2-ix-1).trim();
-			return param;
-		} else if(isEqual(ca, s1, ix, 'm','o','d','e','l','s')) {
-			return tableName(model);
-		} else {
-			String param = new String(ca, s1, ix-s1).trim();
-			Object value = model.get(param);
-			if(value instanceof Model) {
-				return String.valueOf(((Model) value).getId());
-			} else {
-				return String.valueOf(model.get(param));
-			}
-		}
-	}
-
-	private String getValue(Model parent, String field, char[] ca, int s1, int s2) {
-		int ix = findAny(ca, s1, s2, ':', '=');
-		if(ix == -1) ix = s2;
-		if(ix < s2 && ca[ix] == '=') {
-			String param = new String(ca, ix+1, s2-ix-1).trim();
-			return param;
-		} else if(isEqual(ca, s1, ix, 'm','o','d','e','l','s')) {
-			return tableName(getAdapter(parent.getClass()).getRelationClass(field));
-		} else {
-			String param = new String(ca, s1, ix-s1).trim();
-			Object value;
-			int ix2 = find(ca, '[', s1, ix);
-			if(ix2 == -1) {
-				throw new IllegalArgumentException("not a valid variable: " + param);
-			} else {
-				String cname = new String(ca, s1, ix2-s1);
-				if(cname.equals(varName(parent.getClass()))) {
-					String f = new String(ca, ix2+1, ix-ix2-2);
-					value = parent.get(f);
-				} else {
-					throw new IllegalArgumentException("not a valid variable: " + param);
-				}
-			}
-			if(value instanceof Model) {
-				return String.valueOf(((Model) value).getId());
-			} else {
-				return String.valueOf(value);
-			}
-		}
-	}
 	
-	public boolean hasHost(String host) {
-		if(host != null && host.length() > 0) {
-			for(String h : hosts) {
-				if(h.equals(host)) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
 	public boolean isAuthorized(HttpRequest request, Realm realm) {
 		String header = request.getHeader(Header.AUTHORIZATION);
 		if(header != null && header.startsWith("Basic ")) {
@@ -748,7 +674,7 @@ public class Router implements IPathRouting, IUrlRouting {
 		}
 		return false;
 	}
-
+	
 	public boolean isAuthorized(HttpRequest request, String username, String password) {
 		if(username == null) {
 			return false;
@@ -837,302 +763,6 @@ public class Router implements IPathRouting, IUrlRouting {
 			}
 		}
 	}
-
-	private String pathError(Object obj1, String field) {
-		if(obj1 == null) {
-			logger.warn(new RoutingException("cannot find a path to a null object"));
-		} else if(obj1 instanceof Model) {
-			if(field == null) {
-				logger.warn(new Exception("could not find path for model: " + obj1.getClass().getSimpleName()));
-			} else {
-				if(obj1 instanceof Class<?>) {
-					logger.warn(new Exception("could not find path for hasMany: " + obj1.getClass().getSimpleName() + " -> " + field));
-				} else {
-					logger.warn(new Exception("could not find path for hasMany: " + obj1.getClass().getSimpleName() + " -> " + field));
-				}
-			}
-		} else if(obj1 instanceof Class<?>) {
-			logger.warn(new Exception("could not find path for class: " + ((Class<?>) obj1).getSimpleName()));
-		} else if(obj1 instanceof String) {
-			logger.warn(new Exception("could not find path named: " + obj1));
-		} else if(obj1 instanceof Exception) {
-			logger.warn("could not resolve path due an exception: " + ((Exception) obj1).getMessage(), (Exception) obj1);
-		} else {
-			logger.warn(new Exception("could not find path for: " + obj1));
-		}
-		return UNKNOWN_PATH;
-	}
-
-	@Override
-	public String pathTo(Class<? extends Model> modelClass) {
-		return pathTo(modelClass, Action.showAll);
-	}
-	
-	@Override
-	public String pathTo(Class<? extends Model> modelClass, Action action) {
-		if(modelClass != null) {
-			Route[] routes = this.routes.get(getKey(modelClass, action));
-			if(routes != null) {
-				IllegalArgumentException exception = null;
-				for(Route route : routes) {
-					if(routes != null) {
-						try {
-							return pathToClass(route.rule, modelClass);
-						} catch(IllegalArgumentException e) {
-							exception = e; // rule may have variables, which can't be handled without a model object
-						}
-					}
-				}
-				if(exception != null) {
-					return pathError(exception, null);
-				}
-			}
-		}
-		return pathError(modelClass, null);
-	}
-	
-	@Override
-	public String pathTo(Model model) {
-		return pathTo(model, Action.show);
-	}
-	
-	@Override
-	public String pathTo(Model model, Action action) {
-		if(model != null) {
-			Route[] routes = this.routes.get(getKey(model.getClass(), action));
-			if(routes != null) {
-				return pathToModel(routes[0].rule, model);
-			}
-		}
-		return pathError(model, null);
-	}
-
-	@Override
-	public String pathTo(Model parent, String field) {
-		if(parent != null && field != null) {
-			Action action = getAdapter(parent).hasMany(field) ? showAll : show;
-			Route[] routes = this.routes.get(getKey(parent.getClass(), field, action));
-			if(routes != null) {
-				return pathToHasMany(routes[0].rule, parent, field);
-			}
-		}
-		return pathError(parent, field);
-	}
-	
-	@Override
-	public String pathTo(Model parent, String field, Action action) {
-		if(parent != null && field != null) {
-			Route[] routes = this.routes.get(getKey(parent.getClass(), field, action));
-			if(routes != null) {
-				return pathToHasMany(routes[0].rule, parent, field);
-			}
-		}
-		return pathError(parent, field);
-	}
-	
-	@Override
-	public String pathTo(String routeName) {
-		return pathTo(routeName, new Object[0]);
-	}
-	
-	public String pathTo(String routeName, Model model) {
-		if(!blank(routeName)) {
-			Route[] routes = this.routes.get(routeName);
-			if(routes != null) {
-				return pathToModel(routes[0].rule, model);
-			}
-		}
-		return pathError(routeName, null);
-	}
-
-	@Override
-	public String pathTo(String routeName, Object...params) {
-		if(params.length == 1 && params[0] instanceof Model) {
-			return pathTo(routeName, (Model) params[0]);
-		}
-		
-		if(!blank(routeName)) {
-			Route[] routes = this.routes.get(routeName);
-			if(routes != null) {
-				IllegalArgumentException exception = null;
-				for(Route route : routes) {
-					if(route.isFixed()) {
-						return route.path;
-					} else {
-						Class<?> clazz = (namedClasses != null) ? namedClasses.get(routeName) : null;
-						try {
-							return pathToClass(route.rule, clazz, params);
-						} catch(IllegalArgumentException e) {
-							exception = e; // pathToNew may have variables, which are acceptable if the model is passed in
-						}
-					}
-					if(exception != null) {
-						return pathError(exception, null);
-					}
-				}
-			}
-		}
-		return pathError(routeName, null);
-	}
-
-	/**
-	 * TODO switch to using PathBuilder
-	 */
-	@Deprecated
-	private String pathToClass(String path, Class<?> clazz, Object...params) {
-		StringBuilder sb = new StringBuilder(path.length() + 20);
-		char[] ca = path.toCharArray();
-		int pix = find(ca, '?');
-		if(pix == -1) pix = ca.length;
-		int s0 = 0;
-		int s1 = find(ca, '{');
-		int i = 0;
-		while(s1 != -1) {
-			sb.append(ca, s0, s1-s0);
-			int s2 = closer(ca, s1);
-
-			int ix = find(ca, '=', s1, s2);
-			if(ix != -1) {
-				if(s1 < pix) {
-					sb.append(new String(ca, ix+1, s2-ix-1).trim());
-				} // else skip - it is handled by the routing and does not need to be in the path
-			} else {
-				ix = find(ca, ':', s1, s2);
-				if(ix != -1) {
-					if(i < params.length) {
-						String value = String.valueOf(params[i]);
-						String regex = new String(ca, ix+1, s2-ix-1).trim();
-						if(Pattern.matches(regex, value)) {
-							sb.append(params[i]);
-						} else {
-							throw new IllegalArgumentException("invalid value for " + new String(ca, s1, s2-s1+1) + ": " + value);
-						}
-					} else {
-						throw new IllegalArgumentException("cannot evaluate " + new String(ca, s1, s2-s1+1) + ": no parameter given");
-					}
-					i++;
-				} else {
-					String s = new String(ca, s1+1, s2-s1-1).trim();
-					if("models".equals(s)) {
-						if(clazz != null) {
-							sb.append(tableName(clazz));
-						} else if(i < params.length && params[i] instanceof Class<?>) {
-							sb.append(tableName((Class<?>) params[i]));
-						} else {
-							throw new IllegalArgumentException("cannot evaluate {models}: no class given");
-						}
-					} else if("id".equals(s)) {
-						if(i < params.length) {
-							if(params[i] instanceof Number) {
-								sb.append(((Number) params[i]).longValue());
-								i++;
-							} else {
-								throw new IllegalArgumentException("cannot evaluate {id}: " + params[i] + " is not a number");
-							}
-						} else {
-							throw new IllegalArgumentException("cannot evaluate {id}: no parameter given");
-						}
-					} else {
-						throw new IllegalArgumentException("class path contains an unknown variable: " + new String(ca));
-					}
-				}
-			}
-			
-			s0 = s2 + 1;
-			s1 = find(ca, '{', s0);
-		}
-		if(s0 < ca.length) {
-			sb.append(ca, s0, ca.length-s0);
-		}
-		if(sb.charAt(sb.length()-1) == '?') {
-			sb.deleteCharAt(sb.length()-1);
-		}
-		return sb.toString();
-	}
-	
-	private String pathToHasMany(String path, Model parent, String field) {
-		if(path == null) {
-			return UNKNOWN_PATH;
-		}
-		
-		StringBuilder sb = new StringBuilder(path.length() + 20);
-		char[] ca = path.toCharArray();
-		int pix = find(ca, '?');
-		if(pix == -1) pix = ca.length;
-		int s0 = 0;
-		int s1 = find(ca, '{');
-		while(s1 != -1) {
-			sb.append(ca, s0, s1-s0);
-			int s2 = closer(ca, s1);
-			s1++;
-			if(s1 < pix) {
-				sb.append(getValue(parent, field, ca, s1, s2));
-			} else { // in parameter section
-				int ix = find(ca, ':', s1, s2);
-				if(ix != -1) {
-					String f = new String(ca, s1, ix-s1).trim();
-					Object value = parent.get(f);
-					sb.append(f).append('=');
-					if(!blank(value)) sb.append(encode(value.toString()));
-				} else {
-					if(find(ca, '=', s1, s2) == -1) {
-						sb.append(getValue(parent, field, ca, s1, s2));
-					}
-				}
-			}
-			s0 = s2 + 1;
-			s1 = find(ca, '{', s0);
-		}
-		if(s0 < ca.length) {
-			sb.append(ca, s0, ca.length-s0);
-		}
-		if(sb.charAt(sb.length()-1) == '?') {
-			sb.deleteCharAt(sb.length()-1);
-		}
-		return sb.toString();
-	}
-	
-	/**
-	 * TODO switch to using PathBuilder
-	 */
-	@Deprecated
-	private String pathToModel(String path, Model model) {
-		StringBuilder sb = new StringBuilder(path.length() + 20);
-		char[] ca = path.toCharArray();
-		int pix = find(ca, '?');
-		if(pix == -1) pix = ca.length;
-		int s0 = 0;
-		int s1 = find(ca, '{');
-		while(s1 != -1) {
-			sb.append(ca, s0, s1-s0);
-			int s2 = closer(ca, s1);
-			s1++;
-			if(s1 < pix) {
-				sb.append(getValue(model, ca, s1, s2));
-			} else { // in parameter section
-				int ix = find(ca, ':', s1, s2);
-				if(ix != -1) {
-					String field = new String(ca, s1, ix-s1).trim();
-					Object value = model.get(field);
-					sb.append(field).append('=');
-					if(!blank(value)) sb.append(encode(value.toString()));
-				} else {
-					if(find(ca, '=', s1, s2) == -1) {
-						sb.append(getValue(model, ca, s1, s2));
-					}
-				}
-			}
-			s0 = s2 + 1;
-			s1 = find(ca, '{', s0);
-		}
-		if(s0 < ca.length) {
-			sb.append(ca, s0, ca.length-s0);
-		}
-		if(sb.charAt(sb.length()-1) == '?') {
-			sb.deleteCharAt(sb.length()-1);
-		}
-		return sb.toString();
-	}
 	
 	void publish(Route route) {
 		if(published == null) {
@@ -1140,7 +770,7 @@ public class Router implements IPathRouting, IUrlRouting {
 		}
 		published.add(route);
 	}
-	
+
 	/**
 	 * Remove a named route and all routes that had been added to it.
 	 * @param name the named route to remove
@@ -1148,7 +778,7 @@ public class Router implements IPathRouting, IUrlRouting {
 	 * @see #add(String)
 	 */
 	public void remove(String name) {
-		validateName(name);
+		checkName(name);
 		if(routes != null) {
 			if(namedClasses != null) {
 				namedClasses.remove(name);
@@ -1160,6 +790,12 @@ public class Router implements IPathRouting, IUrlRouting {
 				}
 			}
 		}
+	}
+	
+	public void removeAsset(Class<? extends DynamicAsset> clazz) {
+		String name = getAssetName(clazz);
+		Route route = new DynamicAssetRoute(GET, name, clazz);
+		removeRoute(name, route);
 	}
 
 	public void removeAssetRoutes(AssetProvider provider) {
@@ -1232,14 +868,6 @@ public class Router implements IPathRouting, IUrlRouting {
 		}
 	}
 	
-	public void removeControllerNames(Collection<String> controllerNames) {
-		if(controllers != null) {
-			for(String name : controllerNames) {
-				controllers.remove(name);
-			}
-		}
-	}
-	
 	private void removeFromHasMany(String parentKey) {
 		if(hasMany != null) {
 			String key = hasMany.remove(parentKey);
@@ -1256,7 +884,7 @@ public class Router implements IPathRouting, IUrlRouting {
 			}
 		}
 	}
-
+	
 	private boolean removeFromRoutes(String key, Route route) {
 		if(routes != null) {
 			Route[] ra = routes.get(key);
@@ -1281,9 +909,65 @@ public class Router implements IPathRouting, IUrlRouting {
 		}
 		return false;
 	}
+
+	public void removeResource(Class<? extends Model> clazz, Action action) {
+		removeResource(null, clazz, action);
+	}
+
+	public void removeResource(String path, Class<? extends Model> clazz, Action action) {
+		if(path != null && path.charAt(0) == '?') {
+			path = "/{models}/{id}" + path;
+		}
+		switch(action) {
+		case create:	removeRoute(getKey(clazz, action), (path == null) ? "/{models}"				: path, clazz, action); break;
+		case update:	removeRoute(getKey(clazz, action), (path == null) ? "/{models}/{id}"		: path, clazz, action); break;
+		case destroy:	removeRoute(getKey(clazz, action), (path == null) ? "/{models}/{id}"		: path, clazz, action); break;
+		case show:		removeRoute(getKey(clazz, action), (path == null) ? "/{models}/{id}"		: path, clazz, action); break;
+		case showAll:	removeRoute(getKey(clazz, action), (path == null) ? "/{models}" 			: path, clazz, action); break;
+		case showEdit:	removeRoute(getKey(clazz, action), (path == null) ? "/{models}/{id}/edit" 	: path, clazz, action); break;
+		case showNew:	removeRoute(getKey(clazz, action), (path == null) ? "/{models}/new" 		: path, clazz, action); break;
+		default:
+			throw new IllegalArgumentException("unknown action: " + action);
+		}
+	}
+
+	public void removeResources(Class<? extends Model> clazz) {
+		removeResources(clazz, new Action[0]);
+	}
 	
-	public void removeRoute(Class<? extends Model> clazz, Action action) {
-		removeRoute(null, clazz, action);
+	public void removeResources(Class<? extends Model> clazz, Action...actions) {
+		if(actions.length == 0) {
+			actions = Action.values();
+		}
+		for(Action action : actions) {
+			removeResource(clazz, action);
+		}
+	}
+
+	public void removeResources(String path, Class<? extends Model> clazz) {
+		removeResources(path, clazz, new Action[0]);
+	}
+	
+	public void removeResources(String path, Class<? extends Model> clazz, Action...actions) {
+		String[] parsedRules = parseRules(path, clazz);
+		
+		if(actions.length == 0) {
+			actions = Action.values();
+		}
+
+		for(Action action : actions) {
+			switch(action) {
+			case create:	removeResource(parsedRules[create.ordinal()],	clazz, action); break;
+			case destroy:	removeResource(parsedRules[destroy.ordinal()],	clazz, action); break;
+			case update:	removeResource(parsedRules[update.ordinal()], 	clazz, action); break;
+			case show:		removeResource(parsedRules[show.ordinal()],	clazz, action); break;
+			case showAll:	removeResource(parsedRules[showAll.ordinal()],	clazz, action); break;
+			case showEdit:	removeResource(parsedRules[showEdit.ordinal()],clazz, action); break;
+			case showNew:	removeResource(parsedRules[showNew.ordinal()],	clazz, action); break;
+			default:
+				throw new IllegalArgumentException("unknown action: " + action);
+			}
+		}
 	}
 
 	private void removeRoute(Route route) {
@@ -1316,21 +1000,12 @@ public class Router implements IPathRouting, IUrlRouting {
 		}
 	}
 	
-	public void removeRoute(String rule, Class<? extends Model> clazz, Action action) {
-		if(rule != null && rule.charAt(0) == '?') {
-			rule = "/{models}/{id}" + rule;
-		}
-		switch(action) {
-		case create:	removeRoute(getKey(clazz, action), (rule == null) ? "/{models}"			: rule, clazz, action); break;
-		case update:	removeRoute(getKey(clazz, action), (rule == null) ? "/{models}/{id}"		: rule, clazz, action); break;
-		case destroy:	removeRoute(getKey(clazz, action), (rule == null) ? "/{models}/{id}"		: rule, clazz, action); break;
-		case show:		removeRoute(getKey(clazz, action), (rule == null) ? "/{models}/{id}"		: rule, clazz, action); break;
-		case showAll:	removeRoute(getKey(clazz, action), (rule == null) ? "/{models}" 			: rule, clazz, action); break;
-		case showEdit:	removeRoute(getKey(clazz, action), (rule == null) ? "/{models}/{id}/edit" 	: rule, clazz, action); break;
-		case showNew:	removeRoute(getKey(clazz, action), (rule == null) ? "/{models}/new" 		: rule, clazz, action); break;
-		default:
-			throw new IllegalArgumentException("unknown action: " + action);
-		}
+	public void removeRoute(String path) {
+		remove(getName(GET, path));
+	}
+	
+	public void removeRoute(String path, Action action) {
+		remove(getName(action, path));
 	}
 	
 	private void removeRoute(String key, Route route) {
@@ -1343,7 +1018,7 @@ public class Router implements IPathRouting, IUrlRouting {
 			removeFromHasMany(key);
 		}
 	}
-	
+
 	ControllerRoute removeRoute(String key, String path, Class<?> clazz, Action action) {
 		if(!path.startsWith("/")) {
 			path = "/" + path;
@@ -1366,73 +1041,58 @@ public class Router implements IPathRouting, IUrlRouting {
 		removeRoute(key, route);
 		return route;
 	}
-
-	public void removeRoutes(Class<? extends Model> clazz, Action...actions) {
-		if(actions.length == 0) {
-			actions = Action.values();
-		}
-		for(Action action : actions) {
-			removeRoute(clazz, action);
-		}
+	
+	public void removeRoute(Type requestType, String path) {
+		remove(getName(requestType, path));
 	}
 	
-	public void removeRoutes(String path, Class<? extends Model> clazz, Action...actions) {
-		String[] parsedRules = parseRules(path, clazz);
-		
-		if(actions.length == 0) {
-			actions = Action.values();
-		}
-
-		for(Action action : actions) {
-			switch(action) {
-			case create:	removeRoute(parsedRules[create.ordinal()],	clazz, action); break;
-			case destroy:	removeRoute(parsedRules[destroy.ordinal()],	clazz, action); break;
-			case update:	removeRoute(parsedRules[update.ordinal()], 	clazz, action); break;
-			case show:		removeRoute(parsedRules[show.ordinal()],	clazz, action); break;
-			case showAll:	removeRoute(parsedRules[showAll.ordinal()],	clazz, action); break;
-			case showEdit:	removeRoute(parsedRules[showEdit.ordinal()],clazz, action); break;
-			case showNew:	removeRoute(parsedRules[showNew.ordinal()],	clazz, action); break;
-			default:
-				throw new IllegalArgumentException("unknown action: " + action);
-			}
-		}
+	public void removeView(Class<? extends View> clazz) {
+		remove("show" + clazz.getSimpleName());
 	}
 	
-	public void setDiscovery(String path) {
-		setDiscovery(path, false);
+	public void removeView(String path) {
+		remove(getName(show, path));
 	}
 	
-	public void setDiscovery(String path, boolean addDiscoveryHeader) {
-		remove(DISCOVERY_DEFAULT);
-		if(path != null) {
-			add(DISCOVERY_DEFAULT).asRoute(path, new DiscoveryController(this));
-		}
-		this.discoveryHeader = addDiscoveryHeader ? pathTo(DISCOVERY_DEFAULT) : null;
-	}
-	
-	public void setDiscovery(String path, String realm) {
-		setDiscovery(path, false);
-	}
-	
-	public void setDiscovery(String path, String realm, boolean addDiscoverHeader) {
-		setDiscovery(path, discoveryHeader);
-		addBasicAuthentication(path, realm);
-	}
-	
+	/**
+	 * Set the home path ("/") of this router to render the given view class.
+	 * @param clazz the view class to render
+	 * @return a Routed object
+	 */
 	public Routed setHome(Class<? extends View> clazz) {
 		return setHome(clazz, (String) null);
 	}
 	
+	/**
+	 * Set the home path ("/") of this router to render the given view class with
+	 * the given parameters.
+	 * @param clazz the view class to render
+	 * @param parameters a String of parameters in path format ("?{name:value}")
+	 * @return a Routed object
+	 */
 	public Routed setHome(Class<? extends View> clazz, String parameters) {
 		String path = (parameters == null) ? "/" : ("/?" + parameters);
 		Route route = addRoute(HOME, path, clazz);
 		return new Routed(this, route);
 	}
 
+	/**
+	 * Set the home path ("/") of this router to call the given action of the give
+	 * model or controller class.
+	 * @param clazz the model or controller class whose action method should be called
+	 * @return a Routed object
+	 */
 	public Routed setHome(Class<?> clazz, Action action) {
 		return setHome(clazz, action, null);
 	}
 
+	/**
+	 * Set the home path ("/") of this router to call the given action of the give
+	 * model or controller class, with the given parameters.
+	 * @param clazz the model or controller class whose action method should be called
+	 * @param parameters a String of parameters in path format ("?{name:value}")
+	 * @return a Routed object
+	 */
 	public Routed setHome(Class<?> clazz, Action action, String parameters) {
 		if(Model.class.isAssignableFrom(clazz) || Controller.class.isAssignableFrom(clazz)) {
 			String path = (parameters == null) ? "/" : ("/?" + parameters);
@@ -1441,73 +1101,6 @@ public class Router implements IPathRouting, IUrlRouting {
 		} else {
 			throw new IllegalArgumentException("invalid type: " + clazz.getSimpleName() + " (valid types are Model and Controller)");
 		}
-	}
-
-	public Routed setHome(Controller controller) {
-		Route route = addRoute(Type.GET, HOME, "/", controller);
-		return new Routed(this, route);
-	}
-
-	@Override
-	public String urlTo(Class<? extends Model> modelClass) {
-		return urlTo(modelClass, Action.showAll);
-	}
-	
-	@Override
-	public String urlTo(Class<? extends Model> modelClass, Action action) {
-		return asUrl(pathTo(modelClass, action));
-	}
-
-	@Override
-	public String urlTo(Model model) {
-		return urlTo(model, Action.show);
-	}
-
-	@Override
-	public String urlTo(Model model, Action action) {
-		return asUrl(pathTo(model, action));
-	}
-
-	@Override
-	public String urlTo(Model parent, String field) {
-		return asUrl(pathTo(parent, field));
-	}
-
-	@Override
-	public String urlTo(Model parent, String field, Action action) {
-		return asUrl(pathTo(parent, field, action));
-	}
-
-	@Override
-	public String urlTo(String routeName) {
-		return asUrl(pathTo(routeName));
-	}
-
-	@Override
-	public String urlTo(String routeName, Model model) {
-		return asUrl(pathTo(routeName, model));
-	}
-
-	@Override
-	public String urlTo(String routeName, Object... params) {
-		return asUrl(pathTo(routeName, params));
-	}
-	
-	private void validateName(String name) {
-		for(int i = 0; i < name.length(); i++) {
-			if(!Character.isLetterOrDigit(name.charAt(i)) && name.charAt(i) != '_') {
-				throw new IllegalArgumentException("name can consist only of letters, digits, and underscores");
-			}
-		}
-	}
-
-	private void validateNoArgsCtor(Class<?> clazz) {
-		for(Constructor<?> ctor : clazz.getConstructors()) {
-			if(ctor.getParameterTypes().length == 0) {
-				return;
-			}
-		}
-		throw new IllegalArgumentException("\"" + clazz.getSimpleName() + "\" must implement a no-args constructor to be routing directly");
 	}
 
 }

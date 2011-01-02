@@ -37,21 +37,21 @@ public class ManagerService extends AppService {
 	
 	@Override
 	public void addRoutes(Config config, Router router) {
-		router.addRoutes(Bundle.class);
+		router.addResources(Bundle.class);
 		
-		router.addRoute("{models}/{name:[\\w\\.]+}_{version:[\\w\\d\\.-]+}", Bundle.class, destroy);
-		router.addRoute("{models}/{name:[\\w\\.]+}", Bundle.class, destroy);
-		router.addRoute("{models}", Bundle.class, destroy);
+		router.addResource("{models}/{name:[\\w\\.]+}_{version:[\\w\\d\\.-]+}", Bundle.class, destroy);
+		router.addResource("{models}/{name:[\\w\\.]+}", Bundle.class, destroy);
+		router.addResource("{models}", Bundle.class, destroy);
 
-		router.addRoute("{models}/{name:[\\w\\.]+}_{version:[\\w\\d\\.-]+}", Bundle.class, update);
-		router.addRoute("{models}/{name:[\\w\\.]+}", Bundle.class, update);
-		router.addRoute("{models}", Bundle.class, update);
+		router.addResource("{models}/{name:[\\w\\.]+}_{version:[\\w\\d\\.-]+}", Bundle.class, update);
+		router.addResource("{models}/{name:[\\w\\.]+}", Bundle.class, update);
+		router.addResource("{models}", Bundle.class, update);
 
-		router.addRoute("{models}/{name:[\\w\\.]+}_{version:[\\w\\d\\.-]+}", Bundle.class, show);
+		router.addResource("{models}/{name:[\\w\\.]+}_{version:[\\w\\d\\.-]+}", Bundle.class, show);
 
-		router.addRoute("{models}/{name:[\\w\\.]+}", Bundle.class, showAll);
+		router.addResource("{models}/{name:[\\w\\.]+}", Bundle.class, showAll);
 		
-		router.add("refresh").asRoute(BundleController.class, POST);
+		router.add("refresh").asRoute(POST, BundleController.class);
 	}
 
 }

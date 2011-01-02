@@ -39,6 +39,11 @@ public class DynamicAssetRoute extends Route {
 		setString();
 	}
 	
+	@Override
+	protected String[][] params() {
+		return params;
+	}
+	
 	private void setString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append('[').append(requestType).append(']').append(' ');

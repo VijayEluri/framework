@@ -39,6 +39,7 @@ import java.util.regex.Pattern;
 import org.oobium.app.AppService;
 import org.oobium.app.server.response.ByteArrayResponse;
 import org.oobium.app.server.response.Response;
+import org.oobium.app.server.routing.AppRouter;
 import org.oobium.app.server.routing.IPathRouting;
 import org.oobium.app.server.routing.IUrlRouting;
 import org.oobium.app.server.routing.Realm;
@@ -84,9 +85,9 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		return handler.getName() + "/" + key;
 	}
 
-	private long calls;
 	protected Logger logger;
 	private AppService handler;
+	private AppRouter appRouter;
 	private Router router;
 	private Action action;
 	protected HttpRequest request;
@@ -103,9 +104,9 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		// no args constructor
 	}
 	
-	public Controller(HttpRequest request, Map<String, Object> routeParams) {
-		initialize(request, routeParams);
-	}
+//	public Controller(HttpRequest request, Map<String, Object> routeParams) {
+//		initialize(request, routeParams);
+//	}
 
 	@Override
 	public boolean accepts(ContentType type) {
@@ -550,6 +551,10 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		return response;
 	}
 	
+	public AppRouter getRouter() {
+		return appRouter;
+	}
+	
 	public HttpSession getSession() {
 		return getSession(true);
 	}
@@ -610,13 +615,12 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		return session != null;
 	}
 	
-	public void initialize(HttpRequest request, Map<String, Object> routeParams) {
-		reset();
-		
+	public void initialize(Router router, HttpRequest request, Map<String, Object> routeParams) {
+		this.router = router;
 		this.request = request;
 		this.handler = (AppService) request.getHandler();
 		this.logger = handler.getLogger();
-		this.router = handler.getRouter();
+		this.appRouter = handler.getRouter();
 		
 		Map<String, Object> rparams = request.getParameters();
 		if(rparams != null) {
@@ -660,11 +664,11 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 	}
 	
 	protected boolean isAuthorized(Realm realm) {
-		return router.isAuthorized(request, realm);
+		return appRouter.isAuthorized(request, realm);
 	}
 	
 	protected boolean isAuthorized(String username, String password) {
-		return router.isAuthorized(request, username, password);
+		return appRouter.isAuthorized(request, username, password);
 	}
 	
 	public boolean isRendered() {
@@ -703,47 +707,47 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 	
 	@Override
 	public String pathTo(Class<? extends Model> modelClass) {
-		return router.pathTo(modelClass);
+		return appRouter.pathTo(router, modelClass);
 	}
 	
 	@Override
 	public String pathTo(Class<? extends Model> modelClass, Action action) {
-		return router.pathTo(modelClass, action);
+		return appRouter.pathTo(router, modelClass, action);
 	}
 	
 	@Override
 	public String pathTo(Model model) {
-		return router.pathTo(model);
+		return appRouter.pathTo(router, model);
 	}
 	
 	@Override
 	public String pathTo(Model model, Action action) {
-		return router.pathTo(model, action);
+		return appRouter.pathTo(router, model, action);
 	}
 	
 	@Override
 	public String pathTo(Model parent, String field) {
-		return router.pathTo(parent, field);
+		return appRouter.pathTo(router, parent, field);
 	}
 
 	@Override
 	public String pathTo(Model parent, String field, Action action) {
-		return router.pathTo(parent, field, action);
+		return appRouter.pathTo(router, parent, field, action);
 	}
 	
 	@Override
 	public String pathTo(String routeName) {
-		return router.pathTo(routeName);
+		return appRouter.pathTo(router, routeName);
 	}
 	
 	@Override
 	public String pathTo(String routeName, Model model) {
-		return router.pathTo(routeName, model);
+		return appRouter.pathTo(router, routeName, model);
 	}
 	
 	@Override
 	public String pathTo(String routeName, Object... params) {
-		return router.pathTo(routeName, params);
+		return appRouter.pathTo(router, routeName, params);
 	}
 
 	protected void redirectTo(Class<? extends Model> clazz, Action action) {
@@ -1084,27 +1088,24 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		);
 	}
 
-	private void reset() {
-		if(calls > 0) {
-			logger = null;
-			handler = null;
-			router = null;
-			action = null;
-			request = null;
-			response = null;
-			responseTypes = null;
-			if(params != null) params.clear();
-			params = null;
-			if(flash != null) flash.clear();
-			flash = null;
-			if(flashOut != null) flashOut.clear();
-			flashOut = null;
-			if(session != null) session.clear();
-			session = null;
-			sessionResolved = false;
-			isRendered = false;
-		}
-		calls++;
+	public void clear() {
+		logger = null;
+		handler = null;
+		appRouter = null;
+		action = null;
+		request = null;
+		response = null;
+		responseTypes = null;
+		if(params != null) params.clear();
+		params = null;
+		if(flash != null) flash.clear();
+		flash = null;
+		if(flashOut != null) flashOut.clear();
+		flashOut = null;
+		if(session != null) session.clear();
+		session = null;
+		sessionResolved = false;
+		isRendered = false;
 	}
 
 	private void resolveSession(boolean create) {
@@ -1267,47 +1268,47 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 
 	@Override
 	public String urlTo(Class<? extends Model> modelClass) {
-		return router.urlTo(modelClass);
+		return appRouter.urlTo(router, modelClass);
 	}
 
 	@Override
 	public String urlTo(Class<? extends Model> modelClass, Action action) {
-		return router.urlTo(modelClass, action);
+		return appRouter.urlTo(router, modelClass, action);
 	}
 
 	@Override
 	public String urlTo(Model model) {
-		return router.urlTo(model);
+		return appRouter.urlTo(router, model);
 	}
 
 	@Override
 	public String urlTo(Model model, Action action) {
-		return router.urlTo(model, action);
+		return appRouter.urlTo(router, model, action);
 	}
 
 	@Override
 	public String urlTo(Model parent, String field) {
-		return router.urlTo(parent, field);
+		return appRouter.urlTo(router, parent, field);
 	}
 
 	@Override
 	public String urlTo(Model parent, String field, Action action) {
-		return router.urlTo(parent, field, action);
+		return appRouter.urlTo(router, parent, field, action);
 	}
 
 	@Override
 	public String urlTo(String routeName) {
-		return router.urlTo(routeName);
+		return appRouter.urlTo(router, routeName);
 	}
 
 	@Override
 	public String urlTo(String routeName, Model model) {
-		return router.urlTo(routeName, model);
+		return appRouter.urlTo(router, routeName, model);
 	}
 
 	@Override
 	public String urlTo(String routeName, Object... params) {
-		return router.urlTo(routeName, params);
+		return appRouter.urlTo(router, routeName, params);
 	}
 	
 	@Override

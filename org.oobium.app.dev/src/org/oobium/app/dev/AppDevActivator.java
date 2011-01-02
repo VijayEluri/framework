@@ -10,7 +10,8 @@
  ******************************************************************************/
 package org.oobium.app.dev;
 
-import static org.oobium.app.server.controller.Action.*;
+import static org.oobium.app.server.controller.Action.show;
+import static org.oobium.app.server.controller.Action.showAll;
 import static org.oobium.http.HttpRequest.Type.DELETE;
 import static org.oobium.http.HttpRequest.Type.GET;
 import static org.oobium.http.HttpRequest.Type.POST;
@@ -21,9 +22,9 @@ import java.io.StringReader;
 import java.io.StringWriter;
 
 import org.oobium.app.ModuleService;
-import org.oobium.app.dev.controllers.PersistServicesController;
 import org.oobium.app.dev.controllers.NotifyController;
 import org.oobium.app.dev.controllers.PathsController;
+import org.oobium.app.dev.controllers.PersistServicesController;
 import org.oobium.app.dev.controllers.ShutdownController;
 import org.oobium.app.dev.views.application.Error500;
 import org.oobium.app.server.response.Response;
@@ -44,12 +45,12 @@ public class AppDevActivator extends ModuleService implements HttpRequest500Hand
 	public void addRoutes(Config config, Router router) {
 		router.addAssetRoutes(this);
 
-		router.add("notify").asRoute(ID, NotifyController.class, POST);
-		router.add("paths").asRoute("{app:[\\w\\.]+}/paths", PathsController.class, GET);
-		router.add("shutdown").asRoute("/", ShutdownController.class, DELETE);
+		router.add("notify").asRoute(POST, ID, NotifyController.class);
+		router.add("paths").asRoute(GET, "{app:[\\w\\.]+}/paths", PathsController.class);
+		router.add("shutdown").asRoute(DELETE, "/", ShutdownController.class);
 		
-		router.add("persist_services").asRoute("/persist_services", PersistServicesController.class, showAll);
 		router.add("persist_service").asRoute("/persist_services/{id}", PersistServicesController.class, show);
+		router.add("persist_services").asRoute("/persist_services", PersistServicesController.class, showAll);
 	}
 
 	@Override
@@ -88,15 +89,6 @@ public class AppDevActivator extends ModuleService implements HttpRequest500Hand
 			// fall through
 		}
 		return Response.serverError(request.getType());
-	}
-
-	@Override
-	public void removeRoutes(Config config, Router router) {
-		router.removeAssetRoutes(this);
-
-		router.remove("notify");
-		router.remove("paths");
-		router.remove("shutdown");
 	}
 
 }

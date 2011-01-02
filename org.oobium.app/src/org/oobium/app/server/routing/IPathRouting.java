@@ -51,9 +51,9 @@ public interface IPathRouting {
 
 	/**
 	 * A convenience method that is the same as calling
-	 * {@link #pathTo(Model, String, showAll)} if the given field is a
+	 * {@link #getPathTo(Model, String, showAll)} if the given field is a
 	 * hasMany relation, otherwise it is the same as
-	 * {@link #pathTo(Model, String, show)} .
+	 * {@link #getPathTo(Model, String, show)} .
 	 * @param parent
 	 * @return
 	 */

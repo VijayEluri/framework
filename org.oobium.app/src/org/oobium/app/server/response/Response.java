@@ -176,7 +176,7 @@ public class Response implements HttpResponse {
 	}
 	
 	public void setBody(String body) {
-		addHeader(Header.CONTENT_LENGTH, Integer.toString(body.length()));
+		setHeader(Header.CONTENT_LENGTH, Integer.toString(body.length()));
 		this.body = body;
 	}
 	

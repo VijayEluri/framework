@@ -26,12 +26,6 @@ import org.oobium.http.HttpRequest.Type;
 
 class DiscoveryController extends Controller {
 
-	private final Router router;
-	
-	DiscoveryController(Router router) {
-		this.router = router;
-	}
-
 	private Map<String, String> build(Route route) {
 		Map<String, String> map = new HashMap<String, String>();
 		map.put("method", route.requestType.name());
@@ -57,7 +51,7 @@ class DiscoveryController extends Controller {
 	
 	@Override
 	public void handleRequest() throws SQLException {
-		Set<Route> routes = router.published;
+		Set<Route> routes = getRouter().published;
 		if(routes == null) {
 			renderJson("[]");
 			return;

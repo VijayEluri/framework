@@ -12,9 +12,12 @@ package org.oobium.app.server.view;
 
 import static org.oobium.utils.StringUtils.camelCase;
 import static org.oobium.utils.StringUtils.h;
+import static org.oobium.utils.StringUtils.pluralize;
+import static org.oobium.utils.StringUtils.titleize;
 
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.oobium.app.server.controller.Action;
@@ -27,6 +30,7 @@ import org.oobium.app.server.controller.ISessions;
 import org.oobium.app.server.response.Response;
 import org.oobium.app.server.routing.IPathRouting;
 import org.oobium.app.server.routing.IUrlRouting;
+import org.oobium.app.server.routing.Router;
 import org.oobium.http.HttpRequest;
 import org.oobium.http.HttpSession;
 import org.oobium.http.constants.ContentType;
@@ -36,21 +40,50 @@ import org.oobium.utils.json.JsonUtils;
 
 public class View implements ICache, IFlash, IParams, IPathRouting, IUrlRouting, ISessions, IHelpers {
 
+	/**
+	 * Render a view of the given class for the given request. Since this method does not take a 
+	 * Router object then it may not resolve pathTo requests from the perspective of the Application
+	 * rather than the given view class's Module. Thus, this method is primarily suited for views that
+	 * will not make use of pathTo, or are top-level views whose use of pathTo is only relative to the
+	 * application. Default error views (404 and 500) use this method.
+	 * @param viewClass the class of view to be rendered
+	 * @param request the request to use while rendering the view
+	 * @return the rendered Response object
+	 * @throws Exception this will run user generated content - be prepared for anything.
+	 */
 	public static Response render(Class<? extends View> viewClass, HttpRequest request) throws Exception {
-		return render(viewClass, request, new HashMap<String, Object>(0));
-	}
-	
-	public static Response render(Class<? extends View> viewClass, HttpRequest request, Map<String, Object> params) throws Exception {
 		View view = viewClass.newInstance();
-		return render(view, request, params);
+		return render(null, view, request, new HashMap<String, Object>(0));
 	}
 	
+	/**
+	 * Render the given view for the given request. Since this method does not take a
+	 * Router object then it may not resolve pathTo requests from the perspective of the Application
+	 * rather than the given view class's Module. Thus, this method is primarily suited for views that
+	 * will not make use of pathTo, or are top-level views whose use of pathTo is only relative to the
+	 * application.
+	 * @param view the view to be rendered
+	 * @param request the request to use while rendering the view
+	 * @return the rendered Response object
+	 * @throws Exception this will run user generated content - be prepared for anything.
+	 */
 	public static Response render(View view, HttpRequest request) throws Exception {
-		return render(view, request, new HashMap<String, Object>(0));
+		return render(null, view, request, new HashMap<String, Object>(0));
 	}
 
-	public static Response render(View view, HttpRequest request, Map<String, Object> params) throws Exception {
-		Controller controller = new Controller(request, params);
+	/**
+	 * Render the given view for the given request. Any pathTo requests will be resolved from the perspective of 
+	 * the given Router.
+	 * @param router the router from which resolution of pathTo requests will begin
+	 * @param view the view to be rendered
+	 * @param request the request to use while rendering the view
+	 * @param params a map of parameters that are to be available to the view
+	 * @return the rendered Response object
+	 * @throws Exception this will run user generated content - be prepared for anything.
+	 */
+	public static Response render(Router router, View view, HttpRequest request, Map<String, Object> params) throws Exception {
+		Controller controller = new Controller();
+		controller.initialize(router, request, params);
 		controller.render(view);
 		return controller.getResponse();
 	}
@@ -376,6 +409,31 @@ public class View implements ICache, IFlash, IParams, IPathRouting, IUrlRouting,
 		messagesBlock(sb, true, true, true);
 	}
 
+	protected void errorsBlock(StringBuilder sb, Model model, String title, String message) {
+		if(model.hasErrors()) {
+			List<String> errors = model.getErrorsList();
+			sb.append("<div class=\"errorExplanation\">");
+			if(title == null) {
+				String s1 = pluralize(errors.size(), "error");
+				String s2 = titleize(model.getClass().getSimpleName()).toLowerCase();
+				sb.append("<h2>").append(s1).append(" prohibited this ").append(s2).append(" from being saved").append("</h2>");
+			} else if(title.length() > 0) {
+				sb.append("<h2>").append(h(title)).append("</h2>");
+			}
+			if(message == null) {
+				sb.append("<p>There were problems with the following fields:</p>");
+			} else if(message.length() > 0) {
+				sb.append("<p>").append(h(message)).append("</p>");
+			}
+			sb.append("<ul>");
+			for(String error : model.getErrorsList()) {
+				sb.append("<li>").append(h(error)).append("</li>");
+			}
+			sb.append("</ul>");
+			sb.append("</div>");
+		}
+	}
+	
 	protected void messagesBlock(StringBuilder sb, boolean errors, boolean warnings, boolean notices) {
 		if(errors && hasFlashError()) {
 			sb.append("<div class=\"errors\">");

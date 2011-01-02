@@ -11,20 +11,14 @@
 package org.oobium.app.dev.controllers;
 
 import java.sql.SQLException;
-import java.util.Map;
 
 import org.oobium.app.dev.AppDevActivator;
 import org.oobium.app.server.controller.Controller;
-import org.oobium.http.HttpRequest;
 import org.oobium.logging.Logger;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 
 public class ShutdownController extends Controller {
-
-	public ShutdownController(HttpRequest request, Map<String, Object> routeParams) {
-		super(request, routeParams);
-	}
 
 	@Override
 	public void handleRequest() throws SQLException {
