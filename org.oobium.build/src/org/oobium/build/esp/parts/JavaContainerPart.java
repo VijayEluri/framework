@@ -21,9 +21,14 @@ public class JavaContainerPart extends EspPart {
 		parse();
 	}
 
+	@Override
+	public String getText() {
+		return super.getText().replace("\\{", "{");
+	}
+	
 	protected void parse() {
 		for(int s1 = start; s1 < end; s1++) {
-			if(ca[s1] == '{') {
+			if(ca[s1] == '{' && (s1 == 0 || ca[s1-1] != '\\')) {
 				int s2 = closer(ca, s1, end) + 1;
 				if(s2 == 0) {
 					s2 = end;

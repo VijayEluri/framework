@@ -169,8 +169,8 @@ public class EspStyleRanges {
 		case StylePropertyValuePart:
 			return part.getEnd();
 		case StylePart:
-			if(part.getLength() == 6 && "hidden".equals(part.getText())) {
-				return addRange(offset, 6, operator);
+			if(part.getLength() == 4 && "hide".equals(part.getText())) {
+				return addRange(offset, 4, operator);
 			}
 			return part.getEnd();
 		case TagPart:
@@ -222,14 +222,16 @@ public class EspStyleRanges {
 					s1++;
 				}
 			}
-			int s2 = s1;
-			while(s2 < end && Character.isLetter(part.charAt(s2))) {
-				s2++;
-			}
-			if(JAVA_KEYWORDS.contains(part.subSequence(s1, s2))) {
-				s1 = addRange(s1, s2-s1, javaKeyword);
-			} else {
-				s1 = s2;
+			if(s1 < end) {
+				int s2 = s1;
+				while(s2 < end && Character.isLetter(part.charAt(s2))) {
+					s2++;
+				}
+				if(JAVA_KEYWORDS.contains(part.subSequence(s1, s2))) {
+					s1 = addRange(s1, s2-s1, javaKeyword);
+				} else {
+					s1 = s2;
+				}
 			}
 		}
 		return end;
@@ -271,14 +273,16 @@ public class EspStyleRanges {
 						s1++;
 					}
 				}
-				int s2 = s1;
-				while(s2 < end && Character.isLetter(part.charAt(s2))) {
-					s2++;
-				}
-				if(JS_KEYWORDS.contains(part.subSequence(s1, s2))) {
-					s1 = addRange(s1, s2-s1, javaKeyword);
-				} else {
-					s1 = s2;
+				if(s1 < end) {
+					int s2 = s1;
+					while(s2 < end && Character.isLetter(part.charAt(s2))) {
+						s2++;
+					}
+					if(JS_KEYWORDS.contains(part.subSequence(s1, s2))) {
+						s1 = addRange(s1, s2-s1, javaKeyword);
+					} else {
+						s1 = s2;
+					}
 				}
 			}
 			return end;

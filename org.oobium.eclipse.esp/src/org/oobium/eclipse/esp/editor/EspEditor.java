@@ -274,7 +274,7 @@ public class EspEditor extends TextEditor {
 							break;
 						case '"': {
 							Point sel = textWidget.getSelection();
-							if(sel.x == sel.y && sel.x < textWidget.getCharCount()-1 && "\"".equals(textWidget.getText(sel.x, sel.y))) {
+							if(sel.x == sel.y && sel.x < textWidget.getCharCount() && "\"".equals(textWidget.getText(sel.x, sel.y))) {
 								moveSelFore1 = true;
 								e.doit = false;
 							} else {
@@ -289,7 +289,7 @@ public class EspEditor extends TextEditor {
 							break;
 						case ')': {
 							Point sel = textWidget.getSelection();
-							if(sel.x == sel.y && sel.x < textWidget.getCharCount()-1 && ")".equals(textWidget.getText(sel.x, sel.y))) {
+							if(sel.x == sel.y && sel.x < textWidget.getCharCount() && ")".equals(textWidget.getText(sel.x, sel.y))) {
 								moveSelFore1 = true;
 								e.doit = false;
 							}
@@ -297,7 +297,7 @@ public class EspEditor extends TextEditor {
 						}
 						case '}': {
 							Point sel = textWidget.getSelection();
-							if(sel.x == sel.y && sel.x < textWidget.getCharCount()-1 && "}".equals(textWidget.getText(sel.x, sel.y))) {
+							if(sel.x == sel.y && sel.x < textWidget.getCharCount() && "}".equals(textWidget.getText(sel.x, sel.y))) {
 								moveSelFore1 = true;
 								e.doit = false;
 							}
@@ -513,14 +513,14 @@ public class EspEditor extends TextEditor {
 	 */
 	private void updateMarkers() {
 		IFile file = getEResource();
-		if(!OobiumCore.isEFile(file)) {
+		if(!file.exists() || !OobiumCore.isEFile(file)) {
 			return;
 		}
 		
 		System.out.println("update markers");
 		
 		try {
-			IMarker[] markers = file.findMarkers(IMarker.PROBLEM, true, IResource.DEPTH_ZERO);
+			IMarker[] markers = file.findMarkers(IMarker.MARKER, true, IResource.DEPTH_ZERO);
 			for(IMarker marker : markers) {
 				marker.delete();
 			}
