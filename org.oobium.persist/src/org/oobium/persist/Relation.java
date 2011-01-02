@@ -73,8 +73,6 @@ public @interface Relation {
 	 */
 	Class<?> backedBy() default Set.class;
 
-	String through() default "";
-	
 	/**
 	 * If set true, specifies that this field should always be included (eagerly loaded) when loading the model.<br/>
 	 * default is false.
@@ -82,14 +80,14 @@ public @interface Relation {
 	boolean include() default false;
 	
 	Class<?> key() default String.class;
-
-	int limit() default -1;
 	
+	int limit() default -1;
+
 	/**
 	 * The name of the field that will represent this relationship in the defining class.
 	 */
 	String name();
-
+	
 	/**
 	 * The referential action to take place when the model is destroyed. The name comes from the ON DELETE clause in an SQL
 	 * Foreign Key constraint and the meaning of the referential actions can be taken directly from SQL references.
@@ -128,7 +126,7 @@ public @interface Relation {
 	 * @return
 	 */
 	String opposite() default "";
-	
+
 	String orderBy() default "";
 	
 	boolean readOnly() default false;
@@ -140,6 +138,8 @@ public @interface Relation {
 	 * @return true if this field is required, false otherwise
 	 */
 	boolean required() default false;
+	
+	String through() default "";
 	
 	/**
 	 * The class type that this relation points to
