@@ -100,7 +100,7 @@ public class ReadHandler extends Thread {
 	
 	private synchronized void process(Read read) {
 		Data data = dataMap.get(read.key);
-		boolean remove = (data != null);
+		boolean remove;
 		if(data != null) {
 			data.add(read.data);
 			if(data.invalid()) {
@@ -110,12 +110,14 @@ public class ReadHandler extends Thread {
 				createInvalidResponse(read.key, data);
 				return;
 			}
+			remove = true;
 		} else {
-			data = new Data(read.data);
+			data = new Data(read);
 			if(data.invalid()) {
 				createInvalidResponse(read.key, data);
 				return;
 			}
+			remove = false;
 		}
 		
 		if(data.ready()) {

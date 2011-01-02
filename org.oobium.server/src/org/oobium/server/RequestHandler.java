@@ -10,22 +10,23 @@
  ******************************************************************************/
 package org.oobium.server;
 
-import static org.oobium.http.HttpRequest.Type.*;
+import static org.oobium.http.HttpRequest.Type.DELETE;
+import static org.oobium.http.HttpRequest.Type.GET;
+import static org.oobium.http.HttpRequest.Type.HEAD;
+import static org.oobium.http.HttpRequest.Type.PUT;
 
 import java.io.IOException;
-import java.net.Socket;
 import java.net.URLDecoder;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.oobium.http.HttpRequest;
+import org.oobium.http.HttpRequest.Type;
 import org.oobium.http.HttpRequest404Handler;
 import org.oobium.http.HttpRequest500Handler;
 import org.oobium.http.HttpRequestHandler;
 import org.oobium.http.HttpResponse;
-import org.oobium.http.HttpRequest.Type;
 import org.oobium.http.constants.Header;
 import org.oobium.http.impl.Headers;
 import org.oobium.logging.Logger;
@@ -92,6 +93,9 @@ class RequestHandler implements Runnable {
 			request.setInput(data);
 		}
 
+		request.setIpAddress(data.remoteIpAddress);
+		request.setPort(data.localPort);
+		
 		return request;
 	}
 
@@ -128,36 +132,27 @@ class RequestHandler implements Runnable {
 	
 	public void run() {
 		try {
-			logger.debug("start createRequest");
 			Request request = createRequest(data);
-			logger.debug("end createRequest");
-			if(request != null) {
-				Socket socket = ((SocketChannel) key.channel()).socket();
-				if(socket != null && socket.isConnected()) {
-					String hostAddress = socket.getInetAddress().getHostAddress();
-					int localPort = socket.getLocalPort();
-					
-					request.setIpAddress(hostAddress);
-					request.setPort(localPort);
-				}
-
-				HttpResponse response = null;
-				try {
-					response = handleRequest(request);
-				} catch(Exception e) {
-					logger.warn("exception thrown handling request (" + request.getFullPath() + ")", e);
-					response = handle500(request, e);
-				}
-
-				if(response == null) {
-					if(logger.isLoggingDebug()) {
-						logger.debug(request.getFullPath() + " not found");
-					}
-					response = handle404(request);
-				}
-
-				selector.send(key, response);
+			if(logger.isLoggingInfo()) {
+				logger.info("request: " + data.remoteIpAddress + " -> " + request.getHost() + request.getFullPath());
 			}
+
+			HttpResponse response = null;
+			try {
+				response = handleRequest(request);
+			} catch(Exception e) {
+				logger.warn("exception thrown handling request (" + request.getFullPath() + ")", e);
+				response = handle500(request, e);
+			}
+
+			if(response == null) {
+				if(logger.isLoggingInfo()) {
+					logger.info(request.getFullPath() + " not found");
+				}
+				response = handle404(request);
+			}
+
+			selector.send(key, response);
 		} catch(Exception e) {
 			logger.warn(e);
 		}

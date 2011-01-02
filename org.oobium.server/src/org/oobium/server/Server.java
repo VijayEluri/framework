@@ -25,7 +25,7 @@ import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
 public class Server implements BundleActivator, HttpServer {
 
-	// TODO maxOpenSockets (KeepAlive not currently supported)
+	// TODO maxOpenSockets
 	// public static final int maxOpenSockets;
 	public static final long maxReadTime;
 	public static final long maxReadIdleTime;
@@ -56,10 +56,7 @@ public class Server implements BundleActivator, HttpServer {
 		maxRequestHandlers = (int) tmp;
 	}
 
-//	public static void main(String[] args) {
-//		new Server(5000, 5001);
-//	}
-	
+
 	private Logger logger;
 	private ServerSelector selector;
 	private ServiceTracker requestHandlerTracker;
@@ -70,19 +67,13 @@ public class Server implements BundleActivator, HttpServer {
 		logger = Logger.getLogger(Server.class);
 	}
 	
-//	public Server(int...ports) {
-//		logger = Logger.getLogger(Server.class);
-//		logger.setConsoleLevel(Logger.DEBUG);
-//		logger.info("Starting server");
-//		
-//		selector = new ServerSelector(null);
-//		for(int port : ports) {
-//			selector.addPort(port);
-//		}
-//		new Thread(selector).start();
-//
-//		logger.info("Server started");
-//	}
+	synchronized HttpRequestHandler addHandler(HttpRequestHandler handler) {
+		if(selector == null) {
+			selector = new ServerSelector();
+			new Thread(selector).start();
+		}
+		return selector.addHandler(handler);
+	}
 	
 	public int[] getPorts() {
 		return selector.getPorts();
@@ -92,12 +83,12 @@ public class Server implements BundleActivator, HttpServer {
 		logger.setBundle(context.getBundle());
 		logger.info("Starting server");
 		
-		selector = new ServerSelector(context);
+		selector = new ServerSelector();
 		new Thread(selector).start();
 
 		requestHandlerTracker = new ServiceTracker(context, HttpRequestHandler.class.getName(), new ServiceTrackerCustomizer() {
 			public Object addingService(ServiceReference reference) {
-				return selector.addHandler((HttpRequestHandler) context.getService(reference));
+				return addHandler((HttpRequestHandler) context.getService(reference));
 			}
 			public void modifiedService(ServiceReference reference, Object service) {
 				// nothing to do

@@ -12,6 +12,10 @@ package org.oobium.server;
 
 import static org.oobium.http.HttpRequest.Type.*;
 
+import java.net.InetAddress;
+import java.net.Socket;
+import java.nio.channels.SocketChannel;
+
 import org.oobium.http.HttpRequest.Type;
 
 class Data {
@@ -34,6 +38,9 @@ class Data {
 	final long start;
 	long lastRead;
 	
+	String remoteIpAddress;
+	int localPort;
+	
 	byte state; // hasType, hasPath, hasHost, hasHeaders
 				//  if type == [GET|HEAD], we can route it as soon as we receive the path and host
 				//  if type == POST, we need all the headers (in case there is a _method header)
@@ -46,6 +53,26 @@ class Data {
 	byte[] data;
 	int[] marks; // 1-1st space, 2-2nd space, 3-start of host header, 4-start of content
 
+	Data(Read read) {
+		this.data = read.data;
+		start = lastRead = System.currentTimeMillis();
+		
+		Socket socket = ((SocketChannel) read.key.channel()).socket();
+		if(socket != null) {
+			InetAddress ia = socket.getInetAddress();
+			if(ia != null) {
+				remoteIpAddress = ia.getHostAddress();
+			}
+			localPort = socket.getLocalPort();
+		}
+
+		mark = 0;
+		marks = new int[5];
+		if(data.length > 6) {
+			process();
+		}
+	}
+	
 	Data(byte[] data) {
 		this.data = data;
 		start = lastRead = System.currentTimeMillis();

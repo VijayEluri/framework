@@ -32,7 +32,6 @@ import org.oobium.http.HttpRequest500Handler;
 import org.oobium.http.HttpRequestHandler;
 import org.oobium.http.HttpResponse;
 import org.oobium.logging.Logger;
-import org.osgi.framework.BundleContext;
 
 public class ServerSelector implements Runnable {
 
@@ -50,7 +49,7 @@ public class ServerSelector implements Runnable {
 	
 	private volatile boolean addingRequestHandler;
 
-	public ServerSelector(BundleContext context) {
+	public ServerSelector() {
 		logger = Logger.getLogger(Server.class);
 		
 		try {
@@ -234,26 +233,30 @@ public class ServerSelector implements Runnable {
 	}
 	
 	public void removeHandler(HttpRequest404Handler handler, int port) {
-		List<HttpRequest404Handler> handlers = request404Handlers.get(port);
-		if(handlers != null) {
-			handlers.remove(handler);
-			if(handlers.isEmpty()) {
-				request404Handlers.remove(port);
-				if(request404Handlers.isEmpty()) {
-					request404Handlers = null;
+		if(request404Handlers != null) {
+			List<HttpRequest404Handler> handlers = request404Handlers.get(port);
+			if(handlers != null) {
+				handlers.remove(handler);
+				if(handlers.isEmpty()) {
+					request404Handlers.remove(port);
+					if(request404Handlers.isEmpty()) {
+						request404Handlers = null;
+					}
 				}
 			}
 		}
 	}
 	
 	public void removeHandler(HttpRequest500Handler handler, int port) {
-		List<HttpRequest500Handler> handlers = request500Handlers.get(port);
-		if(handlers != null) {
-			handlers.remove(handler);
-			if(handlers.isEmpty()) {
-				request500Handlers.remove(port);
-				if(request500Handlers.isEmpty()) {
-					request500Handlers = null;
+		if(request500Handlers != null) {
+			List<HttpRequest500Handler> handlers = request500Handlers.get(port);
+			if(handlers != null) {
+				handlers.remove(handler);
+				if(handlers.isEmpty()) {
+					request500Handlers.remove(port);
+					if(request500Handlers.isEmpty()) {
+						request500Handlers = null;
+					}
 				}
 			}
 		}
@@ -418,7 +421,11 @@ public class ServerSelector implements Runnable {
 					
 					while(!q.isEmpty()) {
 						ByteBuffer buffer = q.get(0);
-						if(buffer != null) {
+						if(buffer == null) {
+							socket.close();
+							key.cancel();
+							q.clear();
+						} else {
 							if(logger.isLoggingTrace()) {
 								logger.trace(new String(buffer.array()));
 							}
@@ -437,10 +444,6 @@ public class ServerSelector implements Runnable {
 							key.cancel();
 							q.clear();
 							// TODO end of remove this
-						} else {
-							socket.close();
-							key.cancel();
-							q.clear();
 						}
 					}
 					

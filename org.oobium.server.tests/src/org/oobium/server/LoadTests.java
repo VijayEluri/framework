@@ -10,10 +10,11 @@
  ******************************************************************************/
 package org.oobium.server;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
 
@@ -22,8 +23,8 @@ public class LoadTests {
 	@Test
 	public void testSerial() throws Exception {
 		long start = System.currentTimeMillis();
-		int iterations = 4000;
-		for(int i = 0; i < iterations; i++) {
+		int requests = 4000;
+		for(int i = 0; i < requests; i++) {
 			System.out.println("iteration " + i);
 			URL url = new URL("http", "localhost", 5000, "/");
 	        URLConnection conn = url.openConnection();
@@ -31,7 +32,56 @@ public class LoadTests {
 		}
 		long duration = System.currentTimeMillis() - start;
 		System.out.println("elapsed time: " + (duration) + " millis");
-		System.out.println("average time: " + ((double) duration / iterations) + " millis");
+		System.out.println("average time: " + ((double) duration / requests) + " millis");
+		System.out.println("req / second: " + (int) ((double) requests / ((double) duration / 1000)));
 	}
 
+	private volatile AtomicInteger running;
+	
+	@Test
+	public void testParallel() throws Exception {
+		final int iterationsPerThread = 1000;
+		Runnable runnable = new Runnable() {
+			public void run() {
+				int i = 0;
+				try {
+					for( ; i < iterationsPerThread; i++) {
+						URL url = new URL("http", "localhost", 5000, "/");
+				        URLConnection conn = url.openConnection();
+				        if(!"HTTP/1.0 200 - OK".equals(conn.getHeaderField(0))) {
+							System.err.println("iteration " + i + " failed: " + conn.getHeaderField(0));
+							break;
+				        }
+					}
+				} catch(Exception e) {
+					System.err.println("iteration " + i + " failed");
+					e.printStackTrace();
+				}
+				running.decrementAndGet();
+			}
+		};
+		
+		Thread[] threads = new Thread[10];
+		for(int i = 0; i < threads.length; i++) {
+			threads[i] = new Thread(runnable, "test" + i);
+		}
+		
+		running = new AtomicInteger(threads.length);
+		long start = System.currentTimeMillis();
+
+		for(int i = 0; i < threads.length; i++) {
+			threads[i].start();
+		}
+		while(running.get() > 0) {
+			Thread.yield();
+		}
+		
+		long duration = System.currentTimeMillis() - start;
+		int requests = (threads.length * iterationsPerThread);
+		System.out.println("ran " + requests + " requests in " + threads.length + " threads");
+		System.out.println("elapsed time: " + (duration) + " millis");
+		System.out.println("average time: " + ((double) duration / requests) + " millis");
+		System.out.println("req / second: " + (int) ((double) requests / ((double) duration / 1000)));
+	}
+	
 }
