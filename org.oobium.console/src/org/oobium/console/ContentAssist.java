@@ -54,6 +54,10 @@ class ContentAssist {
 	}
 	
 	void close() {
+		if(console != null) {
+			console.canvas.redraw();
+		}
+		
 		if(helpShell != null && !helpShell.isDisposed()) {
 			helpShell.dispose();
 		}

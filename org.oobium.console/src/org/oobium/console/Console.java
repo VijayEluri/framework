@@ -200,7 +200,7 @@ public class Console extends Composite {
 		
 		setLayout(new ConsoleLayout());
 
-		canvas = new Canvas(this, SWT.NONE);
+		canvas = new Canvas(this, SWT.DOUBLE_BUFFERED);
 		hbar = new Slider(this, SWT.HORIZONTAL);
 		hbar.setVisible(false);
 		hbar.addListener(SWT.MouseUp, new Listener() {
@@ -232,8 +232,6 @@ public class Console extends Composite {
 		selection = new Selection();
 		commandSel = new Point(0, 0);
 		
-		setFontSize(10);
-
 		if(readOnly) {
 			buffer = new Buffer("", 1000);
 		} else {
@@ -245,6 +243,10 @@ public class Console extends Composite {
 			
 			buffer = new Buffer("oobium$ ", 1000);
 		}
+
+		String fontName = "gtk".equals(SWT.getPlatform()) ? "monospace" : "courier new";
+		setFont(fontName, 10);
+
 		regions = new HashMap<Integer, Region>();
 
 		defNormal = new Region(Region.NORMAL | Region.BLACK);
@@ -330,6 +332,14 @@ public class Console extends Composite {
 		}
 	}
 
+	public void addResourceStrings(ResourceBundle resourceBundle) {
+		resources.putStrings(resourceBundle);
+	}
+	
+	public void addResourceStrings(String bundleName, ClassLoader classLoader) {
+		resources.putStrings(bundleName, classLoader);
+	}
+	
 	public void capture() {
 		captureErr();
 		captureOut();
@@ -340,7 +350,7 @@ public class Console extends Composite {
 			System.setErr(new ConsolePrintStream(err));
 		}
 	}
-	
+
 	public void captureOut() {
 		if(!(System.out instanceof ConsolePrintStream)) {
 			System.setOut(new ConsolePrintStream(out));
@@ -377,7 +387,7 @@ public class Console extends Composite {
 		clearCommandSelection();
 		canvas.redraw();
 	}
-
+	
 	private void commandHandleKey(char c) {
 		resetLineSelection();
 		int plen = buffer.getPrompt().length();
@@ -435,7 +445,7 @@ public class Console extends Composite {
 		updateScrollBars();
 		scrollCommandToView();
 	}
-	
+
 	private void commandInsert(String data) {
 		int plen = buffer.getPrompt().length();
 		StringBuilder sb = buffer.getLast().sb;
@@ -452,7 +462,7 @@ public class Console extends Composite {
 		commandSel.y = 0;
 		in.notify(data);
 	}
-	
+
 	private Suggestion[] complete() {
 		Suggestion[] suggestions = suggest();
 		if(suggestions.length == 1) {
@@ -482,7 +492,7 @@ public class Console extends Composite {
 		}
 		return suggestions;
 	}
-
+	
 	void complete(String word) {
 		int start = (commandSel.x == command.length()) ? command.length() : commandSel.x;
 		while(start > 0) {
@@ -500,7 +510,7 @@ public class Console extends Composite {
 		setCommandSelection(newSel);
 		scrollCommandToView();
 	}
-
+	
 	private boolean contentAssistRequest(Event e) {
 		if(readOnly) {
 			return false;
@@ -657,6 +667,11 @@ public class Console extends Composite {
 		if(resources != null) {
 			resources.clear();
 		}
+		disposeFonts();
+		super.dispose();
+	}
+	
+	private void disposeFonts() {
 		if(fontNormal != null && !fontNormal.isDisposed()) {
 			fontNormal.dispose();
 		}
@@ -669,9 +684,8 @@ public class Console extends Composite {
 		if(fontItalic != null && !fontItalic.isDisposed()) {
 			fontItalic.dispose();
 		}
-		super.dispose();
 	}
-	
+
 	public void execute() {
 		resetSelection();
 		
@@ -720,7 +734,7 @@ public class Console extends Composite {
 		setCommand(command);
 		execute();
 	}
-
+	
 	public void execute(String command, boolean echo) {
 		if(echo) {
 			execute(command);
@@ -763,7 +777,7 @@ public class Console extends Composite {
 	public Canvas getCanvas() {
 		return canvas;
 	}
-	
+
 	/**
 	 * Returns a point describing the receiver's location relative
 	 * to its parent (or its display if its parent is null).
@@ -785,7 +799,7 @@ public class Console extends Composite {
 	public int getCaretPosition() {
 		return commandSel.x;
 	}
-
+	
 	public int getCharHeight() {
 		return charSize.y;
 	}
@@ -793,7 +807,7 @@ public class Console extends Composite {
 	public Point getCharSize() {
 		return new Point(charSize.x, charSize.y);
 	}
-	
+
 	public int getCharWidth() {
 		return charSize.x;
 	}
@@ -809,15 +823,15 @@ public class Console extends Composite {
 	public String[] getCommandHistory() {
 		return commandHistory.toArray(new String[commandHistory.size()]);
 	}
-
+	
 	public Point getCommandSelection() {
 		return new Point(commandSel.x, commandSel.x + commandSel.y);
 	}
-	
+
 	public int getCommandSelectionCount() {
 		return abs(commandSel.y);
 	}
-	
+
 	public String getCommandSelectionText() {
 		if(commandSel.y != 0) {
 			int x1 = commandSel.x;
@@ -832,6 +846,10 @@ public class Console extends Composite {
 		return fontNormal;
 	}
 
+	public Locale getLocale() {
+		return resources.getLocale();
+	}
+	
 	public Region getRegion(int style) {
 		Region region = regions.get(style);
 		if(region == null) {
@@ -844,11 +862,11 @@ public class Console extends Composite {
 		}
 		return region;
 	}
-
+	
 	public Command getRootCommand() {
 		return rootCommand;
 	}
-
+	
 	public int getRowCount() {
 		return buffer.size();
 	}
@@ -875,7 +893,7 @@ public class Console extends Composite {
 		
 		return new Point(x, y);
 	}
-	
+
 	public int getSelectionCount () {
 		Point selection = getSelection();
 		return abs(selection.y - selection.x);
@@ -884,7 +902,7 @@ public class Console extends Composite {
 	public String getSelectionText() {
 		return buffer.toString(selection);
 	}
-	
+
 	private Point getSelPoint(Event e) {
 		int column = (e.x / charSize.x) + hbar.getSelection();
 		int line = (e.y / charSize.y) + top();
@@ -947,7 +965,7 @@ public class Console extends Composite {
 		}
 		lastAutoCompleteRequest = System.currentTimeMillis();
 	}
-
+	
 	private void handleFocusIn(Event e) {
 		if(!hasFocus) {
 			hasFocus = true;
@@ -1088,7 +1106,7 @@ public class Console extends Composite {
 			canvas.redraw();
 		}
 	}
-
+	
 	private void handleMouseDown(Event e) {
 		if(e.button == 1) {
 			mouseDown = getSelPoint(e);
@@ -1117,7 +1135,7 @@ public class Console extends Composite {
 			}
 		}
 	}
-	
+
 	private void handleMouseMove(Event e) {
 		if(mouseDown != null) {
 			commandSel.y = 0;
@@ -1170,7 +1188,7 @@ public class Console extends Composite {
 		}
 		canvas.redraw();
 	}
-
+	
 	private void handlePaint(Event e) {
 		Point size = getSize();
 
@@ -1272,7 +1290,7 @@ public class Console extends Composite {
 			paintCaret(e);
 		}
 	}
-	
+
 	private void handleTraverse(Event e) {
 		resetLineSelection();
 		switch(e.keyCode) {
@@ -1359,7 +1377,7 @@ public class Console extends Composite {
 	private boolean hasCommandSelection() {
 		return commandSel.y != 0;
 	}
-
+	
 	private boolean hasLineSelection() {
 		return selection.x1 != -1 && selection.y1 != -1 && selection.x2 != -1 && selection.y2 != -1;
 	}
@@ -1396,7 +1414,7 @@ public class Console extends Composite {
 		}
 		return 1;
 	}
-	
+
 	private int incPrev(CharSequence s, int pos, int stateMask) {
 		if((stateMask & SWT.CTRL) != 0) {
 			int i = pos - 1;
@@ -1432,7 +1450,7 @@ public class Console extends Composite {
 	public boolean isCommandRunning() {
 		return commandRunner != null && !commandRunner.isDone();
 	}
-
+	
 	private void paintCaret(boolean paintCaret) {
 		this.paintCaret = paintCaret;
 		Point loc = getCaretLocation();
@@ -1461,7 +1479,7 @@ public class Console extends Composite {
 		}
 	}
 	
-	public void paste() {
+    public void paste() {
 		checkReadOnly();
 		TextTransfer transfer = TextTransfer.getInstance();
 		String data = (String) clipboard.getContents(transfer);
@@ -1471,8 +1489,8 @@ public class Console extends Composite {
 			canvas.redraw();
 		}
 	}
-	
-	private boolean performFunction(Event e) {
+
+    private boolean performFunction(Event e) {
 		if(functions != null) {
 			for(Function f : functions) {
 				if(f.stateMask == e.stateMask && f.keyCode == e.keyCode) {
@@ -1483,8 +1501,8 @@ public class Console extends Composite {
 		}
 		return false;
 	}
-	
-	protected void print(Object x, Region def, boolean addNewLine) {
+
+    protected void print(Object x, Region def, boolean addNewLine) {
     	if(x instanceof Throwable) {
 			try {
 				StringWriter sw = new StringWriter();
@@ -1500,8 +1518,8 @@ public class Console extends Composite {
     		print(String.valueOf(x), def, addNewLine);
     	}
     }
-	
-    protected void print(String x, Region def, boolean addNewLine) {
+
+	protected synchronized void print(String x, Region def, boolean addNewLine) {
     	StringBuilder sb = buffer.getLast().sb;
     	if(sb == null) {
     		return;
@@ -1529,7 +1547,11 @@ public class Console extends Composite {
 	    	for(int i = 0; i < ca.length; i++) {
 	    		if(ca[i] == '\n') {
 	    			if(i != 0) {
-	    				sb.append(new String(ca, start, i-start));
+	    				if(i > 1 && ca[i-1] == '\r') {
+	    					sb.append(new String(ca, start, i-start-1));
+	    				} else {
+	    					sb.append(new String(ca, start, i-start));
+	    				}
 	    			}
 	    			start = i+1;
 	    			sb = buffer.addLine(20).sb;
@@ -1594,7 +1616,7 @@ public class Console extends Composite {
     	updateUI = true;
     }
 
-    private boolean printable(Event e) {
+	private boolean printable(Event e) {
     	if(readOnly) {
     		return false;
     	}
@@ -1629,12 +1651,12 @@ public class Console extends Composite {
 		}
 		return true;
 	}
-
-    public void release() {
+	
+	public void release() {
 		releaseErr();
 		releaseOut();
 	}
-
+	
 	public void releaseErr() {
 		if(System.err instanceof ConsolePrintStream) {
 			System.setErr(((ConsolePrintStream) System.err).getOriginal());
@@ -1646,7 +1668,7 @@ public class Console extends Composite {
 			System.setOut(((ConsolePrintStream) System.out).getOriginal());
 		}
 	}
-	
+
 	private void resetCommandSelection() {
 		commandSel.x = commandSel.y = 0;
 	}
@@ -1655,12 +1677,12 @@ public class Console extends Composite {
 		wholeWordSel = false;
 		selection.x1 = selection.y1 = selection.x2 = selection.y2 = -1;
 	}
-
+	
 	private void resetSelection() {
 		resetCommandSelection();
 		resetLineSelection();
 	}
-
+	
 	public void scrollCommandToView() {
 		if(!scrollLock) {
 			int x = buffer.getPrompt().length() + commandSel.x;
@@ -1675,7 +1697,7 @@ public class Console extends Composite {
 			vbar.setSelection(vbar.getMaximum());
 		}
 	}
-	
+
 	public void scrollSelectionToView() {
 		if(!scrollLock) {
 			if(hasLineSelection()) {
@@ -1708,7 +1730,7 @@ public class Console extends Composite {
 		super.setBackground(color);
 		canvas.setBackground(color);
 	}
-
+	
 	private void setCommand(int offset) {
 		commandHistoryPos += offset;
 		if(commandHistoryPos < 0) {
@@ -1729,7 +1751,7 @@ public class Console extends Composite {
 			});
 		}
 	}
-	
+
 	public void setCommand(String command) {
 		checkReadOnly();
 		int plen = buffer.getPrompt().length();
@@ -1782,7 +1804,7 @@ public class Console extends Composite {
 		commandSel.x = max(start, 0);
 		commandSel.y = max(end, 0) - commandSel.x;
 	}
-	
+
 	public void setCommandSelection(Point selection) {
 		setCommandSelection(selection.x, selection.y);
 	}
@@ -1792,35 +1814,52 @@ public class Console extends Composite {
 		hasFocus = canvas.setFocus();
 		return hasFocus;
 	}
-
+	
+	/**
+	 * Not supported. Use {@link #setFont(String, int)} instead.
+	 * @throws UnsupportedOperationException always
+	 */
 	@Override
 	public void setFont(Font font) {
 		throw new UnsupportedOperationException("not supported. use setFontSize(int) instead");
 	}
-	
-	public void setFontSize(int size) {
-		if(fontNormal != null && !fontNormal.isDisposed()) {
-			fontNormal.dispose();
-		}
-		if(fontBold != null && !fontBold.isDisposed()) {
-			fontBold.dispose();
-		}
-		if(fontItalic != null && !fontItalic.isDisposed()) {
-			fontItalic.dispose();
-		}
 
+	/**
+	 * Set the font for this console widget.<br/>
+	 * Calls {@link #clear()} so that there is only one font visible
+	 * at a time.
+	 * @param name the name of the font
+	 * @param size the size of the font
+	 * @throws IllegalArgumentException if the font is not fixed width
+	 */
+	public void setFont(String name, int size) {
 		Display display = getDisplay();
-		fontNormal = new Font(display, "monospace", size, SWT.NONE);
-		fontBold = new Font(display, "monospace", size, SWT.BOLD);
-		fontBoldItalic = new Font(display, "monospace", size, SWT.BOLD | SWT.ITALIC);
-		fontItalic = new Font(display, "monospace", size, SWT.ITALIC);
 
-		GC gc = new GC(display);
-		gc.setFont(fontNormal);
-		charSize = gc.stringExtent(" ");
+		Font font = new Font(display, name, size, SWT.NONE);
+		
+		GC gc = new GC(getDisplay());
+		gc.setFont(font);
+		Point p1 = gc.stringExtent(" ");
+		Point p2 = gc.stringExtent("i");
+		Point p3 = gc.stringExtent("W");
 		gc.dispose();
-	}
 
+		if(p1.x != p2.x || p2.x != p3.x) {
+			throw new IllegalArgumentException(name + " is not a fixed width font");
+		}
+
+		disposeFonts();
+
+		fontNormal = font;
+		fontBold = new Font(display, name, size, SWT.BOLD);
+		fontBoldItalic = new Font(display, name, size, SWT.BOLD | SWT.ITALIC);
+		fontItalic = new Font(display, name, size, SWT.ITALIC);
+	
+		charSize = p1;
+		
+		clear();
+	}
+	
 	@Override
 	public void setForeground(Color color) {
 		super.setForeground(color);
@@ -1832,18 +1871,6 @@ public class Console extends Composite {
 		if(prompt != null) {
 			canvas.redraw();
 		}
-	}
-
-	public void addResourceStrings(String bundleName, ClassLoader classLoader) {
-		resources.putStrings(bundleName, classLoader);
-	}
-	
-	public Locale getLocale() {
-		return resources.getLocale();
-	}
-	
-	public void addResourceStrings(ResourceBundle resourceBundle) {
-		resources.putStrings(resourceBundle);
 	}
 	
 	public void setRootCommand(Command rootCommand) {

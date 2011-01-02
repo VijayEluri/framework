@@ -140,7 +140,7 @@ public class ConsolePage extends Composite {
 			@Override
 			public void handleEvent(Event event) {
 				matches = null;
-				findNext();
+				findAgain();
 			}
 		});
 
@@ -152,7 +152,7 @@ public class ConsolePage extends Composite {
 			@Override
 			public void handleEvent(Event event) {
 				matches = null;
-				findNext();
+				findAgain();
 			}
 		});
 		
@@ -164,7 +164,7 @@ public class ConsolePage extends Composite {
 			@Override
 			public void handleEvent(Event event) {
 				matches = null;
-				findNext();
+				findAgain();
 			}
 		});
 
@@ -232,6 +232,15 @@ public class ConsolePage extends Composite {
 				match = matches.size();
 			}
 			matches.add(new Point(x, y));
+		}
+	}
+	
+	private void findAgain() {
+		finderPos.y = finderPos.x-1;
+		if(finderPos.y < 0) finderPos.y = 0;
+		findNext();
+		if(regex.getSelection()) {
+			findPrev();
 		}
 	}
 	
