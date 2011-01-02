@@ -39,7 +39,6 @@ import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.oobium.app.AppService;
-import org.oobium.app.AssetProvider;
 import org.oobium.app.server.controller.Action;
 import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.routing.AppRouter;
@@ -225,11 +224,10 @@ public class RouterTests {
 
 	@Test
 	public void testRouteAssets() throws Exception {
-		AssetProvider app = mock(AssetProvider.class);
-		when(app.getName()).thenReturn("TestApp");
-		when(app.getAssetList()).thenReturn(Collections.singletonList("/documents/notes.text|0|0"));
+		when(service.getName()).thenReturn("TestApp");
+		when(service.getAssetList()).thenReturn(Collections.singletonList("/documents/notes.text|0|0"));
 		
-		router.addAssetRoutes(app);
+		router.addAssetRoutes();
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /documents/notes.text -> Asset:TestApp", router.getRoutes().get(0).toString());
 
@@ -240,11 +238,10 @@ public class RouterTests {
 	
 	@Test
 	public void testRouteAssets_Image() throws Exception {
-		AppService app = mock(AppService.class);
-		when(app.getName()).thenReturn("TestApp");
-		when(app.getAssetList()).thenReturn(Collections.singletonList("/images/my_pic.png|0|0"));
+		when(service.getName()).thenReturn("TestApp");
+		when(service.getAssetList()).thenReturn(Collections.singletonList("/images/my_pic.png|0|0"));
 		
-		router.addAssetRoutes(app);
+		router.addAssetRoutes();
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /my_pic.png -> Asset:TestApp", router.getRoutes().get(0).toString());
 
@@ -255,11 +252,10 @@ public class RouterTests {
 	
 	@Test
 	public void testRouteAssets_Script() throws Exception {
-		AppService app = mock(AppService.class);
-		when(app.getName()).thenReturn("TestApp");
-		when(app.getAssetList()).thenReturn(Collections.singletonList("/scripts/application.js|0|0"));
+		when(service.getName()).thenReturn("TestApp");
+		when(service.getAssetList()).thenReturn(Collections.singletonList("/scripts/application.js|0|0"));
 		
-		router.addAssetRoutes(app);
+		router.addAssetRoutes();
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /application.js -> Asset:TestApp", router.getRoutes().get(0).toString());
 
@@ -270,11 +266,10 @@ public class RouterTests {
 	
 	@Test
 	public void testRouteAssets_Style() throws Exception {
-		AppService app = mock(AppService.class);
-		when(app.getName()).thenReturn("TestApp");
-		when(app.getAssetList()).thenReturn(Collections.singletonList("/styles/application.css|0|0"));
+		when(service.getName()).thenReturn("TestApp");
+		when(service.getAssetList()).thenReturn(Collections.singletonList("/styles/application.css|0|0"));
 		
-		router.addAssetRoutes(app);
+		router.addAssetRoutes();
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /application.css -> Asset:TestApp", router.getRoutes().get(0).toString());
 
@@ -285,11 +280,10 @@ public class RouterTests {
 	
 	@Test
 	public void testRouteAssets_WithBasicAuth() throws Exception {
-		AppService app = mock(AppService.class);
-		when(app.getName()).thenReturn("TestApp");
-		when(app.getAssetList()).thenReturn(Collections.singletonList("/documents/notes.text|0|0|realm1"));
+		when(service.getName()).thenReturn("TestApp");
+		when(service.getAssetList()).thenReturn(Collections.singletonList("/documents/notes.text|0|0|realm1"));
 		
-		router.addAssetRoutes(app);
+		router.addAssetRoutes();
 		
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /documents/notes.text -> Asset:TestApp", router.getRoutes().get(0).toString());

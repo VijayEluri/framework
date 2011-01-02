@@ -131,8 +131,8 @@ public class Router {
 		return new Routed(this, route);
 	}
 	
-	public Routed addAssetRoutes(AssetProvider provider) {
-		List<String> paths = provider.getAssetList();
+	public Routed addAssetRoutes() {
+		List<String> paths = service.getAssetList();
 		List<Route> routes = new ArrayList<Route>();
 		if(!blank(paths)) {
 			for(String path : paths) {
@@ -144,8 +144,8 @@ public class Router {
 					path = path.substring(7);
 				}
 				String[] sa = path.split("\\|", 4);
-				String key = provider.getClass().getCanonicalName() + ":" + sa[0];
-				Route route = new AssetRoute(checkRule(sa[0]), provider, sa[1], sa[2]);
+				String key = service.getClass().getCanonicalName() + ":" + sa[0];
+				Route route = new AssetRoute(checkRule(sa[0]), service, sa[1], sa[2]);
 				routes.add(route);
 				addRoute(key, route);
 				if(sa.length == 4) {

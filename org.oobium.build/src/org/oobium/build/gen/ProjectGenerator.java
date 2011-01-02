@@ -125,7 +125,7 @@ public class ProjectGenerator {
 		sb.append("\t\t// TODO add routes specific to your application\n");
 		sb.append('\n');
 		if(createViews) {
-			sb.append("\t\trouter.addAssetRoutes(this);\n");
+			sb.append("\t\trouter.addAssetRoutes();\n");
 			sb.append("\t\trouter.setHome(Home.class);\n");
 		}
 		sb.append("\t}");
@@ -630,7 +630,7 @@ public class ProjectGenerator {
 		sb.append("\tpublic void addRoutes(").append(cType).append(" config, ").append(rType).append(" router) {\n");
 		sb.append("\t\t// TODO add the routes specific to this module\n");
 		if(hasViews) {
-			sb.append("\t\trouter.addAssetRoutes(this);\n");
+			sb.append("\t\trouter.addAssetRoutes();\n");
 		}
 		sb.append("\t}");
 		src.methods.put("addRoutes", sb.toString());
