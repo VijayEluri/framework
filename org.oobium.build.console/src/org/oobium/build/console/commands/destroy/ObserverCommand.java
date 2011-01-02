@@ -35,11 +35,13 @@ public class ObserverCommand extends BuilderCommand {
 				console.out.println("operation cancelled");
 				return;
 			}
-		}
-		
-		observer.delete();
 
-		BuilderConsoleActivator.sendRefresh(module, observer.getParentFile(), 1000);
+			observer.delete();
+
+			BuilderConsoleActivator.sendRefresh(module, observer.getParentFile(), 1000);
+		} else {
+			console.err.println("observer does not exist in " + module);
+		}
 	}
 	
 }

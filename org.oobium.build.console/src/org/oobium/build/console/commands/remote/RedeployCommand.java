@@ -8,26 +8,20 @@
  * Contributors:
  *     Jeremy Dowdall <jeremy@oobium.com> - initial API and implementation
  ******************************************************************************/
-package org.oobium.build.console.commands.show;
+package org.oobium.build.console.commands.remote;
 
-import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.workspace.Module;
-import org.oobium.utils.FileUtils;
+import java.io.IOException;
 
-public class ConfigurationCommand extends BuilderCommand {
+import org.oobium.build.exceptions.OobiumException;
+import org.oobium.build.util.SSH;
 
-	@Override
-	public void configure() {
-		moduleRequired = true;
-	}
+public class RedeployCommand extends DeployCommand {
 
 	@Override
-	public void run() {
-		Module module = getModule();
-		if(module.isJar) {
-			console.out.println(FileUtils.readJarEntry(module.file, module.name.replace('.', '/') + "configuration.js"));
-		} else {
-			console.out.println(FileUtils.readFile(module.config));
+	protected void finish(SSH ssh, String[] previous) throws IOException, OobiumException {
+		if(previous != null) {
+			ssh.exec("rm -r " + previous[0]);
 		}
 	}
+	
 }

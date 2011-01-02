@@ -33,6 +33,7 @@ import org.oobium.build.console.commands.MkdirCommand;
 import org.oobium.build.console.commands.OpenCommand;
 import org.oobium.build.console.commands.PwdCommand;
 import org.oobium.build.console.commands.RefreshCommand;
+import org.oobium.build.console.commands.RemoteCommand;
 import org.oobium.build.console.commands.RemoveCommand;
 import org.oobium.build.console.commands.RmCommand;
 import org.oobium.build.console.commands.SetCommand;
@@ -42,6 +43,7 @@ import org.oobium.build.console.commands.StopCommand;
 import org.oobium.build.console.commands.TouchCommand;
 import org.oobium.build.workspace.Application;
 import org.oobium.build.workspace.Bundle;
+import org.oobium.build.workspace.Migrator;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.Workspace;
 
@@ -66,31 +68,32 @@ public class BuilderRootCommand extends BuilderCommand {
 	
 	@Override
 	public void configure() {
-		add(new OpenCommand());
+		add(new AddCommand());
+		add(new BrowseCommand());
 		add(new CatCommand());
 		add(new CdCommand());
-		add(new ShowCommand());
-		add(new PwdCommand());
-		add(new CreateCommand());
-		add(new SetCommand());
-		add(new GetCommand());
-		add(new GenerateCommand());
-		add(new RmCommand());
 		add(new CleanCommand());
+		add(new CreateCommand());
+		add(new DestroyCommand());
 		add(new ExportCommand());
-		add(new ImportCommand());
-		add(new RefreshCommand());
-		add(new LsCommand());
+		add(new GenerateCommand());
+		add(new GetCommand());
 		add(new HttpCommand());
+		add(new ImportCommand());
+		add(new LsCommand());
+		add(new MigrateCommand());
+		add(new MkdirCommand());
+		add(new OpenCommand());
+		add(new PwdCommand());
+		add(new RefreshCommand());
+		add(new RemoteCommand());
+		add(new RemoveCommand());
+		add(new RmCommand());
+		add(new SetCommand());
+		add(new ShowCommand());
 		add(new StartCommand());
 		add(new StopCommand());
-		add(new DestroyCommand());
-		add(new MkdirCommand());
 		add(new TouchCommand());
-		add(new BrowseCommand());
-		add(new MigrateCommand());
-		add(new AddCommand());
-		add(new RemoveCommand());
 	}
 	
 	@Override
@@ -114,6 +117,9 @@ public class BuilderRootCommand extends BuilderCommand {
 		if(bundle instanceof Module) {
 			return (Module) bundle;
 		}
+		if(bundle instanceof Migrator) {
+			return workspace.getModule(((Migrator) bundle).module);
+		}
 		return null;
 	}
 	
@@ -130,7 +136,7 @@ public class BuilderRootCommand extends BuilderCommand {
 	}
 
 	public boolean hasModule() {
-		return bundle instanceof Module;
+		return getModule() != null;
 	}
 	
 	public void removeListener(String propertyName, PropertyChangeListener listener) {

@@ -10,36 +10,53 @@
  ******************************************************************************/
 package org.oobium.build.console.commands;
 
-import static org.oobium.utils.Config.Mode.DEV;
+import static org.oobium.utils.coercion.TypeCoercer.coerce;
+
+import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.workspace.Application;
+import org.oobium.build.workspace.Workspace;
+import org.oobium.utils.Config.Mode;
 
 public class ExportCommand extends BuilderCommand {
 
 	@Override
 	public void configure() {
 		applicationRequired = true;
-		maxParams = 1;
 	}
 	
 	@Override
 	public void run() {
+		Workspace ws = getWorkspace();
 		Application app = getApplication();
 		
+		Mode mode = Mode.parse(param("mode"));
+		boolean migrators = coerce(param("migrators"), false);
+
 		if(flag('v')) {
+			console.out.println("exporting in " + mode + " mode");
+			if(migrators) {
+				console.out.println("including migrators");
+			} else {
+				console.out.println("not including migrators");
+			}
 			console.capture();
 		}
-
+		
 		try {
 			long start = System.currentTimeMillis();
-			if(flag('c')) {
-				app.cleanExport(getWorkspace());
-			}
-			app.export(getWorkspace(), DEV);
+
+			app.cleanExport(ws);
+			File exportDir = app.export(ws, mode, migrators);
+			
+			String msg = "exported <a href=\"open file " + exportDir + "\">" + app.name() + "</a>";
 			if(flag('v')) {
-				console.out.println("exported " + app.name() + " in " + (System.currentTimeMillis() - start) + "ms");
+				console.out.println(msg + " in " + (System.currentTimeMillis() - start) + "ms");
+			} else {
+				console.out.println(msg);
 			}
+			
 		} catch(Exception e) {
 			console.err.print(e);
 		} finally {

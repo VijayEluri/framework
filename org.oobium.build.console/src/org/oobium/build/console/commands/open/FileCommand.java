@@ -22,13 +22,13 @@ public class FileCommand extends BuilderCommand {
 	private String path;
 
 	@Override
-	public void configure() {
+	protected void configure() {
 		maxParams = 1;
 	}
-
+	
 	@Override
 	public void run() {
-		path = (paramCount() == 0) ? null : param(0);
+		path = options;
 		if(path == null) {
 			console.getDisplay().syncExec(new Runnable() {
 				@Override
@@ -49,7 +49,6 @@ public class FileCommand extends BuilderCommand {
 			file = new File(getPwd(), path);
 		}
 
-//		console.out.println("opening " + file);
 		BuilderConsoleActivator.sendOpen(file);
 	}
 

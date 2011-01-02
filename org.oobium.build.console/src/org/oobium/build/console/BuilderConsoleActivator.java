@@ -14,7 +14,9 @@ import static org.oobium.client.Client.client;
 import static org.oobium.utils.literal.Map;
 import static org.oobium.utils.literal.e;
 
+import java.awt.Desktop;
 import java.io.File;
+import java.io.IOException;
 
 import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Display;
@@ -44,6 +46,18 @@ public class BuilderConsoleActivator implements BundleActivator {
 				@Override
 				public void run() {
 					Program.launch(file.getAbsolutePath());
+				}
+			});
+		} else if(file.isDirectory()) {
+			Display.getDefault().syncExec(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						Desktop.getDesktop().open(file);
+					} catch(IOException e) {
+						e.printStackTrace();
+						// oh well...
+					}
 				}
 			});
 		}
