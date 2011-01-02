@@ -58,7 +58,7 @@ public class ControllerGenerator {
 	public static File createController(Module module, String name) {
 		String controller = camelCase((name.endsWith("Controller")) ? name : (name + "Controller"));
 		String canonicalName = module.packageName(module.controllers) + "." + controller;
-		File appController = new File(module.controllers, "ApplicationController");
+		File appController = new File(module.controllers, "ApplicationController.java");
 		String src = generate(canonicalName, appController.isFile());
 		return writeFile(module.controllers, controller + ".java", src);
 	}
