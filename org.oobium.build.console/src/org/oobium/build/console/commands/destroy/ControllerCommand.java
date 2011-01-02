@@ -42,7 +42,7 @@ public class ControllerCommand extends BuilderCommand {
 		
 		controller.delete();
 
-		BuilderConsoleActivator.sendRefresh(module, controller.getParentFile(), 100);
+		BuilderConsoleActivator.sendRefresh(module, controller, 100);
 	}
 	
 }
