@@ -43,7 +43,7 @@ public class AppDevActivator extends ModuleService implements HttpRequest500Hand
 	
 	@Override
 	public void addRoutes(Config config, Router router) {
-		router.addAssetRoutes(this);
+		router.addAssetRoutes();
 
 		router.add("notify").asRoute(POST, ID, NotifyController.class);
 		router.add("paths").asRoute(GET, "{app:[\\w\\.]+}/paths", PathsController.class);
