@@ -32,13 +32,13 @@ import org.oobium.app.ModuleService;
 import org.oobium.app.server.controller.Action;
 import org.oobium.app.server.controller.ActionCache;
 import org.oobium.app.server.controller.Controller;
+import org.oobium.app.server.routing.AppRouter;
 import org.oobium.app.server.routing.Router;
 import org.oobium.build.util.SourceFile;
 import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Bundle.Type;
 import org.oobium.build.workspace.ExportedPackage;
 import org.oobium.build.workspace.Module;
-import org.oobium.http.HttpRequest;
 import org.oobium.mailer.Mailer;
 import org.oobium.persist.Attribute;
 import org.oobium.persist.ModelDescription;
@@ -106,7 +106,7 @@ public class ProjectGenerator {
 		src.superName = AppService.class.getSimpleName();
 		src.imports.add(Config.class.getCanonicalName());
 		src.imports.add(AppService.class.getCanonicalName());
-		src.imports.add(Router.class.getCanonicalName());
+		src.imports.add(AppRouter.class.getCanonicalName());
 		if(createViews) {
 			String path = viewsFolder(project).getAbsolutePath().substring(srcFolder(project).getAbsolutePath().length()+1).replace(File.separatorChar, '.');
 			src.imports.add(path + ".pages.Home");
@@ -116,7 +116,7 @@ public class ProjectGenerator {
 		}
 
 		String cType = Config.class.getSimpleName();
-		String rType = Router.class.getSimpleName();
+		String rType = AppRouter.class.getSimpleName();
 		
 		StringBuilder sb = new StringBuilder();
 		sb.append("\t@Override\n");
@@ -127,13 +127,6 @@ public class ProjectGenerator {
 		if(createViews) {
 			sb.append("\t\trouter.addAssetRoutes(this);\n");
 			sb.append("\t\trouter.setHome(Home.class);\n");
-		} else {
-			sb.append("\t\trouter.setHome(new Controller() {\n");
-			sb.append("\t\t\t@Override\n");
-			sb.append("\t\t\tpublic void handleRequest() throws SQLException {\n");
-			sb.append("\t\t\t\trender(\"hello world!\");\n");
-			sb.append("\t\t\t}\n");
-			sb.append("\t\t});\n");
 		}
 		sb.append("\t}");
 		src.methods.put("addRoutes", sb.toString());
@@ -255,10 +248,6 @@ public class ProjectGenerator {
 		src.simpleName = "ApplicationController";
 		src.superName = Controller.class.getSimpleName();
 		src.imports.add(Controller.class.getCanonicalName());
-		src.imports.add(HttpRequest.class.getCanonicalName());
-		src.imports.add(Map.class.getCanonicalName());
-		src.constructors.put(0, "\tpublic ApplicationController(" + HttpRequest.class.getSimpleName() + 
-				" request, Map<String, Object> routeParams) {\n\t\tsuper(request, routeParams);\n\t}");
 
 		writeFile(controllersFolder(project), "ApplicationController.java", src.toSource());
 	}
@@ -645,16 +634,6 @@ public class ProjectGenerator {
 		}
 		sb.append("\t}");
 		src.methods.put("addRoutes", sb.toString());
-		
-		sb = new StringBuilder();
-		sb.append("\t@Override\n");
-		sb.append("\tpublic void removeRoutes(").append(cType).append(" config, ").append(rType).append(" router) {\n");
-		sb.append("\t\t// TODO remove the routes specific to this module\n");
-		if(hasViews) {
-			sb.append("\t\trouter.removeAssetRoutes(this);\n");
-		}
-		sb.append("\t}");
-		src.methods.put("removeRoutes", sb.toString());
 		
 		writeFile(mainFolder(project), "Activator.java", src.toSource());
 	}

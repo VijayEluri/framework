@@ -133,6 +133,26 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 			return null;
 		}
 	}
+
+	/**
+	 * Add this application's routes to the given router. Routes can be
+	 * added and removed later as necessary.
+	 * @param config the configuration
+	 * @param router an {@link AppRouter} to which routes are to be added
+	 * @see ModuleService#addRoutes(Config, Router)
+	 */
+	public void addRoutes(Config config, AppRouter router) {
+		// subclasses to override if necessary
+	}
+	
+	/**
+	 * The application implementation of this method simply routes
+	 * it to the {@link AppService}{@link #addRoutes(Config, AppRouter)} method.
+	 */
+	@Override
+	public void addRoutes(Config config, Router router) {
+		addRoutes(config, (AppRouter) router);
+	}
 	
 	final void appStart(BundleContext context) throws Exception {
 		logger.info("configuring in " + Mode.getSystemMode().name() + " mode");
