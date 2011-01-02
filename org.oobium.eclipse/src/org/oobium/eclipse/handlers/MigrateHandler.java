@@ -49,7 +49,7 @@ public class MigrateHandler extends AbstractHandler {
 				dlg.setSingleSelection(true);
 				if(Dialog.OK == dlg.open()) {
 					IProject project = dlg.getProject();
-					IFile file = project.getFile("/generated/"+project.getName().replaceAll("\\.", "/")+"/models/schema.sql");
+					IFile file = project.getFile("/generated/" + project.getName().replace('.', '/') + "/models/schema.sql");
 					if(file.exists()) {
 						throw new UnsupportedOperationException("not implemented yet (client is missing)");
 //						Client client = new Client("localhost", 5000);

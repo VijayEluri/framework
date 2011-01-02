@@ -29,6 +29,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.JavaCore;
@@ -140,7 +141,11 @@ public class OobiumCore {
 				Module module = (Module) bundle;
 				List<File> modified = module.generateModel(workspace, model);
 				if(module.isApplication()) {
-					((Application) module).createSchema(workspace, workspace.getMode());
+					File schema = ((Application) module).createSchema(workspace, workspace.getMode());
+					IProject migrator = ResourcesPlugin.getWorkspace().getRoot().getProject(module.migrator);
+					if(migrator.isOpen()) {
+						refresh(migrator, schema, monitor);
+					}
 				}
 				for(File mfile : modified) {
 					refresh(file.getProject(), mfile, monitor);

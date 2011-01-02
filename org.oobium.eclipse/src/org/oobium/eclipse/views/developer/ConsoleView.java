@@ -11,8 +11,8 @@
 package org.oobium.eclipse.views.developer;
 
 import static org.oobium.build.workspace.Workspace.BUNDLE_REPOS;
-import static org.oobium.build.workspace.Workspace.JAVA_DIR;
 import static org.oobium.build.workspace.Workspace.RUNTIME;
+import static org.oobium.build.workspace.Workspace.WORKING_DIR;
 import static org.oobium.utils.StringUtils.blank;
 
 import java.beans.PropertyChangeEvent;
@@ -23,6 +23,10 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.preferences.IEclipsePreferences.IPreferenceChangeListener;
+import org.eclipse.core.runtime.preferences.IEclipsePreferences.PreferenceChangeEvent;
+import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IStatusLineManager;
@@ -75,6 +79,10 @@ import org.oobium.utils.json.JsonUtils;
 public class ConsoleView extends ViewPart {
 
 	public static final String ID = ConsoleView.class.getCanonicalName();
+	
+	private static final String WORKBENCH_PREFERENCES = "org.eclipse.ui.workbench";
+	private static final String TEXTFONT_KEY = "org.eclipse.jdt.ui.editors.textfont";
+
 
 	private BuilderRootCommand root;
 
@@ -96,6 +104,7 @@ public class ConsoleView extends ViewPart {
 	private LinkedAction linkedAction;
 	private ISelectionListener explorerListener;
 	private WorkspaceListener workspaceListener;
+	private IPreferenceChangeListener preferenceListener;
 
 	private PropertyChangeListener applicationListener;
 	private PropertyChangeListener bundleListener;
@@ -117,6 +126,7 @@ public class ConsoleView extends ViewPart {
 	protected ConsolePage createConsolePage(Composite parent) {
 		ConsolePage page = new ConsolePage(parent, SWT.NONE);
 		Console console = page.getConsole();
+		
 		root = new BuilderRootCommand(OobiumPlugin.getWorkspace());
 		console.setRootCommand(root);
 		
@@ -186,7 +196,7 @@ public class ConsoleView extends ViewPart {
 		
 		manager.add(new Separator());
 	}
-
+	
 	public void createPartControl(Composite parent) {
 		GridLayout layout = new GridLayout();
 		layout.marginHeight = 0;
@@ -219,6 +229,8 @@ public class ConsoleView extends ViewPart {
 		if(commandHistory != null) {
 			consolePage.getConsole().setCommandHistory(commandHistory);
 		}
+
+		updateConsoleFont();
 		
 		setApplication(application);
 		setProject(project);
@@ -271,18 +283,21 @@ public class ConsoleView extends ViewPart {
 			public void handleEvent(WorkspaceEvent event) {
 				setApplication(application);
 				setProject(project);
-//				switch(event.type) {
-//				case Bundle:
-//				case Bundles:
-//				case BundleRepos:
-//				case Workspace:
-//				}
+			}
+		});
+		
+		new InstanceScope().getNode(WORKBENCH_PREFERENCES).addPreferenceChangeListener(preferenceListener = new IPreferenceChangeListener() {
+			@Override
+			public void preferenceChange(PreferenceChangeEvent event) {
+				if(TEXTFONT_KEY.equals(event.getKey())) {
+					updateConsoleFont();
+				}
 			}
 		});
 
 		root.setPwd(ResourcesPlugin.getWorkspace().getRoot().getLocation().toOSString());
 	}
-	
+
 	private void createToolBar() {
 		IToolBarManager manager = getViewSite().getActionBars().getToolBarManager();
 
@@ -304,6 +319,9 @@ public class ConsoleView extends ViewPart {
 			OobiumPlugin.getWorkspace().removeListener(workspaceListener);
 			workspaceListener = null;
 		}
+		if(preferenceListener != null) {
+			new InstanceScope().getNode(WORKBENCH_PREFERENCES).removePreferenceChangeListener(preferenceListener);
+		}
 		if(tracker != null) {
 			tracker.close();
 			tracker = null;
@@ -316,7 +334,7 @@ public class ConsoleView extends ViewPart {
 	
 	private String getLabelText(String label) {
 		if(label != null && label.length() > 0) {
-			int ix = label.lastIndexOf(File.separator);
+			int ix = label.lastIndexOf(File.separatorChar);
 			if(ix == -1) {
 				return label;
 			} else {
@@ -334,7 +352,7 @@ public class ConsoleView extends ViewPart {
 	}
 	
 	public String[] getPreferences() {
-		return new String[] { BUNDLE_REPOS, JAVA_DIR, RUNTIME };
+		return new String[] { BUNDLE_REPOS, RUNTIME, WORKING_DIR };
 	}
 	
 	protected Command getRootCommand() {
@@ -386,11 +404,11 @@ public class ConsoleView extends ViewPart {
 			}
 		});
 	}
-
+	
 	public boolean isLinked() {
 		return linked;
 	}
-	
+
 	@Override
 	public void saveState(IMemento memento) {
 		memento.putString("application", application);
@@ -423,6 +441,19 @@ public class ConsoleView extends ViewPart {
 		setApplication((str != null) ? new File(str) : null);
 	}
 	
+	public void setFocus() {
+		consolePage.setFocus();
+	}
+	
+	/**
+	 * Set whether or not the active application and/or bundle are linked to
+	 * the selection in the Package Explorer view.
+	 * @param linked true if this console is to be linked with the package explorer, false otherwise
+	 */
+	public void setLinked(boolean linked) {
+		this.linked = linked;
+	}
+
 	public void setProject(File dir) {
 		final Bundle bundle = OobiumPlugin.getWorkspace().getBundle(dir);
 		project = (dir == null || !dir.isDirectory()) ? null : dir.getAbsolutePath();
@@ -463,19 +494,6 @@ public class ConsoleView extends ViewPart {
 
 	private void setProject(String str) {
 		setProject((str != null) ? new File(str) : null);
-	}
-
-	public void setFocus() {
-		consolePage.setFocus();
-	}
-	
-	/**
-	 * Set whether or not the active application and/or bundle are linked to
-	 * the selection in the Package Explorer view.
-	 * @param linked true if this console is to be linked with the package explorer, false otherwise
-	 */
-	public void setLinked(boolean linked) {
-		this.linked = linked;
 	}
 	
 	public void setSelection(ISelection selection) {
@@ -521,6 +539,18 @@ public class ConsoleView extends ViewPart {
 				manager.setMessage(image, message);
 			}
 		});
+	}
+	
+	private void updateConsoleFont() {
+		String font = Platform.getPreferencesService().getString(WORKBENCH_PREFERENCES, TEXTFONT_KEY, null, null);
+		if(font != null) {
+			try {
+				String[] sa = font.split("\\|");
+				consolePage.getConsole().setFont(sa[1], (int) Float.parseFloat(sa[2]));
+			} catch(IllegalArgumentException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 }

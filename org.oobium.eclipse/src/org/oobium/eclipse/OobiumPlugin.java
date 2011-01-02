@@ -12,14 +12,15 @@ package org.oobium.eclipse;
 
 import static org.eclipse.ui.IWorkbenchPage.VIEW_ACTIVATE;
 import static org.oobium.build.workspace.Workspace.BUNDLE_REPOS;
+import static org.oobium.build.workspace.Workspace.WORKING_DIR;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.ImageRegistry;
@@ -123,6 +124,21 @@ public class OobiumPlugin extends AbstractUIPlugin {
 	private void setupWorkspace(BundleContext context) {
 		logger.info("setting up workspace");
 
+		File wd; // working directory
+		String wdPath = getPreferenceStore().getString(WORKING_DIR);
+		if(wdPath.length() == 0) {
+			wd = new File(ResourcesPlugin.getWorkspace().getRoot().getLocation().toOSString());
+		} else {
+			wd = new File(wdPath);
+			if(!wd.isAbsolute()) {
+				wd = new File(ResourcesPlugin.getWorkspace().getRoot().getLocation().toOSString(), wdPath);
+			}
+		}
+		workspace.setWorkingDirectory(wd);
+		if(logger.isLoggingDebug()) {
+			logger.debug("workspace working directory set to \"" + wd + "\"");
+		}
+
 		String repos = getPreferenceStore().getString(BUNDLE_REPOS);
 		if(repos.length() > 0) {
 			workspace.setRepositories(repos);
@@ -131,11 +147,17 @@ public class OobiumPlugin extends AbstractUIPlugin {
 			}
 		}
 
+		String install = Platform.getInstallLocation().getURL().getFile();
+		if(logger.isLoggingDebug()) {
+			logger.debug("Eclipse installed at: " + install);
+		}
+		
 		for(org.osgi.framework.Bundle bundle : context.getBundles()) {
 			if(bundle.getState() != org.osgi.framework.Bundle.UNINSTALLED) {
 				String location = bundle.getLocation();
-				if(location.startsWith("reference:file:")) {
-					File file = new File(location.substring(15));
+				int ix = location.indexOf("file:");
+				if(ix != -1) {
+					File file = FileUtils.getAbsolute(location.substring(ix+5), install);
 					Bundle loaded = workspace.loadBundle(file);
 					if(logger.isLoggingDebug()) {
 						if(loaded != null) {
@@ -143,6 +165,10 @@ public class OobiumPlugin extends AbstractUIPlugin {
 						} else {
 							logger.debug("could not load bundle: "+ file);
 						}
+					}
+				} else {
+					if(logger.isLoggingDebug()) {
+						logger.debug("skipping " + location);
 					}
 				}
 			}
@@ -154,24 +180,28 @@ public class OobiumPlugin extends AbstractUIPlugin {
 			if(build == null) {
 				logger.debug("build bundle not found - cannot load felix bundles");
 			} else {
-				File lib = context.getDataFile("lib");
-				if(!lib.exists()) {
-					lib.mkdirs();
+				File dataArea = context.getDataFile("");
+				if(!dataArea.isDirectory() && !dataArea.mkdirs()) {
+					throw new IllegalStateException("could not create data directory: " + dataArea);
 				}
 				try {
 					if(build.isJar) {
-						FileUtils.copyJarEntry(build.file, "/felix.jar", lib);
-						FileUtils.copyJarEntry(build.file, "/org.apache.felix.log-1.0.0.jar", lib);
+						workspace.loadBundle(FileUtils.copyJarEntry(build.file, "lib/felix.jar", dataArea));
+						workspace.loadBundle(FileUtils.copyJarEntry(build.file, "lib/org.apache.felix.log-1.0.0.jar", dataArea));
 					} else {
 						File src = new File(build.file, "lib");
-						FileUtils.copy(new File(src, "felix.jar"), lib);
-						FileUtils.copy(new File(src, "org.apache.felix.log-1.0.0.jar"), lib);
+						File dst = new File(dataArea, "lib");
+						if(!dst.isDirectory() && !dst.mkdirs()) {
+							throw new IllegalStateException("could not create lib directory: " + dst);
+						}
+						FileUtils.copy(new File(src, "felix.jar"), dst);
+						FileUtils.copy(new File(src, "org.apache.felix.log-1.0.0.jar"), dst);
+						workspace.addRepository(dst);
 					}
-					workspace.addRepository(lib);
 					if(logger.isLoggingDebug()) {
-						logger.debug("felix bundles loaded from " + lib);
+						logger.debug("felix bundles loaded from " + dataArea);
 					}
-				} catch(IOException e) {
+				} catch(Exception e) {
 					logger.warn("failed to copy felix bundles", e);
 				}
 			}

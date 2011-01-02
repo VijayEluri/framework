@@ -14,6 +14,7 @@ import static org.oobium.utils.coercion.TypeCoercer.coerce;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IStatusLineManager;
@@ -25,6 +26,7 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.ui.IMemento;
 import org.eclipse.ui.IViewSite;
 import org.eclipse.ui.IWorkbenchActionConstants;
@@ -47,8 +49,8 @@ import org.oobium.eclipse.views.server.actions.ShowBrowserAction;
 import org.oobium.eclipse.views.server.actions.ShowConsoleAction;
 import org.oobium.eclipse.views.server.actions.StartAction;
 import org.oobium.eclipse.views.server.actions.StopAction;
-import org.oobium.logging.Logger;
 import org.oobium.utils.Config.Mode;
+import org.oobium.utils.json.JsonUtils;
 
 public class ServerView extends ViewPart {
 
@@ -57,6 +59,7 @@ public class ServerView extends ViewPart {
 	
 	private String applicationName;
 	private Application application;
+	private String properties;
 	private RunListener runListener;
 	
 	private SashForm sf;
@@ -98,7 +101,21 @@ public class ServerView extends ViewPart {
 			public void handleEvent(RunEvent event) {
 				if(event.application == application) {
 					switch(event.type) {
+					case Error:
+						final String message = event.getMessage();
+						if(message != null) {
+							Display.getDefault().syncExec(new Runnable() {
+								@Override
+								public void run() {
+									MessageBox msg = new MessageBox(getSite().getShell(), SWT.OK);
+									msg.setMessage(message);
+									msg.setText("Error");
+									msg.open();
+								}
+							});
+						}
 					case Start:
+						properties = JsonUtils.toJson(RunnerService.getRunner(application).getProperties());
 						start();
 						browserPanel.updateAppState(true);
 						break;
@@ -231,6 +248,7 @@ public class ServerView extends ViewPart {
 	@Override
 	public void init(IViewSite site, IMemento memento) throws PartInitException {
 		applicationName = (memento != null) ? memento.getString("application") : null;
+		properties = (memento != null) ? memento.getString("properties") : null;
 		browserWeight = (memento != null) ? coerce(memento.getInteger("browserWeight"), 75) : 75;
 		browserVisible = (memento != null) ? coerce(memento.getBoolean("browserVisible"), true) : true;
 		consoleVisible = (memento != null) ? coerce(memento.getBoolean("consoleVisible"), true) : true;
@@ -241,6 +259,7 @@ public class ServerView extends ViewPart {
 	public void saveState(IMemento memento) {
 		super.saveState(memento);
 		memento.putString("application", applicationName);
+		memento.putString("properties", properties);
 		
 		int[] weights = sf.getWeights();
 		int total = 0;
@@ -269,17 +288,20 @@ public class ServerView extends ViewPart {
 						stopAction.setEnabled(true);
 						migrateAction.setEnabled(true);
 						redoAction.setEnabled(true);
+						purgeAction.setEnabled(true);
 					} else {
 						startAction.setEnabled(true);
 						stopAction.setEnabled(false);
 						migrateAction.setEnabled(false);
 						redoAction.setEnabled(false);
+						purgeAction.setEnabled(false);
 					}
 				} else {
 					startAction.setEnabled(false);
 					stopAction.setEnabled(false);
 					migrateAction.setEnabled(false);
 					redoAction.setEnabled(false);
+					purgeAction.setEnabled(false);
 				}
 			}
 		});
@@ -349,16 +371,15 @@ public class ServerView extends ViewPart {
 					consolePanel.getConsole().clear();
 				}
 			});
-			String[] options = new String[] {
-					"-D" + Logger.SYS_PROP_CONSOLE + "=debug"
-			};
-			Runner runner = RunnerService.start(OobiumPlugin.getWorkspace(), application, Mode.DEV, options);
+			Map<String, String> properties = JsonUtils.toStringMap(this.properties);
+			Runner runner = RunnerService.start(OobiumPlugin.getWorkspace(), application, Mode.DEV, properties);
 			runner.setError(new ConsolePrintStream(consolePanel.getConsole().err));
 			runner.setOut(new ConsolePrintStream(consolePanel.getConsole().out));
 			startAction.setEnabled(false);
 			stopAction.setEnabled(true);
 			migrateAction.setEnabled(true);
 			redoAction.setEnabled(true);
+			purgeAction.setEnabled(true);
 			if(updateAction.isChecked()) {
 				RunnerService.unpauseUpdaters();
 			} else {
@@ -386,6 +407,7 @@ public class ServerView extends ViewPart {
 			stopAction.setEnabled(false);
 			migrateAction.setEnabled(false);
 			redoAction.setEnabled(false);
+			purgeAction.setEnabled(false);
 			browserPanel.updateAppState(false);
 			consolePanel.getConsole().out.println(application + " stopped");
 			RunnerService.addListener(runListener);
