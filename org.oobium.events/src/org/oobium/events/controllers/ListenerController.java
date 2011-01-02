@@ -13,17 +13,11 @@ package org.oobium.events.controllers;
 import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.oobium.app.server.controller.Action;
 import org.oobium.events.models.Listener;
-import org.oobium.http.HttpRequest;
 
 public class ListenerController extends ApplicationController {
-
-	public ListenerController(HttpRequest request, Map<String, Object> routeParams) {
-		super(request, routeParams);
-	}
 
 	@Override
 	public void beforeFilter(Action action) {

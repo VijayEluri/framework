@@ -12,18 +12,12 @@ package org.oobium.events.controllers;
 
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 
 import org.oobium.app.server.controller.Action;
 import org.oobium.events.models.Event;
-import org.oobium.http.HttpRequest;
 
 public class EventController extends ApplicationController {
 
-	public EventController(HttpRequest request, Map<String, Object> routeParams) {
-		super(request, routeParams);
-	}
-	
 	@Override
 	public void beforeFilter(Action action) {
 //		TODO security

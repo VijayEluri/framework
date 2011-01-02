@@ -21,7 +21,7 @@ public class Activator extends AppService {
 
 	@Override
 	public void addRoutes(Config config, Router router) {
-		router.add("commands").asRoute("commands/{command:.+}", CommandController.class, POST);
+		router.add("commands").asRoute(POST, "commands/{command:.+}", CommandController.class);
 	}
 
 }

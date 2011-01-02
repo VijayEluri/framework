@@ -14,7 +14,6 @@ import static org.oobium.utils.StringUtils.blank;
 
 import java.io.File;
 import java.sql.SQLException;
-import java.util.Map;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -42,13 +41,8 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.texteditor.AbstractDecoratedTextEditor;
 import org.oobium.app.server.controller.Controller;
-import org.oobium.http.HttpRequest;
 
 public class CommandController extends Controller {
-
-	public CommandController(HttpRequest request, Map<String, Object> routeParams) {
-		super(request, routeParams);
-	}
 
 	private void handleRemove() {
 		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();

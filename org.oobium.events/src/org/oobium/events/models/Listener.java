@@ -28,16 +28,20 @@ import org.oobium.persist.Attribute;
 import org.oobium.persist.Indexes;
 import org.oobium.persist.ModelDescription;
 import org.oobium.persist.PersistService;
+import org.oobium.persist.Validate;
 
 @ModelDescription(
 	attrs = {
-		@Attribute(name="host", type=String.class, required=true),		// the host to listen to for events (domain & port)
-		@Attribute(name="service", type=String.class, required=true),	// the service to listen to for events
-		@Attribute(name="eventName", type=String.class, required=true),	// the name of the event to listen for
-		@Attribute(name="callback", type=String.class, required=true),	// the URL to notify when an event occurs (send events here)
-		@Attribute(name="remoteUrl", type=String.class),				// if this is a local listener: the URL for listeners on the remote server
-		@Attribute(name="remoteId", type=int.class),					// if this is a local listener: the id of the remote listener, if it has been created
-		@Attribute(name="oneShot", type=boolean.class)					// if true, automatically delete this listener after the first event has occurred
+		@Attribute(name="host", type=String.class),		// the host to listen to for events (domain & port)
+		@Attribute(name="service", type=String.class),	// the service to listen to for events
+		@Attribute(name="eventName", type=String.class),// the name of the event to listen for
+		@Attribute(name="callback", type=String.class),	// the URL to notify when an event occurs (send events here)
+		@Attribute(name="remoteUrl", type=String.class),// if this is a local listener: the URL for listeners on the remote server
+		@Attribute(name="remoteId", type=int.class),	// if this is a local listener: the id of the remote listener, if it has been created
+		@Attribute(name="oneShot", type=boolean.class)	// if true, automatically delete this listener after the first event has occurred
+	},
+	validations = {
+		@Validate(field="host,service,eventName,callback", isNotBlank=true)
 	},
 	timestamps = true,
 	allowUpdate = false

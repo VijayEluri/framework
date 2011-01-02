@@ -22,20 +22,11 @@ public class Activator extends ModuleService {
 
 	@Override
 	public void addRoutes(Config config, Router router) {
-		router.addRoutes(Event.class);
-		router.addRoute("{models}/{event:[\\w_]+}", Event.class, showAll);
+		router.addResources(Event.class);
+		router.addResource("{models}/{event:[\\w_]+}", Event.class, showAll);
 		
-		router.addRoutes(Listener.class);
-		router.addRoute("{models}/{service:[\\w\\._]+}", Listener.class, showAll);
-	}
-
-	@Override
-	public void removeRoutes(Config config, Router router) {
-		router.removeRoutes(Event.class);
-		router.removeRoute("{models}/{event:[\\w_]+}", Event.class, showAll);
-		
-		router.removeRoutes(Listener.class);
-		router.removeRoute("{models}/{service:[\\w\\._]+}", Listener.class, showAll);
+		router.addResources(Listener.class);
+		router.addResource("{models}/{service:[\\w\\._]+}", Listener.class, showAll);
 	}
 
 }

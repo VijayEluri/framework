@@ -13,17 +13,20 @@ package org.oobium.events.models;
 import static org.oobium.utils.StringUtils.blank;
 
 import org.oobium.app.AppService;
-import org.oobium.app.server.routing.Router;
-import org.oobium.events.models.EventModel;
+import org.oobium.app.server.routing.AppRouter;
 import org.oobium.persist.Attribute;
 import org.oobium.persist.ModelDescription;
+import org.oobium.persist.Validate;
 
 @ModelDescription(
 	attrs = {
-		@Attribute(name="host", type=String.class, required=true),		// the host that triggered the event
-		@Attribute(name="service", type=String.class, required=true),	// the service that triggered the event
-		@Attribute(name="eventName", type=String.class, required=true),	// the name of the event
-		@Attribute(name="data", type=String.class, required=true)		// any data required to describe the event
+		@Attribute(name="host", type=String.class),		// the host that triggered the event
+		@Attribute(name="service", type=String.class),	// the service that triggered the event
+		@Attribute(name="eventName", type=String.class),// the name of the event
+		@Attribute(name="data", type=String.class)		// any data required to describe the event
+	},
+	validations = {
+		@Validate(field="host,service,eventName,data", isNotBlank=true)
 	},
 	timestamps = true,
 	allowDelete = false,
@@ -57,7 +60,7 @@ public class Event extends EventModel {
 			throw new IllegalStateException("failed to create event - no app: " + appClass);
 		}
 		
-		Router router = app.getRouter();
+		AppRouter router = app.getRouter();
 		
 		Event event = new Event();
 		event.setPersistor(app.getPersistService(Event.class));
