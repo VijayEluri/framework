@@ -22,6 +22,7 @@ import org.oobium.utils.StringUtils;
 public class PropertyDescriptor {
 
 	private String modelType;
+	private String rawType;
 	private String type;
 	private String fullType;
 	private String castType;
@@ -54,12 +55,13 @@ public class PropertyDescriptor {
 	public PropertyDescriptor(ModelAttribute attribute) {
 		this(attribute.getModel().getSimpleName(), attribute.getJavaType(), attribute.getName());
 
+		rawType = attribute.getType();
+		
 		init = attribute.getInit();
 		
 		getterName = StringUtils.getterName(variable);
 		
 		check = attribute.getCheck();
-		required = attribute.isRequired();
 		readOnly = attribute.isReadOnly();
 		unique = attribute.isUnique();
 		virtual = attribute.isVirtual();
@@ -128,6 +130,10 @@ public class PropertyDescriptor {
 		return enumProp;
 	}
 
+	public String rawType() {
+		return rawType;
+	}
+	
 	public String fullType() {
 		return fullType;
 	}

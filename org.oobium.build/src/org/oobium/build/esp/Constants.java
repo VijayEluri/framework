@@ -183,6 +183,7 @@ public class Constants {
 		HTML_TAGS.put("dt", "Specifies a definition term");
 		HTML_TAGS.put("em", "Specifies emphasized text ");
 		HTML_TAGS.put("embed", "Specifies external application or interactive content (HTML 5)");
+		HTML_TAGS.put("errors", "Create a message block to show all errors contained in a model; does not render if empty (ESP)\n  Usage:\n  form(model) <- errors\n  errors(model)");
 		HTML_TAGS.put("eventsource", "Specifies a target for events sent by a server (HTML 5)");
 		HTML_TAGS.put("fieldset", "Specifies a fieldset");
 		HTML_TAGS.put("fields", "Specifies a subsection of a form where the fields are for the given model (ESP) Usage:\n  fields(model)");
@@ -244,7 +245,7 @@ public class Constants {
 		HTML_TAGS.put("table", "Specifies a table");
 		HTML_TAGS.put("tbody", "Specifies a table body");
 		HTML_TAGS.put("td", "Specifies a table cell");
-		HTML_TAGS.put("textarea", "Specifies a text area");
+		HTML_TAGS.put("textArea", "Specifies a text area");
 		HTML_TAGS.put("tfoot", "Specifies a table footer");
 		HTML_TAGS.put("th", "Specifies a table header");
 		HTML_TAGS.put("thead", "Specifies a table header");

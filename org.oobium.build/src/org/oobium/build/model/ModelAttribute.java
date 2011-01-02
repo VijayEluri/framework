@@ -79,10 +79,6 @@ public class ModelAttribute {
 		return (type.indexOf('.') == -1) && !type.endsWith("[]");
 	}
 	
-	public boolean isRequired() {
-		return annotation.required();
-	}
-	
 	public boolean isReadOnly() {
 		return annotation.readOnly();
 	}

@@ -43,6 +43,7 @@ import org.oobium.persist.migrate.Migration;
 import org.oobium.utils.StringUtils;
 import org.oobium.utils.Config.Mode;
 import org.oobium.utils.json.JsonModel;
+import org.oobium.utils.json.JsonUtils;
 
 
 public class ModelGenerator {
@@ -70,26 +71,18 @@ public class ModelGenerator {
 		src.imports.add(Paginator.class.getCanonicalName());
 		src.imports.add(SQLException.class.getCanonicalName());
 
-		boolean validate = false;
 		List<String> inits = new ArrayList<String>();
 		for(PropertyDescriptor property : src.properties.values()) {
 			src.imports.addAll(property.imports());
 			if(property.hasInit()) {
-				inits.add(createInitializer(property));
+				inits.add(createInitializer(src, property));
 			}
 			src.methods.putAll(property.methods());
-			if(property.isRequired()) {
-				validate = true;
-			}
 		}
 
 		createConstructor(src, inits);
 
 		createOverrideMethods(src, model);
-		
-		if(validate) {
-			src.methods.put("validateSave", createValidateMethod(src));
-		}
 		
 		src.staticMethods.put("finders", createStaticMethods(model.getSimpleName()));
 		
@@ -135,31 +128,15 @@ public class ModelGenerator {
 		return sb.toString();
 	}
 	
-	private static String createInitializer(PropertyDescriptor property) {
-		return "set(" + property.enumProp() + ", " + property.init() + ");";
-	}
-	
-	private static String createValidateMethod(SourceFile src) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("\t@Override\n");
-		sb.append("\tprotected void validateSave() {\n");
-		for(PropertyDescriptor property : src.properties.values()) {
-			if(property.isRequired()) {
-				String prop = property.enumProp();
-				if("String".equals(property.type())) {
-					src.staticImports.add(StringUtils.class.getCanonicalName() + ".blank");
-					sb.append("\t\tif((isNew() || isSet(").append(prop).append(")) && blank(get(").append(prop).append("))) {\n");
-					sb.append("\t\t\taddError(").append(prop).append(", \"cannot be blank\");\n");
-					sb.append("\t\t}\n");
-				} else {
-					sb.append("\t\tif((isNew() || isSet(").append(prop).append(")) && (get(").append(prop).append(") == null)) {\n");
-					sb.append("\t\t\taddError(").append(prop).append(", \"cannot be null\");\n");
-					sb.append("\t\t}\n");
-				}
+	private static String createInitializer(SourceFile src, PropertyDescriptor property) {
+		String init = property.init();
+		if(property.isType(Map.class)) {
+			if(init != null && init.length() > 1 && init.charAt(0) == '{' && init.charAt(init.length()-1) == '}') {
+				src.imports.add(JsonUtils.class.getCanonicalName());
+				init = "JsonUtils.toMap(\"" + init + "\")";
 			}
 		}
-		sb.append("\t}");
-		return sb.toString();
+		return "set(" + property.enumProp() + ", " + init + ");";
 	}
 	
 	private static void appendDoc(StringBuilder sb, String javadoc, String...vars) {

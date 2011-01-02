@@ -86,15 +86,25 @@ public class RunnerService extends AppService {
 		}
 	}
 	
-	static void notifyListeners(Type type, Application app, Bundle...bundles) {
+	private static void notifyListeners(RunEvent event) {
 		synchronized(instance.listeners) {
 			if(!instance.listeners.isEmpty()) {
-				RunEvent event = new RunEvent(type, app, bundles);
 				for(RunListener listener : instance.listeners.toArray(new RunListener[instance.listeners.size()])) {
 					listener.handleEvent(event);
 				}
 			}
 		}
+	}
+	
+	static void notifyListeners(Type type, Application app, Bundle...bundles) {
+		RunEvent event = new RunEvent(type, app, bundles);
+		notifyListeners(event);
+	}
+	
+	static void notifyListeners(Type type, Application app, String message) {
+		RunEvent event = new RunEvent(type, app);
+		event.setMessage(message);
+		notifyListeners(event);
 	}
 	
 	public static void pauseUpdaters() {
@@ -119,12 +129,12 @@ public class RunnerService extends AppService {
 		}
 	}
 
-	public static Runner start(Workspace workspace, Application app, Mode mode, String...options) {
+	public static Runner start(Workspace workspace, Application app, Mode mode, Map<String, String> properties) {
 		synchronized(instance.runners) {
 			Runner runner = instance.runners.get(app);
 			if(runner == null) {
-				runner = new Runner(workspace, app, mode);
-				if(runner.start(options)) {
+				runner = new Runner(workspace, app, mode, properties);
+				if(runner.start()) {
 					instance.runners.put(app, runner);
 					notifyListeners(Type.Start, app);
 				}

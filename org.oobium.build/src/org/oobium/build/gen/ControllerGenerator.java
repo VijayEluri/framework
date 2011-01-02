@@ -16,15 +16,16 @@ import static org.oobium.utils.FileUtils.writeFile;
 import static org.oobium.utils.StringUtils.camelCase;
 import static org.oobium.utils.StringUtils.packageName;
 import static org.oobium.utils.StringUtils.plural;
+import static org.oobium.utils.StringUtils.repeat;
 import static org.oobium.utils.StringUtils.simpleName;
-import static org.oobium.utils.StringUtils.*;
+import static org.oobium.utils.StringUtils.titleize;
+import static org.oobium.utils.StringUtils.varName;
 
 import java.io.File;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -78,10 +79,7 @@ public class ControllerGenerator {
 			src.superName = Controller.class.getSimpleName();
 			src.imports.add(Controller.class.getCanonicalName());
 		}
-		src.imports.add(HttpRequest.class.getCanonicalName());
-		src.imports.add(Map.class.getCanonicalName());
 		src.imports.add(SQLException.class.getCanonicalName());
-		src.constructors.put(0, "\tpublic " + src.simpleName + "(" + HttpRequest.class.getSimpleName() + " request, Map<String, Object> routeParams) {\n\t\tsuper(request, routeParams);\n\t}");
 		
 		StringBuilder sb = new StringBuilder();
 		sb.append("\t@Override\n");
@@ -186,10 +184,7 @@ public class ControllerGenerator {
 			src.superName = Controller.class.getSimpleName();
 			src.imports.add(Controller.class.getCanonicalName());
 		}
-		src.imports.add(HttpRequest.class.getCanonicalName());
-		src.imports.add(Map.class.getCanonicalName());
 		src.imports.add(SQLException.class.getCanonicalName());
-		src.constructors.put(0, "\tpublic " + src.simpleName + "(" + HttpRequest.class.getSimpleName() + " request, Map<String, Object> routeParams) {\n\t\tsuper(request, routeParams);\n\t}");
 
 		for(int i = 0; i < 7; i++) {
 			addImports(i, src.imports);
@@ -254,8 +249,8 @@ public class ControllerGenerator {
 		} else {
 			sb.append("\t\t\tswitch(wants()) {\n");
 			sb.append("\t\t\t\tcase JS:\n");
-			sb.append("\t\t\t\tcase JSON: renderErrors(").append(varName).append(");        break;\n");
-			sb.append("\t\t\t\tcase HTML: redirectTo(").append(varName).append(", showNew); break;\n");
+			sb.append("\t\t\t\tcase JSON: renderErrors(").append(varName).append("); break;\n");
+			sb.append("\t\t\t\tcase HTML: render(new ShowNew").append(mType).append('(').append(varName).append(")); break;\n");
 			sb.append("\t\t\t}\n");
 		}
 		sb.append("\t\t}\n");
@@ -333,7 +328,7 @@ public class ControllerGenerator {
 		} else {
 			sb.append("\t\tswitch(wants()) {\n");
 			sb.append("\t\t\tcase JS:\n");
-			sb.append("\t\t\tcase JSON: render(").append(varNamePlural).append(");               ").append(repeat(' ', mType.length())).append("break;\n");;
+			sb.append("\t\t\tcase JSON: render(").append(varNamePlural).append("); break;\n");;
 			sb.append("\t\t\tcase HTML: render(new ShowAll").append(mTypePlural).append("(").append(varNamePlural).append(")); break;\n");
 			sb.append("\t\t}\n");
 		}
@@ -348,7 +343,6 @@ public class ControllerGenerator {
 		sb.append("\tpublic void showEdit() throws SQLException {\n");
 		sb.append("\t\t").append(mType).append(" ").append(varName).append(" = ").append(mType).append(".find(getId());\n");
 		sb.append("\t\tif(").append(varName).append(" != null) {\n");
-		sb.append("\t\t\t").append(varName).append(".putAll(flash(\"").append(varName).append("\"));\n");
 		sb.append("\t\t\trender(new ShowEdit").append(mType).append("(").append(varName).append("));\n");
 		sb.append("\t\t}\n");
 		sb.append("\t}");
@@ -360,7 +354,8 @@ public class ControllerGenerator {
 		sb.append(regen ? "@Regen\n\t" : "\t");
 		sb.append("@Override // GET/URL/[models]/new\n");
 		sb.append("\tpublic void showNew() throws SQLException {\n");
-		sb.append("\t\trender(new ShowNew").append(mType).append("(flash(\"").append(varName).append("\", new ").append(mType).append("())));\n");
+		sb.append("\t\t").append(mType).append(" ").append(varName).append(" = new ").append(mType).append("();\n");
+		sb.append("\t\trender(new ShowNew").append(mType).append('(').append(varName).append("));\n");
 		sb.append("\t}");
 		return sb.toString();
 	}
@@ -387,8 +382,8 @@ public class ControllerGenerator {
 		} else {
 			sb.append("\t\t\tswitch(wants()) {\n");
 			sb.append("\t\t\t\tcase JS:\n");
-			sb.append("\t\t\t\tcase JSON: renderErrors(").append(varName).append(");         break;\n");
-			sb.append("\t\t\t\tcase HTML: redirectTo(").append(varName).append(", showEdit); break;\n");
+			sb.append("\t\t\t\tcase JSON: renderErrors(").append(varName).append("); break;\n");
+			sb.append("\t\t\t\tcase HTML: render(new ShowEdit").append(mType).append('(').append(varName).append(")); break;\n");
 			sb.append("\t\t\t}\n");
 		}
 		sb.append("\t\t}\n");

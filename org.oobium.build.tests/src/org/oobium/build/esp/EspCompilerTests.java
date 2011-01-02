@@ -47,7 +47,14 @@ public class EspCompilerTests {
 	@Test
 	public void testImport() throws Exception {
 		assertTrue(src("import com.mydomain.MyClass").hasImport("com.mydomain.MyClass"));
+		assertEquals("com.mydomain.MyClass", src("import com.mydomain.MyClass").getImport("com.mydomain.MyClass"));
+		assertTrue(src("import com.mydomain.MyClass").getSource().contains("\nimport com.mydomain.MyClass;\n"));
+
 		assertTrue(src("import com.mydomain.MyClass;").hasImport("com.mydomain.MyClass"));
+		assertEquals("com.mydomain.MyClass", src("import com.mydomain.MyClass;").getImport("com.mydomain.MyClass"));
+		assertTrue(src("import com.mydomain.MyClass;").getSource().contains("\nimport com.mydomain.MyClass;\n"));
+
+		assertFalse(src("import com.mydomain.MyClass;;").getSource().contains("\nimport com.mydomain.MyClass;\n"));
 	}
 	
 	@Test
@@ -238,7 +245,7 @@ public class EspCompilerTests {
 		assertTrue(src(esp).hasMethod("hasScript"));
 		assertEquals("return true;", body(src(esp).getMethod("hasScript")));
 		assertTrue(src(esp).hasMethod("doRenderScript"));
-		assertEquals("String path$8 = underscored(MyScripts.class.getName()).replaceAll(\"\\\\.\", \"/\");\n" +
+		assertEquals("String path$8 = underscored(MyScripts.class.getName()).replace('.', '/');\n" +
 					 "__sb__.append(\"<script src='/\").append(path$8).append(\".js'></script>\");",
 				body(src(esp).getMethod("doRenderScript")));
 
@@ -304,7 +311,7 @@ public class EspCompilerTests {
 		assertTrue(src(esp).hasMethod("hasStyle"));
 		assertEquals("return true;", body(src(esp).getMethod("hasStyle")));
 		assertTrue(src(esp).hasMethod("doRenderStyle"));
-		assertEquals("String path$8 = underscored(MyStyles.class.getName()).replaceAll(\"\\\\.\", \"/\");\n" +
+		assertEquals("String path$8 = underscored(MyStyles.class.getName()).replace('.', '/');\n" +
 					 "__sb__.append(\"<link rel='stylesheet' type='text/css' href='/\").append(path$8).append(\".css' />\");",
 				body(src(esp).getMethod("doRenderStyle")));
 
@@ -349,9 +356,9 @@ public class EspCompilerTests {
 	
 	@Test
 	public void testHtmlDivHidden() throws Exception {
-		assertEquals("__sb__.append(\"<div style=\\\"display:none\\\">text</div>\");", html("div:hidden text"));
-		assertEquals("__sb__.append(\"<div id=\\\"myDiv\\\" style=\\\"display:none\\\">text</div>\");", html("div#myDiv:hidden text"));
-		assertEquals("__sb__.append(\"<div style=\\\"color:red;display:none\\\">text</div>\");", html("div(style:\"color:red\"):hidden text"));
+		assertEquals("__sb__.append(\"<div style=\\\"display:none\\\">text</div>\");", html("div|hide text"));
+		assertEquals("__sb__.append(\"<div id=\\\"myDiv\\\" style=\\\"display:none\\\">text</div>\");", html("div#myDiv|hide text"));
+		assertEquals("__sb__.append(\"<div style=\\\"color:red;display:none\\\">text</div>\");", html("div|hide(style:\"color:red\") text"));
 	}
 	
 	@Test
@@ -381,7 +388,12 @@ public class EspCompilerTests {
 		assertEquals("__sb__.append(\"<div id=\\\"\").append(j(id)).append(\"\\\"></div>\");", html("div#{j id}"));
 		assertEquals("__sb__.append(\"<div id=\\\"\").append(id).append(\"\\\"></div>\");", html("div#{r id}"));
 	}
-	
+
+	@Test
+	public void testJavaParts_Escaped() throws Exception {
+		assertEquals("__sb__.append(\"<div>{id}</div>\");", html("div \\{id}"));
+	}
+
 	@Test
 	public void testJavaLines() throws Exception {
 		assertEquals("line1\nline2", html("- line1\n- line2"));
@@ -521,23 +533,49 @@ public class EspCompilerTests {
 						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\" enctype=\\\"multipart/form-data\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><input type=\\\"file\\\" /></form>\");", 
 				html("form(member, create)\n\tfile"));
 
-		assertEquals("String formModelName$0 = \"member\";\n" +
-						"__sb__.append(\"<form action=\\\"\").append(h(pathToAll(team, \"members\"))).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /></form>\");", 
-				html("form(member, action:{pathToAll(team, \"members\")}"));
-		
 		assertEquals("__sb__.append(\"<form action=\\\"/test\\\" method=\\\"post\\\"></form>\");",
 				html("form(action: \"/test\", method: post)"));
 		
 		assertEquals("__sb__.append(\"<form action=\\\"\").append(h(pathTo(\"sessions\"))).append(\"\\\" method=\\\"post\\\"></form>\");",
 				html("form(action: {pathTo(\"sessions\")}, method: post)"));
+		
+		// hasMany routing
+		assertEquals("Comment formModel$0 = new Comment();\n" +
+						"String formModelName$0 = \"comment\";\n" +
+						"__sb__.append(\"<form action=\\\"\").append(pathTo(post, \"comments\")).append(\"\\\" method=\\\"POST\\\" enctype=\\\"multipart/form-data\\\"><input type=\\\"hidden\\\" name=\\\"id\\\" value=\\\"\").append(post.getId()).append(\"\\\" /><input type=\\\"file\\\" /></form>\");", 
+				html("form<Comment>(post, \"comments\")\n\tfile"));
+
+		assertEquals("Comment formModel$0 = new Comment();\n" +
+						"String formModelName$0 = \"comment\";\n" +
+						"__sb__.append(\"<form action=\\\"\").append(pathTo(post, \"comments\")).append(\"\\\" method=\\\"POST\\\" enctype=\\\"multipart/form-data\\\"><input type=\\\"hidden\\\" name=\\\"id\\\" value=\\\"\").append(post.getId()).append(\"\\\" /><input type=\\\"file\\\" /></form>\");", 
+				html("form(post, \"comments\")\n\tfile"));
 	}
 
+	@Test
+	public void testErrors() throws Exception {
+		assertEquals("String formModelName$0 = \"member\";\n" +
+					"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" />\");\n" +
+					"errorsBlock(__sb__, member, null, null);\n" +
+					"__sb__.append(\"</form>\");", 
+			html("form(member, create)\n\terrors"));
+
+		assertEquals("String formModelName$0 = \"member\";\n" +
+					"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" />\");\n" +
+					"errorsBlock(__sb__, member, \"There errors\", \"Please fix them\");\n" +
+					"__sb__.append(\"</form>\");", 
+			html("form(member, create)\n\terrors(title: \"There errors\", message: \"Please fix them\""));
+	}
+	
 	@Test
 	public void testCheck() throws Exception {
 		assertEquals("__sb__.append(\"<input type=\\\"checkbox\\\" />\");", html("check"));
 		assertEquals("__sb__.append(\"<input type=\\\"checkbox\\\" name=\\\"color\\\" value=\\\"red\\\" />\");", html("check(name: color, value: red"));
 		assertEquals("String formModelName$0 = \"member\";\n" +
-						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[active]\\\" value=\\\"false\\\" /><input type=\\\"checkbox\\\" id=\\\"\").append(formModelName$0).append(\"[active]\\\" name=\\\"\").append(formModelName$0).append(\"[active]\\\" value=\\\"true\\\"\");\nif(member.getActive()) {\n\t__sb__.append(\" CHECKED\");\n}\n__sb__.append(\" /></form>\");",
+						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[active]\\\" value=\\\"false\\\" /><input type=\\\"checkbox\\\" id=\\\"\").append(formModelName$0).append(\"[active]\\\"\");\n" +
+						"if(member.hasErrors(\"active\")) {\n" +
+						"\t__sb__.append(\" class=\\\"fieldWithErrors\\\"\");\n" +
+						"}\n" +
+						"__sb__.append(\" name=\\\"\").append(formModelName$0).append(\"[active]\\\" value=\\\"true\\\"\");\nif(member.getActive()) {\n\t__sb__.append(\" CHECKED\");\n}\n__sb__.append(\" /></form>\");",
 				html("form(member, create)\n\tcheck(active)"));
 	}
 	
@@ -560,13 +598,25 @@ public class EspCompilerTests {
 		assertEquals("__sb__.append(\"<input type=\\\"text\\\" id=\\\"myField\\\" value=\\\"hello\\\" />\");", html("input#myField(type: text, value: hello)"));
 		assertEquals("__sb__.append(\"<input type=\\\"text\\\" id=\\\"myField\\\" name=\\\"say\\\" value=\\\"hello\\\" />\");", html("input#myField(type: text, name: say, value: hello)"));
 		assertEquals("String formModelName$0 = \"member\";\n" +
-						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><input id=\\\"\").append(formModelName$0).append(\"[firstName]\\\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\" value=\\\"\").append(f(member.getFirstName())).append(\"\\\" /></form>\");", 
+						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><input id=\\\"\").append(formModelName$0).append(\"[firstName]\\\"\");\n" +
+						"if(member.hasErrors(\"firstName\")) {\n" +
+						"\t__sb__.append(\" class=\\\"fieldWithErrors\\\"\");\n" +
+						"}\n" +
+						"__sb__.append(\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\" value=\\\"\").append(f(member.getFirstName())).append(\"\\\" /></form>\");", 
 				html("form(member, create)\n\tinput(firstName)"));
 		assertEquals("String formModelName$0 = \"member\";\n" +
-						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><input type=\\\"text\\\" id=\\\"\").append(formModelName$0).append(\"[firstName]\\\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\" value=\\\"\").append(f(member.getFirstName())).append(\"\\\" /></form>\");", 
+						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><input type=\\\"text\\\" id=\\\"\").append(formModelName$0).append(\"[firstName]\\\"\");\n" +
+						"if(member.hasErrors(\"firstName\")) {\n" +
+						"\t__sb__.append(\" class=\\\"fieldWithErrors\\\"\");\n" +
+						"}\n" +
+						"__sb__.append(\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\" value=\\\"\").append(f(member.getFirstName())).append(\"\\\" /></form>\");", 
 				html("form(member, create)\n\tinput(firstName, type: text)"));
 		assertEquals("String formModelName$0 = \"member\";\n" +
-						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><input type=\\\"text\\\" id=\\\"\").append(formModelName$0).append(\"[firstName]\\\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\" value=\\\"bob\\\" /></form>\");", 
+						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><input type=\\\"text\\\" id=\\\"\").append(formModelName$0).append(\"[firstName]\\\"\");\n" +
+						"if(member.hasErrors(\"firstName\")) {\n" +
+						"\t__sb__.append(\" class=\\\"fieldWithErrors\\\"\");\n" +
+						"}\n" +
+						"__sb__.append(\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\" value=\\\"bob\\\" /></form>\");", 
 				html("form(member, create)\n\tinput(firstName, type: text, value: \"bob\")"));
 	}
 	
@@ -575,16 +625,31 @@ public class EspCompilerTests {
 		assertEquals("__sb__.append(\"<label></label>\");", html("label"));
 		assertEquals("__sb__.append(\"<label id=\\\"myField\\\" for=\\\"firstName\\\"></label>\");", html("label#myField(for: firstName)"));
 		assertEquals("__sb__.append(\"<label id=\\\"myField\\\" for=\\\"firstName\\\">First Name</label>\");", html("label#myField(for: firstName) First Name"));
-		assertEquals("String formModelName$0 = \"member\";\n" +
-						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><label for=\\\"\").append(formModelName$0).append(\"[firstName]\\\">First Name\");\nboolean required$22 = member.isRequired(\"firstName\");\nif(required$22) {\n\t__sb__.append(\"<span class=\\\"required\\\">*</span>\");\n}\n__sb__.append(\"</label></form>\");",
-				html("form(member, create)\n\tlabel(firstName)"));
-		assertEquals("String formModelName$0 = \"member\";\n" +
-						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><label for=\\\"\").append(formModelName$0).append(\"[firstName]\\\">Member Name\");\nboolean required$22 = member.isRequired(\"firstName\");\nif(required$22) {\n\t__sb__.append(\"<span class=\\\"required\\\">*</span>\");\n}\n__sb__.append(\"</label></form>\");",
-				html("form(member, create)\n\tlabel(firstName, text:\"Member Name\")"));
-		assertEquals("String formModelName$0 = \"member\";\n" +
-						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><label for=\\\"\").append(formModelName$0).append(\"[spouse][firstName]\\\">First Name</label></form>\");", 
-				html("form(member, create)\n\tlabel(spouse, firstName)"));
 		assertEquals("if(true)\n\t__sb__.append(\"<label></label>\");", html("-if(true)\n\tlabel"));
+		
+		assertEquals("String formModelName$0 = \"member\";\n" +
+						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><label\");\n" +
+						"if(member.hasErrors(\"firstName\")) {\n" +
+						"\t__sb__.append(\" class=\\\"fieldWithErrors\\\"\");\n" +
+						"}\n" +
+						"__sb__.append(\" for=\\\"\").append(formModelName$0).append(\"[firstName]\\\">First Name\");\nif(member.isRequired(\"firstName\")) {\n\t__sb__.append(\"<span class=\\\"required\\\">*</span>\");\n}\n__sb__.append(\"</label></form>\");",
+				html("form(member, create)\n\tlabel(firstName)"));
+		
+		assertEquals("String formModelName$0 = \"member\";\n" +
+						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><label\");\n" +
+						"if(member.hasErrors(\"firstName\")) {\n" +
+						"\t__sb__.append(\" class=\\\"fieldWithErrors\\\"\");\n" +
+						"}\n" +
+						"__sb__.append(\" for=\\\"\").append(formModelName$0).append(\"[firstName]\\\">Member Name\");\nif(member.isRequired(\"firstName\")) {\n\t__sb__.append(\"<span class=\\\"required\\\">*</span>\");\n}\n__sb__.append(\"</label></form>\");",
+				html("form(member, create)\n\tlabel(firstName, text:\"Member Name\")"));
+		
+		assertEquals("String formModelName$0 = \"member\";\n" +
+						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><label\");\n" +
+						"if(member.hasErrors(\"spouse\", \"firstName\")) {\n" +
+						"\t__sb__.append(\" class=\\\"fieldWithErrors\\\"\");\n" +
+						"}\n" +
+						"__sb__.append(\" for=\\\"\").append(formModelName$0).append(\"[spouse][firstName]\\\">First Name\");\nif(member.isRequired(\"spouse\", \"firstName\")) {\n\t__sb__.append(\"<span class=\\\"required\\\">*</span>\");\n}\n__sb__.append(\"</label></form>\");", 
+				html("form(member, create)\n\tlabel(spouse, firstName)"));
 	}
 	
 	@Test
@@ -594,7 +659,11 @@ public class EspCompilerTests {
 		assertEquals("__sb__.append(\"<input type=\\\"text\\\" onkeypress=\\\"alert('hello');var k=window.event?event.keyCode:event.which;return !(k>31&&(k<48||k>57));\\\" />\");", html("number(onkeypress: alert('hello');)"));
 		assertEquals("__sb__.append(\"<input type=\\\"text\\\" id=\\\"myField\\\" value=\\\"10\\\" onkeypress=\\\"var k=window.event?event.keyCode:event.which;return !(k>31&&(k<48||k>57));\\\" />\");", html("number#myField(value:10)"));
 		assertEquals("String formModelName$0 = \"member\";\n" +
-						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><input type=\\\"text\\\" id=\\\"\").append(formModelName$0).append(\"[age]\\\" name=\\\"\").append(formModelName$0).append(\"[age]\\\" value=\\\"\").append(f(member.getAge())).append(\"\\\" onkeypress=\\\"var k=window.event?event.keyCode:event.which;return !(k>31&&(k<48||k>57));\\\" /></form>\");",
+						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><input type=\\\"text\\\" id=\\\"\").append(formModelName$0).append(\"[age]\\\"\");\n" +
+						"if(member.hasErrors(\"age\")) {\n" +
+						"\t__sb__.append(\" class=\\\"fieldWithErrors\\\"\");\n" +
+						"}\n" +
+						"__sb__.append(\" name=\\\"\").append(formModelName$0).append(\"[age]\\\" value=\\\"\").append(f(member.getAge())).append(\"\\\" onkeypress=\\\"var k=window.event?event.keyCode:event.which;return !(k>31&&(k<48||k>57));\\\" /></form>\");",
 				html("form(member, create)\n\tnumber(age)"));
 	}
 	
@@ -603,7 +672,11 @@ public class EspCompilerTests {
 		assertEquals("__sb__.append(\"<input type=\\\"password\\\" />\");", html("password"));
 		assertEquals("__sb__.append(\"<input type=\\\"password\\\" id=\\\"myPassword\\\" />\");", html("password#myPassword"));
 		assertEquals("String formModelName$0 = \"member\";\n" +
-						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><input type=\\\"password\\\" id=\\\"\").append(formModelName$0).append(\"[passkey]\\\" name=\\\"\").append(formModelName$0).append(\"[passkey]\\\" value=\\\"\").append(f(member.getPasskey())).append(\"\\\" /></form>\");",
+						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><input type=\\\"password\\\" id=\\\"\").append(formModelName$0).append(\"[passkey]\\\"\");\n" +
+						"if(member.hasErrors(\"passkey\")) {\n" +
+						"\t__sb__.append(\" class=\\\"fieldWithErrors\\\"\");\n" +
+						"}\n" +
+						"__sb__.append(\" name=\\\"\").append(formModelName$0).append(\"[passkey]\\\" value=\\\"\").append(f(member.getPasskey())).append(\"\\\" /></form>\");",
 				html("form(member, create)\n\tpassword(passkey)"));
 	}
 	
@@ -612,7 +685,11 @@ public class EspCompilerTests {
 		assertEquals("__sb__.append(\"<input type=\\\"radio\\\" />\");", html("radio"));
 		assertEquals("__sb__.append(\"<input type=\\\"radio\\\" id=\\\"myRadio\\\" />\");", html("radio#myRadio"));
 		assertEquals("String formModelName$0 = \"member\";\n" +
-						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><input type=\\\"radio\\\" id=\\\"\").append(formModelName$0).append(\"[active]\\\" name=\\\"\").append(formModelName$0).append(\"[active]\\\" value=\\\"\").append(f(member.getActive())).append(\"\\\" /></form>\");",
+						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><input type=\\\"radio\\\" id=\\\"\").append(formModelName$0).append(\"[active]\\\"\");\n" +
+						"if(member.hasErrors(\"active\")) {\n" +
+						"\t__sb__.append(\" class=\\\"fieldWithErrors\\\"\");\n" +
+						"}\n" +
+						"__sb__.append(\" name=\\\"\").append(formModelName$0).append(\"[active]\\\" value=\\\"\").append(f(member.getActive())).append(\"\\\" /></form>\");",
 				html("form(member, create)\n\tradio(active)"));
 	}
 	
@@ -625,7 +702,11 @@ public class EspCompilerTests {
 	public void testSelect() throws Exception {
 		assertEquals("__sb__.append(\"<select></select>\");", html("select"));
 		assertEquals("String formModelName$0 = \"member\";\n" +
-						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><select id=\\\"\").append(formModelName$0).append(\"[firstName]\\\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\"></select></form>\");",
+						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><select id=\\\"\").append(formModelName$0).append(\"[firstName]\\\"\");\n" +
+						"if(member.hasErrors(\"firstName\")) {\n" +
+						"\t__sb__.append(\" class=\\\"fieldWithErrors\\\"\");\n" +
+						"}\n" +
+						"__sb__.append(\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\"></select></form>\");",
 				html("form(member, create)\n\tselect(firstName)"));
 	}
 	
@@ -634,10 +715,18 @@ public class EspCompilerTests {
 		assertEquals("__sb__.append(\"<select></select>\");", html("select<-options"));
 		assertEquals("__sb__.append(\"<select>\");\n__sb__.append(optionTags(members));\n__sb__.append(\"</select>\");", html("select<-options(members)"));
 		assertEquals("String formModelName$0 = \"member\";\n" +
-						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><select id=\\\"\").append(formModelName$0).append(\"[firstName]\\\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\">\");\n__sb__.append(optionTags(members, member.getFirstName()));\n__sb__.append(\"</select></form>\");",
+						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><select id=\\\"\").append(formModelName$0).append(\"[firstName]\\\"\");\n" +
+						"if(member.hasErrors(\"firstName\")) {\n" +
+						"\t__sb__.append(\" class=\\\"fieldWithErrors\\\"\");\n" +
+						"}\n" +
+						"__sb__.append(\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\">\");\n__sb__.append(optionTags(members, member.getFirstName()));\n__sb__.append(\"</select></form>\");",
 				html("form(member, create)\n\tselect(firstName)<-options(members)"));
 		assertEquals("String formModelName$0 = \"member\";\n" +
-						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><select id=\\\"\").append(formModelName$0).append(\"[firstName]\\\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\">\");\nObject selection$41 = member.getFirstName();\nfor(Member option : members) {\n\tboolean selected$41 = isEqual(option.getId(), selection$41);\n\t__sb__.append(\"<option value=\\\"\"+f(option.getId())+\"\\\" \"+(selected$41 ? \"selected >\" : \">\")+h(option.getNameLF())+\"</option>\");\n}\n__sb__.append(\"</select></form>\");",
+						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><select id=\\\"\").append(formModelName$0).append(\"[firstName]\\\"\");\n" +
+						"if(member.hasErrors(\"firstName\")) {\n" +
+						"\t__sb__.append(\" class=\\\"fieldWithErrors\\\"\");\n" +
+						"}\n" +
+						"__sb__.append(\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\">\");\nObject selection$41 = member.getFirstName();\nfor(Member option : members) {\n\tboolean selected$41 = isEqual(option.getId(), selection$41);\n\t__sb__.append(\"<option value=\\\"\"+f(option.getId())+\"\\\" \"+(selected$41 ? \"selected >\" : \">\")+h(option.getNameLF())+\"</option>\");\n}\n__sb__.append(\"</select></form>\");",
 				html("form(member, create)\n\tselect(firstName)<-options<Member>(members, text:\"option.getNameLF()\", value:\"option.getId()\", sort:\"option.getNameLF()\")"));
 	}
 	
@@ -683,24 +772,40 @@ public class EspCompilerTests {
 		assertEquals("__sb__.append(\"<input type=\\\"text\\\" />\");", html("text"));
 		assertEquals("__sb__.append(\"<input type=\\\"text\\\" id=\\\"myText\\\" />\");", html("text#myText"));
 		assertEquals("String formModelName$0 = \"member\";\n" +
-						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><input type=\\\"text\\\" id=\\\"\").append(formModelName$0).append(\"[firstName]\\\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\" value=\\\"\").append(f(member.getFirstName())).append(\"\\\" /></form>\");",
+						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><input type=\\\"text\\\" id=\\\"\").append(formModelName$0).append(\"[firstName]\\\"\");\n" +
+						"if(member.hasErrors(\"firstName\")) {\n" +
+						"\t__sb__.append(\" class=\\\"fieldWithErrors\\\"\");\n" +
+						"}\n" +
+						"__sb__.append(\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\" value=\\\"\").append(f(member.getFirstName())).append(\"\\\" /></form>\");",
 				html("form(member, create)\n\ttext(firstName)"));
 		assertEquals("String formModelName$0 = \"member\";\n" +
-						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><input type=\\\"text\\\" id=\\\"\").append(formModelName$0).append(\"[firstName]\\\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\" value=\\\"\\\" /></form>\");",
+						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><input type=\\\"text\\\" id=\\\"\").append(formModelName$0).append(\"[firstName]\\\"\");\n" +
+						"if(member.hasErrors(\"firstName\")) {\n" +
+						"\t__sb__.append(\" class=\\\"fieldWithErrors\\\"\");\n" +
+						"}\n" +
+						"__sb__.append(\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\" value=\\\"\\\" /></form>\");",
 				html("form(member, create)\n\ttext(firstName, value:)"));
 
 		assertEquals("String formModelName$0 = \"member\";\n" +
-				"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><input type=\\\"text\\\" id=\\\"\").append(formModelName$0).append(\"[firstName]\\\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\" value=\\\"\").append(h(value)).append(\"\\\" /></form>\");",
-		html("form(member, create)\n\ttext(firstName, value: {value})"));
+						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><input type=\\\"text\\\" id=\\\"\").append(formModelName$0).append(\"[firstName]\\\"\");\n" +
+						"if(member.hasErrors(\"firstName\")) {\n" +
+						"\t__sb__.append(\" class=\\\"fieldWithErrors\\\"\");\n" +
+						"}\n" +
+						"__sb__.append(\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\" value=\\\"\").append(h(value)).append(\"\\\" /></form>\");",
+				html("form(member, create)\n\ttext(firstName, value: {value})"));
 	}
 	
 	@Test
 	public void testTextArea() throws Exception {
-		assertEquals("__sb__.append(\"<textarea></textarea>\");", html("textarea"));
-		assertEquals("__sb__.append(\"<textarea id=\\\"myText\\\"></textarea>\");", html("textarea#myText"));
+		assertEquals("__sb__.append(\"<textarea></textarea>\");", html("textArea"));
+		assertEquals("__sb__.append(\"<textarea id=\\\"myText\\\"></textarea>\");", html("textArea#myText"));
 		assertEquals("String formModelName$0 = \"member\";\n" +
-						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><textarea id=\\\"\").append(formModelName$0).append(\"[firstName]\\\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\">\").append(f(member.getFirstName())).append(\"</textarea></form>\");",
-				html("form(member, create)\n\ttextarea(firstName)"));
+						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><textarea id=\\\"\").append(formModelName$0).append(\"[firstName]\\\"\");\n" +
+						"if(member.hasErrors(\"firstName\")) {\n" +
+						"\t__sb__.append(\" class=\\\"fieldWithErrors\\\"\");\n" +
+						"}\n" +
+						"__sb__.append(\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\">\").append(f(member.getFirstName())).append(\"</textarea></form>\");",
+				html("form(member, create)\n\ttextArea(firstName)"));
 	}
 
 	@Test

@@ -30,6 +30,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.oobium.build.BuildBundle;
 import org.oobium.build.gen.ProjectGenerator;
+import org.oobium.logging.Logger;
 import org.oobium.utils.Config;
 import org.oobium.utils.Config.Mode;
 import org.oobium.utils.Config.OsgiRuntime;
@@ -63,14 +64,14 @@ public class Workspace {
 	}
 
 	public static final String BUNDLE_REPOS = "org.oobium.bundle.repos";
-	public static final String JAVA_DIR = "org.oobium.java.dir";
-	public static final String WORKSPACE = "org.oobium.workspace";
+	public static final String WORKING_DIR = "org.oobium.workspace";
 	public static final String RUNTIME = "org.oobium.runtime";
 
 	public static final String RUNTIME_EQUINOX = "equinox";
 	public static final String RUNTIME_FELIX = "felix";
 
 
+	private final Logger logger;
 	private final ReadWriteLock lock;
 	
 	private Mode mode;
@@ -100,6 +101,7 @@ public class Workspace {
 	}
 
 	public Workspace(File workingDirectory) {
+		logger = Logger.getLogger(BuildBundle.class);
 		lock = new ReentrantReadWriteLock();
 		mode = Mode.DEV;
 		bundles = new HashMap<File, Bundle>();
@@ -112,7 +114,14 @@ public class Workspace {
 		try {
 			File cfile = file.getCanonicalFile();
 			Bundle bundle = Bundle.create(cfile);
-			if(bundle != null) {
+			if(bundle == null) {
+				if(logger.isLoggingDebug()) {
+					logger.debug("bundle already loaded: " + bundle);
+				}
+			} else {
+				if(logger.isLoggingDebug()) {
+					logger.debug("adding bundle: " + bundle);
+				}
 				bundles.put(cfile, bundle);
 				if(bundle instanceof Application) {
 					applications.put(cfile, (Application) bundle);
@@ -124,7 +133,9 @@ public class Workspace {
 				} else if(bundle.name.equals("org.apache.felix.main")) {
 					felixRuntimeBundle = bundle;
 				}
-				System.out.println("added bundle: " + bundle);
+				if(logger.isLoggingDebug()) {
+					logger.debug("added bundle: " + bundle);
+				}
 				return bundle;
 			}
 		} catch(IOException e) {
@@ -607,7 +618,14 @@ public class Workspace {
 		lock.writeLock().lock();
 		try {
 			Bundle bundle = bundles.get(file);
-			if(bundle == null) {
+			if(bundle != null) {
+				if(logger.isLoggingDebug()) {
+					logger.debug("bundle already loaded: " + bundle);
+				}
+			} else {
+				if(logger.isLoggingDebug()) {
+					logger.debug("loading: " + file);
+				}
 				bundle = addBundle(file);
 				if(bundle != null) {
 					boolean foundRepo = false;
@@ -785,7 +803,7 @@ public class Workspace {
 		if(repos != null) {
 			List<File> bundles = repos.get(repo);
 			if(bundles != null) {
-				for(File bundle : bundles) {
+				for(File bundle : bundles.toArray(new File[bundles.size()])) {
 					remove(bundle);
 				}
 			}
@@ -825,7 +843,7 @@ public class Workspace {
 		try {
 			String[] oldRepos = getBundleRepositories();
 			if(this.repos != null) {
-				for(File repo : this.repos.keySet()) {
+				for(File repo : this.repos.keySet().toArray(new File[this.repos.size()])) {
 					doRemoveRepository(repo);
 				}
 			}

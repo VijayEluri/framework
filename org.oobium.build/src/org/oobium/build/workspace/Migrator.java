@@ -63,7 +63,7 @@ public class Migrator extends Bundle {
 		this.config = new File(main, "configuration.js");
 		this.migrations = new File(main, "migrations");
 		this.generated = new File(file, "generated");
-		this.genMain = new File(generated, name.replaceAll("\\.", File.separator));
+		this.genMain = new File(generated, name.replace('.', File.separatorChar));
 		this.genMigrations = new File(genMain, "migrations");
 		this.module = name.substring(0, name.length() - 9);
 	}

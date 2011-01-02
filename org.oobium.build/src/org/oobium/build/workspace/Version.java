@@ -100,6 +100,13 @@ public class Version implements Comparable<Version> {
 		return false;
 	}
 
+	/**
+	 * Convenience method for {@link #isAfter(Version, false)}
+	 */
+	public boolean isAfter(Version version) {
+		return isAfter(version, false);
+	}
+	
 	public boolean isAfter(Version version, boolean inclusive) {
 		if(inclusive && version.equals(this)) {
 			return true;
@@ -123,6 +130,13 @@ public class Version implements Comparable<Version> {
 				}
 			}
 		}
+	}
+	
+	/**
+	 * Convenience method for {@link #isBefore(Version, false)}
+	 */
+	public boolean isBefore(Version version) {
+		return isBefore(version, false);
 	}
 	
 	public boolean isBefore(Version version, boolean inclusive) {
@@ -163,6 +177,9 @@ public class Version implements Comparable<Version> {
 		return (range.start.isBefore(this, range.startInclusive) && range.end.isAfter(this, range.endInclusive));
 	}
 	
+	/**
+	 * Returns the String representation of this Version object, including its qualifier (if one exists).
+	 */
 	@Override
 	public String toString() {
 		return toString(false);
@@ -185,6 +202,10 @@ public class Version implements Comparable<Version> {
 		} else {
 			return this;
 		}
+	}
+
+	public Version resolve(long dateInMillis) {
+		return resolve(new Date(dateInMillis));
 	}
 
 }

@@ -99,7 +99,7 @@ public class ProjectGenerator {
 	private static void createAppActivator(File project, boolean createViews) {
 		SourceFile src = new SourceFile();
 
-		File main = new File(project, "src" + File.separator + project.getName().replaceAll("\\.", File.separator));
+		File main = new File(project, "src" + File.separator + project.getName().replace('.', File.separatorChar));
 		
 		src.packageName = project.getName();
 		src.simpleName = "Activator";
@@ -188,6 +188,14 @@ public class ProjectGenerator {
 			createFolder(assetsFolder(project), "styles");
 			createFolder(assetsFolder(project), "images");
 			createFolder(project, "assets.src/images");
+			
+			String src;
+			
+			src = StringUtils.getResourceAsString(ProjectGenerator.class, "templates/application.css");
+			writeFile(assetsFolder(project), "styles/application.css", src);
+
+			src = StringUtils.getResourceAsString(ProjectGenerator.class, "templates/application.js");
+			writeFile(assetsFolder(project), "scripts/application.js", src);
 		}
 
 		createFolder(project, ".settings");
@@ -310,7 +318,7 @@ public class ProjectGenerator {
 	
 	private static void createJdtPrefsFile(File project) {
 		String src = "eclipse.preferences.version=1\n" +
-		"org.eclipse.jdt.core.builder.resourceCopyExclusionFilter=*.launch,*.esp";
+		"org.eclipse.jdt.core.builder.resourceCopyExclusionFilter=*.launch,*.esp,*.ess,*.ejs,*.emt,site.js";
 		File folder = createFolder(project, ".settings");
 		writeFile(folder, "org.eclipse.jdt.core.prefs", src);
 	}
@@ -472,7 +480,7 @@ public class ProjectGenerator {
 
 		// Migrator
 		src = new SourceFile();
-		src.packageName = migration.getName().replaceAll(File.separator, ".");
+		src.packageName = migration.getName().replace(File.separatorChar, '.');
 		src.simpleName = "Migrator";
 		src.superName = MigratorService.class.getSimpleName();
 		src.imports.add(MigratorService.class.getCanonicalName());
@@ -506,7 +514,7 @@ public class ProjectGenerator {
 		
 		// Migration
 		src = new SourceFile();
-		src.packageName = migration.getName().replaceAll(File.separator, ".") + ".migrations";
+		src.packageName = migration.getName().replace(File.separatorChar, '.') + ".migrations";
 		src.simpleName = "CreateDatabase";
 		src.superName = "AbstractCreateDatabase";
 		src.imports.add(SQLException.class.getCanonicalName());
@@ -539,7 +547,7 @@ public class ProjectGenerator {
 		// Abstract Migration
 		src = new SourceFile();
 		src.isAbstract = true;
-		src.packageName = migration.getName().replaceAll(File.separator, ".") + ".migrations";
+		src.packageName = migration.getName().replace(File.separatorChar, '.') + ".migrations";
 		src.simpleName = "AbstractCreateDatabase";
 		src.superName = AbstractMigration.class.getSimpleName();
 		src.imports.add(AbstractMigration.class.getCanonicalName());
@@ -559,7 +567,7 @@ public class ProjectGenerator {
 		sb.append("\t}");
 		src.methods.put("2", sb.toString());
 
-		writeFile(genFolder(migration) + File.separator + migration.getName().replaceAll("\\.", File.separator) + File.separator + "migrations", 
+		writeFile(genFolder(migration) + File.separator + migration.getName().replace('.', File.separatorChar) + File.separator + "migrations", 
 				src.simpleName + ".java", src.toSource());
 	}
 
@@ -674,7 +682,7 @@ public class ProjectGenerator {
 		StringBuilder sb = new StringBuilder();
 		sb.append('@').append(ModelDescription.class.getSimpleName()).append('(');
 		if(properties.size() == 0) {
-			sb.append(')');
+			sb.append("timestamps=true)");
 		} else {
 			List<String> attrs = new ArrayList<String>();
 			List<String> ones = new ArrayList<String>();
@@ -715,11 +723,7 @@ public class ProjectGenerator {
 						sb.append(",\n");
 					}
 				}
-				if(ones.isEmpty() && manys.isEmpty()) {
-					sb.append("\n\t}\n");
-				} else {
-					sb.append("\n\t},\n");
-				}
+				sb.append("\n\t},\n");
 			}
 			if(!ones.isEmpty()) {
 				src.imports.add(Relation.class.getCanonicalName());
@@ -731,11 +735,7 @@ public class ProjectGenerator {
 						sb.append(",\n");
 					}
 				}
-				if(manys.isEmpty()) {
-					sb.append("\n\t}\n");
-				} else {
-					sb.append("\n\t},\n");
-				}
+				sb.append("\n\t},\n");
 			}
 			if(!manys.isEmpty()) {
 				src.imports.add(Relation.class.getCanonicalName());
@@ -747,10 +747,10 @@ public class ProjectGenerator {
 						sb.append(",\n");
 					}
 				}
-				sb.append("\n\t}\n");
+				sb.append("\n\t},\n");
 			}
+			sb.append("\ttimestamps = true\n)");
 		}
-		sb.append(')');
 		
 		src.classAnnotations.put(1, sb.toString());
 
@@ -833,10 +833,12 @@ public class ProjectGenerator {
 		src.imports.add(modelPackage + "." + modelName);
 		src.imports.add(Observer.class.getCanonicalName());
 
-//		src.rawSource = "\tstatic { addObserver(" + name + ".class, " + modelName + ".class); }\n\n" +
-//						"//\tTODO override methods to implement the desired functionality\n";
-
-		src.rawSource = "\t// TODO override methods to implement the desired functionality\n";
+		src.methods.put("afterCreate", 
+			"\t@Override\n" +
+			"\tprotected void afterCreate(Post model) {\n" +
+			"\t\t// TODO Auto-generated method stub\n" +
+			"\t\tsuper.afterCreate(model);\n" +
+			"\t}");
 
 		return writeFile(module.observers, name + ".java", src.toSource());
 	}
@@ -996,7 +998,7 @@ public class ProjectGenerator {
 	private static File mainFolder(File project)		{
 		String path = project.getName();
 		if(path.endsWith(".tests")) path = path.substring(0, path.length()-6);
-		return new File(srcFolder(project), path.replaceAll("\\.", File.separator));
+		return new File(srcFolder(project), path.replace('.', File.separatorChar));
 	}
 	
 	private static File modelsFolder(File project)		{ return new File(appFolder(project), "models"); }

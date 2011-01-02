@@ -19,8 +19,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
-import org.oobium.build.BuildBundle;
-import org.oobium.logging.Logger;
 import org.oobium.persist.ModelDescription;
 
 public class ProjectUtils {
@@ -33,7 +31,6 @@ public class ProjectUtils {
 	public static final String RUNTIME_EQUINOX = "equinox";
 	public static final String RUNTIME_FELIX = "felix";
 
-	private static final Logger logger = Logger.getLogger(BuildBundle.class);
 
 	private static final String mailerAnnotation = "@Mailer";// + Mailer.class.getSimpleName();
 	private static final String modelDescription = "@" + ModelDescription.class.getSimpleName();

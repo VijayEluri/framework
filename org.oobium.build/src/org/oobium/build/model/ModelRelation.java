@@ -27,7 +27,6 @@ public class ModelRelation {
 	private Relation annotation;
 	private boolean hasMany;
 	private ModelRelation opposite;
-	private String relatedType;
 
 	public ModelRelation(ModelDefinition model, Relation annotation, boolean hasMany) {
 		this.model = model;
@@ -99,6 +98,10 @@ public class ModelRelation {
 
 	public int onDelete() {
 		return annotation.onDelete();
+	}
+
+	public int onUpdate() {
+		return annotation.onUpdate();
 	}
 
 	void setOpposite(Collection<ModelDefinition> models) {

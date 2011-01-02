@@ -48,7 +48,7 @@ public class HtmlElement extends EspElement {
 	private List<EspPart> classNames;
 	private List<EspPart> args;
 	private Map<String, EntryPart> entries;
-	private boolean hidden;
+	private boolean hide;
 	private EspPart innerText;
 	private List<EspElement> children;
 	
@@ -267,7 +267,7 @@ public class HtmlElement extends EspElement {
 	}
 
 	public boolean isHidden() {
-		return hidden;
+		return hide;
 	}
 
 	protected void parse() {
@@ -345,6 +345,21 @@ public class HtmlElement extends EspElement {
 		}
 		
 		s1 = commentCheck(this, s1);
+		if((style & STYLES) != 0) {
+			if(s1 < eoe && ca[s1] == '|') { // Styles
+				int s2 = s1 + 1;
+				while(s2 < eoe && Character.isLetter(ca[s2])) {
+					s2++;
+				}
+				if(isEqual(ca, s1+1, s2, "hide")) {
+					hide = true;
+				}
+				new EspPart(this, Type.StylePart, s1+1, s2);
+				s1 = s2;
+			}
+		}
+		
+		s1 = commentCheck(this, s1);
 		if((style & (ARGS | ENTRIES | CTOR_ARGS)) != 0) {
 			if(s1 < eoe && ca[s1] == '(') { // Args
 				int s2 = closer(ca, s1, eoe, true);
@@ -356,21 +371,6 @@ public class HtmlElement extends EspElement {
 					parseArgs(s1, s2);
 				}
 				s1 = s2 + 1;
-			}
-		}
-		
-		s1 = commentCheck(this, s1);
-		if((style & STYLES) != 0) {
-			if(s1 < eoe && ca[s1] == ':') { // Styles
-				int s2 = s1 + 1;
-				while(s2 < eoe && Character.isLetter(ca[s2])) {
-					s2++;
-				}
-				if(isEqual(ca, s1+1, s2, "hidden")) {
-					hidden = true;
-				}
-				new EspPart(this, Type.StylePart, s1+1, s2);
-				s1 = s2;
 			}
 		}
 		
@@ -464,7 +464,7 @@ public class HtmlElement extends EspElement {
 		} else if("fields".equals(tag)) {
 			type = Type.HtmlElement;
 			style = ARGS | ENTRIES;
-		} else if("textarea".equals(tag)) {
+		} else if("textArea".equals(tag)) {
 			type = Type.HtmlElement;
 			style = ID | CLASSES | ARGS | ENTRIES | STYLES | CLOSING_TAG;
 		} else if("select".equals(tag)) {
@@ -494,6 +494,9 @@ public class HtmlElement extends EspElement {
 		} else if("head".equals(tag)) {
 			type = Type.HtmlElement;
 			style = CHILDREN;
+		} else if("errors".equals(tag)) {
+			type = Type.HtmlElement;
+			style = ARGS | ENTRIES;
 		} else if("messages".equals(tag)) {
 			type = Type.HtmlElement;
 			style = NONE;

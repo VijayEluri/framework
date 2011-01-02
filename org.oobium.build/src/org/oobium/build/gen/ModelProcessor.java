@@ -216,7 +216,7 @@ public class ModelProcessor extends AbstractProcessor {
 //					JarEntry entry = entries.nextElement();
 //					String name = entry.getName();
 //					if(name.startsWith(path) && name.indexOf('$') == -1 && !name.endsWith("Model.class")) {
-//						name = name.substring(0, name.lastIndexOf('.')).replaceAll("/", ".");
+//						name = name.substring(0, name.lastIndexOf('.')).replace('/', '.');
 //						try {
 //							Class<?> clazz = ucl.loadClass(name);
 //							ModelDescription description = clazz.getAnnotation(ModelDescription.class);

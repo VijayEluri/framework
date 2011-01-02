@@ -16,6 +16,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 
+import org.oobium.build.runner.RunEvent.Type;
+
 public class StreamGobbler extends Thread {
 
 	private Runner runner;
@@ -58,6 +60,9 @@ public class StreamGobbler extends Thread {
 						Runner tmp = runner;
 						runner = null;
 						tmp.handleStarted();
+					}
+					if(runner != null && line.contains("(ERROR) org.oobium.server: could not listen on port ")) {
+						RunnerService.notifyListeners(Type.Error, runner.getApplication(), line);
 					}
 				}
 				if(outputStream != null) {

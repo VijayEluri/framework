@@ -11,6 +11,7 @@
 package org.oobium.build.workspace;
 
 import static org.oobium.utils.FileUtils.EXECUTABLE;
+import static org.oobium.utils.FileUtils.PERSIST_LAST_MODIFIED;
 import static org.oobium.utils.FileUtils.copy;
 import static org.oobium.utils.FileUtils.createFolder;
 import static org.oobium.utils.FileUtils.deleteContents;
@@ -23,16 +24,19 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 
 import org.oobium.build.BuildBundle;
 import org.oobium.logging.Logger;
-import org.oobium.utils.FileUtils;
 import org.oobium.utils.Config.Mode;
 import org.oobium.utils.Config.OsgiRuntime;
+import org.oobium.utils.FileUtils;
 
 public class Exporter {
 
@@ -58,7 +62,7 @@ public class Exporter {
 
 	
 	private static final String START_SCRIPT = 	"#!/bin/bash\n" +
-												"pidfile=running.pid\n" +
+												"pidfile=../<APP_NAME>.pid\n" +
 												"if [ -e $pidfile ]; then\n" +
 												"  echo \"Already running\"\n" +
 												"  exit 1\n" +
@@ -68,11 +72,13 @@ public class Exporter {
 												"fi";
 
 	private static final String STOP_SCRIPT = 	"#!/bin/bash\n" +
-												"pidfile=running.pid\n" +
+												"pidfile=../<APP_NAME>.pid\n" +
 												"if [ -e $pidfile ]; then\n" +
-												"  kill `cat $pidfile`\n" +
-												"  rm $pidfile\n" +
-												"  echo \"Process stopped\"\n" +
+												"  if kill `cat $pidfile`\n" +
+												"    then\n" +
+												"      rm $pidfile\n" +
+												"      echo \"Process stopped\"\n" +
+												"  fi\n" +
 												"else\n" +
 												"  echo \"Cannot find $pidfile file - is process actually running?\"\n" +
 												"  exit 1\n" +
@@ -80,6 +86,8 @@ public class Exporter {
 
 
 	private final Logger logger;
+	
+	private String name;
 	
 	private final Workspace workspace;
 	private final Set<Application> applications;
@@ -92,6 +100,7 @@ public class Exporter {
 	private boolean clean;
 	private boolean cleanCache;
 	private Mode mode;
+	private Map<String, String> properties;
 	
 	private Set<Bundle> exportedBundles;
 	private Set<Bundle> exportedStart;
@@ -103,13 +112,9 @@ public class Exporter {
 	}
 	
 	public Exporter(Workspace workspace, Application...applications) {
-		this(workspace, Arrays.asList(applications));
-	}
-	
-	public Exporter(Workspace workspace, Collection<Application> applications) {
 		this.logger = Logger.getLogger(BuildBundle.class);
 		this.workspace = workspace;
-		this.applications = new LinkedHashSet<Application>(applications);
+		this.applications = new LinkedHashSet<Application>(Arrays.asList(applications));
 		this.start = new LinkedHashSet<Bundle>();
 		this.includes = new LinkedHashSet<Bundle>();
 		this.exportDir = new File(workspace.getWorkingDirectory(), "export");
@@ -120,23 +125,15 @@ public class Exporter {
 
 		this.exportedBundles = new LinkedHashSet<Bundle>();
 		this.exportedStart = new LinkedHashSet<Bundle>();
-		
+
+		setName(applications[0].name);
 		setStartTypes(MODULE | SERVICE);
 	}
+	
+	public Exporter(Workspace workspace, Collection<Application> applications) {
+		this(workspace, applications.toArray(new Application[applications.size()]));
+	}
 
-	
-	public void setStartTypes(int startTypes) {
-		this.startTypes = startTypes;
-	}
-	
-	public void clearServices() {
-		includes.clear();
-	}
-	
-	public void clearStartBundles() {
-		start.clear();
-	}
-	
 	public void add(Bundle...bundles) {
 		add(Arrays.asList(bundles));
 	}
@@ -155,6 +152,14 @@ public class Exporter {
 		start.addAll(bundles);
 	}
 	
+	public void clearServices() {
+		includes.clear();
+	}
+	
+	public void clearStartBundles() {
+		start.clear();
+	}
+
 	/**
 	 * Only good for Apache Felix - will need to modify if supporting
 	 * additional runtimes in the future...
@@ -164,23 +169,8 @@ public class Exporter {
 		
 		File system = new File(configDir, "system.properties");
 		StringBuilder sb = new StringBuilder();
-		sb.append(Mode.SYSTEM_PROPERTY).append("=").append(mode).append('\n');
-		switch(mode) {
-		case DEV:
-			sb.append(Logger.SYS_PROP_CONSOLE).append('=').append(Logger.DEBUG).append('\n');
-			sb.append(Logger.SYS_PROP_EMAIL).append('=').append(Logger.NEVER).append('\n');
-			sb.append(Logger.SYS_PROP_FILE).append('=').append(Logger.DEBUG);
-			break;
-		case TEST:
-			sb.append(Logger.SYS_PROP_CONSOLE).append('=').append(Logger.DEBUG).append('\n');
-			sb.append(Logger.SYS_PROP_EMAIL).append('=').append(Logger.NEVER).append('\n');
-			sb.append(Logger.SYS_PROP_FILE).append('=').append(Logger.INFO);
-			break;
-		case PROD:
-			sb.append(Logger.SYS_PROP_CONSOLE).append('=').append(Logger.TRACE).append('\n');
-			sb.append(Logger.SYS_PROP_EMAIL).append('=').append(Logger.NEVER).append('\n');
-			sb.append(Logger.SYS_PROP_FILE).append('=').append(Logger.INFO);
-			break;
+		for(Entry<String, String> property : getMergedProperties().entrySet()) {
+			sb.append(property.getKey()).append('=').append(property.getValue()).append('\n');
 		}
 		writeFile(system, sb.toString());
 
@@ -225,7 +215,7 @@ public class Exporter {
 			logger.info("skipping start script");
 		} else {
 			logger.info("writing start script");
-			writeFile(startScript, START_SCRIPT, EXECUTABLE);
+			writeFile(startScript, START_SCRIPT.replace("<APP_NAME>", name), EXECUTABLE);
 		}
 		
 		File stopScript = new File(exportDir, "stop.sh");
@@ -233,10 +223,10 @@ public class Exporter {
 			logger.info("skipping stop script");
 		} else {
 			logger.info("writing stop script");
-			writeFile(stopScript, STOP_SCRIPT, EXECUTABLE);
+			writeFile(stopScript, STOP_SCRIPT.replace("<APP_NAME>", name), EXECUTABLE);
 		}
 	}
-
+	
 	private Bundle doExport(Bundle bundle) throws IOException {
 		File jar;
 		if(bundle.isJar) {
@@ -245,17 +235,18 @@ public class Exporter {
 				logger.info("  skipping " + bundle);
 			} else {
 				logger.info("  copying " + bundle);
-				copy(bundle.file, jar);
+				copy(bundle.file, jar, PERSIST_LAST_MODIFIED);
 			}
 		} else {
 			Date date = new Date(FileUtils.getLastModified(bundle.bin));
 			Version version = bundle.version.resolve(date);
 			jar = new File(bundleDir, bundle.name + "_" + version + ".jar");
 			if(jar.exists()) {
-				logger.info("  skipping " + bundle);
+				logger.info("  skipping " + bundle.toString(date));
 			} else {
-				logger.info("  creating " + bundle);
+				logger.info("  creating " + bundle.toString(date));
 				bundle.createJar(jar, version);
+				jar.setLastModified(date.getTime());
 			}
 		}
 		
@@ -279,7 +270,7 @@ public class Exporter {
 		exportedBundles.add(exportedBundle);
 		return exportedBundle;
 	}
-
+	
 	/**
 	 * Export the application, configured for the given mode.
 	 * @return a File object for the folder where the application was exported.
@@ -362,7 +353,7 @@ public class Exporter {
 		
 		return doExport(bundle);
 	}
-
+	
 	private void exportMigration(Application application, Mode mode) throws IOException {
 		Migrator migration = workspace.getMigratorFor(application);
 		if(migration != null) {
@@ -411,7 +402,7 @@ public class Exporter {
 		}
 		return exportedBundles;
 	}
-	
+
 	public boolean getClean() {
 		return clean;
 	}
@@ -419,11 +410,11 @@ public class Exporter {
 	public boolean getCleanCache() {
 		return cleanCache;
 	}
-	
+
 	public File getExportDir() {
 		return exportDir;
 	}
-	
+
 	public File getExportedJar(Bundle bundle) {
 		if(!exportDir.exists()) {
 			return null;
@@ -454,20 +445,70 @@ public class Exporter {
 		}
 	}
 	
+	private Map<String, String> getMergedProperties() {
+		Map<String, String> properties = new LinkedHashMap<String, String>();
+		properties.put(Mode.SYSTEM_PROPERTY, mode.name());
+		switch(mode) {
+		case DEV:
+			properties.put(Logger.SYS_PROP_CONSOLE, String.valueOf(Logger.DEBUG));
+			properties.put(Logger.SYS_PROP_EMAIL, String.valueOf(Logger.NEVER));
+			properties.put(Logger.SYS_PROP_FILE, String.valueOf(Logger.NEVER));
+			break;
+		case TEST:
+			properties.put(Logger.SYS_PROP_CONSOLE, String.valueOf(Logger.DEBUG));
+			properties.put(Logger.SYS_PROP_EMAIL, String.valueOf(Logger.NEVER));
+			properties.put(Logger.SYS_PROP_FILE, String.valueOf(Logger.INFO));
+			break;
+		case PROD:
+			properties.put(Logger.SYS_PROP_CONSOLE, String.valueOf(Logger.WARNING));
+			properties.put(Logger.SYS_PROP_EMAIL, String.valueOf(Logger.NEVER));
+			properties.put(Logger.SYS_PROP_FILE, String.valueOf(Logger.INFO));
+			break;
+		}
+		if(this.properties != null) {
+			properties.putAll(this.properties);
+		}
+		return properties;
+	}
+	
 	public Mode getMode() {
 		return mode;
+	}
+	
+	public String getName() {
+		return name;
 	}
 	
 	public void setClean(boolean clean) {
 		this.clean = clean;
 	}
-
+	
 	public void setCleanCache(boolean cleanCache) {
 		this.cleanCache = cleanCache;
 	}
 	
 	public void setMode(Mode mode) {
 		this.mode = mode;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public void setProperties(Map<String, String> properties) {
+		this.properties = properties;
+	}
+	
+	public void setProperties(String...properties) {
+		this.properties = new LinkedHashMap<String, String>();
+		for(String property : properties) {
+			String[] sa = property.split("\\s*=\\s*", 2);
+			this.properties.put(sa[0], sa[1]);
+		}
+	}
+	
+	public void setStartTypes(int startTypes) {
+		this.startTypes = startTypes;
 	}
 
 }

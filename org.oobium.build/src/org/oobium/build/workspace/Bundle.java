@@ -29,6 +29,7 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -75,7 +76,11 @@ public class Bundle implements Comparable<Bundle> {
 
 	public static Bundle create(File file) {
 		Manifest manifest = manifest(file);
-		if(manifest != null) {
+		if(manifest == null) {
+			if(slogger.isLoggingDebug()) {
+				slogger.debug("could not load manifest: " + file);
+			}
+		} else {
 			Type type = parseType(manifest);
 			switch(type) {
 			case Application:
@@ -578,7 +583,7 @@ public class Bundle implements Comparable<Bundle> {
 			}
 			this.bin = (binPath != null && !".".equals(binPath)) ? new File(file, binPath) : new File(file, "bin");
 			this.src = new File(file, "src");
-			this.main = new File(src, name.replaceAll("\\.", File.separator));
+			this.main = new File(src, name.replace('.', File.separatorChar));
 			this.activator = parseActivator(manifest);
 			this.classpath = new File(file, ".classpath");
 			this.project = new File(file, ".project");
@@ -825,10 +830,8 @@ public class Bundle implements Comparable<Bundle> {
 	 * the absolute File object pointing to the class or resource file to be
 	 * added to the jar.
 	 * 
-	 * @param bundle
-	 *            the bundle for which to build the jar
-	 * @return Map<String, File> all files necessary to build the jar for the
-	 *         given bundle
+	 * @param bundle the bundle for which to build the jar
+	 * @return Map<String, File> all files necessary to build the jar for the given bundle
 	 */
 	private Map<String, File> getBuildFiles() throws IOException {
 		Map<String, File> buildFiles = new HashMap<String, File>();
@@ -837,7 +840,7 @@ public class Bundle implements Comparable<Bundle> {
 		for(File file : files) {
 			String relativePath = file.getAbsolutePath().substring(len);
 			if('\\' == File.separatorChar) {
-				relativePath.replaceAll("\\", "/");
+				relativePath = relativePath.replace('\\', '/');
 			}
 			buildFiles.put(relativePath, file);
 		}
@@ -855,7 +858,7 @@ public class Bundle implements Comparable<Bundle> {
 					for(File file : files) {
 						String relativePath = file.getAbsolutePath().substring(len);
 						if('\\' == File.separatorChar) {
-							relativePath.replaceAll("\\", "/");
+							relativePath = relativePath.replace('\\', '/');
 						}
 						buildFiles.put(relativePath, file);
 					}
@@ -982,6 +985,10 @@ public class Bundle implements Comparable<Bundle> {
 		return (importedPackages == null) ? new HashSet<ImportedPackage>(0) : new TreeSet<ImportedPackage>(importedPackages);
 	}
 
+	/**
+	 * Get the full name of this bundle without the qualifier: "com.test.blog_1.0.0"
+	 * @return the full name of this bundle
+	 */
 	public String getName() {
 		return name + "_" + version.toString(true);
 	}
@@ -1075,7 +1082,7 @@ public class Bundle implements Comparable<Bundle> {
 			file = file.getParentFile();
 		}
 		int ix = src.getAbsolutePath().length();
-		String name = file.getAbsolutePath().substring(ix + 1).replaceAll(File.separator, ".");
+		String name = file.getAbsolutePath().substring(ix + 1).replace(File.separatorChar, '.');
 		return name;
 	}
 
@@ -1084,7 +1091,7 @@ public class Bundle implements Comparable<Bundle> {
 		if(name != null) {
 			int ix = name.lastIndexOf('.');
 			if(ix != -1) {
-				String path = name.substring(0, ix + 1).replaceAll("\\.", File.separator);
+				String path = name.substring(0, ix + 1).replace('.', File.separatorChar);
 				name = name.substring(ix + 1) + ".java";
 				return new File(src, path + name);
 			}
@@ -1350,8 +1357,17 @@ public class Bundle implements Comparable<Bundle> {
 
 	@Override
 	public String toString() {
+		return toString(null);
+	}
+
+	public String toString(Date date) {
 		StringBuilder sb = new StringBuilder();
-		sb.append(type).append(':').append(' ').append(name).append('_').append(version);
+		sb.append(type).append(':').append(' ').append(name).append('_');
+		if(date == null) {
+			sb.append(version);
+		} else {
+			sb.append(version.resolve(date));
+		}
 		if(isJar) {
 			sb.append(" (jarred)");
 		}

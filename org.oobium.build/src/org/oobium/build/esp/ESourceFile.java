@@ -153,7 +153,7 @@ public class ESourceFile {
 			for(JavaSourcePart imp : imports.values()) {
 				sb.append("import ");
 				addLocations(sb.length(), imp);
-				sb.append(imp).append(";\n");
+				sb.append(imp).append(';').append('\n');
 			}
 			sb.append('\n');
 		}
@@ -231,6 +231,14 @@ public class ESourceFile {
 			}
 		}
 		return -1;
+	}
+	
+	public String getImport(String key) {
+		JavaSourcePart part = imports.get(key);
+		if(part != null) {
+			return part.toString();
+		}
+		return null;
 	}
 	
 	public int getJavaOffset(int espOffset) {

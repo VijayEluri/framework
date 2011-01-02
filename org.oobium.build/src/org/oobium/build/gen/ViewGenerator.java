@@ -23,6 +23,7 @@ import org.oobium.build.model.ModelAttribute;
 import org.oobium.build.model.ModelDefinition;
 import org.oobium.build.model.ModelRelation;
 import org.oobium.persist.Paginator;
+import org.oobium.persist.Text;
 import org.oobium.utils.StringUtils;
 
 public class ViewGenerator {
@@ -76,8 +77,9 @@ public class ViewGenerator {
 		sb.append('\n');
 		sb.append(mType).append("Form(").append(mType).append(' ').append(mVar).append(')').append('\n');
 		sb.append('\n');
-		sb.append("messages\n");
+//		sb.append("messages\n");
 		sb.append("form(").append(mVar).append(")\n");
+		sb.append("\terrors\n");
 		for(PropertyDescriptor property : properties.values()) {
 			String var = property.variable();
 			if("createdAt".equals(var) || "updatedAt".equals(var) || "createdOn".equals(var) || "updatedOn".equals(var)) {
@@ -93,6 +95,8 @@ public class ViewGenerator {
 				if(String.class.getCanonicalName().equals(property.fullType())) {
 					if("password".equalsIgnoreCase(var)) {
 						sb.append("password");
+					} else if(Text.class.getCanonicalName().equals(property.rawType())) {
+						sb.append("textArea");
 					} else {
 						sb.append("text");
 					}

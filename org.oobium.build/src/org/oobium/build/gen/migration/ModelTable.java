@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.oobium.build.gen.migration;
 
+import static org.oobium.persist.Relation.*;
 import static org.oobium.persist.migrate.defs.Column.DATESTAMPS;
 import static org.oobium.persist.migrate.defs.Column.TIMESTAMPS;
 import static org.oobium.utils.StringUtils.blank;
@@ -25,6 +26,7 @@ import java.util.Map;
 import org.oobium.build.model.ModelAttribute;
 import org.oobium.build.model.ModelDefinition;
 import org.oobium.build.model.ModelRelation;
+import org.oobium.build.util.SourceFile;
 import org.oobium.persist.Relation;
 import org.oobium.persist.migrate.defs.Column;
 import org.oobium.persist.migrate.defs.Index;
@@ -33,12 +35,16 @@ import org.oobium.persist.migrate.defs.columns.ForeignKey;
 
 public class ModelTable {
 
+	private final SourceFile sf;
+	
 	public String name;
 	public List<Column> columns;
 	public List<Index> indexes;
 	public List<ForeignKey> foreignKeys;
 
-	public ModelTable(ModelDefinition model, Collection<ModelDefinition> models) {
+	public ModelTable(SourceFile sf, ModelDefinition model, Collection<ModelDefinition> models) {
+		this.sf = sf;
+		
 		name = tableName(model.getSimpleName());
 		columns = new ArrayList<Column>();
 		foreignKeys = new ArrayList<ForeignKey>();
@@ -82,7 +88,7 @@ public class ModelTable {
 		String type = attribute.getType();
 		
 		Map<String, Object> options = new LinkedHashMap<String, Object>();
-		if(attribute.isRequired() || attribute.isPrimitive()) {
+		if(attribute.isPrimitive()) {
 			options.put("required", true);
 		}
 		if("BigDecimal".equals(attribute.getType())) {
@@ -118,6 +124,17 @@ public class ModelTable {
 		}
 		indexes.add(new Index(columns, unique));
 	}
+
+	private String getRerentialAction(int action) {
+		switch(action) {
+		case CASCADE:		return "CASCADE";
+		case NO_ACTION:		return "NO ACTION";
+		case RESTRICT:		return "RESTRICT";
+		case SET_DEFAULT:	return "SET DEFAULT";
+		case SET_NULL:		return "SET NULL";
+		default:			return null;
+		}
+	}
 	
 	private void addRelation(ModelRelation relation) {
 		// add the column
@@ -133,8 +150,15 @@ public class ModelTable {
 		String column = columnName(relation.getName());
 		String reference = tableName(relation.getSimpleType());
 		options = new LinkedHashMap<String, Object>();
-		if(relation.onDelete() != Relation.UNDEFINED) {
-			options.put("onDelete", relation.onDelete());
+		String onDelete = getRerentialAction(relation.onDelete());
+		if(onDelete != null) {
+			sf.staticImports.add(Relation.class.getCanonicalName() + "." + onDelete);
+			options.put("onDelete", onDelete);
+		}
+		String onUpdate = getRerentialAction(relation.onUpdate());
+		if(onUpdate != null) {
+			sf.staticImports.add(Relation.class.getCanonicalName() + "." + onUpdate);
+			options.put("onUpdate", onUpdate);
 		}
 		foreignKeys.add(new ForeignKey(column, reference, options.isEmpty() ? null : options));
 

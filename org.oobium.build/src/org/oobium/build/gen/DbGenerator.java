@@ -10,7 +10,20 @@
  ******************************************************************************/
 package org.oobium.build.gen;
 
-import static org.oobium.persist.migrate.defs.Column.*;
+import static org.oobium.persist.migrate.defs.Column.BINARY;
+import static org.oobium.persist.migrate.defs.Column.BOOLEAN;
+import static org.oobium.persist.migrate.defs.Column.DATE;
+import static org.oobium.persist.migrate.defs.Column.DATESTAMPS;
+import static org.oobium.persist.migrate.defs.Column.DECIMAL;
+import static org.oobium.persist.migrate.defs.Column.DOUBLE;
+import static org.oobium.persist.migrate.defs.Column.FLOAT;
+import static org.oobium.persist.migrate.defs.Column.INTEGER;
+import static org.oobium.persist.migrate.defs.Column.LONG;
+import static org.oobium.persist.migrate.defs.Column.STRING;
+import static org.oobium.persist.migrate.defs.Column.TEXT;
+import static org.oobium.persist.migrate.defs.Column.TIME;
+import static org.oobium.persist.migrate.defs.Column.TIMESTAMP;
+import static org.oobium.persist.migrate.defs.Column.TIMESTAMPS;
 import static org.oobium.utils.StringUtils.varName;
 
 import java.io.File;
@@ -25,8 +38,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.oobium.build.gen.db.JoinTableTemplate;
-import org.oobium.build.gen.db.ModelTableTemplate;
 import org.oobium.build.gen.migration.JoinTable;
 import org.oobium.build.gen.migration.ModelTable;
 import org.oobium.build.model.ModelDefinition;
@@ -44,11 +55,6 @@ import org.oobium.persist.migrate.defs.columns.ForeignKey;
 import org.oobium.utils.literal;
 
 public class DbGenerator {
-
-	/**
-	 * end of statement
-	 */
-	private static final String eos = System.getProperty("line.separator");
 
 	private static final Map<String, String> migrationTypes;
 	static {
@@ -86,11 +92,13 @@ public class DbGenerator {
 	}
 	
 	public static String generate(String name, String version, String type, Collection<ModelDefinition> models) {
+		SourceFile sf = new SourceFile();
+		
 		Map<String, ModelTable> tables = new TreeMap<String, ModelTable>();
 		Map<String, JoinTable> joins = new TreeMap<String, JoinTable>();
 		
 		for(ModelDefinition model : models) {
-			tables.put(model.getSimpleName(), new ModelTable(model, models));
+			tables.put(model.getSimpleName(), new ModelTable(sf, model, models));
 		}
 
 		for(ModelDefinition model : models) {
@@ -106,10 +114,8 @@ public class DbGenerator {
 		}
 		
 
-		SourceFile sf = new SourceFile();
-
 		sf.isAbstract = true;
-		sf.packageName = name.replaceAll(File.separator, ".") + ".migrator.migrations";
+		sf.packageName = name.replace(File.separatorChar, '.') + ".migrator.migrations";
 		sf.simpleName = "AbstractCreateDatabase";
 		sf.superName = AbstractMigration.class.getSimpleName();
 		sf.imports.add(AbstractMigration.class.getCanonicalName());
@@ -235,63 +241,4 @@ public class DbGenerator {
 		}
 	}
 	
-	private static String generate2(String name, String version, String type, Collection<ModelDefinition> models) {
-		Map<String, ModelTableTemplate> tables = new TreeMap<String, ModelTableTemplate>();
-		Map<String, JoinTableTemplate> joins = new HashMap<String, JoinTableTemplate>();
-
-		for(ModelDefinition model : models) {
-			tables.put(model.getSimpleName(), new ModelTableTemplate(model, models));
-		}
-
-		for(ModelDefinition model : models) {
-			for(ModelRelation relation : model.getRelations()) {
-				if(relation.hasMany() && !relation.isThrough()) {
-					ModelRelation oppositeRelation = relation.getOpposite();
-					if(oppositeRelation == null || oppositeRelation.hasMany()) {
-						JoinTableTemplate joinTable = new JoinTableTemplate(relation, oppositeRelation);
-						joins.put(joinTable.name(), joinTable);
-					}
-				}
-			}
-		}
-
-		StringBuilder sb = new StringBuilder();
-
-		if(type.equals(Bundle.Type.Application.name())) {
-			sb.append("CREATE TABLE system_attrs(id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, " +
-						"attr_name VARCHAR(32672) NOT NULL, attr_value VARCHAR(32672))").append(eos);
-			sb.append("CREATE UNIQUE INDEX idx_system_attrs_type ON system_attrs(attr_name)").append(eos);
-		}
-		sb.append("INSERT INTO system_attrs (attr_name, attr_value) VALUES ('");
-		sb.append(name).append(".schema.initial', '").append(version).append("')").append(eos);
-		sb.append("INSERT INTO system_attrs (attr_name, attr_value) VALUES ('");
-		sb.append(name).append(".schema.current', '").append(version).append("')").append(eos);
-		
-		for(ModelTableTemplate table : tables.values()) {
-			sb.append(table.getCreateSQL()).append(eos);
-			if(table.hasIndex()) {
-				for(String index : table.getIndexSQL()) {
-					sb.append(index).append(eos);
-				}
-			}
-		}
-
-		for(JoinTableTemplate join : joins.values()) {
-			sb.append(join.getCreateSQL()).append(eos);
-			for(String index : join.getIndexSQL()) {
-				sb.append(index).append(eos);
-			}
-		}
-
-		for(ModelTableTemplate table : tables.values()) {
-			if(table.hasConstraint()) {
-				for(String constraint : table.getConstraintSQL()) {
-					sb.append(constraint).append(eos);
-				}
-			}
-		}
-
-		return sb.toString();
-	}
-
 }

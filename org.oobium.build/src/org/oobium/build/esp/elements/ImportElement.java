@@ -59,6 +59,9 @@ public class ImportElement extends EspElement {
 				s1 = forward(ca, s2, end);
 				s2 = reverse(ca, end-1) + 1;
 			}
+			if(ca[s2-1] == ';') {
+				s2--;
+			}
 			if(s1 != -1 && s2 > s1) {
 				importPart = new EspPart(this, Type.ImportPart, s1, s2);
 			}

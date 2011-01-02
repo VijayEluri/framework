@@ -14,6 +14,10 @@ import static org.oobium.utils.Config.SERVER;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.jar.Manifest;
 
@@ -24,8 +28,14 @@ import org.oobium.utils.FileUtils;
 
 public class Application extends Module {
 
+	/**
+	 * this application's site configuration file
+	 */
+	public final File site;
+	
 	Application(Type type, File file, Manifest manifest) {
 		super(type, file, manifest);
+		this.site = new File(main, "site.js");
 	}
 
 	@Override
@@ -51,22 +61,36 @@ public class Application extends Module {
 	
 	/**
 	 * Export the application, configured for the given mode.
+	 * @param workspace the workspace to use
 	 * @param mode the to use for the application's configuration during the export
-	 * @param clean if true, the export folder will be cleaned before running this export.
+	 * @param includeMigrators if true Migrator projects will also be exported with the Application
 	 * @return a File object for the export folder.
 	 * @throws IOException
 	 */
-	public File export(Workspace workspace, Mode mode) throws IOException {
-		Exporter exporter = new Exporter(workspace, this);
-		if(mode == Mode.DEV) {
-//			Application manager = workspace.getApplication("org.oobium.manager");
+	public File export(Workspace workspace, Mode mode, boolean includeMigrators) throws IOException {
+		return export(workspace, mode, includeMigrators, null);
+	}
+	
+	/**
+	 * Export the application, configured for the given mode.
+	 * @param workspace the workspace to use
+	 * @param mode the to use for the application's configuration during the export
+	 * @param includeMigrators if true Migrator projects will also be exported with the Application
+	 * @param properties a Map of system properties; will be exported to the system.properties file
+	 * @return a File object for the export folder.
+	 * @throws IOException
+	 */
+	public File export(Workspace workspace, Mode mode, boolean includeMigrators, Map<String, String> properties) throws IOException {
+		Exporter exporter = new Exporter(workspace, getExportApps(workspace));
+		exporter.setMode(mode);
+		exporter.setProperties(properties);
+		if(includeMigrators) {
 			Migrator migrator = workspace.getMigratorFor(this);
 			if(migrator != null) {
 				exporter.addStart(migrator);
 				exporter.addStart(migrator.getMigratorService(workspace, mode));
 			}
 		}
-		exporter.setMode(mode);
 		return exporter.export();
 	}
 
@@ -78,6 +102,36 @@ public class Application extends Module {
 	public Set<Bundle> exportMigration(Workspace workspace, Mode mode) throws IOException {
 		Exporter exporter = new Exporter(workspace, this);
 		return exporter.exportMigration(mode);
+	}
+	
+	private List<Application> getExportApps(Workspace workspace) {
+		List<Application> apps = new ArrayList<Application>();
+		
+		apps.add(this);
+		
+		Config config = Config.loadConfiguration(site);
+		Object o = config.get("apps");
+		if(o instanceof String) {
+			Application app = workspace.getApplication((String) o);
+			if(app == null) {
+				throw new IllegalStateException(this + " has an unresolved export requirement: " + o);
+			}
+			apps.add(app);
+		} else if(o instanceof Collection) {
+			for(Object e : (Collection<?>) o) {
+				if(e instanceof String) {
+					Application app = workspace.getApplication((String) e);
+					if(app == null) {
+						throw new IllegalStateException(this + " has an unresolved export requirement: " + e);
+					}
+					apps.add(app);
+				} else {
+					throw new IllegalArgumentException(this + " has an unknown type of export requirement: " + e);
+				}
+			}
+		}
+		
+		return apps;
 	}
 	
 	public Application getExportedBundle(Workspace workspace) {
@@ -109,7 +163,7 @@ public class Application extends Module {
 	
 	public File getSchema() {
 		File migration = getMigratorFile();
-		return new File(migration + File.separator + "generated" + File.separator + migration.getName().replaceAll("\\.", File.separator) + File.separator + "migrations", 
+		return new File(migration + File.separator + "generated" + File.separator + migration.getName().replace('.', File.separatorChar) + File.separator + "migrations", 
 				"AbstractCreateDatabase.java");
 	}
 	

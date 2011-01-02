@@ -295,7 +295,7 @@ public class TestGenerator {
 		String path = fileInSrcFolder.getAbsolutePath();
 		int ix = path.indexOf(srcSegment);
 		path = path.substring(ix+srcSegment.length(), path.length()-5);
-		path = path.replaceAll(File.separator, ".");
+		path = path.replace(File.separatorChar, '.');
 		return path;
 	}
 	
@@ -490,12 +490,7 @@ public class TestGenerator {
 			if("validate".equals(method)) {
 				String var = varName(className);
 				sb.append("\t\t").append(className).append(' ').append(var).append(" = new ").append(className).append("();\n");
-				if(adapter.hasRequired()) {
-					sb.append("\t\t").append("assertFalse(").append(var).append(".validate());\n");
-					sb.append("\t\t").append("assertFalse(").append(var).append(".getErrors().isEmpty());\n");
-				} else {
-					sb.append("\t\t").append("assertTrue(").append(var).append(".validate());\n");
-				}
+				sb.append("\t\t").append("assertTrue(").append(var).append(".validate());\n");
 			} else {
 				sb.append("\t\tfail(\"Not yet implemented\");\n");
 			}
@@ -523,12 +518,12 @@ public class TestGenerator {
 	}
 
 	public static File fixturesFile(Module module) {
-		StringBuilder sb = new StringBuilder(module.file.getParentFile().getAbsolutePath()).append(File.separator);
-		sb.append(module.name).append(".tests").append(File.separator).append(module.src);
+		StringBuilder sb = new StringBuilder(module.file.getParentFile().getAbsolutePath()).append(File.separatorChar);
+		sb.append(module.name).append(".tests").append(File.separatorChar).append(module.src);
 		for(String segment : module.name.split("\\.")) {
-			sb.append(File.separator).append(segment);
+			sb.append(File.separatorChar).append(segment);
 		}
-		sb.append(File.separator).append("models").append(File.separator).append("Fixtures.js");
+		sb.append(File.separatorChar).append("models").append(File.separatorChar).append("Fixtures.js");
 		return new File(sb.toString());
 	}
 

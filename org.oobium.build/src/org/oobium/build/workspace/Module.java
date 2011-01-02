@@ -157,7 +157,7 @@ public class Module extends Bundle {
 	
 	private File file(File file, String configPath) {
 		if('/' != File.separatorChar) {
-			return new File(file, configPath.replaceAll("/", File.separator));
+			return new File(file, configPath.replace('/', File.separatorChar));
 		}
 		return new File(file, configPath);
 	}
@@ -172,7 +172,7 @@ public class Module extends Bundle {
 		this.assets = new File(file, "assets");
 		this.generated = new File(file, "generated");
 
-		String base = name.replaceAll("\\.", File.separator);
+		String base = name.replace('.', File.separatorChar);
 		
 		this.app = file(src, config.getPathToApp(base));
 		
@@ -186,7 +186,7 @@ public class Module extends Bundle {
 
 		this.mailers = file(src, config.getPathToMailers(base));
 		
-		this.genMain = new File(generated, name.replaceAll("\\.", File.separator));
+		this.genMain = new File(generated, name.replace('.', File.separatorChar));
 		this.assetList = new File(genMain, "assets.js");
 		
 		this.migrator = name + ".migrator";
@@ -230,7 +230,7 @@ public class Module extends Bundle {
 			newsrc = oldsrc.replaceFirst("public\\s+void\\s+addRoutes\\s*\\(\\s*Config\\s+config\\s*,\\s*Router\\s+router\\s*\\)\\s*\\{\\s*",
 											"public void addRoutes(Config config, Router router) {\n" +
 											"\t\t// auto-generated\n" +
-											"\t\trouter.addRoutes(" + modelName + ".class);\n\n\t\t");
+											"\t\trouter.addResources(" + modelName + ".class);\n\n\t\t");
 		}
 		if(!Pattern.compile("import\\s+"+packageName(models)+"."+modelName).matcher(newsrc).find()) {
 			newsrc = newsrc.replaceFirst("(package\\s+[\\w\\.]+;)", "$1\n\nimport "+packageName(models)+"."+modelName+";");
@@ -259,6 +259,9 @@ public class Module extends Bundle {
 	
 	protected void addModulesDependency(Workspace workspace, Mode mode, Object obj, Set<Bundle> dependencies) {
 		if(!blank(obj)) {
+			if(obj instanceof Map) {
+				obj = ((Map<?,?>) obj).keySet().iterator().next();
+			}
 			if(obj instanceof String) {
 				addDependency(workspace, mode, (String) obj, dependencies);
 			} else if(obj instanceof Iterable<?>) {
@@ -317,8 +320,8 @@ public class Module extends Bundle {
 		}
 		
 		// adjust file path separator
-		if(File.separatorChar != '/') {
-			name = name.replaceAll("/", File.separator);
+		if('/' != File.separatorChar) {
+			name = name.replace('/', File.separatorChar);
 		}
 		
 		// just CamelCase the last segment (leave and path segments alone)

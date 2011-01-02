@@ -14,14 +14,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.oobium.build.runner.RunEvent.Type;
 import org.oobium.build.workspace.Application;
 import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Workspace;
-import org.oobium.events.models.Event;
-import org.oobium.events.models.EventHandler;
-import org.oobium.events.models.Listener;
 import org.oobium.utils.FileUtils;
 import org.oobium.utils.Config.Mode;
 
@@ -30,6 +29,7 @@ public class Runner {
 	private final Workspace workspace;
 	private final Application application;
 	private final Mode mode;
+	private final Map<String, String> properties;
 	private volatile Process process;
 	private StreamGobbler errGobbler;
 	private StreamGobbler outGobbler;
@@ -38,22 +38,38 @@ public class Runner {
 	
 	String startString;
 	
-	Runner(Workspace workspace, Application application, Mode mode) {
+	Runner(Workspace workspace, Application application, Mode mode, Map<String, String> properties) {
 		this.workspace = workspace;
 		this.application = application;
 		this.mode = mode;
+		this.properties = properties;
 		startString = "(INFO)  " + application.name + ": Application " + application.getName() + " started";
 	}
 
+	public Application getApplication() {
+		return application;
+	}
+	
+	/**
+	 * Returns a copy of the map of properties that this runner is using.
+	 * @return a map of properties; never null
+	 */
+	public Map<String, String> getProperties() {
+		if(properties == null) {
+			return new LinkedHashMap<String, String>(0);
+		}
+		return new LinkedHashMap<String, String>(properties);
+	}
+	
 	void handleStarted() {
 		RunnerService.notifyListeners(Type.Started, application);
 		startString = null;
-		Listener.create("localhost:5050/listeners", "org.oobium.manager", "updated", RunnerService.class, new EventHandler() {
-			@Override
-			public void handleEvent(Event event) {
-				RunnerService.notifyListeners(Type.Updated, application);
-			}
-		});
+//		Listener.create("localhost:5050/listeners", "org.oobium.manager", "updated", RunnerService.class, new EventHandler() {
+//			@Override
+//			public void handleEvent(Event event) {
+//				RunnerService.notifyListeners(Type.Updated, application);
+//			}
+//		});
 	}
 	
 	public boolean isRunning() {
@@ -88,11 +104,11 @@ public class Runner {
 		return false;
 	}
 	
-	public boolean start(String...options) {
+	public boolean start() {
 		if(process == null) {
 			File exportDir = null;
 			try {
-				exportDir = application.export(workspace, mode);
+				exportDir = application.export(workspace, mode, true, properties);
 			} catch(IOException e) {
 				return false;
 			}
@@ -102,17 +118,8 @@ public class Runner {
 				FileUtils.delete(felixCache);
 			}
 
-			int i = 0;
-			String[] command = new String[options.length + 3];
-			command[i++] = "java";
-			for(String option : options) {
-				command[i++] = option;
-			}
-			command[i++] = "-jar";
-			command[i++] = "bin/felix.jar";
-			
 			ProcessBuilder builder = new ProcessBuilder();
-			builder.command(command);
+			builder.command("java", "-jar", "bin/felix.jar");
 			builder.directory(exportDir);
 			
 			try {
