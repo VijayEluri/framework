@@ -27,11 +27,6 @@ public class ModelAttributes {
 		}
 		
 		@Override
-		public Class<?>[] validators() {
-			return null;
-		}
-		
-		@Override
 		public boolean unique() {
 			return false;
 		}
@@ -46,11 +41,6 @@ public class ModelAttributes {
 			return 0;
 		}
 
-		@Override
-		public boolean required() {
-			return false;
-		}
-		
 		@Override
 		public boolean readOnly() {
 			return false;
@@ -94,11 +84,6 @@ public class ModelAttributes {
 		}
 		
 		@Override
-		public Class<?>[] validators() {
-			return null;
-		}
-		
-		@Override
 		public boolean unique() {
 			return false;
 		}
@@ -113,11 +98,6 @@ public class ModelAttributes {
 			return 0;
 		}
 
-		@Override
-		public boolean required() {
-			return false;
-		}
-		
 		@Override
 		public boolean readOnly() {
 			return false;
@@ -161,11 +141,6 @@ public class ModelAttributes {
 		}
 		
 		@Override
-		public Class<?>[] validators() {
-			return null;
-		}
-		
-		@Override
 		public boolean unique() {
 			return false;
 		}
@@ -180,11 +155,6 @@ public class ModelAttributes {
 			return 0;
 		}
 
-		@Override
-		public boolean required() {
-			return false;
-		}
-		
 		@Override
 		public boolean readOnly() {
 			return false;
@@ -228,11 +198,6 @@ public class ModelAttributes {
 		}
 		
 		@Override
-		public Class<?>[] validators() {
-			return null;
-		}
-		
-		@Override
 		public boolean unique() {
 			return false;
 		}
@@ -247,11 +212,6 @@ public class ModelAttributes {
 			return 0;
 		}
 
-		@Override
-		public boolean required() {
-			return false;
-		}
-		
 		@Override
 		public boolean readOnly() {
 			return false;

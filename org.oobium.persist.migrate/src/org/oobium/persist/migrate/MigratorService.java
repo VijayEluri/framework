@@ -11,7 +11,8 @@
 package org.oobium.persist.migrate;
 
 import static org.oobium.http.HttpRequest.Type.POST;
-import static org.oobium.utils.literal.*;
+import static org.oobium.utils.literal.Map;
+import static org.oobium.utils.literal.e;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -19,9 +20,12 @@ import java.util.Collections;
 import java.util.List;
 
 import org.oobium.app.AppService;
-import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.routing.Router;
 import org.oobium.persist.PersistService;
+import org.oobium.persist.migrate.controllers.MigrateController;
+import org.oobium.persist.migrate.controllers.PurgeController;
+import org.oobium.persist.migrate.controllers.RedoController;
+import org.oobium.persist.migrate.controllers.RollbackController;
 import org.oobium.utils.Config;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -32,6 +36,13 @@ import org.osgi.util.tracker.ServiceTracker;
 
 public abstract class MigratorService extends AppService {
 
+	private static MigratorService instance;
+	
+	public static MigratorService instance() {
+		return instance;
+	}
+	
+	
 	protected String appName;
 	
 	protected String appVersion;
@@ -44,71 +55,108 @@ public abstract class MigratorService extends AppService {
 	
 	protected ServiceTracker msTracker;
 
+	public MigratorService() {
+		instance = this;
+	}
+	
 	@Override
 	public void addRoutes(Config config, Router router) {
-		Controller migrate = new Controller() {
-			public void handleRequest() throws SQLException {
-				if(hasParam("dir")) {
-					render(migrate(param("name"), "up".equals(param("dir"))));
-				} else {
-					render(migrate(param("name")));
-				}
-			};
-		};
-		Controller rollback = new Controller() {
-			public void handleRequest() throws SQLException {
-				render(migrateRollback("all".equals(param("step")) ? -1 : param("step", 1)));
-			};
-		};
-		Controller redo = new Controller() {
-			public void handleRequest() throws SQLException {
-				render(migrateRedo("all".equals(param("step")) ? -1 : param("step", 1)));
-			};
-		};
-		Controller purge = new Controller() {
-			public void handleRequest() throws SQLException {
-				render(migratePurge());
-			};
-		};
-		
-		router.addRoute(POST, "/migrate", migrate);
-		router.addRoute(POST, "/migrate/{name:\\w+}/{dir=up}", migrate);
-		router.addRoute(POST, "/migrate/{name:\\w+}/{dir=down}", migrate);
-		router.addRoute(POST, "/migrate/to/{name:\\w+}", migrate);
-		router.addRoute(POST, "/migrate/rollback", rollback);
-		router.addRoute(POST, "/migrate/rollback/{step=all}", rollback);
-		router.addRoute(POST, "/migrate/rollback/{step:\\d+}", rollback);
-		router.addRoute(POST, "/migrate/redo", redo);
-		router.addRoute(POST, "/migrate/redo/{step=all}", redo);
-		router.addRoute(POST, "/migrate/redo/{step:\\d+}", redo);
-		router.addRoute(POST, "/migrate/purge", purge);
+		router.addRoute(POST, "/migrate", 							MigrateController.class);
+		router.addRoute(POST, "/migrate/{name:\\w+}/{dir=up}", 		MigrateController.class);
+		router.addRoute(POST, "/migrate/{name:\\w+}/{dir=down}", 	MigrateController.class);
+		router.addRoute(POST, "/migrate/to/{name:\\w+}", 			MigrateController.class);
+		router.addRoute(POST, "/migrate/rollback", 					RollbackController.class);
+		router.addRoute(POST, "/migrate/rollback/{step=all}", 		RollbackController.class);
+		router.addRoute(POST, "/migrate/rollback/{step:\\d+}", 		RollbackController.class);
+		router.addRoute(POST, "/migrate/redo", 						RedoController.class);
+		router.addRoute(POST, "/migrate/redo/{step=all}", 			RedoController.class);
+		router.addRoute(POST, "/migrate/redo/{step:\\d+}", 			RedoController.class);
+		router.addRoute(POST, "/migrate/purge", 					PurgeController.class);
 	}
 
-	private synchronized String migratePurge() throws SQLException {
-		getMigrationService().dropDatabase();
-		return "database purged";
-	}
-	
-	private synchronized String migrate(String name, boolean up) throws SQLException {
-		for(Migration migration : getMigrations()) {
-			if(name.equals(migration.getClass().getSimpleName())) {
-				getPersistService().setAutoCommit(false);
-				migration.setService(getMigrationService());
-				if(up) {
-					migration.up();
-					getPersistService().commit();
-					return "ran " + name + ".up() successfully";
-				} else {
-					migration.down();
-					getPersistService().commit();
-					return "ran " + name + ".down() successfully";
-				}
-			}
+	private Bundle getBundle(ServiceReference ref, String symbolicName) {
+		PackageAdmin admin = (PackageAdmin) getContext().getService(ref);
+		Bundle[] bundles = admin.getBundles(symbolicName, null);
+		if(bundles.length == 0) {
+			throw new IllegalStateException("bundle " + symbolicName + " is not present - cannot run migration");
+		} else if(bundles.length == 1) {
+			return bundles[0];
+		} else {
+			throw new IllegalStateException("no more than 2 bundles of " + symbolicName + " may be present to run a migration");
 		}
-		return "migration \"" + name + "\" does not exist";
 	}
 	
-	private synchronized String migrate(String to) throws SQLException {
+	protected String getCurrentMigration() {
+		try {
+			return (String) getPersistService().executeQueryValue("select detail from system_attrs where name='migration.current'");
+		} catch(SQLException e) {
+			return null;
+		}
+	}
+	
+	protected List<String> getMigrated() {
+		try {
+			String sql = "select detail from system_attrs where name='migrated'";
+			List<List<Object>> lists = getPersistService().executeQueryLists(sql);
+			List<String> migrated = new ArrayList<String>();
+			for(int i = 1; i < lists.size(); i++) {
+				migrated.add((String) lists.get(i).get(0));
+			}
+			return migrated;
+		} catch(SQLException e) {
+			getMigrationService().initializeDatabase(null);
+			return Collections.emptyList();
+		}
+	}
+	
+	public abstract List<? extends Migration> getMigrations();
+
+	public MigrationService getMigrationService() {
+		MigrationService service = (MigrationService) msTracker.getService();
+		if(service != null) {
+			service.setPersistService(getPersistService());
+			return service;
+		}
+		throw new IllegalStateException("MigrationService is not present - Migration cannot proceed");
+	}
+	
+	private List<String> getNames(List<? extends Migration> migrations) {
+		List<String> names = new ArrayList<String>();
+		for(Migration migration : migrations) {
+			names.add(migration.getClass().getSimpleName());
+		}
+		return names;
+	}
+	
+	@Override
+	public String getPersistClientName() {
+		return appName + "_" + appVersion;
+	}
+	
+	public PersistService getPersistService() {
+		PersistService service = super.getPersistService();
+		if(service != null) {
+			return service;
+		}
+		throw new IllegalStateException("Migration cannot run without a PersistService: " + appConfig.get(Config.PERSIST));
+	}
+	
+	@Override
+	protected void initializeServiceTrackers(Config config) throws Exception {
+		msTracker = new ServiceTracker(getContext(), MigrationService.class.getName(), null);
+		msTracker.open();
+	}
+	
+	@Override
+	protected Config loadConfiguration() {
+		return new Config(Map(
+				e(Config.PERSIST, appConfig.get(Config.PERSIST, String.class)),
+				e(Config.HOST, "localhost"),
+				e(Config.PORT, "5001")
+			));
+	}
+	
+	public synchronized String migrate(String to) throws SQLException {
 		List<? extends Migration> migrations = getMigrations();
 		List<String> names = getNames(migrations);
 		List<String> migrated = getMigrated();
@@ -159,7 +207,31 @@ public abstract class MigratorService extends AppService {
 		}
 	}
 	
-	private synchronized String migrateRedo(int step) throws SQLException {
+	public synchronized String migrate(String name, boolean up) throws SQLException {
+		for(Migration migration : getMigrations()) {
+			if(name.equals(migration.getClass().getSimpleName())) {
+				getPersistService().setAutoCommit(false);
+				migration.setService(getMigrationService());
+				if(up) {
+					migration.up();
+					getPersistService().commit();
+					return "ran " + name + ".up() successfully";
+				} else {
+					migration.down();
+					getPersistService().commit();
+					return "ran " + name + ".down() successfully";
+				}
+			}
+		}
+		return "migration \"" + name + "\" does not exist";
+	}
+	
+	public synchronized String migratePurge() throws SQLException {
+		getMigrationService().dropDatabase();
+		return "database purged";
+	}
+	
+	public synchronized String migrateRedo(int step) throws SQLException {
 		List<? extends Migration> migrations = getMigrations();
 		List<String> names = getNames(migrations);
 		List<String> migrated = getMigrated();
@@ -200,8 +272,8 @@ public abstract class MigratorService extends AppService {
 			}
 		}
 	}
-
-	private synchronized String migrateRollback(int step) throws SQLException {
+	
+	public synchronized String migrateRollback(int step) throws SQLException {
 		List<? extends Migration> migrations = getMigrations();
 		List<String> names = getNames(migrations);
 		List<String> migrated = getMigrated();
@@ -237,14 +309,34 @@ public abstract class MigratorService extends AppService {
 		}
 	}
 	
-	private List<String> getNames(List<? extends Migration> migrations) {
-		List<String> names = new ArrayList<String>();
-		for(Migration migration : migrations) {
-			names.add(migration.getClass().getSimpleName());
+	protected void setCurrentMigration(String current) throws SQLException {
+		PersistService ps = getPersistService();
+		if(current == null) {
+			try {
+				ps.executeUpdate("DELETE FROM system_attrs WHERE name='migration.current'");
+			} catch(SQLException e) {
+				// last migration will remove the table
+			}
+		} else {
+			int r = ps.executeUpdate("UPDATE system_attrs SET detail='" + current + "' where name='migration.current'");
+			if(r == 0) {
+				ps.executeUpdate("INSERT INTO system_attrs (name, detail, data) VALUES ('migration.current', '" + current + "', NULL)");
+			}
 		}
-		return names;
 	}
 	
+	protected void setMigrated(String name, boolean migrated) throws SQLException {
+		if(migrated) {
+			getPersistService().executeUpdate("INSERT INTO system_attrs (name, detail, data) VALUES ('migrated', '" + name + "', NULL)");
+		} else {
+			try {
+				getPersistService().executeUpdate("DELETE FROM system_attrs WHERE name='migrated' AND detail='" + name + "'");
+			} catch(SQLException e) {
+				// last migration will remove the table
+			}
+		}
+	}
+
 	@Override
 	protected void setName(BundleContext context) throws Exception {
 		Bundle migBundle = context.getBundle();
@@ -272,107 +364,10 @@ public abstract class MigratorService extends AppService {
 		version = new Version(version.getMajor(), version.getMinor(), version.getMicro());
 		appVersion = version.toString();
 	}
-	
-	@Override
-	public String getPersistClientName() {
-		return appName + "_" + appVersion;
-	}
-	
-	protected void setMigrated(String name, boolean migrated) throws SQLException {
-		if(migrated) {
-			getPersistService().executeUpdate("INSERT INTO system_attrs (name, detail, data) VALUES ('migrated', '" + name + "', NULL)");
-		} else {
-			try {
-				getPersistService().executeUpdate("DELETE FROM system_attrs WHERE name='migrated' AND detail='" + name + "'");
-			} catch(SQLException e) {
-				// last migration will remove the table
-			}
-		}
-	}
-	
-	protected void setCurrentMigration(String current) throws SQLException {
-		PersistService ps = getPersistService();
-		if(current == null) {
-			try {
-				ps.executeUpdate("DELETE FROM system_attrs WHERE name='migration.current'");
-			} catch(SQLException e) {
-				// last migration will remove the table
-			}
-		} else {
-			int r = ps.executeUpdate("UPDATE system_attrs SET detail='" + current + "' where name='migration.current'");
-			if(r == 0) {
-				ps.executeUpdate("INSERT INTO system_attrs (name, detail, data) VALUES ('migration.current', '" + current + "', NULL)");
-			}
-		}
-	}
-	
-	private Bundle getBundle(ServiceReference ref, String symbolicName) {
-		PackageAdmin admin = (PackageAdmin) getContext().getService(ref);
-		Bundle[] bundles = admin.getBundles(symbolicName, null);
-		if(bundles.length == 0) {
-			throw new IllegalStateException("bundle " + symbolicName + " is not present - cannot run migration");
-		} else if(bundles.length == 1) {
-			return bundles[0];
-		} else {
-			throw new IllegalStateException("no more than 2 bundles of " + symbolicName + " may be present to run a migration");
-		}
-	}
-	
-	protected String getCurrentMigration() {
-		try {
-			return (String) getPersistService().executeQueryValue("select detail from system_attrs where name='migration.current'");
-		} catch(SQLException e) {
-			return null;
-		}
-	}
-	
-	protected List<String> getMigrated() {
-		try {
-			String sql = "select detail from system_attrs where name='migrated'";
-			List<List<Object>> lists = getPersistService().executeQueryLists(sql);
-			List<String> migrated = new ArrayList<String>();
-			for(int i = 1; i < lists.size(); i++) {
-				migrated.add((String) lists.get(i).get(0));
-			}
-			return migrated;
-		} catch(SQLException e) {
-			getMigrationService().initializeDatabase(null);
-			return Collections.emptyList();
-		}
-	}
-	
-	public abstract List<? extends Migration> getMigrations();
-	
-	public MigrationService getMigrationService() {
-		MigrationService service = (MigrationService) msTracker.getService();
-		if(service != null) {
-			service.setPersistService(getPersistService());
-			return service;
-		}
-		throw new IllegalStateException("MigrationService is not present - Migration cannot proceed");
-	}
-	
-	public PersistService getPersistService() {
-		PersistService service = super.getPersistService();
-		if(service != null) {
-			return service;
-		}
-		throw new IllegalStateException("Migration cannot run without a PersistService: " + appConfig.get(Config.PERSIST));
-	}
-	
-	@Override
-	protected void initializeServiceTrackers(Config config) throws Exception {
-		msTracker = new ServiceTracker(getContext(), MigrationService.class.getName(), null);
-		msTracker.open();
-	}
 
 	@Override
-	protected Config loadConfiguration() {
-		return new Config(Map(
-				e(Config.PERSIST, appConfig.get(Config.PERSIST, String.class)),
-				e(Config.HOST, "localhost"),
-				e(Config.PORT, "5001")
-			));
+	protected void teardown() {
+		instance = null;
 	}
 	
 }

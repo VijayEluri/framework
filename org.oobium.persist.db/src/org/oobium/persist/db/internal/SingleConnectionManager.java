@@ -47,8 +47,7 @@ public class SingleConnectionManager {
 			sb.append("memory:");
 		}
 		if(database.charAt(0) != File.separatorChar) {
-			sb.append(System.getProperty("user.dir"));
-			sb.append(File.separatorChar);
+			sb.append(System.getProperty("user.dir")).append(File.separatorChar);
 		}
 		sb.append(database);
 		sb.append(";create=true;user=\"session\";password=\"session\"");

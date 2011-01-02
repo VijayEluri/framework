@@ -25,7 +25,7 @@ public class DerbyEmbeddedConnectionPool extends ConnectionPool {
 	private static String getDatabase(String client, Map<String, Object> properties) throws IOException {
 		Object o = properties.get("database");
 		if(!(o instanceof String)) {
-			o = "bundles" + File.separator + client;
+			o = ".." + File.separator + "data" + File.separator + client;
 		}
 		File database = new File((String) o);
 		if(!database.isAbsolute()) {

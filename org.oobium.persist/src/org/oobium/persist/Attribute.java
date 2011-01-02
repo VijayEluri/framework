@@ -38,13 +38,6 @@ public @interface Attribute {
 	String name();
 
 	/**
-	 * <p>Sets whether or not this field is required.  Required fields are not allowed to be null.</p>
-	 * <p>Default is false.</p>
-	 * @return true if this field is required, false otherwise
-	 */
-	boolean required() default false;
-	
-	/**
 	 * Only of interest for type BigDecimal
 	 * @return the precision
 	 */
@@ -75,19 +68,14 @@ public @interface Attribute {
 	Class<?> type();
 
 	/**
-	 * <p>Set whether or not the value of the field must be unique for all instances of this model.</p>
+	 * <p>Set whether or not the value of the field must be unique for all instances of this model.
+	 * This is enforced at the persistor level, usually through use of an index (for databases).</p>
 	 * <p>Default is false.</p>
 	 * <p><b>Note:</b> if unique is true, then the field must also be declared as required</p>
 	 * @return the uniqueness of the attribute for this attribute
 	 * @see #required()
 	 */
 	boolean unique() default false;
-
-	/**
-	 * an array of validators... not yet implemented...
-	 * @return
-	 */
-	Class<?>[] validators() default {};
 
 	/**
 	 * not currently implemented...

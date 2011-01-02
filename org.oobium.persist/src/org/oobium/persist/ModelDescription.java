@@ -32,6 +32,8 @@ public @interface ModelDescription {
 	Attribute[] attrs() default {};
 	Relation[] hasMany() default {};
 	Relation[] hasOne() default {};
+	Validate[] validations() default {};
+	
 	boolean datestamps() default false;
 	boolean timestamps() default false;
 	

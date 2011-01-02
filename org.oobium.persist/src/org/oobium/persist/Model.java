@@ -11,6 +11,7 @@
 package org.oobium.persist;
 
 import static org.oobium.persist.ModelAdapter.getAdapter;
+import static org.oobium.utils.json.JsonUtils.toList;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.titleize;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
@@ -128,10 +129,22 @@ public abstract class Model implements JsonModel {
 		fields = new HashMap<String, Object>();
 	}
 
+	/**
+	 * Add a single error message to the base (null) subject.
+	 * Usefull for adding errors not related to a particular field.
+	 * @param message the error message to be added
+	 */
 	public final void addError(String message) {
 		addError(null, message);
 	}
-	
+
+	/**
+	 * Add a single error message to the given subject.
+	 * Used by the internal validation mechanism and available for use
+	 * in custom code.
+	 * @param subject the subject that the error is related to (a field, for example)
+	 * @param message the error message
+	 */
 	public final void addError(String subject, String message) {
 		if(errors == null) {
 			errors = new LinkedHashMap<String, ArrayList<String>>();
@@ -206,6 +219,7 @@ public abstract class Model implements JsonModel {
 	public final boolean canCreate() {
 		clearErrors();
 		Observer.runBeforeValidateCreate(this);
+		runValidations(Validate.CREATE);
 		validateCreate();
 		Observer.runAfterValidateCreate(this);
 		return !hasErrors();
@@ -214,15 +228,29 @@ public abstract class Model implements JsonModel {
 	public final boolean canDestroy() {
 		clearErrors();
 		Observer.runBeforeValidateDestroy(this);
+		runValidations(Validate.DESTROY);
 		validateDestroy();
 		Observer.runAfterValidateDestroy(this);
 		return !hasErrors();
 	}
-	
+
 	public final boolean canSave() {
 		clearErrors();
 		Observer.runBeforeValidateSave(this);
 		validateSave();
+		if(!hasErrors()) {
+			if(isNew()) {
+				Observer.runBeforeValidateCreate(this);
+				runValidations(Validate.CREATE);
+				validateCreate();
+				Observer.runAfterValidateCreate(this);
+			} else {
+				Observer.runBeforeValidateUpdate(this);
+				runValidations(Validate.UPDATE);
+				validateUpdate();
+				Observer.runAfterValidateUpdate(this);
+			}
+		}
 		Observer.runAfterValidateSave(this);
 		return !hasErrors();
 	}
@@ -230,18 +258,19 @@ public abstract class Model implements JsonModel {
 	public final boolean canUpdate() {
 		clearErrors();
 		Observer.runBeforeValidateUpdate(this);
+		runValidations(Validate.UPDATE);
 		validateUpdate();
 		Observer.runAfterValidateUpdate(this);
 		return !hasErrors();
 	}
-
+	
 	/**
 	 * Clear this model's internal data map.
 	 */
 	public void clear() {
 		fields.clear();
 	}
-
+	
 	protected final void clearErrors() {
 		if(hasErrors()) {
 			errors.clear();
@@ -285,7 +314,7 @@ public abstract class Model implements JsonModel {
 		}
 		return false;
 	}
-
+	
 	private boolean doCreate() {
 		boolean saved = false;
 		Observer.runBeforeCreate(this);
@@ -295,7 +324,6 @@ public abstract class Model implements JsonModel {
 				getPersistor().create(this);
 				saved = true;
 				Observer.runAfterCreate(this);
-				Observer.runAfterSave(this);
 			} catch(SQLException e) {
 				logger.warn("failed to save " + asSimpleString(), e);
 				addError(e.getLocalizedMessage());
@@ -303,7 +331,7 @@ public abstract class Model implements JsonModel {
 		}
 		return saved;
 	}
-	
+
 	private boolean doUpdate() {
 		boolean saved = false;
 		if(getAdapter(getClass()).isUpdatable()) {
@@ -314,7 +342,6 @@ public abstract class Model implements JsonModel {
 					getPersistor().update(this);
 					saved = true;
 					Observer.runAfterUpdate(this);
-					Observer.runAfterSave(this);
 				} catch(SQLException e) {
 					logger.warn("failed to save " + asSimpleString(), e);
 					addError(e.getLocalizedMessage());
@@ -404,7 +431,7 @@ public abstract class Model implements JsonModel {
 			}
 		}
 	}
-	
+
 	public <T> T get(String field, Class<T> type) {
 		return coerce(get(field), type);
 	}
@@ -424,14 +451,38 @@ public abstract class Model implements JsonModel {
 	public Map<String, Object> getAll() {
 		return new HashMap<String, Object>(fields);
 	}
-
-	public Map<String, List<String>> getErrors() {
+	
+	/**
+	 * Get all of the errors contained within this model.
+	 * @return a LinkedHashMap of Lists of error messages key by their subject in the order that they were added; never null.
+	 */
+	public LinkedHashMap<String, List<String>> getErrors() {
 		if(errors != null) {
 			return new LinkedHashMap<String, List<String>>(errors);
 		}
 		return new LinkedHashMap<String, List<String>>(0);
 	}
 	
+	/**
+	 * Get the list of errors corresponding to the given subject.
+	 * @param subject the subject to get the errors list for
+	 * @return the errors {@link List} for the subject, if any; otherwise an empty List; never null.
+	 */
+	public List<String> getErrors(String subject) {
+		if(errors != null) {
+			List<String> list = errors.get(subject);
+			if(list != null) {
+				return new ArrayList<String>(list);
+			}
+		}
+		return new ArrayList<String>(0);
+	}
+
+	/**
+	 * A complete and flattened list of all errors in this model. The subject of each
+	 * error has been prepended to the original message.
+	 * @return a List of all errors, or an empty list if there are none; never null.
+	 */
 	public List<String> getErrorsList() {
 		if(errors == null) {
 			return new ArrayList<String>(0);
@@ -461,6 +512,21 @@ public abstract class Model implements JsonModel {
 		return id;
 	}
 
+	private int getLength(Object value, String tokenizer) {
+		if(value == null) {
+			return 0;
+		} else if(value instanceof Collection) {
+			return ((Collection<?>) value).size();
+		} else if(value instanceof Map) {
+			return ((Map<?,?>) value).size();
+		} else if(value.getClass().isArray()) {
+			return Array.getLength(value);
+		}
+		
+		String s = value.toString();
+		return blank(tokenizer) ? s.length() : s.split(tokenizer).length;
+	}
+
 	private String getOpposite(String field) {
 		return getAdapter(getClass()).getOpposite(field);
 	}
@@ -472,15 +538,69 @@ public abstract class Model implements JsonModel {
 		return persistor;
 	}
 	
+	/**
+	 * Find out if this model's persisted object contains the field.
+	 * True if the field is an attribute or hasOne relationship.
+	 */
 	private boolean hasContained(String field) {
 		ModelAdapter adapter = getAdapter(getClass());
 		return adapter.hasAttribute(field) || adapter.hasOne(field);
 	}
-	
+
+	/**
+	 * Find out if this model has any errors associated with it.
+	 * Only valid after validations have been run.
+	 * @return true if there are errors; false otherwise.
+	 */
 	public boolean hasErrors() {
 		return errors != null && !errors.isEmpty();
 	}
-	
+
+	/**
+	 * Find out if this model has any errors associated with the given subject.
+	 * Only valid after validations have been run.
+	 * @param subject the subject to check for errors
+	 * @return true if there are errors; false otherwise.
+	 */
+	public boolean hasErrors(String subject) {
+		if(errors != null) {
+			List<String> list = errors.get(subject);
+			return list != null && !list.isEmpty();
+		}
+		return false;
+	}
+
+	/**
+	 * Find out if there are any errors associated with the nested field.
+	 * <p>For example - if a Post model has one Owner model and the Owner model has a name field, you
+	 * could use this method on a post to find out if there is an error associated with the
+	 * owner's name field: post.hasErrors("owner", "name");</p>
+	 * If the given fields array is of zero length, then this method returns false. Similarly,
+	 * if the nested field is not specified in the containing model's {@link ModelDescription}, then
+	 * this method return false.
+	 * @param fields an array of nested fields leading to the one to check for errors
+	 * @return true if there are errors; false otherwise.
+	 */
+	public final boolean hasErrors(String...fields) {
+		if(fields.length == 0) {
+			return false;
+		}
+		if(fields.length == 1) {
+			return hasErrors(fields[0]);
+		}
+		Model model = null;
+		for(int i = 0; i < fields.length - 1; i++) {
+			Object o = get(fields[i]);
+			if(o instanceof Model) {
+				model = (Model) o;
+			} else {
+				// only models have an errors list
+				return false;
+			}
+		}
+		return model.hasErrors(fields[fields.length-1]);
+	}
+
 	@Override
 	public int hashCode() {
 		int hash = id + 2;
@@ -496,7 +616,7 @@ public abstract class Model implements JsonModel {
 	public final boolean isBlank() {
 		return isNew() && blank(getAll());
 	}
-
+	
 	@Override
 	public final boolean isEmpty() {
 		return fields.isEmpty();
@@ -505,7 +625,7 @@ public abstract class Model implements JsonModel {
 	private boolean isManyToMany(String field) {
 		return getAdapter(getClass()).isManyToMany(field);
 	}
-
+	
 	private boolean isManyToNone(String field) {
 		return getAdapter(getClass()).isManyToNone(field);
 	}
@@ -514,21 +634,61 @@ public abstract class Model implements JsonModel {
 	public final boolean isNew() {
 		return id <= 0;
 	}
-	
+
 	private boolean isOppositeRequired(String field) {
 		return getAdapter(getClass()).isOppositeRequired(field);
 	}
-
+	
+	/**
+	 * Find out if given field is marked as required in this model's {@link ModelDescription}.
+	 * If the given field is not specified in the {@link ModelDescription} then it cannot be
+	 * marked as required and this method returns false.
+	 * @param field
+	 * @return true if the given field is required; false otherwise.
+	 * @see ModelAdapter#isRequired(String)
+	 */
 	public final boolean isRequired(String field) {
 		return getAdapter(getClass()).isRequired(field);
 	}
-	
-    @Override
+
+	/**
+	 * Find out if the nested field is marked as required by its model's {@link ModelDescription}.
+	 * <p>For example - if a Post model has one Owner model and the Owner model has a name field, you
+	 * could use this method on a post to find out if the owner's name field is required: 
+	 * post.isRequired("owner", "name");</p>
+	 * If the given fields array is of zero length, then this method returns false. Similarly,
+	 * if the nested field is not specified in the containing model's {@link ModelDescription}, then
+	 * this method return false.
+	 * @param fields an array of fields leading from this model to the nested model
+	 * @return true if the given nested field is required; false otherwise.
+	 * @see ModelAdapter#isRequired(String)
+	 */
+	public final boolean isRequired(String...fields) {
+		if(fields.length == 0) {
+			return false;
+		}
+		ModelAdapter adapter = getAdapter(getClass());
+		if(fields.length == 1) {
+			return adapter.isRequired(fields[0]);
+		}
+		for(int i = 0; i < fields.length - 1; i++) {
+			Class<?> clazz = adapter.getClass(fields[i]);
+			if(Model.class.isAssignableFrom(clazz)) {
+				adapter = getAdapter(clazz.asSubclass(Model.class));
+			} else {
+				// field is not a model (may be a Map...); only models can mark fields as required
+				return false;
+			}
+		}
+		return adapter.isRequired(fields[fields.length-1]);
+	}
+
+	@Override
 	public final boolean isSet(String field) {
 		return fields.containsKey(field);
 	}
 	
-    private boolean isThrough(String field) {
+	private boolean isThrough(String field) {
 		return getAdapter(getClass()).isManyToNone(field);
 	}
 	
@@ -541,8 +701,15 @@ public abstract class Model implements JsonModel {
 		}
 		return false;
 	}
+
+	private String msg(String message, Validate validation) {
+		if(blank(validation.message())) {
+			return message;
+		}
+		return validation.message();
+	}
 	
-	/**
+    /**
 	 * Put the given field, and its given value, directly into this model's underlying
 	 * data map.  The model will not be resolved if it isn't already.  If the field
 	 * already exists in the data map, it will be over-written.  Other fields in the
@@ -559,7 +726,7 @@ public abstract class Model implements JsonModel {
 		return this;
 	}
 	
-	/**
+    /**
 	 * Sets this model's fields to those of the given model.
 	 * The existing fields will first be cleared and then the
 	 * given model's fields will be passed into the {@link #setAll(Map)}
@@ -619,9 +786,8 @@ public abstract class Model implements JsonModel {
 	}
 	
 	/**
-     * Removes the error at the specified position in this list.
+     * Removes the error at the specified position in list for the base (null) subject.
      * Shifts any subsequent elements to the left (subtracts one from their indices).
-     *
      * @param index the index of the error to be removed
      * @return the error that was removed from the list
      * @throws IndexOutOfBoundsException {@inheritDoc}
@@ -629,15 +795,27 @@ public abstract class Model implements JsonModel {
 	public final String removeError(int index) {
 		return removeError(null, index);
 	}
-	
+
+	/**
+	 * Removes the first occurrence of the specified error from the list for the base (null) subject,
+	 * if it is present.  If the list does not contain the error, it is
+	 * unchanged.  More formally, removes the error with the lowest index
+	 * <tt>i</tt> such that
+	 * <tt>(o==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;o.equals(get(i)))</tt>
+	 * (if such an error exists).  Returns <tt>true</tt> if this list
+	 * contained the specified error (or equivalently, if this list
+	 * changed as a result of the call).
+	 *
+	 * @param error the error to be removed from this list, if present
+	 * @return <tt>true</tt> if this list contained the specified error; false otherwise
+	 */
 	public final boolean removeError(String error) {
 		return removeError(null, error);
 	}
-
+	
 	/**
-     * Removes the error at the specified position in this list.
+     * Removes the error at the specified position in the list for the given subject.
      * Shifts any subsequent elements to the left (subtracts one from their indices).
-     *
      * @param index the index of the error to be removed
      * @return the error that was removed from the list
      * @throws IndexOutOfBoundsException {@inheritDoc}
@@ -660,7 +838,7 @@ public abstract class Model implements JsonModel {
 	}
 	
 	/**
-	 * Removes the first occurrence of the specified error from this list,
+	 * Removes the first occurrence of the specified error from the list for the given subject,
 	 * if it is present.  If the list does not contain the error, it is
 	 * unchanged.  More formally, removes the error with the lowest index
 	 * <tt>i</tt> such that
@@ -689,6 +867,13 @@ public abstract class Model implements JsonModel {
 		return false;
 	}
 
+	/**
+	 * Remove all errors in the list for the given subject.
+	 * To remove errors from the base subject, simply pass a null in for the subject.
+	 * @param subject the subject whose errors are to be removed
+	 * @return the List of errors that was removed, or an empty list if
+	 * there weren't any; never null;
+	 */
 	public final List<String> removeErrors(String subject) {
 		if(errors != null) {
 			List<String> list = errors.remove(subject);
@@ -699,21 +884,171 @@ public abstract class Model implements JsonModel {
 		}
 		return new ArrayList<String>(0);
 	}
+
+	private boolean run(String methodName, String field) {
+		boolean pass = true;
+		try {
+			if(blank(field)) {
+				Method method = getClass().getDeclaredMethod(methodName);
+				pass = (Boolean) method.invoke(this);
+			} else {
+				ModelAdapter adapter = ModelAdapter.getAdapter(this);
+				String[] fields = field.split("\\s*,\\s*");
+				for(int i = 0; pass && i < fields.length; i++) {
+					try {
+						Method method = getClass().getDeclaredMethod(methodName, adapter.getClass(fields[i]));
+						method.setAccessible(true);
+						pass = (Boolean) method.invoke(this, get(fields[i]));
+					} catch(NoSuchMethodException e) {
+						Method method = getClass().getDeclaredMethod(methodName);
+						method.setAccessible(true);
+						pass = (Boolean) method.invoke(this);
+					}
+				}
+			}
+		} catch(ClassCastException e) {
+			logger.warn("validation method does not return a boolean: " + methodName);
+		} catch(NoSuchMethodException e) {
+			logger.warn("validation method does not exist: " + methodName);
+		} catch(Exception e) {
+			// discard
+		}
+		return pass;
+	}
+	
+	private void runValidation(Validate validate, boolean onUpdate) {
+		if(!blank(validate.when()) && !run(validate.when(), validate.field())) {
+			return;
+		}
+		if(!blank(validate.unless()) && run(validate.unless(), validate.field())) {
+			return;
+		}
+		if(validate.unlessNull() && get(validate.field()) == null) {
+			return;
+		}
+		if(validate.unlessBlank() && blank(get(validate.field()))) {
+			return;
+		}
+		
+		if(validate.with() != Object.class) {
+			runValidator(validate.with());
+			return;
+		}
+		
+		if(!blank(validate.withMethod())) {
+			String[] fields = validate.field().split("\\s*,\\s*");
+			for(String field : fields) {
+				if(!onUpdate || isSet(field)) {
+					if(!run(validate.withMethod(), field)) {
+						addError(validate.field(), validate.message());
+					}
+				}
+			}
+			return;
+		}
+		
+		String[] fields = validate.field().split("\\s*,\\s*");
+		for(String field : fields) {
+			if(onUpdate && !isSet(field)) {
+				continue;
+			}
+			
+			Object value = get(field);
+			if(validate.isBlank() && !blank(value)) {
+				addError(field, msg("must be blank", validate));
+				continue;
+			}
+			if(validate.isNotBlank() && blank(value)) {
+				addError(field, msg("cannot be blank", validate));
+				continue;
+			}
+			if(validate.isNotNull() && value == null) {
+				addError(field, msg("cannot be null", validate));
+				continue;
+			}
+			if(validate.isNull() && value != null) {
+				addError(field, msg("must be null", validate));
+				continue;
+			}
+			if(!blank(validate.isNotIn()) && toList(validate.isNotIn()).contains(value)) {
+				addError(field, msg("cannot be one of \"" + validate.isNotIn() + "\"", validate));
+				continue;
+			}
+			if(!blank(validate.isIn()) && !toList(validate.isIn()).contains(value)) {
+				addError(field, msg("can only be one of \"" + validate.isIn() + "\"", validate));
+				continue;
+			}
+			if(!blank(validate.matches()) && !((value == null) ? "" : value.toString()).matches(validate.matches())) {
+				addError(field, msg("must be of format \"" + validate.matches() + "\"", validate));
+				continue;
+			}
+			if(validate.maxLength() >= 0 && getLength(value, validate.tokenizer()) > validate.maxLength()) {
+				addError(field, msg("length cannot be more than " + validate.maxLength(), validate));
+				continue;
+			}
+			if(validate.minLength() >= 0 && getLength(value, validate.tokenizer()) < validate.minLength()) {
+				addError(field, msg("length cannot be less than " + validate.minLength(), validate));
+				continue;
+			}
+			if(validate.lengthIs() >= 0 && getLength(value, validate.tokenizer()) != validate.lengthIs()) {
+				addError(field, msg("length must be " + validate.lengthIs(), validate));
+				continue;
+			}
+		}
+	}
+	
+	private void runValidations(int on) {
+		ModelDescription description = getClass().getAnnotation(ModelDescription.class);
+		if(description != null) {
+			boolean onUpdate = (on == Validate.UPDATE);
+			if((on & (Validate.CREATE | Validate.UPDATE)) != 0) {
+				for(Relation relation : description.hasOne()) {
+					String field = relation.name();
+					if(!onUpdate || isSet(field)) {
+						if(relation.required() && get(relation.name()) == null) {
+							addError(field, "cannot be null");
+						}
+					}
+				}
+			}
+			for(Validate validate : description.validations()) {
+				if((validate.on() & on) != 0) {
+					runValidation(validate, onUpdate);
+				}
+			}
+		}
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private void runValidator(Class<?> validatorClass) {
+		try {
+			Validator validator = (Validator) validatorClass.newInstance();
+			validator.validate(this);
+		} catch(InstantiationException e) {
+			logger.warn("could not run validator: " + validatorClass);
+		} catch(IllegalAccessException e) {
+			logger.warn("could not run validator: " + validatorClass);
+		} catch(Exception e) {
+			logger.warn(e);
+		}
+	}
 	
 	public boolean save() {
+		boolean result = false;
 		if(canSave()) {
 			Observer.runBeforeSave(this);
 			if(isNew()) {
-				return doCreate();
+				result = doCreate();
 			} else {
-				return doUpdate();
+				result = doUpdate();
 			}
+			Observer.runAfterSave(this);
 		}
-		return false;
+		return result;
 	}
 	
 	/**
-	 * Set the given field to the coersed type of the given value.
+	 * Set the given field to the coerced type of the given value.
 	 * <p>The model will be resolved if:
 	 * <ul>
 	 *   <li>it isn't already resolved</li>
@@ -759,7 +1094,7 @@ public abstract class Model implements JsonModel {
 				return coerce(models, type);
 			}
 		} else {
-			Object coersedValue = coerce(value, type);
+			Object coercedValue = coerce(value, type);
 			if(Model.class.isAssignableFrom(type)) {
 				String opposite = getOpposite(field);
 				if(getAdapter(type.asSubclass(Model.class)).hasMany(opposite)) {
@@ -772,7 +1107,7 @@ public abstract class Model implements JsonModel {
 							((RequiredSet<?>) oldModel.get(opposite)).doRemove(this);
 						}
 					}
-					Model newModel = (Model) coersedValue;
+					Model newModel = (Model) coercedValue;
 					if(newModel != null) {
 						Object o = newModel.get(opposite);
 						if(o instanceof ActiveSet<?>) {
@@ -783,8 +1118,8 @@ public abstract class Model implements JsonModel {
 					}
 				}
 			}
-			fields.put(field, coersedValue);
-			return coersedValue;
+			fields.put(field, coercedValue);
+			return coercedValue;
 		}
 	}
 
@@ -878,26 +1213,28 @@ public abstract class Model implements JsonModel {
 					map.put(field, get(field));
 				} else if(adapter.hasOne(field)) {
 					Model model = (Model) get(field);
-					ModelAdapter fadapter = ModelAdapter.getAdapter(model.getClass());
-					Map<String, Object> fmap = new TreeMap<String, Object>();
-					fmap.put("id", model.getId());
-					for(String ffield : fadapter.getFields()) {
-						if(model.isSet(ffield)) {
-							if(fadapter.hasAttribute(ffield)) {
-								fmap.put(ffield, model.get(ffield));
-							} else if(fadapter.hasOne(ffield)) {
-								fmap.put(ffield, ((Model) model.get(ffield)).getId());
-							} else if(fadapter.hasMany(ffield)) {
-								Collection<?> collection = (Collection<?>) model.get(ffield);
-								List<Object> list = new ArrayList<Object>();
-								for(Object o : collection) {
-									list.add(Collections.singletonMap("id", ((Model) o).getId()));
+					if(model != null) {
+						ModelAdapter fadapter = ModelAdapter.getAdapter(model.getClass());
+						Map<String, Object> fmap = new TreeMap<String, Object>();
+						fmap.put("id", model.getId());
+						for(String ffield : fadapter.getFields()) {
+							if(model.isSet(ffield)) {
+								if(fadapter.hasAttribute(ffield)) {
+									fmap.put(ffield, model.get(ffield));
+								} else if(fadapter.hasOne(ffield)) {
+									fmap.put(ffield, ((Model) model.get(ffield)).getId());
+								} else if(fadapter.hasMany(ffield)) {
+									Collection<?> collection = (Collection<?>) model.get(ffield);
+									List<Object> list = new ArrayList<Object>();
+									for(Object o : collection) {
+										list.add(Collections.singletonMap("id", ((Model) o).getId()));
+									}
+									fmap.put(ffield, list);
 								}
-								fmap.put(ffield, list);
 							}
 						}
+						map.put(field, fmap);
 					}
-					map.put(field, fmap);
 				} else if(adapter.hasMany(field)) {
 					Collection<?> collection = (Collection<?>) get(field);
 					List<Object> list = new ArrayList<Object>();
@@ -960,11 +1297,7 @@ public abstract class Model implements JsonModel {
 	}
 
 	protected void validateSave() {
-		if(isNew()) {
-			validateCreate();
-		} else {
-			validateUpdate();
-		}
+		// subclasses to override
 	}
 	
 	protected void validateUpdate() {

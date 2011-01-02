@@ -51,7 +51,6 @@ public class ModelAdapter {
 
 	private Class<? extends Model> clazz;
 	
-	private boolean hasRequired;
 	private Map<String, Attribute> attribute;
 	private Map<String, Relation> hasOne;
 	private Map<String, Relation> hasMany;
@@ -66,7 +65,6 @@ public class ModelAdapter {
 	
 	private ModelAdapter(Class<? extends Model> clazz) {
 		this.clazz = clazz;
-		this.hasRequired = false;
 		this.hasOne = new HashMap<String,Relation>();
 		this.hasMany = new HashMap<String,Relation>();
 		this.fields = new HashSet<String>();
@@ -267,14 +265,6 @@ public class ModelAdapter {
 		return false;
 	}
 
-	/**
-	 * Indicates if this model has one or more required fields.
-	 * @return if the model has at least one required field, false otherwise.
-	 */
-	public boolean hasRequired() {
-		return hasRequired;
-	}
-
 	void init() {
 		LinkedList<Class<?>> classes = new LinkedList<Class<?>>();
 		Class<?> c = this.clazz;
@@ -286,7 +276,6 @@ public class ModelAdapter {
 			ModelDescription description = clazz.getAnnotation(ModelDescription.class);
 			if(description != null) {
 				for(Attribute attr : description.attrs()) {
-					if(attr.required()) hasRequired = true;
 					attribute.put(attr.name(), attr);
 					fields.add(attr.name());
 					if(attr.virtual()) {
@@ -296,13 +285,11 @@ public class ModelAdapter {
 					}
 				}
 				for(Relation relation : description.hasOne()) {
-					if(relation.required()) hasRequired = true;
 					hasOne.put(relation.name(), relation);
 					fields.add(relation.name());
 					modelFields.add(relation.name());
 				}
 				for(Relation relation : description.hasMany()) {
-					if(relation.required()) hasRequired = true;
 					hasMany.put(relation.name(), relation);
 					fields.add(relation.name());
 				}
@@ -459,14 +446,8 @@ public class ModelAdapter {
 	}
 	
 	public boolean isRequired(String field) {
-		if(attribute.containsKey(field)) {
-			return attribute.get(field).required();
-		}
 		if(hasOne.containsKey(field)) {
 			return hasOne.get(field).required();
-		}
-		if(hasMany.containsKey(field)) {
-			return hasMany.get(field).required();
 		}
 		return field.equals("createdAt") || field.equals("createdOn") || field.equals("updatedAt") || field.equals("updatedOn");
 	}

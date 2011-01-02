@@ -472,42 +472,6 @@ public abstract class AbstractMigration implements Migration {
 		return new Column(STRING, name, options);
 	}
 
-	private void test() throws SQLException {
-    	createJoinTable("Table1", "Column1", "Table2", "Column2");
-
-    	createJoinTable(
-    		"Table1", "Column1",
-    		"Table2", "Column2"
-    	);
-
-		createTable("TestTable",
-			String("name"),
-			String("description"),
-			Text("content")
-		);
-
-		createIndex("TestTable", "name");
-		
-		changeTable("TestTable",
-			add("String", "name"),
-			addString("name"),
-			addForeignKey("something", "name"),
-			removeForeignKey("something"),
-			remove("name"),
-			remove("description"),
-			addString("partNumber"),
-			addIndex("partNumber"),
-			rename("upccode", "upcCode")
-		);
-
-		Table table = findTable("TestTable");
-		table.addText("name");
-		table.update();
-		
-		table.addIndex("name");
-		table.update();
-	}
-
 	public Column Text(String name) {
 		return Column(TEXT, name);
 	}

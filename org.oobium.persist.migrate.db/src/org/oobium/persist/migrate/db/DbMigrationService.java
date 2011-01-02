@@ -13,6 +13,7 @@ package org.oobium.persist.migrate.db;
 import static org.oobium.persist.Relation.CASCADE;
 import static org.oobium.persist.Relation.NO_ACTION;
 import static org.oobium.persist.Relation.RESTRICT;
+import static org.oobium.persist.Relation.SET_DEFAULT;
 import static org.oobium.persist.Relation.SET_NULL;
 import static org.oobium.utils.StringUtils.join;
 
@@ -248,15 +249,19 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getSqlSafe(fk.column)).append(' ').append(getSqlType(fk.type)).append(" CONSTRAINT ");
 		sb.append(fk.name).append(" REFERENCES ").append(getSqlSafe(fk.reference)).append(" (id)");
-		switch(fk.options.get("onDelete", ForeignKey.NO_ACTION)) {
-		case CASCADE:
-			sb.append(" ON DELETE CASCADE");
-			break;
-		case RESTRICT:
-		case SET_NULL:
-		case NO_ACTION:
-			// leave blank
-			break;
+		switch(fk.options.get("onDelete", -1)) {
+		case CASCADE:		sb.append(" ON DELETE CASCADE");	break;
+		case NO_ACTION:		sb.append(" ON DELETE NO ACTION");	break;
+		case RESTRICT:		sb.append(" ON DELETE RESTRICT");	break;
+		case SET_DEFAULT:	sb.append(" ON DELETE SET DEFAULT");break;
+		case SET_NULL:		sb.append(" ON DELETE SET NULL");	break;
+		}
+		switch(fk.options.get("onUpdate", -1)) {
+		case CASCADE:		sb.append(" ON UPDATE CASCADE");	break;
+		case NO_ACTION:		sb.append(" ON UPDATE NO ACTION");	break;
+		case RESTRICT:		sb.append(" ON UPDATE RESTRICT");	break;
+		case SET_DEFAULT:	sb.append(" ON UPDATE SET DEFAULT");break;
+		case SET_NULL:		sb.append(" ON UPDATE SET NULL");	break;
 		}
 		return sb.toString();
 	}
@@ -273,19 +278,19 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		sb.append(" CONSTRAINT ").append(getSqlSafe(fk.name));
 		sb.append(" Foreign Key (").append(getSqlSafe(fk.column)).append(")");
 		sb.append(" REFERENCES ").append(getSqlSafe(fk.reference)).append(" (id)");
-		switch(fk.options.get("onDelete", ForeignKey.NO_ACTION)) {
-		case CASCADE:
-			sb.append(" ON DELETE CASCADE");
-			break;
-		case RESTRICT:
-			sb.append(" ON DELETE RESTRICT");
-			break;
-		case SET_NULL:
-			sb.append(" ON DELETE SET NULL");
-			break;
-		case NO_ACTION:
-			sb.append(" ON DELETE NO ACTION");
-			break;
+		switch(fk.options.get("onDelete", -1)) {
+		case CASCADE:		sb.append(" ON DELETE CASCADE");	break;
+		case NO_ACTION:		sb.append(" ON DELETE NO ACTION");	break;
+		case RESTRICT:		sb.append(" ON DELETE RESTRICT");	break;
+		case SET_DEFAULT:	sb.append(" ON DELETE SET DEFAULT");break;
+		case SET_NULL:		sb.append(" ON DELETE SET NULL");	break;
+		}
+		switch(fk.options.get("onUpdate", -1)) {
+		case CASCADE:		sb.append(" ON UPDATE CASCADE");	break;
+		case NO_ACTION:		sb.append(" ON UPDATE NO ACTION");	break;
+		case RESTRICT:		sb.append(" ON UPDATE RESTRICT");	break;
+		case SET_DEFAULT:	sb.append(" ON UPDATE SET DEFAULT");break;
+		case SET_NULL:		sb.append(" ON UPDATE SET NULL");	break;
 		}
 		return sb.toString();
 	}
