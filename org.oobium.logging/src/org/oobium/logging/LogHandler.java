@@ -11,8 +11,9 @@
 package org.oobium.logging;
 
 import static java.lang.Math.max;
+import static org.oobium.logging.ILogger.WARNING;
 import static org.oobium.logging.LogFormatter.format;
-import static org.oobium.logging.Logger.WARNING;
+import static org.oobium.logging.Logger.decode;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -138,7 +139,7 @@ public class LogHandler implements LogListener {
 		if(isLoggingToConsole || isLoggingToFile) {
 			String message = format(log.getBundle(), log.getLevel(), log.getMessage(), log.getException());
 			if(isLoggingToConsole) {
-				if(level <= WARNING) {
+				if(decode(level) <= WARNING) {
 					System.err.print(message);
 				} else {
 					System.out.print(message);

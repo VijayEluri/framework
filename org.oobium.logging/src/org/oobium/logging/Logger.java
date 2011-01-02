@@ -11,7 +11,6 @@
 package org.oobium.logging;
 
 import static org.oobium.logging.Activator.getLogService;
-import static org.oobium.logging.Activator.hasLogTracker;
 import static org.oobium.logging.Activator.isBundle;
 import static org.oobium.logging.LogFormatter.format;
 
@@ -35,6 +34,7 @@ public class Logger implements ILogger {
 	
 	/**
 	 *  32bits split into 4 bytes: CONSOLE|FILE|EMAIL|LEVEL
+	 *  @return the value of LEVEL
 	 */
 	public static int decode(int level) {
 		return (level & 0x000000ff);
@@ -190,9 +190,18 @@ public class Logger implements ILogger {
 		log(DEBUG, exception.getLocalizedMessage(), exception) ;
 	}
 	
-	// 32bits split into 4 bytes: CONSOLE|FILE|EMAIL|LEVEL
+	/**
+	 * 32bits split into 4 bytes: CONSOLE|FILE|EMAIL|LEVEL<br>
+	 * (Could be split into nibbles to add 4 custom loggers...)
+	 * @param level the level of the logging message
+	 * @return the message level encoded with the system levels
+	 * @see Logger#decode(int)
+	 * @see #isLoggingToConsole(int)
+	 * @see #isLoggingToEmail(int)
+	 * @see #isLoggingToFile(int)
+	 */
 	private int encode(int level) {
-		return 	((consoleLevel	<< 24) & 0xff000000) | 
+		return 	((consoleLevel	<< 24) & 0xff000000) |
 				((fileLevel		<< 16) & 0x00ff0000) |
 				((emailLevel	<<  8) & 0x0000ff00) |
 				(level				   & 0x000000ff);
@@ -211,6 +220,14 @@ public class Logger implements ILogger {
 	@Override
 	public void error(Throwable exception) {
 		log(ERROR, exception.getLocalizedMessage(), exception) ;
+	}
+	
+	private boolean hasLogTracker() {
+		try {
+			return Activator.hasLogTracker();
+		} catch(NoClassDefFoundError e) {
+			return false; // OSGi Logging is not enabled (bundles not installed)
+		}
 	}
 	
 	@Override
@@ -272,7 +289,7 @@ public class Logger implements ILogger {
 	public boolean isLoggingWarning() {
 		return isLogging(WARNING, consoleLevel) || isLogging(WARNING, fileLevel) || isLogging(WARNING, emailLevel);
 	}
-	
+
 	@Override
 	public void log(int level, String message) {
 		log(level, message, null);
