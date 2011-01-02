@@ -969,6 +969,62 @@ public class StringUtils {
 		return singular + "s";
 	}
 
+	/**
+	 * Pluralize the singular word, unless count == 1, and concatenate it to the count.
+	 * <dl>
+	 * <dt>For example:</dt>
+	 * <dd>pluralize(1, "person") -> "1 person"</dd>
+	 * <dd>pluralize(2, "person") -> "2 people"</dd>
+	 * </dl>
+	 * @return a String with the result of pluralization; never null.
+	 */
+	public static String pluralize(int count, String singular) {
+		return count + " " + pluralize(singular, count);
+	}
+	
+	/**
+	 * Pluralize the singular word, unless count == 1, and concatenate it to the count.
+	 * Uses the provided plural word rather than calling plural(singular).
+	 * <dl>
+	 * <dt>For example:</dt>
+	 * <dd>pluralize(1, "person", "users") -> "1 person"</dd>
+	 * <dd>pluralize(2, "person", "users") -> "2 users"</dd>
+	 * </dl>
+	 * @return a String with the result of pluralization; never null.
+	 */
+	public static String pluralize(int count, String singular, String plural) {
+		return count + " " + pluralize(singular, plural, count);
+	}
+	
+	/**
+	 * Pluralize the singular word, unless count == 1, and return it.
+	 * The result does not include the count in case you want to do something different.
+	 * <dl>
+	 * <dt>For example:</dt>
+	 * <dd>pluralize("person", 1) -> "person"</dd>
+	 * <dd>pluralize("person", 2) -> "people"</dd>
+	 * </dl>
+	 * @return a String with the result of pluralization; never null.
+	 */
+	public static String pluralize(String singular, int count) {
+		return (count == 1) ? singular : plural(singular);
+	}
+	
+	/**
+	 * Pluralize the singular word, unless count == 1, and return it.
+	 * Uses the provided plural word rather than calling plural(singular).
+	 * The result does not include the count in case you want to do something different.
+	 * <dl>
+	 * <dt>For example:</dt>
+	 * <dd>pluralize("person", "users", 1) -> "person"</dd>
+	 * <dd>pluralize("person", "users", 2) -> "users"</dd>
+	 * </dl>
+	 * @return a String with the result of pluralization; never null.
+	 */
+	public static String pluralize(String singular, String plural, int count) {
+		return (count == 1) ? singular : plural;
+	}
+	
 	public static Integer[] range(Integer start, Integer end) {
 		Integer[] range = new Integer[end-start+1];
 		for(int i = start; i <= end; i++) {

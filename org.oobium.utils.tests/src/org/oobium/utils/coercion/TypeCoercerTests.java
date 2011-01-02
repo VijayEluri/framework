@@ -63,6 +63,11 @@ public class TypeCoercerTests {
 	}
 	
 	@Test
+	public void testStringToMap() throws Exception {
+		assertEquals(Collections.singletonMap("a", "b"), coerce("{a:\"b\"}", Map.class));
+	}
+	
+	@Test
 	public void testMapToString() throws Exception {
 		// presently coded to be a JSON formatted string
 		assertEquals("{a:\"b\"}", coerce(Collections.singletonMap("a", "b"), String.class));

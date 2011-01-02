@@ -18,7 +18,7 @@ public class Utils {
 	/**
 	 * Checks for equality in a null safe manner.
 	 * If the two objects are of difference types, an attempt is made
-	 * to coerse o2 into the type of o1.
+	 * to coerce o2 into the type of o1.
 	 * @param o1
 	 * @param o2
 	 * @return

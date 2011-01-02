@@ -39,17 +39,21 @@ public class DateUtils {
 	
 	public static Date httpDate(String date) throws ParseException {
 		try {
-			return httpDate_1123.parse(date);
-		} catch(ParseException e1) {
 			try {
-				return httpDate_850.parse(date);
-			} catch(ParseException e2) {
+				return httpDate_1123.parse(date);
+			} catch(ParseException e1) {
 				try {
-					return httpDate_ASCTIME.parse(date);
-				} catch(ParseException e3) {
-					throw e1;
+					return httpDate_850.parse(date);
+				} catch(ParseException e2) {
+					try {
+						return httpDate_ASCTIME.parse(date);
+					} catch(ParseException e3) {
+						throw e1;
+					}
 				}
 			}
+		} catch(Exception e) {
+			throw new ParseException("could not parse http date: " + date, -1);
 		}
 	}
 	

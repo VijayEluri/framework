@@ -39,7 +39,7 @@ public class DateCoercer extends AbstractCoercer {
 			}
 			return new Date(Long.parseLong(str));
 		} catch(NumberFormatException e) {
-			throw new IllegalArgumentException(str + " failed to parse correctly when trying to coerse into a Date)");
+			throw new IllegalArgumentException(str + " failed to parse correctly when trying to coerce into a Date)");
 		}
 	}
 

@@ -32,6 +32,7 @@ import org.oobium.utils.coercion.coercers.IntegerCoercer;
 import org.oobium.utils.coercion.coercers.JsonModelCoercer;
 import org.oobium.utils.coercion.coercers.LocaleCoercer;
 import org.oobium.utils.coercion.coercers.LongCoercer;
+import org.oobium.utils.coercion.coercers.MapCoercer;
 import org.oobium.utils.coercion.coercers.PrimitiveBooleanCoercer;
 import org.oobium.utils.coercion.coercers.PrimitiveDoubleCoercer;
 import org.oobium.utils.coercion.coercers.PrimitiveIntCoercer;
@@ -69,6 +70,7 @@ public class TypeCoercer {
 		addCoercer(new JsonModelCoercer());
 		addCoercer(new LocaleCoercer());
 		addCoercer(new LongCoercer());
+		addCoercer(new MapCoercer());
 		addCoercer(new PrimitiveBooleanCoercer());
 		addCoercer(new PrimitiveDoubleCoercer());
 		addCoercer(new PrimitiveIntCoercer());
@@ -109,12 +111,12 @@ public class TypeCoercer {
 	
 	/**
 	 * Creates a new object that represents the given object once it
-	 * has been coersed into the given type.
-	 * @param object the object to be coersed
-	 * @param type the type to coerse the object into (also the return type)
-	 * @return the new coersed object
-	 * @throws IllegalArgumentException if the type is null or there is an error coersing the given object into the given type
-	 * @throws UnsupportedOperationException if the given object cannot be coersed into the given type
+	 * has been coerced into the given type.
+	 * @param object the object to be coerced
+	 * @param type the type to coerce the object into (also the return type)
+	 * @return the new coerced object
+	 * @throws IllegalArgumentException if the type is null or there is an error coercing the given object into the given type
+	 * @throws UnsupportedOperationException if the given object cannot be coerced into the given type
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T> T coerce(Object object, Class<T> type) {
@@ -185,6 +187,16 @@ public class TypeCoercer {
 		}
 	}
 
+	/**
+	 * If the given object is not null, then creates a new object that represents the given object once it has been coerced 
+	 * into the type of the given default value; otherwise, simply returns the default value.
+	 * @param object the object to be coerced
+	 * @param defaultValue the default to use if the given object is null; also the type to coerce the object into if it is not null.
+	 * <b>This value cannot be null</b>.
+	 * @return the new coerced object, or the default value if the given object is null
+	 * @throws IllegalArgumentException if the defaultValue is null or there is an error coercing the given object into the given type
+	 * @throws UnsupportedOperationException if the given object cannot be coerced into the given type
+	 */
 	@SuppressWarnings("unchecked")
 	public static <T> T coerce(Object object, T defaultValue) {
 		if(defaultValue != null) {

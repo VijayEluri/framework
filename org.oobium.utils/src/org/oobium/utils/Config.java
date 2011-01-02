@@ -30,9 +30,19 @@ public class Config {
 	public enum Mode {
 		DEV, TEST, PROD;
 		public static final String SYSTEM_PROPERTY = "org.oobium.mode";
+		
 		public static Mode getSystemMode() {
 			return parse(System.getProperty(SYSTEM_PROPERTY));
 		}
+
+		public static boolean isDEV() {
+			return getSystemMode() == DEV;
+		}
+		
+		public static boolean isNotDEV() {
+			return getSystemMode() != DEV;
+		}
+		
 		public static Mode parse(String str) {
 			if(str != null) {
 				try {
@@ -131,7 +141,7 @@ public class Config {
 	public Object get(String name, Mode mode) {
 		if(!blank(name)) {
 			Object obj = properties.get(name.toLowerCase());
-			Object o = properties.get(mode.name().toLowerCase());
+			Object o = (mode != null) ? properties.get(mode.name().toLowerCase()) : null;
 			if(o instanceof Map<?,?>) {
 				o = ((Map<?,?>) o).get(name.toLowerCase());
 			}
@@ -233,6 +243,42 @@ public class Config {
 	
 	public String getPathToModels(String base) {
 		return getPath("models", getPathToApp(base));
+	}
+	
+	/**
+	 * Get the full module names for the current system mode.
+	 * @return a List of full module names (name_version), or an empty list if none are specified; never null.
+	 */
+	public List<String> getModules() {
+		return getModules(mode);
+	}
+	
+	/**
+	 * Get the full module names for the given mode.
+	 * @param mode the mode for which to get the modules; if null, then get only the modules that are common for all modes.
+	 * @return a List of full module names (name_version), or an empty list if none are specified; never null.
+	 */
+	public List<String> getModules(Mode mode) {
+		Object o = get(MODULES, mode);
+		if(o == null) {
+			return new ArrayList<String>(0);
+		} else {
+			List<String> modules = new ArrayList<String>();
+			if(o instanceof String) {
+				modules.add((String) o);
+			} else if(o instanceof List) {
+				for(Object e : (List<?>) o) {
+					if(e instanceof String) {
+						modules.add((String) e);
+					} else if(e instanceof Map) {
+						modules.add((String) ((Map<?,?>) e).keySet().iterator().next());
+					}
+				}
+			} else if(o instanceof Map) {
+				modules.add((String) ((Map<?,?>) o).keySet().iterator().next());
+			}
+			return modules;
+		}
 	}
 	
 	public Config getModuleConfig(Class<?> refClass) {

@@ -257,63 +257,6 @@ public class SqlUtils {
 	    _reservedWords.add("YEAR".toLowerCase());
 	}
 
-	public static String limit(String sql, int limit) {
-		if(blank(sql)) {
-			return "LIMIT " + limit;
-		}
-		StringBuilder sb = new StringBuilder(sql.length() + 15);
-		sb.append(sql);
-		String lower = sql.toLowerCase();
-		int ix = lower.indexOf("limit ");
-		if(ix != -1) {
-			char[] ca = lower.toCharArray();
-			int ix2 = forward(ca, ix + 6, lower.length());
-			while(ix2 < lower.length()-1 && Character.isDigit(ca[ix2])) {
-				ix2++;
-			}
-			if(ix > 0) {
-				int i = reverse(ca, ix-1);
-				if(i != -1) {
-					ix = i + 1;
-				}
-			}
-			sb.delete(ix, ix2+1);
-			lower = sb.toString().trim().toLowerCase();
-		}
-		ix = lower.indexOf("include:");
-		if(ix == -1) {
-			return sb.append(" LIMIT ").append(limit).toString().trim();
-		} else {
-			StringBuilder sb2 = new StringBuilder(sb.length() + 15);
-			if(ix > 0) {
-				sb2.append(sb, 0, ix);
-			}
-			if(sb2.length() > 0 && sb2.charAt(sb2.length()-1) != ' ') {
-				sb2.append(' ');
-			}
-			sb2.append("LIMIT ").append(limit).append(' ').append(sb, ix, sb.length());
-			return sb2.toString().trim();
-		}
-	}
-	
-	public static String paginate(String sql, int page, int perPage) {
-		int offset = (((page < 1) ? 1 : page) - 1) * perPage;
-		int limit = perPage;
-		if(blank(sql)) {
-			return "LIMIT " + offset + "," + limit;
-		}
-		int ix = sql.toLowerCase().indexOf("include:");
-		if(ix == -1) {
-			return sql.trim() + " LIMIT " + offset + "," + limit;
-		}
-		StringBuilder sb = new StringBuilder(sql.length() + 20);
-		if(ix > 0) {
-			sb.append(sql, 0, ix);
-		}
-		sb.append("LIMIT ").append(offset).append(',').append(limit).append(' ').append(sql, ix, sql.length());
-		return sb.toString();
-	}
-
 	public static Map<String, Object> asFieldMap(ResultSet rs) {
 		try {
 			List<String> columns = new ArrayList<String>();
@@ -327,13 +270,7 @@ public class SqlUtils {
 					String column = columns.get(i);
 					int type = meta.getColumnType(i+1);
 					String var = StringUtils.varName(column);
-					if(Types.SMALLINT == type) {
-						map.put(var, rs.getBoolean(i+1));
-					} else if(Types.BLOB == type) {
-						map.put(var, rs.getBytes(i+1));
-					} else {
-						map.put(var, rs.getObject(i+1));
-					}
+					map.put(var, get(type, rs, i+1));
 				}
 				return map;
 			}
@@ -381,58 +318,7 @@ public class SqlUtils {
 		}
 		return new ArrayList<Map<String,Object>>(0);
 	}
-
-	public static List<Map<String, Map<String, Object>>> asNestedFieldMaps(ResultSet rs) throws SQLException {
-		try {
-			List<Map<String, Map<String, Object>>> maps = new ArrayList<Map<String,Map<String,Object>>>();
-			List<String> columns = new ArrayList<String>();
-			ResultSetMetaData meta = rs.getMetaData();
-			for(int i = 1; i <= meta.getColumnCount(); i++) {
-				columns.add(meta.getColumnName(i));
-			}
-			while(rs.next()) {
-				Map<String, Map<String, Object>> row = new TreeMap<String, Map<String,Object>>(new Comparator<String>() {
-					public int compare(String o1, String o2) {
-						if(o1.equals(o2)) {
-							return 0;
-						}
-						int i1 = 0;
-						for(int i = 0; i < o1.length(); i++) {
-							i1 += o1.charAt(i);
-						}
-						int i2 = 0;
-						for(int i = 0; i < o2.length(); i++) {
-							i2 += o2.charAt(i);
-						}
-						return (i1 > i2) ? 1 : -1;
-					};
-				});
-				for(int i = 0; i < columns.size(); i++) {
-					String column = columns.get(i);
-					String[] sa = column.trim().split("\\s*_\\s*", 2);
-					String key = sa[0].toLowerCase();
-					String var = varName(sa[1]);
-					int type = meta.getColumnType(i+1);
-					if(!row.containsKey(key)) {
-						row.put(key, new HashMap<String, Object>());
-					}
-					if(Types.SMALLINT == type) {
-						row.get(key).put(var, rs.getBoolean(i+1));
-					} else if(Types.BLOB == type) {
-						row.get(key).put(var, rs.getBytes(i+1));
-					} else {
-						row.get(key).put(var, rs.getObject(i+1));
-					}
-				}
-				maps.add(row);
-			}
-			return maps;
-		} catch(Exception e) {
-			logger.warn(e);
-		}
-		return new ArrayList<Map<String,Map<String,Object>>>(0);
-	}
-
+	
 	/**
 	 * return a list of the first column in the result set
 	 * @param rs
@@ -476,7 +362,7 @@ public class SqlUtils {
 		}
 		return null;
 	}
-	
+
 	public static List<List<Object>> asLists(Connection connection, String sql, boolean includeHeader) throws SQLException {
 		Statement s = null;
 		ResultSet rs = null;
@@ -518,6 +404,51 @@ public class SqlUtils {
 		}
 		return new ArrayList<List<Object>>(0);
 	}
+
+	public static List<Map<String, Map<String, Object>>> asNestedFieldMaps(ResultSet rs) throws SQLException {
+		try {
+			List<Map<String, Map<String, Object>>> maps = new ArrayList<Map<String,Map<String,Object>>>();
+			List<String> columns = new ArrayList<String>();
+			ResultSetMetaData meta = rs.getMetaData();
+			for(int i = 1; i <= meta.getColumnCount(); i++) {
+				columns.add(meta.getColumnName(i));
+			}
+			while(rs.next()) {
+				Map<String, Map<String, Object>> row = new TreeMap<String, Map<String,Object>>(new Comparator<String>() {
+					public int compare(String o1, String o2) {
+						if(o1.equals(o2)) {
+							return 0;
+						}
+						int i1 = 0;
+						for(int i = 0; i < o1.length(); i++) {
+							i1 += o1.charAt(i);
+						}
+						int i2 = 0;
+						for(int i = 0; i < o2.length(); i++) {
+							i2 += o2.charAt(i);
+						}
+						return (i1 > i2) ? 1 : -1;
+					};
+				});
+				for(int i = 0; i < columns.size(); i++) {
+					String column = columns.get(i);
+					String[] sa = column.trim().split("\\s*_\\s*", 2);
+					String key = sa[0].toLowerCase();
+					String var = varName(sa[1]);
+					int type = meta.getColumnType(i+1);
+					if(!row.containsKey(key)) {
+						row.put(key, new HashMap<String, Object>());
+					}
+					row.get(key).put(var, get(type, rs, i+1));
+				}
+				maps.add(row);
+			}
+			return maps;
+		} catch(Exception e) {
+			logger.warn(e);
+		}
+		return new ArrayList<Map<String,Map<String,Object>>>(0);
+	}
 	
 	public static String createIndexSql(String table, boolean unique, String...columns) {
 		StringBuilder sb = new StringBuilder();
@@ -540,6 +471,15 @@ public class SqlUtils {
 		return sb.toString();
 	}
 	
+	private static Object get(int type, ResultSet resultSet, int columnIndex) throws SQLException {
+		switch(type) {
+		case Types.BLOB:		return resultSet.getBytes(columnIndex);
+		case Types.CLOB:		return resultSet.getString(columnIndex);
+		case Types.SMALLINT:	return resultSet.getBoolean(columnIndex);
+		default:				return resultSet.getObject(columnIndex);
+		}
+	}
+
 	public static String getColumnType(Class<?> clazz) {
 		return getColumnType(clazz.getCanonicalName());
 	}
@@ -629,7 +569,7 @@ public class SqlUtils {
 		
 		return Types.VARCHAR;
 	}
-
+	
 	public static List<String> getStatements(String sql) {
 		List<String> stmts = new ArrayList<String>();
 		for(String stmt : sql.split(";")) {
@@ -663,8 +603,8 @@ public class SqlUtils {
     		return false;
     	}
     }
-	
-    public static boolean isUpdate(String sql) {
+
+	public static boolean isUpdate(String sql) {
     	try {
 	    	String cmd = sql.trim().split(" ", 2)[0].toUpperCase();
 	    	return (cmd.equals("INSERT") || cmd.equals("UPDATE") || cmd.equals("DELETE") || 
@@ -673,6 +613,63 @@ public class SqlUtils {
     		return false;
     	}
     }
+	
+	public static String limit(String sql, int limit) {
+		if(blank(sql)) {
+			return "LIMIT " + limit;
+		}
+		StringBuilder sb = new StringBuilder(sql.length() + 15);
+		sb.append(sql);
+		String lower = sql.toLowerCase();
+		int ix = lower.indexOf("limit ");
+		if(ix != -1) {
+			char[] ca = lower.toCharArray();
+			int ix2 = forward(ca, ix + 6, lower.length());
+			while(ix2 < lower.length()-1 && Character.isDigit(ca[ix2])) {
+				ix2++;
+			}
+			if(ix > 0) {
+				int i = reverse(ca, ix-1);
+				if(i != -1) {
+					ix = i + 1;
+				}
+			}
+			sb.delete(ix, ix2+1);
+			lower = sb.toString().trim().toLowerCase();
+		}
+		ix = lower.indexOf("include:");
+		if(ix == -1) {
+			return sb.append(" LIMIT ").append(limit).toString().trim();
+		} else {
+			StringBuilder sb2 = new StringBuilder(sb.length() + 15);
+			if(ix > 0) {
+				sb2.append(sb, 0, ix);
+			}
+			if(sb2.length() > 0 && sb2.charAt(sb2.length()-1) != ' ') {
+				sb2.append(' ');
+			}
+			sb2.append("LIMIT ").append(limit).append(' ').append(sb, ix, sb.length());
+			return sb2.toString().trim();
+		}
+	}
+	
+    public static String paginate(String sql, int page, int perPage) {
+		int offset = (((page < 1) ? 1 : page) - 1) * perPage;
+		int limit = perPage;
+		if(blank(sql)) {
+			return "LIMIT " + offset + "," + limit;
+		}
+		int ix = sql.toLowerCase().indexOf("include:");
+		if(ix == -1) {
+			return sql.trim() + " LIMIT " + offset + "," + limit;
+		}
+		StringBuilder sb = new StringBuilder(sql.length() + 20);
+		if(ix > 0) {
+			sb.append(sql, 0, ix);
+		}
+		sb.append("LIMIT ").append(offset).append(',').append(limit).append(' ').append(sql, ix, sql.length());
+		return sb.toString();
+	}
     
     /**
 	 * Escapes the word if it is an SQL reserved word by surrounding it with quotes (").
@@ -681,6 +678,13 @@ public class SqlUtils {
 	 */
 	public static String safeSqlWord(String column) {
 		return reservedWords.contains(column) ? ("\"" + column + "\"") : column;
+	}
+    
+    public static void setObject(PreparedStatement ps, int index, Object object) throws SQLException {
+    	if(object == null) {
+    		throw new SQLException("cannot determine the sql type of a null object");
+    	}
+		setObject(ps, index, object, getSqlType(object.getClass()));
 	}
     
     public static void setObject(PreparedStatement ps, int index, Object object, int type) throws SQLException {
@@ -694,13 +698,6 @@ public class SqlUtils {
 				ps.setObject(index, object, type);
 			}
     	}
-	}
-    
-    public static void setObject(PreparedStatement ps, int index, Object object) throws SQLException {
-    	if(object == null) {
-    		throw new SQLException("cannot determine the sql type of a null object");
-    	}
-		setObject(ps, index, object, getSqlType(object.getClass()));
 	}
     
 }

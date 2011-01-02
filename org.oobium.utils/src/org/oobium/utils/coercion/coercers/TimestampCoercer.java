@@ -40,7 +40,7 @@ public class TimestampCoercer extends AbstractCoercer {
 			}
 			return new Timestamp(Long.parseLong(str));
 		} catch(NumberFormatException e) {
-			throw new IllegalArgumentException(str + " failed to parse correctly when trying to coerse into a Timestamp)");
+			throw new IllegalArgumentException(str + " failed to parse correctly when trying to coerce into a Timestamp)");
 		}
 	}
 	

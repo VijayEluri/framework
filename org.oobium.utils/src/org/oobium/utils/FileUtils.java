@@ -181,7 +181,7 @@ public class FileUtils {
 		for(String path : paths) {
 			String[] parts = path.split("/");
 			for(String part : parts) {
-				sb.append(File.separator).append(part);
+				sb.append(File.separatorChar).append(part);
 			}
 		}
 		File folder = new File(sb.toString());
@@ -361,18 +361,6 @@ public class FileUtils {
 				while((len = in.read(buf)) > 0) {
 					out.write(buf, 0, len);
 				}
-
-				if(flags > 0) {
-					if((flags & EXECUTABLE) != 0) {
-						dst.setExecutable(true);
-					}
-					if((flags & READ_ONLY) != 0) {
-						dst.setReadOnly();
-					}
-					if((flags & PERSIST_LAST_MODIFIED) != 0) {
-						dst.setLastModified(src.lastModified());
-					}
-				}
 			} finally {
 				if(in != null) {
 					try {
@@ -386,6 +374,17 @@ public class FileUtils {
 						out.close();
 					} catch(IOException e) {
 						// throw away
+					}
+				}
+				if(flags > 0) {
+					if((flags & EXECUTABLE) != 0) {
+						dst.setExecutable(true);
+					}
+					if((flags & READ_ONLY) != 0) {
+						dst.setReadOnly();
+					}
+					if((flags & PERSIST_LAST_MODIFIED) != 0) {
+						dst.setLastModified(src.lastModified());
 					}
 				}
 			}
@@ -484,6 +483,19 @@ public class FileUtils {
 	
 	public static File[] findJavaFiles(File folder) {
 		return findFiles(folder, true, ".java");
+	}
+	
+	/**
+	 * Gets an absolute file to the current file system. If the given
+	 * location is already absolute then it is simply returned; otherwise
+	 * it is appended to the given base, which must be absolute itsself.
+	 */
+	public static File getAbsolute(String location, String base) {
+		File file = new File(location);
+		if(!file.isAbsolute()) {
+			file = new File(base, location);
+		}
+		return file;
 	}
 	
 	public static long getLastModified(File...files) {
@@ -606,10 +618,16 @@ public class FileUtils {
 
 	/**
 	 * Convenience method for copyJarEntry(src, entryName, dst, OVER_WRITE | PERSIST_LAST_MODIFIED)
+	 * @param src the jar file
+	 * @param entryName the name of the entry in the jar file to be used as the source
+	 * @param dst the destination
+	 * @return the destination file
+	 * @throws IOException if there is a problem reading or writing to the file system
+	 * @throws {@link IllegalArgumentException} if the entryName does not exist in the given source jar
 	 * @see #copyJarEntry(File, String, File, int)
 	 */
-	public static void copyJarEntry(File src, String entryName, File dst) throws IOException {
-		copyJarEntry(src, entryName, dst, OVER_WRITE | PERSIST_LAST_MODIFIED);
+	public static File copyJarEntry(File src, String entryName, File dst) throws IOException {
+		return copyJarEntry(src, entryName, dst, OVER_WRITE | PERSIST_LAST_MODIFIED);
 	}
 	
 	/**
@@ -621,20 +639,24 @@ public class FileUtils {
 	 * @param entryName the name of the entry in the jar file to be used as the source
 	 * @param dst the destination
 	 * @param flags
+	 * @return the destination file
+	 * @throws IOException if there is a problem reading or writing to the file system
+	 * @throws {@link IllegalArgumentException} if the entryName does not exist in the given source jar
 	 */
-	public static void copyJarEntry(File src, String entryName, File dst, int flags) throws IOException {
+	public static File copyJarEntry(File src, String entryName, File dst, int flags) throws IOException {
 		if(!src.isFile()) {
-			return;
+			logger.info("nothing to copy: no file at " + src);
+			return null;
 		}
 		if(dst.isDirectory()) {
-			String name = (File.separatorChar != '/') ? entryName.replaceAll("/", File.separator) : entryName;
+			String name = (File.separatorChar != '/') ? entryName.replace('/', File.separatorChar) : entryName;
 			dst = new File(dst, name);
 		}
 		if(dst.exists() && ((flags & OVER_WRITE) != 0)) {
 			if(logger.isLoggingDebug()) {
 				logger.debug("skipping " + dst.getName());
 			}
-			return;
+			return dst;
 		} else {
 			if(logger.isLoggingDebug()) {
 				logger.debug("copying jar entry " + dst.getName());
@@ -647,7 +669,7 @@ public class FileUtils {
 			jar = new JarFile(src);
 			ZipEntry entry = jar.getEntry(entryName);
 			if(entry == null) {
-				return;
+				throw new IllegalArgumentException("entry \"" + entryName + "\" does not exist in " + src.getName());
 			}
 
 			if(!dst.exists()) {
@@ -683,6 +705,7 @@ public class FileUtils {
 					}
 				}
 			}
+			return dst;
 		} finally {
 			if(jar != null) {
 				try {
