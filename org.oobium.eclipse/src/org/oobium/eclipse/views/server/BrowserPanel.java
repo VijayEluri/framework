@@ -224,13 +224,11 @@ public class BrowserPanel extends Composite {
 	}
 	
 	public void go() {
-		if(goAction.isEnabled()) {
-			String location = locationBar.getText();
-			if(location.length() > 0 && location.indexOf("://") == -1) {
-				location = "http://" + location;
-			}
-			go(location, false);
+		String location = locationBar.getText();
+		if(location.length() > 0 && location.indexOf("://") == -1) {
+			location = "http://" + location;
 		}
+		go(location, false);
 	}
 	
 	private void go(String url, boolean internal) {
