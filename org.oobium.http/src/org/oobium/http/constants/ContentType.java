@@ -18,8 +18,8 @@ import java.util.Map;
 public enum ContentType {
 
 	ALL("*", "*"),
-	AUDIO("audio", "x-wav", true),
-	AUDIO_WAV("audio", "x-wav", true),
+	AUDIO("audio", "wav", true),
+	AUDIO_WAV("audio", "wav", true),
 	CSS("text", "css"),
 	IMG("image", "png", true),
 	IMG_ICO("image", "ico", true),
@@ -37,7 +37,13 @@ public enum ContentType {
 	XML("text", "xml", "xml"),
 	UNKNOWN("unknown","unknown");
 
-	private static Map<String, ContentType> contentTypes; 
+	private static Map<String, String> synonyms;
+	static {
+		synonyms = new HashMap<String, String>();
+		synonyms.put("audio/x-wav", "audio/wav");
+	}
+	
+	private static Map<String, ContentType> contentTypes;
 	
 	public static ContentType getFromExtension(String fileExt) {
 		if(fileExt != null && fileExt.length() > 0) {
@@ -95,16 +101,25 @@ public enum ContentType {
 				return types.toArray(new ContentType[types.size()]);
 			}
 		}
-		return new ContentType[] { ContentType.UNKNOWN };
+		return new ContentType[] { ContentType.HTML };
 	}
 
+	private static String check(String contentType) {
+		String type = synonyms.get(contentType);
+		if(type != null) {
+			return type;
+		}
+		return contentType;
+	}
+	
 	public static ContentType parse(String contentType) {
 		if(contentType != null && contentType.length() > 0) {
-			String[] sa = contentType.split("/");
+			String type = check(contentType);
+			String[] sa = type.split("/");
 			if(sa.length == 2) {
-				for(ContentType type : ContentType.values()) {
-					if(sa[0].equals(type.getType()) && sa[1].equals(type.getSubType())) {
-						return type;
+				for(ContentType value : ContentType.values()) {
+					if(sa[0].equals(value.getType()) && sa[1].equals(value.getSubType())) {
+						return value;
 					}
 				}
 			}
