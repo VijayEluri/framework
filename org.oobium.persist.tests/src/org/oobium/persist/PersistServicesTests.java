@@ -93,7 +93,7 @@ public class PersistServicesTests {
 	@Test
 	public void testMap() throws Exception {
 		String persist = "{service:\"" + Persistor1.class.getName() + "\"," +
-				"classes:[\"" + Model1.class.getName() + "\",\"" + Model2.class.getName() + "\"]}";
+				"models:[\"" + Model1.class.getName() + "\",\"" + Model2.class.getName() + "\"]}";
 		Object object = toObject(persist);
 		PersistServices services = new PersistServices(context, object);
 		assertTrue(services.getFor(Model.class) instanceof NullPersistService);
@@ -104,7 +104,7 @@ public class PersistServicesTests {
 	@Test
 	public void testMap_OneClass() throws Exception {
 		String persist = "{service:\"" + Persistor1.class.getName() + "\"," +
-				"classes:\"" + Model1.class.getName() + "\"}";
+				"models:\"" + Model1.class.getName() + "\"}";
 		Object object = toObject(persist);
 		PersistServices services = new PersistServices(context, object);
 		assertTrue(services.getFor(Model.class) instanceof NullPersistService);
@@ -115,7 +115,7 @@ public class PersistServicesTests {
 	@Test
 	public void testList() throws Exception {
 		String persist = "[\"" + Persistor1.class.getName() + "\", {service:\"" + Persistor2.class.getName() + "\"," +
-				"classes:\"" + Model2.class.getName() + "\"}]";
+				"models:\"" + Model2.class.getName() + "\"}]";
 		Object object = toObject(persist);
 		PersistServices services = new PersistServices(context, object);
 		assertTrue(services.getFor(Model.class) instanceof Persistor1);
@@ -128,7 +128,7 @@ public class PersistServicesTests {
 		assertEquals(1, new PersistServices(context, null).getServiceNames().size());
 
 		String persist = "[\"" + Persistor1.class.getName() + "\", {service:\"" + Persistor2.class.getName() + "\"," +
-				"classes:\"" + Model2.class.getName() + "\"}]";
+				"models:\"" + Model2.class.getName() + "\"}]";
 		Object object = toObject(persist);
 		PersistServices services = new PersistServices(context, object);
 		assertEquals(asList(Persistor1.class.getName(), Persistor2.class.getName()), services.getServiceNames());
