@@ -16,10 +16,14 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class LoadTests {
+	
+	private volatile AtomicInteger running;
 
+	@Ignore
 	@Test
 	public void testSerial() throws Exception {
 		long start = System.currentTimeMillis();
@@ -35,9 +39,8 @@ public class LoadTests {
 		System.out.println("average time: " + ((double) duration / requests) + " millis");
 		System.out.println("req / second: " + (int) ((double) requests / ((double) duration / 1000)));
 	}
-
-	private volatile AtomicInteger running;
 	
+	@Ignore
 	@Test
 	public void testParallel() throws Exception {
 		final int iterationsPerThread = 1000;

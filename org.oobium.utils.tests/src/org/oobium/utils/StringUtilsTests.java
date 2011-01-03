@@ -60,8 +60,9 @@ public class StringUtilsTests {
 		assertEquals("model",		underscored("Model"));
 		assertEquals("my_model",	underscored("MyModel"));
 		assertEquals("my_model",	underscored("My Model"));
-		assertEquals("amodel",		underscored("AModel"));
 		assertEquals("a_model",		underscored("A Model"));
+		assertEquals("a_model",		underscored("AModel"));
+		assertEquals("abc_model",	underscored("ABCModel"));
 		assertEquals("com.test.ab",	underscored("com.test.Ab"));
 	}
 	
@@ -88,8 +89,9 @@ public class StringUtilsTests {
 		assertEquals("model",		columnName("Model"));
 		assertEquals("my_model",	columnName("MyModel"));
 		assertEquals("my_model",	columnName("My Model"));
-		assertEquals("amodel",		columnName("AModel"));
 		assertEquals("a_model",		columnName("A Model"));
+		assertEquals("a_model",		columnName("AModel"));
+		assertEquals("abc_model",	columnName("ABCModel"));
 	}
 	
 	@Test

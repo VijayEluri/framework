@@ -11,3 +11,4 @@ Require-Bundle: org.oobium.mailer,
  org.oobium.persist,
  com.sun.mail;bundle-version="1.4.2",
  org.oobium.utils
+Export-Package: org.oobium.mailer

@@ -17,7 +17,6 @@ import static org.oobium.utils.StringUtils.hasserName;
 import org.junit.Test;
 
 
-
 public class InputTests {
 
 	@Test

@@ -285,7 +285,13 @@ public class JsonUtilsTests {
 		assertEquals("{c:'d',a:'b'}", serialize(Map(e('a', 'b'), e('c', 'd'))));
 		assertEquals("{c:\"d\",a:\"b\"}", serialize(Map(e("a", "b"), e("c", "d"))));
 		
-		assertEquals(Map(e('a', 'b'), e('c', 'd')), deserialize("{c:'d',a:'b'}"));
+		Object o = deserialize("{c:'d',a:'b'}");
+		assertTrue(o instanceof Map);
+		
+		Map<?,?> map = (Map<?,?>) o;
+		assertEquals(2, map.size());
+		assertEquals('d', map.get("c"));
+		assertEquals('b', map.get("a"));
 	}
 
 	@Test

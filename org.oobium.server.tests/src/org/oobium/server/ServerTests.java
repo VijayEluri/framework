@@ -7,6 +7,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.ByteBuffer;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -17,6 +18,7 @@ import org.oobium.logging.Logger;
 
 public class ServerTests {
 
+	@Ignore
 	@Test
 	public void testServer() throws Exception {
 		Logger.getLogger(Server.class).setConsoleLevel(Logger.NEVER);

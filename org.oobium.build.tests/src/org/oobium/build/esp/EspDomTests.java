@@ -241,7 +241,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(InnerTextPart));
 
 		offset = 0;
-		esp = "div#id1.c1.c2(k1:v1, k2 : v2 ):s t1 <- div#id2.c3.c4( k3 : v3 ,k4:v4):h t2\n\n\tdiv#id3.c5.c6( k5 : v5 ,k6:v6) t3";
+		esp = "div#id1.c1.c2(k1:v1, k2 : v2 )|s t1 <- div#id2.c3.c4( k3 : v3 ,k4:v4)|h t2\n\n\tdiv#id3.c5.c6( k5 : v5 ,k6:v6) t3";
 		assertEquals("div", dom(esp).getPart(offset++).getText());
 		assertEquals("div", dom(esp).getPart(offset++).getText());
 		assertEquals("div", dom(esp).getPart(offset++).getText());
@@ -279,9 +279,9 @@ public class EspDomTests {
 		assertEquals("t1 ", dom(esp).getPart(offset++).getText());
 		assertEquals("t1 ", dom(esp).getPart(offset++).getText());
 
-		assertEquals("div#id1.c1.c2(k1:v1, k2 : v2 ):s t1 <- div#id2.c3.c4( k3 : v3 ,k4:v4):h t2", dom(esp).getPart(offset++).getText());
-		assertEquals("div#id1.c1.c2(k1:v1, k2 : v2 ):s t1 <- div#id2.c3.c4( k3 : v3 ,k4:v4):h t2", dom(esp).getPart(offset++).getText());
-		assertEquals("div#id1.c1.c2(k1:v1, k2 : v2 ):s t1 <- div#id2.c3.c4( k3 : v3 ,k4:v4):h t2", dom(esp).getPart(offset++).getText());
+		assertEquals("div#id1.c1.c2(k1:v1, k2 : v2 )|s t1 <- div#id2.c3.c4( k3 : v3 ,k4:v4)|h t2", dom(esp).getPart(offset++).getText());
+		assertEquals("div#id1.c1.c2(k1:v1, k2 : v2 )|s t1 <- div#id2.c3.c4( k3 : v3 ,k4:v4)|h t2", dom(esp).getPart(offset++).getText());
+		assertEquals("div#id1.c1.c2(k1:v1, k2 : v2 )|s t1 <- div#id2.c3.c4( k3 : v3 ,k4:v4)|h t2", dom(esp).getPart(offset++).getText());
 
 		assertEquals("div", dom(esp).getPart(offset++).getText());
 		assertEquals("div", dom(esp).getPart(offset++).getText());
@@ -765,13 +765,15 @@ public class EspDomTests {
 	
 	@Test
 	public void testHtmlHidden() throws Exception {
-		assertTrue(elem("div:hidden", HtmlElement.class).isHidden());
-		assertTrue(elem("div:hidden text", HtmlElement.class).isHidden());
-		assertTrue(elem("div#myDiv:hidden", HtmlElement.class).isHidden());
-		assertTrue(elem("div.myClass:hidden", HtmlElement.class).isHidden());
-		assertTrue(elem("div(key1:val1):hidden", HtmlElement.class).isHidden());
-		assertTrue(elem("div():hidden", HtmlElement.class).isHidden());
-		assertFalse(elem("div :hidden", HtmlElement.class).isHidden());
+		assertTrue(elem("div|hide", HtmlElement.class).isHidden());
+		assertTrue(elem("div|hide text", HtmlElement.class).isHidden());
+		assertTrue(elem("div#myDiv|hide", HtmlElement.class).isHidden());
+		assertTrue(elem("div.myClass|hide", HtmlElement.class).isHidden());
+		assertTrue(elem("div(key1:val1)|hide", HtmlElement.class).isHidden());
+		assertTrue(elem("div|hide(key1:val1)", HtmlElement.class).isHidden());
+		assertTrue(elem("div()|hide", HtmlElement.class).isHidden());
+		assertTrue(elem("div|hide()", HtmlElement.class).isHidden());
+		assertFalse(elem("div |hide", HtmlElement.class).isHidden());
 	}
 	
 	@Test

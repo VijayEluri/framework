@@ -7,3 +7,4 @@ Bundle-Vendor: oobium.org
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Require-Bundle: org.oobium.console,
  org.junit;bundle-version="4.8.1"
+Export-Package: org.oobium.console

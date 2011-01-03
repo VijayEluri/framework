@@ -69,32 +69,28 @@ public class EssCompilerTests {
 	public void testCssOnly() throws Exception {
 		String ess;
 		ess = ".myClass { color: red }";
-		assertEquals("sb.append(\".myClass{color:red}\");", css(ess));
+		assertEquals("__sb__.append(\".myClass{color:red}\");", css(ess));
 
 		ess = ".myClass { color: red }\n\n.myOtherClass\n\tcolor: blue";
-		assertEquals("sb.append(\".myClass{color:red} .myOtherClass{color:blue}\");", css(ess));
+		assertEquals("__sb__.append(\".myClass{color:red} .myOtherClass{color:blue}\");", css(ess));
 
 		ess = 	"input:not([type=submit])\n"+
-				"\tborder: 1px solid black\n"+
-				"\tpadding: 3px 6px\n"+
-				"\twidth: 200px\n"+
-				"\tbackground-color: #eee\n"+
 				"\t-moz-border-radius: 8px\n"+
 				"\tborder-radius: 8px\n"+
 				"input[type=text]\n"+
 				"\tcolor: grey";
 
-		assertEquals("sb.append(\"input[type=text]{color:red}\");", css(ess));
+		assertEquals("__sb__.append(\"input:not([type=submit]){-moz-border-radius:8px;border-radius:8px} input[type=text]{color:grey}\");", css(ess));
 	}
 
 	@Test
 	public void testJava() throws Exception {
 		String ess;
 		ess = ".myClass { width = (width * 2) + \"px\" }";
-		assertEquals("sb.append(\".myClass{width:\").append((width * 2) + \"px\").append(\"}\");", css(ess));
+		assertEquals("__sb__.append(\".myClass{width:\").append((width * 2) + \"px\").append(\"}\");", css(ess));
 
 		ess = "-int width = 10;\n\n.myClass { width = (width * 2) + \"px\" }";
-		assertEquals("int width = 10;\nsb.append(\".myClass{width:\").append((width * 2) + \"px\").append(\"}\");", css(ess));
+		assertEquals("int width = 10;\n__sb__.append(\".myClass{width:\").append((width * 2) + \"px\").append(\"}\");", css(ess));
 	}
 
 }

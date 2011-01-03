@@ -11,3 +11,4 @@ Require-Bundle: org.junit4,
  org.oobium.http,
  org.oobium.logging,
  org.oobium.server
+Export-Package: org.oobium.server

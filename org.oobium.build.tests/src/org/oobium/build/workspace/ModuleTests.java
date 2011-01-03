@@ -109,10 +109,10 @@ public class ModuleTests {
 		Manifest manifest = getManifest("Bundle-Version", "1.2.3.qualifier");
 		Module module = new Module(Module, file, manifest);
 		
-		assertEquals(new File(module.views, "notice"), module.getViewsFolder("notice"));
-		assertEquals(new File(module.views, "notice"), module.getViewsFolder("Notice"));
-		assertEquals(new File(module.views, "simple_notice"), module.getViewsFolder("SimpleNotice"));
-		assertEquals(new File(module.views, "simple_notice"), module.getViewsFolder("simpleNotice"));
+		assertEquals(new File(module.views, "notices"), module.getViewsFolder("notice"));
+		assertEquals(new File(module.views, "notices"), module.getViewsFolder("Notice"));
+		assertEquals(new File(module.views, "simple_notices"), module.getViewsFolder("SimpleNotice"));
+		assertEquals(new File(module.views, "simple_notices"), module.getViewsFolder("simpleNotice"));
 	}
 	
 }

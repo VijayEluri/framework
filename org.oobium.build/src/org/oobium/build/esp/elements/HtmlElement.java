@@ -346,7 +346,7 @@ public class HtmlElement extends EspElement {
 		
 		s1 = commentCheck(this, s1);
 		if((style & STYLES) != 0) {
-			if(s1 < eoe && ca[s1] == '|') { // Styles
+			if(s1 < eoe && ca[s1] == '|') { // Styles (before arguments)
 				int s2 = s1 + 1;
 				while(s2 < eoe && Character.isLetter(ca[s2])) {
 					s2++;
@@ -371,6 +371,21 @@ public class HtmlElement extends EspElement {
 					parseArgs(s1, s2);
 				}
 				s1 = s2 + 1;
+			}
+		}
+		
+		s1 = commentCheck(this, s1);
+		if((style & STYLES) != 0) {
+			if(s1 < eoe && ca[s1] == '|') { // Styles (after arguments)
+				int s2 = s1 + 1;
+				while(s2 < eoe && Character.isLetter(ca[s2])) {
+					s2++;
+				}
+				if(isEqual(ca, s1+1, s2, "hide")) {
+					hide = true;
+				}
+				new EspPart(this, Type.StylePart, s1+1, s2);
+				s1 = s2;
 			}
 		}
 		

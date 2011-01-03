@@ -69,15 +69,10 @@ public class EjsCompilerTests {
 	public void testJsOnly() throws Exception {
 		String ejs;
 		ejs = "alert('hello');";
-		assertEquals("sb.append(\"alert('hello');\");", js(ejs));
+		assertEquals("__sb__.append(\"alert('hello');\");", js(ejs));
 
 		ejs = "if(true) {\n\talert('hello');\n}";
-		assertEquals("sb.append(\"if(true) {\\n\\talert('hello');\\n}\");", js(ejs));
-	}
-
-	@Test
-	public void testJava() throws Exception {
-		fail("java parts in EJS files is not yet implemented");
+		assertEquals("__sb__.append(\"if(true) {\\n\\talert('hello');\\n}\");", js(ejs));
 	}
 
 }
