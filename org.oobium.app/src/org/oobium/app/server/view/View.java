@@ -700,6 +700,11 @@ public class View implements ICache, IFlash, IParams, IPathRouting, IUrlRouting,
 	public ContentType wants() {
 		return controller.wants();
 	}
+	
+	@Override
+	public ContentType wants(ContentType... options) {
+		return controller.wants(options);
+	}
 
 	@Override
 	public boolean wants(ContentType type) {

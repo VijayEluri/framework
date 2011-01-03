@@ -92,7 +92,6 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 	private Action action;
 	protected HttpRequest request;
 	protected Response response;
-	private ContentType[] responseTypes;
 	private Map<String, Object> params;
 	private Map<String, Object> flash;
 	private Map<String, Object> flashOut;
@@ -1095,7 +1094,6 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		action = null;
 		request = null;
 		response = null;
-		responseTypes = null;
 		if(params != null) params.clear();
 		params = null;
 		if(flash != null) flash.clear();
@@ -1147,10 +1145,6 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 
 	protected void setCacheForAction(String content) {
 		setCacheForAction(action, content);
-	}
-
-	public void setContentTypesHandled(ContentType...types) {
-		responseTypes = types;
 	}
 
 	@Override
@@ -1314,15 +1308,24 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 	@Override
 	public ContentType wants() {
 		ContentType[] requestTypes = request.getContentTypes();
+		if(requestTypes != null && requestTypes.length > 0) {
+			return requestTypes[0];
+		}
+		return ContentType.UNKNOWN;
+	}
+
+	@Override
+	public ContentType wants(ContentType...options) {
+		ContentType[] requestTypes = request.getContentTypes();
 		if(!blank(requestTypes)) {
-			if(blank(responseTypes)) {
+			if(blank(options)) {
 				return request.getContentTypes()[0];
 			} else {
 				for(ContentType accept : requestTypes) {
 					if(accept.isWild()) {
-						return responseTypes[0];
+						return options[0];
 					} else {
-						for(ContentType produce : responseTypes) {
+						for(ContentType produce : options) {
 							if(accept == produce) {
 								return accept;
 							}

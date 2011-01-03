@@ -29,6 +29,7 @@ public interface IHelpers {
 
 	public abstract ContentType wants();
 	public abstract boolean wants(ContentType type);
+	public abstract ContentType wants(ContentType...options);
 	public abstract boolean wantsHtml();
 	public abstract boolean wantsImage();
 	public abstract boolean wantsJS();
