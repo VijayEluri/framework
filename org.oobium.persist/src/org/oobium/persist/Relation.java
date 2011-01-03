@@ -67,11 +67,52 @@ public @interface Relation {
 	 */
 	public static final int SET_NULL = 4;
 
+	/**
+	 * Destroy the related model object when this model is destroyed. This will instantiate the related model and then call
+	 * its destroy method, thereby running any validations and/or observers.
+	 * <p>This is handled at the Model level.</p>
+	 * @see Relation#dependent()
+	 */
+	public static final int DESTROY = 0;
+
+	/**
+	 * Delete the related model object when this model is destroyed. The will delete the model from persistent storage
+	 * without instantiating it or calling its destroy method, thereby skipping its validations and observers.
+	 * <p>This may be better achieved by setting the opposite relation's onDelete property to CASCADE</p>
+	 * <p>This is handled at the Persistor level.</p>
+	 * @see Relation#dependent()
+	 * @see Relation#onDelete()
+	 */
+	public static final int DELETE = 1;
+
+	/**
+	 * Similar to {@link Relation#DELETE}, this sets the foreign key of the related model to null when this
+	 * model is destroyed.
+	 * <p>This may be better achieved by setting the opposite relation's onDelete property to SET_NULL</p>
+	 * <p>This is handled at the Persistor level.</p>
+	 * @see Relation#dependent()
+	 * @see Relation#onDelete()
+	 */
+	public static final int NULLIFY = 2;
+
 	
 	/**
 	 * Not yet implemented
 	 */
 	Class<?> backedBy() default Set.class;
+	
+	/**
+	 * Specify what to do with dependent (related) model objects when this model is destroyed.
+	 * <p><b>Valid only for both has one and has many relationships</b></p>
+	 * <dl>
+	 *   <dt>options:</dt>
+	 *   <dd>{@link Relation#DESTROY}</dd>
+	 *   <dd>{@link Relation#DELETE}</dd>
+	 *   <dd>{@link Relation#NULLIFY}</dd>
+	 * </dl>
+	 * <p>default is UNDEFINED, meaning that it is not used</p>
+	 */
+	int dependent() default UNDEFINED;
 
 	/**
 	 * If set true, specifies that this field should always be included (eagerly loaded) when loading the model.<br/>

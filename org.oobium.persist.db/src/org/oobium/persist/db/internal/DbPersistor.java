@@ -35,6 +35,7 @@ import java.util.Map.Entry;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
+import org.oobium.persist.Relation;
 import org.oobium.persist.RequiredSet;
 import org.oobium.persist.db.DbPersistService;
 import org.oobium.utils.StringUtils;
@@ -111,9 +112,33 @@ public class DbPersistor {
 		}
 	}
 
+	private void handleDependentDelete(Connection connection, ModelAdapter adapter, Model model, String field) throws SQLException {
+		throw new UnsupportedOperationException("not yet implemented");
+	}
+	
+	private void handleDependentNullify(Connection connection, ModelAdapter adapter, Model model, String field) throws SQLException {
+		throw new UnsupportedOperationException("not yet implemented");
+	}
+	
+	private void handleDependents(Connection connection, Model model) throws SQLException {
+		ModelAdapter adapter = ModelAdapter.getAdapter(model);
+		for(String field : adapter.getRelations()) {
+			Relation relation = adapter.getRelation(field);
+			switch(relation.dependent()) {
+			case Relation.DELETE:
+				handleDependentDelete(connection, adapter, model, field);
+				break;
+			case Relation.NULLIFY:
+				handleDependentNullify(connection, adapter, model, field);
+				break;
+			}
+		}
+	}
+	
 	public void destroy(Connection connection, Model[] models) throws SQLException {
-		for(Model adapter : models) {
-			doDestroy(connection, adapter);
+		for(Model model : models) {
+			handleDependents(connection, model);
+			doDestroy(connection, model);
 		}
 	}
 

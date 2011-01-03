@@ -11,10 +11,10 @@
 package org.oobium.persist;
 
 import static org.oobium.persist.ModelAdapter.getAdapter;
-import static org.oobium.utils.json.JsonUtils.toList;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.titleize;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
+import static org.oobium.utils.json.JsonUtils.toList;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
@@ -288,7 +288,7 @@ public abstract class Model implements JsonModel {
 		}
 		return false;
 	}
-	
+
 	public boolean destroy() {
 		if(id == 0) {
 			addError("cannot destroy a model that has not been saved");
@@ -300,6 +300,8 @@ public abstract class Model implements JsonModel {
 						try {
 							getPersistor().destroy(this);
 							id = 0;
+							destroyDependents();
+							fields.clear();
 							Observer.runAfterDestroy(this);
 						} catch(SQLException e) {
 							logger.warn("failed to destroy " + asSimpleString(), e);
@@ -313,6 +315,26 @@ public abstract class Model implements JsonModel {
 			}
 		}
 		return false;
+	}
+
+	private void destroyDependents() {
+		ModelAdapter adapter = ModelAdapter.getAdapter(this);
+		for(String field : adapter.getRelations()) {
+			Relation relation = adapter.getRelation(field);
+			if(relation.dependent() == Relation.DESTROY) {
+				if(adapter.hasOne(field)) {
+					Model related = (Model) get(field);
+					if(related != null) {
+						related.destroy();
+					}
+				} else {
+					Collection<?> related = (Collection<?>) get(field);
+					for(Object o : related) {
+						((Model) o).destroy();
+					}
+				}
+			}
+		}
 	}
 	
 	private boolean doCreate() {
@@ -727,17 +749,13 @@ public abstract class Model implements JsonModel {
 	}
 	
     /**
-	 * Sets this model's fields to those of the given model.
-	 * The existing fields will first be cleared and then the
-	 * given model's fields will be passed into the {@link #setAll(Map)}
-	 * method of this model.
+	 * Puts the fields of the given model into this model.
 	 * @param model
 	 * @see #setAll(Map)
 	 * @return this, for method chaining
 	 */
 	@Override
 	public Model putAll(JsonModel model) {
-		fields.clear();
 		if(model != null) {
 			putAll(model.getAll());
 		}
@@ -1016,9 +1034,12 @@ public abstract class Model implements JsonModel {
 					runValidation(validate, onUpdate);
 				}
 			}
+			if(on == Validate.DESTROY) {
+				validateDependents();
+			}
 		}
 	}
-
+	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void runValidator(Class<?> validatorClass) {
 		try {
@@ -1032,7 +1053,7 @@ public abstract class Model implements JsonModel {
 			logger.warn(e);
 		}
 	}
-	
+
 	public boolean save() {
 		boolean result = false;
 		if(canSave()) {
@@ -1122,7 +1143,7 @@ public abstract class Model implements JsonModel {
 			return coercedValue;
 		}
 	}
-
+	
 	/**
 	 * Sets this model's fields to those of the given map.
 	 * The existing fields will first be cleared and then
@@ -1164,7 +1185,7 @@ public abstract class Model implements JsonModel {
 		}
 		return this;
 	}
-	
+
 	private void setField(String field, Object value) {
 		if("id".equals(field)) {
 			setId(coerce(value, int.class));
@@ -1271,12 +1292,12 @@ public abstract class Model implements JsonModel {
 		}
 		return json;
 	}
-
+	
 	@Override
 	public String toString() {
 		return asSimpleString();
 	}
-	
+
 	public boolean update() {
 		if(isNew()) {
 			addError("cannot update a model that has not been created");
@@ -1290,6 +1311,31 @@ public abstract class Model implements JsonModel {
 	
 	protected void validateCreate() {
 		// subclasses to override
+	}
+	
+	private void validateDependents() {
+		ModelAdapter adapter = ModelAdapter.getAdapter(this);
+		for(String field : adapter.getRelations()) {
+			Relation relation = adapter.getRelation(field);
+			if(relation.dependent() == Relation.DESTROY) {
+				if(adapter.hasOne(field)) {
+					Model related = (Model) get(field);
+					if(related != null) {
+						if(!related.canDestroy()) {
+							addError(field, "is preventing this model from being destroyed");
+						}
+					}
+				} else {
+					Collection<?> related = (Collection<?>) get(field);
+					for(Object o : related) {
+						if(!((Model) o).canDestroy()) {
+							addError(field, "are preventing this model from being destroyed");
+							break;
+						}
+					}
+				}
+			}
+		}
 	}
 	
 	protected void validateDestroy() {
