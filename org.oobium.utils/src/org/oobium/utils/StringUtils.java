@@ -1173,8 +1173,14 @@ public class StringUtils {
 		char[] ca = s.toCharArray();
 		for(int i = 0; i < ca.length; i++) {
 			if(Character.isUpperCase(ca[i])) {
-				if(i != 0 && Character.isLetterOrDigit(ca[i-1]) && !Character.isUpperCase(ca[i-1])) {
+				if(i != 0 && Character.isLetterOrDigit(ca[i-1])) {
+					if(Character.isUpperCase(ca[i-1])) {
+						if(i < ca.length-1 && !Character.isUpperCase(ca[i+1])) {
+							sb.append(sep);
+						}
+					} else {
 						sb.append(sep);
+					}
 				}
 				sb.append(Character.toLowerCase(ca[i]));
 			} else {
