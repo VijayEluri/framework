@@ -1,0 +1,16 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Tests
+Bundle-SymbolicName: org.oobium.framework.tests
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: Oobium.org
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Require-Bundle: org.junit4;bundle-version="4.8.1",
+ org.oobium.app.tests;bundle-version="0.5.0",
+ org.oobium.build.tests;bundle-version="0.5.0",
+ org.oobium.console.tests;bundle-version="0.5.0",
+ org.oobium.mailer.tests;bundle-version="0.5.0",
+ org.oobium.persist.db.tests;bundle-version="0.5.0",
+ org.oobium.persist.tests;bundle-version="0.5.0",
+ org.oobium.server.tests;bundle-version="0.5.0",
+ org.oobium.utils.tests;bundle-version="0.5.0"
