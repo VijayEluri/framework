@@ -219,7 +219,7 @@ public class EspCompilerTests {
 		esp = "head <- script(defaults)";
 		assertTrue(src(esp).hasMethod("doRenderScript"));
 		assertTrue(src(esp).hasMethod("hasScript"));
-		assertEquals("__sb__.append(\"<script src='/jquery-1.4.2.min.js'></script><script src='/application.js'></script>\");", body(src(esp).getMethod("doRenderScript")));
+		assertEquals("__sb__.append(\"<script src='/jquery-1.4.4.js'></script><script src='/application.js'></script>\");", body(src(esp).getMethod("doRenderScript")));
 		assertEquals("return true;", body(src(esp).getMethod("hasScript")));
 
 		esp = "head <- script(myFile)";

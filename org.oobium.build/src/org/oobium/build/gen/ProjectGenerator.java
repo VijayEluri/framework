@@ -189,6 +189,10 @@ public class ProjectGenerator {
 
 			src = StringUtils.getResourceAsString(ProjectGenerator.class, "templates/application.js");
 			writeFile(assetsFolder(project), "scripts/application.js", src);
+
+			// the JQuery version must match between here and in EspCompiler#buildScript
+			src = StringUtils.getResourceAsString(ProjectGenerator.class, "templates/jquery-1.4.4.js");
+			writeFile(assetsFolder(project), "scripts/jquery-1.4.4.js", src);
 		}
 
 		createFolder(project, ".settings");

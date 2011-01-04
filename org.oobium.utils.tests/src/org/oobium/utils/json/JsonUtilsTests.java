@@ -161,7 +161,7 @@ public class JsonUtilsTests {
 		assertEquals("[1, 2'3]", asString(toList("[1,'2\\'3']")));
 		assertEquals("[1, 2'3]", asString(toList("1,'2\\'3'")));
 		
-		assertEquals("[/scripts/jquery-1.4.2.min.js]", asString(toList("([\n\"/scripts/jquery-1.4.2.min.js\"\n]);")));
+		assertEquals("[/scripts/jquery-1.4.4.js]", asString(toList("([\n\"/scripts/jquery-1.4.4.js\"\n]);")));
 	}
 	
 	@Test
@@ -177,7 +177,7 @@ public class JsonUtilsTests {
 		assertEquals("[1, 2, 3]", asString(toStringList("[\"1\",\"2\",\"3\"]")));
 		assertEquals("[1, 2, 3]", asString(toStringList("['1','2','3']")));
 		
-		assertEquals("[/scripts/jquery-1.4.2.min.js]", asString(toStringList("([\n\"/scripts/jquery-1.4.2.min.js\"\n]);")));
+		assertEquals("[/scripts/jquery-1.4.4.js]", asString(toStringList("([\n\"/scripts/jquery-1.4.4.js\"\n]);")));
 	}
 	
 	@Test

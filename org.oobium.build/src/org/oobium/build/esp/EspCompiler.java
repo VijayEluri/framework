@@ -1440,7 +1440,7 @@ public class EspCompiler {
 				for(EspPart arg : element.getArgs()) {
 					String file = arg.getText();
 					if("defaults".equals(file)) {
-						sb.append("<script src='/jquery-1.4.2.min.js'></script>");
+						sb.append("<script src='/jquery-1.4.4.js'></script>");
 						sb.append("<script src='/application.js'></script>");
 					} else {
 						sb.append("<script src='/");
