@@ -58,7 +58,7 @@ public class ModelAttributes {
 		
 		@Override
 		public String init() {
-			return null;
+			return "";
 		}
 		
 		@Override
@@ -68,7 +68,7 @@ public class ModelAttributes {
 		
 		@Override
 		public String check() {
-			return null;
+			return "";
 		}
 	};
 
@@ -115,7 +115,7 @@ public class ModelAttributes {
 		
 		@Override
 		public String init() {
-			return null;
+			return "";
 		}
 		
 		@Override
@@ -125,7 +125,7 @@ public class ModelAttributes {
 		
 		@Override
 		public String check() {
-			return null;
+			return "";
 		}
 	};
 	
@@ -172,7 +172,7 @@ public class ModelAttributes {
 		
 		@Override
 		public String init() {
-			return null;
+			return "";
 		}
 		
 		@Override
@@ -182,7 +182,7 @@ public class ModelAttributes {
 		
 		@Override
 		public String check() {
-			return null;
+			return "";
 		}
 	};
 
@@ -229,7 +229,7 @@ public class ModelAttributes {
 		
 		@Override
 		public String init() {
-			return null;
+			return "";
 		}
 		
 		@Override
@@ -239,7 +239,7 @@ public class ModelAttributes {
 		
 		@Override
 		public String check() {
-			return null;
+			return "";
 		}
 	};
 
