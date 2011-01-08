@@ -4,9 +4,11 @@
  */
 package org.mockito.internal.invocation.realmethod;
 
-import org.mockito.cglib.proxy.MethodProxy;
+import java.io.Serializable;
 
-public interface HasCGLIBMethodProxy {
+import org.mockito.internal.creation.MockitoMethodProxy;
 
-    MethodProxy getMethodProxy();
+public interface HasCGLIBMethodProxy extends Serializable {
+
+    MockitoMethodProxy getMethodProxy();
 }

@@ -4,6 +4,7 @@
  */
 package org.mockito.internal.stubbing.defaultanswers;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -47,8 +48,10 @@ import org.mockito.stubbing.Answer;
  * </li>
  * </ul>
  */
-public class ReturnsEmptyValues implements Answer<Object> {
+public class ReturnsEmptyValues implements Answer<Object>, Serializable {
     
+    private static final long serialVersionUID = 1998191268711234347L;
+
     /* (non-Javadoc)
      * @see org.mockito.stubbing.Answer#answer(org.mockito.invocation.InvocationOnMock)
      */

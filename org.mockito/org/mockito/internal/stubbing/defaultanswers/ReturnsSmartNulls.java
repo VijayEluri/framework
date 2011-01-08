@@ -4,17 +4,18 @@
  */
 package org.mockito.internal.stubbing.defaultanswers;
 
-import java.lang.reflect.Method;
-
 import org.mockito.Mockito;
 import org.mockito.cglib.proxy.MethodInterceptor;
 import org.mockito.cglib.proxy.MethodProxy;
 import org.mockito.exceptions.Reporter;
 import org.mockito.internal.creation.jmock.ClassImposterizer;
 import org.mockito.internal.debugging.Location;
-import org.mockito.internal.invocation.Invocation;
+import org.mockito.internal.util.ObjectMethodsGuru;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+
+import java.io.Serializable;
+import java.lang.reflect.Method;
 
 /**
  * Optional Answer that can be used with
@@ -34,7 +35,9 @@ import org.mockito.stubbing.Answer;
  * ReturnsSmartNulls will be probably the default return values strategy in
  * Mockito 2.0
  */
-public class ReturnsSmartNulls implements Answer<Object> {
+public class ReturnsSmartNulls implements Answer<Object>, Serializable {
+
+    private static final long serialVersionUID = 7618312406617949441L;
 
     private final class ThrowingInterceptor implements MethodInterceptor {
         private final InvocationOnMock invocation;
@@ -45,7 +48,7 @@ public class ReturnsSmartNulls implements Answer<Object> {
         }
 
         public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-            if (Invocation.isToString(method)) {
+            if (new ObjectMethodsGuru().isToString(method)) {
                 return "SmartNull returned by unstubbed " + invocation.getMethod().getName() + "() method on mock";
             }
             

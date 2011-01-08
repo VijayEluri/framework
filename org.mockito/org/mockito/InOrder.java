@@ -4,7 +4,7 @@
  */
 package org.mockito;
 
-import org.mockito.internal.verification.api.VerificationMode;
+import org.mockito.verification.VerificationMode;
 
 /**
  * Allows verification in order. E.g:
@@ -15,6 +15,9 @@ import org.mockito.internal.verification.api.VerificationMode;
  * inOrder.verify(firstMock).add("was called first");
  * inOrder.verify(secondMock).add("was called second");
  * </pre>
+ * 
+ * As of Mockito 1.8.4 you can verifyNoMoreInvocations() in order-sensitive way. Read more: {@link InOrder#verifyNoMoreInteractions()}
+ * <p>
  * 
  * See examples in javadoc for {@link Mockito} class
  */
@@ -58,4 +61,29 @@ public interface InOrder {
      * @return mock object itself
      */
     <T> T verify(T mock, VerificationMode mode);
+
+    
+    /**
+     * Verifies that no more interactions happened <b>in order</b>. 
+     * Different from {@link Mockito#verifyNoMoreInteractions(Object...)} because the order of verification matters.
+     * <p>
+     * Example:
+     * <pre>
+     * mock.foo(); //1st
+     * mock.bar(); //2nd
+     * mock.baz(); //3rd
+     * 
+     * InOrder inOrder = inOrder(mock);
+     * 
+     * inOrder.verify(mock).bar(); //2n
+     * inOrder.verify(mock).baz(); //3rd (last method)
+     * 
+     * //passes because there are no more interactions after last method:
+     * inOrder.verifyNoMoreInteractions();
+     * 
+     * //however this fails because 1st method was not verified:
+     * Mockito.verifyNoMoreInteractions(mock);
+     * </pre>
+     */
+    void verifyNoMoreInteractions();
 }

@@ -4,6 +4,8 @@
  */
 package org.mockito;
 
+import java.io.Serializable;
+
 import org.mockito.stubbing.Answer;
 
 /**
@@ -31,7 +33,7 @@ import org.mockito.stubbing.Answer;
  * Firstly, to make it easy to add another mock setting when the demand comes.
  * Secondly, to enable combining together different mock settings without introducing zillions of overloaded mock() methods.
  */
-public interface MockSettings {
+public interface MockSettings extends Serializable {
     
     /**
      * Specifies extra interfaces the mock should implement. Might be useful for legacy code or some corner cases.
@@ -122,4 +124,21 @@ public interface MockSettings {
      */
     @SuppressWarnings("unchecked")
     MockSettings defaultAnswer(Answer defaultAnswer);
+
+    /**
+     * Configures the mock to be serializable. With this feature you can use a mock in a place that requires dependencies to be serializable.
+     * <p>
+     * WARNING: This should be rarely used in unit testing.
+     * <p>
+     * The behaviour was implemented for a specific use case of a BDD spec that had an unreliable external dependency.  This
+     * was in a web environment and the objects from the external dependency were being serialized to pass between layers.
+     * <p>
+     * Example:
+     * <pre>
+     *   List serializableMock = mock(List.class, withSettings().serializable());
+     * </pre>
+     *
+     * @return settings instance so that you can fluently specify other settings
+     */
+    MockSettings serializable();
 }

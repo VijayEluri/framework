@@ -4,13 +4,16 @@
  */
 package org.mockito.internal.matchers;
 
+import java.io.Serializable;
+
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.mockito.ArgumentMatcher;
 
 @SuppressWarnings("unchecked")
-public class Not extends ArgumentMatcher {
+public class Not extends ArgumentMatcher implements Serializable {
 
+    private static final long serialVersionUID = 4627373642333593264L;
     private final Matcher first;
 
     public Not(Matcher first) {

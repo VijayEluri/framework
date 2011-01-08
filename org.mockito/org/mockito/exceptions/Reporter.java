@@ -28,6 +28,9 @@ import org.mockito.exceptions.verification.VerificationInOrderFailure;
 import org.mockito.exceptions.verification.WantedButNotInvoked;
 import org.mockito.exceptions.verification.junit.JUnitTool;
 import org.mockito.internal.debugging.Location;
+import org.mockito.internal.exceptions.VerificationAwareInvocation;
+import org.mockito.internal.exceptions.util.ScenarioPrinter;
+import org.mockito.internal.invocation.Invocation;
 
 /**
  * Reports verification and misusing errors.
@@ -75,13 +78,14 @@ public class Reporter {
 
     public void missingMethodInvocation() {
         throw new MissingMethodInvocationException(join(
-                "when() requires an argument which has to be a method call on a mock.",
+                "when() requires an argument which has to be 'a method call on a mock'.",
                 "For example:",
                 "    when(mock.getArticles()).thenReturn(articles);",
                 "",
-                "Also, this error might show up because you stub final/private/equals() or hashCode() method.",
-                "Those methods *cannot* be stubbed/verified.",
-                ""
+                "Also, this error might show up because:",
+                "1. you stub either of: final/private/equals()/hashCode() methods.",
+                "   Those methods *cannot* be stubbed/verified.",
+                "2. inside when() you don't call method on mock but on some other object."
         ));
     }
 
@@ -93,7 +97,7 @@ public class Reporter {
                 "Example of correct verification:",
                 "    verify(mock).doSomething()",
                 "",
-                "Also, this error might show up because you verify final/private/equals() or hashCode() method.",
+                "Also, this error might show up because you verify either of: final/private/equals()/hashCode() methods.",
                 "Those methods *cannot* be stubbed/verified.",
                 ""
         ));
@@ -113,7 +117,7 @@ public class Reporter {
     
     public void nullPassedToVerify() {
         throw new NullInsteadOfMockException(join(
-                "Argument passed to verify() is null!",
+                "Argument passed to verify() should be a mock but is null!",
                 "Examples of correct verifications:",
                 "    verify(mock).someMethod();",
                 "    verify(mock, times(10)).someMethod();",
@@ -341,9 +345,23 @@ public class Reporter {
                 "Verification in order failure:" + message
                 ));
     }
-    
-    public void noMoreInteractionsWanted(PrintableInvocation undesired) {
+
+    public void noMoreInteractionsWanted(Invocation undesired, List<VerificationAwareInvocation> invocations) {
+        ScenarioPrinter scenarioPrinter = new ScenarioPrinter();
+        String scenario = scenarioPrinter.print(invocations);
+        
         throw new NoInteractionsWanted(join(
+                "No interactions wanted here:",
+                new Location(),
+                "But found this interaction:",
+                undesired.getLocation(),
+                scenario,
+                ""
+        ));
+    }
+    
+    public void noMoreInteractionsWantedInOrder(Invocation undesired) {
+        throw new VerificationInOrderFailure(join(
                 "No interactions wanted here:",
                 new Location(),
                 "But found this interaction:",
@@ -362,11 +380,12 @@ public class Reporter {
         ));
     }
 
-    public void cannotStubVoidMethodWithAReturnValue() {
+    public void cannotStubVoidMethodWithAReturnValue(String methodName) {
         throw new MockitoException(join(
-                "Cannot stub a void method with a return value!",
+                "'" + methodName + "' is a *void method* and it *cannot* be stubbed with a *return value*!",
                 "Voids are usually stubbed with Throwables:",
-                "    doThrow(exception).when(mock).someVoidMethod();"
+                "    doThrow(exception).when(mock).someVoidMethod();",
+                "If the method you are trying to stub is *overloaded* then make sure you are calling the right overloaded version."
              ));
     }
 
@@ -405,7 +424,7 @@ public class Reporter {
                 "    verify(mock).someMethod(contains(\"foo\"))",
                 "",
                 "Also, this error might show up because you use argument matchers with methods that cannot be mocked.",
-                "Following methods *cannot* be stubbed/verified: final/private/equals()/hashCode() methods.",                
+                "Following methods *cannot* be stubbed/verified: final/private/equals()/hashCode().",
                 ""
                 ));
     }
@@ -460,5 +479,58 @@ public class Reporter {
         throw new MockitoException(join(
                 "extraInterfaces() requires at least one interface."
         ));
+    }
+
+    public void mockedTypeIsInconsistentWithSpiedInstanceType(Class<?> mockedType, Object spiedInstance) {
+        throw new MockitoException(join(
+                "Mocked type must be the same as the type of your spied instance.",
+                "Mocked type must be: " + spiedInstance.getClass().getSimpleName() + ", but is: " + mockedType.getSimpleName(),
+                "  //correct spying:",
+                "  spy = mock( ->ArrayList.class<- , withSettings().spiedInstance( ->new ArrayList()<- );",
+                "  //incorrect - types don't match:",
+                "  spy = mock( ->List.class<- , withSettings().spiedInstance( ->new ArrayList()<- );"
+        ));
+    }
+
+    public void cannotCallRealMethodOnInterface() {
+        throw new MockitoException(join(
+                "Cannot call real method on java interface. Interface does not have any implementation!",
+                "Calling real methods is only possible when mocking concrete classes.",
+                "  //correct example:",
+                "  when(mockOfConcreteClass.doStuff()).thenCallRealMethod();"
+        ));
+    }
+
+    public void cannotVerifyToString() {
+        throw new MockitoException(join(
+                "Mockito cannot verify toString()",
+                "toString() is too often used behind of scenes  (i.e. during String concatenation, in IDE debugging views). " +
+                        "Verifying it may give inconsistent or hard to understand results. " +
+                        "Not to mention that verifying toString() most likely hints awkward design (hard to explain in a short exception message. Trust me...)",
+                "However, it is possible to stub toString(). Stubbing toString() smells a bit funny but there are rare, legitimate use cases."
+        ));
+    }
+
+    public void moreThanOneAnnotationNotAllowed(String fieldName) {
+        throw new MockitoException("You cannot have more than one Mockito annotation on a field!\n" +
+                "The field '" + fieldName + "' has multiple Mockito annotations.\n" +
+                "For info how to use annotations see examples in javadoc for MockitoAnnotations class.");
+    }
+
+    public void unsupportedCombinationOfAnnotations(String undesiredAnnotationOne, String undesiredAnnotationTwo) {
+        throw new MockitoException("This combination of annotations is not permitted on a single field:\n" +
+                "@" + undesiredAnnotationOne + " and @" + undesiredAnnotationTwo);   
+    }
+
+    public void injectMockAnnotationFieldIsNull(String field) {
+        throw new MockitoException("Field '" + field + "' annotated with @InjectMocks is null.\n" +
+                "Please make sure the instance is created *before* MockitoAnnotations.initMocks();\n" +
+                "Example of correct usage:\n" +
+                "   class SomeTest {\n" +
+                "      @InjectMocks private Foo foo = new Foo();\n" +
+                "      \n" +
+                "      @Before public void setUp() {\n" +
+                "         MockitoAnnotations.initMock(this);\n"
+                );   
     }
 }

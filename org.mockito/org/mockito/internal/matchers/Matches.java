@@ -4,12 +4,15 @@
  */
 package org.mockito.internal.matchers;
 
+import java.io.Serializable;
+
 import org.hamcrest.Description;
 import org.mockito.ArgumentMatcher;
 
 
-public class Matches extends ArgumentMatcher<Object> {
+public class Matches extends ArgumentMatcher<Object> implements Serializable {
 
+    private static final long serialVersionUID = 8787704593379472029L;
     private final String regex;
 
     public Matches(String regex) {

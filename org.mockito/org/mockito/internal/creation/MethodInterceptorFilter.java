@@ -4,57 +4,68 @@
  */
 package org.mockito.internal.creation;
 
+import java.io.Serializable;
 import java.lang.reflect.Method;
 
 import org.mockito.cglib.proxy.MethodInterceptor;
 import org.mockito.cglib.proxy.MethodProxy;
-import org.mockito.internal.MockHandler;
+import org.mockito.internal.MockitoInvocationHandler;
 import org.mockito.internal.creation.cglib.CGLIBHacker;
-import org.mockito.internal.invocation.Invocation;
+import org.mockito.internal.invocation.*;
 import org.mockito.internal.invocation.realmethod.FilteredCGLIBProxyRealMethod;
 import org.mockito.internal.progress.SequenceNumber;
+import org.mockito.internal.util.ObjectMethodsGuru;
 
-@SuppressWarnings("unchecked")
-public class MethodInterceptorFilter implements MethodInterceptor {
-    
-    private final Method equalsMethod;
-    private final Method hashCodeMethod;
+public class MethodInterceptorFilter implements MethodInterceptor, Serializable {
 
-    private final MockHandler mockHandler;
+    private static final long serialVersionUID = 6182795666612683784L;
+    private final MockitoInvocationHandler handler;
+    CGLIBHacker cglibHacker = new CGLIBHacker();
+    ObjectMethodsGuru objectMethodsGuru = new ObjectMethodsGuru();
+    private final MockSettingsImpl mockSettings;
 
-    public MethodInterceptorFilter(Class toMock, MockHandler mockHandler) {
-        try {
-            if (toMock.isInterface()) {
-                toMock = Object.class;
-            }
-            equalsMethod = toMock.getMethod("equals", new Class[] { Object.class });
-            hashCodeMethod = toMock.getMethod("hashCode", (Class[]) null);
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException("\nSomething went really wrong. Object method could not be found!" +
-                "\n please report it to the mocking mailing list at http://mockito.org");
-        }
-        this.mockHandler = mockHandler;
+    public MethodInterceptorFilter(MockitoInvocationHandler handler, MockSettingsImpl mockSettings) {
+        this.handler = handler;
+        this.mockSettings = mockSettings;
     }
 
     public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy)
             throws Throwable {
-        if (equalsMethod.equals(method)) {
-            return Boolean.valueOf(proxy == args[0]);
-        } else if (hashCodeMethod.equals(method)) {
+        if (objectMethodsGuru.isEqualsMethod(method)) {
+            return proxy == args[0];
+        } else if (objectMethodsGuru.isHashCodeMethod(method)) {
             return hashCodeForMock(proxy);
         }
         
-        new CGLIBHacker().setMockitoNamingPolicy(methodProxy);
+        MockitoMethodProxy mockitoMethodProxy = createMockitoMethodProxy(methodProxy);
+        cglibHacker.setMockitoNamingPolicy(mockitoMethodProxy);
         
-        Invocation invocation = new Invocation(proxy, method, args, SequenceNumber.next(), new FilteredCGLIBProxyRealMethod(methodProxy));
-        return mockHandler.handle(invocation);
+        MockitoMethod mockitoMethod = createMockitoMethod(method);
+        
+        FilteredCGLIBProxyRealMethod realMethod = new FilteredCGLIBProxyRealMethod(mockitoMethodProxy);
+        Invocation invocation = new Invocation(proxy, mockitoMethod, args, SequenceNumber.next(), realMethod);
+        return handler.handle(invocation);
     }
-    
-    public MockHandler getMockHandler() {
-        return mockHandler;
+   
+    public MockitoInvocationHandler getHandler() {
+        return handler;
     }
 
     private int hashCodeForMock(Object mock) {
-        return new Integer(System.identityHashCode(mock));
+        return System.identityHashCode(mock);
+    }
+
+    public MockitoMethodProxy createMockitoMethodProxy(MethodProxy methodProxy) {
+        if (mockSettings.isSerializable())
+            return new SerializableMockitoMethodProxy(methodProxy);
+        return new DelegatingMockitoMethodProxy(methodProxy);
+    }
+    
+    public MockitoMethod createMockitoMethod(Method method) {
+        if (mockSettings.isSerializable()) {
+            return new SerializableMethod(method);
+        } else {
+            return new DelegatingMethod(method); 
+        }
     }
 }

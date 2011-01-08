@@ -24,6 +24,16 @@ public class AnswersValidator {
         if (answer instanceof DoesNothing) {
             validateDoNothing((DoesNothing) answer, invocation);
         }
+        
+        if (answer instanceof CallsRealMethods) {
+            validateMockingConcreteClass((CallsRealMethods) answer, invocation);
+        }
+    }
+
+    private void validateMockingConcreteClass(CallsRealMethods answer, Invocation invocation) {
+        if (invocation.isDeclaredOnInterface()) {
+            reporter.cannotCallRealMethodOnInterface();
+        }
     }
 
     private void validateDoNothing(DoesNothing answer, Invocation invocation) {
@@ -34,7 +44,7 @@ public class AnswersValidator {
 
     private void validateReturnValue(Returns answer, Invocation invocation) {
         if (invocation.isVoid()) {
-            reporter.cannotStubVoidMethodWithAReturnValue();
+            reporter.cannotStubVoidMethodWithAReturnValue(invocation.getMethod().getName());
         }
         
         if (answer.returnsNull() && invocation.returnsPrimitive()) {

@@ -6,14 +6,24 @@ package org.mockito.internal.creation;
 
 import org.mockito.MockSettings;
 import org.mockito.exceptions.Reporter;
+import org.mockito.internal.util.MockName;
 import org.mockito.stubbing.Answer;
 
+@SuppressWarnings("unchecked")
 public class MockSettingsImpl implements MockSettings {
 
+    private static final long serialVersionUID = 4475297236197939568L;
     private Class<?>[] extraInterfaces;
     private String name;
     private Object spiedInstance;
     private Answer<Object> defaultAnswer;
+    private MockName mockName;
+    private boolean serializable;
+
+    public MockSettings serializable() {
+        this.serializable = true;
+        return this;
+    }
 
     public MockSettings extraInterfaces(Class<?>... extraInterfaces) {
         if (extraInterfaces == null || extraInterfaces.length == 0) {
@@ -31,8 +41,8 @@ public class MockSettingsImpl implements MockSettings {
         return this;
     }
 
-    public String getMockName() {
-        return name;
+    public MockName getMockName() {
+        return mockName;
     }
 
     public Class<?>[] getExtraInterfaces() {
@@ -53,7 +63,6 @@ public class MockSettingsImpl implements MockSettings {
         return this;
     }
 
-    @SuppressWarnings("unchecked")
     public MockSettings defaultAnswer(Answer defaultAnswer) {
         this.defaultAnswer = defaultAnswer;
         return this;
@@ -61,5 +70,13 @@ public class MockSettingsImpl implements MockSettings {
 
     public Answer<Object> getDefaultAnswer() {
         return defaultAnswer;
+    }
+
+    public boolean isSerializable() {
+        return serializable;
+    }
+    
+    public void initiateMockName(Class classToMock) {
+        mockName = new MockName(name, classToMock);
     }
 }

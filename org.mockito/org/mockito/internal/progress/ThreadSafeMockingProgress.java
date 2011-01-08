@@ -4,12 +4,17 @@
  */
 package org.mockito.internal.progress;
 
-import org.mockito.internal.debugging.DebuggingInfo;
-import org.mockito.internal.invocation.Invocation;
-import org.mockito.internal.verification.api.VerificationMode;
+import java.io.Serializable;
 
-public class ThreadSafeMockingProgress implements MockingProgress {
+import org.mockito.MockSettings;
+import org.mockito.internal.invocation.Invocation;
+import org.mockito.internal.listeners.MockingProgressListener;
+import org.mockito.verification.VerificationMode;
+
+@SuppressWarnings("unchecked")
+public class ThreadSafeMockingProgress implements MockingProgress, Serializable {
     
+    private static final long serialVersionUID = 6839454041642082618L;
     private static ThreadLocal<MockingProgress> mockingProgress = new ThreadLocal<MockingProgress>();
 
     static MockingProgress threadSafely() {
@@ -62,8 +67,12 @@ public class ThreadSafeMockingProgress implements MockingProgress {
     public ArgumentMatcherStorage getArgumentMatcherStorage() {
         return threadSafely().getArgumentMatcherStorage();
     }
+    
+    public void mockingStarted(Object mock, Class classToMock, MockSettings mockSettings) {
+        threadSafely().mockingStarted(mock, classToMock, mockSettings);
+    }
 
-    public DebuggingInfo getDebuggingInfo() {
-        return threadSafely().getDebuggingInfo();
+    public void setListener(MockingProgressListener listener) {
+        threadSafely().setListener(listener);
     }
 }

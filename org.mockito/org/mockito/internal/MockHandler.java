@@ -12,115 +12,116 @@ import org.mockito.internal.invocation.InvocationMatcher;
 import org.mockito.internal.invocation.MatchersBinder;
 import org.mockito.internal.progress.MockingProgress;
 import org.mockito.internal.progress.ThreadSafeMockingProgress;
-import org.mockito.internal.stubbing.MockitoStubber;
+import org.mockito.internal.stubbing.InvocationContainer;
+import org.mockito.internal.stubbing.InvocationContainerImpl;
 import org.mockito.internal.stubbing.OngoingStubbingImpl;
 import org.mockito.internal.stubbing.StubbedInvocationMatcher;
 import org.mockito.internal.stubbing.VoidMethodStubbableImpl;
-import org.mockito.internal.util.MockName;
-import org.mockito.internal.verification.RegisteredInvocations;
+import org.mockito.internal.verification.MockAwareVerificationMode;
 import org.mockito.internal.verification.VerificationDataImpl;
-import org.mockito.internal.verification.VerificationModeFactory;
-import org.mockito.internal.verification.api.VerificationMode;
 import org.mockito.stubbing.Answer;
 import org.mockito.stubbing.VoidMethodStubbable;
+import org.mockito.verification.VerificationMode;
 
 /**
  * Invocation handler set on mock objects.
- *
- * @param <T> type of mock object to handle
+ * 
+ * @param <T>
+ *            type of mock object to handle
  */
-public class MockHandler<T> {
+public class MockHandler<T> implements MockitoInvocationHandler, MockHandlerInterface<T> {
 
-    MockitoStubber mockitoStubber;
-    MatchersBinder matchersBinder;
-    MockingProgress mockingProgress;
-    
-    private final RegisteredInvocations registeredInvocations;
-    private final MockName mockName;
+    private static final long serialVersionUID = -2917871070982574165L;
+
+    InvocationContainerImpl invocationContainerImpl;
+    MatchersBinder matchersBinder = new MatchersBinder();
+    MockingProgress mockingProgress = new ThreadSafeMockingProgress();
+
     private final MockSettingsImpl mockSettings;
 
-    public MockHandler(MockName mockName, MockingProgress mockingProgress, MatchersBinder matchersBinder, MockSettingsImpl mockSettings) {
-        this.mockName = mockName;
-        this.mockingProgress = mockingProgress;
-        this.matchersBinder = matchersBinder;
+    public MockHandler(MockSettingsImpl mockSettings) {
         this.mockSettings = mockSettings;
-        this.mockitoStubber = new MockitoStubber(mockingProgress);
-        this.registeredInvocations = new RegisteredInvocations();
+        this.mockingProgress = new ThreadSafeMockingProgress();
+        this.matchersBinder = new MatchersBinder();
+        this.invocationContainerImpl = new InvocationContainerImpl(mockingProgress);
     }
-    
-    public MockHandler(MockHandler<T> oldMockHandler) {
-        this(oldMockHandler.mockName, oldMockHandler.mockingProgress, oldMockHandler.matchersBinder, oldMockHandler.mockSettings);
-    }
-    
-    //for tests
+
+    // for tests
     MockHandler() {
-        this(new MockName("mockie for tests", MockHandler.class), new ThreadSafeMockingProgress(), new MatchersBinder(), new MockSettingsImpl());
+        this(new MockSettingsImpl());
     }
-    
+
+    public MockHandler(MockHandlerInterface<T> oldMockHandler) {
+        this(oldMockHandler.getMockSettings());
+    }
+
     public Object handle(Invocation invocation) throws Throwable {
-        if (mockitoStubber.hasAnswersForStubbing()) {
-            //stubbing voids with stubVoid() or doAnswer() style
-            InvocationMatcher invocationMatcher = matchersBinder.bindMatchers(mockingProgress.getArgumentMatcherStorage(), invocation);
-            mockitoStubber.setMethodForStubbing(invocationMatcher);
+        if (invocationContainerImpl.hasAnswersForStubbing()) {
+            // stubbing voids with stubVoid() or doAnswer() style
+            InvocationMatcher invocationMatcher = matchersBinder.bindMatchers(mockingProgress
+                            .getArgumentMatcherStorage(), invocation);
+            invocationContainerImpl.setMethodForStubbing(invocationMatcher);
             return null;
         }
         VerificationMode verificationMode = mockingProgress.pullVerificationMode();
 
-        InvocationMatcher invocationMatcher = matchersBinder.bindMatchers(mockingProgress.getArgumentMatcherStorage(), invocation);
-        
+        InvocationMatcher invocationMatcher = matchersBinder.bindMatchers(mockingProgress.getArgumentMatcherStorage(),
+                        invocation);
+
         mockingProgress.validateState();
 
+        //if verificationMode is not null then someone is doing verify()        
         if (verificationMode != null) {
-            VerificationDataImpl data = new VerificationDataImpl(registeredInvocations.getAll(), invocationMatcher);
-            verificationMode.verify(data);
-            return null;
-        }
-
-        registeredInvocations.add(invocationMatcher.getInvocation());
-        mockitoStubber.setInvocationForPotentialStubbing(invocationMatcher);
-        OngoingStubbingImpl<T> ongoingStubbing = new OngoingStubbingImpl<T>(mockitoStubber, registeredInvocations);
-        mockingProgress.reportOngoingStubbing(ongoingStubbing);
-
-        StubbedInvocationMatcher stubbedInvocation = mockitoStubber.findAnswerFor(invocation);
-        if (!invocation.isVoid() && stubbedInvocation == null) {
-            //it is a return-value interaction but not stubbed. This *might* be a problem
-            mockingProgress.getDebuggingInfo().addPotentiallyUnstubbed(invocationMatcher);
+            //We need to check if verification was started on the correct mock 
+            // - see VerifyingWithAnExtraCallToADifferentMockTest (bug 138)
+            //TODO: can I avoid this cast here?
+            if (((MockAwareVerificationMode) verificationMode).getMock() == invocation.getMock()) {                
+                VerificationDataImpl data = new VerificationDataImpl(invocationContainerImpl, invocationMatcher);            
+                verificationMode.verify(data);
+                return null;
+            } else {
+                // this means there is an invocation on a different mock. Re-adding verification mode 
+                // - see VerifyingWithAnExtraCallToADifferentMockTest (bug 138)
+                mockingProgress.verificationStarted(verificationMode);
+            }
         }
         
+        invocationContainerImpl.setInvocationForPotentialStubbing(invocationMatcher);
+        OngoingStubbingImpl<T> ongoingStubbing = new OngoingStubbingImpl<T>(invocationContainerImpl);
+        mockingProgress.reportOngoingStubbing(ongoingStubbing);
+
+        StubbedInvocationMatcher stubbedInvocation = invocationContainerImpl.findAnswerFor(invocation);
+
         if (stubbedInvocation != null) {
-            mockingProgress.getDebuggingInfo().reportUsedStub(invocationMatcher);
             stubbedInvocation.captureArgumentsFrom(invocation);
             return stubbedInvocation.answer(invocation);
         } else {
             Object ret = mockSettings.getDefaultAnswer().answer(invocation);
-            
-            //redo setting invocation for potential stubbing in case of partial mocks / spies.
-            //Without it, the real method inside 'when' might have delegated 
-            //to other self method and overwrite the intended stubbed method with a different one.
-            mockitoStubber.setInvocationForPotentialStubbing(invocationMatcher);
+
+            // redo setting invocation for potential stubbing in case of partial
+            // mocks / spies.
+            // Without it, the real method inside 'when' might have delegated
+            // to other self method and overwrite the intended stubbed method
+            // with a different one. The reset is required to avoid runtime exception that validates return type with stubbed method signature.
+            invocationContainerImpl.resetInvocationForPotentialStubbing(invocationMatcher);
             return ret;
         }
     }
 
-    public void verifyNoMoreInteractions() {
-        VerificationDataImpl data = new VerificationDataImpl(registeredInvocations.getAll(), null);
-        VerificationModeFactory.noMoreInteractions().verify(data);
-    }
-
     public VoidMethodStubbable<T> voidMethodStubbable(T mock) {
-        return new VoidMethodStubbableImpl<T>(mock, mockitoStubber);
+        return new VoidMethodStubbableImpl<T>(mock, invocationContainerImpl);
     }
 
-    public List<Invocation> getRegisteredInvocations() {
-        return registeredInvocations.getAll();
-    }
-
-    public MockName getMockName() {
-        return mockName;
+    public MockSettingsImpl getMockSettings() {
+        return mockSettings;
     }
 
     @SuppressWarnings("unchecked")
     public void setAnswersForStubbing(List<Answer> answers) {
-        mockitoStubber.setAnswersForStubbing(answers);
+        invocationContainerImpl.setAnswersForStubbing(answers);
+    }
+
+    public InvocationContainer getInvocationContainer() {
+        return invocationContainerImpl;
     }
 }

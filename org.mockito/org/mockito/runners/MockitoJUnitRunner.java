@@ -6,12 +6,17 @@ package org.mockito.runners;
 
 import org.junit.runner.Description;
 import org.junit.runner.Runner;
+import org.junit.runner.manipulation.Filter;
+import org.junit.runner.manipulation.Filterable;
+import org.junit.runner.manipulation.NoTestsRemainException;
 import org.junit.runner.notification.RunNotifier;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.internal.runners.RunnerFactory;
 import org.mockito.internal.runners.RunnerImpl;
+
+import java.lang.reflect.InvocationTargetException;
 
 
 /**
@@ -44,11 +49,11 @@ import org.mockito.internal.runners.RunnerImpl;
  * }
  * </pre>
  */
-public class MockitoJUnitRunner extends Runner {
+public class MockitoJUnitRunner extends Runner implements Filterable {
 
     private final RunnerImpl runner;
 
-    public MockitoJUnitRunner(Class<?> klass) {
+    public MockitoJUnitRunner(Class<?> klass) throws InvocationTargetException {
         runner = new RunnerFactory().create(klass);
     }
 
@@ -61,4 +66,9 @@ public class MockitoJUnitRunner extends Runner {
     public Description getDescription() {
         return runner.getDescription();
     }
+
+	public void filter(Filter filter) throws NoTestsRemainException {
+        //filter is required because without it UnrootedTests show up in Eclipse
+		runner.filter(filter);
+	}
 }

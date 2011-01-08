@@ -13,13 +13,18 @@ import java.lang.annotation.Target;
 import java.lang.reflect.Field;
 
 import org.mockito.configuration.AnnotationEngine;
+import org.mockito.configuration.DefaultMockitoConfiguration;
+import org.mockito.exceptions.Reporter;
 import org.mockito.exceptions.base.MockitoException;
 import org.mockito.internal.configuration.GlobalConfiguration;
+import org.mockito.internal.util.reflection.FieldSetter;
 import org.mockito.runners.MockitoJUnitRunner;
 
 /**
+ * MockitoAnnotations.initMocks(this); initializes fields annotated with Mockito annotations.
+ * <p>  
  * <ul>
- * <li>Allows shorthand mock creation.</li> 
+ * <li>Allows shorthand creation of objects required for testing.</li> 
  * <li>Minimizes repetitive mock creation code.</li> 
  * <li>Makes the test class more readable.</li>
  * <li>Makes the verification error easier to read because <b>field name</b> is used to identify the mock.</li>
@@ -46,8 +51,10 @@ import org.mockito.runners.MockitoJUnitRunner;
  *       }
  *   }
  * </pre>
- * 
- * <b><code>MockitoAnnotations.initMocks(this)</code></b> method has to called to initialize annotated mocks.
+ * <p>
+ * Read also about other annotations &#064;{@link Spy}, &#064;{@link Captor}, &#064;{@link InjectMocks}
+ * <p>
+ * <b><code>MockitoAnnotations.initMocks(this)</code></b> method has to called to initialize annotated fields.
  * <p>
  * In above example, <code>initMocks()</code> is called in &#064;Before (JUnit4) method of test's base class. 
  * For JUnit3 <code>initMocks()</code> can go to <code>setup()</code> method of a base class.
@@ -70,10 +77,11 @@ public class MockitoAnnotations {
     @Target( { FIELD })
     @Retention(RetentionPolicy.RUNTIME)
     @Deprecated
-    public @interface Mock {}
+    public @interface Mock {}    
     
     /**
-     * Initializes objects annotated with &#064;Mock for given testClass.
+     * Initializes objects annotated with Mockito annotations for given testClass:
+     *  &#064;{@link org.mockito.Mock}, &#064;{@link Spy}, &#064;{@link Captor}, &#064;{@link InjectMocks} 
      * <p>
      * See examples in javadoc for {@link MockitoAnnotations} class.
      */
@@ -89,24 +97,42 @@ public class MockitoAnnotations {
         }
     }
 
-    private static void scan(Object testClass, Class<?> clazz) {
+    static void scan(Object testClass, Class<?> clazz) {
         AnnotationEngine annotationEngine = new GlobalConfiguration().getAnnotationEngine();
         Field[] fields = clazz.getDeclaredFields();
         for (Field field : fields) {
-            for(Annotation annotation : field.getAnnotations()) {
-                Object mock = annotationEngine.createMockFor(annotation, field);
-                if (mock != null) {
-                    boolean wasAccessible = field.isAccessible();
-                    field.setAccessible(true);
-                    try {
-                        field.set(testClass, mock);
-                    } catch (IllegalAccessException e) {
-                        throw new MockitoException("Problems initiating mocks annotated with " + annotation, e);
-                    } finally {
-                        field.setAccessible(wasAccessible);
-                    }    
+            //below can be removed later, when we get rid of deprecated stuff
+            if (annotationEngine.getClass() != new DefaultMockitoConfiguration().getAnnotationEngine().getClass()) {
+                //this means user has his own annotation engine and we have to respect that.
+                //we will do annotation processing the old way so that we are backwards compatible
+                processAnnotationDeprecatedWay(annotationEngine, testClass, field);                
+            } 
+        }
+        //act 'the new' way
+        annotationEngine.process(clazz, testClass);
+    }
+
+    @SuppressWarnings("deprecation")
+    static void processAnnotationDeprecatedWay(AnnotationEngine annotationEngine, Object testClass, Field field) {
+        boolean alreadyAssigned = false;
+        for(Annotation annotation : field.getAnnotations()) {
+            Object mock = annotationEngine.createMockFor(annotation, field);
+            if (mock != null) {
+                throwIfAlreadyAssigned(field, alreadyAssigned);
+                alreadyAssigned = true;                
+                try {
+                    new FieldSetter(testClass, field).set(mock);
+                } catch (Exception e) {
+                    throw new MockitoException("Problems setting field " + field.getName() + " annotated with "
+                            + annotation, e);
                 }
             }
+        }
+    }
+
+    static void throwIfAlreadyAssigned(Field field, boolean alreadyAssigned) {
+        if (alreadyAssigned) {
+            new Reporter().moreThanOneAnnotationNotAllowed(field.getName());
         }
     }
 }

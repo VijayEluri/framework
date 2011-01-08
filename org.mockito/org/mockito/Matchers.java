@@ -10,16 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.hamcrest.Matcher;
-import org.mockito.internal.matchers.Any;
-import org.mockito.internal.matchers.Contains;
-import org.mockito.internal.matchers.EndsWith;
-import org.mockito.internal.matchers.Equals;
-import org.mockito.internal.matchers.InstanceOf;
-import org.mockito.internal.matchers.Matches;
-import org.mockito.internal.matchers.NotNull;
-import org.mockito.internal.matchers.Null;
-import org.mockito.internal.matchers.Same;
-import org.mockito.internal.matchers.StartsWith;
+import org.mockito.internal.matchers.*;
 import org.mockito.internal.matchers.apachecommons.ReflectionEquals;
 import org.mockito.internal.progress.HandyReturnValues;
 import org.mockito.internal.progress.MockingProgress;
@@ -194,6 +185,8 @@ public class Matchers {
     /**
      * any Object or null.
      * <p>
+     * Has aliases: {@link #any()} and {@link #any(Class clazz)}
+     * <p>
      * See examples in javadoc for {@link Matchers} class
      * 
      * @return <code>null</code>.
@@ -202,9 +195,37 @@ public class Matchers {
         return (T) reportMatcher(Any.ANY).returnNull();
     }
     //TODO: after 1.8 check out Jay Fields' idea on any() matcher
+
+    /**
+     * Any vararg, meaning any number and values of arguments.
+     * <p>
+     * Example:
+     * <pre>
+     *   //verification:
+     *   mock.foo(1, 2);
+     *   mock.foo(1, 2, 3, 4);
+     *
+     *   verify(mock, times(2)).foo(anyVararg());
+     *
+     *   //stubbing:
+     *   when(mock.foo(anyVararg()).thenReturn(100);
+     *
+     *   //prints 100
+     *   System.out.println(mock.foo(1, 2));
+     *   //also prints 100
+     *   System.out.println(mock.foo(1, 2, 3, 4));
+     * </pre>
+     * See examples in javadoc for {@link Matchers} class
+     *
+     * @return <code>null</code>.
+     */
+    public static <T> T anyVararg() {
+        return (T) reportMatcher(AnyVararg.ANY_VARARG).returnNull();
+    }
     
     /**
-     * any object of specified class. 
+     * any kind object, not necessary of the given class.
+     * The class argument is provided only to avoid casting.
      * <p>
      * Sometimes looks better than anyObject() - especially when explicit casting is required
      * <p>
@@ -340,7 +361,7 @@ public class Matchers {
      * @return <code>null</code>.
      */
     public static <T> T isA(Class<T> clazz) {
-        return reportMatcher(new InstanceOf(clazz)).<T>returnNull();
+        return reportMatcher(new InstanceOf(clazz)).<T>returnFor(clazz);
     }
 
     /**
@@ -457,8 +478,8 @@ public class Matchers {
      * @return <code>null</code>.
      */
     public static <T> T eq(T value) {
-        return reportMatcher(new Equals(value)).<T>returnNull();
-    }  
+        return (T) reportMatcher(new Equals(value)).<T>returnFor(value);
+    }
 
     /**
      * Object argument that is reflection-equal to the given value with support for excluding
@@ -469,6 +490,8 @@ public class Matchers {
      * <p>
      * Works similarly to EqualsBuilder.reflectionEquals(this, other, exlucdeFields) from
      * apache commons library.
+     * <p>
+     * <b>Warning</b> The equality check is shallow!
      * <p>
      * See examples in javadoc for {@link Matchers} class
      * 
@@ -494,7 +517,7 @@ public class Matchers {
      * @return <code>null</code>.
      */
     public static <T> T same(T value) {
-        return reportMatcher(new Same(value)).<T>returnNull();
+        return (T) reportMatcher(new Same(value)).<T>returnFor(value);
     }
 
     /**

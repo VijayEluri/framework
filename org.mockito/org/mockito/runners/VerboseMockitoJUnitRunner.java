@@ -4,17 +4,20 @@
  */
 package org.mockito.runners;
 
+import java.lang.reflect.InvocationTargetException;
+
 import org.junit.runner.Description;
 import org.junit.runner.Runner;
+import org.junit.runner.manipulation.Filter;
+import org.junit.runner.manipulation.Filterable;
+import org.junit.runner.manipulation.NoTestsRemainException;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
-import org.mockito.internal.debugging.DebuggingInfo;
-import org.mockito.internal.progress.MockingProgress;
-import org.mockito.internal.progress.ThreadSafeMockingProgress;
+import org.mockito.internal.debugging.WarningsCollector;
 import org.mockito.internal.runners.RunnerFactory;
 import org.mockito.internal.runners.RunnerImpl;
-import org.mockito.internal.util.reflection.Whitebox;
+import org.mockito.internal.util.junit.JUnitFailureHacker;
 
 /**
  * Experimental implementation that suppose to improve tdd/testing experience. 
@@ -32,54 +35,50 @@ import org.mockito.internal.util.reflection.Whitebox;
  * <p>
  * Experimental implementation - will change in future!
  */
-public class VerboseMockitoJUnitRunner extends Runner {
+public class VerboseMockitoJUnitRunner extends Runner implements Filterable {
 
     private RunnerImpl runner;
-    
-    public VerboseMockitoJUnitRunner(Class<?> klass) {
-        this(klass, new RunnerFactory().create(klass));
+
+    public VerboseMockitoJUnitRunner(Class<?> klass) throws InvocationTargetException {
+        this(new RunnerFactory().create(klass));
     }
     
-    VerboseMockitoJUnitRunner(Class<?> klass, RunnerImpl runnerImpl) {
+    VerboseMockitoJUnitRunner(RunnerImpl runnerImpl) {
         this.runner = runnerImpl;
     }
     
     @Override
-    public void run(RunNotifier notifier) {
-        MockingProgress progress = new ThreadSafeMockingProgress();
-        DebuggingInfo debuggingInfo = progress.getDebuggingInfo();
-        
-        beforeRun(notifier, debuggingInfo);
-        
-        runner.run(notifier);
-        
-        afterRun(debuggingInfo);
-    }
-
-    private void afterRun(final DebuggingInfo debuggingInfo) {
-        debuggingInfo.clearData();
-    }
-
-    private void beforeRun(RunNotifier notifier, final DebuggingInfo debuggingInfo) {
-        debuggingInfo.collectData();
+    public void run(RunNotifier notifier) {        
 
         //a listener that changes the failure's exception in a very hacky way...
         RunListener listener = new RunListener() {
-            @Override public void testFailure(final Failure failure) throws Exception {
-                Throwable throwable = (Throwable) Whitebox.getInternalState(failure, "fThrownException");
-                
-                String newMessage = throwable.getMessage();
-                newMessage += "\n" + debuggingInfo.getWarnings(false) + "\n*** The actual failure is because of: ***\n";
-                
-                Whitebox.setInternalState(throwable, "detailMessage", newMessage);
+            
+            WarningsCollector warningsCollector;
+                       
+            @Override
+            public void testStarted(Description description) throws Exception {
+                warningsCollector = new WarningsCollector();
+            }
+            
+            @Override 
+            public void testFailure(final Failure failure) throws Exception {       
+                String warnings = warningsCollector.getWarnings();
+                new JUnitFailureHacker().appendWarnings(failure, warnings);                              
             }
         };
-        
+
         notifier.addFirstListener(listener);
+
+        runner.run(notifier);
     }
 
     @Override
     public Description getDescription() {
         return runner.getDescription();
+    }
+    
+    public void filter(Filter filter) throws NoTestsRemainException {
+        //filter is required because without it UnrootedTests show up in Eclipse
+        runner.filter(filter);
     }
 }

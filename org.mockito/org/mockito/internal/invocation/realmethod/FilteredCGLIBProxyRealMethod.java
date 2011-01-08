@@ -4,14 +4,17 @@
  */
 package org.mockito.internal.invocation.realmethod;
 
-import org.mockito.cglib.proxy.MethodProxy;
+import java.io.Serializable;
+
+import org.mockito.internal.creation.MockitoMethodProxy;
 import org.mockito.internal.exceptions.base.ConditionalStackTraceFilter;
 
-public class FilteredCGLIBProxyRealMethod implements RealMethod, HasCGLIBMethodProxy {
+public class FilteredCGLIBProxyRealMethod implements RealMethod, HasCGLIBMethodProxy, Serializable {
 
+    private static final long serialVersionUID = 3596550785818938496L;
     private final RealMethod realMethod;
 
-    public FilteredCGLIBProxyRealMethod(MethodProxy methodProxy) {
+    public FilteredCGLIBProxyRealMethod(MockitoMethodProxy methodProxy) {
         this(new CGLIBProxyRealMethod(methodProxy));
     }
 
@@ -28,7 +31,7 @@ public class FilteredCGLIBProxyRealMethod implements RealMethod, HasCGLIBMethodP
         }
     }
 
-    public MethodProxy getMethodProxy() {
+    public MockitoMethodProxy getMethodProxy() {
         return ((HasCGLIBMethodProxy) realMethod).getMethodProxy();
     }
 }

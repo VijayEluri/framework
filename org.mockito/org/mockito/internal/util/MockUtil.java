@@ -4,40 +4,51 @@
  */
 package org.mockito.internal.util;
 
-import org.mockito.cglib.proxy.Callback;
-import org.mockito.cglib.proxy.Enhancer;
-import org.mockito.cglib.proxy.Factory;
+import static org.mockito.Mockito.RETURNS_DEFAULTS;
+import static org.mockito.Mockito.withSettings;
+
+import org.mockito.cglib.proxy.*;
 import org.mockito.exceptions.misusing.NotAMockException;
 import org.mockito.internal.MockHandler;
+import org.mockito.internal.MockHandlerInterface;
 import org.mockito.internal.creation.MethodInterceptorFilter;
 import org.mockito.internal.creation.MockSettingsImpl;
 import org.mockito.internal.creation.jmock.ClassImposterizer;
-import org.mockito.internal.invocation.MatchersBinder;
-import org.mockito.internal.progress.MockingProgress;
 import org.mockito.internal.util.reflection.LenientCopyTool;
+
+import java.io.Serializable;
 
 @SuppressWarnings("unchecked")
 public class MockUtil {
     
-    private final CreationValidator creationValidator;
+    private final MockCreationValidator creationValidator;
 
-    public MockUtil(CreationValidator creationValidator) {
+    public MockUtil(MockCreationValidator creationValidator) {
         this.creationValidator = creationValidator;
     }
     
     public MockUtil() {
-        this(new CreationValidator());
+        this(new MockCreationValidator());
     }
 
-    public <T> T createMock(Class<T> classToMock, MockingProgress progress, MockSettingsImpl settings) {
+    public <T> T createMock(Class<T> classToMock, MockSettingsImpl settings) {
         creationValidator.validateType(classToMock);
         creationValidator.validateExtraInterfaces(classToMock, settings.getExtraInterfaces());
-        
-        MockName mockName = new MockName(settings.getMockName(), classToMock);
-        MockHandler<T> mockHandler = new MockHandler<T>(mockName, progress, new MatchersBinder(), settings);
-        MethodInterceptorFilter filter = new MethodInterceptorFilter(classToMock, mockHandler);
+        creationValidator.validateMockedType(classToMock, settings.getSpiedInstance());
+
+        settings.initiateMockName(classToMock);
+
+        MockHandler<T> mockHandler = new MockHandler<T>(settings);
+        MethodInterceptorFilter filter = new MethodInterceptorFilter(mockHandler, settings);
         Class<?>[] interfaces = settings.getExtraInterfaces();
-        Class<?>[] ancillaryTypes = interfaces == null ? new Class<?>[0] : interfaces;
+
+        Class<?>[] ancillaryTypes;
+        if (settings.isSerializable()) {
+            ancillaryTypes = interfaces == null ? new Class<?>[] {Serializable.class} : new ArrayUtils().concat(interfaces, Serializable.class);
+        } else {
+            ancillaryTypes = interfaces == null ? new Class<?>[0] : interfaces;
+        }
+
         Object spiedInstance = settings.getSpiedInstance();
         
         T mock = ClassImposterizer.INSTANCE.imposterise(filter, classToMock, ancillaryTypes);
@@ -49,20 +60,21 @@ public class MockUtil {
         return mock;
     }
 
-    public <T> void resetMock(T mock, MockingProgress progress) {
-        MockHandler<T> oldMockHandler = (MockHandler<T>) getMockHandler(mock);
+    public <T> void resetMock(T mock) {
+        MockHandlerInterface<T> oldMockHandler = getMockHandler(mock);
         MockHandler<T> newMockHandler = new MockHandler<T>(oldMockHandler);
-        MethodInterceptorFilter newFilter = new MethodInterceptorFilter(Object.class, newMockHandler);
+        MethodInterceptorFilter newFilter = new MethodInterceptorFilter(newMockHandler, 
+                        (MockSettingsImpl) withSettings().defaultAnswer(RETURNS_DEFAULTS));
         ((Factory) mock).setCallback(0, newFilter);
     }
 
-    public <T> MockHandler<T> getMockHandler(T mock) {
+    public <T> MockHandlerInterface<T> getMockHandler(T mock) {
         if (mock == null) {
             throw new NotAMockException("Argument should be a mock, but is null!");
         }
 
         if (isMockitoMock(mock)) {
-            return getInterceptor(mock).getMockHandler();
+            return (MockHandlerInterface) getInterceptor(mock).getHandler();
         } else {
             throw new NotAMockException("Argument should be a mock, but is: " + mock.getClass());
         }
@@ -86,6 +98,6 @@ public class MockUtil {
     }
 
     public MockName getMockName(Object mock) {
-        return getMockHandler(mock).getMockName();
+        return getMockHandler(mock).getMockSettings().getMockName();
     }
 }

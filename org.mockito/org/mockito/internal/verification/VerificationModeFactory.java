@@ -4,7 +4,7 @@
  */
 package org.mockito.internal.verification;
 
-import org.mockito.internal.verification.api.VerificationMode;
+import org.mockito.verification.VerificationMode;
 
 public class VerificationModeFactory {
     
@@ -14,6 +14,10 @@ public class VerificationModeFactory {
 
     public static VerificationMode atLeast(int minNumberOfInvocations) {
         return new AtLeast(minNumberOfInvocations);
+    }
+
+    public static VerificationMode only() {
+        return new Only();
     }
 
     public static Times times(int wantedNumberOfInvocations) {

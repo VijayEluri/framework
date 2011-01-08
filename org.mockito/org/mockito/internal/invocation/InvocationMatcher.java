@@ -4,8 +4,10 @@
  */
 package org.mockito.internal.invocation;
 
+import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.hamcrest.Matcher;
@@ -16,8 +18,9 @@ import org.mockito.internal.reporting.PrintSettings;
 import org.mockito.internal.reporting.PrintingFriendlyInvocation;
 
 @SuppressWarnings("unchecked")
-public class InvocationMatcher implements PrintableInvocation, PrintingFriendlyInvocation, CapturesArgumensFromInvocation {
+public class InvocationMatcher implements PrintableInvocation, PrintingFriendlyInvocation, CapturesArgumensFromInvocation, Serializable {
 
+    private static final long serialVersionUID = -3047126096857467610L;
     private final Invocation invocation;
     private final List<Matcher> matchers;
 
@@ -53,24 +56,12 @@ public class InvocationMatcher implements PrintableInvocation, PrintingFriendlyI
     public boolean matches(Invocation actual) {
         return invocation.getMock().equals(actual.getMock())
                 && hasSameMethod(actual)
-                && (argumentsMatch(actual.getArguments()));
+                && new ArgumentsComparator().argumentsMatch(this, actual);
     }
 
-    private boolean argumentsMatch(Object[] actualArgs) {
-        if (actualArgs.length != matchers.size()) {
-            return false;
-        }
-        for (int i = 0; i < actualArgs.length; i++) {
-            if (!matchers.get(i).matches(actualArgs[i])) {
-                return false;
-            }
-        }
-        return true;
-    }
-    
     private boolean safelyArgumentsMatch(Object[] actualArgs) {
         try {
-            return argumentsMatch(actualArgs);
+            return new ArgumentsComparator().argumentsMatch(this, actualArgs);
         } catch (Throwable t) {
             return false;
         }
@@ -88,13 +79,14 @@ public class InvocationMatcher implements PrintableInvocation, PrintingFriendlyI
         final boolean isUnverified = !candidate.isVerified();
         final boolean mockIsTheSame = getInvocation().getMock() == candidate.getMock();
         final boolean methodEquals = hasSameMethod(candidate);
-        final boolean overloadedButSameArgs = !methodEquals && safelyArgumentsMatch(candidate.getArguments());        
-        
-        if (methodNameEquals && isUnverified && mockIsTheSame && !overloadedButSameArgs) {
-            return true;
+
+        if (!methodNameEquals || !isUnverified || !mockIsTheSame) {
+            return false;
         }
-        
-        return false;
+
+        final boolean overloadedButSameArgs = !methodEquals && safelyArgumentsMatch(candidate.getArguments());
+
+        return !overloadedButSameArgs;
     }
 
     public boolean hasSameMethod(Invocation candidate) {
@@ -112,10 +104,20 @@ public class InvocationMatcher implements PrintableInvocation, PrintingFriendlyI
     public void captureArgumentsFrom(Invocation i) {
         int k = 0;
         for (Matcher m : matchers) {
-            if (m instanceof CapturesArguments) {
+            if (m instanceof CapturesArguments && i.getArguments().length > k) {
                 ((CapturesArguments) m).captureFrom(i.getArguments()[k]);
             }
             k++;
         }
+    }
+
+    public static List<InvocationMatcher> createFrom(List<Invocation> invocations) {
+        LinkedList<InvocationMatcher> out = new LinkedList<InvocationMatcher>();
+
+        for (Invocation i : invocations) {
+            out.add(new InvocationMatcher(i));
+        }
+
+        return out;
     }
 }

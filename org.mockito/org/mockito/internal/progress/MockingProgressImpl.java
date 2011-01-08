@@ -4,13 +4,15 @@
  */
 package org.mockito.internal.progress;
 
+import org.mockito.MockSettings;
 import org.mockito.exceptions.Reporter;
 import org.mockito.internal.configuration.GlobalConfiguration;
-import org.mockito.internal.debugging.DebuggingInfo;
 import org.mockito.internal.debugging.Localized;
 import org.mockito.internal.debugging.Location;
 import org.mockito.internal.invocation.Invocation;
-import org.mockito.internal.verification.api.VerificationMode;
+import org.mockito.internal.listeners.MockingProgressListener;
+import org.mockito.internal.listeners.MockingStartedListener;
+import org.mockito.verification.VerificationMode;
 
 @SuppressWarnings("unchecked")
 public class MockingProgressImpl implements MockingProgress {
@@ -18,11 +20,10 @@ public class MockingProgressImpl implements MockingProgress {
     private final Reporter reporter = new Reporter();
     private final ArgumentMatcherStorage argumentMatcherStorage = new ArgumentMatcherStorageImpl();
     
-    private final DebuggingInfo debuggingInfo = new DebuggingInfo();
-
     IOngoingStubbing iOngoingStubbing;
     private Localized<VerificationMode> verificationMode;
     private Location stubbingInProgress = null;
+    private MockingProgressListener listener;
 
     public void reportOngoingStubbing(IOngoingStubbing iOngoingStubbing) {
         this.iOngoingStubbing = iOngoingStubbing;
@@ -83,7 +84,6 @@ public class MockingProgressImpl implements MockingProgress {
     }
 
     public void stubbingCompleted(Invocation invocation) {
-        debuggingInfo.addStubbedInvocation(invocation);        
         stubbingInProgress = null;
     }
     
@@ -103,7 +103,14 @@ public class MockingProgressImpl implements MockingProgress {
         return argumentMatcherStorage;
     }
 
-    public DebuggingInfo getDebuggingInfo() {
-        return debuggingInfo;
+    public void mockingStarted(Object mock, Class classToMock, MockSettings mockSettings) {
+        if (listener != null && listener instanceof MockingStartedListener) {
+            ((MockingStartedListener) listener).mockingStarted(mock, classToMock, mockSettings);
+        }
+        validateState();
+    }
+
+    public void setListener(MockingProgressListener listener) {
+        this.listener = listener;
     }
 }

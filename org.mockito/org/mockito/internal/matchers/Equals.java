@@ -4,12 +4,15 @@
  */
 package org.mockito.internal.matchers;
 
+import java.io.Serializable;
+
 import org.hamcrest.Description;
 import org.hamcrest.SelfDescribing;
 import org.mockito.ArgumentMatcher;
 
-public class Equals extends ArgumentMatcher<Object> implements ContainsExtraTypeInformation {
+public class Equals extends ArgumentMatcher<Object> implements ContainsExtraTypeInformation, Serializable {
 
+    private static final long serialVersionUID = -3395637450058086891L;
     private final Object wanted;
 
     public Equals(Object wanted) {
@@ -17,10 +20,7 @@ public class Equals extends ArgumentMatcher<Object> implements ContainsExtraType
     }
 
     public boolean matches(Object actual) {
-        if (this.wanted == null) {
-            return actual == null;
-        }
-        return wanted.equals(actual);
+        return Equality.areEqual(this.wanted, actual);
     }
 
     public void describeTo(Description description) {
@@ -63,7 +63,7 @@ public class Equals extends ArgumentMatcher<Object> implements ContainsExtraType
 
     @Override
     public int hashCode() {
-        throw new UnsupportedOperationException("hashCode() is not supported");
+        return 1;
     }
 
     public SelfDescribing withExtraTypeInfo() {

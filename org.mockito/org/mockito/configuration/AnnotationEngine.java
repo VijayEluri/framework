@@ -10,25 +10,32 @@ import java.lang.reflect.Field;
 import org.mockito.MockitoAnnotations;
 
 /**
- * Configures mock creation logic behind &#064;Mock annotations
+ * Configures mock creation logic behind &#064;Mock, &#064;Captor and &#064;Spy annotations
  * <p>
  * If you are interested then see implementations or source code of {@link MockitoAnnotations#initMocks(Object)}
  */
 public interface AnnotationEngine {
 
     /**
-     * Usually the implementation checks the annotation  
-     * and then creates a mock object for specified field.
+     * @deprecated
+     * Please use AnnotationProcessor 'execute' method instead that is more robust
      * <p>
-     * You don't need to set the mock on the field. Mockito does it for you. 
-     * If in doubts look for implementations of this interface.
-     * <p>
-     * For annotations that you don't care about just return null - then Mockito will not initialize this field
-     * 
-     * @param annotation annotation on the field, for example &#064;Mock
-     * @param field field to create mock object for
-     * @return mock created for specified field. Can be null - then Mockito will not initialize the field
+     * Creates mock, ArgumentCaptor or wraps field instance in spy object.
+     * Only if of correct annotation type.
+     *
+     * @param annotation
+     * @param field
      */
+    @Deprecated
     Object createMockFor(Annotation annotation, Field field);
 
+    /**
+     * Allows extending the interface to perform action on specific fields on the test class
+     * <p>
+     * See the implementation of this method to figure out what is it for
+     * 
+     * @param context
+     * @param testClass 
+     */
+    void process(Class<?> context, Object testClass);
 }

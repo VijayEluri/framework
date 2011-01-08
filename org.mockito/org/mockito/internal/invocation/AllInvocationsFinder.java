@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.mockito.internal.MockHandlerInterface;
 import org.mockito.internal.util.MockUtil;
 
 public class AllInvocationsFinder {
@@ -17,13 +18,14 @@ public class AllInvocationsFinder {
     /**
      * gets all invocations from mocks. Invocations are ordered earlier first. 
      * 
-     * @param mocks
+     * @param mocks mocks
      * @return invocations
      */
-    public List<Invocation> getAllInvocations(List<? extends Object> mocks) {
+    public List<Invocation> find(List<?> mocks) {
         Set<Invocation> invocationsInOrder = new TreeSet<Invocation>(new SequenceNumberComparator());
         for (Object mock : mocks) {
-            List<Invocation> fromSingleMock = new MockUtil().getMockHandler(mock).getRegisteredInvocations();
+            MockHandlerInterface<Object> handler = new MockUtil().getMockHandler(mock);
+            List<Invocation> fromSingleMock = handler.getInvocationContainer().getInvocations();
             invocationsInOrder.addAll(fromSingleMock);
         }
         
@@ -32,9 +34,7 @@ public class AllInvocationsFinder {
 
     private final class SequenceNumberComparator implements Comparator<Invocation> {
         public int compare(Invocation o1, Invocation o2) {
-            int comparison = o1.getSequenceNumber().compareTo(o2.getSequenceNumber());
-            assert comparison != 0 : "sequence number has to be globally unique";
-            return comparison;
+            return o1.getSequenceNumber().compareTo(o2.getSequenceNumber());
         }
     }
 }

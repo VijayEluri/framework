@@ -1,9 +1,10 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Mockito Plug-in
+Bundle-Name: Mockito
 Bundle-SymbolicName: org.mockito
-Bundle-Version: 1.8.0
+Bundle-Version: 1.8.5
 Bundle-ClassPath: .
+Bundle-Vendor: repackaged by oobium.org
 Export-Package: org.hamcrest,
  org.hamcrest.core,
  org.hamcrest.internal,
@@ -32,9 +33,12 @@ Export-Package: org.hamcrest,
  org.mockito.internal.creation.cglib,
  org.mockito.internal.creation.jmock,
  org.mockito.internal.debugging,
+ org.mockito.internal.exceptions,
  org.mockito.internal.exceptions.base,
+ org.mockito.internal.exceptions.util,
  org.mockito.internal.invocation,
  org.mockito.internal.invocation.realmethod,
+ org.mockito.internal.listeners,
  org.mockito.internal.matchers,
  org.mockito.internal.matchers.apachecommons,
  org.mockito.internal.progress,
@@ -45,6 +49,7 @@ Export-Package: org.hamcrest,
  org.mockito.internal.stubbing.answers,
  org.mockito.internal.stubbing.defaultanswers,
  org.mockito.internal.util,
+ org.mockito.internal.util.junit,
  org.mockito.internal.util.reflection,
  org.mockito.internal.verification,
  org.mockito.internal.verification.api,
@@ -53,6 +58,8 @@ Export-Package: org.hamcrest,
  org.mockito.invocation,
  org.mockito.runners,
  org.mockito.stubbing,
+ org.mockito.stubbing.answers,
+ org.mockito.verification,
  org.objenesis,
  org.objenesis.instantiator,
  org.objenesis.instantiator.basic,
@@ -60,5 +67,4 @@ Export-Package: org.hamcrest,
  org.objenesis.instantiator.jrockit,
  org.objenesis.instantiator.sun,
  org.objenesis.strategy
-Bundle-Vendor: oobium.org
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

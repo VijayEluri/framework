@@ -40,7 +40,7 @@ public class HandyReturnValues {
         if (isPrimitiveWrapper(clazz)) {
             return primitiveWrapperOf(clazz);
         } 
-        return primitiveValueFor(clazz);
+        return primitiveValueOrNullFor(clazz);
     }
 
     public Map returnMap() {
@@ -53,5 +53,9 @@ public class HandyReturnValues {
 
     public Set returnSet() {
         return new HashSet();
+    }
+
+    public <T> T returnFor(T instance) {
+        return instance == null ? null : (T) returnFor(instance.getClass());
     }
 }
