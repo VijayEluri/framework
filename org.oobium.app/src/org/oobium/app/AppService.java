@@ -229,7 +229,7 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		StringBuilder sb = new StringBuilder();
 		sb.append("(&(").append(Constants.OBJECTCLASS).append('=').append(ModuleService.class.getName()).append(')');
 		if(modules.size() == 1) {
-			sb.append("(name=").append(modules).append(')');
+			sb.append("(name=").append(modules.get(0)).append(')');
 		} else {
 			sb.append("(|");
 			for(String module : modules) {
