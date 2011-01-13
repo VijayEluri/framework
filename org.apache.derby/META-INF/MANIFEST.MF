@@ -1,8 +1,10 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Derby Plug-in
+Bundle-Name: Derby Database
 Bundle-SymbolicName: org.apache.derby
-Bundle-Version: 10.5.3.0
+Bundle-Version: 10.7.1.1
+Bundle-Vendor: repackaged by Oobium.org
+Bundle-ClassPath: .
 Export-Package: org.apache.derby.authentication,
  org.apache.derby.catalog,
  org.apache.derby.catalog.types,
@@ -37,6 +39,7 @@ Export-Package: org.apache.derby.authentication,
  org.apache.derby.iapi.sql.depend,
  org.apache.derby.iapi.sql.dictionary,
  org.apache.derby.iapi.sql.execute,
+ org.apache.derby.iapi.sql.execute.xplain,
  org.apache.derby.iapi.store.access,
  org.apache.derby.iapi.store.access.conglomerate,
  org.apache.derby.iapi.store.access.xa,
@@ -74,6 +77,7 @@ Export-Package: org.apache.derby.authentication,
  org.apache.derby.impl.sql.depend,
  org.apache.derby.impl.sql.execute,
  org.apache.derby.impl.sql.execute.rts,
+ org.apache.derby.impl.sql.execute.xplain,
  org.apache.derby.impl.store.access,
  org.apache.derby.impl.store.access.btree,
  org.apache.derby.impl.store.access.btree.index,
@@ -102,5 +106,4 @@ Export-Package: org.apache.derby.authentication,
 Import-Package: javax.naming,
  javax.naming.spi,
  javax.sql
-Bundle-Vendor: oobium.org
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
