@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Migration Service for Embedded Derby Databases
 Bundle-SymbolicName: org.oobium.persist.migrate.db.derby.embedded
-Bundle-Version: 0.5.0.qualifier
+Bundle-Version: 0.6.0.qualifier
 Bundle-Activator: org.oobium.persist.migrate.db.derby.embedded.DerbyEmbeddedMigrationService
 Bundle-Vendor: Oobium.org
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

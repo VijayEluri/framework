@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/org.oobium.framework_0.5.0.qualifier.jar" id="org.oobium.framework" version="0.5.0.qualifier">
+   <feature url="features/org.oobium.framework_0.6.0.qualifier.jar" id="org.oobium.framework" version="0.6.0.qualifier">
       <category name="Oobium"/>
    </feature>
    <category-def name="Oobium" label="Oobium"/>

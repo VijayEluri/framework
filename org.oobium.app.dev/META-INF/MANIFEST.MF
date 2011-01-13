@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: org.oobium.app.dev Bundle
 Bundle-SymbolicName: org.oobium.app.dev
-Bundle-Version: 0.5.0.qualifier
+Bundle-Version: 0.6.0.qualifier
 Oobium-Type: module
 Import-Package: org.oobium.app,
  org.oobium.app.model,

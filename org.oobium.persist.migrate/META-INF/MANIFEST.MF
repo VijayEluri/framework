@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Migrate Plug-in
 Bundle-SymbolicName: org.oobium.persist.migrate
-Bundle-Version: 0.5.0.qualifier
+Bundle-Version: 0.6.0.qualifier
 Import-Package: org.oobium.app,
  org.oobium.app.server.controller,
  org.oobium.app.server.routing,
