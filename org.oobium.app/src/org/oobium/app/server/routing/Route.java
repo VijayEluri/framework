@@ -21,7 +21,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import org.oobium.http.HttpRequest.Type;
+import org.oobium.http.constants.RequestType;
 
 public abstract class Route {
 
@@ -34,7 +34,7 @@ public abstract class Route {
 	
 	
 	protected final int type;
-	protected final Type requestType;
+	protected final RequestType requestType;
 	protected String rule;
 	protected boolean matchOnFullPath;
 	protected Pattern pattern;
@@ -42,7 +42,7 @@ public abstract class Route {
 	
 	protected String string;
 	
-	public Route(int type, Type requestType, String rule) {
+	public Route(int type, RequestType requestType, String rule) {
 		this.type = type;
 		this.requestType = requestType;
 		this.rule = rule;

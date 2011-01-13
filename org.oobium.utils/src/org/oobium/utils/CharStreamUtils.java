@@ -81,6 +81,9 @@ public class CharStreamUtils {
 		if(start >= 0 && start < end) {
 			char opener = ca[start];
 			char closer = closerChar(opener);
+			if(closer == 0) {
+				return start; // nothing opened...
+			}
 			
 			if(opener == '"') { // quotes beat comments!
 				escapeLineComments = false;

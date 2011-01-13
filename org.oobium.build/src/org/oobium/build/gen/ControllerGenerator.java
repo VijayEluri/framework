@@ -36,6 +36,7 @@ import org.oobium.build.model.ModelDefinition;
 import org.oobium.build.util.SourceFile;
 import org.oobium.build.workspace.Module;
 import org.oobium.http.HttpRequest;
+import org.oobium.http.constants.ContentType;
 
 public class ControllerGenerator {
 
@@ -185,6 +186,7 @@ public class ControllerGenerator {
 			src.imports.add(Controller.class.getCanonicalName());
 		}
 		src.imports.add(SQLException.class.getCanonicalName());
+		src.staticImports.add(ContentType.class.getCanonicalName() + ".*");
 
 		for(int i = 0; i < 7; i++) {
 			addImports(i, src.imports);
@@ -237,7 +239,7 @@ public class ControllerGenerator {
 		if(!withViews) {
 			sb.append("\t\t\trenderCreated(").append(varName).append(");\n");
 		} else {
-			sb.append("\t\t\tswitch(wants()) {\n");
+			sb.append("\t\t\tswitch(wants(JS, JSON, HTML)) {\n");
 			sb.append("\t\t\t\tcase JS:\n");
 			sb.append("\t\t\t\tcase JSON: renderCreated(").append(varName).append("); break;\n");
 			sb.append("\t\t\t\tcase HTML: redirectTo(").append(varName).append(", show, \"").append(titleize(mType)).append(" was successfully created.\"); break;\n");
@@ -247,7 +249,7 @@ public class ControllerGenerator {
 		if(!withViews) {
 			sb.append("\t\t\trenderErrors(").append(varName).append(");\n");
 		} else {
-			sb.append("\t\t\tswitch(wants()) {\n");
+			sb.append("\t\t\tswitch(wants(JS, JSON, HTML)) {\n");
 			sb.append("\t\t\t\tcase JS:\n");
 			sb.append("\t\t\t\tcase JSON: renderErrors(").append(varName).append("); break;\n");
 			sb.append("\t\t\t\tcase HTML: render(new ShowNew").append(mType).append('(').append(varName).append(")); break;\n");
@@ -268,7 +270,7 @@ public class ControllerGenerator {
 		if(!withViews) {
 			sb.append("\t\t\trenderDestroyed(").append(varName).append(");\n");
 		} else {
-			sb.append("\t\t\tswitch(wants()) {\n");
+			sb.append("\t\t\tswitch(wants(JS, JSON, HTML)) {\n");
 			sb.append("\t\t\t\tcase JS:\n");
 			sb.append("\t\t\t\tcase JSON: renderDestroyed(").append(varName).append(");     break;\n");
 			sb.append("\t\t\t\tcase HTML: redirectTo(").append(varName).append(", showAll); break;\n");
@@ -305,7 +307,7 @@ public class ControllerGenerator {
 		if(!withViews) {
 			sb.append("\t\t\trender(").append(varName).append(");\n");
 		} else {
-			sb.append("\t\t\tswitch(wants()) {\n");
+			sb.append("\t\t\tswitch(wants(JS, JSON, HTML)) {\n");
 			sb.append("\t\t\t\tcase JS:\n");
 			sb.append("\t\t\t\tcase JSON: render(").append(varName).append(");           ").append(repeat(' ', mType.length())).append("break;\n");
 			sb.append("\t\t\t\tcase HTML: render(new Show").append(mType).append("(").append(varName).append(")); break;\n");
@@ -326,7 +328,7 @@ public class ControllerGenerator {
 		if(!withViews) {
 			sb.append("\t\trender(").append(varNamePlural).append(");\n");
 		} else {
-			sb.append("\t\tswitch(wants()) {\n");
+			sb.append("\t\tswitch(wants(JS, JSON, HTML)) {\n");
 			sb.append("\t\t\tcase JS:\n");
 			sb.append("\t\t\tcase JSON: render(").append(varNamePlural).append("); break;\n");;
 			sb.append("\t\t\tcase HTML: render(new ShowAll").append(mTypePlural).append("(").append(varNamePlural).append(")); break;\n");
@@ -365,12 +367,12 @@ public class ControllerGenerator {
 		sb.append(regen ? "@Regen\n\t" : "\t");
 		sb.append("@Override // PUT/URL/[models]/id\n");
 		sb.append("\tpublic void update() throws SQLException {\n");
-		sb.append("\t\t").append(mType).append(" ").append(varName).append(" = ").append("param(\"").append(varName).append("\", ").append(mType).append(".class).setId(getId());\n");
+		sb.append("\t\t").append(mType).append(" ").append(varName).append(" = ").append("param(\"").append(varName).append("\", new ").append(mType).append("()).setId(getId());\n");
 		sb.append("\t\tif(").append(varName).append(".update()) {\n");
 		if(!withViews) {
 			sb.append("\t\t\trenderCreated(").append(varName).append(");\n");
 		} else {
-			sb.append("\t\t\tswitch(wants()) {\n");
+			sb.append("\t\t\tswitch(wants(JS, JSON, HTML)) {\n");
 			sb.append("\t\t\t\tcase JS:\n");
 			sb.append("\t\t\t\tcase JSON: renderOK(); break;\n");
 			sb.append("\t\t\t\tcase HTML: redirectTo(").append(varName).append(", show, \"").append(titleize(mType)).append(" was successfully updated.\"); break;\n");
@@ -380,7 +382,7 @@ public class ControllerGenerator {
 		if(!withViews) {
 			sb.append("\t\t\trenderErrors(").append(varName).append(");\n");
 		} else {
-			sb.append("\t\t\tswitch(wants()) {\n");
+			sb.append("\t\t\tswitch(wants(JS, JSON, HTML)) {\n");
 			sb.append("\t\t\t\tcase JS:\n");
 			sb.append("\t\t\t\tcase JSON: renderErrors(").append(varName).append("); break;\n");
 			sb.append("\t\t\t\tcase HTML: render(new ShowEdit").append(mType).append('(').append(varName).append(")); break;\n");

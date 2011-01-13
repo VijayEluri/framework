@@ -18,7 +18,7 @@ import java.util.List;
 import org.oobium.app.server.controller.Action;
 import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.routing.Route;
-import org.oobium.http.HttpRequest.Type;
+import org.oobium.http.constants.RequestType;
 import org.oobium.persist.Model;
 
 public class ControllerRoute extends Route {
@@ -29,15 +29,15 @@ public class ControllerRoute extends Route {
 	public final String[][] params;
 
 	
-	public ControllerRoute(Type requestType, String rule, Controller controller, Action action) {
+	public ControllerRoute(RequestType requestType, String rule, Controller controller, Action action) {
 		this(requestType, rule, controller, null, controller.getClass(), action);
 	}
 	
-	public ControllerRoute(Type requestType, String rule, Class<? extends Model> modelClass, Class<? extends Controller> controllerClass, Action action) {
+	public ControllerRoute(RequestType requestType, String rule, Class<? extends Model> modelClass, Class<? extends Controller> controllerClass, Action action) {
 		this(requestType, rule, null, modelClass, controllerClass, action);
 	}
 	
-	private ControllerRoute(Type requestType, String rule, Controller controller, Class<? extends Model> modelClass, Class<? extends Controller> controllerClass, Action action) {
+	private ControllerRoute(RequestType requestType, String rule, Controller controller, Class<? extends Model> modelClass, Class<? extends Controller> controllerClass, Action action) {
 		super(Route.CONTROLLER, requestType, rule);
 
 		this.modelClass = modelClass;

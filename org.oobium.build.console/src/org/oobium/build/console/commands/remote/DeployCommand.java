@@ -37,6 +37,8 @@ import org.oobium.utils.StringUtils;
 
 public class DeployCommand extends BuilderCommand {
 
+	private static final int KEEP = 3;
+	
 	@Override
 	public void configure() {
 		applicationRequired = true;
@@ -105,7 +107,7 @@ public class DeployCommand extends BuilderCommand {
 			if("all".equals(param("keep"))) {
 				console.out.println("keeping all previous installations");
 			} else {
-				for(int i = coerce(param("keep"), 1); i < previous.length; i++) {
+				for(int i = coerce(param("keep"), KEEP); i < previous.length; i++) {
 					ssh.exec("rm -r " + previous[i]);
 				}
 			}

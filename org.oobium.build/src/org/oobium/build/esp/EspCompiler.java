@@ -53,6 +53,8 @@ import org.oobium.build.esp.elements.StyleElement;
 import org.oobium.build.esp.parts.ConstructorArg;
 import org.oobium.build.esp.parts.EntryPart;
 import org.oobium.build.esp.parts.JavaPart;
+import org.oobium.build.esp.parts.ScriptJavaPart;
+import org.oobium.build.esp.parts.ScriptPart;
 import org.oobium.build.esp.parts.StylePropertyPart;
 import org.oobium.mailer.MailerTemplate;
 import org.oobium.persist.Model;
@@ -78,20 +80,6 @@ public class EspCompiler {
 			case '\t':	if(j == 0 || text.charAt(j-1) != '\\') { sb.append("\\t"); } break;
 			default:	sb.append(c); break;
 			}
-		}
-	}
-	
-	private static void appendEscaped(StringBuilder sb, String text, Map<String, EntryPart> vars) {
-		if(vars == null) {
-			appendEscaped(sb, text);
-		} else {
-			StringBuilder sb0 = new StringBuilder();
-			appendEscaped(sb0, text);
-			String s = sb0.toString();
-			for(Entry<String, EntryPart> entry : vars.entrySet()) {
-				s = s.replaceAll("@"+entry.getKey(), "\").append("+entry.getValue().getValue().getText()+").append(\"");
-			}
-			sb.append(s);
 		}
 	}
 	
@@ -519,21 +507,23 @@ public class EspCompiler {
 		for(int j = 0; j < args.size(); j++) {
 			ConstructorArg arg = args.get(j);
 			if(j != 0) sb.append(", ");
-			int start = sb.length();
 			locations.add(new EspLocation(sb.length(), arg));
 			if(arg.hasVarType()) {
+				String type = arg.getVarType();
 				locations.add(new EspLocation(sb.length(), arg.getVarTypePart()));
-				sb.append(arg.getVarType());
-			}
-			if(arg.isVarArgs()) {
-				sb.append('.').append('.').append('.');
-			} else {
-				sb.append(' ');
-			}
-			if(arg.hasVarName()) {
-				locations.add(new EspLocation(sb.length(), arg.getVarNamePart()));
-				sb.append(arg.getVarName());
-				esf.addVariable(arg.getVarName(), new String(sb.substring(start, sb.length())));
+				sb.append(type);
+				if(arg.isVarArgs()) {
+					type = type + "[]";
+					sb.append('.').append('.').append('.');
+				} else {
+					sb.append(' ');
+				}
+				if(arg.hasVarName()) {
+					locations.add(new EspLocation(sb.length(), arg.getVarNamePart()));
+					String name = arg.getVarName();
+					sb.append(name);
+					esf.addVariable(name, "public " + type + " " + name);
+				}
 			}
 		}
 		sb.append(") {\n");
@@ -1453,14 +1443,58 @@ public class EspCompiler {
 				}
 			}
 			if(element.hasLines()) {
-				List<EspPart> lines = element.getLines();
-				Map<String, EntryPart> vars = element.hasEntries() ? element.getEntries() : null;
+				List<ScriptPart> lines = element.getLines();
 				if(!dom.isEjs()) {
 					sb.append("<script>");
 				}
 				for(int i = 0; i < lines.size(); i++) {
+					ScriptPart line = lines.get(i);
 					if(i != 0) sb.append("\\n");
-					appendEscaped(sb, trim(lines.get(i).getText()), vars);
+					if(line.hasParts()) {
+						String text = line.getText();
+						List<EspPart> parts = line.getParts();
+						for(int j = 0; j < parts.size(); j++) {
+							if(parts.get(j) instanceof ScriptJavaPart) {
+								ScriptJavaPart sjpart = (ScriptJavaPart) parts.get(j);
+								int s1 = sjpart.getStart() - line.getStart();
+								int s2 = s1 + sjpart.getLength();
+								if(j == 0) {
+									if(s1 > 0) {
+										appendEscaped(sb, text, 0, s1);
+									}
+								} else {
+									int s0 = parts.get(j-1).getEnd();
+									if(s0 < s1) {
+										appendEscaped(sb, text, s0, s1);
+									}
+								}
+								sb.append(sjpart.assignmentChar);
+								sb.append("\").append(");
+								if(sb == body) {
+									EspPart spart = sjpart.getSourcePart();
+									if(spart != null) {
+										bodyLocations.add(new EspLocation(sb.length(), spart));
+									}
+								} else if(sb == title) {
+									EspPart spart = sjpart.getSourcePart();
+									if(spart != null) {
+										titleLocations.add(new EspLocation(sb.length(), spart));
+									}
+								}
+								sb.append(sjpart.getSource());
+								sb.append(").append(\"");
+								if(j == parts.size() - 1) {
+									if(s2 < text.length()) {
+										appendEscaped(sb, text, s2, text.length());
+									}
+								}
+							} else {
+								build(parts.get(j), sb);
+							}
+						}
+					} else {
+						appendEscaped(sb, trim(line.getText()));
+					}
 				}
 				if(!dom.isEjs()) {
 					sb.append("</script>");
@@ -1584,7 +1618,6 @@ public class EspCompiler {
 			if(element.hasChildren()) {
 				boolean firstChild = true;
 				List<StyleChildElement> children = element.getChildren();
-				Map<String, EntryPart> vars = element.hasEntries() ? element.getEntries() : null;
 				if(!dom.isEss()) {
 					sb.append("<style>");
 				}
@@ -1614,7 +1647,7 @@ public class EspCompiler {
 										sb.append(":\").append(").append(value.getText()).append(").append(\"");
 									} else {
 										sb.append(':');
-										appendEscaped(sb, value.getText(), vars);
+										appendEscaped(sb, value.getText());
 									}
 								}
 							}

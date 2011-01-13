@@ -214,7 +214,7 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 	 * {@link #authorize(String, String)} will not be called and this method will behave as
 	 * if it had returned false by rendering the 401 response.
 	 */
-	protected void authorize() {
+	public void authorize() {
 		boolean authorized = false;
 		String header = request.getHeader(Header.AUTHORIZATION);
 		if(header != null && header.startsWith("Basic ")) {
@@ -228,7 +228,7 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		if(!authorized) {
 			try {
 				rendering();
-				response = new AuthorizationHandler("secure area").routeRequest(request);
+				response = new AuthorizationHandler(router, "secure area").routeRequest(request);
 			} catch(Exception e) {
 				logger.warn(e);
 			}
@@ -244,7 +244,7 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 	 * @param password the password sent in the request; may be null
 	 * @return true if the username and password are authorized to continue; false otherwise
 	 */
-	protected boolean authorize(String username, String password) {
+	public boolean authorize(String username, String password) {
 		return false;
 	}
 	
@@ -286,6 +286,25 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 				// discard
 			}
 		}
+	}
+	
+	public void clear() {
+		logger = null;
+		handler = null;
+		appRouter = null;
+		action = null;
+		request = null;
+		response = null;
+		if(params != null) params.clear();
+		params = null;
+		if(flash != null) flash.clear();
+		flash = null;
+		if(flashOut != null) flashOut.clear();
+		flashOut = null;
+		if(session != null) session.clear();
+		session = null;
+		sessionResolved = false;
+		isRendered = false;
 	}
 	
 	/**
@@ -365,7 +384,6 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		logger.debug("end controller execute");
 	}
 	
-	@Override
 	public void expireCache(String key) {
 		CacheService cache = handler.getCacheService();
 		if(cache != null) {
@@ -400,26 +418,26 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		}
 		return new Filter(null);
 	}
-	
+
 	@Override
 	public String flash(String name) {
 		return getFlash(name);
 	}
-
+	
 	public <T> T flash(String name, java.lang.Class<T> type) {
 		if(flash != null) {
 			return coerce(flash.get(name), type);
 		}
 		return null;
 	}
-	
+
 	public <T> T flash(String name, T defaultValue) {
 		if(flash != null) {
 			return coerce(flash.get(name), defaultValue);
 		}
 		return defaultValue;
 	}
-
+	
 	@Override
 	public Action getAction() {
 		return action;
@@ -459,19 +477,19 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 	protected String getCacheForAction() {
 		return getCacheForAction(action);
 	}
-	
+
 	protected String getCacheForAction(Action action) {
 		if(ActionCache.isCaching(this, action)) {
 			return getCache(createActionCacheKey(getClass(), action, wants()));
 		}
 		return null;
 	}
-
+	
 	@Override
 	public String getControllerName() {
 		return getClass().getSimpleName();
 	}
-	
+
 	@Override
 	public String getFlash(String name) {
 		if(flash != null) {
@@ -482,7 +500,7 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		}
 		return null;
 	}
-
+	
 	@Override
 	public <T> T getFlash(String name, Class<T> type) {
 		return flash(name, type);
@@ -507,11 +525,11 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 	public String getFlashWarning() {
 		return getFlash(FLASH_WARNING);
 	}
-	
+
 	public int getId() {
 		return param("id", int.class);
 	}
-
+	
 	public Logger getLogger() {
 		return logger;
 	}
@@ -557,12 +575,12 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 	public HttpSession getSession() {
 		return getSession(true);
 	}
-	
+
 	public HttpSession getSession(boolean create) {
 		resolveSession(create);
 		return session;
 	}
-
+	
 	/**
 	 * Implemented by subclasses, if necessary, to handle non-RESTful routes.
 	 * @throws SQLException
@@ -579,17 +597,17 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		}
 		return false;
 	}
-	
+
 	@Override
 	public boolean hasFlashError() {
 		return hasFlash(FLASH_ERROR);
 	}
-
+	
 	@Override
 	public boolean hasFlashNotice() {
 		return hasFlash(FLASH_NOTICE);
 	}
-	
+
 	@Override
 	public boolean hasFlashWarning() {
 		return hasFlash(FLASH_WARNING);
@@ -607,7 +625,7 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 	public boolean hasParams() {
 		return params != null && !params.isEmpty();
 	}
-
+	
 	@Override
 	public boolean hasSession() {
 		resolveSession(false);
@@ -628,7 +646,7 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 				params.putAll(routeParams);
 			}
 			this.params = mapParams(params);
-		} else {
+		} else if(routeParams != null) {
 			this.params = mapParams(routeParams);
 		}
 
@@ -723,12 +741,12 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 	public String pathTo(Model model, Action action) {
 		return appRouter.pathTo(router, model, action);
 	}
-	
+
 	@Override
 	public String pathTo(Model parent, String field) {
 		return appRouter.pathTo(router, parent, field);
 	}
-
+	
 	@Override
 	public String pathTo(Model parent, String field, Action action) {
 		return appRouter.pathTo(router, parent, field, action);
@@ -743,21 +761,21 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 	public String pathTo(String routeName, Model model) {
 		return appRouter.pathTo(router, routeName, model);
 	}
-	
+
 	@Override
 	public String pathTo(String routeName, Object... params) {
 		return appRouter.pathTo(router, routeName, params);
 	}
-
-	protected void redirectTo(Class<? extends Model> clazz, Action action) {
+	
+	public void redirectTo(Class<? extends Model> clazz, Action action) {
 		redirectTo(pathTo(clazz, action));
 	}
 	
-	protected void redirectTo(Model model, Action action) {
+	public void redirectTo(Model model, Action action) {
 		redirectTo(model, action, null);
 	}
 	
-	protected void redirectTo(Model model, Action action, String notice) {
+	public void redirectTo(Model model, Action action, String notice) {
 		if(action == showEdit) {
 			addFlashError(model);
 			setFlash(varName(model.getClass()), model);
@@ -770,8 +788,8 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		}
 		redirectTo(pathTo(model, action));
 	}
-	
-	protected void redirectTo(Model parent, String field, Action action) {
+
+	public void redirectTo(Model parent, String field, Action action) {
 		if(action == showEdit || action == showNew) {
 			Object fieldValue = parent.get(field);
 			if(fieldValue instanceof Model) {
@@ -784,36 +802,34 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		redirectTo(pathTo(parent, field, action));
 	}
 
-	protected void redirectTo(String path) {
+	public void redirectTo(String path) {
 		rendering();
 		response = new Response(request.getType());
 		response.setStatus(StatusCode.REDIRECT);
 		response.addHeader(Header.LOCATION, path);
 	}
-
-	protected void redirectToHome() {
+	
+	public void redirectToHome() {
 		redirectTo("/");
 	}
 	
-	protected void render(Collection<? extends Model> models) {
+	public void render(Collection<? extends Model> models) {
 		render(wants(), models);
 	}
 	
-	protected void render(ContentType type, byte[] data) {
+	public void render(ContentType type, byte[] data) {
 		rendering();
 		response = new ByteArrayResponse(request.getType());
 		response.setStatus(StatusCode.OK);
 		response.setContentType(type);
 		((ByteArrayResponse) response).setData(data);
 	}
-	
-	protected void render(ContentType type, Collection<? extends Model> models) {
-		logger.debug("start render of models");
-		render(type, toJson(models));
-		logger.debug("end render of models");
-	}
 
-	protected void render(ContentType type, String body) {
+	public void render(ContentType type, Collection<? extends Model> models) {
+		render(type, toJson(models));
+	}
+	
+	public void render(ContentType type, String body) {
 		rendering();
 		response = new Response(request.getType());
 		response.setStatus(StatusCode.OK);
@@ -833,7 +849,7 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		response.setBody(asset.getContent());
 	}
 	
-	protected void render(Model model) {
+	public void render(Model model) {
 		render(wants(), model.toJson());
 	}
 	
@@ -841,7 +857,7 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 	 * Convenience method for render(String.valueOf(object))
 	 * @param object
 	 */
-	protected void render(Object object) {
+	public void render(Object object) {
 		render(String.valueOf(object));
 	}
 	
@@ -849,11 +865,11 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		render((DynamicAsset) sf);
 	}
 	
-	protected void render(StatusCode status) {
+	public void render(StatusCode status) {
 		render(status, status.getDescription());
 	}
 	
-	protected void render(StatusCode status, String body) {
+	public void render(StatusCode status, String body) {
 		rendering();
 		response = new Response(request.getType());
 		response.setStatus(status);
@@ -861,7 +877,7 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		response.setBody(body);
 	}
 	
-	protected void render(String body) {
+	public void render(String body) {
 		rendering();
 		response = new Response(request.getType());
 		response.setStatus(StatusCode.OK);
@@ -910,16 +926,16 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 			render(sb);
 		}
 	}
-	
+
 	public void render(StyleSheet ss) {
 		render((DynamicAsset) ss);
 	}
-
+	
 	public void render(View view) {
 		render(view, isXhr());
 	}
 	
-	protected void render(View view, boolean partial) {
+	public void render(View view, boolean partial) {
 		if(view == null) {
 			throw new IllegalArgumentException("view cannot be null");
 		}
@@ -943,59 +959,37 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		logger.debug("end render of view");
 	}
 	
-	protected void render(View view, View layout) {
-		if(view == null) {
-			throw new IllegalArgumentException("view cannot be null");
-		}
-		if(layout == null) {
-			render(view);
-			return;
-		}
-		
-		if(logger.isLoggingDebug()) {
-			logger.debug("start render of view " + view.getClass().getSimpleName() + " with layout " + layout.getClass().getSimpleName());
-		}
-		rendering();
-		
-		try {
-			response = new Response(request.getType());
-			response.setStatus(StatusCode.OK);
-			response.setContentType(ContentType.HTML);
-			
-			ViewRenderer renderer = new ViewRenderer(this, view);
-			renderer.setLayout(layout);
-			
-			response.setBody(renderer.render());
-		} finally {
-			view.setRenderer(null);
-		}
-		logger.debug("end render of view with layout");
-	}
-	
-	protected void renderAccepted() {
+	public void renderAccepted() {
 		render(StatusCode.ACCEPTED, wantsJS() ? "[]" : StatusCode.ACCEPTED.getDescription());
 	}
 	
-	protected void renderCreated(int id) {
+	public void renderCreated(int id) {
 		renderCreated((long) id);
 	}
+
+	public void renderCreated(long id) {
+		renderCreated(id, null);
+	}
 	
-	protected void renderCreated(long id) {
+	public void renderCreated(long id, String path) {
 		rendering();
 		response = new Response(request.getType());
 		response.setStatus(StatusCode.CREATED);
 		response.addHeader(Header.ID, String.valueOf(id));
+		if(!blank(path)) {
+			response.addHeader(Header.LOCATION, path);
+		}
 		if(wantsJS()) {
 			response.setContentType(wants());
 			response.setBody("null");
 		}
 	}
 
-	protected void renderCreated(Model model) {
-		renderCreated(model.getId());
+	public void renderCreated(Model model) {
+		renderCreated((long) model.getId(), pathTo(model));
 	}
 
-	protected void renderDestroyed(Model model) {
+	public void renderDestroyed(Model model) {
 		rendering();
 		response = new Response(request.getType());
 		response.setStatus(StatusCode.OK);
@@ -1006,15 +1000,15 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		}
 	}
 
-	protected void renderErrors(List<String> errors) {
+	public void renderErrors(List<String> errors) {
 		if(errors != null) {
 			renderErrors(errors.toArray(new String[errors.size()]));
 		} else {
 			renderErrors(new String[0]);
 		}
 	}
-
-	protected void renderErrors(Model...models) {
+	
+	public void renderErrors(Model...models) {
 		rendering();
 		response = new Response(request.getType());
 		response.setStatus(StatusCode.CONFLICT);
@@ -1036,22 +1030,22 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		}
 	}
 	
-	protected void renderErrors(String...errors) {
+	public void renderErrors(String...errors) {
 		rendering();
 		response = new Response(request.getType());
 		response.setStatus(StatusCode.CONFLICT);
 		response.setContentType(ContentType.JSON);
 		response.setBody(toJson(errors));
 	}
-	
+
 	private void rendering() {
 		if(isRendered) {
 			throw new UnsupportedOperationException("cannot render more than once");
 		}
 		isRendered = true;
 	}
-
-	protected void renderJson(Collection<? extends Model> models, String include) {
+	
+	public void renderJson(Collection<? extends Model> models, String include) {
 		if(blank(models)) {
 			render(ContentType.JSON, "[]");
 		} else {
@@ -1060,19 +1054,19 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		}
 	}
 	
-	protected void renderJson(Object object) {
+	public void renderJson(Object object) {
 		render(ContentType.JSON, format(toJson(object)));
 	}
-	
-	protected void renderOK() {
+
+	public void renderOK() {
 		render(StatusCode.OK, wantsJS() ? "[]" : StatusCode.OK.getDescription());
 	}
-
-	protected void renderPage(String text) {
+	
+	public void renderPage(String text) {
 		renderPage("", text);
 	}
-	
-	protected void renderPage(String title, String text) {
+
+	public void renderPage(String title, String text) {
 		render(ContentType.PLAIN,
 				"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" " +
 				"\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n" +
@@ -1085,25 +1079,6 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 			   	"</body>\n" +
 				"</html>"
 		);
-	}
-
-	public void clear() {
-		logger = null;
-		handler = null;
-		appRouter = null;
-		action = null;
-		request = null;
-		response = null;
-		if(params != null) params.clear();
-		params = null;
-		if(flash != null) flash.clear();
-		flash = null;
-		if(flashOut != null) flashOut.clear();
-		flashOut = null;
-		if(session != null) session.clear();
-		session = null;
-		sessionResolved = false;
-		isRendered = false;
 	}
 
 	private void resolveSession(boolean create) {
@@ -1127,7 +1102,6 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		}
 	}
 
-	@Override
 	public void setCache(String key, String value) {
 		CacheService cache = handler.getCacheService();
 		if(cache != null) {
@@ -1147,7 +1121,6 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		setCacheForAction(action, content);
 	}
 
-	@Override
 	public void setFlash(String name, Object value) {
 		if(flash == null) {
 			flash = new HashMap<String, Object>();
@@ -1164,7 +1137,6 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		}
 	}
 
-	@Override
 	public void setFlashError(Model model) {
 		if(model.hasErrors()) {
 			List<String> errors = new ArrayList<String>();
@@ -1175,7 +1147,6 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		}
 	}
 
-	@Override
 	public void setFlashError(Model... models) {
 		List<String> errors = new ArrayList<String>();
 		for(Model model : models) {
@@ -1188,22 +1159,18 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		}
 	}
 
-	@Override
 	public void setFlashError(Object value) {
 		setFlash(FLASH_ERROR, value);
 	}
 	
-	@Override
 	public void setFlashNotice(Object value) {
 		setFlash(FLASH_NOTICE, value);
 	}
 	
-	@Override
 	public void setFlashWarning(Object value) {
 		setFlash(FLASH_ERROR, value);
 	}
 	
-	@Override
 	public void setParam(String name, Object value) {
 		if(params == null) {
 			params = new HashMap<String, Object>();
@@ -1333,6 +1300,9 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 					}
 				}
 			}
+		}
+		if(!blank(options)) {
+			return options[options.length-1];
 		}
 		return ContentType.UNKNOWN;
 	}

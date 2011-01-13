@@ -20,7 +20,6 @@ public interface IParams {
 	public abstract Map<String, Object> getParams();
 	public abstract boolean hasParam(String name);
 	public abstract boolean hasParams();
-	public abstract void setParam(String name, Object value);
 	
 	public abstract String param(String name);
 	public abstract <T> T param(String name, Class<T> clazz);

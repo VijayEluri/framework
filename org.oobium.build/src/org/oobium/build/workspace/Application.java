@@ -162,8 +162,7 @@ public class Application extends Module {
 	}
 	
 	public File getSchema() {
-		File migration = getMigratorFile();
-		return new File(migration + File.separator + "generated" + File.separator + migration.getName().replace('.', File.separatorChar) + File.separator + "migrations", 
+		return new File(migrator + File.separator + "generated" + File.separator + migrator.getName().replace('.', File.separatorChar) + File.separator + "migrations", 
 				"AbstractCreateDatabase.java");
 	}
 	

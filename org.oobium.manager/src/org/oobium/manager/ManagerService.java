@@ -14,7 +14,7 @@ import static org.oobium.app.server.controller.Action.destroy;
 import static org.oobium.app.server.controller.Action.show;
 import static org.oobium.app.server.controller.Action.showAll;
 import static org.oobium.app.server.controller.Action.update;
-import static org.oobium.http.HttpRequest.Type.POST;
+import static org.oobium.http.constants.RequestType.POST;
 
 import org.oobium.app.AppService;
 import org.oobium.app.persist.MemoryPersistService;

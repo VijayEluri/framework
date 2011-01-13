@@ -19,9 +19,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
 
-import org.oobium.http.HttpRequest.Type;
 import org.oobium.http.constants.ContentType;
 import org.oobium.http.constants.Header;
+import org.oobium.http.constants.RequestType;
 import org.oobium.http.constants.StatusCode;
 
 public class FileResponse extends Response {
@@ -31,7 +31,7 @@ public class FileResponse extends Response {
 
 	private File file;
 	
-	public FileResponse(Type requestType, File file) {
+	public FileResponse(RequestType requestType, File file) {
 		super(requestType);
 		if(file.canRead()) {
 			this.file = file;

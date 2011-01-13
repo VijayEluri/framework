@@ -60,6 +60,7 @@ import org.oobium.build.workspace.Application;
 import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Migrator;
 import org.oobium.build.workspace.Module;
+import org.oobium.build.workspace.TestSuite;
 import org.oobium.build.workspace.WorkspaceEvent;
 import org.oobium.build.workspace.WorkspaceListener;
 import org.oobium.console.Command;
@@ -516,7 +517,13 @@ public class ConsoleView extends ViewPart {
 								setApplication(file);
 							} else if(bundle.isMigration()) {
 								Migrator migrator = (Migrator) bundle;
-								Module module = OobiumPlugin.getWorkspace().getModule(migrator.module);
+								Module module = OobiumPlugin.getWorkspace().getModule(migrator.moduleName);
+								if(module != null && module.isApplication()) {
+									setApplication(module.file);
+								}
+							} else if(bundle.isTestSuite()) {
+								TestSuite tests = (TestSuite) bundle;
+								Module module = OobiumPlugin.getWorkspace().getModule(tests.moduleName);
 								if(module != null && module.isApplication()) {
 									setApplication(module.file);
 								}

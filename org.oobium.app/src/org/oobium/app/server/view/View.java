@@ -165,11 +165,6 @@ public class View implements ICache, IFlash, IParams, IPathRouting, IUrlRouting,
 	}
 	
 	@Override
-	public void expireCache(String key) {
-		controller.expireCache(key);
-	}
-	
-	@Override
 	public String flash(String name) {
 		return controller.flash(name);
 	}
@@ -583,57 +578,20 @@ public class View implements ICache, IFlash, IParams, IPathRouting, IUrlRouting,
 		}
 	}
 
-	@Override
-	public void setCache(String key, String value) {
-		controller.setCache(key, value);
-	}
-
-	public void setChild(View child) {
+	public View setChild(View child) {
 		this.child = child;
 		this.child.setRenderer(renderer);
+		return this;
 	}
 
-	@Override
-	public void setFlash(String name, Object value) {
-		controller.setFlash(name, value);
-	}
-
-	@Override
-	public void setFlashError(Model model) {
-		controller.setFlashError(model);		
-	}
-
-	@Override
-	public void setFlashError(Model... models) {
-		controller.setFlashError(models);		
-	}
-
-	@Override
-	public void setFlashError(Object value) {
-		controller.setFlashError(value);		
-	}
-
-	@Override
-	public void setFlashNotice(Object value) {
-		controller.setFlashNotice(value);
-	}
-
-	@Override
-	public void setFlashWarning(Object value) {
-		controller.setFlashWarning(value);
-	}
-
-	public void setLayout(Class<? extends View> layout) {
+	public View setLayout(Class<? extends View> layout) {
 		this.layout = layout;
+		return this;
 	}
 
-	public void setLayout(String layoutName) {
+	public View setLayout(String layoutName) {
 		this.layoutName = layoutName;
-	}
-
-	@Override
-	public void setParam(String name, Object value) {
-		controller.setParam(name, value);
+		return this;
 	}
 
 	public void setRenderer(ViewRenderer renderer) {

@@ -19,13 +19,11 @@ import org.oobium.http.HttpRequest;
 
 public class ControllerHandler extends RouteHandler {
 
-	public final Router router;
 	public final Class<? extends Controller> controllerClass;
 	public final Action action;
 	
 	public ControllerHandler(Router router, Class<? extends Controller> controllerClass, Action action, String[][] params) {
-		super(params);
-		this.router = router;
+		super(router, params);
 		this.controllerClass = controllerClass;
 		this.action = action;
 	}
@@ -41,4 +39,28 @@ public class ControllerHandler extends RouteHandler {
 		}
 	}
 
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(controllerClass.getSimpleName());
+		sb.append('#');
+		if(action != null) {
+			sb.append(action);
+		} else {
+			sb.append("handleRequest");
+		}
+		if(params != null) {
+			sb.append('(');
+			for(int i = 0; i < params.length; i++) {
+				if(i != 0) sb.append(',');
+				sb.append(params[i][0]);
+				if(params[i][1] != null) {
+					sb.append('=').append(params[i][1]);
+				}
+			}
+			sb.append(')');
+		}
+		return sb.toString();
+	}
+	
 }

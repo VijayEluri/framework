@@ -22,13 +22,13 @@ public class Cookie implements HttpCookie {
                 || name.equalsIgnoreCase("CommentURL")      // rfc2965 only
                 || name.equalsIgnoreCase("Discard")	        // rfc2965 only
                 || name.equalsIgnoreCase("Domain")
-//                || name.equalsIgnoreCase("Expires")	        // netscape draft only
+//              || name.equalsIgnoreCase("Expires")	        // netscape draft only
                 || name.equalsIgnoreCase("Max-Age")
                 || name.equalsIgnoreCase("Path")
                 || name.equalsIgnoreCase("Port")            // rfc2965 only
                 || name.equalsIgnoreCase("Secure")
                 || name.equalsIgnoreCase("Version") ) {
-			throw new IllegalArgumentException("Illegal cookie name");
+			throw new IllegalArgumentException("Illegal cookie name: " + name);
 		}
 	}
 	

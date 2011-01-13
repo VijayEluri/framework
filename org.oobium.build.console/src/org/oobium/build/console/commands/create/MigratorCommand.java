@@ -10,8 +10,6 @@
  ******************************************************************************/
 package org.oobium.build.console.commands.create;
 
-import java.io.File;
-
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.BuilderConsoleActivator;
 import org.oobium.build.workspace.Migrator;
@@ -38,11 +36,10 @@ public class MigratorCommand extends BuilderCommand {
 				return;
 			}
 		} else {
-			File file = module.getMigratorFile();
-			if(file.exists()) {
+			if(module.migrator.exists()) {
 				String confirm = flag('f') ? "Y" : ask("This will overwrite the existing migrator. Are you sure?[Y/N] ");
 				if("Y".equalsIgnoreCase(confirm)) {
-					FileUtils.delete(file);
+					FileUtils.delete(module.migrator);
 				} else {
 					console.out.println("operation cancelled");
 					return;

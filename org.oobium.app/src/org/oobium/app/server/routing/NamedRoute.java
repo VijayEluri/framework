@@ -11,7 +11,7 @@
 package org.oobium.app.server.routing;
 
 import static org.oobium.app.server.routing.Router.checkClass;
-import static org.oobium.http.HttpRequest.Type.GET;
+import static org.oobium.http.constants.RequestType.GET;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +19,7 @@ import java.util.List;
 import org.oobium.app.server.controller.Action;
 import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.view.View;
-import org.oobium.http.HttpRequest.Type;
+import org.oobium.http.constants.RequestType;
 import org.oobium.persist.Model;
 
 public class NamedRoute {
@@ -140,7 +140,7 @@ public class NamedRoute {
 	 * @param clazz the controller class that will handle the routed request
 	 * @return a Routed object
 	 */
-	public Routed asRoute(Type requestType, Class<? extends Controller> clazz) {
+	public Routed asRoute(RequestType requestType, Class<? extends Controller> clazz) {
 		return asRoute(requestType, name, clazz);
 	}
 	
@@ -151,7 +151,7 @@ public class NamedRoute {
 	 * @param clazz the controller class that will handle the routed request
 	 * @return a Routed object
 	 */
-	public Routed asRoute(Type requestType, String path, Class<? extends Controller> clazz) {
+	public Routed asRoute(RequestType requestType, String path, Class<? extends Controller> clazz) {
 		checkClass(clazz);
 		if(path.charAt(path.length() - 1) == '*') {
 			if(path.length() == 1 || path.charAt(path.length() - 2) == '/') {

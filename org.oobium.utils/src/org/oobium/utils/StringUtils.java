@@ -408,6 +408,9 @@ public class StringUtils {
 	}
 
 	public static String field(String method) {
+		if(method.equals("get") || method.equals("set") || method.equals("has")) {
+			return null;
+		}
 		if(method.startsWith("get") || method.startsWith("set") || method.startsWith("has")) {
 			return Character.toLowerCase(method.charAt(3)) + method.substring(4);
 		}

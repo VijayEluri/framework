@@ -18,12 +18,10 @@ import org.oobium.http.HttpRequest;
 
 public class ViewHandler extends RouteHandler {
 
-	public final Router router;
 	public final Class<? extends View> viewClass;
 	
 	public ViewHandler(Router router, Class<? extends View> viewClass, String[][] params) {
-		super(params);
-		this.router = router;
+		super(router, params);
 		this.viewClass = viewClass;
 	}
 
@@ -31,6 +29,11 @@ public class ViewHandler extends RouteHandler {
 	public Response routeRequest(HttpRequest request) throws Exception {
 		View view = viewClass.newInstance();
 		return View.render(router, view, request, getParamMap());
+	}
+
+	@Override
+	public String toString() {
+		return viewClass.getSimpleName();
 	}
 
 }

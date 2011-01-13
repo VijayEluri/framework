@@ -10,10 +10,10 @@
  ******************************************************************************/
 package org.oobium.app.server.response;
 
-import static org.oobium.http.HttpRequest.Type.HEAD;
 import static org.oobium.http.constants.ContentType.HTML;
 import static org.oobium.http.constants.ContentType.JS;
 import static org.oobium.http.constants.ContentType.JSON;
+import static org.oobium.http.constants.RequestType.HEAD;
 import static org.oobium.http.constants.StatusCode.NOT_FOUND;
 import static org.oobium.http.constants.StatusCode.NOT_MODIFIED;
 import static org.oobium.http.constants.StatusCode.OK;
@@ -27,17 +27,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.oobium.http.HttpRequest.Type;
 import org.oobium.http.HttpResponse;
 import org.oobium.http.constants.ContentType;
 import org.oobium.http.constants.Header;
+import org.oobium.http.constants.RequestType;
 import org.oobium.http.constants.StatusCode;
 import org.oobium.http.impl.Cookie;
 import org.oobium.http.impl.Headers;
 
 public class Response implements HttpResponse {
 
-	private static Response newInstance(StatusCode status, Type requestType, ContentType[] types) {
+	private static Response newInstance(StatusCode status, RequestType requestType, ContentType[] types) {
 		Response response = new Response(requestType);
 		response.setStatus(status);
 		if(status != NOT_MODIFIED) {
@@ -53,38 +53,38 @@ public class Response implements HttpResponse {
 		return response;
 	}
 	
-	public static Response notFound(Type requestType) {
+	public static Response notFound(RequestType requestType) {
 		return newInstance(NOT_FOUND, requestType, null);
 	}
 	
-	public static Response notFound(Type requestType, ContentType[] types) {
+	public static Response notFound(RequestType requestType, ContentType[] types) {
 		return newInstance(NOT_FOUND, requestType, types);
 	}
 	
-	public static Response notModified(Type requestType) {
+	public static Response notModified(RequestType requestType) {
 		return newInstance(NOT_MODIFIED, requestType, null);
 	}
 	
-	public static Response notModified(Type requestType, ContentType[] types) {
+	public static Response notModified(RequestType requestType, ContentType[] types) {
 		return newInstance(NOT_MODIFIED, requestType, types);
 	}
 	
-	public static Response serverError(Type requestType) {
+	public static Response serverError(RequestType requestType) {
 		return newInstance(SERVER_ERROR, requestType, null);
 	}
 	
-	public static Response serverError(Type requestType, ContentType[] types) {
+	public static Response serverError(RequestType requestType, ContentType[] types) {
 		return newInstance(SERVER_ERROR, requestType, types);
 	}
 	
 	private Headers headers;
 	private Map<String, Cookie> cookies;
-	private Type requestType;
+	private RequestType requestType;
 	private StatusCode status;
 	private ContentType contentType;
 	private String body;
 	
-	public Response(Type requestType) {
+	public Response(RequestType requestType) {
 		this.requestType = requestType;
 		headers = new Headers();
 		headers.add(Header.DATE, httpDate(new Date()));

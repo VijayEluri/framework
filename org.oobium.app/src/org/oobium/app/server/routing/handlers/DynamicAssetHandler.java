@@ -18,12 +18,10 @@ import org.oobium.http.HttpRequest;
 
 public class DynamicAssetHandler extends RouteHandler {
 
-	public final Router router;
 	public final Class<? extends DynamicAsset> assetClass;
 	
 	public DynamicAssetHandler(Router router, Class<? extends DynamicAsset> assetClass, String[][] params) {
-		super(params);
-		this.router = router;
+		super(router, params);
 		this.assetClass = assetClass;
 	}
 
@@ -31,6 +29,11 @@ public class DynamicAssetHandler extends RouteHandler {
 	public Response routeRequest(HttpRequest request) throws Exception {
 		DynamicAsset asset = assetClass.newInstance();
 		return DynamicAsset.render(router, asset, request, getParamMap());
+	}
+	
+	@Override
+	public String toString() {
+		return assetClass.getSimpleName();
 	}
 
 }

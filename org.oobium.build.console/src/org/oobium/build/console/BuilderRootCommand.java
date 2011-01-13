@@ -45,6 +45,7 @@ import org.oobium.build.workspace.Application;
 import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Migrator;
 import org.oobium.build.workspace.Module;
+import org.oobium.build.workspace.TestSuite;
 import org.oobium.build.workspace.Workspace;
 
 
@@ -118,7 +119,10 @@ public class BuilderRootCommand extends BuilderCommand {
 			return (Module) bundle;
 		}
 		if(bundle instanceof Migrator) {
-			return workspace.getModule(((Migrator) bundle).module);
+			return workspace.getModule(((Migrator) bundle).moduleName);
+		}
+		if(bundle instanceof TestSuite) {
+			return workspace.getModule(((TestSuite) bundle).moduleName);
 		}
 		return null;
 	}

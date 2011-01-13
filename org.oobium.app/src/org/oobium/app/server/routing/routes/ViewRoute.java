@@ -15,14 +15,14 @@ import java.util.List;
 
 import org.oobium.app.server.routing.Route;
 import org.oobium.app.server.view.View;
-import org.oobium.http.HttpRequest.Type;
+import org.oobium.http.constants.RequestType;
 
 public class ViewRoute extends Route {
 
 	public final Class<? extends View> viewClass;
 	public final String[][] params;
 	
-	public ViewRoute(Type requestType, String rule, Class<? extends View> viewClass) {
+	public ViewRoute(RequestType requestType, String rule, Class<? extends View> viewClass) {
 		super(Route.VIEW, requestType, rule);
 		this.viewClass = viewClass;
 

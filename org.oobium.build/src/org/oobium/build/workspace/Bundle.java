@@ -652,7 +652,7 @@ public class Bundle implements Comparable<Bundle> {
 		}
 	}
 
-	public void addExportPackage(String packageName) {
+	public boolean addExportPackage(String packageName) {
 		String exportStr = "Export-Package: ";
 		StringBuilder sb = readFile(manifest);
 		char[] ca = new char[sb.length()];
@@ -676,7 +676,7 @@ public class Bundle implements Comparable<Bundle> {
 			for(String export : exports) {
 				if(packageName.equals(export.trim())) {
 					// already exported so exit without writing anything
-					return;
+					return false;
 				}
 			}
 			exports = Arrays.copyOf(exports, exports.length + 1);
@@ -689,6 +689,7 @@ public class Bundle implements Comparable<Bundle> {
 		exportedPackages.add(exportedPackage);
 
 		writeFile(manifest, sb.toString());
+		return true;
 	}
 
 	public boolean addImportPackage(String packageName) {
@@ -1078,10 +1079,18 @@ public class Bundle implements Comparable<Bundle> {
 	 * The given file may be an actual file, or a directory.
 	 */
 	public String packageName(File file) {
+		return packageName(src, file);
+	}
+
+	/**
+	 * Get the java package name for the given file.<br>
+	 * The given file may be an actual file, or a directory.
+	 */
+	public String packageName(File srcFolder, File file) {
 		if(file.isFile()) {
 			file = file.getParentFile();
 		}
-		int ix = src.getAbsolutePath().length();
+		int ix = srcFolder.getAbsolutePath().length();
 		String name = file.getAbsolutePath().substring(ix + 1).replace(File.separatorChar, '.');
 		return name;
 	}

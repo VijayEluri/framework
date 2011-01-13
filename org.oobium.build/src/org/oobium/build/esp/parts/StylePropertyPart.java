@@ -59,13 +59,14 @@ public class StylePropertyPart extends EspPart {
 			if(s1 != -1) {
 				for(int s = s1; s < end; s++) {
 					switch(ca[s]) {
-					case '=':
-						isValueJava = true;
-						// fall through
 					case ':':
 						int s2 = reverse(ca, s-1) + 1;
 						if(s2 > s1) {
 							name = new EspPart(this, Type.StylePropertyNamePart, s1, s2);
+						}
+						if(s < end-1 && ca[s+1] == '=') {
+							isValueJava = true;
+							s++;
 						}
 						s1 = forward(ca, s+1, end);
 						if(s1 != -1) {

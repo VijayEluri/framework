@@ -16,8 +16,11 @@ import java.util.List;
 
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.gen.TestGenerator;
 import org.oobium.build.runner.RunnerService;
 import org.oobium.build.workspace.Module;
+import org.oobium.build.workspace.TestSuite;
+import org.oobium.build.workspace.Workspace;
 
 public class ModelCommand extends BuilderCommand {
 
@@ -37,9 +40,9 @@ public class ModelCommand extends BuilderCommand {
 		Module module = getModule();
 
 		try {
-			retainFlags('m', 'v', 'c', 'r', 'f');
+			retainFlags('m', 'v', 'c', 't', 'r', 'f');
 			if(!hasFlags() || (flagCount() == 1 && flag('f'))) {
-				setFlag('m', 'c', 'r');
+				setFlag('m', 'c', 't', 'r');
 				if(!module.isWebservice()) {
 					setFlag('v');
 				}
@@ -114,6 +117,32 @@ public class ModelCommand extends BuilderCommand {
 					console.out.println("modified file <a href=\"open file " + file + "\">" + file.getName() + "</a>");
 				}
 			}
+
+			if(flag('t')) {
+				Workspace ws = getWorkspace();
+				TestSuite testSuite = ws.getTestSuiteFor(module);
+				if(testSuite == null) {
+					String confirm = flag('f') ? "y" : ask("Test suite project does not exist. Create?[Y/N] ");
+					if(confirm.equalsIgnoreCase("Y")) {
+						testSuite = ws.createTestSuite(module);
+					}
+				}
+				if(testSuite != null) {
+					List<File> tests = new ArrayList<File>();
+					TestGenerator gen = new TestGenerator(testSuite);
+					tests.add(gen.createModelTests(module, model));
+					File controller = module.getControllerFor(model);
+					if(controller.isFile()) {
+						tests.add(gen.createControllerTests(module, controller));
+					}
+					for(File test : tests) {
+						String name = test.getName();
+						name = name.substring(0, name.length() - 5);
+						console.out.println("created test case <a href=\"open file " + test + "\">" + name + "</a>");
+					}
+					BuilderConsoleActivator.sendRefresh(testSuite, 500);
+				}
+			}
 			
 			if(flag('r')) {
 				if(module.addModelRoutes(param(0))) {
@@ -124,7 +153,7 @@ public class ModelCommand extends BuilderCommand {
 			
 			waitFor.addAll(module.generate(getWorkspace()));
 
-			BuilderConsoleActivator.sendRefresh(module, 500);
+			BuilderConsoleActivator.sendRefresh(module, 100);
 		} finally {
 			if(!waitFor.isEmpty()) {
 				RunnerService.waitFor(module, module.getBinFiles(waitFor));

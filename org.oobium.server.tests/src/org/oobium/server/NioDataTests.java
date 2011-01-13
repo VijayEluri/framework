@@ -10,7 +10,7 @@
  ******************************************************************************/
 package org.oobium.server;
 
-import static org.oobium.http.HttpRequest.Type.*;
+import static org.oobium.http.constants.RequestType.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 

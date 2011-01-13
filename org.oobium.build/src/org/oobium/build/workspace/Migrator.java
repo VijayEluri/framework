@@ -55,7 +55,12 @@ public class Migrator extends Bundle {
 	/**
 	 * the name of this migration's module bundle
 	 */
-	public final String module;
+	public final File module;
+
+	/**
+	 * the name of this migration's module bundle
+	 */
+	public final String moduleName;
 	
 	Migrator(Type type, File file, Manifest manifest) {
 		super(type, file, manifest);
@@ -65,7 +70,8 @@ public class Migrator extends Bundle {
 		this.generated = new File(file, "generated");
 		this.genMain = new File(generated, name.replace('.', File.separatorChar));
 		this.genMigrations = new File(genMain, "migrations");
-		this.module = name.substring(0, name.length() - 9);
+		this.moduleName = name.substring(0, name.length() - 9);
+		this.module = new File(file.getParent(), moduleName);
 	}
 
 	public Bundle getMigratorService(Workspace workspace, Mode mode) {

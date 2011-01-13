@@ -10,10 +10,10 @@
  ******************************************************************************/
 package org.oobium.app.dev.controllers;
 
-import static org.oobium.http.HttpRequest.Type.DELETE;
-import static org.oobium.http.HttpRequest.Type.GET;
-import static org.oobium.http.HttpRequest.Type.POST;
-import static org.oobium.http.HttpRequest.Type.PUT;
+import static org.oobium.http.constants.RequestType.DELETE;
+import static org.oobium.http.constants.RequestType.GET;
+import static org.oobium.http.constants.RequestType.POST;
+import static org.oobium.http.constants.RequestType.PUT;
 import static org.oobium.utils.StringUtils.when;
 import static org.oobium.utils.json.JsonUtils.toJson;
 

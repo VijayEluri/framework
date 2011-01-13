@@ -10,7 +10,7 @@
  ******************************************************************************/
 package org.oobium.eclipse.connector;
 
-import static org.oobium.http.HttpRequest.Type.*;
+import static org.oobium.http.constants.RequestType.*;
 
 import org.oobium.app.AppService;
 import org.oobium.app.server.routing.Router;

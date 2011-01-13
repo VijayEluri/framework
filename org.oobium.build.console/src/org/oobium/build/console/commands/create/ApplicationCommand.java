@@ -22,6 +22,7 @@ import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.BuilderConsoleActivator;
 import org.oobium.build.workspace.Migrator;
 import org.oobium.build.workspace.Module;
+import org.oobium.build.workspace.TestSuite;
 
 public class ApplicationCommand extends BuilderCommand {
 
@@ -78,9 +79,10 @@ public class ApplicationCommand extends BuilderCommand {
 			console.out.print("successfully created \"").print(module).println("\"");
 			importList.add(project);
 			
-			String confirm = flag('f') ? (flag('m') ? "y" : "n") : (flag('m') ? "y" : ask("Also create the migration project? [Y/N] "));
+			String confirm = "Y"; //flag('f') ? (flag('m') ? "y" : "n") : (flag('m') ? "y" : ask("Also create the migration project? [Y/N] "));
 			if(confirm.equalsIgnoreCase("y")) {
-				project = module.getMigratorFile();
+				boolean create = true;
+				project = module.migrator;
 				if(project.exists()) {
 					if(flag('f')) {
 						confirm = "y";
@@ -91,16 +93,41 @@ public class ApplicationCommand extends BuilderCommand {
 					}
 					if(confirm.equalsIgnoreCase("y")) {
 						delete(project);
-						Migrator migration = getWorkspace().createMigrator(module);
-						console.out.print("successfully created \"").print(migration).println("\"");
-						importList.add(migration.file);
 					} else {
+						create = false;
 						console.out.println("operation cancelled");
 					}
-				} else {
+				}
+				if(create) {
 					Migrator migration = getWorkspace().createMigrator(module);
 					console.out.print("successfully created \"").print(migration).println("\"");
 					importList.add(migration.file);
+				}
+			}
+
+			confirm = "Y"; //flag('f') ? (flag('m') ? "y" : "n") : (flag('m') ? "y" : ask("Also create the test suite project? [Y/N] "));
+			if(confirm.equalsIgnoreCase("y")) {
+				boolean create = true;
+				project = module.testSuite;
+				if(project.exists()) {
+					if(flag('f')) {
+						confirm = "y";
+					} else if(isProject(project)) {
+						confirm = ask("  a bundle already exists with the name " + project.getName() + " - overwrite? [Y/N] ");
+					} else {
+						confirm = ask("  a directory already exists with the name " + project.getName() + " - overwrite? [Y/N] ");
+					}
+					if(confirm.equalsIgnoreCase("y")) {
+						delete(project);
+					} else {
+						create = false;
+						console.out.println("operation cancelled");
+					}
+				}
+				if(create) {
+					TestSuite testSuite = getWorkspace().createTestSuite(module);
+					console.out.print("successfully created \"").print(testSuite).println("\"");
+					importList.add(testSuite.file);
 				}
 			}
 

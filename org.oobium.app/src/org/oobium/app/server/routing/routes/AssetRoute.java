@@ -12,25 +12,24 @@ package org.oobium.app.server.routing.routes;
 
 import org.oobium.app.AssetProvider;
 import org.oobium.app.server.routing.Route;
-import org.oobium.http.HttpRequest.Type;
+import org.oobium.http.constants.ContentType;
+import org.oobium.http.constants.RequestType;
 
 public class AssetRoute extends Route {
 
-	public final AssetProvider provider;
+	public final String assetPath;
+	public final ContentType contentType;
 	public final String length;
 	public final String lastModified;
 	
-	public AssetRoute(String path, AssetProvider provider, String length, String lastModified) {
-		super(Route.ASSET, Type.GET, path);
+	public AssetRoute(String path, String assetPath, ContentType contentType, String length, String lastModified) {
+		super(Route.ASSET, RequestType.GET, path);
 		setPattern(path);
-		this.provider = provider;
+		this.assetPath = assetPath;
+		this.contentType = contentType;
 		this.length = length;
 		this.lastModified = lastModified;
 		setString();
-	}
-	
-	public ClassLoader loader() {
-		return provider.getClass().getClassLoader();
 	}
 	
 	@Override
@@ -41,7 +40,7 @@ public class AssetRoute extends Route {
 	private void setString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append('[').append(requestType).append(']').append(' ');
-		sb.append(path).append(' ').append('-').append('>').append(" Asset:").append(provider.getName());
+		sb.append(path).append(' ').append('-').append('>').append(" Asset");
 		string = sb.toString();
 	}
 	

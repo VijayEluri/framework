@@ -14,7 +14,10 @@ import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.gen.TestGenerator;
 import org.oobium.build.workspace.Module;
+import org.oobium.build.workspace.TestSuite;
+import org.oobium.build.workspace.Workspace;
 
 public class ControllerCommand extends BuilderCommand {
 
@@ -27,6 +30,7 @@ public class ControllerCommand extends BuilderCommand {
 	
 	@Override
 	public void run() {
+		Workspace ws = getWorkspace();
 		Module module = getModule();
 		File controller = module.getController(param(0));
 		if(controller.exists()) {
@@ -40,6 +44,23 @@ public class ControllerCommand extends BuilderCommand {
 		module.createController(controller);
 		String name = module.getControllerName(controller);
 		console.out.println("created controller <a href=\"open controller " + name + "\">" + name + "</a>");
+
+		TestSuite testSuite = ws.getTestSuiteFor(module);
+		if(testSuite == null) {
+			String confirm = flag('f') ? "y" : ask("Test suite project does not exist. Create?[Y/N] ");
+			if(confirm.equalsIgnoreCase("Y")) {
+				testSuite = ws.createTestSuite(module);
+			}
+		}
+		if(testSuite != null) {
+			TestGenerator gen = new TestGenerator(testSuite);
+			File test = gen.createControllerTests(module, controller);
+			String testName = test.getName();
+			testName = testName.substring(0, testName.length() - 5);
+			console.out.println("created test case <a href=\"open file " + test + "\">" + testName + "</a>");
+			BuilderConsoleActivator.sendRefresh(testSuite, 500);
+		}
+		
 		BuilderConsoleActivator.sendRefresh(module, controller, 100);
 	}
 

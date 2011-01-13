@@ -59,7 +59,7 @@ public class EjsCompilerTests {
 		String esp;
 		esp = "MyEss(String arg1)";
 		assertTrue(src(esp).hasVariable("arg1"));
-		assertEquals("String arg1", src(esp).getVariable("arg1"));
+		assertEquals("public String arg1", src(esp).getVariable("arg1"));
 		assertEquals(1, src(esp).getConstructorCount());
 		assertTrue(src(esp).hasConstructor(0));
 		assertEquals("\tpublic MyEss(String arg1) {\n\t\tthis.arg1 = arg1;\n\t}", src(esp).getConstructor(0));
@@ -73,6 +73,19 @@ public class EjsCompilerTests {
 
 		ejs = "if(true) {\n\talert('hello');\n}";
 		assertEquals("__sb__.append(\"if(true) {\\n\\talert('hello');\\n}\");", js(ejs));
+	}
+
+	@Test
+	public void testJava() throws Exception {
+		String ejs;
+		ejs = "var size = { height: 100, width:= width * 2 };";
+		assertEquals("__sb__.append(\"var size = { height: 100, width:\").append(width * 2).append(\"};\");", js(ejs));
+		
+		ejs = "-int width = 10;\n\nvar size = { height: 100, width:= width * 2 };";
+		assertEquals("int width = 10;\n__sb__.append(\"var size = { height: 100, width:\").append(width * 2).append(\"};\");", js(ejs));
+
+		ejs = "var height := width * 2;";
+		assertEquals("__sb__.append(\"var height =\").append(width * 2).append(\";\");", js(ejs));
 	}
 
 }

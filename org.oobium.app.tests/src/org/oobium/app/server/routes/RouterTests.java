@@ -27,7 +27,7 @@ import static org.oobium.app.server.controller.Action.showAll;
 import static org.oobium.app.server.controller.Action.showEdit;
 import static org.oobium.app.server.controller.Action.showNew;
 import static org.oobium.app.server.controller.Action.update;
-import static org.oobium.http.HttpRequest.Type.GET;
+import static org.oobium.http.constants.RequestType.GET;
 import static org.oobium.utils.StringUtils.asString;
 
 import java.util.Collections;
@@ -53,13 +53,14 @@ import org.oobium.app.server.view.ScriptFile;
 import org.oobium.app.server.view.StyleSheet;
 import org.oobium.app.server.view.View;
 import org.oobium.http.HttpRequest;
-import org.oobium.http.HttpRequest.Type;
 import org.oobium.http.constants.Header;
+import org.oobium.http.constants.RequestType;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelDescription;
 import org.oobium.persist.Relation;
 import org.oobium.utils.Base64;
+
 
 
 public class RouterTests {
@@ -111,7 +112,7 @@ public class RouterTests {
 		HttpRequest request = mock(HttpRequest.class);
 		when(request.getPort()).thenReturn(router.getPort());
 		when(request.getHost()).thenReturn(router.getHosts()[0]);
-		when(request.getType()).thenReturn(Type.valueOf(type));
+		when(request.getType()).thenReturn(RequestType.valueOf(type));
 		when(request.getPath()).thenReturn(path);
 		when(request.getFullPath()).thenReturn(fullPath);
 		when(request.hasParameters()).thenReturn(hasParams);
@@ -229,7 +230,7 @@ public class RouterTests {
 		
 		router.addAssetRoutes();
 		assertEquals(1, router.getRoutes().size());
-		assertEquals("[GET] /documents/notes.text -> Asset:TestApp", router.getRoutes().get(0).toString());
+		assertEquals("[GET] /documents/notes.text -> Asset", router.getRoutes().get(0).toString());
 
 		RouteHandler handler = router.getHandler(request("[GET] /documents/notes.text"));
 		assertNotNull(handler);
@@ -243,7 +244,7 @@ public class RouterTests {
 		
 		router.addAssetRoutes();
 		assertEquals(1, router.getRoutes().size());
-		assertEquals("[GET] /my_pic.png -> Asset:TestApp", router.getRoutes().get(0).toString());
+		assertEquals("[GET] /my_pic.png -> Asset", router.getRoutes().get(0).toString());
 
 		RouteHandler handler = router.getHandler(request("[GET] /my_pic.png"));
 		assertNotNull(handler);
@@ -257,7 +258,7 @@ public class RouterTests {
 		
 		router.addAssetRoutes();
 		assertEquals(1, router.getRoutes().size());
-		assertEquals("[GET] /application.js -> Asset:TestApp", router.getRoutes().get(0).toString());
+		assertEquals("[GET] /application.js -> Asset", router.getRoutes().get(0).toString());
 
 		RouteHandler handler = router.getHandler(request("[GET] /application.js"));
 		assertNotNull(handler);
@@ -271,7 +272,7 @@ public class RouterTests {
 		
 		router.addAssetRoutes();
 		assertEquals(1, router.getRoutes().size());
-		assertEquals("[GET] /application.css -> Asset:TestApp", router.getRoutes().get(0).toString());
+		assertEquals("[GET] /application.css -> Asset", router.getRoutes().get(0).toString());
 
 		RouteHandler handler = router.getHandler(request("[GET] /application.css"));
 		assertNotNull(handler);
@@ -286,7 +287,7 @@ public class RouterTests {
 		router.addAssetRoutes();
 		
 		assertEquals(1, router.getRoutes().size());
-		assertEquals("[GET] /documents/notes.text -> Asset:TestApp", router.getRoutes().get(0).toString());
+		assertEquals("[GET] /documents/notes.text -> Asset", router.getRoutes().get(0).toString());
 
 		RouteHandler handler = router.getHandler(request("[GET] /documents/notes.text"));
 		assertNotNull(handler);
@@ -413,7 +414,7 @@ public class RouterTests {
 		assertEquals("/#", router.pathTo(account, showEdit));
 		assertEquals("/#", router.pathTo(account, showNew));
 		
-		router.addBasicAuthentication(Type.GET, "/accounts", "realm1");
+		router.addBasicAuthentication(RequestType.GET, "/accounts", "realm1");
 		
 		RouteHandler handler = router.getHandler(request("[GET] /accounts"));
 		assertNotNull(handler);

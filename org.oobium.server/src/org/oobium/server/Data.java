@@ -10,13 +10,13 @@
  ******************************************************************************/
 package org.oobium.server;
 
-import static org.oobium.http.HttpRequest.Type.*;
+import static org.oobium.http.constants.RequestType.*;
 
 import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
 
-import org.oobium.http.HttpRequest.Type;
+import org.oobium.http.constants.RequestType;
 
 class Data {
 
@@ -46,7 +46,7 @@ class Data {
 				//  if type == POST, we need all the headers (in case there is a _method header)
 				//    still, we can route it before the data has been received (may want to check permissions before uploading a big file...)
 	
-	Type type;
+	RequestType type;
 	byte protocol;
 	
 	int mark;

@@ -167,19 +167,32 @@ public class Headers implements Iterable<String> {
 	}
 	
 	public void set(Header name, String value) {
-		if(name != null && value != null) {
+		if(name != null) {
 			String key = name.lowerKey();
-			for(int i = 0; i < headerList.size(); i++) {
-				String s = headerList.get(i);
-				int ix = s.indexOf(':');
-				if(ix != -1 && key.equals(s.substring(0, ix).toLowerCase())) {
-					headerList.set(i, name.key() + ":" + value);
-					clearMap();
-					return;
+			if(value == null) {
+				String[] headers = headerList.toArray(new String[headerList.size()]);
+				for(int i = 0; i < headers.length; i++) {
+					String s = headers[i];
+					int ix = s.indexOf(':');
+					if(ix != -1 && key.equals(s.substring(0, ix).toLowerCase())) {
+						headerList.remove(i);
+						clearMap();
+						return;
+					}
 				}
+			} else {
+				for(int i = 0; i < headerList.size(); i++) {
+					String s = headerList.get(i);
+					int ix = s.indexOf(':');
+					if(ix != -1 && key.equals(s.substring(0, ix).toLowerCase())) {
+						headerList.set(i, name.key() + ":" + value);
+						clearMap();
+						return;
+					}
+				}
+				// not found, add
+				add(name, value);
 			}
-			// not found, add
-			add(name, value);
 		}		
 	}
 	

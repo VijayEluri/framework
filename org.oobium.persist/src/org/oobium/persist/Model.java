@@ -257,10 +257,14 @@ public abstract class Model implements JsonModel {
 	
 	public final boolean canUpdate() {
 		clearErrors();
-		Observer.runBeforeValidateUpdate(this);
-		runValidations(Validate.UPDATE);
-		validateUpdate();
-		Observer.runAfterValidateUpdate(this);
+		if(isEmpty()) {
+			addError("nothing to update");
+		} else {
+			Observer.runBeforeValidateUpdate(this);
+			runValidations(Validate.UPDATE);
+			validateUpdate();
+			Observer.runAfterValidateUpdate(this);
+		}
 		return !hasErrors();
 	}
 	
@@ -473,6 +477,31 @@ public abstract class Model implements JsonModel {
 	public Map<String, Object> getAll() {
 		return new HashMap<String, Object>(fields);
 	}
+
+	public String getError(String subject) {
+		return getError(subject, 0);
+	}
+	
+	public String getError(String subject, int index) {
+		if(errors != null && index >= 0) {
+			List<String> list = errors.get(subject);
+			if(list != null && index < list.size()) {
+				return list.get(index);
+			}
+		}
+		return null;
+	}
+	
+	public int getErrorCount() {
+		if(errors == null) {
+			return 0;
+		}
+		int count = 0;
+		for(ArrayList<String> list : errors.values()) {
+			count += list.size();
+		}
+		return count;
+	}
 	
 	/**
 	 * Get all of the errors contained within this model.
@@ -484,7 +513,7 @@ public abstract class Model implements JsonModel {
 		}
 		return new LinkedHashMap<String, List<String>>(0);
 	}
-	
+
 	/**
 	 * Get the list of errors corresponding to the given subject.
 	 * @param subject the subject to get the errors list for
@@ -560,6 +589,72 @@ public abstract class Model implements JsonModel {
 		return persistor;
 	}
 	
+	private Map<String, Object> getSerializationMap() {
+		Map<String, Object> map = new TreeMap<String, Object>();
+		map.put("id", getId());
+//		TODO toJson: include canonical class name?
+		ModelAdapter adapter = ModelAdapter.getAdapter(getClass());
+		for(String field : adapter.getFields()) {
+			if(isSet(field)) {
+				if(adapter.hasAttribute(field)) {
+					map.put(field, get(field));
+				} else if(adapter.hasOne(field)) {
+					Model model = (Model) get(field);
+					if(model != null) {
+						ModelAdapter fadapter = ModelAdapter.getAdapter(model.getClass());
+						Map<String, Object> fmap = new TreeMap<String, Object>();
+						fmap.put("id", model.getId());
+						for(String ffield : fadapter.getFields()) {
+							if(model.isSet(ffield)) {
+								if(fadapter.hasAttribute(ffield)) {
+									fmap.put(ffield, model.get(ffield));
+								} else if(fadapter.hasOne(ffield)) {
+									fmap.put(ffield, ((Model) model.get(ffield)).getId());
+								} else if(fadapter.hasMany(ffield)) {
+									Collection<?> collection = (Collection<?>) model.get(ffield);
+									List<Object> list = new ArrayList<Object>();
+									for(Object o : collection) {
+										list.add(Collections.singletonMap("id", ((Model) o).getId()));
+									}
+									fmap.put(ffield, list);
+								}
+							}
+						}
+						map.put(field, fmap);
+					}
+				} else if(adapter.hasMany(field)) {
+					Collection<?> collection = (Collection<?>) get(field);
+					List<Object> list = new ArrayList<Object>();
+					for(Object o : collection) {
+						Model model = (Model) o;
+						ModelAdapter fadapter = ModelAdapter.getAdapter(model.getClass());
+						Map<String, Object> fmap = new TreeMap<String, Object>();
+						fmap.put("id", model.getId());
+						for(String ffield : fadapter.getFields()) {
+							if(model.isSet(ffield)) {
+								if(fadapter.hasAttribute(ffield)) {
+									fmap.put(ffield, model.get(ffield));
+								} else if(fadapter.hasOne(ffield)) {
+									fmap.put(ffield, ((Model) model.get(ffield)).getId());
+								} else if(fadapter.hasMany(ffield)) {
+									Collection<?> fcollection = (Collection<?>) get(ffield);
+									List<Object> flist = new ArrayList<Object>();
+									for(Object fo : fcollection) {
+										flist.add(Collections.singletonMap("id", ((Model) fo).getId()));
+									}
+									fmap.put(ffield, list);
+								}
+							}
+						}
+						list.add(fmap);
+					}
+					map.put(field, list);
+				}
+			}
+		}
+		return map;
+	}
+
 	/**
 	 * Find out if this model's persisted object contains the field.
 	 * True if the field is an attribute or hasOne relationship.
@@ -622,7 +717,7 @@ public abstract class Model implements JsonModel {
 		}
 		return model.hasErrors(fields[fields.length-1]);
 	}
-
+	
 	@Override
 	public int hashCode() {
 		int hash = id + 2;
@@ -651,16 +746,16 @@ public abstract class Model implements JsonModel {
 	private boolean isManyToNone(String field) {
 		return getAdapter(getClass()).isManyToNone(field);
 	}
-	
+
 	@Override
 	public final boolean isNew() {
 		return id <= 0;
 	}
-
+	
 	private boolean isOppositeRequired(String field) {
 		return getAdapter(getClass()).isOppositeRequired(field);
 	}
-	
+
 	/**
 	 * Find out if given field is marked as required in this model's {@link ModelDescription}.
 	 * If the given field is not specified in the {@link ModelDescription} then it cannot be
@@ -704,7 +799,7 @@ public abstract class Model implements JsonModel {
 		}
 		return adapter.isRequired(fields[fields.length-1]);
 	}
-
+	
 	@Override
 	public final boolean isSet(String field) {
 		return fields.containsKey(field);
@@ -713,7 +808,7 @@ public abstract class Model implements JsonModel {
 	private boolean isThrough(String field) {
 		return getAdapter(getClass()).isManyToNone(field);
 	}
-	
+
 	public final boolean load() {
 		try {
 			getPersistor().retrieve(this);
@@ -723,8 +818,8 @@ public abstract class Model implements JsonModel {
 		}
 		return false;
 	}
-
-	private String msg(String message, Validate validation) {
+	
+    private String msg(String message, Validate validation) {
 		if(blank(validation.message())) {
 			return message;
 		}
@@ -748,7 +843,7 @@ public abstract class Model implements JsonModel {
 		return this;
 	}
 	
-    /**
+	/**
 	 * Puts the fields of the given model into this model.
 	 * @param model
 	 * @see #setAll(Map)
@@ -802,7 +897,7 @@ public abstract class Model implements JsonModel {
 	public Object remove(String field) {
 		return fields.remove(field);
 	}
-	
+
 	/**
      * Removes the error at the specified position in list for the base (null) subject.
      * Shifts any subsequent elements to the left (subtracts one from their indices).
@@ -813,7 +908,7 @@ public abstract class Model implements JsonModel {
 	public final String removeError(int index) {
 		return removeError(null, index);
 	}
-
+	
 	/**
 	 * Removes the first occurrence of the specified error from the list for the base (null) subject,
 	 * if it is present.  If the list does not contain the error, it is
@@ -854,7 +949,7 @@ public abstract class Model implements JsonModel {
 		}
 	    throw new IndexOutOfBoundsException("Index: " + index + ", Size: 0");
 	}
-	
+
 	/**
 	 * Removes the first occurrence of the specified error from the list for the given subject,
 	 * if it is present.  If the list does not contain the error, it is
@@ -902,7 +997,7 @@ public abstract class Model implements JsonModel {
 		}
 		return new ArrayList<String>(0);
 	}
-
+	
 	private boolean run(String methodName, String field) {
 		boolean pass = true;
 		try {
@@ -1039,7 +1134,7 @@ public abstract class Model implements JsonModel {
 			}
 		}
 	}
-	
+
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void runValidator(Class<?> validatorClass) {
 		try {
@@ -1053,7 +1148,7 @@ public abstract class Model implements JsonModel {
 			logger.warn(e);
 		}
 	}
-
+	
 	public boolean save() {
 		boolean result = false;
 		if(canSave()) {
@@ -1143,7 +1238,7 @@ public abstract class Model implements JsonModel {
 			return coercedValue;
 		}
 	}
-	
+
 	/**
 	 * Sets this model's fields to those of the given map.
 	 * The existing fields will first be cleared and then
@@ -1185,7 +1280,7 @@ public abstract class Model implements JsonModel {
 		}
 		return this;
 	}
-
+	
 	private void setField(String field, Object value) {
 		if("id".equals(field)) {
 			setId(coerce(value, int.class));
@@ -1217,75 +1312,14 @@ public abstract class Model implements JsonModel {
 		this.id = id;
 		return this;
 	}
-	
+
 	public void setPersistor(PersistService service) {
 		persistor = service;
 	}
 	
 	@Override
 	public String toJson() {
-		Map<String, Object> map = new TreeMap<String, Object>();
-		map.put("id", getId());
-//		TODO toJson: include canonical class name?
-		ModelAdapter adapter = ModelAdapter.getAdapter(getClass());
-		for(String field : adapter.getFields()) {
-			if(isSet(field)) {
-				if(adapter.hasAttribute(field)) {
-					map.put(field, get(field));
-				} else if(adapter.hasOne(field)) {
-					Model model = (Model) get(field);
-					if(model != null) {
-						ModelAdapter fadapter = ModelAdapter.getAdapter(model.getClass());
-						Map<String, Object> fmap = new TreeMap<String, Object>();
-						fmap.put("id", model.getId());
-						for(String ffield : fadapter.getFields()) {
-							if(model.isSet(ffield)) {
-								if(fadapter.hasAttribute(ffield)) {
-									fmap.put(ffield, model.get(ffield));
-								} else if(fadapter.hasOne(ffield)) {
-									fmap.put(ffield, ((Model) model.get(ffield)).getId());
-								} else if(fadapter.hasMany(ffield)) {
-									Collection<?> collection = (Collection<?>) model.get(ffield);
-									List<Object> list = new ArrayList<Object>();
-									for(Object o : collection) {
-										list.add(Collections.singletonMap("id", ((Model) o).getId()));
-									}
-									fmap.put(ffield, list);
-								}
-							}
-						}
-						map.put(field, fmap);
-					}
-				} else if(adapter.hasMany(field)) {
-					Collection<?> collection = (Collection<?>) get(field);
-					List<Object> list = new ArrayList<Object>();
-					for(Object o : collection) {
-						Model model = (Model) o;
-						ModelAdapter fadapter = ModelAdapter.getAdapter(model.getClass());
-						Map<String, Object> fmap = new TreeMap<String, Object>();
-						fmap.put("id", model.getId());
-						for(String ffield : fadapter.getFields()) {
-							if(model.isSet(ffield)) {
-								if(fadapter.hasAttribute(ffield)) {
-									fmap.put(ffield, model.get(ffield));
-								} else if(fadapter.hasOne(ffield)) {
-									fmap.put(ffield, ((Model) model.get(ffield)).getId());
-								} else if(fadapter.hasMany(ffield)) {
-									Collection<?> fcollection = (Collection<?>) get(ffield);
-									List<Object> flist = new ArrayList<Object>();
-									for(Object fo : fcollection) {
-										flist.add(Collections.singletonMap("id", ((Model) fo).getId()));
-									}
-									fmap.put(ffield, list);
-								}
-							}
-						}
-						list.add(fmap);
-					}
-					map.put(field, list);
-				}
-			}
-		}
+		Map<String, Object> map = getSerializationMap();
 		String json = JsonUtils.toJson(map);
 		if(logger.isLoggingTrace()) {
 			logger.trace(this + ".toJson() -> \n  " + json);

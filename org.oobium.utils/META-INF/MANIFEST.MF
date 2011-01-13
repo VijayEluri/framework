@@ -9,4 +9,8 @@ Export-Package: org.oobium.utils,
  org.oobium.utils.coercion,
  org.oobium.utils.coercion.coercers,
  org.oobium.utils.json
-Import-Package: org.oobium.logging
+Import-Package: javax.xml.parsers,
+ javax.xml.transform,
+ javax.xml.transform.dom,
+ javax.xml.transform.stream,
+ org.oobium.logging

@@ -84,19 +84,23 @@ public class Config {
 	public static final String MIGRATION_SERVICE = "migration.service";
 	
 	
+	public static Config loadConfiguration(Class<?> refClass) {
+		return loadConfiguration(refClass, null);
+	}
+	
 	/**
 	 * Loads the configuration of the project containing the given class in its root package.
 	 * @param refClass any class in the application's (or its migration's) root package
 	 * @return an instance of AppConfig, loaded if possible. never null.
 	 */
-	public static Config loadConfiguration(Class<?> refClass) {
+	public static Config loadConfiguration(Class<?> refClass, Mode mode) {
 		try {
 			Map<String, Object> map = toMap(getResourceAsString(refClass, "configuration.js"));
-			return new Config(map);
+			return new Config(map, mode);
 		} catch(Exception e) {
 			Logger.getLogger(refClass).error("There was an error loading the configuration.", e);
 		}
-		return new Config(new HashMap<String, Object>(0));
+		return new Config(new HashMap<String, Object>(0), mode);
 	}
 	
 	public static Config loadConfiguration(File file) {
@@ -125,7 +129,11 @@ public class Config {
 	protected final Map<String, Object> properties;
 
 	public Config(Map<String, ? extends Object> properties) {
-		this.mode = Mode.getSystemMode();
+		this(properties, null);
+	}
+	
+	public Config(Map<String, ? extends Object> properties, Mode mode) {
+		this.mode = (mode != null) ? mode : Mode.getSystemMode();
 		this.properties = lowerKeys(properties);
 	}
 	

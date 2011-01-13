@@ -15,14 +15,14 @@ import java.util.List;
 
 import org.oobium.app.server.routing.Route;
 import org.oobium.app.server.view.DynamicAsset;
-import org.oobium.http.HttpRequest.Type;
+import org.oobium.http.constants.RequestType;
 
 public class DynamicAssetRoute extends Route {
 
 	public final Class<? extends DynamicAsset> assetClass;
 	public final String[][] params;
 	
-	public DynamicAssetRoute(Type requestType, String rule, Class<? extends DynamicAsset> assetClass) {
+	public DynamicAssetRoute(RequestType requestType, String rule, Class<? extends DynamicAsset> assetClass) {
 		super(Route.DYNAMIC_ASSET, requestType, rule);
 		this.assetClass = assetClass;
 

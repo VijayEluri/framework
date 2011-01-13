@@ -150,10 +150,24 @@ public class Module extends Bundle {
 	public final File generated;
 
 	/**
+	 * this module's migrator bundle (may not actually exist)
+	 */
+	public final File migrator;
+
+	/**
 	 * the name of this module's migrator bundle (may not actually exist)
 	 */
-	public final String migrator;
+	public final String migratorName;
 
+	/**
+	 * this module's test suite bundle (may not actually exist)
+	 */
+	public final File testSuite;
+
+	/**
+	 * the name of this module's test suite bundle (may not actually exist)
+	 */
+	public final String testSuiteName;
 	
 	private File file(File file, String configPath) {
 		if('/' != File.separatorChar) {
@@ -189,7 +203,11 @@ public class Module extends Bundle {
 		this.genMain = new File(generated, name.replace('.', File.separatorChar));
 		this.assetList = new File(genMain, "assets.js");
 		
-		this.migrator = name + ".migrator";
+		this.migratorName = name + ".migrator";
+		this.migrator = new File(file.getParent(), migratorName);
+		
+		this.testSuiteName = name + ".tests";
+		this.testSuite = new File(file.getParent(), testSuiteName);
 	}
 
 	@Override
@@ -374,9 +392,15 @@ public class Module extends Bundle {
 				if(addImportPackage(Controller.class.getPackage().getName())) {
 					changed.add(manifest);
 				}
+				if(addExportPackage(packageName(controllers))) {
+					changed.add(manifest);
+				}
 			}
 			if((flags & VIEW) != 0) {
 				if(addImportPackage(View.class.getPackage().getName())) {
+					changed.add(manifest);
+				}
+				if(addExportPackage(packageName(getViewsFolder(model)))) {
 					changed.add(manifest);
 				}
 			}
@@ -394,8 +418,10 @@ public class Module extends Bundle {
 	}
 	
 	public File createController(String name) {
+		File controller = ControllerGenerator.createController(this, adjust(name, "Controller"));
 		addImportPackage(Controller.class.getPackage().getName());
-		return ControllerGenerator.createController(this, adjust(name, "Controller"));
+		addExportPackage(packageName(controller));
+		return controller;
 	}
 
 	/**
@@ -583,7 +609,9 @@ public class Module extends Bundle {
 	}
 	
 	public List<File> findControllers() {
-		return new ArrayList<File>(Arrays.asList(findFiles(controllers, "Controller.java")));
+		List<File> files = Arrays.asList(findFiles(controllers, "Controller.java"));
+		Collections.sort(files);
+		return new ArrayList<File>(files);
 	}
 
 	public List<File> findGenMailers() {
@@ -639,42 +667,54 @@ public class Module extends Bundle {
 	
 	public List<File> findMailers() {
 		if(mailers.isDirectory()) {
-			return new ArrayList<File>(Arrays.asList(mailers.listFiles(mailersFilter)));
+			List<File> files = Arrays.asList(mailers.listFiles(mailersFilter));
+			Collections.sort(files);
+			return new ArrayList<File>(files);
 		}
 		return new ArrayList<File>(0);
 	}
 
 	public List<File> findMailerTemplates() {
 		if(mailers != null && mailers.isDirectory()) {
-			return new ArrayList<File>(Arrays.asList(findFiles(mailers, ".emt")));
+			List<File> files = Arrays.asList(findFiles(mailers, ".emt"));
+			Collections.sort(files);
+			return new ArrayList<File>(files);
 		}
 		return new ArrayList<File>(0);
 	}
 	
 	public List<File> findModels() {
 		if(models.isDirectory()) {
-			return new ArrayList<File>(Arrays.asList(models.listFiles(modelsFilter)));
+			List<File> files = Arrays.asList(models.listFiles(modelsFilter));
+			Collections.sort(files);
+			return new ArrayList<File>(files);
 		}
 		return new ArrayList<File>(0);
 	}
 	
 	public List<File> findScriptFiles() {
 		if(views.isDirectory()) {
-			return new ArrayList<File>(Arrays.asList(findFiles(views, ".ejs")));
+			List<File> files = Arrays.asList(findFiles(views, ".ejs"));
+			Collections.sort(files);
+			return new ArrayList<File>(files);
 		}
 		return new ArrayList<File>(0);
 	}
 	
 	public List<File> findStyleSheets() {
 		if(views.isDirectory()) {
-			return new ArrayList<File>(Arrays.asList(findFiles(views, ".ess")));
+			List<File> files = Arrays.asList(findFiles(views, ".ess"));
+			Collections.sort(files);
+			return new ArrayList<File>(files);
 		}
 		return new ArrayList<File>(0);
 	}
 	
 	public List<File> findViews() {
 		if(views.isDirectory()) {
-			return new ArrayList<File>(Arrays.asList(findFiles(views, ".esp")));
+			List<File> files = Arrays.asList(findFiles(views, ".esp"));
+			Collections.sort(files);
+			return new ArrayList<File>(files);
 		}
 		return new ArrayList<File>(0);
 	}
@@ -682,7 +722,9 @@ public class Module extends Bundle {
 	public List<File> findViews(String modelName) {
 		File folder = getViewsFolder(modelName);
 		if(folder.isDirectory()) {
-			return new ArrayList<File>(Arrays.asList(findFiles(folder, ".esp")));
+			List<File> files = Arrays.asList(findFiles(views, ".esp"));
+			Collections.sort(files);
+			return new ArrayList<File>(files);
 		}
 		return new ArrayList<File>(0);
 	}
@@ -931,10 +973,22 @@ public class Module extends Bundle {
 		return binViews;
 	}
 	
+	/**
+	 * Get a File for a controller in this module with the given model file.<br>
+	 * Note that this controller may not actually exist - check using {@link File#exists()}.
+	 * @param modelFile the file for the model
+	 * @return a File object for the controller (whether it exists or not); never null
+	 */
 	public File getControllerFor(File modelFile) {
 		return getController(getModelName(modelFile));
 	}
 	
+	/**
+	 * Get a File for a controller in this module with the given model name.<br>
+	 * Note that this controller may not actually exist - check using {@link File#exists()}.
+	 * @param name the name of the model
+	 * @return a File object for the controller (whether it exists or not); never null
+	 */
 	public File getControllerFor(String modelName) {
 		return getController(modelName);
 	}
@@ -1093,10 +1147,6 @@ public class Module extends Bundle {
 		return name;
 	}
 	
-	public File getMigratorFile() {
-		return new File(file.getAbsolutePath() + ".migrator");
-	}
-	
 	/**
 	 * Get a File for a model in this module with the given name.<br>
 	 * Note that this model may not actually exist - check using
@@ -1174,10 +1224,6 @@ public class Module extends Bundle {
 		return new File(views, adjust(name) + ".ess");
 	}
 
-	public File getTestSuiteFile() {
-		return new File(file.getAbsolutePath() + ".tests");
-	}
-
 	public int getType(File file) {
 		if(ProjectUtils.isModel(file)) {
 			return MODEL;
@@ -1222,6 +1268,10 @@ public class Module extends Bundle {
 			name = name.substring(gen(views).getAbsolutePath().length() + 1, name.length() - 5);
 		}
 		return name;
+	}
+
+	public File getViewsFolder(File model) {
+		return getViewsFolder(getModelName(model));
 	}
 
 	public File getViewsFolder(String modelName) {

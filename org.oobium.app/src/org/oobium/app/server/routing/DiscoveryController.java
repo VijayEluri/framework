@@ -22,7 +22,7 @@ import java.util.Set;
 import org.oobium.app.server.controller.Action;
 import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.routing.routes.ControllerRoute;
-import org.oobium.http.HttpRequest.Type;
+import org.oobium.http.constants.RequestType;
 
 class DiscoveryController extends Controller {
 
@@ -57,10 +57,10 @@ class DiscoveryController extends Controller {
 			return;
 		}
 		
-		Type type = null;
+		RequestType type = null;
 		boolean models = "models".equals(param("q"));
 		if(!models) {
-			type = Type.valueOf(param("q").toUpperCase());
+			type = RequestType.valueOf(param("q").toUpperCase());
 		}
 
 		List<Map<String, String>> results = new ArrayList<Map<String,String>>();

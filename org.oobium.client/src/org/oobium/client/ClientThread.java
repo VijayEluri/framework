@@ -10,8 +10,8 @@
  ******************************************************************************/
 package org.oobium.client;
 
-import static org.oobium.http.HttpRequest.Type.POST;
-import static org.oobium.http.HttpRequest.Type.PUT;
+import static org.oobium.http.constants.RequestType.POST;
+import static org.oobium.http.constants.RequestType.PUT;
 import static org.oobium.utils.StringUtils.attrsEncode;
 
 import java.io.OutputStreamWriter;
@@ -25,14 +25,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.oobium.http.HttpRequest.Type;
 import org.oobium.http.constants.Header;
+import org.oobium.http.constants.RequestType;
 import org.oobium.utils.StringUtils;
 
 public class ClientThread extends Thread {
 
 	private Client client;
-	private Type type;
+	private RequestType type;
 	private String path;
 	private Map<String, List<String>> headers;
 	private Map<String, String> parameters;
@@ -40,7 +40,7 @@ public class ClientThread extends Thread {
 	
 	private ClientResponse response;
 	
-	ClientThread(Client client, Type type, String path, Map<String, List<String>> headers, Map<String, String> parameters) {
+	ClientThread(Client client, RequestType type, String path, Map<String, List<String>> headers, Map<String, String> parameters) {
 		if(!path.startsWith("/")) {
 			path = "/" + path;
 		}

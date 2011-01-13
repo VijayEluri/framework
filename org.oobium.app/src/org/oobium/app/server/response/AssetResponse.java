@@ -17,9 +17,9 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-import org.oobium.http.HttpRequest.Type;
 import org.oobium.http.constants.ContentType;
 import org.oobium.http.constants.Header;
+import org.oobium.http.constants.RequestType;
 import org.oobium.http.constants.StatusCode;
 
 public class AssetResponse extends Response {
@@ -28,7 +28,7 @@ public class AssetResponse extends Response {
 	private final String length;
 	private final String lastModified;
 
-	public AssetResponse(Type requestType, ContentType type, URL url, String length, String lastModified) {
+	public AssetResponse(RequestType requestType, ContentType type, URL url, String length, String lastModified) {
 		super(requestType);
 		setStatus(StatusCode.OK);
 		setContentType(type);

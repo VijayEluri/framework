@@ -17,10 +17,10 @@ import static org.oobium.app.server.controller.Action.showAll;
 import static org.oobium.app.server.controller.Action.showEdit;
 import static org.oobium.app.server.controller.Action.showNew;
 import static org.oobium.app.server.controller.Action.update;
-import static org.oobium.http.HttpRequest.Type.DELETE;
-import static org.oobium.http.HttpRequest.Type.GET;
-import static org.oobium.http.HttpRequest.Type.POST;
-import static org.oobium.http.HttpRequest.Type.PUT;
+import static org.oobium.http.constants.RequestType.DELETE;
+import static org.oobium.http.constants.RequestType.GET;
+import static org.oobium.http.constants.RequestType.POST;
+import static org.oobium.http.constants.RequestType.PUT;
 import static org.oobium.utils.CharStreamUtils.closer;
 import static org.oobium.utils.CharStreamUtils.find;
 import static org.oobium.utils.CharStreamUtils.findAny;
@@ -54,8 +54,9 @@ import org.oobium.app.server.routing.routes.ViewRoute;
 import org.oobium.app.server.view.DynamicAsset;
 import org.oobium.app.server.view.View;
 import org.oobium.http.HttpRequest;
-import org.oobium.http.HttpRequest.Type;
+import org.oobium.http.constants.ContentType;
 import org.oobium.http.constants.Header;
+import org.oobium.http.constants.RequestType;
 import org.oobium.logging.ILogger;
 import org.oobium.persist.Model;
 import org.oobium.utils.Base64;
@@ -98,11 +99,11 @@ public class Router {
 
 	protected Map<String, Route[]> routes;
 	protected List<Route> patternRoutes;
-	protected Map<Type, Map<String, Route>> fixedRoutes;
+	protected Map<RequestType, Map<String, Route>> fixedRoutes;
 	protected Map<String, Class<?>> namedClasses;
 	protected Map<String, String> hasMany;
 
-	protected Map<Type, Map<String, Realm>> authentications;
+	protected Map<RequestType, Map<String, Realm>> authentications;
 	private Map<String, Realm> realms;
 	
 	Set<Route> published;
@@ -136,20 +137,28 @@ public class Router {
 		List<Route> routes = new ArrayList<Route>();
 		if(!blank(paths)) {
 			for(String path : paths) {
-				if(path.startsWith("/images/")) {
-					path = path.substring(7);
-				} else if(path.startsWith("/scripts/")) {
-					path = path.substring(8);
-				} else if(path.startsWith("/styles/")) {
-					path = path.substring(7);
-				}
 				String[] sa = path.split("\\|", 4);
 				String key = service.getClass().getCanonicalName() + ":" + sa[0];
-				Route route = new AssetRoute(checkRule(sa[0]), service, sa[1], sa[2]);
+				
+				String assetPath = sa[0];
+				if(path.startsWith("/images/")) {
+					sa[0] = sa[0].substring(7);
+				} else if(path.startsWith("/scripts/")) {
+					sa[0] = sa[0].substring(8);
+				} else if(path.startsWith("/styles/")) {
+					sa[0] = sa[0].substring(7);
+				}
+
+				int ix = assetPath.lastIndexOf('.');
+				String ext = (ix != -1) ? assetPath.substring(ix+1) : null;
+
+				ContentType type = ContentType.getFromExtension(ext, ContentType.HTML);
+
+				Route route = new AssetRoute(checkRule(sa[0]), assetPath, type, sa[1], sa[2]);
 				routes.add(route);
 				addRoute(key, route);
 				if(sa.length == 4) {
-					addBasicAuthentication(Type.GET, sa[0], sa[3]);
+					addBasicAuthentication(RequestType.GET, sa[0], sa[3]);
 				}
 			}
 			return new Routed(this, routes.toArray(new Route[routes.size()]));
@@ -161,7 +170,7 @@ public class Router {
 		addBasicAuthentication(GET, path, realm);
 	}
 	
-	public void addBasicAuthentication(Type requestType, String path, String realm) {
+	public void addBasicAuthentication(RequestType requestType, String path, String realm) {
 		if(realms == null) {
 			realms = new HashMap<String, Realm>();
 		}
@@ -171,7 +180,7 @@ public class Router {
 			realms.put(realm, r);
 		}
 		if(authentications == null) {
-			authentications = new HashMap<Type, Map<String,Realm>>();
+			authentications = new HashMap<RequestType, Map<String,Realm>>();
 		}
 		Map<String, Realm> auth = authentications.get(requestType);
 		if(auth == null) {
@@ -392,7 +401,7 @@ public class Router {
 
 		if(route.isFixed()) {
 			if(fixedRoutes == null) {
-				fixedRoutes = new HashMap<Type, Map<String,Route>>();
+				fixedRoutes = new HashMap<RequestType, Map<String,Route>>();
 			}
 			Map<String, Route> routes = fixedRoutes.get(route.requestType);
 			if(routes == null) {
@@ -408,7 +417,7 @@ public class Router {
 		}
 	}
 	
-	Route addRoute(String key, String rule, Class<? extends Controller> clazz, Type requestType) {
+	Route addRoute(String key, String rule, Class<? extends Controller> clazz, RequestType requestType) {
 		rule = checkRule(rule);
 		Route route = new ControllerRoute(requestType, rule, null, clazz, null);
 		addRoute(key, route);
@@ -424,7 +433,7 @@ public class Router {
 
 	ControllerRoute addRoute(String key, String rule, Class<?> clazz, Action action) {
 		rule = checkRule(rule);
-		Type type;
+		RequestType type;
 		switch(action) {
 		case create:	type = POST;	break;
 		case update:	type = PUT;		break;
@@ -450,7 +459,7 @@ public class Router {
 	 * @param clazz the controller class that will handle the routed request
 	 * @return a Routed object
 	 */
-	public Routed addRoute(Type requestType, String path, Class<? extends Controller> clazz) {
+	public Routed addRoute(RequestType requestType, String path, Class<? extends Controller> clazz) {
 		return add(getName(requestType, path)).asRoute(requestType, path, clazz);
 	}
 
@@ -581,7 +590,7 @@ public class Router {
 		return name;
 	}
 
-	private String getName(Type type, String path) {
+	private String getName(RequestType type, String path) {
 		String name = getName(path);
 		return type.name().toLowerCase() + camelCase(name);
 	}
@@ -602,7 +611,7 @@ public class Router {
 		return paths;
 	}
 	
-	public List<String> getPaths(Type type) {
+	public List<String> getPaths(RequestType type) {
 		List<String> paths = new ArrayList<String>();
 		if(fixedRoutes != null) {
 			Map<String, Route> map = fixedRoutes.get(type);
@@ -640,7 +649,7 @@ public class Router {
 		return routes;
 	}
 
-	public List<Route> getRoutes(Type type) {
+	public List<Route> getRoutes(RequestType type) {
 		List<Route> routes = new ArrayList<Route>();
 		if(fixedRoutes != null) {
 			Map<String, Route> map = fixedRoutes.get(type);
@@ -662,6 +671,10 @@ public class Router {
 			}
 		}
 		return routes;
+	}
+	
+	public ModuleService getService() {
+		return service;
 	}
 	
 	public boolean isAuthorized(HttpRequest request, Realm realm) {
@@ -804,7 +817,7 @@ public class Router {
 			for(String path : paths) {
 				String[] sa = path.split(":", 2);
 				if(sa.length == 2) {
-					removeBasicAuthentication(Type.GET, sa[0]);
+					removeBasicAuthentication(RequestType.GET, sa[0]);
 				}
 			}
 			if(fixedRoutes != null) {
@@ -812,7 +825,7 @@ public class Router {
 				if(map != null) {
 					for(Iterator<Route> rIter = map.values().iterator(); rIter.hasNext(); ) {
 						Route route = rIter.next();
-						if(route instanceof AssetRoute && ((AssetRoute) route).provider == provider) {
+						if(route instanceof AssetRoute) {
 							rIter.remove();
 						}
 					}
@@ -827,7 +840,7 @@ public class Router {
 			if(patternRoutes != null) {
 				for(Iterator<Route> iter = patternRoutes.iterator(); iter.hasNext(); ) {
 					Route route = iter.next();
-					if(route instanceof AssetRoute && ((AssetRoute) route).provider == provider) {
+					if(route instanceof AssetRoute) {
 						iter.remove();
 					}
 				}
@@ -838,7 +851,7 @@ public class Router {
 		}
 	}
 
-	public void removeBasicAuthentication(Type requestType, String path) {
+	public void removeBasicAuthentication(RequestType requestType, String path) {
 		if(authentications != null) {
 			Map<String, Realm> auth = authentications.get(requestType);
 			if(auth != null) {
@@ -1023,7 +1036,7 @@ public class Router {
 		if(!path.startsWith("/")) {
 			path = "/" + path;
 		}
-		Type type;
+		RequestType type;
 		switch(action) {
 		case create:	type = POST;	break;
 		case update:	type = PUT;		break;
@@ -1042,7 +1055,7 @@ public class Router {
 		return route;
 	}
 	
-	public void removeRoute(Type requestType, String path) {
+	public void removeRoute(RequestType requestType, String path) {
 		remove(getName(requestType, path));
 	}
 	

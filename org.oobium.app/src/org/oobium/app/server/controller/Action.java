@@ -13,9 +13,10 @@
  */
 package org.oobium.app.server.controller;
 
-import static org.oobium.http.HttpRequest.Type.*;
+import static org.oobium.http.constants.RequestType.*;
+
 import org.oobium.http.HttpRequest;
-import org.oobium.http.HttpRequest.Type;
+import org.oobium.http.constants.RequestType;
 
 /**
  * Used primarily in resource routing, actions denote controller methods that will
@@ -92,7 +93,7 @@ public enum Action {
 	 */
 	showNew;
 
-	public Type getRequestType() {
+	public RequestType getRequestType() {
 		switch(this) {
 		case create:	return POST;
 		case update:	return PUT;

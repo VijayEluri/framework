@@ -12,8 +12,6 @@ package org.oobium.app.server.controller;
 
 public interface ICache {
 
-	public abstract void expireCache(String key);
 	public abstract String getCache(String key);
-	public abstract void setCache(String key, String value);
 	
 }

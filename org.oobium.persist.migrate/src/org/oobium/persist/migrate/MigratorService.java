@@ -10,7 +10,7 @@
  ******************************************************************************/
 package org.oobium.persist.migrate;
 
-import static org.oobium.http.HttpRequest.Type.POST;
+import static org.oobium.http.constants.RequestType.POST;
 import static org.oobium.utils.literal.Map;
 import static org.oobium.utils.literal.e;
 

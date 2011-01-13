@@ -16,13 +16,15 @@ import static org.oobium.http.constants.StatusCode.NOT_AUTHORIZED;
 
 import org.oobium.app.server.response.Response;
 import org.oobium.app.server.routing.RouteHandler;
+import org.oobium.app.server.routing.Router;
 import org.oobium.http.HttpRequest;
 
 public class AuthorizationHandler extends RouteHandler {
 
 	private final String realm;
 	
-	public AuthorizationHandler(String realm) {
+	public AuthorizationHandler(Router router, String realm) {
+		super(router);
 		this.realm = realm;
 	}
 
@@ -44,6 +46,11 @@ public class AuthorizationHandler extends RouteHandler {
 				"</HTML>"
 			);
 		return response;
+	}
+	
+	@Override
+	public String toString() {
+		return "Unauthorized";
 	}
 	
 }

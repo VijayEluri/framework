@@ -59,7 +59,7 @@ public class EssCompilerTests {
 		String esp;
 		esp = "MyEss(String arg1)";
 		assertTrue(src(esp).hasVariable("arg1"));
-		assertEquals("String arg1", src(esp).getVariable("arg1"));
+		assertEquals("public String arg1", src(esp).getVariable("arg1"));
 		assertEquals(1, src(esp).getConstructorCount());
 		assertTrue(src(esp).hasConstructor(0));
 		assertEquals("\tpublic MyEss(String arg1) {\n\t\tthis.arg1 = arg1;\n\t}", src(esp).getConstructor(0));
@@ -86,10 +86,10 @@ public class EssCompilerTests {
 	@Test
 	public void testJava() throws Exception {
 		String ess;
-		ess = ".myClass { width = (width * 2) + \"px\" }";
+		ess = ".myClass { width:= (width * 2) + \"px\" }";
 		assertEquals("__sb__.append(\".myClass{width:\").append((width * 2) + \"px\").append(\"}\");", css(ess));
 
-		ess = "-int width = 10;\n\n.myClass { width = (width * 2) + \"px\" }";
+		ess = "-int width = 10;\n\n.myClass { width:= (width * 2) + \"px\" }";
 		assertEquals("int width = 10;\n__sb__.append(\".myClass{width:\").append((width * 2) + \"px\").append(\"}\");", css(ess));
 	}
 

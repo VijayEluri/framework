@@ -270,13 +270,14 @@ public class ProjectGenerator {
 	
 	private static void createBuildFile(File project, int type) {
 		StringBuilder sb = new StringBuilder();
-		sb.append("source.. = src/");
 		if(PTYPE_MIG == type) {
-			sb.append(",\\\n           generated/\n");
+			sb.append("source.. = src/,\\\n           generated/\n");
 		} else if(PTYPE_TEST == type) {
-			sb.append('\n');
+			sb.append("source.. = src-functional/,\\\n");
+			sb.append("           src-integration/,\\\n");
+			sb.append("           src-unit/\n");
 		} else if(type >= 0) {
-			sb.append(",\\\n");
+			sb.append("source.. = src/,\\\n");
 			sb.append("           assets/,\\\n");
 			sb.append("           generated/\n");
 		}
@@ -293,14 +294,20 @@ public class ProjectGenerator {
 		StringBuilder sb = new StringBuilder();
 		sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
 		sb.append("<classpath>\n");
-		sb.append("	<classpathentry kind=\"src\" path=\"src\"/>\n");
-		if(type == PTYPE_APP || type == PTYPE_APP_WS || type == PTYPE_MOD || type == PTYPE_MOD_WS) {
-			if(type != PTYPE_APP_WS && type != PTYPE_MOD_WS) {
-				sb.append("	<classpathentry kind=\"src\" path=\"assets\"/>\n");
+		if(type == PTYPE_TEST) {
+			sb.append("	<classpathentry kind=\"src\" path=\"src-functional\"/>\n");
+			sb.append("	<classpathentry kind=\"src\" path=\"src-integration\"/>\n");
+			sb.append("	<classpathentry kind=\"src\" path=\"src-unit\"/>\n");
+		} else {
+			sb.append("	<classpathentry kind=\"src\" path=\"src\"/>\n");
+			if(type == PTYPE_APP || type == PTYPE_APP_WS || type == PTYPE_MOD || type == PTYPE_MOD_WS) {
+				if(type != PTYPE_APP_WS && type != PTYPE_MOD_WS) {
+					sb.append("	<classpathentry kind=\"src\" path=\"assets\"/>\n");
+				}
+				sb.append("	<classpathentry kind=\"src\" path=\"generated\"/>\n");
+			} else if(type == PTYPE_MIG) {
+				sb.append("	<classpathentry kind=\"src\" path=\"generated\"/>\n");
 			}
-			sb.append("	<classpathentry kind=\"src\" path=\"generated\"/>\n");
-		} else if(type == PTYPE_MIG) {
-			sb.append("	<classpathentry kind=\"src\" path=\"generated\"/>\n");
 		}
 		sb.append("	<classpathentry kind=\"con\" path=\"org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6\"/>\n");
 		sb.append("	<classpathentry kind=\"con\" path=\"org.eclipse.pde.core.requiredPlugins\"/>\n");
@@ -366,7 +373,7 @@ public class ProjectGenerator {
 		} else if(properties.containsKey("Bundle-SymbolicName")) {
 			throw new IllegalArgumentException("Bundle-SymbolicName must equal the name of the project folder");
 		}
-		
+
 		final String name = project.getName();
 		StringBuilder sb = new StringBuilder();
 		sb.append("Manifest-Version: ").append(property(properties, "Manifest-Version", "1.0")).append('\n');
@@ -411,8 +418,6 @@ public class ProjectGenerator {
 			sb.append(" org.oobium.logging,\n");
 			sb.append(" org.oobium.persist,\n");
 			if(projectType == PTYPE_TEST) {
-				sb.append(" org.oobium.persist.db,\n");
-				sb.append(" org.oobium.persist.db.migrate,\n");
 				sb.append(" org.oobium.test,\n");
 			}
 			sb.append(" org.oobium.utils,\n");
@@ -445,7 +450,7 @@ public class ProjectGenerator {
 	}
 
 	public static File createMigrator(Module module, Set<Bundle> dependencies) {
-		File migrator = new File(module.file.getParentFile(), module.migrator);
+		File migrator = module.migrator;
 		if(migrator.exists()) {
 			throw new UnsupportedOperationException(migrator.getName() + " already exists");
 		} else {
@@ -881,13 +886,15 @@ public class ProjectGenerator {
 		writeFile(project, ".project", sb.toString());
 	}
 	
-	public static File createTests(Module module, Map<String, String> properties) {
-		File project = new File(module.file.getParentFile(), module.name + ".tests");
+	public static File createTestSuite(Module module, Map<String, String> properties) {
+		File project = module.testSuite;
 		if(!project.exists()) {
 			project.mkdirs();
 		}
 
-		createFolder(srcFolder(project));
+		createFolder(funcFolder(project));
+		createFolder(intgFolder(project));
+		createFolder(unitFolder(project));
 		createFolder(binFolder(project));
 		createFolder(mainFolder(project));
 		createFolder(modelsFolder(project));
@@ -974,26 +981,31 @@ public class ProjectGenerator {
 		return project;
 	}
 	
-	private static File genFolder(File project)			{ return new File(project, "generated"); }
-
-	private static File libFolder(File project)			{ return new File(project, "lib"); }
-
 	private static File mainFolder(File project)		{
 		String path = project.getName();
-		if(path.endsWith(".tests")) path = path.substring(0, path.length()-6);
-		return new File(srcFolder(project), path.replace('.', File.separatorChar));
+		if(path.endsWith(".tests")) {
+			path = path.substring(0, path.length()-6);
+			return new File(unitFolder(project), path.replace('.', File.separatorChar));
+		} else {
+			return new File(srcFolder(project), path.replace('.', File.separatorChar));
+		}
+	}
+
+	private static File modelsFolder(File project) {
+		return new File(appFolder(project), "models");
 	}
 	
-	private static File modelsFolder(File project)		{ return new File(appFolder(project), "models"); }
-
 	private static String property(Map<String, String> properties, String name, String defaultValue) {
 		return properties.containsKey(name) ? properties.remove(name) : defaultValue;
 	}
 	
+	private static File genFolder(File project)			{ return new File(project, "generated"); }
+	private static File libFolder(File project)			{ return new File(project, "lib"); }
+	private static File funcFolder(File project)			{ return new File(project, "src-functional"); }
+	private static File intgFolder(File project)			{ return new File(project, "src-integration"); }
+	private static File unitFolder(File project)			{ return new File(project, "src-unit"); }
 	private static File srcFolder(File project)			{ return new File(project, "src"); }
-
 	private static File layoutsFolder(File project)		{ return new File(viewsFolder(project), "_layouts"); }
-
 	private static File viewsFolder(File project)		{ return new File(appFolder(project), "views"); }
 	
 }

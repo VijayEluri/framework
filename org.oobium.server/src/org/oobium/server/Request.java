@@ -10,10 +10,6 @@
  ******************************************************************************/
 package org.oobium.server;
 
-import static org.oobium.http.HttpRequest.Type.DELETE;
-import static org.oobium.http.HttpRequest.Type.GET;
-import static org.oobium.http.HttpRequest.Type.POST;
-import static org.oobium.http.HttpRequest.Type.PUT;
 import static org.oobium.http.constants.ContentType.MULTIPART;
 import static org.oobium.http.constants.ContentType.parse;
 import static org.oobium.http.constants.Header.ACCEPT;
@@ -23,6 +19,10 @@ import static org.oobium.http.constants.Header.CONTENT_TYPE;
 import static org.oobium.http.constants.Header.COOKIE;
 import static org.oobium.http.constants.Header.HOST;
 import static org.oobium.http.constants.Header.METHOD;
+import static org.oobium.http.constants.RequestType.DELETE;
+import static org.oobium.http.constants.RequestType.GET;
+import static org.oobium.http.constants.RequestType.POST;
+import static org.oobium.http.constants.RequestType.PUT;
 import static org.oobium.http.impl.Attrs.attrDecode;
 import static org.oobium.http.impl.Attrs.attrsDecode;
 import static org.oobium.utils.json.JsonUtils.toMap;
@@ -38,6 +38,7 @@ import org.oobium.http.HttpRequest;
 import org.oobium.http.HttpRequestHandler;
 import org.oobium.http.constants.ContentType;
 import org.oobium.http.constants.Header;
+import org.oobium.http.constants.RequestType;
 import org.oobium.http.impl.Cookie;
 import org.oobium.http.impl.Headers;
 import org.oobium.logging.Logger;
@@ -66,7 +67,7 @@ public class Request implements HttpRequest {
 	
 	private final Logger logger;
 
-	private Type type;
+	private RequestType type;
 	private String path;
 	private String fullPath;
 	private HttpRequestHandler handler;
@@ -77,7 +78,7 @@ public class Request implements HttpRequest {
 	private int port;
 	private String ipAddress;
 	
-	public Request(Type type, String path, String fullPath, Headers headers, Map<String, Object> parameters) {
+	public Request(RequestType type, String path, String fullPath, Headers headers, Map<String, Object> parameters) {
 		logger = Logger.getLogger(Server.class);
 		
 		this.type = type;
@@ -191,7 +192,7 @@ public class Request implements HttpRequest {
 		return null;
 	}
 
-	public Type getType() {
+	public RequestType getType() {
 		return type;
 	}
 

@@ -12,9 +12,9 @@ package org.oobium.app.dev;
 
 import static org.oobium.app.server.controller.Action.show;
 import static org.oobium.app.server.controller.Action.showAll;
-import static org.oobium.http.HttpRequest.Type.DELETE;
-import static org.oobium.http.HttpRequest.Type.GET;
-import static org.oobium.http.HttpRequest.Type.POST;
+import static org.oobium.http.constants.RequestType.DELETE;
+import static org.oobium.http.constants.RequestType.GET;
+import static org.oobium.http.constants.RequestType.POST;
 
 import java.io.BufferedReader;
 import java.io.PrintWriter;

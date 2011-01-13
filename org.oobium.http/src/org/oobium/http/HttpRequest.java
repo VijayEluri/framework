@@ -15,11 +15,10 @@ import java.util.Map;
 
 import org.oobium.http.constants.ContentType;
 import org.oobium.http.constants.Header;
+import org.oobium.http.constants.RequestType;
 
 public interface HttpRequest {
 
-	public enum Type { GET, POST, PUT, DELETE, HEAD }
-	
 	public static final int UNKNOWN = -1;
 	
 	public static final String DELETE_METHOD = "_delete";
@@ -60,7 +59,7 @@ public interface HttpRequest {
 
 	public abstract Map<String, Object> getQueryMap();
 
-	public abstract Type getType();
+	public abstract RequestType getType();
 
 	public abstract String getHost();
 

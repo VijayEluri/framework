@@ -19,14 +19,17 @@ import org.oobium.logging.Logger;
 
 public abstract class RouteHandler {
 
+	public final Router router;
 	protected Logger logger;
 	public final String[][] params;
 	
-	public RouteHandler() {
+	public RouteHandler(Router router) {
+		this.router = router;
 		params = null;
 	}
 	
-	public RouteHandler(String[][] params) {
+	public RouteHandler(Router router, String[][] params) {
+		this.router = router;
 		this.params = params;
 	}
 	

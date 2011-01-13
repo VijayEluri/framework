@@ -23,6 +23,7 @@ import java.util.TreeMap;
 import org.oobium.build.esp.EspElement;
 import org.oobium.build.esp.EspPart;
 import org.oobium.build.esp.parts.EntryPart;
+import org.oobium.build.esp.parts.ScriptPart;
 import org.oobium.utils.CharStreamUtils;
 
 public class ScriptElement extends EspElement {
@@ -30,7 +31,7 @@ public class ScriptElement extends EspElement {
 	private EspPart javaType;
 	private List<EspPart> args;
 	private Map<String, EntryPart> entries;
-	private List<EspPart> lines;
+	private List<ScriptPart> lines;
 	
 	public ScriptElement(EspPart parent, int start) {
 		super(parent, start);
@@ -67,9 +68,9 @@ public class ScriptElement extends EspElement {
 	
 	private void addLine(int start, int end) {
 		if(lines == null) {
-			lines = new ArrayList<EspPart>();
+			lines = new ArrayList<ScriptPart>();
 		}
-		lines.add(new EspPart(this, Type.ScriptPart, start, end));
+		lines.add(new ScriptPart(this, start, end));
 	}
 	
 	public EspPart getArg(int index) {
@@ -107,7 +108,7 @@ public class ScriptElement extends EspElement {
 		return (javaType != null) ? javaType.getText() : null;
 	}
 	
-	public List<EspPart> getLines() {
+	public List<ScriptPart> getLines() {
 		return lines;
 	}
 	

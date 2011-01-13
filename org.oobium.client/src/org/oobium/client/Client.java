@@ -10,10 +10,10 @@
  ******************************************************************************/
 package org.oobium.client;
 
-import static org.oobium.http.HttpRequest.Type.DELETE;
-import static org.oobium.http.HttpRequest.Type.GET;
-import static org.oobium.http.HttpRequest.Type.POST;
-import static org.oobium.http.HttpRequest.Type.PUT;
+import static org.oobium.http.constants.RequestType.DELETE;
+import static org.oobium.http.constants.RequestType.GET;
+import static org.oobium.http.constants.RequestType.POST;
+import static org.oobium.http.constants.RequestType.PUT;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -23,9 +23,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.oobium.http.HttpRequest.Type;
 import org.oobium.http.constants.ContentType;
 import org.oobium.http.constants.Header;
+import org.oobium.http.constants.RequestType;
 
 public class Client {
 
@@ -123,11 +123,11 @@ public class Client {
 		asyncRequest(PUT, path, parameters, null);
 	}
 	
-	public void asyncRequest(Type type, String path, ClientCallback callback) {
+	public void asyncRequest(RequestType type, String path, ClientCallback callback) {
 		asyncRequest(type, path, null, callback);
 	}
 	
-	public void asyncRequest(Type type, String path, Map<String, String> parameters, ClientCallback callback) {
+	public void asyncRequest(RequestType type, String path, Map<String, String> parameters, ClientCallback callback) {
 		ClientThread c = new ClientThread(this, type, path, headers, parameters);
 		c.setCallback(callback);
 		c.start();
@@ -252,21 +252,21 @@ public class Client {
 		}
 	}
 	
-	public ClientResponse syncRequest(Type type) {
+	public ClientResponse syncRequest(RequestType type) {
 		return syncRequest(type, url.getPath(), null);
 	}
 	
-	public ClientResponse syncRequest(Type type, Map<String, String> parameters) {
+	public ClientResponse syncRequest(RequestType type, Map<String, String> parameters) {
 		ClientThread c = new ClientThread(this, type, url.getPath(), headers, parameters);
 		c.run();
 		return c.getResponse();
 	}
 	
-	public ClientResponse syncRequest(Type type, String path) {
+	public ClientResponse syncRequest(RequestType type, String path) {
 		return syncRequest(type, path, null);
 	}
 
-	public ClientResponse syncRequest(Type type, String path, Map<String, String> parameters) {
+	public ClientResponse syncRequest(RequestType type, String path, Map<String, String> parameters) {
 		ClientThread c = new ClientThread(this, type, path, headers, parameters);
 		c.run();
 		return c.getResponse();

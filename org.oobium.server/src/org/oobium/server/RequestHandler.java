@@ -10,10 +10,10 @@
  ******************************************************************************/
 package org.oobium.server;
 
-import static org.oobium.http.HttpRequest.Type.DELETE;
-import static org.oobium.http.HttpRequest.Type.GET;
-import static org.oobium.http.HttpRequest.Type.HEAD;
-import static org.oobium.http.HttpRequest.Type.PUT;
+import static org.oobium.http.constants.RequestType.DELETE;
+import static org.oobium.http.constants.RequestType.GET;
+import static org.oobium.http.constants.RequestType.HEAD;
+import static org.oobium.http.constants.RequestType.PUT;
 
 import java.io.IOException;
 import java.net.URLDecoder;
@@ -22,12 +22,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.oobium.http.HttpRequest;
-import org.oobium.http.HttpRequest.Type;
 import org.oobium.http.HttpRequest404Handler;
 import org.oobium.http.HttpRequest500Handler;
 import org.oobium.http.HttpRequestHandler;
 import org.oobium.http.HttpResponse;
 import org.oobium.http.constants.Header;
+import org.oobium.http.constants.RequestType;
 import org.oobium.http.impl.Headers;
 import org.oobium.logging.Logger;
 
@@ -78,7 +78,7 @@ class RequestHandler implements Runnable {
 			headers.add(line);
 		}
 
-		Type type;
+		RequestType type;
 		String headerType = headers.get(Header.METHOD);
 		if(HttpRequest.DELETE_METHOD.equals(headerType)) {
 			type = DELETE;

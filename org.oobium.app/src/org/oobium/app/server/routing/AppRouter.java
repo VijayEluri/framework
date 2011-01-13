@@ -12,7 +12,7 @@ package org.oobium.app.server.routing;
 
 import static org.oobium.app.server.controller.Action.show;
 import static org.oobium.app.server.controller.Action.showAll;
-import static org.oobium.http.HttpRequest.Type.GET;
+import static org.oobium.http.constants.RequestType.GET;
 import static org.oobium.persist.ModelAdapter.getAdapter;
 import static org.oobium.utils.CharStreamUtils.closer;
 import static org.oobium.utils.CharStreamUtils.find;
@@ -44,9 +44,9 @@ import org.oobium.app.server.routing.routes.ControllerRoute;
 import org.oobium.app.server.routing.routes.DynamicAssetRoute;
 import org.oobium.app.server.routing.routes.ViewRoute;
 import org.oobium.http.HttpRequest;
-import org.oobium.http.HttpRequest.Type;
 import org.oobium.http.HttpResponse;
 import org.oobium.http.constants.Header;
+import org.oobium.http.constants.RequestType;
 import org.oobium.persist.Model;
 
 public class AppRouter extends Router implements IPathRouting, IUrlRouting {
@@ -111,7 +111,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 				}
 				if(realm != null) {
 					if(!router.isAuthorized(request, realm)) {
-						return new AuthorizationHandler(realm.name());
+						return new AuthorizationHandler(router, realm.name());
 					}
 				}
 			}
@@ -151,7 +151,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 					switch(fixedRoute.type) {
 					case Route.ASSET:
 						AssetRoute ar = (AssetRoute) fixedRoute;
-						return new AssetHandler(ar.loader(), ar.length, ar.lastModified);
+						return new AssetHandler(router, ar.assetPath, ar.contentType, ar.length, ar.lastModified);
 					case Route.AUTHORIZATION:
 						throw new UnsupportedOperationException();
 					case Route.CONTROLLER:
@@ -171,7 +171,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		}
 		return null;
 	}
-	
+
 	public RouteHandler getHandler(HttpRequest request) {
 		if(port != request.getPort()) {
 			return null;
@@ -204,11 +204,11 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 	public String getHost() {
 		return hosts[0];
 	}
-	
+
 	public String[] getHosts() {
 		return hosts;
 	}
-
+	
 	private String[][] getParams(Route cr, Matcher matcher) {
 		String[][] params;
 		String[][] cparams = cr.params();
@@ -230,7 +230,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		}
 		return params;
 	}
-	
+
 	public List<String> getPaths() {
 		List<String> paths = new ArrayList<String>();
 		if(fixedRoutes != null) {
@@ -265,7 +265,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		return paths;
 	}
 	
-	public List<String> getPaths(Type type) {
+	public List<String> getPaths(RequestType type) {
 		List<String> paths = new ArrayList<String>();
 		if(fixedRoutes != null) {
 			Map<String, Route> map = fixedRoutes.get(type);
@@ -351,10 +351,10 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		}
 		return handler;
 	}
-
+	
 	private RouteHandler getPatternRouteHandler(HttpRequest request, Router router) {
 		if(router.patternRoutes != null) {
-			Type type = request.getType();
+			RequestType type = request.getType();
 			for(Route route : router.patternRoutes) {
 				if(route.requestType == type) {
 					Matcher matcher = route.matcher(route.matchOnFullPath ? request.getFullPath() : request.getPath());
@@ -378,7 +378,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		}
 		return null;
 	}
-	
+
 	public int getPort() {
 		return port;
 	}
@@ -425,7 +425,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		return routes;
 	}
 
-	public List<Route> getRoutes(Type type) {
+	public List<Route> getRoutes(RequestType type) {
 		List<Route> routes = new ArrayList<Route>();
 		if(fixedRoutes != null) {
 			Map<String, Route> map = fixedRoutes.get(type);

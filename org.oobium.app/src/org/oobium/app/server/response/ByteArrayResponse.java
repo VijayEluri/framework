@@ -15,15 +15,15 @@ import static org.oobium.utils.StringUtils.blank;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-import org.oobium.http.HttpRequest.Type;
 import org.oobium.http.constants.Header;
+import org.oobium.http.constants.RequestType;
 
 
 public class ByteArrayResponse extends Response {
 
 	private byte[] data;
 
-	public ByteArrayResponse(Type requestType) {
+	public ByteArrayResponse(RequestType requestType) {
 		super(requestType);
 	}
 

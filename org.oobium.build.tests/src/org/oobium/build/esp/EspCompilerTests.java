@@ -64,7 +64,7 @@ public class EspCompilerTests {
 		// single arg
 		esp = "MyEsp(String arg1)";
 		assertTrue(src(esp).hasVariable("arg1"));
-		assertEquals("String arg1", src(esp).getVariable("arg1"));
+		assertEquals("public String arg1", src(esp).getVariable("arg1"));
 		assertEquals(1, src(esp).getConstructorCount());
 		assertTrue(src(esp).hasConstructor(0));
 		assertEquals("\tpublic MyEsp(String arg1) {\n\t\tthis.arg1 = arg1;\n\t}", src(esp).getConstructor(0));
@@ -73,8 +73,8 @@ public class EspCompilerTests {
 		esp = "MyEsp(String arg1,  int  arg2 )";
 		assertTrue(src(esp).hasVariable("arg1"));
 		assertTrue(src(esp).hasVariable("arg2"));
-		assertEquals("String arg1", src(esp).getVariable("arg1"));
-		assertEquals("int arg2", src(esp).getVariable("arg2"));
+		assertEquals("public String arg1", src(esp).getVariable("arg1"));
+		assertEquals("public int arg2", src(esp).getVariable("arg2"));
 		assertEquals(1, src(esp).getConstructorCount());
 		assertTrue(src(esp).hasConstructor(0));
 		assertEquals("\tpublic MyEsp(String arg1, int arg2) {\n\t\tthis.arg1 = arg1;\n\t\tthis.arg2 = arg2;\n\t}", src(esp).getConstructor(0));
@@ -82,7 +82,7 @@ public class EspCompilerTests {
 		// complex arg
 		esp = "MyEsp(List<Map<String, Object>> arg1)";
 		assertTrue(src(esp).hasVariable("arg1"));
-		assertEquals("List<Map<String, Object>> arg1", src(esp).getVariable("arg1"));
+		assertEquals("public List<Map<String, Object>> arg1", src(esp).getVariable("arg1"));
 		assertEquals(1, src(esp).getConstructorCount());
 		assertTrue(src(esp).hasConstructor(0));
 		assertEquals("\tpublic MyEsp(List<Map<String, Object>> arg1) {\n\t\tthis.arg1 = arg1;\n\t}", src(esp).getConstructor(0));
@@ -91,7 +91,7 @@ public class EspCompilerTests {
 		EspCompiler e2j = new EspCompiler("com.mydomain", dom);
 		ESourceFile jfile = e2j.compile();
 		assertTrue(jfile.hasVariable("exception"));
-		assertEquals("Exception exception", jfile.getVariable("exception"));
+		assertEquals("public Exception exception", jfile.getVariable("exception"));
 		assertEquals(1, jfile.getConstructorCount());
 		assertTrue(jfile.hasConstructor(0));
 		assertEquals("\tpublic Error404(Exception exception) {\n\t\tthis.exception = exception;\n\t}", jfile.getConstructor(0));
@@ -102,7 +102,7 @@ public class EspCompilerTests {
 		String esp;
 		esp = "MyEsp(String arg1=\"hello\")";
 		assertTrue(src(esp).hasVariable("arg1"));
-		assertEquals("String arg1", src(esp).getVariable("arg1"));
+		assertEquals("public String arg1", src(esp).getVariable("arg1"));
 		assertEquals(2, src(esp).getConstructorCount());
 		assertTrue(src(esp).hasConstructor(0));
 		assertEquals("\tpublic MyEsp() {\n\t\tthis.arg1 = \"hello\";\n\t}", src(esp).getConstructor(0));
@@ -111,7 +111,7 @@ public class EspCompilerTests {
 
 		esp = "MyEsp(String arg1, String arg2=\"hello\")";
 		assertTrue(src(esp).hasVariable("arg1"));
-		assertEquals("String arg1", src(esp).getVariable("arg1"));
+		assertEquals("public String arg1", src(esp).getVariable("arg1"));
 		assertEquals(2, src(esp).getConstructorCount());
 		assertTrue(src(esp).hasConstructor(0));
 		assertEquals("\tpublic MyEsp(String arg1) {\n\t\tthis.arg1 = arg1;\n\t\tthis.arg2 = \"hello\";\n\t}", src(esp).getConstructor(0));
@@ -164,9 +164,6 @@ public class EspCompilerTests {
 		assertEquals(0, src("script").getMethodCount());
 		assertEquals("__sb__.append(\"<script>function() { alert('hello') }</script>\");", html("script function() { alert('hello') }"));
 		assertEquals("__sb__.append(\"<script>function() { alert('hello') }\\n\\tfunction() { alert('goodbye') }</script>\");", html("script function() { alert('hello') }\n\tfunction() { alert('goodbye') }"));
-		assertEquals("__sb__.append(\"<script>function() { alert(\").append(\"'hello'\").append(\") }</script>\");", html("script(var1: \"'hello'\") function() { alert(@var1) }"));
-		assertEquals("__sb__.append(\"<script>alert(\").append(\"'hello'\").append(\")\\n\\talert(\").append(\"'goodbye'\").append(\")</script>\");", html("script(var1: \"'hello'\", var2: \"'goodbye'\") alert(@var1)\n\talert(@var2)"));
-		assertEquals("__sb__.append(\"<script>\\tfunction speek() {\\n\\t\\talert(\").append(\"'hello'\").append(\");\\n\\t}</script>\");", html("script(var1: \"'hello'\")\n\tfunction speek() {\n\t\talert(@var1);\n\t}"));
 
 		// after java line
 		assertEquals("if(true)\n\t__sb__.append(\"<script>alert('hello');</script>\");", html("-if(true)\n\tscript alert('hello');"));
@@ -184,8 +181,9 @@ public class EspCompilerTests {
 		assertEquals("__sb__.append(\"<div><style>.myClass{color:red}</style></div>\");", html("div <- style .myClass { color: red; }"));
 		assertEquals("__sb__.append(\"<div><style>.myClass{color:red}</style></div>\");", html("div\n\tstyle .myClass { color: red; }"));
 		assertEquals("__sb__.append(\"<div><style>.myClass{color:red}</style></div>\");", html("div\n\tstyle\n\t\t.myClass { color: red; }"));
-		assertEquals("__sb__.append(\"<style>.myClass{color:\").append(\"red\").append(\"}</style>\");", html("style(var1: \"red\") .myClass { color: @var1; }"));
-		assertEquals("__sb__.append(\"<style>.myClass1{color:\").append(\"red\").append(\"} .myClass2{color:\").append(\"blue\").append(\"}</style>\");", html("style(var1: \"red\", var2: \"blue\") .myClass1 { color: @var1; }\n\t.myClass2 { color: @var2; }"));
+
+		// with java
+		assertEquals("__sb__.append(\"<div><style>.myClass{width:\").append(height * 2 + \"px\").append(\"}</style></div>\");", html("div\n\tstyle\n\t\t.myClass { width:= height * 2 + \"px\"; }"));
 
 		// with comments
 		assertEquals("__sb__.append(\"<style>.myClass{color:red}</style>\");", html("style .myClass { /* color:blue; */ color: red; }"));

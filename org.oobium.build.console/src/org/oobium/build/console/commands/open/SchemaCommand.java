@@ -28,7 +28,7 @@ public class SchemaCommand extends BuilderCommand {
 		Application app = getApplication();
 		File schema = app.getSchema();
 		if(schema.exists()) {
-			BuilderConsoleActivator.sendOpen(app.getMigratorFile(), schema);
+			BuilderConsoleActivator.sendOpen(app.migrator, schema);
 		} else {
 			console.err.println("schema file (create.sql) does not exist");
 		}
