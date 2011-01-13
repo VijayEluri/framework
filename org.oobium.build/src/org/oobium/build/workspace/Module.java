@@ -244,9 +244,9 @@ public class Module extends Bundle {
 		String oldsrc = FileUtils.readFile(activator).toString();
 		String newsrc = oldsrc;
 		
-		if(!Pattern.compile("router.addRoutes\\s*\\(\\s*" + modelName + ".class\\s*\\)\\s*;").matcher(newsrc).find()) {
-			newsrc = oldsrc.replaceFirst("public\\s+void\\s+addRoutes\\s*\\(\\s*Config\\s+config\\s*,\\s*Router\\s+router\\s*\\)\\s*\\{\\s*",
-											"public void addRoutes(Config config, Router router) {\n" +
+		if(!Pattern.compile("router.addResources\\s*\\(\\s*" + modelName + ".class\\s*\\)\\s*;").matcher(newsrc).find()) {
+			newsrc = oldsrc.replaceFirst("public\\s+void\\s+addRoutes\\s*\\(\\s*Config\\s+config\\s*,\\s*(App)?Router\\s+router\\s*\\)\\s*\\{\\s*",
+											"public void addRoutes(Config config, $1Router router) {\n" +
 											"\t\t// auto-generated\n" +
 											"\t\trouter.addResources(" + modelName + ".class);\n\n\t\t");
 		}
