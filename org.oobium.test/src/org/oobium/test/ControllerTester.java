@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.net.URL;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -701,11 +702,6 @@ public class ControllerTester {
 		return service;
 	}
 
-	public ControllerTester seed(Model model) {
-		persistor.seed(model);
-		return this;
-	}
-	
 	public ControllerTester set(Header header, String value) {
 		if(headers == null) {
 			headers = new Headers();

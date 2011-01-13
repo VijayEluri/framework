@@ -368,11 +368,6 @@ public class ViewTester {
 		return render(mockRequest(type, params), partial);
 	}
 	
-	public ViewTester seed(Model model) {
-		persistor.seed(model);
-		return this;
-	}
-
 	/**
 	 * Get elements that match the given selector query as run on the root document.
 	 * @param query the query to use in finding the element (follows JQuery CSS selectors approach)

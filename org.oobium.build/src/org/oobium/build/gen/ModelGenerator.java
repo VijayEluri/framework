@@ -39,6 +39,7 @@ import org.oobium.build.workspace.Workspace;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.persist.Paginator;
+import org.oobium.persist.PersistService;
 import org.oobium.persist.migrate.Migration;
 import org.oobium.utils.StringUtils;
 import org.oobium.utils.Config.Mode;
@@ -70,6 +71,7 @@ public class ModelGenerator {
 		src.imports.add(Map.class.getCanonicalName());
 		src.imports.add(Paginator.class.getCanonicalName());
 		src.imports.add(SQLException.class.getCanonicalName());
+		src.imports.add(PersistService.class.getCanonicalName());
 
 		List<String> inits = new ArrayList<String>();
 		for(PropertyDescriptor property : src.properties.values()) {
@@ -158,6 +160,11 @@ public class ModelGenerator {
 	private static String createStaticMethods(String type) {
 		String var = varName(type);
 		StringBuilder sb = new StringBuilder();
+		appendDoc(sb, "Get the PersistService appropriate for the ? class.", type);
+		sb.append("\tpublic static PersistService getPersistService() {\n");
+		sb.append("\t\treturn Model.getPersistService(").append(type).append(".class);\n");
+		sb.append("\t}\n");
+		sb.append("\n");
 		appendDoc(sb, "Create a new instance of ? and set its id to the given value", type);
 		sb.append("\tpublic static ").append(type).append(" newInstance(int id) {\n");
 		sb.append("\t\t").append(type).append(' ').append(var).append(" = new ").append(type).append("();\n");

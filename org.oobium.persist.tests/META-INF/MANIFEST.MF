@@ -2,11 +2,11 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Tests
 Bundle-SymbolicName: org.oobium.persist.tests
-Bundle-Version: 0.5.0.qualifier
+Bundle-Version: 0.6.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Import-Package: org.osgi.framework;version="1.4.0"
-Require-Bundle: org.junit4;bundle-version="4.5.0",
- org.mockito;bundle-version="1.8.0",
+Import-Package: org.osgi.framework
+Require-Bundle: org.junit4,
+ org.mockito,
  org.oobium.persist,
  org.oobium.http,
  org.apache.derby,

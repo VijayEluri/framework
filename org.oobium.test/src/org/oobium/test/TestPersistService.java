@@ -125,14 +125,6 @@ public class TestPersistService implements PersistService {
 		service.rollback();
 	}
 
-	public void seed(Model model) {
-		if(service instanceof SimplePersistService) {
-			((SimplePersistService) service).seed(model);
-		} else {
-			throw new UnsupportedOperationException("not yet implemented for derby database");
-		}
-	}
-	
 	@Override
 	public void setAutoCommit(boolean autoCommit) throws SQLException {
 		service.setAutoCommit(autoCommit);

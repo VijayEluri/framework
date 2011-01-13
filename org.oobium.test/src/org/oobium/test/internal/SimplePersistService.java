@@ -198,13 +198,6 @@ public class SimplePersistService implements PersistService {
 		// nothing to do
 	}
 
-	public void seed(Model model) {
-		if(model.isNew()) {
-			model.setId(id.incrementAndGet());
-		}
-		store(model);
-	}
-	
 	@Override
 	public void setAutoCommit(boolean autoCommit) throws SQLException {
 		// nothing to do

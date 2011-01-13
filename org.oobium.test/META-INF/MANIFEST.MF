@@ -22,8 +22,8 @@ Import-Package: org.oobium.app,
  org.oobium.utils,
  org.oobium.utils.coercion,
  org.oobium.utils.json,
- org.osgi.framework;version="1.4.0"
-Require-Bundle: org.junit4;bundle-version="4.3.1";visibility:=reexport,
- org.mockito;bundle-version="1.8.5";visibility:=reexport,
- org.jsoup;bundle-version="1.4.1";visibility:=reexport
+ org.osgi.framework
+Require-Bundle: org.junit4;visibility:=reexport,
+ org.mockito;visibility:=reexport,
+ org.jsoup;visibility:=reexport
 Export-Package: org.oobium.test
