@@ -1,0 +1,15 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Jsoup
+Bundle-SymbolicName: org.jsoup
+Bundle-Version: 1.4.1
+Bundle-Vendor: repackaged by Oobium.org
+Bundle-ClassPath: .
+Export-Package: org.jsoup,
+ org.jsoup.examples,
+ org.jsoup.helper,
+ org.jsoup.nodes,
+ org.jsoup.parser,
+ org.jsoup.safety,
+ org.jsoup.select
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
