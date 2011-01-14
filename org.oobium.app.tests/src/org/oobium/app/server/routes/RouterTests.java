@@ -43,7 +43,6 @@ import org.oobium.app.server.controller.Action;
 import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.routing.AppRouter;
 import org.oobium.app.server.routing.RouteHandler;
-import org.oobium.app.server.routing.RoutingException;
 import org.oobium.app.server.routing.handlers.AssetHandler;
 import org.oobium.app.server.routing.handlers.AuthorizationHandler;
 import org.oobium.app.server.routing.handlers.ControllerHandler;
@@ -1157,19 +1156,82 @@ public class RouterTests {
 		assertEquals("/#", router.pathTo(account, showNew));
 	}
 	
-	@Test(expected=RoutingException.class)
-	public void testAddModelRoutes_MissingModelAndId() throws Exception {
-		router.addResources("path", Account.class);
+	@Test
+	public void testAddModelRoutes_WithPrefix() throws Exception {
+		router.addResources("prefix", Account.class);
+		assertEquals(7, router.getRoutes().size());
+		assertEquals("[GET] /prefix/accounts -> AccountController#showAll", 					router.getRoutes().get(0).toString());
+		assertEquals("[GET] /prefix/accounts/new -> AccountController#showNew", 				router.getRoutes().get(1).toString());
+		assertEquals("[POST] /prefix/accounts -> AccountController#create", 					router.getRoutes().get(2).toString());
+		assertEquals("[PUT] /prefix/accounts/(\\d+) -> AccountController#update(id)", 			router.getRoutes().get(3).toString());
+		assertEquals("[DELETE] /prefix/accounts/(\\d+) -> AccountController#destroy(id)", 		router.getRoutes().get(4).toString());
+		assertEquals("[GET] /prefix/accounts/(\\d+) -> AccountController#show(id)", 			router.getRoutes().get(5).toString());
+		assertEquals("[GET] /prefix/accounts/(\\d+)/edit -> AccountController#showEdit(id)", 	router.getRoutes().get(6).toString());
+		assertEquals("/prefix/accounts", router.pathTo(Account.class, create));
+		assertEquals("/prefix/accounts", router.pathTo(Account.class, showAll));
+		assertEquals("/prefix/accounts/new", router.pathTo(Account.class, showNew));
+		assertEquals("/prefix/accounts", router.pathTo(account, create));
+		assertEquals("/prefix/accounts/0", router.pathTo(account, destroy));
+		assertEquals("/prefix/accounts/0", router.pathTo(account, update));
+		assertEquals("/prefix/accounts/0", router.pathTo(account, show));
+		assertEquals("/prefix/accounts", router.pathTo(account, showAll));
+		assertEquals("/prefix/accounts/0/edit", router.pathTo(account, showEdit));
+		assertEquals("/prefix/accounts/new", router.pathTo(account, showNew));
+		
+		router.removeResources("prefix", Account.class);
+		assertEquals(0, router.getRoutes().size());
 	}
 	
-	@Test(expected=RoutingException.class)
+	@Test
 	public void testAddModelRoutes_MissingId() throws Exception {
-		router.addResources("{models}/id", Account.class);
+		router.addResources("{models}/postmodel", Account.class);
+		assertEquals(7, router.getRoutes().size());
+		assertEquals("[GET] /accounts/postmodel -> AccountController#showAll", 					router.getRoutes().get(0).toString());
+		assertEquals("[GET] /accounts/postmodel/new -> AccountController#showNew", 				router.getRoutes().get(1).toString());
+		assertEquals("[POST] /accounts/postmodel -> AccountController#create", 					router.getRoutes().get(2).toString());
+		assertEquals("[PUT] /accounts/postmodel/(\\d+) -> AccountController#update(id)", 			router.getRoutes().get(3).toString());
+		assertEquals("[DELETE] /accounts/postmodel/(\\d+) -> AccountController#destroy(id)", 		router.getRoutes().get(4).toString());
+		assertEquals("[GET] /accounts/postmodel/(\\d+) -> AccountController#show(id)", 			router.getRoutes().get(5).toString());
+		assertEquals("[GET] /accounts/postmodel/(\\d+)/edit -> AccountController#showEdit(id)", 	router.getRoutes().get(6).toString());
+		assertEquals("/accounts/postmodel", router.pathTo(Account.class, create));
+		assertEquals("/accounts/postmodel", router.pathTo(Account.class, showAll));
+		assertEquals("/accounts/postmodel/new", router.pathTo(Account.class, showNew));
+		assertEquals("/accounts/postmodel", router.pathTo(account, create));
+		assertEquals("/accounts/postmodel/0", router.pathTo(account, destroy));
+		assertEquals("/accounts/postmodel/0", router.pathTo(account, update));
+		assertEquals("/accounts/postmodel/0", router.pathTo(account, show));
+		assertEquals("/accounts/postmodel", router.pathTo(account, showAll));
+		assertEquals("/accounts/postmodel/0/edit", router.pathTo(account, showEdit));
+		assertEquals("/accounts/postmodel/new", router.pathTo(account, showNew));
+		
+		router.removeResources("{models}/postmodel", Account.class);
+		assertEquals(0, router.getRoutes().size());
 	}
 	
-	@Test(expected=RoutingException.class)
+	@Test
 	public void testAddModelRoutes_MissingModel() throws Exception {
-		router.addResources("models/{id}", Account.class);
+		router.addResources("prefix/{id}", Account.class);
+		assertEquals(7, router.getRoutes().size());
+		assertEquals("[GET] /prefix/accounts -> AccountController#showAll", 					router.getRoutes().get(0).toString());
+		assertEquals("[GET] /prefix/accounts/new -> AccountController#showNew", 				router.getRoutes().get(1).toString());
+		assertEquals("[POST] /prefix/accounts -> AccountController#create", 					router.getRoutes().get(2).toString());
+		assertEquals("[PUT] /prefix/(\\d+)/accounts -> AccountController#update(id)", 			router.getRoutes().get(3).toString());
+		assertEquals("[DELETE] /prefix/(\\d+)/accounts -> AccountController#destroy(id)", 		router.getRoutes().get(4).toString());
+		assertEquals("[GET] /prefix/(\\d+)/accounts -> AccountController#show(id)", 			router.getRoutes().get(5).toString());
+		assertEquals("[GET] /prefix/(\\d+)/accounts/edit -> AccountController#showEdit(id)", 	router.getRoutes().get(6).toString());
+		assertEquals("/prefix/accounts", router.pathTo(Account.class, create));
+		assertEquals("/prefix/accounts", router.pathTo(Account.class, showAll));
+		assertEquals("/prefix/accounts/new", router.pathTo(Account.class, showNew));
+		assertEquals("/prefix/accounts", router.pathTo(account, create));
+		assertEquals("/prefix/0/accounts", router.pathTo(account, destroy));
+		assertEquals("/prefix/0/accounts", router.pathTo(account, update));
+		assertEquals("/prefix/0/accounts", router.pathTo(account, show));
+		assertEquals("/prefix/accounts", router.pathTo(account, showAll));
+		assertEquals("/prefix/0/accounts/edit", router.pathTo(account, showEdit));
+		assertEquals("/prefix/accounts/new", router.pathTo(account, showNew));
+		
+		router.removeResources("prefix/{id}", Account.class);
+		assertEquals(0, router.getRoutes().size());
 	}
 	
 	@Test

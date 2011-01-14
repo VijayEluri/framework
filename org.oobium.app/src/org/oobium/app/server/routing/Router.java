@@ -229,6 +229,33 @@ public class Router {
 		return addResource(null, clazz, action);
 	}
 
+	private String getResourceRule(String path, Action action) {
+		if(path == null || path.length() == 0) {
+			switch(action) {
+			case create:	return "/{models}";
+			case update:	return "/{models}/{id}";
+			case destroy:	return "/{models}/{id}";
+			case show:		return "/{models}/{id}";
+			case showAll:	return "/{models}";
+			case showEdit:	return "/{models}/{id}/edit";
+			case showNew:	return "/{models}/new";
+			default:		throw new IllegalArgumentException("unknown action: " + action);
+			}
+		} else if(path.charAt(0) == '?') {
+			switch(action) {
+			case create:	return "/{models}" + path;
+			case update:	return "/{models}/{id}" + path;
+			case destroy:	return "/{models}/{id}" + path;
+			case show:		return "/{models}/{id}" + path;
+			case showAll:	return "/{models}" + path;
+			case showEdit:	return "/{models}/{id}/edit" + path;
+			case showNew:	return "/{models}/new" + path;
+			default:		throw new IllegalArgumentException("unknown action: " + action);
+			}
+		}
+		return path;
+	}
+	
 	/**
 	 * Add a single resource route to this router for the given model class and action.
 	 * Unlike {@link #addResource(Class, Action)}, this method allows for overriding the conventional path.
@@ -239,21 +266,8 @@ public class Router {
 	 * @see Action
 	 */
 	public Routed addResource(String path, Class<? extends Model> clazz, Action action) {
-		if(path != null && path.charAt(0) == '?') {
-			path = "/{models}/{id}" + path;
-		}
-		Route route = null;
-		switch(action) {
-		case create:	route = addRoute(getKey(clazz, action), (path == null) ? "/{models}" 			: path, clazz, action); break;
-		case update:	route = addRoute(getKey(clazz, action), (path == null) ? "/{models}/{id}" 	 	: path, clazz, action); break;
-		case destroy:	route = addRoute(getKey(clazz, action), (path == null) ? "/{models}/{id}" 	 	: path, clazz, action); break;
-		case show:		route = addRoute(getKey(clazz, action), (path == null) ? "/{models}/{id}" 	 	: path, clazz, action); break;
-		case showAll:	route = addRoute(getKey(clazz, action), (path == null) ? "/{models}" 			: path, clazz, action); break;
-		case showEdit:	route = addRoute(getKey(clazz, action), (path == null) ? "/{models}/{id}/edit"	: path, clazz, action); break;
-		case showNew:	route = addRoute(getKey(clazz, action), (path == null) ? "/{models}/new" 		: path, clazz, action); break;
-		default:
-			throw new IllegalArgumentException("unknown action: " + action);
-		}
+		String rule = getResourceRule(path, action);
+		Route route = addRoute(getKey(clazz, action), rule, clazz, action);
 		return new Routed(this, route);
 	}
 	
@@ -744,37 +758,34 @@ public class Router {
 			}
 		}
 		
-		if(models && id != null) {
-			String classRules = (path.substring(0, id[0]) + path.substring(id[1]+1)).replaceAll("//", "/").replaceAll("/\\?", "?");
-			if(classRules.endsWith("/")) {
-				classRules = classRules.substring(0, classRules.length()-1);
-			}
-
-			String modelRules = path;
-			if(idRule != null) {
-				modelRules = path.substring(0, id[0]+1) + idRule + path.substring(id[1]);
-			}
-
-			String[] sa = new String[7];
-			sa[create.ordinal()] =   classRules;
-			sa[destroy.ordinal()] =  modelRules;
-			sa[update.ordinal()] =   modelRules;
-			sa[show.ordinal()] =     modelRules;
-			sa[showAll.ordinal()] =  classRules;
-			sa[showEdit.ordinal()] = modelRules.contains("?") ? modelRules.replaceFirst("\\?", "/edit?") : modelRules + "/edit";
-			sa[showNew.ordinal()] =  classRules.contains("?") ? classRules.replaceFirst("\\?", "/new?") : classRules + "/new";
-			
-			return sa;
-		} else {
-			if(!models && id == null) {
-				throw new RoutingException("{model} and {id} fields missing in model path: " + path);
-			}
-			if(!models) {
-				throw new RoutingException("{model} field missing in model path: " + path);
-			} {
-				throw new RoutingException("{id} field missing in model path: " + path);
-			}
+		if(!models) {
+			path = path + "/{models}";
 		}
+		if(id == null) {
+			path = path + "/{id}";
+			id = new int[] { path.length()-4, path.length()-1 };
+		}
+		
+		String classRules = (path.substring(0, id[0]) + path.substring(id[1]+1)).replaceAll("//", "/").replaceAll("/\\?", "?");
+		if(classRules.endsWith("/")) {
+			classRules = classRules.substring(0, classRules.length()-1);
+		}
+
+		String modelRules = path;
+		if(idRule != null) {
+			modelRules = path.substring(0, id[0]+1) + idRule + path.substring(id[1]);
+		}
+
+		String[] sa = new String[7];
+		sa[create.ordinal()] =   classRules;
+		sa[destroy.ordinal()] =  modelRules;
+		sa[update.ordinal()] =   modelRules;
+		sa[show.ordinal()] =     modelRules;
+		sa[showAll.ordinal()] =  classRules;
+		sa[showEdit.ordinal()] = modelRules.contains("?") ? modelRules.replaceFirst("\\?", "/edit?") : modelRules + "/edit";
+		sa[showNew.ordinal()] =  classRules.contains("?") ? classRules.replaceFirst("\\?", "/new?") : classRules + "/new";
+		
+		return sa;
 	}
 	
 	void publish(Route route) {
@@ -928,20 +939,8 @@ public class Router {
 	}
 
 	public void removeResource(String path, Class<? extends Model> clazz, Action action) {
-		if(path != null && path.charAt(0) == '?') {
-			path = "/{models}/{id}" + path;
-		}
-		switch(action) {
-		case create:	removeRoute(getKey(clazz, action), (path == null) ? "/{models}"				: path, clazz, action); break;
-		case update:	removeRoute(getKey(clazz, action), (path == null) ? "/{models}/{id}"		: path, clazz, action); break;
-		case destroy:	removeRoute(getKey(clazz, action), (path == null) ? "/{models}/{id}"		: path, clazz, action); break;
-		case show:		removeRoute(getKey(clazz, action), (path == null) ? "/{models}/{id}"		: path, clazz, action); break;
-		case showAll:	removeRoute(getKey(clazz, action), (path == null) ? "/{models}" 			: path, clazz, action); break;
-		case showEdit:	removeRoute(getKey(clazz, action), (path == null) ? "/{models}/{id}/edit" 	: path, clazz, action); break;
-		case showNew:	removeRoute(getKey(clazz, action), (path == null) ? "/{models}/new" 		: path, clazz, action); break;
-		default:
-			throw new IllegalArgumentException("unknown action: " + action);
-		}
+		String rule = getResourceRule(path, action);
+		removeRoute(getKey(clazz, action), rule, clazz, action);
 	}
 
 	public void removeResources(Class<? extends Model> clazz) {
