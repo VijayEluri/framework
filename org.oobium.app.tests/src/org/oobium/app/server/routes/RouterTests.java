@@ -13,6 +13,7 @@ package org.oobium.app.server.routes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -47,6 +48,7 @@ import org.oobium.app.server.routing.handlers.AssetHandler;
 import org.oobium.app.server.routing.handlers.AuthorizationHandler;
 import org.oobium.app.server.routing.handlers.ControllerHandler;
 import org.oobium.app.server.routing.handlers.DynamicAssetHandler;
+import org.oobium.app.server.routing.handlers.RedirectHandler;
 import org.oobium.app.server.routing.handlers.ViewHandler;
 import org.oobium.app.server.view.ScriptFile;
 import org.oobium.app.server.view.StyleSheet;
@@ -2519,6 +2521,23 @@ public class RouterTests {
 		ControllerHandler ch = (ControllerHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals("[[types, my_business]]", asString(ch.params));
+	}
+
+	@Test
+	public void testAddRedirect() throws Exception {
+		router.addRedirect("old_path", "new_path");
+		assertEquals(1, router.getRoutes().size());
+		assertEquals("[GET] /old_path -> /new_path", router.getRoutes().get(0).toString());
+
+		RouteHandler handler = router.getHandler(request("[GET] /old_path"));
+		assertNotNull(handler);
+		assertEquals(RedirectHandler.class, handler.getClass());
+		RedirectHandler ch = (RedirectHandler) handler;
+		assertEquals("/new_path", ch.to);
+		assertNull(ch.params); // this will change if we enable params in the future
+		
+		router.removeRedirect("old_path");
+		assertTrue(router.getRoutes().isEmpty());
 	}
 	
 }

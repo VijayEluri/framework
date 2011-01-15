@@ -38,10 +38,12 @@ import org.oobium.app.server.routing.handlers.AssetHandler;
 import org.oobium.app.server.routing.handlers.AuthorizationHandler;
 import org.oobium.app.server.routing.handlers.ControllerHandler;
 import org.oobium.app.server.routing.handlers.DynamicAssetHandler;
+import org.oobium.app.server.routing.handlers.RedirectHandler;
 import org.oobium.app.server.routing.handlers.ViewHandler;
 import org.oobium.app.server.routing.routes.AssetRoute;
 import org.oobium.app.server.routing.routes.ControllerRoute;
 import org.oobium.app.server.routing.routes.DynamicAssetRoute;
+import org.oobium.app.server.routing.routes.RedirectRoute;
 import org.oobium.app.server.routing.routes.ViewRoute;
 import org.oobium.http.HttpRequest;
 import org.oobium.http.HttpResponse;
@@ -160,6 +162,9 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 					case Route.DYNAMIC_ASSET:
 						DynamicAssetRoute dar = (DynamicAssetRoute) fixedRoute;
 						return new DynamicAssetHandler(router, dar.assetClass, dar.params);
+					case Route.REDIRECT:
+						RedirectRoute rr = (RedirectRoute) fixedRoute;
+						return new RedirectHandler(router, rr.to);
 					case Route.VIEW:
 						ViewRoute vr = (ViewRoute) fixedRoute;
 						return new ViewHandler(router, vr.viewClass, vr.params);
@@ -366,6 +371,9 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 						case Route.CONTROLLER:
 							ControllerRoute cr = (ControllerRoute) route;
 							return new ControllerHandler(router, cr.controllerClass, cr.action, getParams(cr, matcher));
+						case Route.REDIRECT:
+							RedirectRoute rr = (RedirectRoute) route;
+							return new RedirectHandler(router, rr.to);
 						case Route.VIEW:
 							ViewRoute vr = (ViewRoute) route;
 							return new ViewHandler(router, vr.viewClass, vr.params);

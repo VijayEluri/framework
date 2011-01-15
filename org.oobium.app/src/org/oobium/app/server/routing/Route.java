@@ -30,7 +30,7 @@ public abstract class Route {
 	public static final int ASSET = 2;
 	public static final int AUTHORIZATION = 3;
 	public static final int DYNAMIC_ASSET = 4;
-	public static final int SIMPLE = 5;
+	public static final int REDIRECT = 5;
 	
 	
 	protected final int type;

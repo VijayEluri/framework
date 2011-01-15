@@ -10,24 +10,19 @@
  ******************************************************************************/
 package org.oobium.app.server.routing.routes;
 
+import static org.oobium.http.constants.RequestType.GET;
+
 import org.oobium.app.server.routing.Route;
-import org.oobium.http.constants.ContentType;
-import org.oobium.http.constants.RequestType;
 
-public class AssetRoute extends Route {
+public class RedirectRoute extends Route {
 
-	public final String assetPath;
-	public final ContentType contentType;
-	public final String length;
-	public final String lastModified;
+	public final String to;
 	
-	public AssetRoute(String path, String assetPath, ContentType contentType, String length, String lastModified) {
-		super(Route.ASSET, RequestType.GET, path);
-		setPattern(path);
-		this.assetPath = assetPath;
-		this.contentType = contentType;
-		this.length = length;
-		this.lastModified = lastModified;
+	public RedirectRoute(String from, String to) {
+		super(Route.REDIRECT, GET, null);
+		this.path = from;
+		this.to = to;
+		
 		setString();
 	}
 	
@@ -39,7 +34,8 @@ public class AssetRoute extends Route {
 	private void setString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append('[').append(requestType).append(']').append(' ');
-		sb.append(path).append(' ').append('-').append('>').append(" Asset");
+		sb.append(isFixed() ? path : pattern.pattern()).append(' ').append('-').append('>').append(' ');
+		sb.append(to);
 		string = sb.toString();
 	}
 	

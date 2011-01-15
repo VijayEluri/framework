@@ -50,6 +50,7 @@ import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.routing.routes.AssetRoute;
 import org.oobium.app.server.routing.routes.ControllerRoute;
 import org.oobium.app.server.routing.routes.DynamicAssetRoute;
+import org.oobium.app.server.routing.routes.RedirectRoute;
 import org.oobium.app.server.routing.routes.ViewRoute;
 import org.oobium.app.server.view.DynamicAsset;
 import org.oobium.app.server.view.View;
@@ -214,6 +215,13 @@ public class Router {
 			namedClasses = new HashMap<String, Class<?>>();
 		}
 		namedClasses.put(name, clazz);
+	}
+	
+	public void addRedirect(String from, String to) {
+		from = checkRule(from);
+		to = checkRule(to);
+		Route route = new RedirectRoute(from, to);
+		addRoute(getName(GET, from), route);
 	}
 	
 	/**
@@ -934,6 +942,11 @@ public class Router {
 		return false;
 	}
 
+	public void removeRedirect(String from) {
+		from = checkRule(from);
+		removeRoute(from);
+	}
+	
 	public void removeResource(Class<? extends Model> clazz, Action action) {
 		removeResource(null, clazz, action);
 	}
