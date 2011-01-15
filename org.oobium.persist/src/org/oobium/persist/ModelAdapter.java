@@ -141,14 +141,15 @@ public class ModelAdapter {
 	}
 	
 	public String getOpposite(String field) {
-		String opposite = null;
 		if(hasMany.containsKey(field)) {
-			opposite = hasMany.get(field).opposite();
+			String opposite = hasMany.get(field).opposite();
+			if(opposite != null) return opposite;
 		}
 		if(hasOne.containsKey(field)) {
-			opposite = hasOne.get(field).opposite();
+			String opposite = hasOne.get(field).opposite();
+			if(opposite != null) return opposite;
 		}
-		return blank(opposite) ? null : opposite;
+		return null;
 	}
 	
 	public Class<?> getRawClass(String field) {
