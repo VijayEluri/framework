@@ -197,6 +197,9 @@ public class EspStyleRanges {
 	}
 
 	private int evaluateInnerText(int offset, EspElement element, EspPart part) {
+		if(part.isA(JavaPart)) {
+			return evaluateJava(offset, element, part);
+		}
 		return addRange(offset, part, innerText);
 	}
 
