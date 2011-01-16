@@ -7,4 +7,4 @@ div(style:"margin-top: 15px")
 		label(for: q) Query:
 		text(name: q, value: {h query}, style:"width: 500px")
 		submit#submit(onclick:"$('#submit').hide();$('#executing').show();")
-		img#executing:hidden(src: "/executing.gif")
+		img#executing|hide(src: "/executing.gif")
