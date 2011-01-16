@@ -24,7 +24,7 @@ import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.routing.routes.ControllerRoute;
 import org.oobium.http.constants.RequestType;
 
-class DiscoveryController extends Controller {
+public class DiscoveryController extends Controller {
 
 	private Map<String, String> build(Route route) {
 		Map<String, String> map = new HashMap<String, String>();
@@ -58,9 +58,9 @@ class DiscoveryController extends Controller {
 		}
 		
 		RequestType type = null;
-		boolean models = "models".equals(param("q"));
-		if(!models) {
-			type = RequestType.valueOf(param("q").toUpperCase());
+		boolean models = "models".equals(param("type"));
+		if(!models && hasParam("type")) {
+			type = RequestType.valueOf(param("type").toUpperCase());
 		}
 
 		List<Map<String, String>> results = new ArrayList<Map<String,String>>();
