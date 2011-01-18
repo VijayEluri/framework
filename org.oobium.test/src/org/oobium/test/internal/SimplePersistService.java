@@ -1,5 +1,7 @@
 package org.oobium.test.internal;
 
+import static org.oobium.utils.coercion.TypeCoercer.coerce;
+
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,6 +11,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.oobium.persist.Model;
+import org.oobium.persist.ModelAdapter;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.ServiceInfo;
 
@@ -17,11 +20,11 @@ public class SimplePersistService implements PersistService {
 	private String session;
 
 	private AtomicInteger id;
-	private Map<Class<? extends Model>, LinkedHashMap<Integer, Model>> db;
+	private Map<Class<? extends Model>, LinkedHashMap<Integer, Map<String, Object>>> db;
 	
 	public SimplePersistService() {
 		id = new AtomicInteger();
-		db = new HashMap<Class<? extends Model>, LinkedHashMap<Integer,Model>>();
+		db = new HashMap<Class<? extends Model>, LinkedHashMap<Integer, Map<String, Object>>>();
 	}
 	
 	@Override
@@ -37,7 +40,7 @@ public class SimplePersistService implements PersistService {
 	@Override
 	public int count(Class<? extends Model> clazz, String where, Object... values) throws SQLException {
 		if(where == null) {
-			Map<Integer, Model> models = db.get(clazz);
+			Map<Integer, Map<String, Object>> models = db.get(clazz);
 			if(models != null) {
 				return models.size();
 			}
@@ -45,13 +48,25 @@ public class SimplePersistService implements PersistService {
 		return 0;
 	}
 
+	private Map<String, Object> getPersistentMap(Model model) {
+		Map<String, Object> map = model.getAll();
+		Map<String, Object> pmap = new HashMap<String, Object>();
+		ModelAdapter adapter = ModelAdapter.getAdapter(model);
+		for(String field : adapter.getFields()) {
+			if(!adapter.isVirtual(field) && map.containsKey(field)) {
+				pmap.put(field, map.get(field));
+			}
+		}
+		return pmap;
+	}
+	
 	private void store(Model model) {
-		LinkedHashMap<Integer, Model> models = db.get(model.getClass());
+		LinkedHashMap<Integer, Map<String, Object>> models = db.get(model.getClass());
 		if(models == null) {
-			models = new LinkedHashMap<Integer, Model>();
+			models = new LinkedHashMap<Integer, Map<String, Object>>();
 			db.put(model.getClass(), models);
 		}
-		models.put(model.getId(), model);
+		models.put(model.getId(), getPersistentMap(model));
 	}
 
 	@Override
@@ -66,8 +81,8 @@ public class SimplePersistService implements PersistService {
 	}
 
 	private void destroy(Model model) throws SQLException {
-		Model removed = null;
-		Map<Integer, Model> models = db.get(model.getClass());
+		Object removed = null;
+		Map<Integer, ?> models = db.get(model.getClass());
 		if(models != null) {
 			removed = models.remove(model.getId());
 		}
@@ -120,11 +135,14 @@ public class SimplePersistService implements PersistService {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public <T extends Model> List<T> findAll(Class<T> clazz) throws SQLException {
-		Map<Integer, Model> models = db.get(clazz);
+		Map<Integer, Map<String, Object>> models = db.get(clazz);
 		if(models != null) {
-			return (List<T>) new ArrayList<Model>(models.values());
+			List<T> list = new ArrayList<T>();
+			for(Map<String, Object> map : models.values()) {
+				list.add(coerce(map, clazz));
+			}
+			return list;
 		}
 		return new ArrayList<T>(0);
 	}
@@ -134,11 +152,10 @@ public class SimplePersistService implements PersistService {
 		throw new UnsupportedOperationException("Stub this method to use: when(persistor.findAll(anyClass(), anyString(), anyVararg()).thenReturn(...))");
 	}
 
-	@SuppressWarnings("unchecked")
 	private <T> T get(Class<T> modelClass, int id) {
-		Map<Integer, Model> models = db.get(modelClass);
+		Map<Integer, Map<String, Object>> models = db.get(modelClass);
 		if(models != null) {
-			return (T) models.get(id);
+			return coerce(models.get(id), modelClass);
 		}
 		return null;
 	}
@@ -208,7 +225,7 @@ public class SimplePersistService implements PersistService {
 		if(saved == null) {
 			throw new SQLException("cannot update - model not found: " + model);
 		}
-		saved.setAll(model.getAll());
+		saved.setAll(getPersistentMap(model));
 	}
 
 	@Override
