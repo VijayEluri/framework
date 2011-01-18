@@ -1181,7 +1181,7 @@ public class StringUtils {
 			if(Character.isUpperCase(ca[i])) {
 				if(i != 0 && Character.isLetterOrDigit(ca[i-1])) {
 					if(Character.isUpperCase(ca[i-1])) {
-						if(i < ca.length-1 && !Character.isUpperCase(ca[i+1])) {
+						if(i < ca.length-1 && Character.isLetter(ca[i+1]) && !Character.isUpperCase(ca[i+1])) {
 							sb.append(sep);
 						}
 					} else {

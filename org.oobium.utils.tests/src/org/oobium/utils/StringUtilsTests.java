@@ -64,6 +64,7 @@ public class StringUtilsTests {
 		assertEquals("a_model",		underscored("AModel"));
 		assertEquals("abc_model",	underscored("ABCModel"));
 		assertEquals("com.test.ab",	underscored("com.test.Ab"));
+		assertEquals("esp_files",	underscored("ESP Files"));
 	}
 	
 	@Test
