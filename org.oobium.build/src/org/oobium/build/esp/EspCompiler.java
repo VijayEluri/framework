@@ -545,29 +545,37 @@ public class EspCompiler {
 		body.append("<span");
 		buildFormField(date, false);
 		body.append(">\");\n");
+		indent(body);
+		body.append(sbName).append(".append(dateTimeTags(\"");
+		if(date.hasEntry("name")) {
+			build(date.getEntryValue("name"), body, true);
+		} else if(date.hasId()) {
+			build(date.getId(), body, true);
+		} else if(date.hasEntry("id")) {
+			build(date.getEntryValue("id"), body, true);
+		} else {
+			body.append("datetime");
+		}
+		body.append("\", ");
+		if(date.hasEntry("format")) {
+			build(date.getEntryValue("format"), body, true);
+		} else {
+			body.append("\"MMM/dd/yyyy\"");
+		}
 		if(date.hasArgs()) {
 			String model = getFormModel(date);
-			if(!blank(model)) {
+			if(blank(model)) {
+				body.append(", ");
+				build(date.getArg(0), body, true);
+				body.append("));\n");
+			} else {
 				String var = "selection$" + date.getStart();
-				List<EspPart> fields = date.getArgs();
-				indent(body);
 				body.append("java.util.Date ").append(var).append(" = ");
-				appendValueGetter(model, fields);
-				body.append(";\n");
-				indent(body);
-				body.append(sbName).append(".append(dateTimeTags(\"");
-				appendFormFieldName(model, fields);
-				body.append("\", \"");
-				if(date.hasEntry("format")) {
-					build(date.getEntry("format"), body, true);
-				} else {
-					body.append("MM/dd/yyyy");
-				}
+				appendValueGetter(model, date.getArgs());
 				body.append("\", ").append(var).append("));\n");
 			}
 		} else {
-			indent(body);
-			body.append(sbName).append(".append(dateTimeTags(\"MMM/dd/yyyy\"));\n");
+			body.append("));\n");
 		}
 		indent(body);
 		body.append(sbName).append(".append(\"</span>");

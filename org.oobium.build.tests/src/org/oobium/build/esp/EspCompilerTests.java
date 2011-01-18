@@ -475,14 +475,22 @@ public class EspCompilerTests {
 
 		assertEquals("__sb__.append(\"<button href=\\\"\").append(pathTo(member, update)).append(\"\\\" onclick=\\\"var f = document.createElement('form');f.style.display = 'none';this.parentNode.appendChild(f);f.method = 'POST';f.action = '\").append(pathTo(member, update)).append(\"';var m = document.createElement('input');m.setAttribute('type', 'hidden');m.setAttribute('name', '_method');m.setAttribute('value', 'put');f.appendChild(m);var m = document.createElement('input');m.setAttribute('type', 'hidden');m.setAttribute('name', 'null');m.setAttribute('value', 'null');f.appendChild(m);f.submit();return false;\\\">Update</button>\");",
 				html("button(member, update) Update"));
-		
+
 		assertEquals("__sb__.append(\"<button href=\\\"\").append(pathTo(member, destroy)).append(\"\\\" onclick=\\\"var f = document.createElement('form');f.style.display = 'none';this.parentNode.appendChild(f);f.method = 'POST';f.action = '\").append(pathTo(member, destroy)).append(\"';var m = document.createElement('input');m.setAttribute('type', 'hidden');m.setAttribute('name', '_method');m.setAttribute('value', 'delete');f.appendChild(m);f.submit();return false;\\\">Destroy</button>\");", 
 				html("button(member, destroy) Destroy"));
 	}
 
 	@Test
 	public void testDate() throws Exception {
-		assertEquals("__sb__.append(\"<span>\");\n__sb__.append(dateTimeTags(\"MMM/dd/yyyy\"));\n__sb__.append(\"</span>\");", html("date"));
+		assertEquals("__sb__.append(\"<span>\");\n__sb__.append(dateTimeTags(\"datetime\", \"MMM/dd/yyyy\"));\n__sb__.append(\"</span>\");", html("date"));
+		assertEquals("__sb__.append(\"<span>\");\n" +
+				"__sb__.append(dateTimeTags(\"datetime\", \"MMM/dd/yyyy\", new Date()));\n" +
+				"__sb__.append(\"</span>\");",
+			html("date(new Date())"));
+		assertEquals("__sb__.append(\"<span>\");\n" +
+				"__sb__.append(dateTimeTags(\"datetime\", \"dd/MM/yy\", new Date()));\n" +
+				"__sb__.append(\"</span>\");",
+			html("date(new Date(), format: \"dd/MM/yy\")"));
 	}
 	
 	@Test
