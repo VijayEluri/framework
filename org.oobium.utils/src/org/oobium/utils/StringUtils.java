@@ -358,9 +358,12 @@ public class StringUtils {
 					sb.append("</select>");
 				}
 			}
-			
 		}
 		return sb.toString();
+	}
+	
+	public static String dateTimeTags(String prefix, String format) {
+		return dateTimeTags(prefix, format, new Date());
 	}
 	
 	public static String dateTimeTags(String prefix, String format, Date selection) {
@@ -401,10 +404,10 @@ public class StringUtils {
 	}
 	
 	/**
-	 * Short cut for {@link #formValue(Object)}
+	 * Short cut for {@link #formEscape(Object)}
 	 */
 	public static String f(Object object) {
-		return formValue(object);
+		return formEscape(object);
 	}
 
 	public static String field(String method) {
@@ -432,7 +435,7 @@ public class StringUtils {
 	 * @param object
 	 * @return
 	 */
-	public static String formValue(Object object) {
+	public static String formEscape(Object object) {
 		if(object == null) {
 			return "";
 		}
