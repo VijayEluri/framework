@@ -41,17 +41,22 @@ class Data {
 	String remoteIpAddress;
 	int localPort;
 	
-	byte state; // hasType, hasPath, hasHost, hasHeaders
-				//  if type == [GET|HEAD], we can route it as soon as we receive the path and host
-				//  if type == POST, we need all the headers (in case there is a _method header)
-				//    still, we can route it before the data has been received (may want to check permissions before uploading a big file...)
-	
+	/**
+	 *  hasType, hasPath, hasHost, hasHeaders<br/>
+	 *  if type == [GET|HEAD], we can route it as soon as we receive the path and host<br/>
+	 *  if type == POST, we need all the headers (in case there is a _method header)<br/>
+	 *  still, we can route it before the data has been received (may want to check permissions before uploading a big file...)
+	 */
+	byte state; 
 	RequestType type;
 	byte protocol;
 	
 	int mark;
 	byte[] data;
-	int[] marks; // 1-1st space, 2-2nd space, 3-start of host header, 4-start of content
+	/**
+	 * 0-type, 1-path (1st space), 2-protocol (2nd space), 3-start of host header, 4-start of content
+	 */
+	int[] marks;
 
 	Data(Read read) {
 		this.data = read.data;
