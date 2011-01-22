@@ -65,14 +65,14 @@ public class ReadHandler extends Thread {
 
 	private final Logger logger;
 
-	private ServerSelector selector;
-	private BlockingQueue<Read> readQueue;
+	private final ServerSelector selector;
+	private final BlockingQueue<Read> readQueue;
 
-	private int maxData;
-	private Map<SelectionKey, Data> dataMap;
-	private Timer timeOutTimer;
+	private final int maxData;
+	private final Map<SelectionKey, Data> dataMap;
+	private final Timer timeOutTimer;
 
-	private ExecutorService execService;
+	private final ExecutorService execService;
 
 	public ReadHandler(ServerSelector selector) {
 		this.selector = selector;
@@ -87,18 +87,13 @@ public class ReadHandler extends Thread {
 		timeOutTimer.scheduleAtFixedRate(new ReadTimeOutTask(), 1000, 1000);
 	}
 
-	private void routeRequest(SelectionKey key, Data data) {
-		RequestHandler handler = new RequestHandler(selector, key, data);
-		execService.submit(handler);
-	}
-
 	private void createInvalidResponse(SelectionKey key, Data data) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(data.getProtocol()).append(" 400 Bad Request\r\n\r\n\n");
 		selector.send(key, sb.toString(), true);
 	}
 	
-	private synchronized void process(Read read) {
+	private void process(Read read) {
 		Data data = dataMap.get(read.key);
 		boolean remove;
 		if(data != null) {
@@ -126,7 +121,8 @@ public class ReadHandler extends Thread {
 					dataMap.remove(data);
 				}
 			}
-			routeRequest(read.key, data);
+			RequestHandler handler = new RequestHandler(selector, read.key, data);
+			execService.submit(handler);
 		} else {
 			while(dataMap.size() > maxData) {
 				try {
