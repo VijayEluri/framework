@@ -23,8 +23,10 @@ import org.osgi.framework.Filter;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.util.tracker.ServiceTracker;
 
-// this class is only intended to be accessed by a single thread at a time!
 public class PersistServices {
+
+	private final ThreadLocal<String> threadSessionName = new ThreadLocal<String>();
+	private final ThreadLocal<List<PersistService>> threadOpenServices = new ThreadLocal<List<PersistService>>();
 
 	/**
 	 * a list of the names of services being tracked
@@ -45,8 +47,6 @@ public class PersistServices {
 	 */
 	private Map<String, Object> classServices; // class name -> persistor
 	
-	private String sessionName;
-	private List<PersistService> openServices;
 	
 	
 	public PersistServices() {
@@ -99,19 +99,19 @@ public class PersistServices {
 	
 	public void closeSession() {
 		closeSessions();
-		this.sessionName = null;
+		this.threadSessionName.set(null);
 	}
 
-	private void closeSessions() {
+	private synchronized void closeSessions() {
+		List<PersistService> openServices = threadOpenServices.get();
 		if(openServices != null) {
 			for(PersistService service : openServices) {
 				service.closeSession();
 			}
 			openServices.clear();
-			openServices = null;
+			threadOpenServices.set(null);
 		}
 	}
-	
 	
 	/**
 	 * Get the PersistService for the given class, or the primary PersistService
@@ -149,7 +149,7 @@ public class PersistServices {
 	}
 	
 	public List<PersistService> getOpenServices() {
-		return openServices;
+		return threadOpenServices.get();
 	}
 	
 	public PersistService getPrimary() {
@@ -169,7 +169,7 @@ public class PersistServices {
 			}
 		}
 		// falls through to here if service tracker returns a null, or if "o" is null or something weird :)
-		return new NullPersistService(sessionName); // TODO create new every time, or main a static instance?
+		return new NullPersistService(threadSessionName.get()); // TODO create new every time, or main a static instance?
 	}
 
 	public List<String> getServiceNames() {
@@ -260,22 +260,31 @@ public class PersistServices {
 		tracker.open();
 	}
 
-	private void openSession(PersistService ps) {
+	private synchronized void openSession(PersistService ps) {
+		String sessionName = threadSessionName.get();
 		if(sessionName != null && !ps.isSessionOpen()) {
+			List<PersistService> openServices = threadOpenServices.get();
 			if(openServices == null) {
 				openServices = new ArrayList<PersistService>();
 				ps.openSession(sessionName);
 				openServices.add(ps);
+				threadOpenServices.set(openServices);
 			} else if(!openServices.contains(ps)) {
-				ps.openSession(sessionName);
 				openServices.add(ps);
+				ps.openSession(sessionName);
 			}
 		}
 	}
 	
+	/** 
+	 * Sets the session name for open persist service sessions in this thread.
+	 * First closes any sessions that may already be open.
+	 * <p>Thread safe if the persist services handle sessions in a thread safe manner.</p>
+	 * @param name
+	 */
 	public void openSession(String name) {
 		closeSessions();
-		this.sessionName = name;
+		threadSessionName.set(name);
 	}
 
 	public Object put(Class<? extends Model> clazz, PersistService service) {
