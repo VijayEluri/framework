@@ -15,7 +15,7 @@ import static org.oobium.http.constants.RequestType.GET;
 import static org.oobium.http.constants.RequestType.HEAD;
 import static org.oobium.http.constants.RequestType.PUT;
 
-import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.channels.SelectionKey;
 import java.util.HashMap;
@@ -33,11 +33,11 @@ import org.oobium.logging.Logger;
 
 class RequestHandler implements Runnable {
 
-	private Logger logger;
+	private final Logger logger;
 	
-	private ServerSelector selector;
-	private SelectionKey key;
-	private Data data;
+	private final ServerSelector selector;
+	private final SelectionKey key;
+	private final Data data;
 
 	RequestHandler(ServerSelector selector, SelectionKey key, Data data) {
 		logger = Logger.getLogger(Server.class);
@@ -46,7 +46,7 @@ class RequestHandler implements Runnable {
 		this.data = data;
 	}
 
-	private Request createRequest(Data data) throws IOException {
+	private Request createRequest(Data data) {
 		String fullPath = data.getPath();
 		if(fullPath.length() > 1 && fullPath.charAt(fullPath.length()-1) == '/') {
 			fullPath = fullPath.substring(0, fullPath.length()-1);
@@ -64,7 +64,11 @@ class RequestHandler implements Runnable {
 			for(String s : query.split("&")) {
 				String[] sa3 = s.split("=", 2);
 				if(sa3.length == 2) {
-					parameters.put(sa3[0].trim(), URLDecoder.decode(sa3[1].trim(), "UTF-8"));
+					try {
+						parameters.put(sa3[0].trim(), URLDecoder.decode(sa3[1].trim(), "UTF-8"));
+					} catch(UnsupportedEncodingException e) {
+						logger.equals(e);
+					}
 				} else {
 					parameters.put(sa3[0].trim(), null);
 				}
@@ -131,27 +135,44 @@ class RequestHandler implements Runnable {
 	}
 	
 	public void run() {
+		Request request = null;
 		try {
-			Request request = createRequest(data);
+			request = createRequest(data);
 			if(logger.isLoggingInfo()) {
-				logger.info("request: " + data.remoteIpAddress + " -> " + request.getHost() + request.getFullPath());
+				logger.info("request: " + data.remoteIpAddress + " -> " + request.getType() + " " + request.getHost() + request.getFullPath());
 			}
-
-			HttpResponse response = null;
+		} catch(Exception e) {
+			logger.warn("error creating request: " + data.toString());
+			logger.warn(e);
+			return; // could not create request, exit
+		}
+		
+		HttpResponse response = null;
+		try {
+			response = handleRequest(request);
+		} catch(Exception e) {
+			logger.warn("exception thrown handling request (" + request.getFullPath() + ")", e);
 			try {
-				response = handleRequest(request);
-			} catch(Exception e) {
-				logger.warn("exception thrown handling request (" + request.getFullPath() + ")", e);
 				response = handle500(request, e);
+			} catch(Exception e2) {
+				logger.warn("error handling 500", e2);
+				return; // just exit
 			}
+		}
 
-			if(response == null) {
-				if(logger.isLoggingInfo()) {
-					logger.info(request.getFullPath() + " not found");
-				}
+		if(response == null) {
+			if(logger.isLoggingInfo()) {
+				logger.info(request.getFullPath() + " not found");
+			}
+			try {
 				response = handle404(request);
+			} catch(Exception e) {
+				logger.warn("error handling 404", e);
+				return; // just exit
 			}
+		}
 
+		try {
 			selector.send(key, response);
 		} catch(Exception e) {
 			logger.warn(e);

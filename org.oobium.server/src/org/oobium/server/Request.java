@@ -27,7 +27,6 @@ import static org.oobium.http.impl.Attrs.attrDecode;
 import static org.oobium.http.impl.Attrs.attrsDecode;
 import static org.oobium.utils.json.JsonUtils.toMap;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -258,7 +257,7 @@ public class Request implements HttpRequest {
 		return getType() == PUT;
 	}
 
-	private void loadContent(Data data) throws IOException {
+	private void loadContent(Data data) {
 		if(headers.has(CONTENT_LENGTH)) {
 			int contentLength;
 			try {
@@ -370,7 +369,7 @@ public class Request implements HttpRequest {
 		this.handler = handler;
 	}
 	
-	public void setInput(Data data) throws IOException {
+	public void setInput(Data data) {
 		loadContent(data);
 		if(headers.has(METHOD)) {
 			String newType = headers.get(METHOD);
