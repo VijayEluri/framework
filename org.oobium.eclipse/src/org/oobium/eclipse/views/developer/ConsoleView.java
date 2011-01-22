@@ -137,7 +137,7 @@ public class ConsoleView extends ViewPart {
 		root.add("set", new PreferenceCommand());
 		root.add("show", new PreferencesCommand(this));
 
-		root.get("create application").addListener(new CommandListener() {
+		CommandListener createAppListener = new CommandListener() {
 			@Override
 			public void handleEvent(CommandEvent event) {
 				File app = new File(event.command.param(0));
@@ -147,7 +147,9 @@ public class ConsoleView extends ViewPart {
 				setApplication(app);
 				setProject(app);
 			}
-		});
+		};
+		root.get("create application").addListener(createAppListener);
+		root.get("create webservice").addListener(createAppListener);
 		
 		root.get("create module").addListener(new CommandListener() {
 			@Override
