@@ -110,9 +110,6 @@ public class ProjectGenerator {
 		if(createViews) {
 			String path = viewsFolder(project).getAbsolutePath().substring(srcFolder(project).getAbsolutePath().length()+1).replace(File.separatorChar, '.');
 			src.imports.add(path + ".pages.Home");
-		} else {
-			src.imports.add(Controller.class.getCanonicalName());
-			src.imports.add(SQLException.class.getCanonicalName());
 		}
 
 		String cType = Config.class.getSimpleName();
@@ -278,7 +275,9 @@ public class ProjectGenerator {
 			sb.append("           src-unit/\n");
 		} else if(type >= 0) {
 			sb.append("source.. = src/,\\\n");
-			sb.append("           assets/,\\\n");
+			if(type != PTYPE_APP_WS && type != PTYPE_MOD_WS) {
+				sb.append("           assets/,\\\n");
+			}
 			sb.append("           generated/\n");
 		}
 		sb.append("output.. = bin/\n");
@@ -286,7 +285,10 @@ public class ProjectGenerator {
 //		if(type >= 0 && PTYPE_APP_WS != type && PTYPE_MOD_WS != type) {
 //			sb.append("           assets/,\\\n");
 //		}
-		sb.append(".");
+		sb.append(".\n");
+		if(PTYPE_TEST == type) {
+			sb.append("additional.bundles = org.oobium.cache\n");
+		}
 		writeFile(project, "build.properties", sb.toString());
 	}
 	
@@ -900,7 +902,6 @@ public class ProjectGenerator {
 		createFolder(modelsFolder(project));
 		createFolder(viewsFolder(project));
 		createFolder(controllersFolder(project));
-		createFolder(viewsFolder(project), "application");
 
 		createProjectFile(project, PTYPE_TEST, false);
 		createClasspathFile(project, PTYPE_TEST);

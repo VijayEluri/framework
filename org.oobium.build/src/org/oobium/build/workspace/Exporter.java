@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -34,12 +35,26 @@ import java.util.TreeSet;
 
 import org.oobium.build.BuildBundle;
 import org.oobium.logging.Logger;
+import org.oobium.persist.migrate.MigratorService;
 import org.oobium.utils.Config.Mode;
 import org.oobium.utils.Config.OsgiRuntime;
 import org.oobium.utils.FileUtils;
 
 public class Exporter {
 
+	/**
+	 * Export an individual bundle
+	 * @param mode
+	 * @param bundle
+	 * @return the exported Bundle (note that this bundle will not be available to Workspace.getBundle())
+	 * @throws IOException
+	 */
+	public static Bundle export(Workspace workspace, Bundle bundle) throws IOException {
+		Exporter exporter = new Exporter(workspace, null);
+		return exporter.export(bundle);
+	}
+
+	
 	/**
 	 * Bundles that are Applications only
 	 */
@@ -87,10 +102,8 @@ public class Exporter {
 
 	private final Logger logger;
 	
-	private String name;
-	
 	private final Workspace workspace;
-	private final Set<Application> applications;
+	private final Application application;
 	private final Set<Bundle> start;
 	private final Set<Bundle> includes;
 	private final File exportDir;
@@ -107,17 +120,16 @@ public class Exporter {
 	
 	private int startTypes;
 	
-	public Exporter(Workspace workspace) {
-		this(workspace, workspace.getApplications());
-	}
+	private boolean includeMigrator;
+	private boolean isMigrator;
 	
-	public Exporter(Workspace workspace, Application...applications) {
+	public Exporter(Workspace workspace, Application application) {
 		this.logger = Logger.getLogger(BuildBundle.class);
 		this.workspace = workspace;
-		this.applications = new LinkedHashSet<Application>(Arrays.asList(applications));
+		this.application = application;
 		this.start = new LinkedHashSet<Bundle>();
 		this.includes = new LinkedHashSet<Bundle>();
-		this.exportDir = new File(workspace.getWorkingDirectory(), "export");
+		this.exportDir = workspace.getExportDir();
 		this.binDir = new File(exportDir, "bin");
 		this.bundleDir = new File(exportDir, "bundles");
 
@@ -126,12 +138,15 @@ public class Exporter {
 		this.exportedBundles = new LinkedHashSet<Bundle>();
 		this.exportedStart = new LinkedHashSet<Bundle>();
 
-		setName(applications[0].name);
 		setStartTypes(MODULE | SERVICE);
 	}
 	
-	public Exporter(Workspace workspace, Collection<Application> applications) {
-		this(workspace, applications.toArray(new Application[applications.size()]));
+	public void setIncludeMigrator(boolean include) {
+		this.includeMigrator = include;
+	}
+	
+	public void setMigrator(boolean migrator) {
+		this.isMigrator = migrator;
 	}
 
 	public void add(Bundle...bundles) {
@@ -215,7 +230,7 @@ public class Exporter {
 			logger.info("skipping start script");
 		} else {
 			logger.info("writing start script");
-			writeFile(startScript, START_SCRIPT.replace("<APP_NAME>", name), EXECUTABLE);
+			writeFile(startScript, START_SCRIPT.replace("<APP_NAME>", application.name), EXECUTABLE);
 		}
 		
 		File stopScript = new File(exportDir, "stop.sh");
@@ -223,7 +238,7 @@ public class Exporter {
 			logger.info("skipping stop script");
 		} else {
 			logger.info("writing stop script");
-			writeFile(stopScript, STOP_SCRIPT.replace("<APP_NAME>", name), EXECUTABLE);
+			writeFile(stopScript, STOP_SCRIPT.replace("<APP_NAME>", application.name), EXECUTABLE);
 		}
 	}
 	
@@ -250,25 +265,29 @@ public class Exporter {
 			}
 		}
 		
-		Bundle exportedBundle = Bundle.create(jar);
+		return Bundle.create(jar);
+	}
+
+	private void addExported(Bundle bundle, Bundle exportedBundle) {
 		if(start.contains(bundle)) {
 			exportedStart.add(exportedBundle);
 		} else {
-			if((startTypes & APP) != 0 && exportedBundle.isApplication()) {
-				exportedStart.add(exportedBundle);
-			}
-			if((startTypes & MODULE) != 0 && exportedBundle.isModule()) {
-				exportedStart.add(exportedBundle);
+			if(!isMigrator) {
+				if((startTypes & APP) != 0 && exportedBundle.isApplication()) {
+					exportedStart.add(exportedBundle);
+				}
+				if((startTypes & MODULE) != 0 && exportedBundle.isModule()) {
+					exportedStart.add(exportedBundle);
+				}
+				if((startTypes & MIGRATION) != 0 && exportedBundle.isMigration()) {
+					exportedStart.add(exportedBundle);
+				}
 			}
 			if((startTypes & SERVICE) != 0 && exportedBundle.isService()) {
 				exportedStart.add(exportedBundle);
 			}
-			if((startTypes & MIGRATION) != 0 && exportedBundle.isMigration()) {
-				exportedStart.add(exportedBundle);
-			}
 		}
 		exportedBundles.add(exportedBundle);
-		return exportedBundle;
 	}
 	
 	/**
@@ -290,11 +309,27 @@ public class Exporter {
 			exportDir.mkdirs();
 		}
 
+		List<Application> applications = workspace.getApplications(application);
+
+		if(includeMigrator || isMigrator) {
+			Migrator migrator = workspace.getMigratorFor(application);
+			if(migrator == null) {
+				if(isMigrator) {
+					throw new IllegalStateException("migrator does not exist");
+				}
+			} else {
+				logger.info("including migrator");
+				addStart(migrator);
+				addStart(migrator.getMigratorService(workspace, mode));
+			}
+		}
+		
 		logger.info("determining required bundles");
 		Set<Bundle> bundles = new TreeSet<Bundle>();
 		for(Application application : applications) {
 			if(!bundles.contains(application)) {
-				bundles.addAll(application.getDependencies(workspace, mode));
+				Set<Bundle> deps = application.getDependencies(workspace, mode);
+				bundles.addAll(deps);
 				bundles.add(application);
 			}
 		}
@@ -305,6 +340,19 @@ public class Exporter {
 			}
 		}
 		workspace.setRuntimeBundle(OsgiRuntime.Felix, bundles);
+
+		// remove servers if necessary
+		if(isMigrator) {
+			Set<Bundle> servers = new HashSet<Bundle>();
+			for(Bundle bundle : bundles) {
+				if(bundle.isApplication()) {
+					servers.add(((Application) bundle).getServer(workspace, mode));
+				}
+			}
+			for(Bundle server : servers) {
+				bundles.remove(server);
+			}
+		}
 		
 		for(Bundle bundle : start) {
 			if(!bundles.contains(bundle)) {
@@ -320,7 +368,8 @@ public class Exporter {
 		
 		logger.info("creating and copying bundles");
 		for(Bundle bundle : bundles) {
-			doExport(bundle);
+			Bundle exportedBundle = doExport(bundle);
+			addExported(bundle, exportedBundle);
 		}
 
 		deleteContents(new File(exportDir, "configuration"));
@@ -329,15 +378,8 @@ public class Exporter {
 		
 		return exportDir;
 	}
-	
-	/**
-	 * Export an individual bundle
-	 * @param mode
-	 * @param bundle
-	 * @return the exported Bundle (note that this bundle will not be available to Workspace.getBundle())
-	 * @throws IOException
-	 */
-	public Bundle export(Bundle bundle) throws IOException {
+
+	private Bundle export(Bundle bundle) throws IOException {
 		if(exportDir.exists()) {
 			if(clean) {
 				FileUtils.deleteContents(exportDir);
@@ -354,55 +396,6 @@ public class Exporter {
 		return doExport(bundle);
 	}
 	
-	private void exportMigration(Application application, Mode mode) throws IOException {
-		Migrator migration = workspace.getMigratorFor(application);
-		if(migration != null) {
-			if(!workspace.getWorkingDirectory().exists()) {
-				workspace.getWorkingDirectory().mkdirs();
-			}
-
-			// make sure that the schema files have been copied to the bin directory
-			
-			logger.info("determining required bundles");
-			Set<Bundle> bundles = migration.getDependencies(workspace, mode);
-			bundles.add(migration);
-			
-			workspace.removeRuntimeBundle(bundles);
-			
-			// export only those bundles directly related to the migration
-			bundles.remove(application);
-			bundles.removeAll(application.getDependencies(workspace, mode));
-			
-			if(logger.isLoggingInfo()) {
-				for(Bundle bundle : bundles) {
-					logger.info("  " + bundle);
-				}
-			}
-			
-			logger.info("creating and copying bundles");
-			for(Bundle bundle : bundles) {
-				doExport(bundle);
-			}
-			
-		}
-	}
-
-	/**
-	 * Export all migrations for this application and the dependencies
-	 * configured for the given mode.
-	 * @param mode
-	 * @return a list of bundles that have been exported during this operation. Note that these
-	 * are only bundles related to the migration; bundles for the application export are not
-	 * exported during this operation, nor are they returned with this list.
-	 * @throws IOException
-	 */
-	public Set<Bundle> exportMigration(Mode mode) throws IOException {
-		for(Application application : applications) {
-			exportMigration(application, mode);
-		}
-		return exportedBundles;
-	}
-
 	public boolean getClean() {
 		return clean;
 	}
@@ -448,22 +441,29 @@ public class Exporter {
 	private Map<String, String> getMergedProperties() {
 		Map<String, String> properties = new LinkedHashMap<String, String>();
 		properties.put(Mode.SYSTEM_PROPERTY, mode.name());
-		switch(mode) {
-		case DEV:
-			properties.put(Logger.SYS_PROP_CONSOLE, String.valueOf(Logger.DEBUG));
+		if(isMigrator) {
+			properties.put(Logger.SYS_PROP_CONSOLE, String.valueOf(Logger.INFO));
 			properties.put(Logger.SYS_PROP_EMAIL, String.valueOf(Logger.NEVER));
 			properties.put(Logger.SYS_PROP_FILE, String.valueOf(Logger.NEVER));
-			break;
-		case TEST:
-			properties.put(Logger.SYS_PROP_CONSOLE, String.valueOf(Logger.DEBUG));
-			properties.put(Logger.SYS_PROP_EMAIL, String.valueOf(Logger.NEVER));
-			properties.put(Logger.SYS_PROP_FILE, String.valueOf(Logger.INFO));
-			break;
-		case PROD:
-			properties.put(Logger.SYS_PROP_CONSOLE, String.valueOf(Logger.WARNING));
-			properties.put(Logger.SYS_PROP_EMAIL, String.valueOf(Logger.NEVER));
-			properties.put(Logger.SYS_PROP_FILE, String.valueOf(Logger.INFO));
-			break;
+			properties.put(MigratorService.SYS_PROP_MODE, MigratorService.ACTIVE);
+		} else {
+			switch(mode) {
+			case DEV:
+				properties.put(Logger.SYS_PROP_CONSOLE, String.valueOf(Logger.DEBUG));
+				properties.put(Logger.SYS_PROP_EMAIL, String.valueOf(Logger.NEVER));
+				properties.put(Logger.SYS_PROP_FILE, String.valueOf(Logger.NEVER));
+				break;
+			case TEST:
+				properties.put(Logger.SYS_PROP_CONSOLE, String.valueOf(Logger.DEBUG));
+				properties.put(Logger.SYS_PROP_EMAIL, String.valueOf(Logger.NEVER));
+				properties.put(Logger.SYS_PROP_FILE, String.valueOf(Logger.INFO));
+				break;
+			case PROD:
+				properties.put(Logger.SYS_PROP_CONSOLE, String.valueOf(Logger.WARNING));
+				properties.put(Logger.SYS_PROP_EMAIL, String.valueOf(Logger.NEVER));
+				properties.put(Logger.SYS_PROP_FILE, String.valueOf(Logger.INFO));
+				break;
+			}
 		}
 		if(this.properties != null) {
 			properties.putAll(this.properties);
@@ -473,10 +473,6 @@ public class Exporter {
 	
 	public Mode getMode() {
 		return mode;
-	}
-	
-	public String getName() {
-		return name;
 	}
 	
 	public void setClean(boolean clean) {
@@ -489,10 +485,6 @@ public class Exporter {
 	
 	public void setMode(Mode mode) {
 		this.mode = mode;
-	}
-
-	public void setName(String name) {
-		this.name = name;
 	}
 
 	public void setProperties(Map<String, String> properties) {

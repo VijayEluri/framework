@@ -13,18 +13,12 @@ package org.oobium.build.workspace;
 import static org.oobium.utils.Config.SERVER;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.jar.Manifest;
 
 import org.oobium.build.gen.ModelGenerator;
 import org.oobium.utils.Config;
 import org.oobium.utils.Config.Mode;
-import org.oobium.utils.FileUtils;
 
 public class Application extends Module {
 
@@ -38,6 +32,12 @@ public class Application extends Module {
 		this.site = new File(main, "site.js");
 	}
 
+	public Bundle getServer(Workspace workspace, Mode mode) {
+		Config configuration = loadConfiguration();
+		String fullName = configuration.getString(SERVER, mode);
+		return workspace.getBundle(fullName);
+	}
+	
 	@Override
 	protected void addDependencies(Workspace workspace, Mode mode, Set<Bundle> dependencies) {
 		super.addDependencies(workspace, mode, dependencies);
@@ -47,97 +47,15 @@ public class Application extends Module {
 		addDependency(workspace, mode, configuration.getString(SERVER, mode), dependencies);
 	}
 	
-	public File cleanExport(Workspace workspace) {
-		Exporter exporter = new Exporter(workspace, this);
-		File exportDir = exporter.getExportDir();
-		FileUtils.deleteContents(exportDir);
-		return exportDir;
-	}
-
 	public File createSchema(Workspace workspace, Mode mode) {
 		ModelGenerator.generateSchema(workspace, this, mode);
 		return getSchema();
 	}
-	
-	/**
-	 * Export the application, configured for the given mode.
-	 * @param workspace the workspace to use
-	 * @param mode the to use for the application's configuration during the export
-	 * @param includeMigrators if true Migrator projects will also be exported with the Application
-	 * @return a File object for the export folder.
-	 * @throws IOException
-	 */
-	public File export(Workspace workspace, Mode mode, boolean includeMigrators) throws IOException {
-		return export(workspace, mode, includeMigrators, null);
-	}
-	
-	/**
-	 * Export the application, configured for the given mode.
-	 * @param workspace the workspace to use
-	 * @param mode the to use for the application's configuration during the export
-	 * @param includeMigrators if true Migrator projects will also be exported with the Application
-	 * @param properties a Map of system properties; will be exported to the system.properties file
-	 * @return a File object for the export folder.
-	 * @throws IOException
-	 */
-	public File export(Workspace workspace, Mode mode, boolean includeMigrators, Map<String, String> properties) throws IOException {
-		Exporter exporter = new Exporter(workspace, getExportApps(workspace));
-		exporter.setMode(mode);
-		exporter.setProperties(properties);
-		if(includeMigrators) {
-			Migrator migrator = workspace.getMigratorFor(this);
-			if(migrator != null) {
-				exporter.addStart(migrator);
-				exporter.addStart(migrator.getMigratorService(workspace, mode));
-			}
-		}
-		return exporter.export();
-	}
 
-	public Bundle export(Workspace workspace, Mode mode, Bundle bundle) throws IOException {
-		Exporter exporter = new Exporter(workspace, this);
-		return exporter.export(bundle);
-	}
-	
-	public Set<Bundle> exportMigration(Workspace workspace, Mode mode) throws IOException {
-		Exporter exporter = new Exporter(workspace, this);
-		return exporter.exportMigration(mode);
-	}
-	
-	private List<Application> getExportApps(Workspace workspace) {
-		List<Application> apps = new ArrayList<Application>();
-		
-		apps.add(this);
-		
-		Config config = Config.loadConfiguration(site);
-		Object o = config.get("apps");
-		if(o instanceof String) {
-			Application app = workspace.getApplication((String) o);
-			if(app == null) {
-				throw new IllegalStateException(this + " has an unresolved export requirement: " + o);
-			}
-			apps.add(app);
-		} else if(o instanceof Collection) {
-			for(Object e : (Collection<?>) o) {
-				if(e instanceof String) {
-					Application app = workspace.getApplication((String) e);
-					if(app == null) {
-						throw new IllegalStateException(this + " has an unresolved export requirement: " + e);
-					}
-					apps.add(app);
-				} else {
-					throw new IllegalArgumentException(this + " has an unknown type of export requirement: " + e);
-				}
-			}
-		}
-		
-		return apps;
-	}
-	
 	public Application getExportedBundle(Workspace workspace) {
 		return getExportedBundle(workspace, this);
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public <T extends Bundle> T getExportedBundle(Workspace workspace, T bundle) {
 		Exporter exporter = new Exporter(workspace, this);

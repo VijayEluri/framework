@@ -32,6 +32,7 @@ import org.oobium.build.BuildBundle;
 import org.oobium.build.gen.ProjectGenerator;
 import org.oobium.logging.Logger;
 import org.oobium.utils.Config;
+import org.oobium.utils.FileUtils;
 import org.oobium.utils.Config.Mode;
 import org.oobium.utils.Config.OsgiRuntime;
 
@@ -108,6 +109,86 @@ public class Workspace {
 		applications = new HashMap<File, Application>();
 		listeners = new WorkspaceListener[0];
 		setWorkingDirectory(workingDirectory);
+	}
+
+	public File export(Application application, Mode mode) throws IOException {
+		return export(application, mode, new HashMap<String, String>(0));
+	}
+	
+	public File export(Application application, Mode mode, Map<String, String> properties) throws IOException {
+		Exporter exporter = new Exporter(this, application);
+		exporter.setMode(mode);
+		exporter.setProperties(properties);
+		return exporter.export();
+	}
+
+	public Bundle export(Bundle bundle) throws IOException {
+		return Exporter.export(this, bundle);
+	}
+	
+	public File getExportDir() {
+		return new File(getWorkingDirectory(), "export");
+	}
+	
+	public File exportWithMigrators(Application application, Mode mode) throws IOException {
+		return exportWithMigrators(application, mode, new HashMap<String, String>(0));
+	}
+	
+	public File exportWithMigrators(Application application, Mode mode, Map<String, String> properties) throws IOException {
+		Exporter exporter = new Exporter(this, application);
+		exporter.setMode(mode);
+		exporter.setProperties(properties);
+		exporter.setIncludeMigrator(true);
+		return exporter.export();
+	}
+	
+	public File exportMigrator(Application application, Mode mode) throws IOException {
+		return exportMigrator(application, mode, new HashMap<String, String>(0));
+	}
+	
+	public File exportMigrator(Application application, Mode mode, Map<String, String> properties) throws IOException {
+		Exporter exporter = new Exporter(this, application);
+		exporter.setMode(mode);
+		exporter.setProperties(properties);
+		exporter.setMigrator(true);
+		return exporter.export();
+	}
+	
+	public File cleanExport(Application application) {
+		Exporter exporter = new Exporter(this, application);
+		File exportDir = exporter.getExportDir();
+		FileUtils.deleteContents(exportDir);
+		return exportDir;
+	}
+
+	public List<Application> getApplications(Application application) {
+		List<Application> apps = new ArrayList<Application>();
+		
+		apps.add(application);
+		
+		Config config = Config.loadConfiguration(application.site);
+		Object o = config.get("apps");
+		if(o instanceof String) {
+			Application app = getApplication((String) o);
+			if(app == null) {
+				throw new IllegalStateException(this + " has an unresolved export requirement: " + o);
+			}
+			apps.add(app);
+		} else if(o instanceof Collection) {
+			for(Object e : (Collection<?>) o) {
+				if(e instanceof String) {
+					Application app = getApplication((String) e);
+					if(app == null) {
+						throw new IllegalStateException(this + " has an unresolved export requirement: " + e);
+					}
+					apps.add(app);
+				} else {
+					throw new IllegalArgumentException(this + " has an unknown type of export requirement: " + e);
+				}
+			}
+		}
+		
+		return apps;
 	}
 	
 	private Bundle addBundle(File file) {
