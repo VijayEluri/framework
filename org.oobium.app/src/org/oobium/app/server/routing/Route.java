@@ -132,7 +132,7 @@ public abstract class Route {
 							
 							for(int i = 0; i < sa[1].length(); i++) {
 								if(!Character.isLetterOrDigit(sa[1].charAt(i)) && sa[1].charAt(i) != '_') {
-									throw new RoutingException("constants cann only contain letters, digets, and underscores");
+									throw new RoutingException("constants can only contain letters, digits, and underscores");
 								}
 							}
 							if(!"models".equals(sa[0])) {
