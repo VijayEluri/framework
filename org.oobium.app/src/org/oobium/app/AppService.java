@@ -23,8 +23,7 @@ import org.oobium.app.server.response.Response;
 import org.oobium.app.server.routing.AppRouter;
 import org.oobium.app.server.routing.RouteHandler;
 import org.oobium.app.server.routing.Router;
-import org.oobium.app.server.routing.handlers.AssetHandler;
-import org.oobium.app.server.routing.handlers.ViewHandler;
+import org.oobium.app.server.routing.handlers.ControllerHandler;
 import org.oobium.app.server.view.View;
 import org.oobium.app.workers.Worker;
 import org.oobium.app.workers.Workers;
@@ -340,9 +339,7 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		RouteHandler handler = router.getHandler(request);
 		if(handler != null) {
 			handler.setLogger(logger);
-			if(handler instanceof AssetHandler || handler instanceof ViewHandler) {
-				response = handler.routeRequest(request);
-			} else {
+			if(handler instanceof ControllerHandler) {
 				appService.set(this);
 				persistServices.openSession(getPersistClientName());
 				Model.setLogger(logger);
@@ -355,6 +352,8 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 					Model.setLogger(null);
 					appService.set(null);
 				}
+			} else {
+				response = handler.routeRequest(request);
 			}
 			router.applyHeaders(request, response);
 		}
