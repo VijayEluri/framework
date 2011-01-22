@@ -44,12 +44,21 @@ public class FileCommand extends BuilderCommand {
 			}
 		}
 		
-		File file = new File(path);
-		if(!file.isAbsolute()) {
-			file = new File(getPwd(), path);
+		int ix = path.indexOf('#');
+		if(ix == -1) {
+			File file = new File(path);
+			if(!file.isAbsolute()) {
+				file = new File(getPwd(), path);
+			}
+			BuilderConsoleActivator.sendOpen(file);
+		} else {
+			File project = new File(path.substring(0, ix));
+			if(!project.isAbsolute()) {
+				project = new File(getPwd(), path.substring(0, ix));
+			}
+			File file = new File(project, path.substring(ix+1));
+			BuilderConsoleActivator.sendOpen(project, file);
 		}
-
-		BuilderConsoleActivator.sendOpen(file);
 	}
 
 }
