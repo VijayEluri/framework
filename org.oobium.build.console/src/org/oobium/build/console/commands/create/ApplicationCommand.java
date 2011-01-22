@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.gen.TestGenerator;
 import org.oobium.build.workspace.Migrator;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.TestSuite;
@@ -128,6 +129,8 @@ public class ApplicationCommand extends BuilderCommand {
 					TestSuite testSuite = getWorkspace().createTestSuite(module);
 					console.out.print("successfully created \"").print(testSuite).println("\"");
 					importList.add(testSuite.file);
+					TestGenerator gen = new TestGenerator(testSuite);
+					gen.createRouteTests(module);
 				}
 			}
 

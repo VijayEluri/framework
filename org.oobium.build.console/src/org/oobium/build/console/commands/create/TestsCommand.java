@@ -55,7 +55,9 @@ public class TestsCommand extends BuilderCommand {
 		for(File file : files) {
 			String name = file.getName();
 			name = name.substring(0, name.length() - 5);
-			console.out.println("created test case <a href=\"open file " + file + "\">" + name + "</a>");
+			StringBuilder sb = new StringBuilder(file.getAbsolutePath());
+			sb.setCharAt(testSuite.file.getAbsolutePath().length(), '#');
+			console.out.println("created test case <a href=\"open file " + sb.toString() + "\">" + name + "</a>");
 		}
 
 		BuilderConsoleActivator.sendRefresh(testSuite, 100);
