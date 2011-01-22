@@ -47,7 +47,7 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 	public void addColumn(Table table, AddColumn change) throws SQLException {
 		long start = -1;
 		if(logger.isLoggingInfo()) {
-			logger.info("adding column " + change.column.name + "to table " + table.name + "...");
+			logger.info("adding column " + change.column.name + " to table " + table.name + "...");
 			start = System.currentTimeMillis();
 		}
 		
@@ -55,11 +55,11 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		Statement stmt = connection.createStatement();
 		try {
 			String sql = getAddColumnSql(table, change.column);
-			logger.debug(sql);
+			logger.info(sql);
 			stmt.executeUpdate(sql);
 			if(logger.isLoggingInfo()) {
 				long total = System.currentTimeMillis() - start;
-				logger.info("added column " + change.column.name + "to table " + table.name + " in " + total + "ms");
+				logger.info("added column " + change.column.name + " to table " + table.name + " in " + total + "ms");
 			}
 		} finally {
 			try {
@@ -81,7 +81,7 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		Statement stmt = connection.createStatement();
 		try {
 			String sql = getCreateForeignKeySql(table, change.fk);
-			logger.debug(sql);
+			logger.info(sql);
 			stmt.executeUpdate(sql);
 			if(logger.isLoggingInfo()) {
 				long total = System.currentTimeMillis() - start;
@@ -118,7 +118,7 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		Statement stmt = connection.createStatement();
 		try {
 			String sql = getCreateIndexSql(table, index);
-			logger.debug(sql);
+			logger.info(sql);
 			stmt.executeUpdate(sql);
 			if(logger.isLoggingInfo()) {
 				long total = System.currentTimeMillis() - start;
@@ -144,7 +144,7 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		Statement stmt = connection.createStatement();
 		try {
 			String sql = getCreateTableSql(table);
-			logger.debug(sql);
+			logger.info(sql);
 			stmt.executeUpdate(sql);
 			if(logger.isLoggingInfo()) {
 				long total = System.currentTimeMillis() - start;
@@ -170,7 +170,7 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		Statement stmt = connection.createStatement();
 		try {
 			String sql = "drop table " + table.name;
-			logger.debug(sql);
+			logger.info(sql);
 			stmt.executeUpdate(sql);
 			if(logger.isLoggingInfo()) {
 				long total = System.currentTimeMillis() - start;
@@ -265,7 +265,7 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		}
 		return sb.toString();
 	}
-	
+
 	/**
 	 * Generate the SQL to create a foreign key constraint on an existing column.
 	 * @param table
@@ -294,7 +294,7 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		}
 		return sb.toString();
 	}
-
+	
 	protected String getCreateIndexSql(Table table, Index index) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("CREATE ");
@@ -312,7 +312,7 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		sb.append(')');
 		return sb.toString();
 	}
-	
+
 	protected String getCreatePrimaryKeySql(PrimaryKey pk) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getSqlSafe(pk.name)).append(' ').append(getSqlType(pk.type));
@@ -343,21 +343,50 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		sb.append(")");
 		return sb.toString();
 	}
-
+	
 	@Override
 	public int getCurrentRevision() {
 		// TODO Auto-generated method stub
 		return 0;
 	}
-	
-	protected abstract String getSqlSafe(String rawString);
 
-	protected abstract String getSqlType(String migrationType);
+	protected String getRemoveColumnSql(Table table, String column) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("ALTER TABLE ").append(getSqlSafe(table.name));
+		sb.append(" DROP COLUMN ").append(getSqlSafe(column));
+		return sb.toString();
+	}
 	
 	protected abstract String getSqlForPrimitive(String type);
+
+	protected abstract String getSqlSafe(String rawString);
+	
+	protected abstract String getSqlType(String migrationType);
 	
 	public void removeColumn(Table table, RemoveColumn change) throws SQLException {
-		throw new UnsupportedOperationException("not yet implemented");
+		long start = -1;
+		if(logger.isLoggingInfo()) {
+			logger.info("removing column " + change.column + " from table " + table.name + "...");
+			start = System.currentTimeMillis();
+		}
+		
+		Connection connection = persistor.getConnection();
+		Statement stmt = connection.createStatement();
+		try {
+			String sql = getRemoveColumnSql(table, change.column);
+			logger.info(sql);
+			stmt.executeUpdate(sql);
+			if(logger.isLoggingInfo()) {
+				long total = System.currentTimeMillis() - start;
+				logger.info("removed column " + change.column + " from table " + table.name + " in " + total + "ms");
+			}
+		} finally {
+			try {
+				stmt.close();
+			} catch(SQLException e) {
+				// discard
+			}
+		}
 	}
 	
 	public void removeForeignKey(Table table, RemoveForeignKey change) throws SQLException {
