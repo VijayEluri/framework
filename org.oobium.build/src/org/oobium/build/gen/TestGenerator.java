@@ -32,6 +32,7 @@ import org.oobium.build.workspace.TestSuite;
 import org.oobium.http.constants.RequestType;
 import org.oobium.http.constants.StatusCode;
 import org.oobium.test.ControllerTester;
+import org.oobium.test.RouteTester;
 
 
 public class TestGenerator {
@@ -85,7 +86,7 @@ public class TestGenerator {
 			for(BuildListener listener : listeners.toArray(new BuildListener[listeners.size()])) {
 				listener.handleEvent(event);
 				if(event.doIt == false) {
-					return null;
+					return file;
 				}
 			}
 		}
@@ -222,7 +223,7 @@ public class TestGenerator {
 			for(BuildListener listener : listeners.toArray(new BuildListener[listeners.size()])) {
 				listener.handleEvent(event);
 				if(event.doIt == false) {
-					return null;
+					return file;
 				}
 			}
 		}
@@ -249,11 +250,67 @@ public class TestGenerator {
 		return file;
 	}
 
+	/**
+	 * @param module the module for which to make the RouteTests
+	 * @return the RouteTests File; never null
+	 */
 	public File createRouteTests(Module module) {
 		File folder = mainFolder(module);
 		String simpleName = "RouteTests";
 		
-		return createTest(folder, simpleName);
+		File file = new File(folder, simpleName + ".java");
+		if(listeners != null && file.exists()) {
+			BuildEvent event = new BuildEvent(Type.FileExists, file);
+			for(BuildListener listener : listeners.toArray(new BuildListener[listeners.size()])) {
+				listener.handleEvent(event);
+				if(event.doIt == false) {
+					return file;
+				}
+			}
+		}
+
+		String activator = module.activator.getName();
+		activator = activator.substring(0, activator.length() - 5);
+		
+		SourceFile sf = new SourceFile();
+		
+		sf.simpleName = simpleName;
+		sf.packageName = testSuite.packageName(testSuite.unit, folder);
+		sf.staticImports.add(Assert.class.getCanonicalName() + ".*");
+		sf.staticImports.add(CoreMatchers.class.getCanonicalName() + ".*");
+		sf.imports.add(Before.class.getCanonicalName());
+		sf.imports.add(Test.class.getCanonicalName());
+		sf.imports.add(RouteTester.class.getCanonicalName());
+		sf.imports.add(module.packageName(module.activator) + "." + activator);
+
+		sf.variables.put("tester", RouteTester.class.getSimpleName() + " tester");
+		
+		sf.methods.put("0_setup",
+				"\t@Before\n" +
+				"\tpublic void setup() throws Exception {\n" +
+				"\t\ttester = new RouteTester(" + activator + ".class);\n" +
+				"\t}"
+		);
+		
+		if(module.isWebservice()) {
+			sf.methods.put("testHome",
+					"\t@Test\n" +
+					"\tpublic void testHome() throws Exception {\n" +
+					"\t\tassertThat(tester.hasHome(), is(false));\n" +
+					"\t}"
+			);
+		} else {
+			sf.methods.put("testHome",
+					"\t@Test\n" +
+					"\tpublic void testHome() throws Exception {\n" +
+					"\t\tassertThat(tester.hasHome(), is(true));\n" +
+					"\t}"
+			);
+		}
+		
+		writeFile(file, sf.toSource());
+		
+		return file;
 	}
 
 	private File createTest(File folder, String simpleName) {
@@ -263,7 +320,7 @@ public class TestGenerator {
 			for(BuildListener listener : listeners.toArray(new BuildListener[listeners.size()])) {
 				listener.handleEvent(event);
 				if(event.doIt == false) {
-					return null;
+					return file;
 				}
 			}
 		}
