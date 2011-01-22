@@ -22,7 +22,8 @@ public interface HttpRequestHandler {
 	public abstract int getPort();
 	
 	/**
-	 * handle the http request
+	 * Handle the http request.
+	 * This method MUST be able to handle being called from multiple threads.
 	 * @param request
 	 * @return
 	 */
