@@ -348,9 +348,19 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 		props.put("name", getName());
 		context.registerService(ModuleService.class.getName(), this, props);
 
+		startWorkers();
+		
 		logger.info(toString() + " started");
 	}
 
+	/**
+	 * A place to start any work that needs to be run (do not run in main thread - use a worker).
+	 * The module has been completely initialized at this point.
+	 */
+	public void startWorkers() {
+		// subclasses to implement
+	}
+	
 	@Override
 	public final void stop(BundleContext context) throws Exception {
 		logger.info(toString() + " stopping");
