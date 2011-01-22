@@ -7,6 +7,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: org.oobium.http,
  org.oobium.http.constants,
  org.oobium.logging,
- org.oobium.utils
+ org.oobium.utils,
+ org.oobium.utils.coercion
 Export-Package: org.oobium.client
 Bundle-Vendor: oobium.org

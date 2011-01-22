@@ -87,7 +87,7 @@ public class Client {
 		asyncRequest(DELETE, path, null, null);
 	}
 	
-	public void aDelete(String path, Map<String, String> parameters) {
+	public void aDelete(String path, Map<String, ?> parameters) {
 		asyncRequest(DELETE, path, parameters, null);
 	}
 	
@@ -95,15 +95,15 @@ public class Client {
 		asyncRequest(DELETE, path, null, null);
 	}
 	
-	public void aGet(String path, Map<String, String> parameters) {
+	public void aGet(String path, Map<String, ?> parameters) {
 		asyncRequest(DELETE, path, parameters, null);
 	}
 	
-	public void aPost(Map<String, String> parameters) {
+	public void aPost(Map<String, ?> parameters) {
 		asyncRequest(POST, url.getPath(), parameters, null);
 	}
 	
-	public void aPost(Map<String, String> parameters, ClientCallback callback) {
+	public void aPost(Map<String, ?> parameters, ClientCallback callback) {
 		asyncRequest(POST, url.getPath(), parameters, callback);
 	}
 	
@@ -111,7 +111,7 @@ public class Client {
 		asyncRequest(POST, path, null, null);
 	}
 	
-	public void aPost(String path, Map<String, String> parameters) {
+	public void aPost(String path, Map<String, ?> parameters) {
 		asyncRequest(POST, path, parameters, null);
 	}
 	
@@ -119,7 +119,7 @@ public class Client {
 		asyncRequest(PUT, path, null, null);
 	}
 	
-	public void aPut(String path, Map<String, String> parameters) {
+	public void aPut(String path, Map<String, ?> parameters) {
 		asyncRequest(PUT, path, parameters, null);
 	}
 	
@@ -127,7 +127,7 @@ public class Client {
 		asyncRequest(type, path, null, callback);
 	}
 	
-	public void asyncRequest(RequestType type, String path, Map<String, String> parameters, ClientCallback callback) {
+	public void asyncRequest(RequestType type, String path, Map<String, ?> parameters, ClientCallback callback) {
 		ClientThread c = new ClientThread(this, type, path, headers, parameters);
 		c.setCallback(callback);
 		c.start();
@@ -145,19 +145,19 @@ public class Client {
 		asyncRequest(DELETE, path, null, callback);
 	}
 	
-	public ClientResponse delete(String path, Map<String, String> parameters) {
+	public ClientResponse delete(String path, Map<String, ?> parameters) {
 		return syncRequest(DELETE, path, parameters);
 	}
 	
-	public void delete(String path, Map<String, String> parameters, ClientCallback callback) {
+	public void delete(String path, Map<String, ?> parameters, ClientCallback callback) {
 		asyncRequest(DELETE, path, parameters, callback);
 	}
 	
 	public ClientResponse get() {
-		return get(new HashMap<String, String>(0));
+		return get(new HashMap<String, Object>(0));
 	}
 	
-	public ClientResponse get(Map<String, String> parameters) {
+	public ClientResponse get(Map<String, ?> parameters) {
 		return syncRequest(GET, url.getPath(), parameters);
 	}
 	
@@ -169,11 +169,11 @@ public class Client {
 		asyncRequest(GET, path, null, callback);
 	}
 
-	public ClientResponse get(String path, Map<String, String> parameters) {
+	public ClientResponse get(String path, Map<String, ?> parameters) {
 		return syncRequest(GET, path, parameters);
 	}
 	
-	public void get(String path, Map<String, String> parameters, ClientCallback callback) {
+	public void get(String path, Map<String, ?> parameters, ClientCallback callback) {
 		asyncRequest(GET, path, parameters, callback);
 	}
 	
@@ -201,7 +201,7 @@ public class Client {
 		}
 	}
 
-	public ClientResponse post(Map<String, String> parameters) {
+	public ClientResponse post(Map<String, ?> parameters) {
 		return syncRequest(POST, url.getPath(), parameters);
 	}
 
@@ -213,11 +213,11 @@ public class Client {
 		asyncRequest(POST, path, null, callback);
 	}
 	
-	public ClientResponse post(String path, Map<String, String> parameters) {
+	public ClientResponse post(String path, Map<String, ?> parameters) {
 		return syncRequest(POST, path, parameters);
 	}
 	
-	public void post(String path, Map<String, String> parameters, ClientCallback callback) {
+	public void post(String path, Map<String, ?> parameters, ClientCallback callback) {
 		asyncRequest(POST, path, parameters, callback);
 	}
 	
@@ -229,11 +229,11 @@ public class Client {
 		asyncRequest(PUT, path, null, callback);
 	}
 	
-	public ClientResponse put(String path, Map<String, String> parameters) {
+	public ClientResponse put(String path, Map<String, ?> parameters) {
 		return syncRequest(PUT, path, parameters);
 	}
 
-	public void put(String path, Map<String, String> parameters, ClientCallback callback) {
+	public void put(String path, Map<String, ?> parameters, ClientCallback callback) {
 		asyncRequest(PUT, path, parameters, callback);
 	}
 	
@@ -256,7 +256,7 @@ public class Client {
 		return syncRequest(type, url.getPath(), null);
 	}
 	
-	public ClientResponse syncRequest(RequestType type, Map<String, String> parameters) {
+	public ClientResponse syncRequest(RequestType type, Map<String, ?> parameters) {
 		ClientThread c = new ClientThread(this, type, url.getPath(), headers, parameters);
 		c.run();
 		return c.getResponse();
@@ -266,7 +266,7 @@ public class Client {
 		return syncRequest(type, path, null);
 	}
 
-	public ClientResponse syncRequest(RequestType type, String path, Map<String, String> parameters) {
+	public ClientResponse syncRequest(RequestType type, String path, Map<String, ?> parameters) {
 		ClientThread c = new ClientThread(this, type, path, headers, parameters);
 		c.run();
 		return c.getResponse();
