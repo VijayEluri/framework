@@ -6,6 +6,7 @@ Bundle-Version: 0.6.0.qualifier
 Import-Package: org.oobium.app,
  org.oobium.app.server.controller,
  org.oobium.app.server.routing,
+ org.oobium.app.workers,
  org.oobium.http.constants,
  org.oobium.logging,
  org.oobium.persist,

@@ -46,7 +46,6 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	private static final int UPDATE = 3;
 
 	private final Logger logger;
-	private boolean open;
 	private BundleContext context;
 	private DbPersistor persistor;
 	private Map<String, ConnectionPool> connectionPools;
@@ -208,7 +207,6 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		threadClient.set(name);
 		threadAutoCommit.set(true);
 		expireCache();
-		open = true;
 	}
 	
 	@Override
@@ -239,7 +237,6 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		threadConnection.set(null);
 		threadClient.set(null);
 		expireCache();
-		open = false;
 	}
 	
 	public Connection getConnection() throws SQLException {
@@ -318,7 +315,7 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	
 	@Override
 	public boolean isSessionOpen() {
-		return open;
+		return threadClient.get() != null;
 	}
 	
 	private void removeDatabase(String client) {

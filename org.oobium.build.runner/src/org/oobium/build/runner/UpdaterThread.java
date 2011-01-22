@@ -34,7 +34,6 @@ class UpdaterThread extends Thread {
 
 	private final Workspace workspace;
 	private final Application application;
-	private final Mode mode;
 	private final String domain;
 	private final int port;
 
@@ -54,7 +53,6 @@ class UpdaterThread extends Thread {
 		this.waitLock = new Object();
 		this.workspace = workspace;
 		this.application = application;
-		this.mode = mode;
 		this.domain = "localhost";
 		this.port = 5050;
 		this.bundles = new HashMap<Bundle, Long>();
@@ -153,7 +151,7 @@ class UpdaterThread extends Thread {
 			long lastModified = getLastModified(bundle);
 			if(modified < lastModified) {
 				try {
-					Bundle update = application.export(workspace, mode, bundle);
+					Bundle update = workspace.export(bundle);
 					bundles.put(bundle, lastModified);
 					update(domain, port, bundle, "file:" + update.file.getAbsolutePath());
 					RunnerService.notifyListeners(Type.Update, application, update);

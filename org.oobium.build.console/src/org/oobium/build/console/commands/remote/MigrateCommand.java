@@ -11,7 +11,6 @@
 package org.oobium.build.console.commands.remote;
 
 import static org.oobium.build.console.commands.RemoteCommand.getInstallations;
-import static org.oobium.utils.FileUtils.getLastModified;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 
 import java.io.File;
@@ -35,10 +34,8 @@ import org.oobium.utils.Config.Mode;
 import org.oobium.utils.FileUtils;
 import org.oobium.utils.StringUtils;
 
-public class DeployCommand extends BuilderCommand {
+public class MigrateCommand extends BuilderCommand {
 
-	private static final int KEEP = 3;
-	
 	@Override
 	public void configure() {
 		applicationRequired = true;
@@ -62,58 +59,59 @@ public class DeployCommand extends BuilderCommand {
 		ssh.setOut(new ConsolePrintStream(console.out));
 		ssh.setErr(new ConsolePrintStream(console.err));
 		
-		String name = config.getString("name", app.name);
-		String version = app.version.resolve(getLastModified(new File(exportDir, "bundles"))).toString();
-
-		String remote = name;
+		String remote = config.getString("name", app.name);
+		String data = "data";
 		if(dir != null) {
 			remote = dir + "/" + remote;
+			data = dir + "/" + data;
 		}
 
-		String current = remote + "_" + version;
+		String migrator = remote + "_migrator";
 		String[] previous = getInstallations(ssh, remote);
+
+		String current = (previous == null || previous.length == 0) ? null : previous[0];
 		
+		// deploy migrator
 		if(flag('f')) {
 			console.out.println("force install requested - performing full upload");
-			ssh.copy(exportDir, current);
+			ssh.copy(exportDir, migrator);
 		} else {
-			if(previous == null) {
-				console.out.println("no previous installation found - performing full upload");
-				ssh.copy(exportDir, current);
-			} else if(previous[0].equals(current)) {
-				console.out.println("remote installation is already up to date... exiting.");
-				return;
+			if(current == null) {
+				console.out.println("no app installation found - performing full upload");
+				ssh.copy(exportDir, migrator);
 			} else {
-				console.out.println("previous installation found (" + previous[0] + ") - performing update");
-				update(ssh, exportDir, previous[0], current);
+				console.out.println("app installation found (" + current + ") - performing update");
+				update(ssh, exportDir, current, migrator);
 			}
 		}
 		
-		ssh.exec("chmod +x " + current + "/*.sh");
-		ssh.setSudo(sudo);
-		ssh.exec("./stop.sh", current);
-		ssh.exec("nohup ./start.sh", current);
-		ssh.setSudo(false);
+		// stop application
+		if(current != null) {
+			ssh.setSudo(sudo);
+			ssh.exec("./stop.sh", current);
+			ssh.setSudo(false);
+		}
+		
+		// run migrator
+		ssh.exec("java -jar bin/felix.jar", migrator);
+		
+		// start application
+		if(current != null) {
+			ssh.setSudo(sudo);
+			ssh.exec("nohup ./start.sh", current);
+			ssh.setSudo(false);
+		}
+		
+		// output info
 		ssh.exec("ps aux | grep felix");
-		
 		ssh.setSudo(sudo);
-		ssh.exec("cat nohup.out", current);
-		
-		finish(ssh, previous);
+		ssh.exec("cat nohup.out", migrator);
+		ssh.setSudo(false);
+
+		// remove migrator and migrator database
+		ssh.exec("rm -r " + migrator);
 	}
 	
-	protected void finish(SSH ssh, String[] previous) throws IOException, OobiumException {
-		if(previous != null) {
-			if("all".equals(param("keep"))) {
-				console.out.println("keeping all previous installations");
-			} else {
-				for(int i = coerce(param("keep"), KEEP); i < previous.length; i++) {
-					ssh.exec("rm -r " + previous[i]);
-				}
-			}
-		}
-	}
-
 	@Override
 	public void run() {
 		Workspace ws = getWorkspace();
@@ -130,7 +128,7 @@ public class DeployCommand extends BuilderCommand {
 			long start = System.currentTimeMillis();
 
 			ws.cleanExport(app);
-			File exportDir = ws.export(app, mode);
+			File exportDir = ws.exportMigrator(app, mode);
 			
 			String msg = "exported <a href=\"open file " + exportDir + "\">" + app.name() + "</a>";
 			if(flag('v')) {

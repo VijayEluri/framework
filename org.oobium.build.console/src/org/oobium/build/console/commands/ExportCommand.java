@@ -47,8 +47,8 @@ public class ExportCommand extends BuilderCommand {
 		try {
 			long start = System.currentTimeMillis();
 
-			app.cleanExport(ws);
-			File exportDir = app.export(ws, mode, migrators);
+			ws.cleanExport(app);
+			File exportDir = ws.exportWithMigrators(app, mode);
 			
 			String msg = "exported <a href=\"open file " + exportDir + "\">" + app.name() + "</a>";
 			if(flag('v')) {

@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.oobium.app.AppService;
 import org.oobium.app.server.routing.Router;
+import org.oobium.app.workers.Worker;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.migrate.controllers.MigrateController;
 import org.oobium.persist.migrate.controllers.PurgeController;
@@ -29,17 +30,27 @@ import org.oobium.persist.migrate.controllers.RollbackController;
 import org.oobium.utils.Config;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleException;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.Version;
 import org.osgi.service.packageadmin.PackageAdmin;
 import org.osgi.util.tracker.ServiceTracker;
+import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
 public abstract class MigratorService extends AppService {
 
+	public static final String SYS_PROP_MODE = "org.oobium.persist.migrate";
+	public static final String ACTIVE = "active";
+	public static final String DONE = "Migrate complete";
+	
 	private static MigratorService instance;
 	
 	public static MigratorService instance() {
 		return instance;
+	}
+	
+	public static boolean isActive() {
+		return ACTIVE.equals(System.getProperty(SYS_PROP_MODE));
 	}
 	
 	
@@ -61,17 +72,19 @@ public abstract class MigratorService extends AppService {
 	
 	@Override
 	public void addRoutes(Config config, Router router) {
-		router.addRoute(POST, "/migrate", 							MigrateController.class);
-		router.addRoute(POST, "/migrate/{name:\\w+}/{dir=up}", 		MigrateController.class);
-		router.addRoute(POST, "/migrate/{name:\\w+}/{dir=down}", 	MigrateController.class);
-		router.addRoute(POST, "/migrate/to/{name:\\w+}", 			MigrateController.class);
-		router.addRoute(POST, "/migrate/rollback", 					RollbackController.class);
-		router.addRoute(POST, "/migrate/rollback/{step=all}", 		RollbackController.class);
-		router.addRoute(POST, "/migrate/rollback/{step:\\d+}", 		RollbackController.class);
-		router.addRoute(POST, "/migrate/redo", 						RedoController.class);
-		router.addRoute(POST, "/migrate/redo/{step=all}", 			RedoController.class);
-		router.addRoute(POST, "/migrate/redo/{step:\\d+}", 			RedoController.class);
-		router.addRoute(POST, "/migrate/purge", 					PurgeController.class);
+		if(!isActive()) { // TODO this doesn't need to be an application for remote use...
+			router.addRoute(POST, "/migrate", 							MigrateController.class);
+			router.addRoute(POST, "/migrate/{name:\\w+}/{dir=up}", 		MigrateController.class);
+			router.addRoute(POST, "/migrate/{name:\\w+}/{dir=down}", 	MigrateController.class);
+			router.addRoute(POST, "/migrate/to/{name:\\w+}", 			MigrateController.class);
+			router.addRoute(POST, "/migrate/rollback", 					RollbackController.class);
+			router.addRoute(POST, "/migrate/rollback/{step=all}", 		RollbackController.class);
+			router.addRoute(POST, "/migrate/rollback/{step:\\d+}", 		RollbackController.class);
+			router.addRoute(POST, "/migrate/redo", 						RedoController.class);
+			router.addRoute(POST, "/migrate/redo/{step=all}", 			RedoController.class);
+			router.addRoute(POST, "/migrate/redo/{step:\\d+}", 			RedoController.class);
+			router.addRoute(POST, "/migrate/purge", 					PurgeController.class);
+		}
 	}
 
 	private Bundle getBundle(ServiceReference ref, String symbolicName) {
@@ -110,7 +123,7 @@ public abstract class MigratorService extends AppService {
 	}
 	
 	public abstract List<? extends Migration> getMigrations();
-
+	
 	public MigrationService getMigrationService() {
 		MigrationService service = (MigrationService) msTracker.getService();
 		if(service != null) {
@@ -119,7 +132,7 @@ public abstract class MigratorService extends AppService {
 		}
 		throw new IllegalStateException("MigrationService is not present - Migration cannot proceed");
 	}
-	
+
 	private List<String> getNames(List<? extends Migration> migrations) {
 		List<String> names = new ArrayList<String>();
 		for(Migration migration : migrations) {
@@ -130,6 +143,9 @@ public abstract class MigratorService extends AppService {
 	
 	@Override
 	public String getPersistClientName() {
+//		if(isActive()) {
+//			return appName + "_migrator";
+//		}
 		return appName + "_" + appVersion;
 	}
 	
@@ -154,6 +170,10 @@ public abstract class MigratorService extends AppService {
 				e(Config.HOST, "localhost"),
 				e(Config.PORT, "5001")
 			));
+	}
+	
+	public synchronized String migrate() throws SQLException {
+		return migrate(null);
 	}
 	
 	public synchronized String migrate(String to) throws SQLException {
@@ -273,6 +293,10 @@ public abstract class MigratorService extends AppService {
 		}
 	}
 	
+	public synchronized String migrateRollback() throws SQLException {
+		return migrateRollback(1);
+	}
+	
 	public synchronized String migrateRollback(int step) throws SQLException {
 		List<? extends Migration> migrations = getMigrations();
 		List<String> names = getNames(migrations);
@@ -336,7 +360,7 @@ public abstract class MigratorService extends AppService {
 			}
 		}
 	}
-
+	
 	@Override
 	protected void setName(BundleContext context) throws Exception {
 		Bundle migBundle = context.getBundle();
@@ -363,6 +387,41 @@ public abstract class MigratorService extends AppService {
 		version = appBundle.getVersion();
 		version = new Version(version.getMajor(), version.getMinor(), version.getMicro());
 		appVersion = version.toString();
+	}
+
+	@Override
+	public void startWorkers() {
+		if(isActive()) {
+			final ServiceTracker tmp = new ServiceTracker(getContext(), MigrationService.class.getName(), new ServiceTrackerCustomizer() {
+				public Object addingService(ServiceReference reference) {
+					Worker worker = new Worker() {
+						protected void run() {
+							String action = System.getProperty("org.oobium.persist.migrate.action", "migrate");
+							try {
+								if("migrate".equals(action)) {
+									migrate();
+								} else if("rollback".equals(action)) {
+									migrateRollback();
+								}
+							} catch(Exception e) {
+								logger.error(e);
+							}
+							logger.info(DONE);
+							try {
+								getContext().getBundle(0).stop();
+							} catch(BundleException e) {
+								logger.error(e);
+							}
+						};
+					};
+					submit(worker);
+					return null;
+				}
+				public void modifiedService(ServiceReference reference, Object service) { }
+				public void removedService(ServiceReference reference, Object service) { }
+			});
+			tmp.open();
+		}
 	}
 
 	@Override

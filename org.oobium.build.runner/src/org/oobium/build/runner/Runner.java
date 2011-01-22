@@ -108,7 +108,7 @@ public class Runner {
 		if(process == null) {
 			File exportDir = null;
 			try {
-				exportDir = application.export(workspace, mode, true, properties);
+				exportDir = workspace.exportWithMigrators(application, mode, properties);
 			} catch(IOException e) {
 				return false;
 			}

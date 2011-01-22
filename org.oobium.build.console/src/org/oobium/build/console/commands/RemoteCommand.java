@@ -16,6 +16,7 @@ import java.util.Comparator;
 
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.commands.remote.DeployCommand;
+import org.oobium.build.console.commands.remote.MigrateCommand;
 import org.oobium.build.console.commands.remote.RedeployCommand;
 import org.oobium.build.console.commands.remote.RestartCommand;
 import org.oobium.build.console.commands.remote.RollbackCommand;
@@ -50,6 +51,7 @@ public class RemoteCommand extends BuilderCommand {
 	@Override
 	public void configure() {
 		add(new DeployCommand());
+		add(new MigrateCommand());
 		add(new RedeployCommand());
 		add(new RestartCommand());
 		add(new RollbackCommand());
