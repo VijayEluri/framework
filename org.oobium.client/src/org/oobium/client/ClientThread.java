@@ -37,24 +37,6 @@ import org.oobium.utils.StringUtils;
 
 public class ClientThread extends Thread {
 
-	public static class Part {
-		public final InputStream stream;
-		private Map<String, String> params;
-		public Part(InputStream stream) {
-			this.stream = stream;
-		}
-		public Map<String, String> params() {
-			return (params != null) ? params : new LinkedHashMap<String, String>(0);
-		}
-		public void put(String name, String value) {
-			if(params == null) {
-				params = new LinkedHashMap<String, String>();
-			}
-			params.put(name, value);
-		}
-	}
-	
-	
 	private Client client;
 	
 	private RequestType type;
@@ -116,26 +98,29 @@ public class ClientThread extends Thread {
 	@Override
 	public void run() {
 		try {
-			Map<String, String> params = new LinkedHashMap<String, String>();
-			Map<String, Part> parts = null;
-			for(Entry<String, ?> entry : parameters.entrySet()) {
-				String key = entry.getKey();
-				Object val = entry.getValue();
-				if(val instanceof File) {
-					File file = (File) val;
-					Part part = new Part(new FileInputStream(file));
-					part.put("filename", file.getName());
-					val = part;
-				} else if(val instanceof InputStream) {
-					val = new Part((InputStream) val);
-				}
-				if(val instanceof Part) {
-					if(parts == null) {
-						parts = new LinkedHashMap<String, Part>();
+			Map<String, String> params = null;
+			Map<String, MessagePart> parts = null;
+			if(parameters != null) {
+				params = new LinkedHashMap<String, String>();
+				for(Entry<String, ?> entry : parameters.entrySet()) {
+					String key = entry.getKey();
+					Object val = entry.getValue();
+					if(val instanceof File) {
+						File file = (File) val;
+						MessagePart part = new MessagePart(new FileInputStream(file));
+						part.put("filename", file.getName());
+						val = part;
+					} else if(val instanceof InputStream) {
+						val = new MessagePart((InputStream) val);
 					}
-					parts.put(key, (Part) val);
-				} else {
-					params.put(key, coerce(val, String.class));
+					if(val instanceof MessagePart) {
+						if(parts == null) {
+							parts = new LinkedHashMap<String, MessagePart>();
+						}
+						parts.put(key, (MessagePart) val);
+					} else {
+						params.put(key, coerce(val, String.class));
+					}
 				}
 			}
 			
@@ -171,7 +156,7 @@ public class ClientThread extends Thread {
 		        			}
 		        		}
 		        		if(boundary == null) {
-		        			boundary = "---------------------------MoneyWatchTest";
+		        			boundary = "---------------------------OobiumBoundary";
 		        		}
 	        		}
 	        		conn.setRequestProperty(Header.CONTENT_TYPE.key(), "multipart/form-data; boundary=" + boundary);
@@ -180,7 +165,7 @@ public class ClientThread extends Thread {
 	                for(Entry<String, String> entry : params.entrySet()) {
 	                	writeParam(out, entry.getKey(), entry.getValue(), boundary);
 	                }
-	                for(Entry<String, Part> entry : parts.entrySet()) {
+	                for(Entry<String, MessagePart> entry : parts.entrySet()) {
 	                	writePart(out, entry.getKey(), entry.getValue(), boundary);
 	                }
 	                out.flush();
@@ -220,15 +205,15 @@ public class ClientThread extends Thread {
         out.writeBytes("\r\n" + "--" + boundary + "\r\n");
     }
 	
-	private void writePart(DataOutputStream out, String name, Part part, String boundary) throws Exception {
+	private void writePart(DataOutputStream out, String name, MessagePart part, String boundary) throws Exception {
 		StringBuilder sb = new StringBuilder();
 		sb.append("content-disposition: form-data; name=\"").append(name).append('"');
-		for(Entry<String, String> entry : part.params().entrySet()) {
+		for(Entry<String, String> entry : part.getParameters().entrySet()) {
 			sb.append(';').append(attrEncode(entry.getKey(), entry.getValue())).append('"');
 		}
 		sb.append("\r\ncontent-type: audio/wav\r\n\r\n");
 		out.writeBytes(sb.toString());
-		InputStream in = part.stream;
+		InputStream in = part.getStream();
 		byte[] bytes = new byte[4*1024];
 		int read;
 		while((read = in.read(bytes)) > 0) {
