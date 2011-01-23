@@ -11,21 +11,19 @@
 package org.oobium.build.console.commands.open;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
 
 public class TypeCommand extends BuilderCommand {
 
 	@Override
 	public void configure() {
-		moduleRequired = true;
 		maxParams = 1;
 		minParams = 1;
 	}
 	
 	@Override
 	public void run() {
-//		console.out.println("opening " + param(0));
-		BuilderConsoleActivator.sendOpenType(param(0), (paramCount() > 1) ? param(1) : null);
+		console.err.println("not yet implemented");
+//		BuilderConsoleActivator.sendOpenType(param(0), (paramCount() > 1) ? param(1) : null);
 	}
 
 }
