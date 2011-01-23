@@ -32,7 +32,11 @@ public class VersionCommand extends BuilderCommand {
 				}
 			}
 		} else {
-			console.out.println(getBundle().version);
+			if(hasBundle()) {
+				console.out.println(getBundle().version);
+			} else {
+				console.err.println("bundle is not set");
+			}
 		}
 	}
 
