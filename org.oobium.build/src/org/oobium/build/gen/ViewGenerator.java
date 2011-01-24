@@ -16,6 +16,8 @@ import static org.oobium.utils.StringUtils.titleize;
 import static org.oobium.utils.StringUtils.varName;
 
 import java.io.File;
+import java.sql.Timestamp;
+import java.util.Date;
 import java.util.LinkedHashMap;
 
 import org.oobium.build.gen.model.PropertyDescriptor;
@@ -70,6 +72,49 @@ public class ViewGenerator {
 		this.mType = mType;
 	}
 
+	private void generateLabelAndField(StringBuilder sb, PropertyDescriptor property, String var) {
+		String ftype = property.fullType();
+		if(Boolean.class.getCanonicalName().equals(ftype)) {
+			sb.append("\t\tcheck(").append(var).append(")\n");
+			sb.append("\t\tlabel(").append(var).append(")\n");
+		} else if(java.sql.Date.class.getCanonicalName().equals(ftype)) {
+			sb.append("\t\tdiv <- label(").append(var).append(")\n");
+			sb.append("\t\tdiv <- date(").append(var).append(")\n");
+		} else {
+			sb.append("\t\tdiv <- label(").append(var).append(")\n");
+			sb.append("\t\tdiv <- ");
+			if(String.class.getCanonicalName().equals(ftype)) {
+				if("password".equalsIgnoreCase(var)) {
+					sb.append("password");
+				} else if(Text.class.getCanonicalName().equals(property.rawType())) {
+					sb.append("textArea");
+				} else {
+					sb.append("text");
+				}
+			} else if(property.hasOne()) {
+				sb.append("select");
+			} else if(Integer.class.getCanonicalName().equals(ftype)) {
+				sb.append("number");
+			} else if(Double.class.getCanonicalName().equals(ftype)) {
+				sb.append("number");
+			} else if(property.hasMany()) {
+				sb.append("span hasMany");
+			} else if(Date.class.getCanonicalName().equals(ftype) ||
+					Timestamp.class.getCanonicalName().equals(ftype)) {
+				sb.append("date");
+			} else {
+				sb.append("input");
+			}
+			sb.append("(").append(var).append(')');
+			if(property.hasOne()) {
+				String type = StringUtils.simpleName(property.relatedType());
+				sb.append(" <- options(").append(type).append(".findAll())\n");
+			} else {
+				sb.append('\n');
+			}
+		}
+	}
+	
 	public String generateForm() {
 		StringBuilder sb = new StringBuilder();
 
@@ -77,48 +122,15 @@ public class ViewGenerator {
 		sb.append('\n');
 		sb.append(mType).append("Form(").append(mType).append(' ').append(mVar).append(')').append('\n');
 		sb.append('\n');
-//		sb.append("messages\n");
 		sb.append("form(").append(mVar).append(")\n");
 		sb.append("\terrors\n");
 		for(PropertyDescriptor property : properties.values()) {
 			String var = property.variable();
 			if("createdAt".equals(var) || "updatedAt".equals(var) || "createdOn".equals(var) || "updatedOn".equals(var)) {
-				continue; // not supposed to be user-editable fields
+				continue; // not normally user-editable fields
 			}
 			sb.append("\tdiv.field\n");
-			if(Boolean.class.getCanonicalName().equals(property.fullType())) {
-				sb.append("\t\tcheck(").append(var).append(")\n");
-				sb.append("\t\tlabel(").append(var).append(")\n");
-			} else {
-				sb.append("\t\tdiv <- label(").append(var).append(")\n");
-				sb.append("\t\tdiv <- ");
-				if(String.class.getCanonicalName().equals(property.fullType())) {
-					if("password".equalsIgnoreCase(var)) {
-						sb.append("password");
-					} else if(Text.class.getCanonicalName().equals(property.rawType())) {
-						sb.append("textArea");
-					} else {
-						sb.append("text");
-					}
-				} else if(property.hasOne()) {
-					sb.append("select");
-				} else if(Integer.class.getCanonicalName().equals(property.fullType())) {
-					sb.append("number");
-				} else if(Double.class.getCanonicalName().equals(property.fullType())) {
-					sb.append("number");
-				} else if(property.hasMany()) {
-					sb.append("span hasMany");
-				} else {
-					sb.append("input");
-				}
-				sb.append("(").append(var).append(')');
-				if(property.hasOne()) {
-					String type = StringUtils.simpleName(property.relatedType());
-					sb.append(" <- options(").append(type).append(".findAll())\n");
-				} else {
-					sb.append('\n');
-				}
-			}
+			generateLabelAndField(sb, property, var);
 		}
 		sb.append("\tdiv.actions\n");
 		sb.append("\t\tsubmit\n");
