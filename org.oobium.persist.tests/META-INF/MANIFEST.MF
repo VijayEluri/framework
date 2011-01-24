@@ -12,5 +12,4 @@ Require-Bundle: org.junit4,
  org.apache.derby,
  org.oobium.logging,
  org.oobium.utils
-Export-Package: org.oobium.persist,
- org.oobium.persist.tests
+Export-Package: org.oobium.persist

@@ -8,7 +8,7 @@
  * Contributors:
  *     Jeremy Dowdall <jeremy@oobium.com> - initial API and implementation
  ******************************************************************************/
-package org.oobium.persist.tests;
+package org.oobium.persist;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;

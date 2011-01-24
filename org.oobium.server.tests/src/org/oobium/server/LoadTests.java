@@ -12,12 +12,19 @@ package org.oobium.server;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Ignore;
 import org.junit.Test;
+import org.oobium.client.Client;
+import org.oobium.client.ClientResponse;
 
 public class LoadTests {
 	
@@ -40,10 +47,39 @@ public class LoadTests {
 		System.out.println("req / second: " + (int) ((double) requests / ((double) duration / 1000)));
 	}
 	
+	@Test
+	public void testWithCurl() throws Exception {
+		long start = System.currentTimeMillis();
+		int requests = 100;
+		Thread[] threads = new Thread[requests];
+		for(int i = 0; i < requests; i++) {
+			threads[i] = new Thread() {
+				public void run() {
+					try {
+						Runtime.getRuntime().exec(new String[] { "curl", "http://guides.oobium.org/getting_started"});
+					} catch(IOException e) {
+						e.printStackTrace();
+					}
+					System.out.println("ran");
+				};
+			};
+		}
+		for(int i = 0; i < requests; i++) {
+			threads[i].start();
+		}
+		long duration = System.currentTimeMillis() - start;
+		System.out.println("elapsed time: " + (duration) + " millis");
+		System.out.println("average time: " + ((double) duration / requests) + " millis");
+		System.out.println("req / second: " + (int) ((double) requests / ((double) duration / 1000)));
+		
+		Thread.sleep(5000);
+	}
+	
 	@Ignore
 	@Test
 	public void testParallel() throws Exception {
-		final int iterationsPerThread = 1000;
+		final int numThreads = 2;
+		final int iterationsPerThread = 2;
 		Runnable runnable = new Runnable() {
 			public void run() {
 				int i = 0;
@@ -64,7 +100,7 @@ public class LoadTests {
 			}
 		};
 		
-		Thread[] threads = new Thread[10];
+		Thread[] threads = new Thread[numThreads];
 		for(int i = 0; i < threads.length; i++) {
 			threads[i] = new Thread(runnable, "test" + i);
 		}
@@ -80,8 +116,8 @@ public class LoadTests {
 		}
 		
 		long duration = System.currentTimeMillis() - start;
-		int requests = (threads.length * iterationsPerThread);
-		System.out.println("ran " + requests + " requests in " + threads.length + " threads");
+		int requests = (numThreads * iterationsPerThread);
+		System.out.println("ran " + requests + " requests in " + numThreads + " threads");
 		System.out.println("elapsed time: " + (duration) + " millis");
 		System.out.println("average time: " + ((double) duration / requests) + " millis");
 		System.out.println("req / second: " + (int) ((double) requests / ((double) duration / 1000)));

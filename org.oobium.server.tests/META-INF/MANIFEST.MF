@@ -5,7 +5,8 @@ Bundle-SymbolicName: org.oobium.server.tests
 Bundle-Version: 0.6.0.qualifier
 Bundle-Vendor: oobium.org
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Import-Package: org.osgi.framework
+Import-Package: org.oobium.client,
+ org.osgi.framework
 Require-Bundle: org.junit4,
  org.mockito,
  org.oobium.http,
