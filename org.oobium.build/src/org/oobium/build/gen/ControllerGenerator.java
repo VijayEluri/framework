@@ -35,7 +35,6 @@ import org.oobium.app.server.controller.Controller;
 import org.oobium.build.model.ModelDefinition;
 import org.oobium.build.util.SourceFile;
 import org.oobium.build.workspace.Module;
-import org.oobium.http.HttpRequest;
 import org.oobium.http.constants.ContentType;
 
 public class ControllerGenerator {
@@ -138,7 +137,6 @@ public class ControllerGenerator {
 	
 	private void addImports(TreeSet<String> imports) {
 		imports.add("static " + Action.class.getCanonicalName() + ".*");
-		imports.add(HttpRequest.class.getCanonicalName());
 		imports.add(SQLException.class.getCanonicalName());
 		imports.add(model.getCanonicalName());
 	}
