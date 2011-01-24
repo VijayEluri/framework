@@ -491,6 +491,21 @@ public class EspCompilerTests {
 				"__sb__.append(dateTimeTags(\"datetime\", \"dd/MM/yy\", new Date()));\n" +
 				"__sb__.append(\"</span>\");",
 			html("date(new Date(), format: \"dd/MM/yy\")"));
+		
+		assertEquals(
+				"String formModelName$0 = \"post\";\n" +
+				"__sb__.append(\"<form action=\\\"\").append(pathTo(post, post.isNew() ? create : update)).append(\"\\\" method=\\\"POST\\\">\");\n" +
+				"if(!post.isNew()) {\n" +
+				"\t__sb__.append(\"<input type=\\\"hidden\\\" name=\\\"_method\\\" value=\\\"PUT\\\" />\");\n" +
+				"}\n" +
+				"__sb__.append(\"<input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(post.getId()).append(\"\\\" /><span id=\\\"\").append(formModelName$0).append(\"[publishedAt]\\\"\");\n" +
+				"if(post.hasErrors(\"publishedAt\")) {\n" +
+				"\t__sb__.append(\" class=\\\"fieldWithErrors\\\"\");\n" +
+				"}\n" +
+				"__sb__.append(\" name=\\\"\").append(formModelName$0).append(\"[publishedAt]\\\">\");\n" +
+				"__sb__.append(dateTimeTags(\"datetime\", \"MMM/dd/yyyy\", post.getPublishedAt()));\n" +
+				"__sb__.append(\"</span></form>\");",
+			html("form(post)\n\tdate(publishedAt)"));
 	}
 	
 	@Test

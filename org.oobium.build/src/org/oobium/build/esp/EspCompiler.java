@@ -563,20 +563,15 @@ public class EspCompiler {
 			body.append("\"MMM/dd/yyyy\"");
 		}
 		if(date.hasArgs()) {
+			body.append(", ");
 			String model = getFormModel(date);
 			if(blank(model)) {
-				body.append(", ");
 				build(date.getArg(0), body, true);
-				body.append("));\n");
 			} else {
-				String var = "selection$" + date.getStart();
-				body.append("java.util.Date ").append(var).append(" = ");
 				appendValueGetter(model, date.getArgs());
-				body.append("\", ").append(var).append("));\n");
 			}
-		} else {
-			body.append("));\n");
 		}
+		body.append("));\n");
 		indent(body);
 		body.append(sbName).append(".append(\"</span>");
 	}
