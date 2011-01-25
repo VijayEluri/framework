@@ -10,7 +10,6 @@
  ******************************************************************************/
 package org.oobium.persist;
 
-import org.osgi.framework.Version;
 
 public interface ServiceInfo {
 
