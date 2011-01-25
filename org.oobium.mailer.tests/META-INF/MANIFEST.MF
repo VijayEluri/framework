@@ -6,7 +6,7 @@ Bundle-Version: 0.6.0.qualifier
 Bundle-Vendor: oobium.org
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Require-Bundle: org.oobium.mailer,
- org.junit4;bundle-version="4.5.0",
+ org.junit;bundle-version="4.7.0",
  org.oobium.app,
  org.oobium.persist,
  com.sun.mail;bundle-version="1.4.2",

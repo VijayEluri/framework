@@ -7,7 +7,7 @@ Bundle-Vendor: oobium.org
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: org.oobium.client,
  org.osgi.framework
-Require-Bundle: org.junit4,
+Require-Bundle: org.junit;bundle-version="4.7.0",
  org.mockito,
  org.oobium.http,
  org.oobium.logging,

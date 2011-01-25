@@ -5,7 +5,7 @@ Bundle-SymbolicName: org.oobium.app.tests
 Bundle-Version: 0.6.0.qualifier
 Bundle-Vendor: oobium.org
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Require-Bundle: org.junit4,
+Require-Bundle: org.junit;bundle-version="4.7.0",
  org.mockito,
  org.oobium.app,
  org.oobium.http,

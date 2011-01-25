@@ -7,7 +7,7 @@ Bundle-Vendor: oobium.org
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: org.oobium.persist.db.derby.embedded,
  org.osgi.framework;version="1.4.0"
-Require-Bundle: org.junit4,
+Require-Bundle: org.junit;bundle-version="4.7.0",
  org.oobium.persist,
  org.oobium.persist.db,
  org.oobium.http,

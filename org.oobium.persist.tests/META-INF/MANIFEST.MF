@@ -5,7 +5,7 @@ Bundle-SymbolicName: org.oobium.persist.tests
 Bundle-Version: 0.6.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: org.osgi.framework
-Require-Bundle: org.junit4,
+Require-Bundle: org.junit;bundle-version="4.7.0",
  org.mockito,
  org.oobium.persist,
  org.oobium.http,
