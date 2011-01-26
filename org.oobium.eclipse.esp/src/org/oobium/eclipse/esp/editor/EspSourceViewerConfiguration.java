@@ -11,7 +11,6 @@
 package org.oobium.eclipse.esp.editor;
 
 
-import org.eclipse.jface.text.DefaultIndentLineAutoEditStrategy;
 import org.eclipse.jface.text.DefaultInformationControl;
 import org.eclipse.jface.text.IAutoEditStrategy;
 import org.eclipse.jface.text.IDocument;
@@ -43,7 +42,7 @@ public class EspSourceViewerConfiguration extends SourceViewerConfiguration {
 	}
 
 	public IAutoEditStrategy[] getAutoEditStrategies(ISourceViewer sourceViewer, String contentType) {
-		return new IAutoEditStrategy[] { new DefaultIndentLineAutoEditStrategy() };
+		return new IAutoEditStrategy[] { new EspAutoEditStrategy() };
 	}
 	
 	public String getConfiguredDocumentPartitioning(ISourceViewer sourceViewer) {

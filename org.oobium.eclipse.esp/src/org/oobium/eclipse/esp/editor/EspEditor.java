@@ -212,7 +212,7 @@ public class EspEditor extends TextEditor {
 			}
 		});
 		
-//		TODO reinstate key listener (it's causing a problem right now)
+		// TODO move the auto-commenting functionality to the EspAutoEditStrategy
 //		textWidget.addKeyListener(new KeyAdapter() {
 //			@Override
 //			public void keyPressed(KeyEvent e) {
@@ -236,6 +236,7 @@ public class EspEditor extends TextEditor {
 //			}
 //		});
 		
+		// TODO move the addVerifyListener functionality to the EspAutoEditStrategy
 		textWidget.addVerifyListener(new VerifyListener() {
 			@Override
 			public void verifyText(VerifyEvent e) {
