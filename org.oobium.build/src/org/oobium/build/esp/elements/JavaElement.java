@@ -39,11 +39,11 @@ public class JavaElement extends EspElement {
 				element = new JavaElement(this, offset);
 			} else if(InnerTextElement.isInnerText(ca, start)) {
 				element = new InnerTextElement(this, offset);
-			} else if(isNext(ca, start, '/', '/')) {
+			} else if(isNext(start, '/', '/')) {
 				element = new CommentElement(this, offset);
-			} else if(isNext(ca, start, 's', 'c', 'r', 'i', 'p', 't')) {
+			} else if(isNext(start, 's', 'c', 'r', 'i', 'p', 't')) {
 				element = new ScriptElement(this, offset);
-			} else if(isNext(ca, start, 's', 't', 'y', 'l', 'e')) {
+			} else if(isNext(start, 's', 't', 'y', 'l', 'e')) {
 				element = new StyleElement(this, offset);
 			} else if(Character.isLowerCase(ca[start])) {
 				element = new HtmlElement(this, offset);

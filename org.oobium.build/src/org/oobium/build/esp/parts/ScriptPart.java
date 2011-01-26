@@ -8,16 +8,7 @@ public class ScriptPart extends EspPart {
 
 	public ScriptPart(EspPart parent, int start, int end) {
 		super(parent, Type.ScriptPart, start, end);
-		int s1 = findJava(start, end);
-		while(s1 != -1) {
-			int s2 = findJavaEnd(s1, end);
-			if(s2 <= s1) {
-				break;
-			} else {
-				new ScriptJavaPart(this, s1, s2);
-				s1 = findJava(s2, end);
-			}
-		}
+		parse();
 	}
 
 	private int findJavaEnd(int start, int end) {
@@ -51,19 +42,30 @@ public class ScriptPart extends EspPart {
 		return i;
 	}
 	
-	private int findJava(int start, int end) {
-		for(int i = start; i < end; i++) {
-			switch(ca[i]) {
+	private void parse() {
+		for(int s = start; s < end; s++) {
+			switch(ca[s]) {
 			case '=':
-				if(ca[i-1] == ':') {
-					return i-1;
+				if(ca[s-1] == ':') {
+					int s2 = findJavaEnd(s, end);
+					new ScriptJavaPart(this, s-1, s2);
+					s = s2 + 1;
 				}
 				break;
-			default:
-				i = skip(ca, i, end);
+			case '*':
+				if(ca[s-1] == '/') {
+					CommentPart comment = new CommentPart(this, s-1);
+					s = comment.getEnd();
+				}
+				break;
+			case '/':
+				if(ca[s-1] == '/') {
+					CommentPart comment = new CommentPart(this, s-1);
+					s = comment.getEnd();
+				}
+				break;
 			}
 		}
-		return -1;
 	}
-	
+
 }

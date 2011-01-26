@@ -10,9 +10,10 @@
  ******************************************************************************/
 package org.oobium.build.esp;
 
-import static org.oobium.utils.CharStreamUtils.*;
-import static org.oobium.utils.StringUtils.*;
-
+import static org.oobium.utils.CharStreamUtils.findEOL;
+import static org.oobium.utils.CharStreamUtils.forward;
+import static org.oobium.utils.StringUtils.join;
+import static org.oobium.utils.StringUtils.when;
 
 import org.oobium.build.BuildBundle;
 import org.oobium.build.esp.elements.CommentElement;
@@ -136,9 +137,9 @@ public class EspDom extends EspPart {
 			int start = forward(ca, offset, eol);
 			if(start != -1) {
 				if(!Character.isWhitespace(ca[start])) {
-					if(isNext(ca, start, '/', '*')) {
+					if(isNext(start, '/', '*')) {
 						element = new CommentElement(this, offset);
-					} else if(isNext(ca, start, '/', '/')) {
+					} else if(isNext(start, '/', '/')) {
 						element = new CommentElement(this, offset);
 					} else {
 						if(inScript) {
@@ -146,9 +147,9 @@ public class EspDom extends EspPart {
 						} else {
 							if(ca[start] == '-') {
 								element = new JavaElement(this, offset);
-							} else if(isNext(ca, start, 'i', 'm', 'p', 'o', 'r', 't')) {
+							} else if(isNext(start, 'i', 'm', 'p', 'o', 'r', 't')) {
 								element = new ImportElement(this, offset);
-							} else if(isNext(ca, start, name)) {
+							} else if(isNext(start, name)) {
 								element = new ConstructorElement(this, offset);
 							} else {
 								element = new ScriptElement(this, offset);
@@ -178,17 +179,17 @@ public class EspDom extends EspPart {
 				if(!Character.isWhitespace(ca[start])) {
 					if(ca[start] == '-') {
 						element = new JavaElement(this, offset);
-					} else if(isNext(ca, start, '/', '*')) {
+					} else if(isNext(start, '/', '*')) {
 						element = new CommentElement(this, offset);
-					} else if(isNext(ca, start, '/', '/')) {
+					} else if(isNext(start, '/', '/')) {
 						element = new CommentElement(this, offset);
-					} else if(isNext(ca, start, 'i', 'm', 'p', 'o', 'r', 't')) {
+					} else if(isNext(start, 'i', 'm', 'p', 'o', 'r', 't')) {
 						element = new ImportElement(this, offset);
-					} else if(isNext(ca, start, name)) {
+					} else if(isNext(start, name)) {
 						element = new ConstructorElement(this, offset);
-					} else if(isNext(ca, start, 's', 'c', 'r', 'i', 'p', 't')) {
+					} else if(isNext(start, 's', 'c', 'r', 'i', 'p', 't')) {
 						element = new ScriptElement(this, offset);
-					} else if(isNext(ca, start, 's', 't', 'y', 'l', 'e')) {
+					} else if(isNext(start, 's', 't', 'y', 'l', 'e')) {
 						element = new StyleElement(this, offset);
 					} else if(Character.isLowerCase(ca[start])){
 						element = new HtmlElement(this, offset);
@@ -214,9 +215,9 @@ public class EspDom extends EspPart {
 			int start = forward(ca, offset, eol);
 			if(start != -1) {
 				if(!Character.isWhitespace(ca[start])) {
-					if(isNext(ca, start, '/', '*')) {
+					if(isNext(start, '/', '*')) {
 						element = new CommentElement(this, offset);
-					} else if(isNext(ca, start, '/', '/')) {
+					} else if(isNext(start, '/', '/')) {
 						element = new CommentElement(this, offset);
 					} else {
 						if(inCss) {
@@ -224,9 +225,9 @@ public class EspDom extends EspPart {
 						} else {
 							if(ca[start] == '-') {
 								element = new JavaElement(this, offset);
-							} else if(isNext(ca, start, 'i', 'm', 'p', 'o', 'r', 't')) {
+							} else if(isNext(start, 'i', 'm', 'p', 'o', 'r', 't')) {
 								element = new ImportElement(this, offset);
-							} else if(isNext(ca, start, name)) {
+							} else if(isNext(start, name)) {
 								element = new ConstructorElement(this, offset);
 							} else {
 								element = new StyleElement(this, offset);

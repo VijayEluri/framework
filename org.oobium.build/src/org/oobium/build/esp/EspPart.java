@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.oobium.build.esp.parts.CommentPart;
+import org.oobium.utils.CharStreamUtils;
 
 public class EspPart implements CharSequence {
 
@@ -199,6 +200,10 @@ public class EspPart implements CharSequence {
 		return getLength();
 	}
 
+	public boolean isNext(int start, char...test) {
+		return CharStreamUtils.isNext(ca, start, test);
+	}
+	
 	@Override
 	public CharSequence subSequence(int start, int end) {
 		return new String(ca, start, end-start);
