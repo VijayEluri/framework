@@ -26,7 +26,7 @@ public class GetCommand extends HttpCommand {
 	
 	@Override
 	protected ClientResponse executeRequest(String host, int port, String path, Map<String, String> parameters) {
-		return client(host, port).get(path);
+		return client(host, port).get(path, parameters);
 	}
 	
 }
