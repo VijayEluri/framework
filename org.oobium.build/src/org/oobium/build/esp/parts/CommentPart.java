@@ -29,13 +29,24 @@ public class CommentPart extends EspPart {
 
 	private void setEnd() {
 		int s = start + 2;
-		while(s < ca.length) {
-			if(ca[s] == '/' && ca[s-1] == '*') {
-				end = s + 1;
-				commentEnd = reverse(ca, s-1) + 1;
-				return;
+		if(ca[start+1] == '*') {
+			while(s < ca.length) {
+				if(ca[s] == '/' && ca[s-1] == '*') {
+					end = s + 1;
+					commentEnd = reverse(ca, s-1) + 1;
+					return;
+				}
+				s++;
 			}
-			s++;
+		} else { // single line comment
+			while(s < ca.length) {
+				if(ca[s] == '\n') {
+					end = s;
+					commentEnd = reverse(ca, s-1) + 1;
+					return;
+				}
+				s++;
+			}
 		}
 		end = ca.length;
 		commentEnd = reverse(ca, end-1) + 1;
