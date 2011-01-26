@@ -10,8 +10,14 @@
  ******************************************************************************/
 package org.oobium.eclipse.esp.editor;
 
-import static org.oobium.build.esp.Constants.*;
-import static org.oobium.build.esp.EspPart.Type.*;
+import static org.oobium.build.esp.Constants.CSS_PROPERTIES;
+import static org.oobium.build.esp.Constants.HTML_TAGS;
+import static org.oobium.build.esp.Constants.JAVA_KEYWORDS;
+import static org.oobium.build.esp.Constants.JS_KEYWORDS;
+import static org.oobium.build.esp.EspPart.Type.CommentPart;
+import static org.oobium.build.esp.EspPart.Type.ImportPart;
+import static org.oobium.build.esp.EspPart.Type.JavaPart;
+import static org.oobium.build.esp.EspPart.Type.TagPart;
 
 import java.util.Arrays;
 
@@ -35,7 +41,14 @@ public class EspStyleRanges {
 	private static final StyleRange javaString = new StyleRange(-1, -1, color(0, 0, 128), null);
 	private static final StyleRange operator = new StyleRange(-1, -1, color(128, 32, 32), null);
 	private static final StyleRange comment = new StyleRange(-1, -1, color(32, 128, 32), null);
+	private static final StyleRange taskTag = new StyleRange(-1, -1, color(127, 159, 191), null, SWT.BOLD);
 	private static final StyleRange innerText = new StyleRange(-1, -1, color(128, 128, 128), null);
+
+	private static final char[][] TASK_TAGS = {
+		"TASK".toCharArray(),
+		"TODO".toCharArray(),
+		"XXX".toCharArray()
+	};
 
 	private static Color color(int r, int g, int b) {
 		return EspPlugin.getDefault().getEspColorProvider().getColor(r, g, b);
@@ -106,7 +119,7 @@ public class EspStyleRanges {
 				EspPart part = dom.getPart(offset);
 				if(part != null) {
 					if(part.isA(CommentPart)) {
-						offset = addRange(offset, part.getEnd()-offset, comment);
+						offset = evaluateComment(offset, null, part);
 						continue;
 					} else {
 						EspElement element = part.getElement();
@@ -140,7 +153,21 @@ public class EspStyleRanges {
 	}
 	
 	private int evaluateComment(int offset, EspElement element, EspPart part) {
-		return addRange(element.getStart(), element.getLength(), comment);
+		int end = part.getEnd();
+		for(int i = offset; i < end; i++) {
+			for(int j = 0; j < TASK_TAGS.length; j++) {
+				if(part.isNext(i, TASK_TAGS[j])) {
+					addRange(offset, i-offset, comment);
+					i = addRange(i, TASK_TAGS[j].length, taskTag);
+					offset = i;
+					break;
+				}
+			}
+		}
+		if(offset < end) {
+			addRange(offset, end-offset, comment);
+		}
+		return end+1;
 	}
 
 	private int evaluateConstructor(int offset, EspElement element, EspPart part) {
@@ -244,9 +271,9 @@ public class EspStyleRanges {
 		switch(part.getType()) {
 		case TagPart:
 			return addRange(offset, part.getEnd()-offset, htmlTag);
-		case ScriptElement:
 		case ScriptPart:
-			int end = part.getEnd();
+			EspPart next = part.getNextSubPart(offset);
+			int end = (next != null) ? next.getStart() : part.getEnd();
 			for(int s1 = offset; s1 < end; s1++) {
 				while(s1 < end && !Character.isLetter(part.charAt(s1))) {
 					char c = part.charAt(s1);
@@ -293,7 +320,7 @@ public class EspStyleRanges {
 
 		return offset + 1;
 	}
-
+	
 	private int evaluateStyle(int offset, EspElement element, EspPart part) {
 		switch(part.getType()) {
 		case TagPart:
