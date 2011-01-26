@@ -30,6 +30,9 @@ public class ScriptPart extends EspPart {
 		switch(ca[i]) {
 		case '"':
 			i = closer(ca, i, end, true, true);
+			if(i == -1) {
+				i = end;
+			}
 			break;
 		case '/':
 			if(ca[i-1] == '/') {

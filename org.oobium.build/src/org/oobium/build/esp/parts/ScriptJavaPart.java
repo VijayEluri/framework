@@ -12,19 +12,23 @@ public class ScriptJavaPart extends EspPart {
 	public ScriptJavaPart(EspPart parent, int start, int end) {
 		super(parent, Type.JavaPart, start, end);
 		int srcStart = forward(ca, start+2, end);
-		int srcEnd = reverse(ca, end-1) + 1;
-		if(srcEnd > srcStart) {
-			source = new EspPart(this, Type.JavaSourcePart, srcStart, srcEnd);
-		}
-		if(end < ca.length && ca[end] == ';') {
+		if(srcStart == -1) {
 			assignmentChar = '=';
 		} else {
-			assignmentChar = ':';
+			int srcEnd = reverse(ca, end-1) + 1;
+			if(srcEnd > srcStart) {
+				source = new EspPart(this, Type.JavaSourcePart, srcStart, srcEnd);
+			}
+			if(end < ca.length && ca[end] == ';') {
+				assignmentChar = '=';
+			} else {
+				assignmentChar = ':';
+			}
 		}
 	}
 
 	public String getSource() {
-		return (source != null) ? source.getText() : "";
+		return (source != null) ? source.getText() : null;
 	}
 	
 	public EspPart getSourcePart() {

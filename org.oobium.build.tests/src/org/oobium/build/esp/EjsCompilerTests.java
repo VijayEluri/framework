@@ -78,6 +78,9 @@ public class EjsCompilerTests {
 	@Test
 	public void testJava() throws Exception {
 		String ejs;
+		ejs = "var height :=";
+		assertTrue(src(ejs).getMethod("doRender") == null);
+		
 		ejs = "var size = { height: 100, width:= height * 2 };";
 		assertEquals("__sb__.append(\"var size = { height: 100, width:\").append(height * 2).append(\"};\");", js(ejs));
 		

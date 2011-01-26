@@ -1459,36 +1459,33 @@ public class EspCompiler {
 						for(int j = 0; j < parts.size(); j++) {
 							if(parts.get(j) instanceof ScriptJavaPart) {
 								ScriptJavaPart sjpart = (ScriptJavaPart) parts.get(j);
-								int s1 = sjpart.getStart() - line.getStart();
-								int s2 = s1 + sjpart.getLength();
-								if(j == 0) {
-									if(s1 > 0) {
-										appendEscaped(sb, text, 0, s1);
+								EspPart spart = sjpart.getSourcePart();
+								if(spart != null) {
+									int s1 = sjpart.getStart() - line.getStart();
+									int s2 = s1 + sjpart.getLength();
+									if(j == 0) {
+										if(s1 > 0) {
+											appendEscaped(sb, text, 0, s1);
+										}
+									} else {
+										int s0 = parts.get(j-1).getEnd();
+										if(s0 < s1) {
+											appendEscaped(sb, text, s0, s1);
+										}
 									}
-								} else {
-									int s0 = parts.get(j-1).getEnd();
-									if(s0 < s1) {
-										appendEscaped(sb, text, s0, s1);
-									}
-								}
-								sb.append(sjpart.assignmentChar);
-								sb.append("\").append(");
-								if(sb == body) {
-									EspPart spart = sjpart.getSourcePart();
-									if(spart != null) {
+									sb.append(sjpart.assignmentChar);
+									sb.append("\").append(");
+									if(sb == body) {
 										bodyLocations.add(new EspLocation(sb.length(), spart));
-									}
-								} else if(sb == title) {
-									EspPart spart = sjpart.getSourcePart();
-									if(spart != null) {
+									} else if(sb == title) {
 										titleLocations.add(new EspLocation(sb.length(), spart));
 									}
-								}
-								sb.append(sjpart.getSource());
-								sb.append(").append(\"");
-								if(j == parts.size() - 1) {
-									if(s2 < text.length()) {
-										appendEscaped(sb, text, s2, text.length());
+									sb.append(spart.getText());
+									sb.append(").append(\"");
+									if(j == parts.size() - 1) {
+										if(s2 < text.length()) {
+											appendEscaped(sb, text, s2, text.length());
+										}
 									}
 								}
 							} else {
