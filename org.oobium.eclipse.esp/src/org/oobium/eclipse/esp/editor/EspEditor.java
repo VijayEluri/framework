@@ -45,9 +45,6 @@ import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.DisposeListener;
-import org.eclipse.swt.events.VerifyEvent;
-import org.eclipse.swt.events.VerifyListener;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.TextStyle;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
@@ -212,123 +209,6 @@ public class EspEditor extends TextEditor {
 			}
 		});
 		
-		// TODO move the auto-commenting functionality to the EspAutoEditStrategy
-//		textWidget.addKeyListener(new KeyAdapter() {
-//			@Override
-//			public void keyPressed(KeyEvent e) {
-//				if(e.character == '/' && e.stateMask == SWT.CONTROL) {
-//					try {
-//						Point sel = getSourceViewer().getSelectedRange();
-//						int start = document.getLineOffset(document.getLineOfOffset(sel.x));
-//						int end = (sel.y > 0) ? (sel.x + sel.y - 1) : sel.x;
-//						char[] ca = document.get(start, end-start).toCharArray();
-//						StringBuilder sb = new StringBuilder(ca.length + 50);
-//						sb.append('/').append('/');
-//						for(int i = 0; i < ca.length; i++) {
-//							sb.append(ca[i]);
-//							if(ca[i] == '\n') sb.append('/').append('/');
-//						}
-//						document.replace(start, end-start, sb.toString());
-//					} catch(BadLocationException exc) {
-//						// discard
-//					}
-//				}
-//			}
-//		});
-		
-		// TODO move the addVerifyListener functionality to the EspAutoEditStrategy
-		textWidget.addVerifyListener(new VerifyListener() {
-			@Override
-			public void verifyText(VerifyEvent e) {
-				if(e.stateMask == SWT.NONE) {
-					if(e.text != null && e.text.length() == 1) {
-						boolean moveSelBack1 = false;
-						boolean moveSelFore1 = false;
-						switch(e.text.charAt(0)) {
-						case ' ': {
-							e.doit = false;
-							
-							StyledText txt = getSourceViewer().getTextWidget();
-							int offset = txt.getCaretOffset();
-							int line = txt.getLineAtOffset(offset);
-							int start = txt.getOffsetAtLine(line);
-							
-							if(start < offset) {
-								char[] ca = txt.getText(start, offset - 1).toCharArray();
-								for(char c : ca) {
-									if(c != '\t' && c != '\n' && c != '\r') {
-										e.doit = true;
-										break;
-									}
-								}
-							}
-		
-							if(e.doit == false) {
-								e.text = "\t";
-								e.doit = true;
-							}
-							break;
-						}
-						case '(':
-							e.text = "()";
-							moveSelBack1 = true;
-							break;
-						case '"': {
-							Point sel = textWidget.getSelection();
-							if(sel.x == sel.y && sel.x < textWidget.getCharCount() && "\"".equals(textWidget.getText(sel.x, sel.y))) {
-								moveSelFore1 = true;
-								e.doit = false;
-							} else {
-								e.text = "\"\"";
-								moveSelBack1 = true;
-							}
-							break;
-						}
-						case '{':
-							e.text = "{}";
-							moveSelBack1 = true;
-							break;
-						case ')': {
-							Point sel = textWidget.getSelection();
-							if(sel.x == sel.y && sel.x < textWidget.getCharCount() && ")".equals(textWidget.getText(sel.x, sel.y))) {
-								moveSelFore1 = true;
-								e.doit = false;
-							}
-							break;
-						}
-						case '}': {
-							Point sel = textWidget.getSelection();
-							if(sel.x == sel.y && sel.x < textWidget.getCharCount() && "}".equals(textWidget.getText(sel.x, sel.y))) {
-								moveSelFore1 = true;
-								e.doit = false;
-							}
-							break;
-						}
-						}
-						if(moveSelBack1) {
-							e.display.asyncExec(new Runnable() {
-								@Override
-								public void run() {
-									if(textWidget != null && !textWidget.isDisposed()) {
-										textWidget.setSelection(textWidget.getSelection().x - 1);
-									}
-								}
-							});
-						} else if(moveSelFore1) {
-							e.display.asyncExec(new Runnable() {
-								@Override
-								public void run() {
-									if(textWidget != null && !textWidget.isDisposed()) {
-										textWidget.setSelection(textWidget.getSelection().x + 1);
-									}
-								}
-							});
-						}
-					}
-				}
-			}
-		});
-
 		IFile file = getEResource();
 		if(OobiumCore.isEFile(file)) {
 			buildListener = new IResourceChangeListener() {
