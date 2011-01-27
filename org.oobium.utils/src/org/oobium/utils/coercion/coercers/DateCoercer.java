@@ -35,7 +35,7 @@ public class DateCoercer extends AbstractCoercer {
 	public Date coerce(String str, Class<?> toType) {
 		try {
 			if(str.startsWith("/Date(")) {
-				return new Date(Long.parseLong(str.substring(6, str.length()-1)));
+				return new Date(Long.parseLong(str.substring(6, str.length()-2)));
 			}
 			return new Date(Long.parseLong(str));
 		} catch(NumberFormatException e) {

@@ -17,6 +17,7 @@ import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.utils.json.JsonUtils.SERIALIZATION_TYPE_KEY;
 
 import java.io.File;
+import java.util.Date;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -57,6 +58,12 @@ public class TypeCoercerTests {
 	}
 	
 
+	@Test
+	public void testDate() throws Exception {
+		long date = System.currentTimeMillis();
+		assertEquals(new Date(date), coerce("/Date("+date+")/", Date.class));
+	}
+	
 	@Test
 	public void testFile() throws Exception {
 		assertEquals(new File("someplace"), coerce("someplace", File.class));
