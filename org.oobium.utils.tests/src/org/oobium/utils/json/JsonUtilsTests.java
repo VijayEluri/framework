@@ -55,7 +55,7 @@ public class JsonUtilsTests {
 	private List<Map<String, Object>> list;
 
 	private void setUp() throws Exception {
-		json = "[{a:\"hello\",b:1,c:1.2,d:true,e:{e1:1}},{a:\"bye\",b:2,c:2.1,d:false,e:[{e2:2},{e3:3}]}]";
+		json = "[{\"a\":\"hello\",\"b\":1,\"c\":1.2,\"d\":true,\"e\":{\"e1\":1}},{\"a\":\"bye\",\"b\":2,\"c\":2.1,\"d\":false,\"e\":[{\"e2\":2},{\"e3\":3}]}]";
 
 		list = new ArrayList<Map<String,Object>>();
 		Map<String, Object> map;
@@ -209,8 +209,8 @@ public class JsonUtilsTests {
 		assertEquals("\"1\"", toJson("1"));
 		assertEquals("'1'", toJson("'1'"));
 		assertEquals("\"1\"", toJson("\"1\""));
-		assertEquals("{a:\"b\"}", toJson(Collections.singletonMap("a", "b")));
-		assertEquals("{a:\"b\"}", toJson(Collections.singletonMap("a", "\"b\"")));
+		assertEquals("{\"a\":\"b\"}", toJson(Collections.singletonMap("a", "b")));
+		assertEquals("{\"a\":\"b\"}", toJson(Collections.singletonMap("a", "\"b\"")));
 		assertEquals("[\"a\"]", toJson(Collections.singletonList("a")));
 		assertEquals("['a']", toJson(Collections.singletonList('a')));
 		assertEquals("\"" + new String(Base64.encode("test".getBytes())) + "\"", toJson("test".getBytes()));
@@ -224,7 +224,7 @@ public class JsonUtilsTests {
 		setUp();
 		assertEquals(json, toJson(list)) ;
 		
-		assertEquals("{a:\"my string\"}", toJson(Collections.singletonMap("a", "\"my string\""), "a"));
+		assertEquals("{\"a\":\"my string\"}", toJson(Collections.singletonMap("a", "\"my string\""), "a"));
 	}
 	
 	@Ignore
@@ -253,9 +253,9 @@ public class JsonUtilsTests {
 		obj.name = "bob";
 		obj.size = 1;
 		
-		String type = SERIALIZATION_TYPE_KEY + ":\"" + obj.getClass().getName() + "\"";
+		String type = "\"" + SERIALIZATION_TYPE_KEY + "\":\"" + obj.getClass().getName() + "\"";
 		
-		assertEquals("{" + type + ",name:\"bob\",size:1}", serialize(obj));
+		assertEquals("{" + type + ",\"name\":\"bob\",\"size\":1}", serialize(obj));
 		
 		assertNotNull(deserialize("{" + type + "}"));
 		assertNotNull(deserialize("{" + type + ",name:\"bob\",size:1}"));
@@ -282,8 +282,8 @@ public class JsonUtilsTests {
 
 	@Test
 	public void testSerialization_Maps() throws Exception {
-		assertEquals("{c:'d',a:'b'}", serialize(Map(e('a', 'b'), e('c', 'd'))));
-		assertEquals("{c:\"d\",a:\"b\"}", serialize(Map(e("a", "b"), e("c", "d"))));
+		assertEquals("{\"c\":'d',\"a\":'b'}", serialize(Map(e('a', 'b'), e('c', 'd'))));
+		assertEquals("{\"c\":\"d\",\"a\":\"b\"}", serialize(Map(e("a", "b"), e("c", "d"))));
 		
 		Object o = deserialize("{c:'d',a:'b'}");
 		assertTrue(o instanceof Map);

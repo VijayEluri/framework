@@ -64,8 +64,7 @@ public class JsonBuilder {
 			Entry<?, ?> entry = (Entry<?, ?> ) iter.next();
 			String key = String.valueOf(entry.getKey());
 			Object val = entry.getValue();
-			sb.append(key);
-			sb.append(':');
+			sb.append('"').append(key).append('"').append(':');
 			if(val instanceof String && skip != null && skip.length > 0) {
 				boolean doSkip = false;
 				for(int i = 0; i < skip.length; i++) {
