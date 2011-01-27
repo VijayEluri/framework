@@ -472,11 +472,13 @@ public class DbPersistor {
 						}
 					} else if(adapter.hasAttribute(field)) {
 						String name = columnName(field);
-						if(needsUpdatedAt && name.equals(updatedAt.column)) needsUpdatedAt = false;
-						if(needsUpdatedOn && name.equals(updatedOn.column)) needsUpdatedOn = false;
-						int type = getSqlType(adapter.getClass(field));
-						Object val = fields.get(field);
-						cells.add(new Cell(name, type, val));
+						if(!name.equals(createdAt.column) && !name.equals(createdOn.column)) {
+							if(needsUpdatedAt && name.equals(updatedAt.column)) needsUpdatedAt = false;
+							if(needsUpdatedOn && name.equals(updatedOn.column)) needsUpdatedOn = false;
+							int type = getSqlType(adapter.getClass(field));
+							Object val = fields.get(field);
+							cells.add(new Cell(name, type, val));
+						}
 					}
 				}
 			}
@@ -506,10 +508,7 @@ public class DbPersistor {
 		sb.append("UPDATE ").append(table).append(" SET ");
 		for(Iterator<Cell> iter = cells.iterator(); iter.hasNext();) {
 			Cell cell = iter.next();
-			if(CREATED_AT.equals(cell.column) || CREATED_ON.equals(cell.column)) {
-				iter.remove();
-				continue;
-			} else if(isUpdatedDateTimeField(cell) && cell.value instanceof String) {
+			if(isUpdatedDateTimeField(cell) && cell.value instanceof String) {
 				iter.remove();
 				sb.append(cell.column).append('=').append(cell.value);
 			} else {
