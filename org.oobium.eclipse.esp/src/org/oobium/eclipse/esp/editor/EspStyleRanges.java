@@ -99,10 +99,13 @@ public class EspStyleRanges {
 		styles = new StyleRange[1000];
 		ranges = new int[2000];
 		
+		EspElement current = null;
 		int offset = 0;
 		while(offset < dom.getEnd()) {
 			char c = dom.charAt(offset);
-			if(c == '\t' && (offset == 0 || dom.charAt(offset-1) == '\n')) {
+			if(c == '\t' && 
+					(current == null || !current.isA(Type.ScriptElement)) && 
+					(offset == 0 || dom.charAt(offset-1) == '\n')) {
 				int end = offset;
 				while(end < dom.getEnd()) {
 					if(dom.charAt(end) == '\t') end++;
@@ -123,6 +126,7 @@ public class EspStyleRanges {
 						continue;
 					} else {
 						EspElement element = part.getElement();
+						current = element;
 						if(element != null) {
 							offset = evaluate(offset, element, part);
 							continue;
