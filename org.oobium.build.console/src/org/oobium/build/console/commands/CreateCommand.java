@@ -13,6 +13,7 @@ package org.oobium.build.console.commands;
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.commands.create.ActionCacheCommand;
 import org.oobium.build.console.commands.create.ApplicationCommand;
+import org.oobium.build.console.commands.create.ClientCommand;
 import org.oobium.build.console.commands.create.ControllerCommand;
 import org.oobium.build.console.commands.create.ControllerForCommand;
 import org.oobium.build.console.commands.create.ControllerTestsCommand;
@@ -37,6 +38,7 @@ public class CreateCommand extends BuilderCommand {
 	public void configure() {
 		add(new ActionCacheCommand());
 		add(new ApplicationCommand());
+		add(new ClientCommand());
 		add(new ControllerCommand());
 		add(new ControllerForCommand());
 		add(new ControllerTestsCommand());

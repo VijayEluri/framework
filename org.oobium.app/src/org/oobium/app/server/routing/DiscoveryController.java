@@ -10,7 +10,8 @@
  ******************************************************************************/
 package org.oobium.app.server.routing;
 
-import static org.oobium.utils.json.JsonUtils.*;
+import static org.oobium.utils.json.JsonUtils.format;
+import static org.oobium.utils.json.JsonUtils.toJson;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -49,29 +50,12 @@ public class DiscoveryController extends Controller {
 		return map;
 	}
 	
-	@Override
-	public void handleRequest() throws SQLException {
-		Set<Route> routes = getRouter().published;
-		if(routes == null) {
-			renderJson("[]");
-			return;
-		}
-		
-		RequestType type = null;
-		boolean models = "models".equals(param("type"));
-		if(!models && hasParam("type")) {
-			type = RequestType.valueOf(param("type").toUpperCase());
-		}
+	private List<Map<String, String>> createRouteList(Set<Route> routes) {
+		RequestType type = hasParam("type") ? RequestType.valueOf(param("type").toUpperCase()) : null;
 
 		List<Map<String, String>> results = new ArrayList<Map<String,String>>();
 		for(Route route : routes) {
-			if(models) {
-				if(route instanceof ControllerRoute) {
-					if(((ControllerRoute) route).modelClass != null) {
-						results.add(build(route));
-					}
-				}
-			} else if(type != null) {
+			if(type != null) {
 				if(route.requestType == type) {
 					results.add(build(route));
 				}
@@ -80,7 +64,25 @@ public class DiscoveryController extends Controller {
 			}
 		}
 		
-		render(format(toJson(results)));
+		return results;
 	}
-
+	
+	@Override
+	public void handleRequest() throws SQLException {
+		Router router = getRouter();
+		Set<Route> routes = router.published;
+		if(routes == null) {
+			renderJson("[]");
+			return;
+		}
+		
+		if("models".equals(param("type"))) {
+			Map<String, Map<String, Map<String, String>>> results = router.getModelRouteMap(routes);
+			render(format(toJson(results)));
+		} else {
+			List<Map<String, String>> results = createRouteList(routes);
+			render(format(toJson(results)));
+		}
+	}
+	
 }

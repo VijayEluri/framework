@@ -34,14 +34,17 @@ import static org.oobium.utils.json.JsonUtils.toStringList;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.oobium.app.AssetProvider;
 import org.oobium.app.ModuleService;
@@ -652,6 +655,42 @@ public class Router {
 		return paths;
 	}
 	
+	public Map<String, Map<String, Map<String, String>>> getModelRouteMap() {
+		return getModelRouteMap(getRoutes());
+	}
+	
+	public Map<String, Map<String, Map<String, String>>> getModelRouteMap(Collection<Route> routes) {
+		Map<String, Map<String, Map<String, String>>> results = new TreeMap<String, Map<String, Map<String, String>>>();
+
+		for(Route route : routes) {
+			if(route instanceof ControllerRoute) {
+				ControllerRoute cr = (ControllerRoute) route;
+				Class<?> c = cr.modelClass;
+				Action a = cr.action;
+				if(c != null && a != null) {
+					Map<String, String> map = new LinkedHashMap<String, String>();
+					map.put("method", route.requestType.name());
+					if(route.isFixed()) {
+						map.put("path", route.path);
+						map.put("fixed", "true");
+					} else {
+						map.put("path", route.rule);
+					}
+
+					String name = c.getName();
+					Map<String, Map<String, String>> model = results.get(name);
+					if(model == null) {
+						model = new TreeMap<String, Map<String, String>>();
+						results.put(name, model);
+					}
+					model.put(a.name(), map);
+				}
+			}
+		}
+		
+		return results;
+	}
+
 	public List<Route> getRoutes() {
 		List<Route> routes = new ArrayList<Route>();
 		if(fixedRoutes != null) {

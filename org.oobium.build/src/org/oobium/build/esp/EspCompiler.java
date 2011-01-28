@@ -1435,6 +1435,8 @@ public class EspCompiler {
 					if("defaults".equals(file)) {
 						sb.append("<script src='/jquery-1.4.4.js'></script>");
 						sb.append("<script src='/application.js'></script>");
+					} else if("models".equals(file)) {
+						sb.append("<script src='/models.js'></script><script>$Router=new Router(\").append(toJson(controller.getRouter().getModelRouteMap())).append(\");</script>");
 					} else {
 						sb.append("<script src='/");
 						sb.append(file);

@@ -1,0 +1,62 @@
+title Home Page
+
+head
+	script(models)
+
+script
+	var currentId;
+	find = function(id) {
+		Post.find(1,
+			function(model) {
+			alert(model.id + " -> " + model.getTitle() + ", " + model.getContent());
+			},
+			function(data, status, et) {
+				alert('not found: ' + id);
+			}
+		);
+	}
+	findAll = function() {
+		Post.findAll(function(models) {
+			var s = "";
+			for(var i in models) {
+				s += models[i].id + " -> " + models[i].getTitle() + ", ";
+			}
+			alert(s);
+		});
+	}
+	create = function(title, content) {
+		var post = new Post();
+		post.setTitle(title);
+		post.setContent(content);
+		post.create(function(model) {
+			alert(model.id + " -> " + model.getTitle() + ", " + model.getContent());
+			currentId = model.id;
+		});
+	}
+	retrieve = function() {
+		var post = new Post(currentId);
+		post.retrieve(function(model) {
+			alert(model.id + " -> " + model.getTitle() + ", " + model.getContent());
+		});
+	}
+	update = function(title) {
+		var post = new Post(currentId);
+		post.setTitle(title);
+		post.update(function(model) {
+			alert(model.id + " -> " + model.getTitle() + ", " + model.getContent());
+		});
+	}
+	destroy = function() {
+		var post = new Post(currentId);
+		post.destroy(function(model) {
+			alert(model.id + " -> " + model.data);
+		});
+	}
+
+div to test:
+	div <- button(onclick:"find(currentId || 1)") find(currentId || 1)
+	div <- button(onclick:"findAll()") findAll()
+	div <- button(onclick:"create('bob', 'test content')") create('bob', 'test content')
+	div <- button(onclick:"retrieve()") retrieve()
+	div <- button(onclick:"update('joe')") update(1, 'joe')
+	div <- button(onclick:"destroy(1)") destroy(1)
