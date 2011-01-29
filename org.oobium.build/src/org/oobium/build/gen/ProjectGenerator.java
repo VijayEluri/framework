@@ -429,7 +429,7 @@ public class ProjectGenerator {
 				throw new IllegalArgumentException("Import-Package not supported yet");
 			}
 			if(projectType == PTYPE_TEST) {
-				sb.append("Require-Bundle: org.junit4;bundle-version=\"4.3.1\",\n ");
+				sb.append("Require-Bundle: org.junit;bundle-version=\"4.7.0\",\n ");
 				sb.append("org.mockito;bundle-version=\"1.8.0\",\n ");
 				sb.append(name.substring(0, name.length()-6)).append(",\n ");
 				sb.append(name.substring(0, name.length()-6)).append(".migrator").append('\n');
