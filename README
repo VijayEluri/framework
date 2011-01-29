@@ -66,9 +66,9 @@ RUNNING
     $ start
 
   For a more in-depth example, see the Getting Started guide:
-    http://guides.oobium.com/getting_started
+    http://guides.oobium.org/getting_started
 
 LICENSE
 
   The Oobium framework (and accompanying tools) are licensed under the
-	Eclipse Public License (EPL).
+  Eclipse Public License (EPL).
