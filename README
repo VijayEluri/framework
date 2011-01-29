@@ -1,0 +1,74 @@
+Oobium Framework README
+
+DESCRIPTION
+
+  The open source Oobium project is a system for creating Java web
+  applications and services with the aim of maximizing developer
+  productivity and happiness.
+
+  The Oobium framework is built on OSGi and applications built with it
+  are also OSGi applications. Currently, exported applications run on the
+  Apache Felix runtime.
+
+  The Oobium framework is a full-stack system, using an MVC architecture
+  and comprised of routing, logging, ORM, and even server modules.
+  Everything you need to create and deploy web applications and services
+  is included.
+
+  The Oobium tools are built hand-in-hand with the framework to support
+  building, exporting, and deploying applications.
+  There are several integration points with Eclipse, such as builders
+  and editors, but the primary interface is the Oobium Console which can
+  also be run as a stand-alone SWT application.
+
+  The Oobium project is usable in its current state, but should be
+  considered Alpha level software and is a continual work in progress.
+
+  All feedback is welcome and appreciated: jeremy@oobium.com
+
+  Code well. Code happy.
+
+DOCUMENTATION
+
+  http://guides.oobium.org/
+
+INSTALLATION
+
+  Source:
+    Import all projects into Eclipse
+    Must be Eclipse 3.6 or later, and include JDT and PDE.
+
+  Binary:
+    Use the Eclipse update-site: http://oobium.org/updates
+    Must be Eclipse 3.6 or later, and include JDT and PDE.
+
+RUNNING
+
+  Source:
+    An Eclipse Launcher is provided in the org.oobium.framework project.
+    Open this launcher and go to the "Plug-ins" tab.
+    Click the "Add Required Plug-ins" button (on the right).
+    Click the "Run" button (or the "Debug" button, if debugging).
+
+  Binary:
+    Once installed, there is nothing to do.
+
+  The main component that developers will interact with is the Oobium Console.
+  If this view is not visible already, open it via Window -> Show View...
+
+  For command options invoke:
+
+    $ help -la
+
+  Example (this will create an application and start the server):
+
+    $ create application com.test.blog
+    $ start
+
+  For a more in-depth example, see the Getting Started guide:
+    http://guides.oobium.com/getting_started
+
+LICENSE
+
+  The Oobium framework (and accompanying tools) are licensed under the
+	Eclipse Public License (EPL).
