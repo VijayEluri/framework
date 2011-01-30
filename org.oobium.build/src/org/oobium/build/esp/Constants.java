@@ -19,6 +19,7 @@ public class Constants {
 
 	public static final Map<String, String> CSS_PROPERTIES;
 	public static final Map<String, String> HTML_TAGS;
+	public static final Set<String> DOM_EVENTS;
 	public static final Set<String> JAVA_KEYWORDS;
 	public static final Set<String> JS_KEYWORDS;
 	
@@ -274,6 +275,25 @@ public class Constants {
 													   "       yield(view) - yield rendering to the given view\n" +
 													   "       yield(\"name\") - render the content defined by contentFor(\"name\")");
 		
+	    DOM_EVENTS = new TreeSet<String>();
+	    DOM_EVENTS.add("onblur");
+	    DOM_EVENTS.add("onchange");
+	    DOM_EVENTS.add("onclick");
+	    DOM_EVENTS.add("ondblclick");
+	    DOM_EVENTS.add("onerror");
+	    DOM_EVENTS.add("onfocus");
+	    DOM_EVENTS.add("onkeydown");
+	    DOM_EVENTS.add("onkeypress");
+	    DOM_EVENTS.add("onkeyup");
+	    DOM_EVENTS.add("onmousedown");
+	    DOM_EVENTS.add("onmousemove");
+	    DOM_EVENTS.add("onmouseout");
+	    DOM_EVENTS.add("onmouseover");
+	    DOM_EVENTS.add("onmouseup");
+	    DOM_EVENTS.add("onresize");
+	    DOM_EVENTS.add("onselect");
+	    DOM_EVENTS.add("onunload");
+	    
 		JAVA_KEYWORDS = new TreeSet<String>();
 		JAVA_KEYWORDS.add("abstract");
 		JAVA_KEYWORDS.add("assert");
@@ -389,6 +409,8 @@ public class Constants {
 		JS_KEYWORDS.add("volatile");
 		JS_KEYWORDS.add("while");
 		JS_KEYWORDS.add("with");
+		
+		
 	}
 
 	private Constants() {

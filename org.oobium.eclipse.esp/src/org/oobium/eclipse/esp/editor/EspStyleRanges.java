@@ -14,10 +14,7 @@ import static org.oobium.build.esp.Constants.CSS_PROPERTIES;
 import static org.oobium.build.esp.Constants.HTML_TAGS;
 import static org.oobium.build.esp.Constants.JAVA_KEYWORDS;
 import static org.oobium.build.esp.Constants.JS_KEYWORDS;
-import static org.oobium.build.esp.EspPart.Type.CommentPart;
-import static org.oobium.build.esp.EspPart.Type.ImportPart;
-import static org.oobium.build.esp.EspPart.Type.JavaPart;
-import static org.oobium.build.esp.EspPart.Type.TagPart;
+import static org.oobium.build.esp.EspPart.Type.*;
 
 import java.util.Arrays;
 
@@ -195,6 +192,8 @@ public class EspStyleRanges {
 			return evaluateJava(offset, element, part);
 		case JavaTypePart:
 			return part.getEnd();
+		case ScriptPart:
+			return evaluateScript(offset, element, part);
 		case StylePropertyNamePart:
 			return evaluateStyle(offset, element, part);
 		case StylePropertyValuePart:
@@ -278,6 +277,10 @@ public class EspStyleRanges {
 		case ScriptPart:
 			EspPart next = part.getNextSubPart(offset);
 			int end = (next != null) ? next.getStart() : part.getEnd();
+			if(!element.isA(ScriptElement)) {
+				if(part.charAt(offset) == '"') offset++;
+				if(part.charAt(end-1) == '"') end--;
+			}
 			for(int s1 = offset; s1 < end; s1++) {
 				while(s1 < end && !Character.isLetter(part.charAt(s1))) {
 					char c = part.charAt(s1);
@@ -319,7 +322,7 @@ public class EspStyleRanges {
 					}
 				}
 			}
-			return end;
+			return (next != null) ? next.getStart() : part.getEnd();
 		}
 
 		return offset + 1;

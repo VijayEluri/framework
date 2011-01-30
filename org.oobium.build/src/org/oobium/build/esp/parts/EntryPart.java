@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.oobium.build.esp.parts;
 
+import static org.oobium.build.esp.Constants.DOM_EVENTS;
 import static org.oobium.utils.CharStreamUtils.find;
 import static org.oobium.utils.CharStreamUtils.forward;
 import static org.oobium.utils.CharStreamUtils.reverse;
@@ -43,10 +44,17 @@ public class EntryPart extends EspPart {
 		}
 		s1 = forward(ca, ix+1, end);
 		if(s1 != -1) {
-			if(key != null && "style".equals(key.getText())) {
-				value = new StyleEntryPart(this, Type.StyleEntryPart, s1, reverse(ca, end-1) + 1);
-			} else {
-				value = new JavaContainerPart(this, Type.EntryValuePart, s1, reverse(ca, end-1) + 1);
+			int s2 = reverse(ca, end-1) + 1;
+			if(key != null) {
+				String keyText = key.getText();
+				if("style".equals(keyText)) {
+					value = new StyleEntryPart(this, s1, s2);
+				} else if(DOM_EVENTS.contains(keyText)) {
+					value = new ScriptPart(this, s1, s2);
+				}
+			}
+			if(value == null) { // default to JavaContainerPart
+				value = new JavaContainerPart(this, Type.EntryValuePart, s1, s2);
 			}
 		}
 	}

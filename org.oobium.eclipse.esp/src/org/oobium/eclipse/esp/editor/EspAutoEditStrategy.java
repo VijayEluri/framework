@@ -1,11 +1,17 @@
 package org.oobium.eclipse.esp.editor;
 
+import static org.oobium.build.esp.EspPart.Type.*;
+
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.DocumentCommand;
 import org.eclipse.jface.text.IAutoEditStrategy;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.TextUtilities;
+import org.oobium.build.esp.EspDom;
+import org.oobium.build.esp.EspElement;
+import org.oobium.build.esp.EspPart;
+import org.oobium.eclipse.esp.EspCore;
 
 public class EspAutoEditStrategy implements IAutoEditStrategy {
 
@@ -70,7 +76,7 @@ public class EspAutoEditStrategy implements IAutoEditStrategy {
 		}
 	}
 
-	private void autoIndentAfterNewLine(IDocument doc, DocumentCommand cmd) throws BadLocationException {
+	private void handleNewLine(IDocument doc, DocumentCommand cmd) throws BadLocationException {
 		if(cmd.offset == -1 || doc.getLength() == 0) {
 			return;
 		}
@@ -79,16 +85,36 @@ public class EspAutoEditStrategy implements IAutoEditStrategy {
 		IRegion info = doc.getLineInformationOfOffset(p);
 		int lineStart = info.getOffset();
 		int lineEnd = lineStart + info.getLength();
-		int end = findEndOfWhiteSpace(doc, lineStart, cmd.offset);
-		
-		String indents = (end > lineStart) ? doc.get(lineStart, end-lineStart) : null;
+		int indentEnd = findEndOfWhiteSpace(doc, lineStart, cmd.offset);
+		boolean javaElement = false;
+
+		EspDom dom = EspCore.get(doc);
+		if(dom != null) {
+			EspPart part = dom.getPart(cmd.offset);
+			if(part != null && part != dom) {
+				EspElement element = part.getElement();
+				if(element != null) {
+					if(part.isA(ScriptPart) && !element.isA(ScriptElement)) {
+						cmd.offset = part.getEnd();
+						cmd.text = null;
+						cmd.length = 0;
+						return;
+					}
+					if(element.isA(JavaElement)) {
+						javaElement = true;
+					}
+				}
+			}
+		}
+
+		String indentText = (indentEnd > lineStart) ? doc.get(lineStart, indentEnd-lineStart) : null;
 		
 		int prevCharOffset = findPreviousCharOffset(doc, cmd.offset);
 		if(doc.getChar(prevCharOffset) == '{') {
 			int offset = prevCharOffset+1;
-			int eoflb = getEndOfLineBlock(doc, cmd.offset, lineEnd);
+			int eoflb = getEndOfLineOrBlock(doc, cmd.offset, lineEnd);
 			StringBuilder sb = new StringBuilder(cmd.text);
-			if(indents != null) sb.append(indents);
+			if(indentText != null) sb.append(indentText);
 			sb.append('\t');
 			cmd.caretOffset = offset + sb.length();
 			if(eoflb != offset) {
@@ -96,16 +122,20 @@ public class EspAutoEditStrategy implements IAutoEditStrategy {
 				sb.append(doc.get(s, eoflb - s));
 			}
 			sb.append('\n');
-			if(indents != null) sb.append(indents);
+			if(indentText != null) sb.append(indentText);
+			if(javaElement) {
+				int endJavaStart = findEndOfWhiteSpace(doc, indentEnd+1, cmd.offset);
+				sb.append(doc.get(indentEnd, endJavaStart-indentEnd));
+			}
 			if(doc.getChar(eoflb) != '}') sb.append('}');
 			cmd.offset = offset;
 			cmd.text = sb.toString();
 			cmd.length = eoflb - offset;
 			cmd.shiftsCaret = false;
 		} else {
-			if(indents != null) {
+			if(indentText != null) {
 				StringBuilder sb = new StringBuilder(cmd.text);
-				sb.append(indents);
+				sb.append(indentText);
 				cmd.text = sb.toString();
 			}
 		}
@@ -116,7 +146,7 @@ public class EspAutoEditStrategy implements IAutoEditStrategy {
 		try {
 			if(cmd.length == 0 && cmd.text != null) {
 				if(TextUtilities.endsWith(doc.getLegalLineDelimiters(), cmd.text) != -1) {
-					autoIndentAfterNewLine(doc, cmd);
+					handleNewLine(doc, cmd);
 				} else if(cmd.text.length() == 1) {
 					autoComplete(doc, cmd, cmd.text.charAt(0));
 				}
@@ -149,7 +179,7 @@ public class EspAutoEditStrategy implements IAutoEditStrategy {
 		return 0;
 	}
 	
-	private int getEndOfLineBlock(IDocument doc, int offset, int end) throws BadLocationException {
+	private int getEndOfLineOrBlock(IDocument doc, int offset, int end) throws BadLocationException {
 		while(offset < end) {
 			char c = doc.getChar(offset);
 			if(c == '\n' || c == '}') {

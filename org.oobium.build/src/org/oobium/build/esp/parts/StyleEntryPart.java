@@ -21,8 +21,8 @@ public class StyleEntryPart extends EspPart {
 
 	private List<StylePropertyPart> properties;
 
-	public StyleEntryPart(EspPart parent, Type type, int start, int end) {
-		super(parent, type, start, end);
+	public StyleEntryPart(EspPart parent, int start, int end) {
+		super(parent, Type.StyleEntryPart, start, end);
 		parse();
 	}
 
