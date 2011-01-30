@@ -19,6 +19,8 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 import org.oobium.build.esp.EspElement;
+import org.oobium.build.esp.EspPart;
+import org.oobium.build.esp.elements.JavaElement;
 
 public class EspLabelProvider extends LabelProvider implements IColorProvider, IFontProvider, ILabelProvider {
 
@@ -26,7 +28,7 @@ public class EspLabelProvider extends LabelProvider implements IColorProvider, I
 	private static final int META_TAG	= 1;
 	private static final int IMPORTS	= 2;
 	private static final int IMPORT		= 3;
-	private static final int JAVA		= 4;
+	private static final int CTOR		= 4;
 	private static final int JAVA_LINE	= 5;
 	private static final int SCRIPT		= 6;
 	private static final int STYLE		= 7;
@@ -40,7 +42,7 @@ public class EspLabelProvider extends LabelProvider implements IColorProvider, I
 				"meta_tag.gif", 
 				"imports.gif", 
 				"import.gif", 
-				"java.gif",
+				"constructor.gif", 
 				"java_line.gif",
 				"javascript.gif",
 				"stylesheet.gif",
@@ -49,7 +51,6 @@ public class EspLabelProvider extends LabelProvider implements IColorProvider, I
 		images = new Image[names.length];
 		for(int i = 0; i < names.length; i++) {
 			ImageDescriptor desc = ImageDescriptor.createFromFile(getClass(), "/icons/" + names[i]);
-//			ImageDescriptor desc = EspPlugin.imageDescriptorFromPlugin(EspPlugin.ID, "icons/" + names[i]);
 			if(desc != null) {
 				images[i] = desc.createImage();
 			}
@@ -84,20 +85,18 @@ public class EspLabelProvider extends LabelProvider implements IColorProvider, I
 
 	@Override
 	public Image getImage(Object element) {
-//		if(element instanceof EspLine) {
-//			element = ((EspLine) element).get(0);
-//		}
 		if(element instanceof EspElement) {
 			EspElement espElement = (EspElement) element;
 			switch(espElement.getType()) {
 			case ImportElement: return images[IMPORT];
+			case ConstructorElement: return images[CTOR];
 			case JavaElement: return images[JAVA_LINE];
 			case ScriptElement: return images[SCRIPT];
 			case StyleElement: return images[STYLE];
-			case HtmlElement: 
-//				if("title".equals(espElement.getTag())) {
-//					return images[TITLE];
-//				}
+			case HtmlElement:
+				if(espElement.getElementText().startsWith("title ")) {
+					return images[TITLE];
+				}
 				return images[TAG];
 			}
 		}
@@ -112,22 +111,19 @@ public class EspLabelProvider extends LabelProvider implements IColorProvider, I
 		if(element instanceof Imports) {
 			return "imports declarations";
 		}
-		if(element instanceof EspElement) {
-			EspElement espElement = (EspElement) element;
-			return espElement.getText();
+		if(element instanceof JavaElement) {
+			return ((JavaElement) element).getSource();
 		}
-//		if(element instanceof ScriptBlock) {
-//			return "script section";
-//		}
-//		if(element instanceof StyleBlock) {
-//			return "style section";
-//		}
-//		if(element instanceof MetaBlock) {
-//			return "meta tags";
-//		}
-//		if(element instanceof TitleLineBlock) {
-//			return "page title";
-//		}
+		if(element instanceof EspElement) {
+			String text = ((EspElement) element).getElementText();
+			if(text.startsWith("title ")) {
+				return text.substring(6);
+			}
+			return text;
+		}
+		if(element instanceof EspPart) {
+			return ((EspPart) element).getText();
+		}
 		return element.toString();
 	}
 

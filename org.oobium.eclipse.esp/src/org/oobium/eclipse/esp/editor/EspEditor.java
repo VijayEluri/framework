@@ -40,6 +40,7 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
+import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
@@ -54,7 +55,10 @@ import org.eclipse.ui.texteditor.ITextEditorActionDefinitionIds;
 import org.eclipse.ui.texteditor.TextOperationAction;
 import org.eclipse.ui.views.contentoutline.IContentOutlinePage;
 import org.oobium.build.esp.ESourceFile;
+import org.oobium.build.esp.EspDom;
 import org.oobium.build.esp.EspElement;
+import org.oobium.build.esp.EspPart;
+import org.oobium.build.esp.EspPart.Type;
 import org.oobium.build.workspace.Module;
 import org.oobium.eclipse.esp.EspCore;
 import org.oobium.eclipse.esp.editor.actions.DefineFoldingRegionAction;
@@ -120,10 +124,17 @@ public class EspEditor extends TextEditor {
 						EspElement element = (EspElement) sel;
 						try {
 //							setHighlightRange(offset, length, true);
-							selectAndReveal(element.getStart(), element.getLength());
+							int start = element.getStart();
+							int length = element.getElementText().length();
+							selectAndReveal(start, length);
 						} catch(IllegalArgumentException x) {
 							resetHighlightRange();
 						}
+					} else if(sel instanceof EspPart) {
+						EspPart part = (EspPart) sel;
+						int start = part.getStart();
+						int end = part.getEnd();
+						selectAndReveal(start, end-start);
 					}
 					outlinePage = page;
 				}
@@ -312,7 +323,7 @@ public class EspEditor extends TextEditor {
 	public Object getAdapter(Class required) {
 		if(IContentOutlinePage.class.equals(required)) {
 			if(outlinePage == null) {
-				outlinePage= new EspOutlinePage(getDocumentProvider(), this);
+				outlinePage = new EspOutlinePage(getDocumentProvider(), this);
 				if(document != null) {
 					outlinePage.setInput(document);
 					outlinePage.addSelectionChangedListener(selListener);
@@ -370,16 +381,16 @@ public class EspEditor extends TextEditor {
 	protected void handleCursorPositionChanged() {
 		super.handleCursorPositionChanged();
 		if(outlinePage != null && document != null) {
-//			int tabWidth = getSourceViewerConfiguration().getTabWidth(getSourceViewer());
-//			EspDom dom = EspCore.get(document);
-//			String[] sa = getCursorPosition().split(" *: *");
-//			int line = Integer.parseInt(sa[0]) - 1;
-//			int column = Integer.parseInt(sa[1]) - ((tabWidth-1) * dom.getLine(line).getLevel()) - 1;
-//			EspElement element = dom.getElement(line, column);
-//
-//			outlinePage.removeSelectionChangedListener(selListener);
-//			outlinePage.setSelection((element == null) ? new StructuredSelection() : new StructuredSelection(element));
-//			outlinePage.addSelectionChangedListener(selListener);
+			EspDom dom = EspCore.get(document);
+			int offset = textWidget.getCaretOffset();
+			EspPart part = dom.getPart(offset);
+			if(part != null && !part.isA(Type.StyleSelectorPart)) {
+				part = part.getElement();
+			}
+
+			outlinePage.removeSelectionChangedListener(selListener);
+			outlinePage.setSelection((part == null) ? new StructuredSelection() : new StructuredSelection(part));
+			outlinePage.addSelectionChangedListener(selListener);
 		}
 	}
 	

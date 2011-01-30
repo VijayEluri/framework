@@ -1401,7 +1401,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(StyleElement));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
-		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
+		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
@@ -1521,7 +1521,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(StyleElement));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
-		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
+		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		for( ; offset < esp.length(); offset++) {
@@ -1538,7 +1538,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(StyleElement));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
-		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
+		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		for( ; offset < esp.length(); offset++) {
@@ -1555,7 +1555,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(StyleElement));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
-		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
+		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
@@ -1574,7 +1574,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(StyleElement));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
-		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
+		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
@@ -1594,7 +1594,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(StyleElement));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
-		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
+		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
@@ -1615,7 +1615,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(StyleElement));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
-		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
+		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
@@ -1638,7 +1638,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(StyleElement));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
-		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
+		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
@@ -1662,7 +1662,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(StyleElement));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
-		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
+		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
@@ -1687,7 +1687,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(StyleElement));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
-		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
+		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
@@ -1714,7 +1714,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(StyleElement));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
-		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
+		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
@@ -1742,7 +1742,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(StyleElement));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
-		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
+		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
@@ -1772,7 +1772,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(StyleElement));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
-		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
+		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
@@ -1808,7 +1808,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(StyleElement));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
-		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
+		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
@@ -1838,7 +1838,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(StyleElement));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
-		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
+		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleSelectorPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));

@@ -55,6 +55,10 @@ public class EspDom extends EspPart {
 		setSource(src);
 	}
 
+	/**
+	 * Get the Element at the given index.
+	 * @param index
+	 */
 	public EspElement get(int index) {
 		return (EspElement) parts.get(index);
 	}

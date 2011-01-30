@@ -214,6 +214,24 @@ public class HtmlElement extends EspElement {
 		return (javaType != null) ? javaType.getText() : null;
 	}
 	
+	@Override
+	public String getElementText() {
+		if(parts != null) {
+			int end = start;
+			for(EspPart part : parts) {
+				if(part instanceof EspElement) {
+					break;
+				} else {
+					end = part.getEnd();
+				}
+			}
+			end = reverse(ca, end-1) + 1;
+			if(end < ca.length && ca[end] == ')') end++; // TODO crap hack
+			return new String(ca, start, end - start);
+		}
+		return getText();
+	}
+	
 	public String getTag() {
 		return (tag != null) ? tag.getText() : "";
 	}

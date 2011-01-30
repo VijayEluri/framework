@@ -95,6 +95,23 @@ public class JavaElement extends EspElement {
 		return children;
 	}
 
+	@Override
+	public String getElementText() {
+		if(parts != null) {
+			int end = start;
+			for(EspPart part : parts) {
+				if(part instanceof EspElement) {
+					break;
+				} else {
+					end = part.getEnd();
+				}
+			}
+			end = reverse(ca, end-1) + 1;
+			return new String(ca, start, end - start);
+		}
+		return getText();
+	}
+	
 	public String getSource() {
 		return (source != null) ? source.getText() : "";
 	}

@@ -27,7 +27,14 @@ import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.widgets.Display;
+import org.oobium.build.esp.EspDom;
 import org.oobium.build.esp.EspElement;
+import org.oobium.build.esp.EspPart;
+import org.oobium.build.esp.elements.HtmlElement;
+import org.oobium.build.esp.elements.ImportElement;
+import org.oobium.build.esp.elements.JavaElement;
+import org.oobium.build.esp.elements.StyleChildElement;
+import org.oobium.build.esp.elements.StyleElement;
 import org.oobium.eclipse.esp.EspCore;
 
 /**
@@ -42,32 +49,98 @@ class EspContentProvider implements ITreeContentProvider, PropertyChangeListener
 	private IDocument document;
 	private Imports imports;
 	
-	protected void parse(IDocument document) {
-		int lines= document.getNumberOfLines();
-		int increment= Math.max(Math.round(lines / 10), 10);
-
-		for (int line= 0; line < lines; line += increment) {
-
-			int length= increment;
-			if (line + increment > lines)
-				length= lines - line;
-
-			try {
-
-				int offset= document.getLineOffset(line);
-				int end= document.getLineOffset(line + length);
-				length= end - offset;
-				Position p= new Position(offset, length);
-				document.addPosition(SEGMENTS, p);
-//				content.add(new Segment(MessageFormat.format(EspEditorMessages.getString("OutlinePage.segment.title_pattern"), new Object[] { new Integer(offset) }), p)); //$NON-NLS-1$
-
-			} catch (BadPositionCategoryException x) {
-			} catch (BadLocationException x) {
-			}
+	public void dispose() {
+		if(document != null) {
+//			EspCore.get(document).removeListener(this);
 		}
 	}
 
 	
+	public Object[] getChildren(Object element) {
+		if(element instanceof HtmlElement) {
+			return ((HtmlElement) element).getChildren().toArray();
+		}
+		if(element instanceof JavaElement) {
+			return ((JavaElement) element).getChildren().toArray();
+		}
+		if(element instanceof StyleElement) {
+			List<Object> selectors = new ArrayList<Object>();
+			for(StyleChildElement child : ((StyleElement) element).getChildren()) {
+				for(EspPart selector : child.getSelectorGroups()) {
+					selectors.add(selector);
+				}
+			}
+			return selectors.toArray();
+		}
+		if(element instanceof Imports) {
+			return ((Imports) element).getChildren().toArray();
+		}
+		return new Object[0];
+	}
+
+	public Object[] getElements(Object element) {
+		if(element instanceof IDocument) {
+			List<Object> elements = new ArrayList<Object>();
+			imports = null;
+			EspDom dom = EspCore.get(document);
+			for(int i = 0; i < dom.size(); i++) {
+				EspElement e = dom.get(i);
+				if(e.isA(ImportElement)) {
+					if(imports == null) imports = new Imports();
+					imports.addChild(e);
+				} else {
+					int level = e.getLevel();
+					if(level == 0) {
+						elements.add(e);
+					} else if(level < 1 && e instanceof StyleElement) { // CSS or ESS file
+						for(StyleChildElement child : ((StyleElement) e).getChildren()) {
+							for(EspPart sg : child.getSelectorGroups()) {
+								elements.add(sg);
+							}
+						}
+					}
+				}
+			}
+			if(imports != null) {
+				elements.add(0, imports);
+			}
+			return elements.toArray();
+		}
+		return new Object[0];
+	}
+
+	public Object getParent(Object element) {
+		if(element instanceof ImportElement) {
+			return imports;
+		}
+		if(element instanceof EspElement) {
+			return ((EspElement) element).getParent();
+		}
+		if(element instanceof EspPart) {
+			return ((EspPart) element).getElement();
+		}
+		if(element instanceof Imports) {
+			return imports;
+		}
+		return null;
+	}
+
+	public boolean hasChildren(Object element) {
+		if(element instanceof HtmlElement) {
+			return ((HtmlElement) element).hasChildren();
+		}
+		if(element instanceof JavaElement) {
+			return ((JavaElement) element).hasChildren();
+		}
+		if(element instanceof StyleElement) {
+			return ((StyleElement) element).hasChildren();
+		}
+		if(element instanceof Imports) {
+			return ((Imports) element).hasChildren();
+		}
+		return false;
+	}
+
 	public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
 		this.viewer = (TreeViewer) viewer;
 		
@@ -93,70 +166,39 @@ class EspContentProvider implements ITreeContentProvider, PropertyChangeListener
 		}
 	}
 
-	public void dispose() {
-		if(document != null) {
-//			EspCore.get(document).removeListener(this);
-		}
-	}
+	protected void parse(IDocument document) {
+		int lines= document.getNumberOfLines();
+		int increment= Math.max(Math.round(lines / 10), 10);
 
-	public Object[] getElements(Object element) {
-		if(element instanceof IDocument) {
-			List<Object> elements = new ArrayList<Object>();
-			imports = null;
-//			for(EspLine line : EspCore.get(document).lines()) {
-//				if(line.isElementA(ImportElement)) {
-//					if(imports == null) imports = new Imports();
-//					imports.addChild(line.get(0));
-//				} else if(!line.isElementA(BlankElement) && line.getLevel() == 0) {
-//					elements.add(line.get(0));
-//				}
-//			}
-			if(imports != null) {
-				elements.add(0, imports);
+		for (int line= 0; line < lines; line += increment) {
+
+			int length= increment;
+			if (line + increment > lines)
+				length= lines - line;
+
+			try {
+
+				int offset= document.getLineOffset(line);
+				int end= document.getLineOffset(line + length);
+				length= end - offset;
+				Position p= new Position(offset, length);
+				document.addPosition(SEGMENTS, p);
+//				content.add(new Segment(MessageFormat.format(EspEditorMessages.getString("OutlinePage.segment.title_pattern"), new Object[] { new Integer(offset) }), p)); //$NON-NLS-1$
+
+			} catch (BadPositionCategoryException x) {
+			} catch (BadLocationException x) {
 			}
-			return elements.toArray();
 		}
-		return new Object[0];
-	}
-
-	public boolean hasChildren(Object element) {
-//		if(element instanceof EspElement) {
-//			return ((EspElement) element).hasChildren();
-//		}
-		if(element instanceof Imports) {
-			return ((Imports) element).hasChildren();
-		}
-		return false;
-	}
-
-	public Object getParent(Object element) {
-		if(element instanceof EspElement) {
-			return ((EspElement) element).getParent();
-		}
-		if(element instanceof Imports) {
-			return imports;
-		}
-		return null;
-	}
-
-	public Object[] getChildren(Object element) {
-//		if(element instanceof EspElement) {
-//			return ((EspElement) element).getChildren().toArray();
-//		}
-		if(element instanceof Imports) {
-			return ((Imports) element).getChildren().toArray();
-		}
-		return new Object[0];
 	}
 
 	@Override
 	public void propertyChange(PropertyChangeEvent evt) {
-//		Display.getDefault().asyncExec(new Runnable() {
-//			@Override
-//			public void run() {
-//				viewer.refresh();
-//			}
-//		});
+		Display.getDefault().asyncExec(new Runnable() {
+			@Override
+			public void run() {
+				viewer.refresh();
+			}
+		});
 	}
 	
 }

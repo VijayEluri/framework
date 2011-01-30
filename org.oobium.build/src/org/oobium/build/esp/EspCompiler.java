@@ -1627,9 +1627,9 @@ public class EspCompiler {
 					if(child.hasSelectors() && child.hasProperties()) {
 						if(firstChild) firstChild = false;
 						else sb.append(' ');
-						List<EspPart> selectors = child.getSelectors();
+						List<EspPart> selectors = child.getSelectorGroups();
 						for(int j = 0; j < selectors.size(); j++) {
-							if(j != 0) sb.append(' ');
+							if(j != 0) sb.append(',');
 							sb.append(selectors.get(j).getText());
 						}
 						sb.append('{');

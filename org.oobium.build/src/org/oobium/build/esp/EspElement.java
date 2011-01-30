@@ -10,7 +10,9 @@
  ******************************************************************************/
 package org.oobium.build.esp;
 
+import static org.oobium.utils.CharStreamUtils.findEOL;
 import static org.oobium.utils.CharStreamUtils.isBOL;
+import static org.oobium.utils.CharStreamUtils.reverse;
 
 public abstract class EspElement extends EspPart {
 
@@ -47,8 +49,14 @@ public abstract class EspElement extends EspPart {
 		return this;
 	}
 	
+	public String getElementText() {
+		int end = findEOL(ca, start);
+		end = reverse(ca, end-1) + 1;
+		return new String(ca, start, end-start);
+	}
+	
 	public int getLevel() {
 		return level;
 	}
-	
+
 }

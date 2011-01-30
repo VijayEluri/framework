@@ -18,10 +18,11 @@ import java.util.List;
 import org.oobium.build.esp.EspElement;
 import org.oobium.build.esp.EspPart;
 import org.oobium.build.esp.parts.StylePropertyPart;
+import org.oobium.utils.CharStreamUtils;
 
 public class StyleChildElement extends EspElement {
 
-	private List<EspPart> selectors;
+	private List<EspPart> selectorGroups;
 	private List<StylePropertyPart> properties;
 	
 	public StyleChildElement(StyleElement parent, int start) {
@@ -33,7 +34,8 @@ public class StyleChildElement extends EspElement {
 	private int addProperties(int start) {
 		int s1 = start;
 		int s2 = start;
-		int eol = findEOL(ca, start);
+		// static CSS files don't use levels
+		int eol = dom.isStatic() ? ca.length : findEOL(ca, start);
 		while(s2 < eol) {
 			if(ca[s2] == '}') {
 				if(s2 > s1) {
@@ -69,11 +71,14 @@ public class StyleChildElement extends EspElement {
 		properties.add(new StylePropertyPart(this, start, end));
 	}
 	
-	private void addSelector(int start, int end) {
-		if(selectors == null) {
-			selectors = new ArrayList<EspPart>();
+	private void addSelectorGroup(int start, int end) {
+		end = reverse(ca, end-1) + 1;
+		if(end > start && !isWhitespace(ca, start, end)) {
+			if(selectorGroups == null) {
+				selectorGroups = new ArrayList<EspPart>();
+			}
+			selectorGroups.add(new EspPart(this, Type.StyleSelectorPart, start, end));
 		}
-		selectors.add(new EspPart(this, Type.StyleSelectorPart, start, end));
 	}
 	
 	public EspElement getElement() {
@@ -84,8 +89,8 @@ public class StyleChildElement extends EspElement {
 		return properties;
 	}
 	
-	public List<EspPart> getSelectors() {
-		return selectors;
+	public List<EspPart> getSelectorGroups() {
+		return selectorGroups;
 	}
 	
 	public boolean hasProperties() {
@@ -93,7 +98,7 @@ public class StyleChildElement extends EspElement {
 	}
 	
 	public boolean hasSelectors() {
-		return selectors != null;
+		return selectorGroups != null;
 	}
 	
 	private void parse() {
@@ -103,15 +108,17 @@ public class StyleChildElement extends EspElement {
 		int s2 = s1;
 		while(s2 < eol) {
 			if(ca[s2] == '{') {
-				addSelector(s1, s2);
+				addSelectorGroup(s1, s2);
 				s1 = s2;
 				break;
 			}
-			if(Character.isWhitespace(ca[s2])) {
-				addSelector(s1, s2);
-				s1 = s2 = forward(ca, s2, eol);
-				if(s1 == -1 || ca[s1] == '{') {
-					break;
+			if(ca[s2] == ',') {
+				addSelectorGroup(s1, s2);
+				s1 = forward(ca, s2+1, eol);
+				if(s1 == -1) {
+					s2 = eol;
+				} else {
+					s2 = s1;
 				}
 			} else {
 				s2 = commentCheck(this, s2);
@@ -131,27 +138,42 @@ public class StyleChildElement extends EspElement {
 					return;
 				}
 			} else if(s2 > s1) {
-				addSelector(s1, s2);
+				addSelectorGroup(s1, s2);
 			}
 		}
 		
 		s1 = eol;
-		while(s1 < ca.length) {
-			int level = 0;
-			while((s1+1+level) < ca.length && ca[s1+1+level] == '\t') {
-				level++;
-			}
-			if(this.level < level) {
-				s1 = addProperties(s1+1+level);
+		if(dom.isStatic()) { // does not use levels...
+			while(s1 < ca.length) {
+				s1 = forward(ca, s1);
+				if(s1 == -1) {
+					end = ca.length;
+					return;
+				}
+				s1 = addProperties(s1+1);
 				if(ca[s1-1] == '}') { // element has been completed, ignore the rest of line
 					end = findEOL(ca, s1);
 					return;
 				}
-			} else {
-				break;
+			}
+		} else {
+			while(s1 < ca.length) {
+				int level = 0;
+				while((s1+1+level) < ca.length && ca[s1+1+level] == '\t') {
+					level++;
+				}
+				if(this.level < level) {
+					s1 = addProperties(s1+1+level);
+					if(ca[s1-1] == '}') { // element has been completed, ignore the rest of line
+						end = findEOL(ca, s1);
+						return;
+					}
+				} else {
+					break;
+				}
 			}
 		}
-	
+		
 		end = (s1 < ca.length) ? s1 : ca.length;
 	}
 	
