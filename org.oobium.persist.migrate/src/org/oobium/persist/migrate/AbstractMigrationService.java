@@ -12,6 +12,9 @@ package org.oobium.persist.migrate;
 
 import static org.oobium.utils.literal.Properties;
 
+import java.sql.SQLException;
+import java.util.Map;
+
 import org.oobium.logging.Logger;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
@@ -34,6 +37,11 @@ public abstract class AbstractMigrationService implements MigrationService, Bund
 	@Override
 	public void stop(BundleContext context) throws Exception {
 		logger.setBundle(null);
+	}
+
+	@Override
+	public void initializeDatabase(Map<String, ? extends Object> options) throws SQLException {
+		// subclasses to override
 	}
 
 }

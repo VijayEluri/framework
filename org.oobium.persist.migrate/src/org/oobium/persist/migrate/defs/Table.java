@@ -23,7 +23,7 @@ import org.oobium.persist.migrate.defs.columns.PrimaryKey;
 
 public class Table {
 
-	private static final PrimaryKey defaultPrimaryKey = new PrimaryKey("id", "integer", true);
+	private static final PrimaryKey defaultPrimaryKey = new PrimaryKey("id", INTEGER, true);
 	
 	private static String fkname(String table, String column) {
 		return table + "__" + column + "_FK";
@@ -92,11 +92,11 @@ public class Table {
 			break;
 		case RemoveColumn:
 			RemoveColumn rc = (RemoveColumn) change;
-			if("Timestamps".equals(rc.column)) {
+			if(TIMESTAMPS.equals(rc.column)) {
 				changes.add(new RemoveColumn("created_at"));
 				changes.add(new RemoveColumn("updated_at"));
 				return this;
-			} else if("Datestamps".equals(rc.column)) {
+			} else if(DATESTAMPS.equals(rc.column)) {
 				changes.add(new RemoveColumn("created_on"));
 				changes.add(new RemoveColumn("updated_on"));
 				return this;
@@ -165,55 +165,47 @@ public class Table {
 	}
 	
 	public Table addBinary(String name) {
-		return add("Binary", name);
+		return add(BINARY, name);
 	}
 	
 	public Table addBinary(String name, Map<String, ? extends Object> options) {
-		return add("Binary", name, options);
+		return add(BINARY, name, options);
 	}
 	
 	public Table addBoolean(String name) {
-		return add("Boolean", name);
+		return add(BOOLEAN, name);
 	}
 	
 	public Table addBoolean(String name, Map<String, ? extends Object> options) {
-		return add("Boolean", name, options);
+		return add(BOOLEAN, name, options);
 	}
 	
 	public Table addDate(String name) {
-		return add("Date", name);
+		return add(DATE, name);
 	}
 	
 	public Table addDate(String name, Map<String, ? extends Object> options) {
-		return add("Date", name, options);
+		return add(DATE, name, options);
 	}
 	
 	public Table addDatestamps() {
-		return add(null, "Datestamps");
+		return add(DATESTAMPS, null);
     }
 	
-	public Table addDatetime(String name) {
-		return add("Datetime", name);
-	}
-	
-	public Table addDatetime(String name, Map<String, ? extends Object> options) {
-		return add("Datetime", name, options);
-	}
-
 	public Table addDecimal(String name) {
-		return add("Decimal", name);
+		return add(DECIMAL, name);
 	}
 	
 	public Table addDecimal(String name, Map<String, ? extends Object> options) {
-		return add("Decimal", name, options);
+		return add(DECIMAL, name, options);
 	}
 
 	public Table addFloat(String name) {
-		return add("Float", name);
+		return add(FLOAT, name);
 	}
 	
 	public Table addFloat(String name, Map<String, ? extends Object> options) {
-		return add("Float", name, options);
+		return add(FLOAT, name, options);
 	}
 	
 	public Table addForeignKey(String column, String reference) {
@@ -229,47 +221,47 @@ public class Table {
     }
 
 	public Table addInteger(String name) {
-		return add("Integer", name);
+		return add(INTEGER, name);
 	}
 	
 	public Table addInteger(String name, Map<String, ? extends Object> options) {
-		return add("Integer", name, options);
+		return add(INTEGER, name, options);
 	}
 	
 	public Table addString(String name) {
-		return add("String", name);
+		return add(STRING, name);
 	}
 	
     public Table addString(String name, Map<String, ? extends Object> options) {
-		return add("String", name, options);
+		return add(STRING, name, options);
 	}
     
     public Table addText(String name) {
-		return add("Text", name);
+		return add(TEXT, name);
 	}
     
     public Table addText(String name, Map<String, ? extends Object> options) {
-		return add("Text", name, options);
+		return add(TEXT, name, options);
 	}
     
     public Table addTime(String name) {
-		return add("Time", name);
+		return add(TIME, name);
 	}
     
     public Table addTime(String name, Map<String, ? extends Object> options) {
-		return add("Time", name, options);
+		return add(TIME, name, options);
 	}
 
     public Table addTimestamp(String name) {
-		return add("Timestamp", name);
+		return add(TIMESTAMP, name);
 	}
 
 	public Table addTimestamp(String name, Map<String, ? extends Object> options) {
-		return add("Timestamp", name, options);
+		return add(TIMESTAMP, name, options);
 	}
 
     public Table addTimestamps() {
-		return add(null, "Timestamps");
+		return add(TIMESTAMPS, null);
     }
 
     public Table addUniqueIndex(String...columns) {
@@ -315,7 +307,7 @@ public class Table {
     }
 
     public Table removeDatestamps() {
-    	return remove("Datestamps");
+    	return remove(DATESTAMPS);
     }
 
 	public Table removeForeignKey(String column) {
@@ -327,7 +319,7 @@ public class Table {
     }
 
     public Table removeTimestamps() {
-    	return remove("Timestamps");
+    	return remove(TIMESTAMPS);
     }
     
     /**

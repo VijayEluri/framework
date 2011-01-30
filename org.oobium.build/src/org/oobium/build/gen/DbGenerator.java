@@ -43,7 +43,6 @@ import org.oobium.build.gen.migration.ModelTable;
 import org.oobium.build.model.ModelDefinition;
 import org.oobium.build.model.ModelRelation;
 import org.oobium.build.util.SourceFile;
-import org.oobium.build.workspace.Bundle;
 import org.oobium.persist.Binary;
 import org.oobium.persist.Text;
 import org.oobium.persist.migrate.AbstractMigration;
@@ -128,24 +127,8 @@ public class DbGenerator {
 		sf.methods.put("1", "\tprotected void setOptions(String table, Map<String, Object> options) {\n\t\ttableOptions.put(table, options);\n\t}");
 		
 		StringBuilder sb = new StringBuilder();
-		sb.append("\t@Override\n\tpublic void up() throws SQLException {\n");
+		sb.append("\t@Override\n\tpublic void up() throws SQLException {");
 		
-		if(type.equals(Bundle.Type.Application.name())) {
-			sf.imports.add(Table.class.getCanonicalName());
-			sb.append("\t\tTable systemAttrs = createTable(\"system_attrs\",\n" +
-					  "\t\t\tString(\"name\"),\n" +
-					  "\t\t\tString(\"detail\"),\n" +
-					  "\t\t\tText(\"data\")\n" +
-					  "\t\t);\n" +
-					  "\t\tsystemAttrs.addUniqueIndex(\"name\", \"detail\");\n" +
-					  "\t\tsystemAttrs.update();\n"
-				);
-		}
-//		sb.append("\t\texecuteUpdate(\"INSERT INTO system_attrs (name, value) VALUES ('");
-//		sb.append(name).append(".schema.initial', '").append(version).append("')").append("\");\n");
-//		sb.append("\t\texecuteUpdate(\"INSERT INTO system_attrs (attr_name, attr_value) VALUES ('");
-//		sb.append(name).append(".schema.current', '").append(version).append("')").append("\");\n");
-
 		for(ModelTable table : tables.values()) {
 			sb.append('\n');
 			String var = varName(table.name);
@@ -212,13 +195,13 @@ public class DbGenerator {
 					if(fk.options.hasAny()) {
 						appendOptions(sf, sb, fk.options);
 					}
-					sb.append(");");
+					sb.append(");\n");
 				}
-				sb.append("\n\t\t").append(var).append(".update();");
+				sb.append("\n\t\t").append(var).append(".update();\n");
 			}
 		}
 
-		sb.append("\n\t}");
+		sb.append("\t}");
 		sf.methods.put("2", sb.toString());
 		
 		return sf.toSource();

@@ -32,7 +32,7 @@ public interface MigrationService {
 	
 	public abstract void dropDatabase();
 	
-	public abstract void initializeDatabase(Map<String, ? extends Object> options);
+	public abstract void initializeDatabase(Map<String, ? extends Object> options)  throws SQLException;
 	
 	public abstract Table find(String table);
 	

@@ -210,7 +210,7 @@ public abstract class AbstractMigration implements Migration {
     	table.update();
     }
     
-    public void createDatabase(Map<String, ? extends Object> options) {
+    public void createDatabase(Map<String, ? extends Object> options) throws SQLException {
     	getService().initializeDatabase(options);
     }
 

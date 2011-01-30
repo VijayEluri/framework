@@ -425,7 +425,6 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 			case RenameTable:		renameTable(table,		(Rename) change); 			break;
 			}
 		}
-		// TODO
 	}
 
 }

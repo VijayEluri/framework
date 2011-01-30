@@ -27,6 +27,8 @@ import org.oobium.persist.migrate.controllers.MigrateController;
 import org.oobium.persist.migrate.controllers.PurgeController;
 import org.oobium.persist.migrate.controllers.RedoController;
 import org.oobium.persist.migrate.controllers.RollbackController;
+import org.oobium.persist.migrate.defs.Column;
+import org.oobium.persist.migrate.defs.Table;
 import org.oobium.utils.Config;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -117,7 +119,11 @@ public abstract class MigratorService extends AppService {
 			}
 			return migrated;
 		} catch(SQLException e) {
-			getMigrationService().initializeDatabase(null);
+			try {
+				getMigrationService().initializeDatabase(null);
+			} catch(SQLException e2) {
+				// discard
+			}
 			return Collections.emptyList();
 		}
 	}
@@ -333,6 +339,20 @@ public abstract class MigratorService extends AppService {
 		}
 	}
 	
+	protected void createSystemAttrs() {
+		try {
+			Table systemAttrs = new Table(getMigrationService(), "system_attrs");
+			systemAttrs.add(new Column(Column.STRING, "name"));
+			systemAttrs.add(new Column(Column.STRING, "detail"));
+			systemAttrs.add(new Column(Column.TEXT, "data"));
+			systemAttrs.create();
+			systemAttrs.addUniqueIndex("name", "detail");
+			systemAttrs.update();
+		} catch(SQLException e) {
+			logger.error(e);
+		}
+	}
+	
 	protected void setCurrentMigration(String current) throws SQLException {
 		PersistService ps = getPersistService();
 		if(current == null) {
@@ -342,16 +362,24 @@ public abstract class MigratorService extends AppService {
 				// last migration will remove the table
 			}
 		} else {
-			int r = ps.executeUpdate("UPDATE system_attrs SET detail='" + current + "' where name='migration.current'");
-			if(r == 0) {
-				ps.executeUpdate("INSERT INTO system_attrs (name, detail, data) VALUES ('migration.current', '" + current + "', NULL)");
+			try {
+				int r = ps.executeUpdate("UPDATE system_attrs SET detail='" + current + "' where name='migration.current'");
+				if(r == 0) {
+					ps.executeUpdate("INSERT INTO system_attrs (name, detail, data) VALUES ('migration.current', '" + current + "', NULL)");
+				}
+			} catch(SQLException e) {
+				createSystemAttrs();
 			}
 		}
 	}
 	
 	protected void setMigrated(String name, boolean migrated) throws SQLException {
 		if(migrated) {
-			getPersistService().executeUpdate("INSERT INTO system_attrs (name, detail, data) VALUES ('migrated', '" + name + "', NULL)");
+			try {
+				getPersistService().executeUpdate("INSERT INTO system_attrs (name, detail, data) VALUES ('migrated', '" + name + "', NULL)");
+			} catch(SQLException e) {
+				createSystemAttrs();
+			}
 		} else {
 			try {
 				getPersistService().executeUpdate("DELETE FROM system_attrs WHERE name='migrated' AND detail='" + name + "'");

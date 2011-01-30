@@ -121,22 +121,4 @@ public class DerbyEmbeddedMigrationService extends DbMigrationService {
 		return migrationType;
 	}
 
-	@Override
-	public void initializeDatabase(Map<String, ? extends Object> options) {
-//		nothing to do?
-//		logger.info("Creating database...");
-//		try {
-//			List<String> statements = loadCreateStatements();
-//			for(String statement : statements) {
-//				logger.debug(statement);
-//				persistor.executeUpdate(statement);
-//			}
-//			logger.info("Database created.");
-//		} catch(IOException e) {
-//			logger.error(e);
-//		} catch(SQLException e) {
-//			logger.error(e);
-//		}
-	}
-
 }

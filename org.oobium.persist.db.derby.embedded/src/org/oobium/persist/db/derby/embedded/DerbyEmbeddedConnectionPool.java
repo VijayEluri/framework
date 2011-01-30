@@ -31,7 +31,9 @@ public class DerbyEmbeddedConnectionPool extends ConnectionPool {
 		if(!database.isAbsolute()) {
 			database = new File(System.getProperty("user.dir"), (String) o);
 		}
-		return database.getCanonicalPath();
+		String path = database.getCanonicalPath();
+		System.out.println("db: " + path);
+		return path;
 	}
 	
 	private static String getPassword(Map<String, Object> properties) {
