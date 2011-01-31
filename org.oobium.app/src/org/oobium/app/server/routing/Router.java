@@ -92,7 +92,7 @@ public class Router {
 	private static void checkName(String name) {
 		for(int i = 0; i < name.length(); i++) {
 			if(!Character.isLetterOrDigit(name.charAt(i)) && name.charAt(i) != '_') {
-				throw new IllegalArgumentException("name can consist only of letters, digits, and underscores");
+				throw new IllegalArgumentException("name can consist only of letters, digits, and underscores: " + name);
 			}
 		}
 	}
