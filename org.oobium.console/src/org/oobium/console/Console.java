@@ -1773,7 +1773,7 @@ public class Console extends Composite {
 			} else {
 				commandHistory = new ArrayList<String>(Arrays.asList(history));
 			}
-			commandHistoryPos = commandHistory.size() - 1;
+			commandHistoryPos = commandHistory.size();
 		} else {
 			commandHistory = new ArrayList<String>();
 			commandHistoryPos = 0;
