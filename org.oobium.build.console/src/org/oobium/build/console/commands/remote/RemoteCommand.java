@@ -9,18 +9,22 @@ import org.oobium.utils.Config;
 
 public class RemoteCommand extends BuilderCommand {
 
-	private String ask(String field, boolean required, boolean password) throws IllegalStateException {
-		String msg = required ? (field + ": ") : (field + " (optional): ");
-		String s = ask(msg, password);
-		if("q".equals(s)) {
-			console.out.println("exiting");
-			throw new IllegalStateException();
-		}
-		if(required && blank(s)) {
+	public String ask(String field, boolean password) throws IllegalStateException {
+		String msg = "  " + field + ": ";
+		String s = super.ask(msg, password);
+		checkQuit(s);
+		if(blank(s)) {
 			console.err.println(field + " cannot be blank - exiting");
 			throw new IllegalStateException();
 		}
 		return s;
+	}
+	
+	private void checkQuit(String s) {
+		if("q".equals(s)) {
+			console.out.println("exiting");
+			throw new IllegalStateException();
+		}
 	}
 	
 	protected RemoteConfig getRemoteConfig(Application app) {
@@ -51,21 +55,23 @@ public class RemoteCommand extends BuilderCommand {
 				return null;
 			}
 		} else {
-			console.out.println("No site.js file found. You will be asked each of the fields; press 'q' to quit.");
+			console.out.println("No site.js file found.\nInput the following fields (press 'q' to quit):");
 			try {
-				String s = ask("host", true, false);
+				String s = ask("host", false);
 				remoteConfig.host = s;
 				
-				s = ask("dir", false, false);
+				s = ask("  base dir [~]: ");
+				checkQuit(s);
 				remoteConfig.dir = s;
 	
-				s = ask("username", true, false);
+				s = ask("username", false);
 				remoteConfig.username = s;
 	
-				s = ask("password", true, true);
+				s = ask("password", true);
 				remoteConfig.password = s;
 	
-				s = ask("use sudo? [false]: ");
+				s = ask("  use sudo? [false]: ");
+				checkQuit(s);
 				remoteConfig.sudo = coerce(s, false);
 			} catch(IllegalStateException e) {
 				return null;

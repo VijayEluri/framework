@@ -1,5 +1,7 @@
 package org.oobium.build.util;
 
+import static org.oobium.build.util.SSHEvent.Type.*;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -13,6 +15,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.oobium.build.exceptions.OobiumException;
+import org.oobium.build.util.SSHEvent.Type;
 import org.oobium.utils.FileUtils;
 
 import com.jcraft.jsch.Channel;
@@ -97,7 +100,9 @@ public class SSH {
 	public void copy(File src, String dst) throws IOException, OobiumException {
 		if(src.isFile()) {
 			sysout.println("copying " + src + " to " + dst);
+			notify(ScpStart, new Object[] { src, dst });
 			doCopy(new FileInputStream(src), src.length(), dst);
+			notify(ScpEnd);
 		} else if(src.isDirectory()) {
 			Set<String> created = new HashSet<String>();
 			
@@ -113,8 +118,9 @@ public class SSH {
 					created.add(dpath);
 				}
 				String fpath = (dst + file.getPath().substring(len)).replace('\\', '/');
-				sysout.println("copying " + file + " to " + dst);
+				notify(ScpStart, new Object[] { file, dst });
 				doCopy(new FileInputStream(file), file.length(), fpath);
+				notify(ScpEnd);
 			}
 		}
 	}
@@ -129,14 +135,10 @@ public class SSH {
 	}
 
 	public void disconnect() {
-		try {
-			session.disconnect();
-		} catch(Exception e) {
-			// discard
-		}
+		session.disconnect();
 	}
 
-	public void doCopy(InputStream src, long srcSize, String dst) throws IOException, OobiumException {
+	private void doCopy(InputStream src, long srcSize, String dst) throws IOException, OobiumException {
 		Channel channel = null;
 		OutputStream out = null;
 		try {
@@ -254,9 +256,13 @@ public class SSH {
 		return false;
 	}
 	
-	private void notify(String s) {
+	private void notify(Type eventType) {
+		notify(eventType, null);
+	}
+	
+	private void notify(Type eventType, Object data) {
 		if(listeners != null) {
-			SSHEvent event = new SSHEvent(s);
+			SSHEvent event = new SSHEvent(eventType, data);
 			for(SSHListener listener : listeners.toArray(new SSHListener[listeners.size()])) {
 				listener.handleEvent(event);
 			}
@@ -309,7 +315,7 @@ public class SSH {
 					if(isSudo && s.startsWith("[sudo] password for")) {
 						writeln(password);
 					}
-					notify(s);
+					notify(In, s);
 				}
 				if(channel.isClosed()) {
 					sysout.println("exit-status: " + channel.getExitStatus());

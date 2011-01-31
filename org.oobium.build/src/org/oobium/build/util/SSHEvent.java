@@ -2,10 +2,14 @@ package org.oobium.build.util;
 
 public class SSHEvent {
 
-	public final String line;
+	public enum Type { In, InExt, Err, ScpStart, ScpEnd }
+
+	public final Type type;
+	public Object data;
 	
-	public SSHEvent(String line) {
-		this.line = line;
+	public SSHEvent(Type type, Object data) {
+		this.type = type;
+		this.data = data;
 	}
 	
 }

@@ -20,8 +20,11 @@ public class RedeployCommand extends DeployCommand {
 	@Override
 	protected void finish(SSH ssh, String[] previous) throws IOException, OobiumException {
 		if(previous != null) {
+			console.out.print("Removing obsolete installation (" + previous[0] + ")...");
 			ssh.exec("rm -r " + previous[0]);
+			console.out.println(" done.");
 		}
+		console.out.println("Redeployment Complete.");
 	}
 	
 }

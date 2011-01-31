@@ -44,6 +44,10 @@ public class RemoteCommand extends BuilderCommand {
 			}
 		});
 		
+		for(int i = 0; i < installs.length; i++) {
+			installs[i] = installs[i].substring(0, installs[i].length()-1);
+		}
+		
 		return installs;
 	}
 
