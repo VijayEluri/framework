@@ -24,18 +24,16 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.exceptions.OobiumException;
 import org.oobium.build.util.SSH;
 import org.oobium.build.workspace.Application;
 import org.oobium.build.workspace.Workspace;
 import org.oobium.console.ConsolePrintStream;
-import org.oobium.utils.Config;
 import org.oobium.utils.Config.Mode;
 import org.oobium.utils.FileUtils;
 import org.oobium.utils.StringUtils;
 
-public class DeployCommand extends BuilderCommand {
+public class DeployCommand extends RemoteCommand {
 
 	private static final int KEEP = 3;
 	
@@ -45,29 +43,21 @@ public class DeployCommand extends BuilderCommand {
 	}
 
 	private void deploy(Workspace ws, Application app, File exportDir) throws OobiumException, IOException {
-		if(app.site == null || !app.site.isFile()) {
-			console.err.println("site configuration file (site.js) cannot be found for " + app);
+		RemoteConfig config = getRemoteConfig(app);
+		if(config == null) {
 			return;
 		}
 		
-		Config config = Config.loadConfiguration(app.site);
-		
-		String host = config.getString("host");
-		String dir = config.getString("path");
-		String username = config.getString("username");
-		String password = config.getString("password");
-		boolean sudo = coerce(config.get("sudo"), false);
-		
-		final SSH ssh = new SSH(host, username, password);
+		final SSH ssh = new SSH(config.host, config.username, config.password);
 		ssh.setOut(new ConsolePrintStream(console.out));
 		ssh.setErr(new ConsolePrintStream(console.err));
 		
-		String name = config.getString("name", app.name);
+		String name = app.name;
 		String version = app.version.resolve(getLastModified(new File(exportDir, "bundles"))).toString();
 
 		String remote = name;
-		if(dir != null) {
-			remote = dir + "/" + remote;
+		if(config.dir != null) {
+			remote = config.dir + "/" + remote;
 		}
 
 		String current = remote + "_" + version;
@@ -90,13 +80,13 @@ public class DeployCommand extends BuilderCommand {
 		}
 		
 		ssh.exec("chmod +x " + current + "/*.sh");
-		ssh.setSudo(sudo);
+		ssh.setSudo(config.sudo);
 		ssh.exec("./stop.sh", current);
 		ssh.exec("nohup ./start.sh", current);
 		ssh.setSudo(false);
 		ssh.exec("ps aux | grep felix");
 		
-		ssh.setSudo(sudo);
+		ssh.setSudo(config.sudo);
 		ssh.exec("cat nohup.out", current);
 		
 		finish(ssh, previous);

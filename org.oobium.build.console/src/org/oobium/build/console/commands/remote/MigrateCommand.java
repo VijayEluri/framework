@@ -11,7 +11,6 @@
 package org.oobium.build.console.commands.remote;
 
 import static org.oobium.build.console.commands.RemoteCommand.getInstallations;
-import static org.oobium.utils.coercion.TypeCoercer.coerce;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,18 +22,16 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.exceptions.OobiumException;
 import org.oobium.build.util.SSH;
 import org.oobium.build.workspace.Application;
 import org.oobium.build.workspace.Workspace;
 import org.oobium.console.ConsolePrintStream;
-import org.oobium.utils.Config;
 import org.oobium.utils.Config.Mode;
 import org.oobium.utils.FileUtils;
 import org.oobium.utils.StringUtils;
 
-public class MigrateCommand extends BuilderCommand {
+public class MigrateCommand extends RemoteCommand {
 
 	@Override
 	public void configure() {
@@ -42,28 +39,17 @@ public class MigrateCommand extends BuilderCommand {
 	}
 
 	private void deploy(Workspace ws, Application app, File exportDir) throws OobiumException, IOException {
-		if(app.site == null || !app.site.isFile()) {
-			console.err.println("site configuration file (site.js) cannot be found for " + app);
-			return;
-		}
+		RemoteConfig config = getRemoteConfig(app);
 		
-		Config config = Config.loadConfiguration(app.site);
-		
-		String host = config.getString("host");
-		String dir = config.getString("path");
-		String username = config.getString("username");
-		String password = config.getString("password");
-		boolean sudo = coerce(config.get("sudo"), false);
-		
-		final SSH ssh = new SSH(host, username, password);
+		final SSH ssh = new SSH(config.host, config.username, config.password);
 		ssh.setOut(new ConsolePrintStream(console.out));
 		ssh.setErr(new ConsolePrintStream(console.err));
 		
-		String remote = config.getString("name", app.name);
+		String remote = app.name;
 		String data = "data";
-		if(dir != null) {
-			remote = dir + "/" + remote;
-			data = dir + "/" + data;
+		if(config.dir != null) {
+			remote = config.dir + "/" + remote;
+			data = config.dir + "/" + data;
 		}
 
 		String migrator = remote + "_migrator";
@@ -87,7 +73,7 @@ public class MigrateCommand extends BuilderCommand {
 		
 		// stop application
 		if(current != null) {
-			ssh.setSudo(sudo);
+			ssh.setSudo(config.sudo);
 			ssh.exec("./stop.sh", current);
 			ssh.setSudo(false);
 		}
@@ -97,14 +83,14 @@ public class MigrateCommand extends BuilderCommand {
 		
 		// start application
 		if(current != null) {
-			ssh.setSudo(sudo);
+			ssh.setSudo(config.sudo);
 			ssh.exec("nohup ./start.sh", current);
 			ssh.setSudo(false);
 		}
 		
 		// output info
 		ssh.exec("ps aux | grep felix");
-		ssh.setSudo(sudo);
+		ssh.setSudo(config.sudo);
 		ssh.exec("cat nohup.out", migrator);
 		ssh.setSudo(false);
 
