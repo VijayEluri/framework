@@ -456,11 +456,11 @@ public class Console extends Composite {
 			commandSel.x = start;
 			sb.delete(start+plen, end+plen);
 		}
-		command.insert(commandSel.x, data);
-		sb.insert(commandSel.x+plen, data);
-		commandSel.x += data.length();
+		String echo = in.notify(data);
+		command.insert(commandSel.x, echo);
+		sb.insert(commandSel.x+plen, echo);
+		commandSel.x += echo.length();
 		commandSel.y = 0;
-		in.notify(data);
 	}
 
 	private Suggestion[] complete() {
@@ -1081,8 +1081,8 @@ public class Console extends Composite {
 		default:
 			if(isCommandRunning()) {
 				if(!performFunction(e) && printable(e)) {
+					e.character = in.notify(e.character);
 					buffer.getLast().sb.append(e.character);
-					in.notify(e.character);
 				}
 			} else {
 				if(!contentAssistRequest(e) && !performFunction(e) && printable(e)) {

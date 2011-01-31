@@ -136,6 +136,17 @@ public abstract class Command {
 		return console.in.readLine();
 	}
 	
+	protected String ask(String message, boolean password) {
+		console.out.print(message);
+		boolean prevState = console.in.password;
+		console.in.password = password;
+		try {
+			return console.in.readLine();
+		} finally {
+			console.in.password = prevState;
+		}
+	}
+	
 	protected boolean canExecute() {
 		if(optionsRequired && (options == null || options.length() == 0)) {
 			console.err.println("missing required options string");
