@@ -61,7 +61,7 @@ public class BundleCommand extends BuilderCommand {
 				Module module = (Module) bundle;
 				bundle = getWorkspace().getMigratorFor(module);
 				if(bundle != null) {
-					confirm = flag('f') ? "Y" : ask("Also remove the associated migration (" + bundle + ")\n  from the file system? [Y/N] ");
+					confirm = flag('f') ? "Y" : ask("Also remove the associated migration (" + bundle + ")? [Y/N] ");
 					if("Y".equalsIgnoreCase(confirm)) {
 						bundle.delete();
 						BuilderConsoleActivator.sendRemove(bundle.file);
@@ -72,7 +72,7 @@ public class BundleCommand extends BuilderCommand {
 				}
 				bundle = getWorkspace().getTestSuiteFor(module);
 				if(bundle != null) {
-					confirm = flag('f') ? "Y" : ask("Also remove the associated test suite (" + bundle + ")\n  from the file system? [Y/N] ");
+					confirm = flag('f') ? "Y" : ask("Also remove the associated test suite (" + bundle + ")? [Y/N] ");
 					if("Y".equalsIgnoreCase(confirm)) {
 						bundle.delete();
 						BuilderConsoleActivator.sendRemove(bundle.file);
