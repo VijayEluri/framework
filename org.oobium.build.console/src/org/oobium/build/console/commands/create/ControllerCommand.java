@@ -41,6 +41,8 @@ public class ControllerCommand extends BuilderCommand {
 			}
 		}
 
+		long manifestMod = module.manifest.lastModified();
+		
 		module.createController(controller);
 		String name = module.getControllerName(controller);
 		console.out.println("created controller <a href=\"open controller " + name + "\">" + name + "</a>");
@@ -62,6 +64,9 @@ public class ControllerCommand extends BuilderCommand {
 		}
 		
 		BuilderConsoleActivator.sendRefresh(module, controller, 100);
+		if(manifestMod != module.manifest.lastModified()) {
+			BuilderConsoleActivator.sendRefresh(module, module.manifest, 100);
+		}
 	}
 
 }
