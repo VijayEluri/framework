@@ -120,8 +120,10 @@ public class DeployCommand extends RemoteCommand {
 				
 				ssh.setSudo(config.sudo);
 				ssh.exec("cat nohup.out", current);
+				ssh.setSudo(false);
 			}
 			
+			ssh.setSudo(config.sudo);
 			finish(ssh, previous);
 		} finally {
 			ssh.disconnect();
@@ -137,7 +139,7 @@ public class DeployCommand extends RemoteCommand {
 				if(i >= previous.length) {
 					console.out.println("Keeping " + i + " previous installations; there are no older installations to remove.");
 				} else {
-					console.out.print("Keeping " + i + " previous installations, removing older installations...");
+					console.out.println("Keeping " + i + " previous installations, removing older installations...");
 					for( ; i < previous.length; i++) {
 						console.out.print("  removing " + previous[i] + "...");
 						ssh.exec("rm -r " + previous[i]);
