@@ -310,9 +310,15 @@ public class BrowserPanel extends Composite {
 				locationBar.setItems(paths.toArray(new String[paths.size()]));
 				locationBar.setText(txt);
 				if(load) {
-					if(txt.length() == 0 && locationBar.getItemCount() > 0) {
-						locationBar.select(0);
-						go();
+					if(txt.length() == 0) {
+						for(int i = 0; i < locationBar.getItemCount(); i++) {
+							String path = locationBar.getItem(i);
+							if(path.indexOf('{') == -1) {
+								locationBar.select(i);
+								go();
+								return;
+							}
+						}
 					} else {
 						go();
 					}
