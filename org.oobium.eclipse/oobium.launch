@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.pde.ui.RuntimeWorkbench">
+<booleanAttribute key="append.args" value="true"/>
+<booleanAttribute key="askclear" value="true"/>
+<booleanAttribute key="automaticAdd" value="false"/>
+<booleanAttribute key="automaticValidate" value="false"/>
+<stringAttribute key="bootstrap" value=""/>
+<stringAttribute key="checked" value="[NONE]"/>
+<booleanAttribute key="clearConfig" value="false"/>
+<booleanAttribute key="clearws" value="false"/>
+<booleanAttribute key="clearwslog" value="false"/>
+<stringAttribute key="configLocation" value="${workspace_loc}/.metadata/.plugins/org.eclipse.pde.core/oobium"/>
+<booleanAttribute key="default" value="false"/>
+<booleanAttribute key="includeOptional" value="false"/>
+<stringAttribute key="location" value="${workspace_loc}/../workspace-oobium"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-os ${target.os} -ws ${target.ws} -arch ${target.arch} -nl ${target.nl} -consoleLog"/>
+<stringAttribute key="org.eclipse.jdt.launching.SOURCE_PATH_PROVIDER" value="org.eclipse.pde.ui.workbenchClasspathProvider"/>
+<stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-Xms512m -Xmx1024m -XX:PermSize=512M -XX:MaxPermSize=512M&#10;-Dorg.oobium.logging.console=debug"/>
+<stringAttribute key="pde.version" value="3.3"/>
+<stringAttribute key="product" value="org.eclipse.sdk.ide"/>
+<stringAttribute key="selected_target_plugins" value="org.eclipse.jdt.junit4.runtime@default:default,org.eclipse.jdt.apt.ui@default:default,org.eclipse.pde.api.tools@default:default,org.eclipse.pde.ui.templates@default:default,org.eclipse.pde.ds.ui@default:default,org.eclipse.jdt.junit@default:default,org.eclipse.pde.junit.runtime@default:default,org.eclipse.jdt.junit.core@default:default,org.eclipse.jdt.doc.isv@default:default,org.eclipse.pde@default:default,org.eclipse.jdt.compiler.apt@default:false,org.eclipse.jdt.apt.core@default:default,org.eclipse.jdt.debug@default:default,org.eclipse.jdt.ui@default:default,org.eclipse.jdt.apt.pluggable.core@default:default,org.eclipse.pde.ds.core@default:default,org.eclipse.pde.build@default:default,org.eclipse.pde.ua.ui@default:default,org.eclipse.jdt.launching@default:default,org.eclipse.pde.doc.user@default:default,org.eclipse.jdt.compiler.tool@default:false,org.eclipse.pde.ui@default:default,org.eclipse.jdt.core@default:default,org.eclipse.pde.ua.core@default:default,org.eclipse.jdt.junit.runtime@default:default,org.eclipse.jdt.core.manipulation@default:default,org.eclipse.pde.core@default:default,org.eclipse.pde.launching@default:default,org.eclipse.jdt.debug.ui@default:default,org.eclipse.jdt@default:default,org.eclipse.equinox.ds@default:true,org.eclipse.jdt.doc.user@default:default,org.eclipse.pde.runtime@default:default,org.eclipse.pde.api.tools.ui@default:default"/>
+<stringAttribute key="selected_workspace_plugins" value="org.oobium.mailer@default:default,org.oobium.utils.tests@default:default,org.oobium.build.runner@default:default,org.oobium.eclipse@default:default,org.oobium.persist.migrate@default:default,org.oobium.eclipse.esp@default:default,org.jsoup@default:default,org.oobium.persist.db.derby@default:default,org.mockito@default:default,org.oobium.persist.migrate.db.derby.embedded@default:default,org.oobium.build.console@default:default,org.oobium.persist.remote@default:default,org.oobium.persist.db.derby.embedded@default:default,org.oobium.app.dev@default:default,com.sun.mail@default:default,org.oobium.logging@default:default,org.oobium.build@default:default,org.oobium.persist.db@default:default,org.oobium.cache.file@default:default,org.oobium.utils@default:default,org.oobium.http.impl@default:default,org.apache.derby.client@default:default,org.oobium.test@default:default,org.oobium.persist@default:default,org.oobium.cache@default:default,org.oobium.eclipse.connector@default:default,org.oobium.manager@default:default,org.apache.derby@default:default,org.oobium.http@default:default,org.oobium.session.db@default:default,org.oobium.client@default:default,org.oobium.console@default:default,org.oobium.server@default:default,org.oobium.events@default:default,org.oobium.persist.migrate.db@default:default,org.oobium.app@default:default"/>
+<booleanAttribute key="show_selected_only" value="false"/>
+<stringAttribute key="templateConfig" value="${target_home}/configuration/config.ini"/>
+<booleanAttribute key="tracing" value="false"/>
+<booleanAttribute key="useCustomFeatures" value="false"/>
+<booleanAttribute key="useDefaultConfig" value="true"/>
+<booleanAttribute key="useDefaultConfigArea" value="true"/>
+<booleanAttribute key="useProduct" value="true"/>
+</launchConfiguration>
