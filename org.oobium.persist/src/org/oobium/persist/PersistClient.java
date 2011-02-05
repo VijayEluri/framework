@@ -10,12 +10,9 @@
  ******************************************************************************/
 package org.oobium.persist;
 
-import org.osgi.framework.BundleContext;
 
 public interface PersistClient {
 
-	public abstract BundleContext getContext();
-	
 	public abstract String getPersistClientName();
 	
 }
