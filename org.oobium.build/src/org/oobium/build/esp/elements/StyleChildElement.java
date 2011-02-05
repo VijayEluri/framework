@@ -18,7 +18,6 @@ import java.util.List;
 import org.oobium.build.esp.EspElement;
 import org.oobium.build.esp.EspPart;
 import org.oobium.build.esp.parts.StylePropertyPart;
-import org.oobium.utils.CharStreamUtils;
 
 public class StyleChildElement extends EspElement {
 
