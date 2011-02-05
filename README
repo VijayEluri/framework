@@ -45,7 +45,7 @@ INSTALLATION
 RUNNING
 
   Source:
-    An Eclipse Launcher is provided in the org.oobium.framework project.
+    An Eclipse Launcher is provided in the org.oobium.eclipse project.
     Open this launcher and go to the "Plug-ins" tab.
     Click the "Add Required Plug-ins" button (on the right).
     Click the "Run" button (or the "Debug" button, if debugging).
