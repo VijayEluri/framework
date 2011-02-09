@@ -241,6 +241,15 @@ public class FileUtils {
 		return jar;
 	}
 	
+	/**
+	 * Create a jar containing the given files and manifest.
+	 * @param jar the Jar File to create; may or may not exist
+	 * @param files a Map of Files to add to the Jar (entry name -> file)
+	 * @param manifest the manifest (optional)
+	 * @return the Jar File that is passed in
+	 * @throws IOException if there is a problem creating the jar file (if it does not already exist), if there
+	 * is a problem reading one of the files, or writing to the jar file
+	 */
 	public static File createJar(File jar, Map<String, File> files, Manifest manifest) throws IOException {
 		if(!jar.exists()) {
 			jar.getParentFile().mkdirs();
@@ -254,7 +263,7 @@ public class FileUtils {
 			jos = (manifest != null) ? new JarOutputStream(fos, manifest) : new JarOutputStream(fos);
 			
 			for(String name : files.keySet()) {
-				if(name.equals("META-INF/MANIFEST.MF") && manifest != null) {
+				if(manifest != null && name.equals("META-INF/MANIFEST.MF")) {
 					continue; // we created one above
 				}
 				File file = files.get(name);
