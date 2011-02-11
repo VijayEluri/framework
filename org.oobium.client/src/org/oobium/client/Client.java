@@ -80,7 +80,7 @@ public class Client {
 	}
 
 	public void aDelete() {
-		asyncRequest(DELETE, url.getPath(), null, null);
+		asyncRequest(DELETE, getPath(), null, null);
 	}
 	
 	public void aDelete(String path) {
@@ -100,11 +100,11 @@ public class Client {
 	}
 	
 	public void aPost(Map<String, ?> parameters) {
-		asyncRequest(POST, url.getPath(), parameters, null);
+		asyncRequest(POST, getPath(), parameters, null);
 	}
 	
 	public void aPost(Map<String, ?> parameters, ClientCallback callback) {
-		asyncRequest(POST, url.getPath(), parameters, callback);
+		asyncRequest(POST, getPath(), parameters, callback);
 	}
 	
 	public void aPost(String path) {
@@ -134,7 +134,7 @@ public class Client {
 	}
 
 	public ClientResponse delete() {
-		return syncRequest(DELETE, url.getPath());
+		return syncRequest(DELETE, getPath());
 	}
 
 	public ClientResponse delete(String path) {
@@ -158,7 +158,7 @@ public class Client {
 	}
 	
 	public ClientResponse get(Map<String, ?> parameters) {
-		return syncRequest(GET, url.getPath(), parameters);
+		return syncRequest(GET, getPath(), parameters);
 	}
 	
 	public ClientResponse get(String path) {
@@ -202,7 +202,7 @@ public class Client {
 	}
 
 	public ClientResponse post(Map<String, ?> parameters) {
-		return syncRequest(POST, url.getPath(), parameters);
+		return syncRequest(POST, getPath(), parameters);
 	}
 
 	public ClientResponse post(String path) {
@@ -253,11 +253,11 @@ public class Client {
 	}
 	
 	public ClientResponse syncRequest(RequestType type) {
-		return syncRequest(type, url.getPath(), null);
+		return syncRequest(type, getPath(), null);
 	}
 	
 	public ClientResponse syncRequest(RequestType type, Map<String, ?> parameters) {
-		ClientThread c = new ClientThread(this, type, url.getPath(), headers, parameters);
+		ClientThread c = new ClientThread(this, type, getPath(), headers, parameters);
 		c.run();
 		return c.getResponse();
 	}

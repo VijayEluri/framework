@@ -49,7 +49,9 @@ public class ClientThread extends Thread {
 	private ClientResponse response;
 
 	ClientThread(Client client, RequestType type, String path, Map<String, List<String>> headers, Map<String, ?> parameters) {
-		if(!path.startsWith("/")) {
+		if(path == null) {
+			path = "/";
+		} else if(!path.startsWith("/")) {
 			path = "/" + path;
 		}
 		this.client = client;
