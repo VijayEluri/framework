@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Remote Persist Service
+Bundle-SymbolicName: org.oobium.persist.http
+Bundle-Version: 0.6.0.qualifier
+Bundle-Vendor: oobium.org
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Import-Package: org.oobium.client,
+ org.oobium.http.constants,
+ org.oobium.logging,
+ org.oobium.persist,
+ org.oobium.utils,
+ org.oobium.utils.coercion,
+ org.oobium.utils.json
