@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.oobium.app.server.controller.Action;
 import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.controller.ICache;
 import org.oobium.app.server.controller.IFlash;
@@ -33,6 +32,7 @@ import org.oobium.app.server.routing.IUrlRouting;
 import org.oobium.app.server.routing.Router;
 import org.oobium.http.HttpRequest;
 import org.oobium.http.HttpSession;
+import org.oobium.http.constants.Action;
 import org.oobium.http.constants.ContentType;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;

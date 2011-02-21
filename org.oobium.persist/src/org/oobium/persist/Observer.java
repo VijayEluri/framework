@@ -19,10 +19,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 
 public class Observer<T extends Model> {
 
-	private static final Logger slogger = Logger.getLogger(PersistService.class);
+	private static final Logger slogger = LogProvider.getLogger(PersistService.class);
 
 	private static final Map<Class<?>, List<Observer<? extends Model>>> observerMap = new HashMap<Class<?>, List<Observer<? extends Model>>>();
 

@@ -10,7 +10,9 @@
  ******************************************************************************/
 package org.oobium.app;
 
-import static org.oobium.utils.json.JsonUtils.*;
+import static org.oobium.utils.json.JsonUtils.format;
+import static org.oobium.utils.json.JsonUtils.toJson;
+import static org.oobium.utils.json.JsonUtils.toMap;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -19,7 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 import org.oobium.utils.Config;
 import org.oobium.utils.FileUtils;
 
@@ -36,7 +38,7 @@ public class MutableAppConfig extends Config {
 					return new MutableAppConfig(file, map);
 				}
 			} catch(Exception e) {
-				Logger.getLogger().error("There was an error loading the configuration.", e);
+				LogProvider.getLogger().error("There was an error loading the configuration.", e);
 			}
 		}
 		return new MutableAppConfig(file, new HashMap<String, Object>(0));

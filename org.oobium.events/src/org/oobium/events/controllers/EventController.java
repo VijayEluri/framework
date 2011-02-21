@@ -13,8 +13,8 @@ package org.oobium.events.controllers;
 import java.sql.SQLException;
 import java.util.List;
 
-import org.oobium.app.server.controller.Action;
 import org.oobium.events.models.Event;
+import org.oobium.http.constants.Action;
 
 public class EventController extends ApplicationController {
 

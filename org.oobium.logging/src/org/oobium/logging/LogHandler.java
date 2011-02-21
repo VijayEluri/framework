@@ -11,9 +11,9 @@
 package org.oobium.logging;
 
 import static java.lang.Math.max;
-import static org.oobium.logging.ILogger.WARNING;
+import static org.oobium.logging.Logger.WARNING;
 import static org.oobium.logging.LogFormatter.format;
-import static org.oobium.logging.Logger.decode;
+import static org.oobium.logging.LoggerImpl.decode;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -91,7 +91,7 @@ public class LogHandler implements LogListener {
 
 	public LogHandler() {
 		this.inited = false;
-		if(Logger.getSystemFileLevel() != Logger.NEVER) {
+		if(LoggerImpl.getSystemFileLevel() != LoggerImpl.NEVER) {
 			this.name = getName();
 			this.max = getMax();
 			this.count = 0;
@@ -134,10 +134,10 @@ public class LogHandler implements LogListener {
 	public synchronized void logged(LogEntry log) {
 		Bundle bundle = log.getBundle();
 		int level = log.getLevel();
-		boolean isLoggingToConsole = Logger.isLoggingToConsole(bundle, level);
-		boolean isLoggingToFile = inited && Logger.isLoggingToFile(bundle, level);
+		boolean isLoggingToConsole = LoggerImpl.isLoggingToConsole(bundle, level);
+		boolean isLoggingToFile = inited && LoggerImpl.isLoggingToFile(bundle, level);
 		if(isLoggingToConsole || isLoggingToFile) {
-			String message = format(log.getBundle(), log.getLevel(), log.getMessage(), log.getException());
+			String message = format(bundle.getSymbolicName(), log.getLevel(), log.getMessage(), log.getException());
 			if(isLoggingToConsole) {
 				if(decode(level) <= WARNING) {
 					System.err.print(message);

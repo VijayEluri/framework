@@ -41,6 +41,7 @@ import org.oobium.http.constants.RequestType;
 import org.oobium.http.impl.Cookie;
 import org.oobium.http.impl.Headers;
 import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 
 public class Request implements HttpRequest {
 
@@ -78,7 +79,7 @@ public class Request implements HttpRequest {
 	private String ipAddress;
 	
 	public Request(RequestType type, String path, String fullPath, Headers headers, Map<String, Object> parameters) {
-		logger = Logger.getLogger(Server.class);
+		logger = LogProvider.getLogger(Server.class);
 		
 		this.type = type;
 		this.path = path;

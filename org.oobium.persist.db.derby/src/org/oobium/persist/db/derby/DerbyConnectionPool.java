@@ -18,13 +18,13 @@ import javax.sql.ConnectionPoolDataSource;
 
 import org.apache.derby.jdbc.ClientConnectionPoolDataSource;
 import org.apache.derby.jdbc.EmbeddedConnectionPoolDataSource;
-import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 import org.oobium.persist.db.ConnectionPool;
 
 public class DerbyConnectionPool extends ConnectionPool {
 
 	public DerbyConnectionPool(String client, Map<String, Object> properties) {
-		super(client, properties, Logger.getLogger(DerbyPersistService.class));
+		super(client, properties, LogProvider.getLogger(DerbyPersistService.class));
 	}
 
 	@Override

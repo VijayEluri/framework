@@ -8,7 +8,7 @@
  * Contributors:
  *     Jeremy Dowdall <jeremy@oobium.com> - initial API and implementation
  ******************************************************************************/
-package org.oobium.persist;
+package org.oobium.app.persist;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,13 +17,17 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
+import org.oobium.persist.Model;
+import org.oobium.persist.NullPersistService;
+import org.oobium.persist.PersistService;
+import org.oobium.persist.PersistServiceProvider;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Filter;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.util.tracker.ServiceTracker;
 
-public class PersistServices {
+public class PersistServices implements PersistServiceProvider {
 
 	private final ThreadLocal<String> threadSessionName = new ThreadLocal<String>();
 	private final ThreadLocal<List<PersistService>> threadOpenServices = new ThreadLocal<List<PersistService>>();
@@ -97,6 +101,7 @@ public class PersistServices {
 		}
 	}
 	
+	@Override
 	public void closeSession() {
 		closeSessions();
 		this.threadSessionName.set(null);
@@ -113,15 +118,7 @@ public class PersistServices {
 		}
 	}
 	
-	/**
-	 * Get the PersistService for the given class, or the primary PersistService
-	 * if the given class does not map to any PersistService.<br>
-	 * PersistServices are keyed off the class's name, so this method is functionally equivalent
-	 * to calling get(clazz.getName()).
-	 * @param clazz the class whose PersistService is being retrieved.  Can be null.
-	 * @return the PersistService for the given class, if one exists; the primary PersistService otherwise, never null.
-	 * @see PersistServices#getFor(String)
-	 */
+	@Override
 	public PersistService getFor(Class<? extends Model> clazz) {
 		if(classServices != null && clazz != null) {
 			Object o = classServices.get(clazz.getName());
@@ -132,12 +129,7 @@ public class PersistServices {
 		return getService(primaryService);
 	}
 	
-	/**
-	 * Get the PersistService for the class with the given name, or the primary PersistService
-	 * if the given class does not map to any PersistService.
-	 * @param clazz the class whose PersistService is being retrieved. Can be null.
-	 * @return the PersistService for the given class, if one exists; the primary PersistService otherwise, never null.
-	 */
+	@Override
 	public PersistService getFor(String className) {
 		if(classServices != null && className != null && className.length() > 0) {
 			Object o = classServices.get(className);
@@ -152,6 +144,7 @@ public class PersistServices {
 		return threadOpenServices.get();
 	}
 	
+	@Override
 	public PersistService getPrimary() {
 		return getService(primaryService);
 	}
@@ -276,17 +269,13 @@ public class PersistServices {
 		}
 	}
 	
-	/** 
-	 * Sets the session name for open persist service sessions in this thread.
-	 * First closes any sessions that may already be open.
-	 * <p>Thread safe if the persist services handle sessions in a thread safe manner.</p>
-	 * @param name
-	 */
+	@Override
 	public void openSession(String name) {
 		closeSessions();
 		threadSessionName.set(name);
 	}
 
+	@Override
 	public Object put(Class<? extends Model> clazz, PersistService service) {
 		return put(clazz.getName(), service);
 	}
@@ -298,6 +287,7 @@ public class PersistServices {
 		return classServices.put(className, service);
 	}
 
+	@Override
 	public Object remove(Class<? extends Model> clazz) {
 		if(classServices != null) {
 			Object old = classServices.remove(clazz);
@@ -309,6 +299,7 @@ public class PersistServices {
 		return null;
 	}
 	
+	@Override
 	public Object set(PersistService service) {
 		Object old = this.primaryService;
 		this.primaryService = service;

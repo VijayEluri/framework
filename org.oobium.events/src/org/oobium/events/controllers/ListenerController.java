@@ -14,8 +14,8 @@ import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.List;
 
-import org.oobium.app.server.controller.Action;
 import org.oobium.events.models.Listener;
+import org.oobium.http.constants.Action;
 
 public class ListenerController extends ApplicationController {
 

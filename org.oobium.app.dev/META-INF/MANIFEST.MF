@@ -6,6 +6,7 @@ Bundle-Version: 0.6.0.qualifier
 Oobium-Type: module
 Import-Package: org.oobium.app,
  org.oobium.app.model,
+ org.oobium.app.persist,
  org.oobium.app.server.controller,
  org.oobium.app.server.response,
  org.oobium.app.server.routing,

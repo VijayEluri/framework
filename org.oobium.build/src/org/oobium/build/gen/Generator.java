@@ -33,6 +33,7 @@ import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.Workspace;
 import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 import org.oobium.utils.Config.Mode;
 
 public class Generator {
@@ -49,7 +50,7 @@ public class Generator {
 	}
 	
 	public Generator(Workspace workspace, Collection<? extends Module> modules) {
-		this.logger = Logger.getLogger(BuildBundle.class);
+		this.logger = LogProvider.getLogger(BuildBundle.class);
 		this.workspace = workspace;
 		this.modules = new LinkedHashSet<Module>(modules);
 	}

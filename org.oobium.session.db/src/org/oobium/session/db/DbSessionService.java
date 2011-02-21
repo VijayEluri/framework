@@ -14,6 +14,7 @@ import java.util.Properties;
 
 import org.oobium.http.HttpSession;
 import org.oobium.http.HttpSessionService;
+import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
@@ -23,7 +24,7 @@ public class DbSessionService implements BundleActivator, HttpSessionService {
 	private final Logger logger;
 
 	public DbSessionService() {
-		logger = Logger.getLogger(DbSessionService.class);
+		logger = LogProvider.getLogger(DbSessionService.class);
 	}
 	
 	@Override
@@ -40,7 +41,7 @@ public class DbSessionService implements BundleActivator, HttpSessionService {
 	
 	@Override
 	public void start(BundleContext context) throws Exception {
-		logger.setBundle(context.getBundle());
+		logger.setTag(context.getBundle().getSymbolicName());
 		
 		Properties properties = new Properties();
 		properties.put(HttpSessionService.TYPE, getClass().getPackage().getName());
@@ -52,7 +53,7 @@ public class DbSessionService implements BundleActivator, HttpSessionService {
 	@Override
 	public void stop(BundleContext context) throws Exception {
 		logger.info("SessionService stopped");
-		logger.setBundle(null);
+		logger.setTag(null);
 	}
 
 }

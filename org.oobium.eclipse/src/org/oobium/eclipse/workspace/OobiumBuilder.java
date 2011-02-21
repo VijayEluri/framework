@@ -27,6 +27,7 @@ import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Module;
 import org.oobium.eclipse.OobiumPlugin;
 import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 import org.oobium.utils.FileUtils;
 
 public class OobiumBuilder extends IncrementalProjectBuilder {
@@ -36,7 +37,7 @@ public class OobiumBuilder extends IncrementalProjectBuilder {
 	private Logger logger;
 
 	public OobiumBuilder() {
-		logger = Logger.getLogger(OobiumPlugin.class);
+		logger = LogProvider.getLogger(OobiumPlugin.class);
 	}
 
 	@Override

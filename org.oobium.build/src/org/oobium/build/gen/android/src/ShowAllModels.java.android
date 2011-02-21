@@ -1,0 +1,87 @@
+package {projectPackage}.activities.{modelsVar};
+
+import java.sql.SQLException;
+import java.util.List;
+
+import android.app.Activity;
+import android.app.ProgressDialog;
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.ListView;
+import android.widget.TextView;
+
+import {modelPackage}.{modelName};
+import {projectPackage}.R;
+import {projectPackage}.activities.{modelsVar}.{modelName}Adapter;
+
+public class ShowAll{modelsName} extends Activity {
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.show_all_{modelsVar});
+		
+		Button b = (Button) findViewById(R.id.create);
+		b.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				Intent intent = new Intent(ShowAll{modelsName}.this, ShowNew{modelName}.class);
+				startActivity(intent);
+			}
+		});
+
+		b = (Button) findViewById(R.id.refresh);
+		b.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				load();
+			}
+		});
+		
+		load();
+	}
+
+	private void load() {
+		final ProgressDialog progress = ProgressDialog.show(this, "Please wait...", "Retrieving data...", true);
+
+		Thread thread = new Thread("loading {modelsVar}") {
+			public void run() {
+				try {
+					final List<{modelName}> {modelsVar} = {modelName}.findAll();
+					runOnUiThread(new Runnable() {
+						@Override
+						public void run() {
+							{modelName}Adapter adapter = new {modelName}Adapter(ShowAll{modelsName}.this, R.layout.{modelVar}_item, {modelsVar});
+							ListView list = (ListView) findViewById(R.id.list);
+							list.setAdapter(adapter);
+							TextView status = (TextView) findViewById(R.id.status);
+							if({modelsVar}.size() == 0) {
+								status.setText("There are no {modelsVar}");
+								status.setVisibility(View.VISIBLE);
+							} else {
+								status.setVisibility(View.GONE);
+							}
+						}
+					});
+				} catch(SQLException e) {
+					final String message = e.getMessage();
+					runOnUiThread(new Runnable() {
+						@Override
+						public void run() {
+							TextView status = (TextView) findViewById(R.id.status);
+							status.setText("Error loading {modelsVar}: " + message);
+							status.setVisibility(View.VISIBLE);
+						}
+					});
+				} finally {
+					progress.dismiss();
+				}
+			};
+		};
+		thread.start();
+	}
+	
+}

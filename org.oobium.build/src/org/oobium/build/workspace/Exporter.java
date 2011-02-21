@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.oobium.build.BuildBundle;
+import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
 import org.oobium.persist.migrate.MigratorService;
 import org.oobium.utils.Config.Mode;
@@ -124,7 +125,7 @@ public class Exporter {
 	private boolean isMigrator;
 	
 	public Exporter(Workspace workspace, Application application) {
-		this.logger = Logger.getLogger(BuildBundle.class);
+		this.logger = LogProvider.getLogger(BuildBundle.class);
 		this.workspace = workspace;
 		this.application = application;
 		this.start = new LinkedHashSet<Bundle>();
@@ -265,7 +266,7 @@ public class Exporter {
 			}
 		}
 		
-		return Bundle.create(jar);
+		return (Bundle) Project.load(jar);
 	}
 
 	private void addExported(Bundle bundle, Bundle exportedBundle) {

@@ -10,12 +10,12 @@
  ******************************************************************************/
 package org.oobium.app.server.routing.handlers;
 
-import org.oobium.app.server.controller.Action;
 import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.response.Response;
 import org.oobium.app.server.routing.RouteHandler;
 import org.oobium.app.server.routing.Router;
 import org.oobium.http.HttpRequest;
+import org.oobium.http.constants.Action;
 
 public class ControllerHandler extends RouteHandler {
 

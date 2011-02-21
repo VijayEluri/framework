@@ -34,10 +34,12 @@ import org.oobium.build.runner.RunEvent.Type;
 import org.oobium.build.runner.RunListener;
 import org.oobium.build.runner.RunnerService;
 import org.oobium.build.workspace.Bundle;
+import org.oobium.build.workspace.Project;
 import org.oobium.build.workspace.Workspace;
 import org.oobium.eclipse.views.developer.ConsoleView;
 import org.oobium.eclipse.views.server.ServerView;
 import org.oobium.eclipse.workspace.ResourceChangeListener;
+import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
 import org.oobium.utils.Config.OsgiRuntime;
 import org.oobium.utils.FileUtils;
@@ -86,7 +88,7 @@ public class OobiumPlugin extends AbstractUIPlugin {
 		super();
 		instance = this;
 		workspace = new Workspace();
-		logger = Logger.getLogger(OobiumPlugin.class);
+		logger = LogProvider.getLogger(OobiumPlugin.class);
 	}
 
 	/**
@@ -158,7 +160,7 @@ public class OobiumPlugin extends AbstractUIPlugin {
 				int ix = location.indexOf("file:");
 				if(ix != -1) {
 					File file = FileUtils.getAbsolute(location.substring(ix+5), install);
-					Bundle loaded = workspace.loadBundle(file);
+					Project loaded = workspace.load(file);
 					if(logger.isLoggingDebug()) {
 						if(loaded != null) {
 							logger.debug("loaded " + loaded + " from "+ loaded.file);
@@ -186,8 +188,8 @@ public class OobiumPlugin extends AbstractUIPlugin {
 				}
 				try {
 					if(build.isJar) {
-						workspace.loadBundle(FileUtils.copyJarEntry(build.file, "lib/felix.jar", dataArea));
-						workspace.loadBundle(FileUtils.copyJarEntry(build.file, "lib/org.apache.felix.log-1.0.0.jar", dataArea));
+						workspace.load(FileUtils.copyJarEntry(build.file, "lib/felix.jar", dataArea));
+						workspace.load(FileUtils.copyJarEntry(build.file, "lib/org.apache.felix.log-1.0.0.jar", dataArea));
 					} else {
 						File src = new File(build.file, "lib");
 						File dst = new File(dataArea, "lib");
@@ -210,7 +212,7 @@ public class OobiumPlugin extends AbstractUIPlugin {
 		logger.debug("loading project in the Eclipse workspace");
 		for(IProject project : ResourcesPlugin.getWorkspace().getRoot().getProjects()) {
 			if(project.isOpen()) {
-				workspace.loadBundle(project.getLocation().toFile());
+				workspace.load(project.getLocation().toFile());
 				if(logger.isLoggingDebug()) {
 					logger.debug("loaded " + project.getName());
 				}
@@ -223,7 +225,7 @@ public class OobiumPlugin extends AbstractUIPlugin {
 	@Override
 	public void start(BundleContext context) throws Exception {
 		super.start(context);
-		logger.setBundle(context.getBundle());
+		logger.setTag(context.getBundle().getSymbolicName());
 		
 		loadPreferences();
 
@@ -254,7 +256,7 @@ public class OobiumPlugin extends AbstractUIPlugin {
 	@Override
 	public void stop(BundleContext context) throws Exception {
 		ResourcesPlugin.getWorkspace().removeResourceChangeListener(listener);
-		logger.setBundle(null);
+		logger.setTag(null);
 		instance = null;
 		workspace = null;
 		super.stop(context);

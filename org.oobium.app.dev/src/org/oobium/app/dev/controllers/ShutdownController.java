@@ -14,7 +14,7 @@ import java.sql.SQLException;
 
 import org.oobium.app.dev.AppDevActivator;
 import org.oobium.app.server.controller.Controller;
-import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 
@@ -35,7 +35,7 @@ public class ShutdownController extends Controller {
 				bundle.stop();
 			} catch(BundleException e) {
 				System.out.println("oophta!");
-				Logger.getLogger().error("could not shutdown", e);
+				LogProvider.getLogger().error("could not shutdown", e);
 			}
 		}
 	}

@@ -1,0 +1,132 @@
+package {projectPackage}.activities.{modelsVar};
+
+import java.sql.SQLException;
+
+import android.app.Activity;
+import android.app.ProgressDialog;
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+
+import {modelPackage}.{modelName};
+import {projectPackage}.R;
+
+public class ShowEdit{modelName} extends Activity {
+
+	private int id;
+	
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		
+		id = getIntent().getIntExtra("id", 0);
+
+		setContentView(R.layout.show_edit_{modelVar});
+		
+		Button b = (Button) findViewById(R.id.update);
+		b.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				update();
+			}
+		});
+		
+		b = (Button) findViewById(R.id.showAll);
+		b.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				Intent intent = new Intent(ShowEdit{modelName}.this, ShowAll{modelsName}.class);
+				startActivity(intent);
+			}
+		});
+		
+		b = (Button) findViewById(R.id.refresh);
+		b.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				load();
+			}
+		});
+
+		load();
+	}
+	
+	private void load() {
+		final ProgressDialog progress = ProgressDialog.show(this, "Please wait...", "Retrieving data...", true);
+
+		Thread thread = new Thread("loading {modelVar} " + id) {
+			public void run() {
+				try {
+					final {modelName} {modelVar} = {modelName}.find(id);
+					runOnUiThread(new Runnable() {
+						@Override
+						public void run() {
+							View form = findViewById(R.id.form);
+							TextView status = (TextView) findViewById(R.id.status);
+							if({modelVar} == null) {
+								status.setText("There is no {modelVar} with the given id: " + id);
+								status.setVisibility(View.VISIBLE);
+								form.setVisibility(View.GONE);
+							} else {
+								setViewFields(form, {modelVar});
+								form.setVisibility(View.VISIBLE);
+								status.setVisibility(View.GONE);
+							}
+						}
+					});
+				} catch(SQLException e) {
+					final String message = e.getMessage();
+					runOnUiThread(new Runnable() {
+						@Override
+						public void run() {
+							TextView status = (TextView) findViewById(R.id.status);
+							status.setText("Error loading {modelVar}{" + id + "}: " + message);
+							status.setVisibility(View.VISIBLE);
+						}
+					});
+				} finally {
+					progress.dismiss();
+				}
+			};
+		};
+		thread.start();
+	}
+
+	private void update() {
+		final ProgressDialog progress = ProgressDialog.show(this, "Please wait...", "Sending data...", true);
+
+		Thread thread = new Thread("updating {modelVar}") {
+			public void run() {
+				try {
+					{modelName} {modelVar} = new {modelName}().setId(id);
+					
+					setModelFields({modelVar});
+					
+					if({modelVar}.update()) {
+						Intent intent = new Intent(ShowEdit{modelName}.this, Show{modelName}.class);
+						intent.putExtra("id", {modelVar}.getId());
+						startActivity(intent);
+					} else {
+						// TODO
+					}
+				} finally {
+					progress.dismiss();
+				}
+			}
+		};
+		thread.start();
+	}
+
+	private void setModelFields({modelName} {modelVar}) {
+		{setModelFields}
+	}
+	
+	private void setViewFields(View view, {modelName} {modelVar}) {
+		{setViewFields}
+	}
+	
+}

@@ -24,6 +24,7 @@ import java.util.jar.JarFile;
 import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.routing.Router;
 import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 import org.oobium.persist.Model;
 import org.oobium.persist.Observer;
 import org.oobium.utils.Config;
@@ -70,7 +71,7 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 	protected Router router;
 
 	public ModuleService() {
-		logger = Logger.getLogger(getClass());
+		logger = LogProvider.getLogger(getClass());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -335,7 +336,7 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 			activatorsByName.put(getName(), this);
 		}
 
-		logger.setBundle(context.getBundle());
+		logger.setTag(context.getBundle().getSymbolicName());
 		logger.info(toString() + " starting...");
 		
 		if(this instanceof AppService) {
@@ -371,7 +372,7 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 		}
 
 		logger.info(toString() + " stopped");
-		logger.setBundle(null);
+		logger.setTag(null);
 
 		this.context = null;
 

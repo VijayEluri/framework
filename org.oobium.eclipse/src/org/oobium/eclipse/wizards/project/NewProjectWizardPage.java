@@ -12,8 +12,8 @@ package org.oobium.eclipse.wizards.project;
 
 import static org.eclipse.swt.SWT.FILL;
 import static org.eclipse.swt.SWT.RADIO;
-import static org.oobium.build.workspace.Bundle.Type.Application;
-import static org.oobium.build.workspace.Bundle.Type.Module;
+import static org.oobium.build.workspace.Project.Type.Application;
+import static org.oobium.build.workspace.Project.Type.Module;
 
 import org.eclipse.jface.wizard.IWizardPage;
 import org.eclipse.swt.SWT;
@@ -26,12 +26,13 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.ui.dialogs.WizardNewProjectCreationPage;
 import org.oobium.build.workspace.Bundle;
+import org.oobium.build.workspace.Project;
 import org.oobium.eclipse.OobiumPlugin;
 
 public class NewProjectWizardPage extends WizardNewProjectCreationPage implements IWizardPage {
 
 	private Button[] b;
-	private Bundle.Type type;
+	private Project.Type type;
 	private boolean webservice;
 	
 	protected NewProjectWizardPage(String pageName) {

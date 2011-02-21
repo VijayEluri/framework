@@ -32,6 +32,7 @@ import org.oobium.http.HttpRequest500Handler;
 import org.oobium.http.HttpRequestHandler;
 import org.oobium.http.HttpResponse;
 import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 
 public class ServerSelector implements Runnable {
 
@@ -50,7 +51,7 @@ public class ServerSelector implements Runnable {
 	private volatile boolean addingRequestHandler;
 
 	public ServerSelector() {
-		logger = Logger.getLogger(Server.class);
+		logger = LogProvider.getLogger(Server.class);
 		
 		try {
 			selector = Selector.open();

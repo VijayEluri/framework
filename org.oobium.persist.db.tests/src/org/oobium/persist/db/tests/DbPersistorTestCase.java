@@ -19,14 +19,15 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 import org.oobium.persist.Model;
-import org.oobium.persist.PersistServices;
+import org.oobium.persist.SimplePersistServiceProvider;
 import org.oobium.persist.db.DbPersistService;
 import org.oobium.persist.db.derby.embedded.DerbyEmbeddedPersistService;
 
 public class DbPersistorTestCase {
 
-	protected static final Logger logger = Logger.getLogger(DbPersistService.class);
+	protected static final Logger logger = LogProvider.getLogger(DbPersistService.class);
 	
 	protected static final String schema = "dbtest";
 	protected static DbPersistService service;
@@ -40,13 +41,13 @@ public class DbPersistorTestCase {
 	public void setUp() {
 		service = new DerbyEmbeddedPersistService(schema, true);
 		Model.setLogger(logger);
-		Model.setPersistServices(new PersistServices(service));
+		Model.setPersistServiceProvider(new SimplePersistServiceProvider(service));
 	}
 
 	@After
 	public void tearDown() {
 		Model.setLogger(null);
-		Model.setPersistServices(null);
+		Model.setPersistServiceProvider(null);
 		dropDatabase();
 		service.closeSession();
 		service = null;

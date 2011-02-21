@@ -77,7 +77,7 @@ public class TypeCoercerTests {
 	@Test
 	public void testMapToString() throws Exception {
 		// presently coded to be a JSON formatted string
-		assertEquals("{a:\"b\"}", coerce(Collections.singletonMap("a", "b"), String.class));
+		assertEquals("{\"a\":\"b\"}", coerce(Collections.singletonMap("a", "b"), String.class));
 	}
 	
 	@Test
@@ -142,14 +142,14 @@ public class TypeCoercerTests {
 		obj.name = "bob";
 		obj.size = 1;
 		
-		String type = SERIALIZATION_TYPE_KEY + ":\"" + obj.getClass().getName() + "\"";
+		String type = SERIALIZATION_TYPE_KEY + "\":\"" + obj.getClass().getName();
 		
-		assertEquals("{" + type + ",name:\"bob\",size:1}", coerce(obj, String.class));
+		assertEquals("{\"" + type + "\",\"name\":\"bob\",\"size\":1}", coerce(obj, String.class));
 		
-		assertNotNull(coerce("{" + type + "}", SerializeTest.class));
-		assertNotNull(coerce("{" + type + ",name:\"bob\",size:1}", SerializeTest.class));
-		assertEquals(obj.name, coerce("{" + type + ",name:\"bob\",size:1}", SerializeTest.class).name);
-		assertEquals(obj.size, coerce("{" + type + ",name:\"bob\",size:1}", SerializeTest.class).size);
+		assertNotNull(coerce("{\"" + type + "\"}", SerializeTest.class));
+		assertNotNull(coerce("{\"" + type + "\",\"name\":\"bob\",\"size\":1}", SerializeTest.class));
+		assertEquals(obj.name, coerce("{\"" + type + "\",\"name\":\"bob\",\"size\":1}", SerializeTest.class).name);
+		assertEquals(obj.size, coerce("{\"" + type + "\",\"name\":\"bob\",\"size\":1}", SerializeTest.class).size);
 	}
 
 	@Test

@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.oobium.app.server.controller.Action;
 import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.routing.routes.ControllerRoute;
+import org.oobium.http.constants.Action;
 import org.oobium.http.constants.RequestType;
 
 public class DiscoveryController extends Controller {

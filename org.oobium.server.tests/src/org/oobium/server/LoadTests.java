@@ -13,18 +13,12 @@ package org.oobium.server;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Ignore;
 import org.junit.Test;
-import org.oobium.client.Client;
-import org.oobium.client.ClientResponse;
 
 public class LoadTests {
 	
@@ -47,6 +41,7 @@ public class LoadTests {
 		System.out.println("req / second: " + (int) ((double) requests / ((double) duration / 1000)));
 	}
 	
+	@Ignore
 	@Test
 	public void testWithCurl() throws Exception {
 		long start = System.currentTimeMillis();

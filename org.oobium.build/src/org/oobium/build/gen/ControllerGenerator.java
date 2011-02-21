@@ -30,11 +30,11 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.oobium.app.server.controller.Action;
 import org.oobium.app.server.controller.Controller;
 import org.oobium.build.model.ModelDefinition;
 import org.oobium.build.util.SourceFile;
 import org.oobium.build.workspace.Module;
+import org.oobium.http.constants.Action;
 import org.oobium.http.constants.ContentType;
 
 public class ControllerGenerator {
@@ -136,7 +136,6 @@ public class ControllerGenerator {
 	}
 	
 	private void addImports(TreeSet<String> imports) {
-		imports.add("static " + Action.class.getCanonicalName() + ".*");
 		imports.add(SQLException.class.getCanonicalName());
 		imports.add(model.getCanonicalName());
 	}
@@ -145,6 +144,8 @@ public class ControllerGenerator {
 		addImports(imports);
 		imports.add(List.class.getCanonicalName());
 		if(withViews) {
+			imports.add("static " + Action.class.getCanonicalName() + ".*");
+			imports.add("static " + ContentType.class.getCanonicalName() + ".*");
 			imports.add(module.packageName(module.getViewsFolder(mType))+".ShowAll"+mTypePlural);
 		}
 	}
@@ -152,6 +153,8 @@ public class ControllerGenerator {
 	private void addShowEditViewImports(TreeSet<String> imports) {
 		addImports(imports);
 		if(withViews) {
+			imports.add("static " + Action.class.getCanonicalName() + ".*");
+			imports.add("static " + ContentType.class.getCanonicalName() + ".*");
 			imports.add(module.packageName(module.getViewsFolder(mType))+".ShowEdit"+mType);
 		}
 	}
@@ -159,6 +162,8 @@ public class ControllerGenerator {
 	private void addShowNewViewImports(TreeSet<String> imports) {
 		addImports(imports);
 		if(withViews) {
+			imports.add("static " + Action.class.getCanonicalName() + ".*");
+			imports.add("static " + ContentType.class.getCanonicalName() + ".*");
 			imports.add(module.packageName(module.getViewsFolder(mType))+".ShowNew"+mType);
 		}
 	}
@@ -166,6 +171,8 @@ public class ControllerGenerator {
 	private void addShowViewImports(TreeSet<String> imports) {
 		addImports(imports);
 		if(withViews) {
+			imports.add("static " + Action.class.getCanonicalName() + ".*");
+			imports.add("static " + ContentType.class.getCanonicalName() + ".*");
 			imports.add(module.packageName(module.getViewsFolder(mType))+".Show"+mType);
 		}
 	}
@@ -184,7 +191,6 @@ public class ControllerGenerator {
 			src.imports.add(Controller.class.getCanonicalName());
 		}
 		src.imports.add(SQLException.class.getCanonicalName());
-		src.staticImports.add(ContentType.class.getCanonicalName() + ".*");
 
 		for(int i = 0; i < 7; i++) {
 			addImports(i, src.imports);

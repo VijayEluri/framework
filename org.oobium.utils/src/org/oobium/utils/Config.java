@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 import org.oobium.utils.coercion.TypeCoercer;
 
 public class Config {
@@ -98,7 +98,7 @@ public class Config {
 			Map<String, Object> map = toMap(getResourceAsString(refClass, "configuration.js"));
 			return new Config(map, mode);
 		} catch(Exception e) {
-			Logger.getLogger(refClass).error("There was an error loading the configuration.", e);
+			LogProvider.getLogger(refClass).error("There was an error loading the configuration.", e);
 		}
 		return new Config(new HashMap<String, Object>(0), mode);
 	}
@@ -115,7 +115,7 @@ public class Config {
 					return new Config(map);
 				}
 			} catch(Exception e) {
-				Logger.getLogger().error("There was an error loading the configuration.", e);
+				LogProvider.getLogger(Config.class).error("There was an error loading the configuration.", e);
 			}
 		}
 		return new Config(new HashMap<String, Object>(0));

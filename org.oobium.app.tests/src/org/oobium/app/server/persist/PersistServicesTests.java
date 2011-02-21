@@ -8,7 +8,7 @@
  * Contributors:
  *     Jeremy Dowdall <jeremy@oobium.com> - initial API and implementation
  ******************************************************************************/
-package org.oobium.persist;
+package org.oobium.app.server.persist;
 
 import static java.util.Arrays.*;
 import static org.junit.Assert.*;
@@ -20,10 +20,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.oobium.app.persist.PersistServices;
 import org.oobium.persist.Model;
 import org.oobium.persist.NullPersistService;
 import org.oobium.persist.PersistAdapter;
-import org.oobium.persist.PersistServices;
+import org.oobium.persist.ServiceInfo;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Filter;
 import org.osgi.framework.ServiceReference;

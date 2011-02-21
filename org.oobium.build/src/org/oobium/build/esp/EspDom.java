@@ -23,7 +23,7 @@ import org.oobium.build.esp.elements.ImportElement;
 import org.oobium.build.esp.elements.JavaElement;
 import org.oobium.build.esp.elements.ScriptElement;
 import org.oobium.build.esp.elements.StyleElement;
-import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 
 
 public class EspDom extends EspPart {
@@ -295,7 +295,7 @@ public class EspDom extends EspPart {
 				parse();
 			} catch(Throwable t) {
 				t.printStackTrace();
-				Logger.getLogger(BuildBundle.class).warn(t);
+				LogProvider.getLogger(BuildBundle.class).warn(t);
 			}
 		}
 	}

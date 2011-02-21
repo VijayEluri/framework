@@ -12,7 +12,7 @@ package org.oobium.build.workspace;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
-import static org.oobium.build.workspace.Bundle.Type.Module;
+import static org.oobium.build.workspace.Project.Type.Module;
 
 import java.io.File;
 import java.util.jar.Attributes;

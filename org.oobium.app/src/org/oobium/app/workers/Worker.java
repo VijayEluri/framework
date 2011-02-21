@@ -16,7 +16,7 @@ import java.util.concurrent.Future;
 
 import org.oobium.app.AppService;
 import org.oobium.persist.Model;
-import org.oobium.persist.PersistServices;
+import org.oobium.persist.PersistServiceProvider;
 
 public class Worker {
 
@@ -78,11 +78,11 @@ public class Worker {
 	private void execute() {
 		running = true;
 		AppService service = workers.getService();
-		PersistServices services = service.getPersistServices();
+		PersistServiceProvider services = service.getPersistServices();
 		AppService.set(service);
 		services.openSession(service.getPersistClientName());
 		Model.setLogger(service.getLogger());
-		Model.setPersistServices(services);
+		Model.setPersistServiceProvider(services);
 		try {
 			if(runnables == null) {
 				run();
@@ -105,7 +105,7 @@ public class Worker {
 			this.e = e;
 		} finally {
 			services.closeSession();
-			Model.setPersistServices(null);
+			Model.setPersistServiceProvider(null);
 			Model.setLogger(null);
 			AppService.set(null);
 			task = null;

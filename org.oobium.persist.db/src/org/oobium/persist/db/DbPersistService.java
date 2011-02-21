@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.persist.PersistClient;
@@ -57,7 +58,7 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 
 
 	public DbPersistService() {
-		logger = Logger.getLogger(DbPersistService.class);
+		logger = LogProvider.getLogger(DbPersistService.class);
 		persistor = new DbPersistor();
 		connectionPools = new HashMap<String, ConnectionPool>();
 	}
@@ -73,7 +74,7 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	 * @param timeout
 	 */
 	public DbPersistService(String client, boolean inMemory) {
-		logger = Logger.getLogger(DbPersistService.class);
+		logger = LogProvider.getLogger(DbPersistService.class);
 		openSession(client);
 		persistor = new DbPersistor();
 		sConnManager = new SingleConnectionManager(threadClient.get(), inMemory);
@@ -338,7 +339,7 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 
 	public void start(BundleContext context) throws Exception {
 		this.context = context;
-		logger.setBundle(context.getBundle());
+		logger.setTag(context.getBundle().getSymbolicName());
 		logger.info("PersistService starting");
 		
 		appTracker = new ServiceTracker(context, PersistClient.class.getName(), new ServiceTrackerCustomizer() {
@@ -396,7 +397,7 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		appTracker = null;
 		this.context = null;
 		logger.info("PersistService stopped");
-		logger.setBundle(null);
+		logger.setTag(null);
 	}
 
 	@Override

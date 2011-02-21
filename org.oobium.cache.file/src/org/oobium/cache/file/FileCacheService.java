@@ -24,6 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.oobium.cache.CacheService;
+import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
@@ -36,13 +37,13 @@ public class FileCacheService implements BundleActivator, CacheService {
 	private final ReadWriteLock lock;
 	
 	public FileCacheService() {
-		logger = Logger.getLogger(FileCacheService.class);
+		logger = LogProvider.getLogger(FileCacheService.class);
 		lock = new ReentrantReadWriteLock();
 	}
 	
 	@Override
 	public void start(BundleContext context) throws Exception {
-		logger.setBundle(context.getBundle());
+		logger.setTag(context.getBundle().getSymbolicName());
 		
 		Properties properties = new Properties();
 		properties.put(CacheService.TYPE, CacheService.TYPE_FILE);
@@ -54,7 +55,7 @@ public class FileCacheService implements BundleActivator, CacheService {
 	@Override
 	public void stop(BundleContext context) throws Exception {
 		logger.info("CacheService stopped");
-		logger.setBundle(null);
+		logger.setTag(null);
 	}
 
 	private String OSKey(String key) {

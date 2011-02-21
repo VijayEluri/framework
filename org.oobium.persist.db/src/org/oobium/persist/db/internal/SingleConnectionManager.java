@@ -17,6 +17,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 import org.oobium.persist.db.DbPersistService;
 
 public class SingleConnectionManager {
@@ -29,7 +30,7 @@ public class SingleConnectionManager {
 	private boolean inMemory;
 
 	public SingleConnectionManager(String database, boolean inMemory) {
-		logger = Logger.getLogger(DbPersistService.class);
+		logger = LogProvider.getLogger(DbPersistService.class);
 		this.database = database;
 		this.inMemory = inMemory;
 	}

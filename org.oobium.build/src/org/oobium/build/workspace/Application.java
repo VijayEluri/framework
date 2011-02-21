@@ -61,7 +61,7 @@ public class Application extends Module {
 		Exporter exporter = new Exporter(workspace, this);
 		File jar = exporter.getExportedJar(bundle);
 		if(jar != null) {
-			return (T) Bundle.create(jar);
+			return (T) Bundle.load(jar);
 		}
 		return null;
 	}

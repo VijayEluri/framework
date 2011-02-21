@@ -30,11 +30,13 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.oobium.build.BuildBundle;
 import org.oobium.build.gen.ProjectGenerator;
+import org.oobium.build.workspace.Project.Type;
 import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 import org.oobium.utils.Config;
-import org.oobium.utils.FileUtils;
 import org.oobium.utils.Config.Mode;
 import org.oobium.utils.Config.OsgiRuntime;
+import org.oobium.utils.FileUtils;
 
 public class Workspace {
 
@@ -74,17 +76,36 @@ public class Workspace {
 
 	private final Logger logger;
 	private final ReadWriteLock lock;
-	
 	private Mode mode;
 	private Workspace parentWorkspace;
+
+	/**
+	 * A Map of all projects that are not bundles
+	 */
+	private final Map<File, Project> projects;
+	
+	/**
+	 * A Map of all bundles. Note that even though bundles are also
+	 * projects, these bundles are <b>not</b> in the {@link #projects} Map.
+	 */
 	private final Map<File, Bundle> bundles;
-	private Map<File, List<File>> repos;
-	private List<File> ibundles;
+	
+	/**
+	 * A Map of all bundles that are also of type Application.
+	 * Note that these are bundles and are also in the {@link #bundles} Map.
+	 */
 	private final Map<File, Application> applications;
-//	private Set<File> workspaceFiles;
-//	private Set<File> bundleRepoFiles;
+	
+	/**
+	 * Bundles repositories
+	 */
+	private Map<File, List<File>> repos;
+	
+	/**
+	 * A list of independent projects (those that are not contained in a repository)
+	 */
+	private List<File> iprojects;
 	private WorkspaceListener[] listeners;
-//	private File dir;
 	private File workingDir;
 	
 	private Bundle buildBundle;
@@ -102,104 +123,22 @@ public class Workspace {
 	}
 
 	public Workspace(File workingDirectory) {
-		logger = Logger.getLogger(BuildBundle.class);
+		logger = LogProvider.getLogger(BuildBundle.class);
 		lock = new ReentrantReadWriteLock();
 		mode = Mode.DEV;
+		projects = new HashMap<File, Project>();
 		bundles = new HashMap<File, Bundle>();
 		applications = new HashMap<File, Application>();
 		listeners = new WorkspaceListener[0];
 		setWorkingDirectory(workingDirectory);
 	}
 
-	public File export(Application application, Mode mode) throws IOException {
-		return export(application, mode, new HashMap<String, String>(0));
-	}
-	
-	public File export(Application application, Mode mode, Map<String, String> properties) throws IOException {
-		Exporter exporter = new Exporter(this, application);
-		exporter.setMode(mode);
-		exporter.setProperties(properties);
-		return exporter.export();
-	}
-
-	public Bundle export(Bundle bundle) throws IOException {
-		return Exporter.export(this, bundle);
-	}
-	
-	public File getExportDir() {
-		return new File(getWorkingDirectory(), "export");
-	}
-	
-	public File exportWithMigrators(Application application, Mode mode) throws IOException {
-		return exportWithMigrators(application, mode, new HashMap<String, String>(0));
-	}
-	
-	public File exportWithMigrators(Application application, Mode mode, Map<String, String> properties) throws IOException {
-		Exporter exporter = new Exporter(this, application);
-		exporter.setMode(mode);
-		exporter.setProperties(properties);
-		exporter.setIncludeMigrator(true);
-		return exporter.export();
-	}
-	
-	public File exportMigrator(Application application, Mode mode) throws IOException {
-		return exportMigrator(application, mode, new HashMap<String, String>(0));
-	}
-	
-	public File exportMigrator(Application application, Mode mode, Map<String, String> properties) throws IOException {
-		Exporter exporter = new Exporter(this, application);
-		exporter.setMode(mode);
-		exporter.setProperties(properties);
-		exporter.setMigrator(true);
-		return exporter.export();
-	}
-	
-	public File cleanExport(Application application) {
-		Exporter exporter = new Exporter(this, application);
-		File exportDir = exporter.getExportDir();
-		FileUtils.deleteContents(exportDir);
-		return exportDir;
-	}
-
-	public List<Application> getApplications(Application application) {
-		List<Application> apps = new ArrayList<Application>();
-		
-		apps.add(application);
-		
-		Config config = Config.loadConfiguration(application.site);
-		Object o = config.get("apps");
-		if(o instanceof String) {
-			Application app = getApplication((String) o);
-			if(app == null) {
-				throw new IllegalStateException(this + " has an unresolved export requirement: " + o);
-			}
-			apps.add(app);
-		} else if(o instanceof Collection) {
-			for(Object e : (Collection<?>) o) {
-				if(e instanceof String) {
-					Application app = getApplication((String) e);
-					if(app == null) {
-						throw new IllegalStateException(this + " has an unresolved export requirement: " + e);
-					}
-					apps.add(app);
-				} else {
-					throw new IllegalArgumentException(this + " has an unknown type of export requirement: " + e);
-				}
-			}
-		}
-		
-		return apps;
-	}
-	
-	private Bundle addBundle(File file) {
+	private Project add(File file) {
 		try {
 			File cfile = file.getCanonicalFile();
-			Bundle bundle = Bundle.create(cfile);
-			if(bundle == null) {
-				if(logger.isLoggingDebug()) {
-					logger.debug("bundle already loaded: " + bundle);
-				}
-			} else {
+			Project project = Project.load(cfile);
+			if(project instanceof Bundle) {
+				Bundle bundle = (Bundle) project;
 				if(logger.isLoggingDebug()) {
 					logger.debug("adding bundle: " + bundle);
 				}
@@ -217,8 +156,10 @@ public class Workspace {
 				if(logger.isLoggingDebug()) {
 					logger.debug("added bundle: " + bundle);
 				}
-				return bundle;
+			} else {
+				projects.put(cfile, project);
 			}
+			return project;
 		} catch(IOException e) {
 			e.printStackTrace();
 		}
@@ -251,9 +192,16 @@ public class Workspace {
 		bundles.add(bundle);
 	}
 	
+	public File cleanExport(Application application) {
+		Exporter exporter = new Exporter(this, application);
+		File exportDir = exporter.getExportDir();
+		FileUtils.deleteContents(exportDir);
+		return exportDir;
+	}
+	
 	public Application createApplication(File file, Map<String, String> properties) {
 		if(file != null) {
-			return (Application) loadBundle(ProjectGenerator.createApplication(file, properties));
+			return (Application) load(ProjectGenerator.createApplication(file, properties));
 		}
 		return null;
 	}
@@ -261,28 +209,28 @@ public class Workspace {
 	public Migrator createMigrator(Module module) {
 		if(module != null) {
 			Set<Bundle> dependencies = module.getDependencies(this);
-			return (Migrator) loadBundle(ProjectGenerator.createMigrator(module, dependencies));
+			return (Migrator) load(ProjectGenerator.createMigrator(module, dependencies));
 		}
 		return null;
 	}
 	
 	public Module createModule(File file, Map<String, String> properties) {
 		if(file != null) {
-			return (Module) loadBundle(ProjectGenerator.createModule(file, properties));
+			return (Module) load(ProjectGenerator.createModule(file, properties));
 		}
 		return null;
 	}
 
 	public TestSuite createTestSuite(Module module) {
 		if(module != null) {
-			return (TestSuite) loadBundle(ProjectGenerator.createTestSuite(module, null));
+			return (TestSuite) load(ProjectGenerator.createTestSuite(module, null));
 		}
 		return null;
 	}
 	
 	public Module createWebservice(File file, Map<String, String> properties) {
 		if(file != null) {
-			return (Module) loadBundle(ProjectGenerator.createWebservice(file, properties));
+			return (Module) load(ProjectGenerator.createWebservice(file, properties));
 		}
 		return null;
 	}
@@ -296,26 +244,65 @@ public class Workspace {
 			repos = new HashMap<File, List<File>>();
 		}
 		
-		List<File> bundles = new ArrayList<File>(asList(getProjects(repo)));
-		repos.put(repo, bundles);
+		List<File> projects = new ArrayList<File>(asList(getProjects(repo)));
+		repos.put(repo, projects);
 
-		for(File bundle : bundles) {
-			addBundle(bundle);
+		for(File project : projects) {
+			add(project);
 		}
 	}
-	
+
 	private List<File> doRemoveRepository(File repo) {
 		if(repos != null) {
 			List<File> bundles = repos.get(repo);
 			if(bundles != null) {
 				for(File bundle : bundles.toArray(new File[bundles.size()])) {
-					remove(bundle);
+					unload(bundle);
 				}
 			}
 			repos.remove(repo);
 			return bundles;
 		}
 		return new ArrayList<File>(0);
+	}
+	
+	public File export(Application application, Mode mode) throws IOException {
+		return export(application, mode, new HashMap<String, String>(0));
+	}
+	
+	public File export(Application application, Mode mode, Map<String, String> properties) throws IOException {
+		Exporter exporter = new Exporter(this, application);
+		exporter.setMode(mode);
+		exporter.setProperties(properties);
+		return exporter.export();
+	}
+	
+	public Bundle export(Bundle bundle) throws IOException {
+		return Exporter.export(this, bundle);
+	}
+	
+	public File exportMigrator(Application application, Mode mode) throws IOException {
+		return exportMigrator(application, mode, new HashMap<String, String>(0));
+	}
+	
+	public File exportMigrator(Application application, Mode mode, Map<String, String> properties) throws IOException {
+		Exporter exporter = new Exporter(this, application);
+		exporter.setMode(mode);
+		exporter.setProperties(properties);
+		exporter.setMigrator(true);
+		return exporter.export();
+	}
+
+	public File exportWithMigrators(Application application, Mode mode) throws IOException {
+		return exportWithMigrators(application, mode, new HashMap<String, String>(0));
+	}
+	
+	public File exportWithMigrators(Application application, Mode mode, Map<String, String> properties) throws IOException {
+		Exporter exporter = new Exporter(this, application);
+		exporter.setMode(mode);
+		exporter.setProperties(properties);
+		exporter.setIncludeMigrator(true);
+		return exporter.export();
 	}
 	
 	void fireEvent(EventType eventType, Object oldValue, Object newValue) {
@@ -373,6 +360,36 @@ public class Workspace {
 		}
 	}
 	
+	public List<Application> getApplications(Application application) {
+		List<Application> apps = new ArrayList<Application>();
+		
+		apps.add(application);
+		
+		Config config = Config.loadConfiguration(application.site);
+		Object o = config.get("apps");
+		if(o instanceof String) {
+			Application app = getApplication((String) o);
+			if(app == null) {
+				throw new IllegalStateException(this + " has an unresolved export requirement: " + o);
+			}
+			apps.add(app);
+		} else if(o instanceof Collection) {
+			for(Object e : (Collection<?>) o) {
+				if(e instanceof String) {
+					Application app = getApplication((String) e);
+					if(app == null) {
+						throw new IllegalStateException(this + " has an unresolved export requirement: " + e);
+					}
+					apps.add(app);
+				} else {
+					throw new IllegalArgumentException(this + " has an unknown type of export requirement: " + e);
+				}
+			}
+		}
+		
+		return apps;
+	}
+	
 	public Bundle getBuildBundle() {
 		if(buildBundle != null) {
 			return buildBundle;
@@ -383,6 +400,11 @@ public class Workspace {
 		return null;
 	}
 	
+	/**
+	 * Get the bundle for the given file.
+	 * @param file
+	 * @return the bundle, or null if one cannot be found.
+	 */
 	public Bundle getBundle(File file) {
 		if(file == null) {
 			return null;
@@ -430,7 +452,7 @@ public class Workspace {
 		}
 		return bundle;
 	}
-
+	
 	public Bundle getBundle(RequiredBundle requiredBundle) {
 		lock.readLock().lock();
 		try {
@@ -447,7 +469,7 @@ public class Workspace {
 			lock.readLock().unlock();
 		}
 	}
-
+	
 	/**
 	 * Get the first bundle that matches the given full name (the name and version range).
 	 * If the fullName does not include a version range, than a version range of [*, *] is used.
@@ -491,7 +513,7 @@ public class Workspace {
 			lock.readLock().unlock();
 		}
 	}
-	
+
 	public Bundle getBundle(String name, String version) {
 		return getBundle(name, new Version(version));
 	}
@@ -523,7 +545,7 @@ public class Workspace {
 			lock.readLock().unlock();
 		}
 	}
-
+	
 	/**
 	 * Get an array of paths for the bundle repositories that this workspace is currently using.
 	 * @return an array of absolute paths; never null
@@ -542,13 +564,12 @@ public class Workspace {
 	public Bundle[] getBundles() {
 		lock.readLock().lock();
 		try {
-			Set<Bundle> bundles = new HashSet<Bundle>(this.bundles.values());
-			return bundles.toArray(new Bundle[bundles.size()]);
+			return bundles.values().toArray(new Bundle[bundles.size()]);
 		} finally {
 			lock.readLock().unlock();
 		}
 	}
-	
+
 	/**
 	 * Get all the bundles that match the given full name (the name and version range).
 	 * If the fullName does not include a version range, than a version range of [*, *] is used.<br/>
@@ -591,15 +612,35 @@ public class Workspace {
 			lock.readLock().unlock();
 		}
 	}
+
+	public ClientBundle getClientBundle(File file) {
+		Bundle bundle = getBundle(file);
+		if(bundle instanceof ClientBundle) {
+			return (ClientBundle) bundle;
+		}
+		if(parentWorkspace != null) {
+			return parentWorkspace.getClientBundle(file);
+		}
+		return null;
+	}
+	
+	public ClientBundle getClientBundleFor(Module module) {
+		File client = new File(module.file.getAbsolutePath() + ".client");
+		return getClientBundle(client);
+	}
 	
 	public Object getData() {
 		return data;
 	}
-
+	
 	public Object getData(String key) {
 		return (data instanceof Map<?,?>) ? ((Map<?,?>) data).get(key) : null;
 	}
 	
+	public File getExportDir() {
+		return new File(getWorkingDirectory(), "export");
+	}
+
 	public Migrator getMigrator(File file) {
 		Bundle bundle = getBundle(file);
 		if(bundle instanceof Migrator) {
@@ -625,11 +666,11 @@ public class Workspace {
 	public Migrator getMigratorFor(Module module) {
 		return getMigrator(module.migrator);
 	}
-
+	
 	public Mode getMode() {
 		return mode;
 	}
-	
+
 	public Module getModule(File file) {
 		Bundle bundle = getBundle(file);
 		if(bundle instanceof Module) {
@@ -674,11 +715,125 @@ public class Workspace {
 			lock.readLock().unlock();
 		}
 	}
-
+	
 	public Workspace getParent() {
 		return parentWorkspace;
 	}
 
+	/**
+	 * Get the project for the given file. This method first searches 
+	 * the projects Map, then the bundles Map, and finally calls this
+	 * method on the parentWorkspace (if one exists).
+	 * @param file
+	 * @return the project, or null if one cannot be found.
+	 */
+	public Project getProject(File file) {
+		if(file == null) {
+			return null;
+		}
+		
+		lock.readLock().lock();
+		try {
+			Project project = projects.get(file);
+			if(project != null) {
+				return project;
+			}
+			project = bundles.get(file);
+			if(project == null && parentWorkspace != null) {
+				return parentWorkspace.getBundle(file);
+			}
+			return project;
+		} finally {
+			lock.readLock().unlock();
+		}
+	}
+
+	/**
+	 * Get the first project that matches the given name. This method first
+	 * searches the project Map, then the bundles Map, and finally calls
+	 * this method on the parentWorkspace (if one exists).
+	 * @param full
+	 * @return the matching {@link Project} object
+	 */
+	public Project getProject(String name) {
+		if(blank(name)) {
+			return null;
+		}
+
+		lock.readLock().lock();
+		try {
+			for(Project project : projects.values()) {
+				if(project.name.equals(name)) {
+					return project;
+				}
+			}
+			for(Project project : bundles.values()) {
+				if(project.name.equals(name)) {
+					return project;
+				}
+			}
+			if(parentWorkspace != null) {
+				return parentWorkspace.getProject(name);
+			}
+			return null;
+		} finally {
+			lock.readLock().unlock();
+		}
+	}
+
+	/**
+	 * Get all projects in this workspace. Includes values from both the projects
+	 * and bundles Maps; does not includes projects from the parentWorkspace.
+	 * @return an array of all projects, or an empty array if none are in the workspace; never null
+	 */
+	public Project[] getProjects() {
+		lock.readLock().lock();
+		try {
+			List<Project> projects = new ArrayList<Project>(this.projects.values());
+			projects.addAll(bundles.values());
+			return projects.toArray(new Project[projects.size()]);
+		} finally {
+			lock.readLock().unlock();
+		}
+	}
+	
+	/**
+	 * Get all projects in this workspace. Includes values from both the projects
+	 * and bundles Maps; does not includes projects from the parentWorkspace.
+	 * @param type the type of projects to return
+	 * @return an array of all projects of the given type, or an empty array if none are found in the workspace; never null
+	 */
+	public Project[] getProjects(Type type) {
+		lock.readLock().lock();
+		try {
+			switch(type) {
+			case Application:	return applications.values().toArray(new Project[applications.size()]);
+			case Bundle:		return bundles.values().toArray(new Bundle[bundles.size()]);
+			case Project:		return getProjects();
+			case Android: {
+				List<Project> projects = new ArrayList<Project>();
+				for(Project project : this.projects.values()) {
+					if(project.type == Type.Android) {
+						projects.add(project);
+					}
+				}
+				return projects.toArray(new Project[projects.size()]);
+			}
+			default: {
+				List<Project> projects = new ArrayList<Project>();
+				for(Project project : this.bundles.values()) {
+					if(project.type == type) {
+						projects.add(project);
+					}
+				}
+				return projects.toArray(new Project[projects.size()]);
+			}
+			}
+		} finally {
+			lock.readLock().unlock();
+		}
+	}
+	
 	private File[] getProjects(File repo) {
 		if(repo.isDirectory()) {
 			File[] files = repo.listFiles(new FileFilter() {
@@ -697,7 +852,7 @@ public class Workspace {
 		}
 		return new File[0];
 	}
-
+	
 	public TestSuite getTestSuite(File file) {
 		Bundle bundle = getBundle(file);
 		if(bundle instanceof TestSuite) {
@@ -740,44 +895,51 @@ public class Workspace {
 		}
 	}
 	
-	public Bundle loadBundle(File file) {
+	public Project load(File file) {
 		if(file == null || !file.exists()) {
 			return null;
 		}
 		
 		lock.writeLock().lock();
 		try {
-			Bundle bundle = bundles.get(file);
-			if(bundle != null) {
+			Project project = projects.get(file);
+			if(project != null) {
 				if(logger.isLoggingDebug()) {
-					logger.debug("bundle already loaded: " + bundle);
+					logger.debug("project already loaded: " + project);
 				}
 			} else {
-				if(logger.isLoggingDebug()) {
-					logger.debug("loading: " + file);
-				}
-				bundle = addBundle(file);
-				if(bundle != null) {
-					boolean foundRepo = false;
-					File parent = file.getParentFile();
-					if(repos != null) {
-						for(File repo : repos.keySet()) {
-							if(parent.equals(repo)) {
-								addToRepo(repo, file);
-								foundRepo = true;
-								break;
+				project = bundles.get(file);
+				if(project != null) {
+					if(logger.isLoggingDebug()) {
+						logger.debug("bundle already loaded: " + project);
+					}
+				} else {
+					if(logger.isLoggingDebug()) {
+						logger.debug("loading: " + file);
+					}
+					project = add(file);
+					if(project != null) {
+						boolean foundRepo = false;
+						File parent = file.getParentFile();
+						if(repos != null) {
+							for(File repo : repos.keySet()) {
+								if(parent.equals(repo)) {
+									addToRepo(repo, file);
+									foundRepo = true;
+									break;
+								}
 							}
 						}
-					}
-					if(!foundRepo) {
-						if(ibundles == null) {
-							ibundles = new ArrayList<File>();
+						if(!foundRepo) {
+							if(iprojects == null) {
+								iprojects = new ArrayList<File>();
+							}
+							iprojects.add(file);
 						}
-						ibundles.add(file);
 					}
 				}
 			}
-			return bundle;
+			return project;
 		} finally {
 			lock.writeLock().unlock();
 		}
@@ -796,7 +958,7 @@ public class Workspace {
 		try {
 			// save state
 			List<File> reposBak = (repos != null) ? new ArrayList<File>(repos.keySet()) : null;
-			List<File> ibundlesBak = (ibundles != null) ? new ArrayList<File>(ibundles) : null;
+			List<File> ibundlesBak = (iprojects != null) ? new ArrayList<File>(iprojects) : null;
 			
 			// remove everything
 			removed.addAll(bundles.values());
@@ -808,7 +970,7 @@ public class Workspace {
 			}
 			File[] files = bundles.keySet().toArray(new File[bundles.size()]);
 			for(File file : files) {
-				removeBundle(file);
+				remove(file);
 			}
 
 			// add everything back
@@ -819,8 +981,8 @@ public class Workspace {
 			}
 			if(ibundlesBak != null) {
 				for(File file : ibundlesBak) {
-					if(!bundles.containsKey(file)) { // may be part of a repo now...
-						addBundle(file);
+					if(!projects.containsKey(file) && !bundles.containsKey(file)) { // may be part of a repo now...
+						add(file);
 					}
 				}
 			}
@@ -838,12 +1000,12 @@ public class Workspace {
 	}
 
 	public void refresh(File file) {
-		Bundle oldBundle;
-		Bundle newBundle;
+		Project oldBundle;
+		Project newBundle;
 		lock.writeLock().lock();
 		try {
-			oldBundle = removeBundle(file);
-			newBundle = loadBundle(file);
+			oldBundle = remove(file);
+			newBundle = load(file);
 		} finally {
 			lock.writeLock().unlock();
 		}
@@ -851,15 +1013,15 @@ public class Workspace {
 		fireEvent(EventType.Bundle, oldBundle, newBundle);
 	}
 	
-	public void remove(Bundle bundle) {
-		remove(bundle.file);
+	public void unload(Bundle bundle) {
+		unload(bundle.file);
 	}
 	
-	public void remove(File file) {
-		Bundle oldBundle;
+	public void unload(File file) {
+		Project oldBundle;
 		lock.writeLock().lock();
 		try {
-			oldBundle = removeBundle(file);
+			oldBundle = remove(file);
 			if(oldBundle != null) {
 				fireEvent(EventType.Bundle, oldBundle, null);
 			}
@@ -868,11 +1030,14 @@ public class Workspace {
 		}
 	}
 	
-	private Bundle removeBundle(File file) {
+	private Project remove(File file) {
 		if(repos != null) removeFromRepos(file);
 		if(applications != null) applications.remove(file);
-		if(bundles != null) return bundles.remove(file);
-		return null;
+		Project project = projects.remove(file);
+		if(project == null) {
+			project = bundles.remove(file);
+		}
+		return project;
 	}
 
 	private void removeFromRepos(File bundle) {

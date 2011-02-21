@@ -10,8 +10,8 @@
  ******************************************************************************/
 package org.oobium.app.server.routing;
 
-import static org.oobium.app.server.controller.Action.show;
-import static org.oobium.app.server.controller.Action.showAll;
+import static org.oobium.http.constants.Action.show;
+import static org.oobium.http.constants.Action.showAll;
 import static org.oobium.http.constants.RequestType.GET;
 import static org.oobium.persist.ModelAdapter.getAdapter;
 import static org.oobium.utils.CharStreamUtils.closer;
@@ -32,7 +32,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.oobium.app.AppService;
-import org.oobium.app.server.controller.Action;
 import org.oobium.app.server.response.Response;
 import org.oobium.app.server.routing.handlers.AssetHandler;
 import org.oobium.app.server.routing.handlers.AuthorizationHandler;
@@ -47,6 +46,7 @@ import org.oobium.app.server.routing.routes.RedirectRoute;
 import org.oobium.app.server.routing.routes.ViewRoute;
 import org.oobium.http.HttpRequest;
 import org.oobium.http.HttpResponse;
+import org.oobium.http.constants.Action;
 import org.oobium.http.constants.Header;
 import org.oobium.http.constants.RequestType;
 import org.oobium.persist.Model;

@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 import org.oobium.utils.StringUtils;
 import org.oobium.utils.coercion.TypeCoercer;
 import org.oobium.utils.json.JsonModel;
@@ -42,7 +43,7 @@ import org.oobium.utils.json.JsonUtils;
 public abstract class Model implements JsonModel {
 
 	private static final ThreadLocal<Logger> logService = new ThreadLocal<Logger>();
-	private static final ThreadLocal<PersistServices> persistServices = new ThreadLocal<PersistServices>();
+	private static final ThreadLocal<PersistServiceProvider> persistServiceProvider = new ThreadLocal<PersistServiceProvider>();
 	
 	
 	public static int count(Class<? extends Model> clazz) throws SQLException {
@@ -80,23 +81,23 @@ public abstract class Model implements JsonModel {
 	public static Logger getLogger() {
 		Logger service = logService.get();
 		if(service == null) {
-			service = Logger.getLogger();
+			service = LogProvider.getLogger(PersistService.class);
 			logService.set(service);
 		}
 		return service;
 	}
 	
 	public static PersistService getPersistService(Class<? extends Model> clazz) {
-		return getPersistServices().getFor(clazz);
+		return getPersistServiceProvider().getFor(clazz);
 	}
 	
-	public static PersistServices getPersistServices() {
-		PersistServices services = persistServices.get();
-		if(services == null) {
-			services = new PersistServices();
-			persistServices.set(services);
+	public static PersistServiceProvider getPersistServiceProvider() {
+		PersistServiceProvider provider = persistServiceProvider.get();
+		if(provider == null) {
+			provider = new SimplePersistServiceProvider();
+			persistServiceProvider.set(provider);
 		}
-		return persistServices.get();
+		return persistServiceProvider.get();
 	}
 	
 	protected static boolean notEquals(Object o1, Object o2) {
@@ -107,14 +108,14 @@ public abstract class Model implements JsonModel {
 		logService.set(service);
 	}
 
-	public static PersistServices setPersistService(PersistService service) {
-		PersistServices services = new PersistServices(service);
-		setPersistServices(services);
+	public static PersistServiceProvider setPersistService(PersistService service) {
+		PersistServiceProvider services = new SimplePersistServiceProvider(service);
+		setPersistServiceProvider(services);
 		return services;
 	}
-	
-	public static void setPersistServices(PersistServices services) {
-		persistServices.set(services);
+
+	public static void setPersistServiceProvider(PersistServiceProvider services) {
+		persistServiceProvider.set(services);
 	}
 	
 	private PersistService persistor;

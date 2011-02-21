@@ -143,11 +143,11 @@ public class ModelAdapter {
 	public String getOpposite(String field) {
 		if(hasMany.containsKey(field)) {
 			String opposite = hasMany.get(field).opposite();
-			if(opposite != null) return opposite;
+			if(!blank(opposite)) return opposite;
 		}
 		if(hasOne.containsKey(field)) {
 			String opposite = hasOne.get(field).opposite();
-			if(opposite != null) return opposite;
+			if(!blank(opposite)) return opposite;
 		}
 		return null;
 	}

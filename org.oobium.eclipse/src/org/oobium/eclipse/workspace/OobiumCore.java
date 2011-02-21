@@ -51,6 +51,7 @@ import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.Workspace;
 import org.oobium.eclipse.OobiumPlugin;
 import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -58,7 +59,7 @@ import org.xml.sax.SAXException;
 
 public class OobiumCore {
 
-	private static final Logger logger = Logger.getLogger(OobiumPlugin.class);
+	private static final Logger logger = LogProvider.getLogger(OobiumPlugin.class);
 	private static final Map<String, String> formatterOptions = createFormatterOptions();
 	private static final OobiumCore instance = new OobiumCore();
 	
@@ -179,11 +180,11 @@ public class OobiumCore {
 				options.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_1_6);
 				return options;
 			} catch(ParserConfigurationException e) {
-				Logger.getLogger(OobiumPlugin.class).error(e);
+				LogProvider.getLogger(OobiumPlugin.class).error(e);
 			} catch(SAXException e) {
-				Logger.getLogger(OobiumPlugin.class).error(e);
+				LogProvider.getLogger(OobiumPlugin.class).error(e);
 			} catch(IOException e) {
-				Logger.getLogger(OobiumPlugin.class).error(e);
+				LogProvider.getLogger(OobiumPlugin.class).error(e);
 			}
 		}
 		

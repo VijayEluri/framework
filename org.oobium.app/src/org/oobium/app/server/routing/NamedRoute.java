@@ -16,9 +16,9 @@ import static org.oobium.http.constants.RequestType.GET;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.oobium.app.server.controller.Action;
 import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.view.View;
+import org.oobium.http.constants.Action;
 import org.oobium.http.constants.RequestType;
 import org.oobium.persist.Model;
 

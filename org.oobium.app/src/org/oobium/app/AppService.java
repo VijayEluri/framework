@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.oobium.app.persist.PersistServices;
 import org.oobium.app.server.controller.ActionCache;
 import org.oobium.app.server.response.Response;
 import org.oobium.app.server.routing.AppRouter;
@@ -39,7 +40,7 @@ import org.oobium.http.constants.StatusCode;
 import org.oobium.persist.Model;
 import org.oobium.persist.PersistClient;
 import org.oobium.persist.PersistService;
-import org.oobium.persist.PersistServices;
+import org.oobium.persist.PersistServiceProvider;
 import org.oobium.utils.Config;
 import org.oobium.utils.Config.Mode;
 import org.oobium.utils.StringUtils;
@@ -62,7 +63,7 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		return appService.get();
 	}
 	
-	public static PersistServices getPersistServices(Class<? extends AppService> appType) {
+	public static PersistServiceProvider getPersistServices(Class<? extends AppService> appType) {
 		AppService service = getActivator(appType);
 		if(service != null) {
 			return service.getPersistServices();
@@ -273,7 +274,7 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		return null;
 	}
 	
-	public PersistServices getPersistServices() {
+	public PersistServiceProvider getPersistServices() {
 		return persistServices;
 	}
 	
@@ -343,12 +344,12 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 				appService.set(this);
 				persistServices.openSession(getPersistClientName());
 				Model.setLogger(logger);
-				Model.setPersistServices(persistServices);
+				Model.setPersistServiceProvider(persistServices);
 				try {
 					response = handler.routeRequest(request);
 				} finally {
 					persistServices.closeSession();
-					Model.setPersistServices(null);
+					Model.setPersistServiceProvider(null);
 					Model.setLogger(null);
 					appService.set(null);
 				}

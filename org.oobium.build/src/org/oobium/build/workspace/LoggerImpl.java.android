@@ -1,0 +1,148 @@
+package org.oobium.logging;
+
+import android.util.Log;
+
+public class LoggerImpl implements Logger {
+
+	private String tag;
+	
+	public LoggerImpl() {
+		this.tag = "oobium";
+	}
+	
+	private int adjust(int level) {
+		switch(level) {
+		case Logger.ERROR:		return Log.ERROR;
+		case Logger.WARNING:	return Log.WARN;
+		case Logger.INFO:		return Log.INFO;
+		case Logger.DEBUG:		return Log.DEBUG;
+		case Logger.TRACE:		return Log.VERBOSE;
+		}
+		return 0;
+	}
+
+	public void debug(String message) {
+		Log.d(tag, message);
+	}
+
+	public void debug(String message, Throwable exception) {
+		Log.d(tag, message, exception);
+	}
+
+	public void debug(Throwable exception) {
+		Log.d(tag, "", exception);
+	}
+
+	public void error(String message) {
+		Log.e(tag, message);
+	}
+
+	public void error(String message, Throwable exception) {
+		Log.e(tag, message, exception);
+	}
+
+	public void error(Throwable exception) {
+		Log.e(tag, "", exception);
+	}
+
+	public void info(String message) {
+		Log.i(tag, message);
+	}
+
+	public void info(String message, Throwable exception) {
+		Log.i(tag, message, exception);
+	}
+
+	public void info(Throwable exception) {
+		Log.i(tag, "", exception);
+	}
+
+	public boolean isLogging(int level) {
+		return Log.isLoggable(tag, level);
+	}
+
+	public boolean isLoggingDebug() {
+		return Log.isLoggable(tag, Log.DEBUG);
+	}
+
+	public boolean isLoggingError() {
+		return Log.isLoggable(tag, Log.ERROR);
+	}
+
+	public boolean isLoggingInfo() {
+		return Log.isLoggable(tag, Log.INFO);
+	}
+
+	public boolean isLoggingToConsole(int level) {
+		return true;
+	}
+
+	public boolean isLoggingToEmail(int level) {
+		return false;
+	}
+
+	public boolean isLoggingToFile(int level) {
+		return false;
+	}
+
+	public boolean isLoggingTrace() {
+		return Log.isLoggable(tag, Log.VERBOSE);
+	}
+
+	public boolean isLoggingWarning() {
+		return Log.isLoggable(tag, Log.WARN);
+	}
+
+	public void log(int level, String message) {
+		Log.println(level, tag, message);
+	}
+	
+	public void log(int level, String message, Throwable exception) {
+		Log.println(adjust(level), tag, message);
+	}
+
+	public void log(int level, Throwable exception) {
+        Log.println(adjust(level), tag, Log.getStackTraceString(exception));
+	}
+
+	public void setConsoleLevel(int level) {
+		// not applicable
+	}
+
+	public void setEmailLevel(int level) {
+		// not applicable
+	}
+
+	public void setFileLevel(int level) {
+		// not applicable
+	}
+	
+	public void setTag(String tag) {
+		this.tag = tag;
+	}
+
+	public void trace(String message) {
+		Log.v(tag, message);
+	}
+
+	public void trace(String message, Throwable exception) {
+		Log.v(tag, message, exception);
+	}
+
+	public void trace(Throwable exception) {
+		Log.v(tag, "", exception);
+	}
+
+	public void warn(String message) {
+		Log.w(tag, message);
+	}
+
+	public void warn(String message, Throwable exception) {
+		Log.w(tag, message, exception);
+	}
+
+	public void warn(Throwable exception) {
+		Log.w(tag, "", exception);
+	}
+
+}

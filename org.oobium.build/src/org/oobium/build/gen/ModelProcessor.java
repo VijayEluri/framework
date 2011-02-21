@@ -42,13 +42,14 @@ import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.Workspace;
 import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 import org.oobium.persist.Indexes;
 import org.oobium.persist.ModelDescription;
 
 @SupportedSourceVersion(SourceVersion.RELEASE_6)
 public class ModelProcessor extends AbstractProcessor {
 
-	private Logger logger = Logger.getLogger(BuildBundle.class);
+	private Logger logger = LogProvider.getLogger(BuildBundle.class);
 	
 	private static final Set<String> supportedOptions = new TreeSet<String>();
 	
@@ -137,7 +138,7 @@ public class ModelProcessor extends AbstractProcessor {
 	private void generateControllerFiles(String appPath, Map<ModelDefinition, File> models, boolean webservice) {
 		for(ModelDefinition model : models.keySet()) {
 			File file = new File(appPath);
-			Module module = (Module) Bundle.create(file);
+			Module module = (Module) Bundle.load(file);
 			
 			String src = ControllerGenerator.generate(module, model);
 

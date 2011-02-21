@@ -92,7 +92,11 @@ public class ClientResponse {
 		try {
 			status = StatusCode.get(conn.getResponseCode());
 			type = ContentType.get(conn.getContentType());
-			headers = new LinkedHashMap<String, List<String>>(conn.getHeaderFields());
+			headers = new LinkedHashMap<String, List<String>>();
+			for(Entry<String, List<String>> entry : conn.getHeaderFields().entrySet()) {
+				String key = entry.getKey();
+				headers.put((key != null) ? key.toLowerCase() : null, entry.getValue());
+			}
 			int contentLength = conn.getContentLength();
 			if(contentLength > 0) {
 				content = new byte[contentLength];
@@ -113,7 +117,7 @@ public class ClientResponse {
 			exception = e;
 		}
 	}
-
+	
 	public boolean exceptionThrown() {
 		return exception != null;
 	}
@@ -132,7 +136,7 @@ public class ClientResponse {
 
 	public String getHeader(String key) {
 		if(headers != null) {
-			List<String> list = headers.get(key);
+			List<String> list = headers.get(key.toLowerCase());
 			if(list != null && !list.isEmpty()) {
 				return list.get(0);
 			}

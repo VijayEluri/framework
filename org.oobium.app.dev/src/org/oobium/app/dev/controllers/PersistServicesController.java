@@ -18,6 +18,7 @@ import org.oobium.app.dev.views.persist_services.ShowAllPersistServices;
 import org.oobium.app.dev.views.persist_services.ShowPersistService;
 import org.oobium.app.dev.views.persist_services.ShowQueryResults;
 import org.oobium.app.dev.views.persist_services.ShowUpdateResults;
+import org.oobium.app.persist.PersistServices;
 import org.oobium.app.server.controller.Controller;
 import org.oobium.persist.Model;
 import org.oobium.persist.PersistService;
@@ -27,12 +28,12 @@ public class PersistServicesController extends Controller {
 
 	@Override
 	public void showAll() throws SQLException {
-		render(new ShowAllPersistServices(Model.getPersistServices()));
+		render(new ShowAllPersistServices((PersistServices) Model.getPersistServiceProvider()));
 	}
 	
 	@Override
 	public void show() throws SQLException {
-		List<PersistService> services = Model.getPersistServices().getServices();
+		List<PersistService> services = ((PersistServices) Model.getPersistServiceProvider()).getServices();
 		int id = getId();
 		int ix = id - 1;
 		if(ix >= 0 && ix < services.size()) {

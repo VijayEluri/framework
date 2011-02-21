@@ -10,10 +10,10 @@
  ******************************************************************************/
 package org.oobium.manager;
 
-import static org.oobium.app.server.controller.Action.destroy;
-import static org.oobium.app.server.controller.Action.show;
-import static org.oobium.app.server.controller.Action.showAll;
-import static org.oobium.app.server.controller.Action.update;
+import static org.oobium.http.constants.Action.destroy;
+import static org.oobium.http.constants.Action.show;
+import static org.oobium.http.constants.Action.showAll;
+import static org.oobium.http.constants.Action.update;
 import static org.oobium.http.constants.RequestType.POST;
 
 import org.oobium.app.AppService;

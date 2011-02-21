@@ -24,10 +24,11 @@ import java.util.UUID;
 
 import org.oobium.http.HttpSession;
 import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 
 public class DbSession implements HttpSession {
 
-	private static final Logger logger = Logger.getLogger(DbSessionService.class);
+	private static final Logger logger = LogProvider.getLogger(DbSessionService.class);
 	
 	private static Connection connection;
 	private static boolean runCreate = true;

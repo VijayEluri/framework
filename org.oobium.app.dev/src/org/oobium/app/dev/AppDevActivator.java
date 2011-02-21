@@ -10,8 +10,8 @@
  ******************************************************************************/
 package org.oobium.app.dev;
 
-import static org.oobium.app.server.controller.Action.show;
-import static org.oobium.app.server.controller.Action.showAll;
+import static org.oobium.http.constants.Action.show;
+import static org.oobium.http.constants.Action.showAll;
 import static org.oobium.http.constants.RequestType.DELETE;
 import static org.oobium.http.constants.RequestType.GET;
 import static org.oobium.http.constants.RequestType.POST;

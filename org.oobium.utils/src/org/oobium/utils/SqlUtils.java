@@ -38,10 +38,11 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 
 public class SqlUtils {
 
-	private static final Logger logger = Logger.getLogger(SqlUtils.class);
+	private static final Logger logger = LogProvider.getLogger(SqlUtils.class);
 	
 	private static final Set<String> _reservedWords = new HashSet<String>();
 	public static final Set<String> reservedWords = Collections.unmodifiableSet(_reservedWords);

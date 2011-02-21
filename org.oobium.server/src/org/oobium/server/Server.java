@@ -16,6 +16,7 @@ import org.oobium.http.HttpRequest404Handler;
 import org.oobium.http.HttpRequest500Handler;
 import org.oobium.http.HttpRequestHandler;
 import org.oobium.http.HttpServer;
+import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
@@ -64,7 +65,7 @@ public class Server implements BundleActivator, HttpServer {
 	private ServiceTracker request500HandlerTracker;
 
 	public Server() {
-		logger = Logger.getLogger(Server.class);
+		logger = LogProvider.getLogger(Server.class);
 	}
 	
 	synchronized HttpRequestHandler addHandler(HttpRequestHandler handler) {
@@ -80,7 +81,7 @@ public class Server implements BundleActivator, HttpServer {
 	}
 
 	public void start(final BundleContext context) throws Exception {
-		logger.setBundle(context.getBundle());
+		logger.setTag(context.getBundle().getSymbolicName());
 		logger.info("Starting server");
 		
 		selector = new ServerSelector();
@@ -143,7 +144,7 @@ public class Server implements BundleActivator, HttpServer {
 		selector.close();
 		selector = null;
 		logger.info("Server stopped");
-		logger.setBundle(null);
+		logger.setTag(null);
 		logger = null;
 	}
 

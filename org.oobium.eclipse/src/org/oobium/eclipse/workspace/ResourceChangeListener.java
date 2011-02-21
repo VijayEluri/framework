@@ -26,12 +26,12 @@ public class ResourceChangeListener implements IResourceChangeListener {
 			for(IResourceDelta delta : event.getDelta().getAffectedChildren()) {
 				switch(delta.getKind()) {
 				case IResourceDelta.ADDED:
-					OobiumPlugin.getWorkspace().loadBundle(delta.getResource().getLocation().toFile());
+					OobiumPlugin.getWorkspace().load(delta.getResource().getLocation().toFile());
 					break;
 				case IResourceDelta.REMOVED:
 					File file = ResourcesPlugin.getWorkspace().getRoot().getLocation().toFile();
 					file = new File(file, delta.getResource().getFullPath().toString());
-					OobiumPlugin.getWorkspace().remove(file);
+					OobiumPlugin.getWorkspace().unload(file);
 					break;
 				}
 			}

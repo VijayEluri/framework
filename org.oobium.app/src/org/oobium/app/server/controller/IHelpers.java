@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.oobium.app.server.controller;
 
+import org.oobium.http.constants.Action;
 import org.oobium.http.constants.ContentType;
 
 public interface IHelpers {

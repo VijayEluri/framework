@@ -13,7 +13,6 @@ package org.oobium.build.workspace;
 import static org.oobium.client.Client.client;
 import static org.oobium.utils.CharStreamUtils.find;
 import static org.oobium.utils.CharStreamUtils.findAll;
-import static org.oobium.utils.FileUtils.findFiles;
 import static org.oobium.utils.FileUtils.readFile;
 import static org.oobium.utils.FileUtils.writeFile;
 import static org.oobium.utils.StringUtils.join;
@@ -22,42 +21,27 @@ import static org.oobium.utils.literal.Map;
 import static org.oobium.utils.literal.e;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.jar.Attributes;
-import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 
-import org.oobium.build.BuildBundle;
 import org.oobium.client.Client;
 import org.oobium.client.ClientResponse;
-import org.oobium.logging.Logger;
-import org.oobium.utils.FileUtils;
-import org.oobium.utils.StringUtils;
-import org.oobium.utils.literal;
 import org.oobium.utils.Config.Mode;
+import org.oobium.utils.FileUtils;
+import org.oobium.utils.literal;
 import org.oobium.utils.json.IConverter;
 import org.oobium.utils.json.JsonBuilder;
 import org.oobium.utils.json.JsonUtils;
@@ -66,48 +50,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-public class Bundle implements Comparable<Bundle> {
-
-	public enum Type {
-		Application, Module, Migrator, TestSuite, Bundle, Fragment
-	}
-
-	private static Logger slogger = Logger.getLogger(BuildBundle.class);
-
-	public static Bundle create(File file) {
-		Manifest manifest = manifest(file);
-		if(manifest == null) {
-			if(slogger.isLoggingDebug()) {
-				slogger.debug("could not load manifest: " + file);
-			}
-		} else {
-			Type type = parseType(manifest);
-			switch(type) {
-			case Application:
-				return new Application(type, file, manifest);
-			case Module:
-				return new Module(type, file, manifest);
-			case Migrator:
-				return new Migrator(type, file, manifest);
-			case TestSuite:
-				return new TestSuite(type, file, manifest);
-			case Bundle:
-				return new Bundle(type, file, manifest);
-			case Fragment:
-				return new Fragment(type, file, manifest);
-			}
-		}
-		return null;
-	}
-
-	private static String createPath(String name, Version version) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("/bundles/").append(name);
-		if(version != null) {
-			sb.append('_').append(version);
-		}
-		return sb.toString();
-	}
+public class Bundle extends Project {
 
 	@Deprecated
 	public static List<Bundle> deploy(String domain, int port, Bundle... bundles) {
@@ -207,63 +150,13 @@ public class Bundle implements Comparable<Bundle> {
 		return false;
 	}
 
-	private static Manifest manifest(File bundle) {
-		if(bundle.isDirectory()) {
-			File file = new File(bundle, "META-INF" + File.separator + "MANIFEST.MF");
-			if(file.isFile()) {
-				FileInputStream fis = null;
-				try {
-					fis = new FileInputStream(file);
-					return new Manifest(fis);
-				} catch(Exception e) {
-					// throw away
-				} finally {
-					if(fis != null) {
-						try {
-							fis.close();
-						} catch(IOException e) {
-							// throw away
-						}
-					}
-				}
-			}
+	private static String createPath(String name, Version version) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("/bundles/").append(name);
+		if(version != null) {
+			sb.append('_').append(version);
 		}
-		if(bundle.isFile()) {
-			JarFile jar = null;
-			try {
-				jar = new JarFile(bundle);
-				return jar.getManifest();
-			} catch(Exception e) {
-				// throw away
-			} finally {
-				if(jar != null) {
-					try {
-						jar.close();
-					} catch(IOException e) {
-						// throw away
-					}
-				}
-			}
-		}
-		return null;
-	}
-
-	private static Type parseType(Manifest manifest) {
-		Attributes attrs = manifest.getMainAttributes();
-		
-		String name = (String) attrs.getValue("Oobium-Type");
-		if(name != null) {
-			String type = StringUtils.camelCase(name);
-			try {
-				return Type.valueOf(type);
-			} catch(Exception e) {
-				// discard and fall through
-			}
-		}
-		
-		Object frag = manifest.getMainAttributes().getValue("Fragment-Host");
-		
-		return (frag != null) ? Type.Fragment : Type.Bundle;
+		return sb.toString();
 	}
 
 	public static void refresh(String domain, int port) {
@@ -439,45 +332,11 @@ public class Bundle implements Comparable<Bundle> {
 	}
 
 	
-	protected final Logger logger;
-
-	/**
-	 * This bundle's root directory, or jar file, on the file system.
-	 */
-	public final File file;
-
-	/**
-	 * This bundle's manifest file, or null if this is a jarred bundle.
-	 */
-	public final File manifest;
-
-	/**
-	 * This bundle's symbolic name, as specified by the manifest header
-	 * <code>Bundle-SymbolicName</code>
-	 */
-	public final String name;
-
 	/**
 	 * This bundle's version, as specified by the manifest header
 	 * <code>Bundle-Version</code>
 	 */
 	public final Version version;
-
-	/**
-	 * This bundle's type, as specified in the custom manifest header,
-	 * <code>Oobium-Type</code>.
-	 * <p>
-	 * May be one of the following:
-	 * <ul>
-	 * <li>Application</li>
-	 * <li>Module</li>
-	 * <li>Migration</li>
-	 * <li>TestSuite</li>
-	 * <li>Bundle</li>
-	 * </ul>
-	 * </p>
-	 */
-	public final Type type;
 
 	/**
 	 * A list of bundles that are required by this bundle, as specified by the
@@ -504,44 +363,10 @@ public class Bundle implements Comparable<Bundle> {
 	private boolean isFramework;
 
 	/**
-	 * this project's "bin" directory<br>
-	 * The value is obtained from the project's "build.properties" file, if it
-	 * exists; otherwise it defaults to simply "bin";
-	 */
-	public final File bin;
-
-	/**
-	 * this project's "src" directory
-	 */
-	public final File src;
-
-	/**
-	 * this project's main source directory
-	 */
-	public final File main;
-
-	/**
 	 * this project's activator file, as specified by the manifest header
 	 * <code>Bundle-Activator</code>. Not valid for Fragments.
 	 */
 	public final File activator;
-
-	/**
-	 * this project's .classpath file (created by Eclipse if this project was
-	 * created by Eclipse)
-	 */
-	public final File classpath;
-
-	/**
-	 * this project's .project file (created by Eclipse if this project was
-	 * created by Eclipse)
-	 */
-	public final File project;
-
-	/**
-	 * true if this bundle is a jar file, false otherwise.
-	 */
-	public final boolean isJar;
 
 	/**
 	 * a list of services that this bundle registers with the OSGi framework
@@ -549,44 +374,16 @@ public class Bundle implements Comparable<Bundle> {
 	private final String[] services;
 
 	Bundle(Type type, File file, Manifest manifest) {
-		this.logger = Logger.getLogger(BuildBundle.class);
-
-		this.type = type;
-		this.file = file;
-		this.name = parseName(manifest);
+		super(type, file, manifest);
 		this.version = new Version((String) manifest.getMainAttributes().getValue("Bundle-Version"));
 		this.requiredBundles = parseRequiredBundles(manifest);
 		this.importedPackages = parseImportedPackages(manifest);
 		this.exportedPackages = parseExportedPackages(manifest);
 		this.services = parseServices(manifest);
-		this.isJar = file.isFile() && file.getName().endsWith(".jar");
 		if(isJar) {
-			this.manifest = null;
-			this.bin = null;
-			this.src = null;
-			this.main = null;
 			this.activator = null;
-			this.classpath = null;
-			this.project = null;
 		} else {
-			this.manifest = new File(file, "META-INF" + File.separator + "MANIFEST.MF");
-			File buildFile = new File(file, "build.properties");
-			String binPath = null;
-			if(buildFile.isFile()) {
-				Properties props = new Properties();
-				try {
-					props.load(new FileReader(buildFile));
-					binPath = props.getProperty("output..", "bin");
-				} catch(Exception e) {
-					binPath = "bin";
-				}
-			}
-			this.bin = (binPath != null && !".".equals(binPath)) ? new File(file, binPath) : new File(file, "bin");
-			this.src = new File(file, "src");
-			this.main = new File(src, name.replace('.', File.separatorChar));
 			this.activator = parseActivator(manifest);
-			this.classpath = new File(file, ".classpath");
-			this.project = new File(file, ".project");
 		}
 	}
 
@@ -732,50 +529,17 @@ public class Bundle implements Comparable<Bundle> {
 		return true;
 	}
 
-	public boolean addNature(String nature) {
-		if(project.isFile()) {
-			try {
-				DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
-				DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
-				Document doc = docBuilder.parse(project);
-				NodeList lists = doc.getElementsByTagName("natures");
-				if(lists.getLength() > 0) {
-					for(int i = 0; i < lists.getLength(); i++) {
-						Node node = lists.item(i);
-						if(node.getNodeType() == Node.ELEMENT_NODE) {
-							NodeList list = node.getChildNodes();
-							for(int j = 0; j < list.getLength(); j++) {
-								Node child = list.item(j);
-								if(child.getNodeType() == Node.ELEMENT_NODE && "nature".equals(child.getNodeName())) {
-									if(nature.equals(child.getFirstChild().getNodeValue())) {
-										return true; // nature already present
-									}
-								}
-							}
-						}
-					}
-					lists.item(0).appendChild(doc.createTextNode("\t"));
-					Element element = doc.createElement("nature");
-					element.setTextContent(nature);
-					lists.item(0).appendChild(element);
-					write(project, doc);
-					return true;
-				}
-			} catch(Exception e) {
-				logger.warn(e);
-			}
-		}
-		return false;
-	}
-
-	public void clean() {
-		FileUtils.deleteContents(bin);
-	}
-
 	@Override
-	public int compareTo(Bundle o) {
+	public int compareTo(Project o) {
 		int i = name.compareTo(o.name);
-		return (i == 0) ? version.compareTo(o.version) : i;
+		if(i != 0) {
+			return i;
+		}
+		if(o instanceof Bundle) {
+			return version.compareTo(((Bundle) o).version);
+		} else {
+			return 1;
+		}
 	}
 
 	public void createJar(File jar, Version version) throws IOException {
@@ -787,98 +551,11 @@ public class Bundle implements Comparable<Bundle> {
 		FileUtils.createJar(jar, files, manifest);
 	}
 
-	public void delete() {
-		FileUtils.delete(file);
-	}
-
 	public boolean exportsModels() {
 		if(this instanceof Module) {
 			return exportedPackages.contains(new ExportedPackage(name + ".models"));
 		}
 		return false;
-	}
-
-	public File getBinFile(File srcFile) {
-		int len = src.getAbsolutePath().length();
-		String path = srcFile.getAbsolutePath();
-		if(path.endsWith(".java")) {
-			path = path.substring(len, path.length() - 4) + "class";
-		} else {
-			path = path.substring(len);
-		}
-		return new File(bin, path);
-	}
-
-	public Set<File> getBinFiles(File... srcFiles) {
-		return getBinFiles(Arrays.asList(srcFiles));
-	}
-
-	public Set<File> getBinFiles(List<File> srcFiles) {
-		Set<File> binFiles = new HashSet<File>();
-
-		int len = src.getAbsolutePath().length();
-		for(File file : srcFiles) {
-			binFiles.add(new File(bin, file.getAbsolutePath().substring(len)));
-		}
-
-		return binFiles;
-	}
-
-	/**
-	 * Returns a map of all files necessary to build the jar for the given
-	 * bundle. The map key is the relative path to be used in the JarEntry
-	 * object (Windows style path separators are corrected). The map value is
-	 * the absolute File object pointing to the class or resource file to be
-	 * added to the jar.
-	 * 
-	 * @param bundle the bundle for which to build the jar
-	 * @return Map<String, File> all files necessary to build the jar for the given bundle
-	 */
-	private Map<String, File> getBuildFiles() throws IOException {
-		Map<String, File> buildFiles = new HashMap<String, File>();
-		File[] files = findFiles(bin);
-		int len = bin.getAbsolutePath().length() + 1;
-		for(File file : files) {
-			String relativePath = file.getAbsolutePath().substring(len);
-			if('\\' == File.separatorChar) {
-				relativePath = relativePath.replace('\\', '/');
-			}
-			buildFiles.put(relativePath, file);
-		}
-
-		File buildFile = new File(file, "build.properties");
-		if(buildFile.isFile()) {
-			Properties props = new Properties();
-			props.load(new FileReader(buildFile));
-			String[] includes = props.getProperty("bin.includes", "").split("\\s*,\\s*");
-			len = file.getAbsolutePath().length() + 1;
-			for(String include : includes) {
-				if(!".".equals(include)) {
-					File folder = new File(file, include);
-					files = findFiles(folder);
-					for(File file : files) {
-						String relativePath = file.getAbsolutePath().substring(len);
-						if('\\' == File.separatorChar) {
-							relativePath = relativePath.replace('\\', '/');
-						}
-						buildFiles.put(relativePath, file);
-					}
-				}
-			}
-		}
-		return buildFiles;
-	}
-
-	public String getClasspath() {
-		return StringUtils.join(getClasspathEntries(), File.pathSeparatorChar);
-	}
-
-	public String getClasspath(Workspace workspace) {
-		return StringUtils.join(getClasspathEntries(workspace), File.pathSeparatorChar);
-	}
-
-	public String getClasspath(Workspace workspace, Mode mode) {
-		return StringUtils.join(getClasspathEntries(workspace, mode), File.pathSeparatorChar);
 	}
 
 	private void addClasspathEntries(Set<String> cpes) {
@@ -909,12 +586,6 @@ public class Bundle implements Comparable<Bundle> {
 		} else {
 			cpes.add(file.getAbsolutePath());
 		}
-	}
-
-	public Set<String> getClasspathEntries() {
-		Set<String> cpes = new LinkedHashSet<String>();
-		addClasspathEntries(cpes);
-		return cpes;
 	}
 
 	public Set<String> getClasspathEntries(Workspace workspace) {
@@ -994,41 +665,8 @@ public class Bundle implements Comparable<Bundle> {
 		return name + "_" + version.toString(true);
 	}
 
-	public Set<String> getNatures() {
-		Set<String> natures = new LinkedHashSet<String>();
-		if(project.isFile()) {
-			try {
-				DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
-				DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
-				Document doc = docBuilder.parse(project);
-				NodeList list = doc.getElementsByTagName("nature");
-				for(int i = 0; i < list.getLength(); i++) {
-					Node node = list.item(i);
-					if(node.getNodeType() == Node.ELEMENT_NODE) {
-						String nature = node.getFirstChild().getNodeValue();
-						natures.add(nature);
-					}
-				}
-			} catch(Exception e) {
-				logger.warn(e);
-			}
-		}
-		return natures;
-	}
-
 	public List<RequiredBundle> getRequiredBundles() {
 		return (requiredBundles == null) ? new ArrayList<RequiredBundle>(0) : new ArrayList<RequiredBundle>(requiredBundles);
-	}
-
-	public boolean hasNature(String nature) {
-		return getNatures().contains(nature);
-	}
-
-	/**
-	 * @return true if this is a Oobium Application.
-	 */
-	public boolean isApplication() {
-		return type == Type.Application;
 	}
 
 	/**
@@ -1041,58 +679,8 @@ public class Bundle implements Comparable<Bundle> {
 		return isFramework;
 	}
 
-	/**
-	 * @return true if this is a Library.
-	 */
-	public boolean isLibrary() {
-		return type == Type.Bundle;
-	}
-
-	/**
-	 * @return true if this is a Oobium Migration.
-	 */
-	public boolean isMigration() {
-		return type == Type.Migrator;
-	}
-
-	/**
-	 * @return true if this is a Oobium Module or Application (Application
-	 *         extends Module).
-	 */
-	public boolean isModule() {
-		return type == Type.Module || type == Type.Application;
-	}
-
 	public boolean isService() {
 		return services.length > 0;
-	}
-
-	/**
-	 * @return true if this is a Oobium TestSuite.
-	 */
-	public boolean isTestSuite() {
-		return type == Type.TestSuite;
-	}
-
-	/**
-	 * Get the java package name for the given file.<br>
-	 * The given file may be an actual file, or a directory.
-	 */
-	public String packageName(File file) {
-		return packageName(src, file);
-	}
-
-	/**
-	 * Get the java package name for the given file.<br>
-	 * The given file may be an actual file, or a directory.
-	 */
-	public String packageName(File srcFolder, File file) {
-		if(file.isFile()) {
-			file = file.getParentFile();
-		}
-		int ix = srcFolder.getAbsolutePath().length();
-		String name = file.getAbsolutePath().substring(ix + 1).replace(File.separatorChar, '.');
-		return name;
 	}
 
 	private File parseActivator(Manifest manifest) {
@@ -1167,19 +755,6 @@ public class Bundle implements Comparable<Bundle> {
 			}
 		}
 		return packages;
-	}
-
-	private String parseName(Manifest manifest) {
-		String name = (String) manifest.getMainAttributes().getValue("Bundle-SymbolicName");
-		if(name != null) {
-			int ix = name.indexOf(';');
-			if(ix == -1) {
-				return name.trim();
-			} else {
-				return name.substring(0, ix).trim();
-			}
-		}
-		return "";
 	}
 
 	private List<RequiredBundle> parseRequiredBundles(Manifest manifest) {
@@ -1313,42 +888,6 @@ public class Bundle implements Comparable<Bundle> {
 		return true;
 	}
 
-	public boolean removeNature(String nature) {
-		if(project.isFile()) {
-			try {
-				DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
-				DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
-				Document doc = docBuilder.parse(project);
-				NodeList lists = doc.getElementsByTagName("natures");
-				if(lists.getLength() > 0) {
-					for(int i = 0; i < lists.getLength(); i++) {
-						Node node = lists.item(i);
-						if(node.getNodeType() == Node.ELEMENT_NODE) {
-							NodeList list = node.getChildNodes();
-							for(int j = 0; j < list.getLength(); j++) {
-								Node child = list.item(j);
-								if(child.getNodeType() == Node.ELEMENT_NODE && "nature".equals(child.getNodeName())) {
-									if(nature.equals(child.getFirstChild().getNodeValue())) {
-										node.removeChild(child);
-										if(j > 0 && list.item(j - 1).getNodeType() == Node.TEXT_NODE) {
-											node.removeChild(list.item(j - 1));
-										}
-										write(project, doc);
-										return true;
-									}
-								}
-							}
-						}
-					}
-				}
-				return true; // nature not present
-			} catch(Exception e) {
-				logger.warn(e);
-			}
-		}
-		return false;
-	}
-
 	public boolean resolves(ImportedPackage importedPackage) {
 		if(exportedPackages != null) {
 			for(ExportedPackage exportedPackage : exportedPackages) {
@@ -1381,21 +920,6 @@ public class Bundle implements Comparable<Bundle> {
 			sb.append(" (jarred)");
 		}
 		return sb.toString();
-	}
-
-	private void write(File file, Document doc) throws Exception {
-		TransformerFactory transfac = TransformerFactory.newInstance();
-		Transformer trans = transfac.newTransformer();
-		trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-		trans.setOutputProperty(OutputKeys.INDENT, "yes");
-
-		StringWriter sw = new StringWriter();
-		StreamResult result = new StreamResult(sw);
-		DOMSource source = new DOMSource(doc);
-		trans.transform(source, result);
-		String xmlString = sw.toString();
-
-		FileUtils.writeFile(file, xmlString);
 	}
 
 }

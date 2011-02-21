@@ -30,19 +30,19 @@ import org.oobium.build.model.ModelAttribute;
 import org.oobium.build.model.ModelDefinition;
 import org.oobium.build.model.ModelRelation;
 import org.oobium.build.util.PersistConfig;
-import org.oobium.build.util.SourceFile;
 import org.oobium.build.util.PersistConfig.Service;
+import org.oobium.build.util.SourceFile;
 import org.oobium.build.workspace.Application;
 import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.Workspace;
-import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 import org.oobium.persist.Model;
 import org.oobium.persist.Paginator;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.migrate.Migration;
-import org.oobium.utils.StringUtils;
 import org.oobium.utils.Config.Mode;
+import org.oobium.utils.StringUtils;
 import org.oobium.utils.json.JsonModel;
 import org.oobium.utils.json.JsonUtils;
 
@@ -329,7 +329,7 @@ public class ModelGenerator {
 				if(action == GEN_SCHEMA) { // an explicit request to build the schema and nothing else
 					throw new IllegalStateException("Migrator Bundle cannot be found");
 				}
-				Logger.getLogger(BuildBundle.class).debug("build schema requestd but migrator is not present... continuing anyway");
+				LogProvider.getLogger(BuildBundle.class).debug("build schema requestd but migrator is not present... continuing anyway");
 				action &= ~GEN_SCHEMA;
 			} else {
 				classpath.append(File.pathSeparatorChar).append(migrator.file.getAbsolutePath());

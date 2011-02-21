@@ -20,22 +20,23 @@ import java.nio.channels.SelectionKey;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.Map.Entry;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 
 public class ReadHandler extends Thread {
 
 	private class ReadTimeOutTask extends TimerTask {
 		private final Logger logger;
 		private ReadTimeOutTask() {
-			logger = Logger.getLogger(Server.class);
+			logger = LogProvider.getLogger(Server.class);
 		}
 		@Override
 		public void run() {
@@ -77,7 +78,7 @@ public class ReadHandler extends Thread {
 	public ReadHandler(ServerSelector selector) {
 		this.selector = selector;
 
-		logger = Logger.getLogger(Server.class);
+		logger = LogProvider.getLogger(Server.class);
 		execService = Executors.newFixedThreadPool(maxRequestHandlers);
 		
 		readQueue = new LinkedBlockingQueue<Read>();

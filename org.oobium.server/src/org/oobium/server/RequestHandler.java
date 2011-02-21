@@ -30,6 +30,7 @@ import org.oobium.http.constants.Header;
 import org.oobium.http.constants.RequestType;
 import org.oobium.http.impl.Headers;
 import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 
 class RequestHandler implements Runnable {
 
@@ -40,7 +41,7 @@ class RequestHandler implements Runnable {
 	private final Data data;
 
 	RequestHandler(ServerSelector selector, SelectionKey key, Data data) {
-		logger = Logger.getLogger(Server.class);
+		logger = LogProvider.getLogger(Server.class);
 		this.selector = selector;
 		this.key = key;
 		this.data = data;

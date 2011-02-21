@@ -60,6 +60,7 @@ import org.oobium.build.workspace.Application;
 import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Migrator;
 import org.oobium.build.workspace.Module;
+import org.oobium.build.workspace.Project;
 import org.oobium.build.workspace.TestSuite;
 import org.oobium.build.workspace.WorkspaceEvent;
 import org.oobium.build.workspace.WorkspaceListener;
@@ -506,25 +507,25 @@ public class ConsoleView extends ViewPart {
 				sel = ((IJavaElement) sel).getResource();
 			}
 			if(sel instanceof IResource) {
-				IProject project = ((IResource) sel).getProject();
+				IProject iproject = ((IResource) sel).getProject();
 				try {
-					if(project.isOpen() && project.hasNature(OobiumNature.ID)) {
-						File file = project.getLocation().toFile();
-						Bundle bundle = OobiumPlugin.getWorkspace().getBundle(file);
-						if(bundle == null) {
-							bundle = OobiumPlugin.getWorkspace().loadBundle(file);
+					if(iproject.isOpen() && iproject.hasNature(OobiumNature.ID)) {
+						File file = iproject.getLocation().toFile();
+						Project project = OobiumPlugin.getWorkspace().getBundle(file);
+						if(project == null) {
+							project = OobiumPlugin.getWorkspace().load(file);
 						}
-						if(bundle != null) {
-							if(bundle.isApplication()) {
+						if(project != null) {
+							if(project.isApplication()) {
 								setApplication(file);
-							} else if(bundle.isMigration()) {
-								Migrator migrator = (Migrator) bundle;
+							} else if(project.isMigration()) {
+								Migrator migrator = (Migrator) project;
 								Module module = OobiumPlugin.getWorkspace().getModule(migrator.moduleName);
 								if(module != null && module.isApplication()) {
 									setApplication(module.file);
 								}
-							} else if(bundle.isTestSuite()) {
-								TestSuite tests = (TestSuite) bundle;
+							} else if(project.isTestSuite()) {
+								TestSuite tests = (TestSuite) project;
 								Module module = OobiumPlugin.getWorkspace().getModule(tests.moduleName);
 								if(module != null && module.isApplication()) {
 									setApplication(module.file);

@@ -10,8 +10,12 @@
  ******************************************************************************/
 package org.oobium.build.console.commands.create;
 
-import static org.oobium.utils.FileUtils.*;
-import static org.oobium.utils.StringUtils.*;
+import static org.oobium.utils.FileUtils.readFile;
+import static org.oobium.utils.FileUtils.writeFile;
+import static org.oobium.utils.StringUtils.camelCase;
+import static org.oobium.utils.StringUtils.getResourceAsString;
+import static org.oobium.utils.StringUtils.tableName;
+import static org.oobium.utils.StringUtils.varName;
 
 import java.io.File;
 import java.util.List;
@@ -29,11 +33,9 @@ public class ClientCommand extends BuilderCommand {
 	public void configure() {
 		applicationRequired = true;
 	}
-	
-	@Override
-	public void run() {
-		Application app = getApplication();
-		
+
+	// TODO move this to a generator in the builder project
+	private void createScriptClient(Application app) {
 		String template = getResourceAsString(ProjectGenerator.class, "templates/models.js");
 		StringBuilder sb = new StringBuilder(template);
 		
@@ -150,6 +152,12 @@ public class ClientCommand extends BuilderCommand {
 		console.out.println("created client <a href=\"open file " + sb.toString() + "\">models.js</a>");
 
 		BuilderConsoleActivator.sendRefresh(app, scripts, 100);
+	}
+
+	@Override
+	public void run() {
+		Application app = getApplication();
+		createScriptClient(app);
 	}
 
 }

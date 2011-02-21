@@ -10,7 +10,7 @@
  ******************************************************************************/
 package org.oobium.app.server.routing;
 
-import static org.oobium.app.server.controller.Action.*;
+import static org.oobium.http.constants.Action.*;
 import static org.oobium.utils.CharStreamUtils.closer;
 import static org.oobium.utils.CharStreamUtils.find;
 import static org.oobium.utils.CharStreamUtils.findAny;
@@ -19,8 +19,8 @@ import static org.oobium.utils.StringUtils.*;
 
 import java.util.List;
 
-import org.oobium.app.server.controller.Action;
 import org.oobium.app.server.routing.routes.ControllerRoute;
+import org.oobium.http.constants.Action;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
 

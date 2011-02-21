@@ -12,7 +12,9 @@ package org.oobium.persist.db.internal;
 
 import static org.oobium.persist.db.internal.DbCache.getCache;
 import static org.oobium.persist.db.internal.DbCache.setCache;
-import static org.oobium.utils.StringUtils.*;
+import static org.oobium.utils.StringUtils.blank;
+import static org.oobium.utils.StringUtils.columnName;
+import static org.oobium.utils.StringUtils.tableName;
 
 import java.sql.SQLException;
 import java.util.Map;
@@ -20,6 +22,7 @@ import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
 import org.oobium.persist.ModelDescription;
@@ -27,7 +30,7 @@ import org.oobium.persist.db.DbPersistService;
 
 public class QueryUtils {
 
-	private static final Logger logger = Logger.getLogger(DbPersistService.class);
+	private static final Logger logger = LogProvider.getLogger(DbPersistService.class);
 	
 	public static final String ID = columnName(ModelDescription.ID);
 	public static final String SUPER_ID = columnName(ModelDescription.SUPER_ID);

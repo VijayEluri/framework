@@ -1,0 +1,70 @@
+package {projectPackage}.activities.{modelsVar};
+
+import android.app.Activity;
+import android.app.ProgressDialog;
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.TextView;
+
+import {modelPackage}.{modelName};
+import {projectPackage}.R;
+
+public class ShowNew{modelName} extends Activity {
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		
+		setContentView(R.layout.show_new_{modelVar});
+		
+		Button b = (Button) findViewById(R.id.create);
+		b.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				create();
+			}
+		});
+		
+		b = (Button) findViewById(R.id.showAll);
+		b.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				Intent intent = new Intent(ShowNew{modelName}.this, ShowAll{modelsName}.class);
+				startActivity(intent);
+			}
+		});
+	}
+
+	private void create() {
+		final ProgressDialog progress = ProgressDialog.show(this, "Please wait...", "Sending data...", true);
+
+		Thread thread = new Thread("creating {modelVar}") {
+			public void run() {
+				try {
+					{modelName} {modelVar} = new {modelName}();
+					
+					setModelFields({modelVar});
+					
+					if({modelVar}.create()) {
+						Intent intent = new Intent(ShowNew{modelName}.this, Show{modelName}.class);
+						intent.putExtra("id", {modelVar}.getId());
+						startActivity(intent);
+					} else {
+						// TODO
+					}
+				} finally {
+					progress.dismiss();
+				}
+			}
+		};
+		thread.start();
+	}
+
+	private void setModelFields({modelName} {modelVar}) {
+		{setModelFields}
+	}
+
+}

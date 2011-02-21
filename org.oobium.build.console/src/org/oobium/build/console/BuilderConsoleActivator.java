@@ -20,7 +20,7 @@ import java.io.IOException;
 
 import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Display;
-import org.oobium.build.workspace.Bundle;
+import org.oobium.build.workspace.Project;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
@@ -28,16 +28,16 @@ public class BuilderConsoleActivator implements BundleActivator {
 
 	private static BuilderConsoleActivator instance;
 	
-	public static void sendImport(Bundle bundle) {
-		sendImport(bundle.file);
+	public static void sendImport(Project project) {
+		sendImport(project.file);
 	}
 	
 	public static void sendImport(File project) {
 		client(instance.port).aPost("commands/import", Map(e("project", project.getName()), e("file", project.getAbsolutePath())));
 	}
 	
-	public static void sendOpen(Bundle bundle, File file) {
-		sendOpen(bundle.file, file);
+	public static void sendOpen(Project project, File file) {
+		sendOpen(project.file, file);
 	}
 	
 	public static void sendOpen(final File file) {
@@ -85,14 +85,14 @@ public class BuilderConsoleActivator implements BundleActivator {
 		client(instance.port).aPost("commands/open_type", Map(e("type", type), e("line", line)));
 	}
 
-	public static void sendRefresh(Bundle bundle, long delay) {
-		if(bundle != null) {
-			sendRefresh(bundle.file, delay);
+	public static void sendRefresh(Project project, long delay) {
+		if(project != null) {
+			sendRefresh(project.file, delay);
 		}
 	}
 
-	public static void sendRefresh(Bundle bundle, File file, long delay) {
-		sendRefresh(bundle.file, file, delay);
+	public static void sendRefresh(Project project, File file, long delay) {
+		sendRefresh(project.file, file, delay);
 	}
 	
 	public static void sendRefresh(final File project, final long delay) {

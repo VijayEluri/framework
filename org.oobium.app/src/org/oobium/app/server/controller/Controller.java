@@ -10,10 +10,10 @@
  ******************************************************************************/
 package org.oobium.app.server.controller;
 
-import static org.oobium.app.server.controller.Action.showEdit;
-import static org.oobium.app.server.controller.Action.showNew;
 import static org.oobium.http.HttpSession.SESSION_ID_KEY;
 import static org.oobium.http.HttpSession.SESSION_UUID_KEY;
+import static org.oobium.http.constants.Action.showEdit;
+import static org.oobium.http.constants.Action.showNew;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.mapParams;
 import static org.oobium.utils.StringUtils.varName;
@@ -54,6 +54,7 @@ import org.oobium.cache.CacheService;
 import org.oobium.http.HttpCookie;
 import org.oobium.http.HttpRequest;
 import org.oobium.http.HttpSession;
+import org.oobium.http.constants.Action;
 import org.oobium.http.constants.ContentType;
 import org.oobium.http.constants.Header;
 import org.oobium.http.constants.StatusCode;

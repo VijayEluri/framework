@@ -12,10 +12,10 @@ package org.oobium.build.console.commands.create;
 
  import java.io.File;
 
-import org.oobium.app.server.controller.Action;
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.BuilderConsoleActivator;
 import org.oobium.build.workspace.Module;
+import org.oobium.http.constants.Action;
 
 public class ActionCacheCommand extends BuilderCommand {
 

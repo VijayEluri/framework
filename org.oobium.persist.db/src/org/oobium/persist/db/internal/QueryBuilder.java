@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 
-import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
 import org.oobium.persist.db.DbPersistService;
@@ -272,7 +272,7 @@ public class QueryBuilder {
 			}
 			query.setSql(buildSql());
 		} catch(Exception e) {
-			Logger.getLogger(DbPersistService.class).warn(e);
+			LogProvider.getLogger(DbPersistService.class).warn(e);
 			throw new SQLException(e);
 		}
 	}

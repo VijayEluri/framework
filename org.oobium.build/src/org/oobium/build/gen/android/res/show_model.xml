@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="wrap_content"
+	android:layout_height="wrap_content" >
+	<TextView
+		android:id="@+id/header"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:textStyle="bold"
+		android:textSize="12pt" />
+	<RelativeLayout
+		android:id="@+id/footer"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_alignParentBottom="true" >
+	    <ImageButton
+	    	android:id="@+id/edit"
+	    	android:src="@drawable/edit"
+	    	android:layout_width="wrap_content"
+	    	android:layout_height="wrap_content" />
+	    <Button
+	    	android:id="@+id/showAll"
+	    	android:text="Show All"
+	    	android:layout_width="wrap_content"
+	    	android:layout_height="wrap_content"
+	    	android:layout_toRightOf="@id/edit" />
+	    <Button
+	    	android:id="@+id/refresh"
+	    	android:text="Refresh"
+	    	android:layout_width="wrap_content"
+	    	android:layout_height="wrap_content"
+	    	android:layout_alignParentRight="true" />
+	</RelativeLayout>
+	<ScrollView
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:scrollbars="vertical"
+		android:layout_below="@id/header"
+		android:layout_above="@id/footer" >
+		<LinearLayout
+			android:id="@+id/form"
+			android:orientation="vertical"
+			android:layout_width="fill_parent"
+			android:layout_height="fill_parent" >
+			{stackedFields}
+		</LinearLayout>
+	</ScrollView>
+	<TextView
+		android:id="@+id/status"
+		android:visibility="gone"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_below="@id/header"
+		android:layout_above="@id/footer" />
+</RelativeLayout>

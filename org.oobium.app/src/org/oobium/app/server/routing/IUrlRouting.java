@@ -10,7 +10,7 @@
  ******************************************************************************/
 package org.oobium.app.server.routing;
 
-import org.oobium.app.server.controller.Action;
+import org.oobium.http.constants.Action;
 import org.oobium.persist.Model;
 
 public interface IUrlRouting {

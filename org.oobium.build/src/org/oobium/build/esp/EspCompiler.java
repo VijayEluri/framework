@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.oobium.app.server.controller.Action;
 import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.view.ScriptFile;
 import org.oobium.app.server.view.StyleSheet;
@@ -56,6 +55,7 @@ import org.oobium.build.esp.parts.JavaPart;
 import org.oobium.build.esp.parts.ScriptJavaPart;
 import org.oobium.build.esp.parts.ScriptPart;
 import org.oobium.build.esp.parts.StylePropertyPart;
+import org.oobium.http.constants.Action;
 import org.oobium.mailer.MailerTemplate;
 import org.oobium.persist.Model;
 import org.oobium.utils.ArrayUtils;

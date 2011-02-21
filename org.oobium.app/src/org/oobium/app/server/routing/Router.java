@@ -10,13 +10,13 @@
  ******************************************************************************/
 package org.oobium.app.server.routing;
 
-import static org.oobium.app.server.controller.Action.create;
-import static org.oobium.app.server.controller.Action.destroy;
-import static org.oobium.app.server.controller.Action.show;
-import static org.oobium.app.server.controller.Action.showAll;
-import static org.oobium.app.server.controller.Action.showEdit;
-import static org.oobium.app.server.controller.Action.showNew;
-import static org.oobium.app.server.controller.Action.update;
+import static org.oobium.http.constants.Action.create;
+import static org.oobium.http.constants.Action.destroy;
+import static org.oobium.http.constants.Action.show;
+import static org.oobium.http.constants.Action.showAll;
+import static org.oobium.http.constants.Action.showEdit;
+import static org.oobium.http.constants.Action.showNew;
+import static org.oobium.http.constants.Action.update;
 import static org.oobium.http.constants.RequestType.DELETE;
 import static org.oobium.http.constants.RequestType.GET;
 import static org.oobium.http.constants.RequestType.POST;
@@ -48,7 +48,6 @@ import java.util.TreeMap;
 
 import org.oobium.app.AssetProvider;
 import org.oobium.app.ModuleService;
-import org.oobium.app.server.controller.Action;
 import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.routing.routes.AssetRoute;
 import org.oobium.app.server.routing.routes.ControllerRoute;
@@ -58,10 +57,11 @@ import org.oobium.app.server.routing.routes.ViewRoute;
 import org.oobium.app.server.view.DynamicAsset;
 import org.oobium.app.server.view.View;
 import org.oobium.http.HttpRequest;
+import org.oobium.http.constants.Action;
 import org.oobium.http.constants.ContentType;
 import org.oobium.http.constants.Header;
 import org.oobium.http.constants.RequestType;
-import org.oobium.logging.ILogger;
+import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.utils.Base64;
 
@@ -99,7 +99,7 @@ public class Router {
 
 	
 	protected final ModuleService service;
-	protected final ILogger logger;
+	protected final Logger logger;
 
 	protected Map<String, Route[]> routes;
 	protected List<Route> patternRoutes;

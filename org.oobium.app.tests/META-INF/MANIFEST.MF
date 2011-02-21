@@ -16,3 +16,6 @@ Require-Bundle: org.junit;bundle-version="4.7.0",
 Import-Package: org.oobium.logging,
  org.osgi.framework,
  org.osgi.service.log
+Export-Package: org.oobium.app,
+ org.oobium.app.server.persist,
+ org.oobium.app.server.routes

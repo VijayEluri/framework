@@ -11,8 +11,11 @@
 package org.oobium.persist.db.internal;
 
 import static org.oobium.persist.db.internal.DbCache.getCache;
-import static org.oobium.persist.db.internal.QueryUtils.*;
-import static org.oobium.utils.SqlUtils.*;
+import static org.oobium.persist.db.internal.QueryUtils.ID;
+import static org.oobium.persist.db.internal.QueryUtils.createModel;
+import static org.oobium.persist.db.internal.QueryUtils.valuePattern;
+import static org.oobium.utils.SqlUtils.asNestedFieldMaps;
+import static org.oobium.utils.SqlUtils.setObject;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -23,17 +26,18 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Matcher;
 
 import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 import org.oobium.persist.Model;
 import org.oobium.persist.db.DbPersistService;
 
 public class QueryProcessor<E extends Model> {
 
-	private static final Logger logger = Logger.getLogger(DbPersistService.class);
+	private static final Logger logger = LogProvider.getLogger(DbPersistService.class);
 
 	public static <T extends Model> QueryProcessor<T> create(Class<T> clazz, String sql, Object...values) throws SQLException {
 		QueryProcessor<T> processor = new QueryProcessor<T>();

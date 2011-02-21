@@ -15,6 +15,7 @@ import static org.oobium.utils.literal.Properties;
 import java.sql.SQLException;
 import java.util.Map;
 
+import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
@@ -24,19 +25,19 @@ public abstract class AbstractMigrationService implements MigrationService, Bund
 	protected final Logger logger;
 	
 	public AbstractMigrationService() {
-		logger = Logger.getLogger(getClass());
+		logger = LogProvider.getLogger(getClass());
 	}
 
 	@Override
 	public void start(BundleContext context) throws Exception {
-		logger.setBundle(context.getBundle());
+		logger.setTag(context.getBundle().getSymbolicName());
 		String serviceName = context.getBundle().getSymbolicName();
 		context.registerService(MigrationService.class.getName(), this, Properties(MigrationService.SERVICE, serviceName));
 	}
 
 	@Override
 	public void stop(BundleContext context) throws Exception {
-		logger.setBundle(null);
+		logger.setTag(null);
 	}
 
 	@Override

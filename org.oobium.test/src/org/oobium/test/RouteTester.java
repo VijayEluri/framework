@@ -1,7 +1,8 @@
 package org.oobium.test;
 
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -10,7 +11,6 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.oobium.app.AppService;
 import org.oobium.app.ModuleService;
-import org.oobium.app.server.controller.Action;
 import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.routing.AppRouter;
 import org.oobium.app.server.routing.IPathRouting;
@@ -18,6 +18,7 @@ import org.oobium.app.server.routing.IUrlRouting;
 import org.oobium.app.server.routing.RouteHandler;
 import org.oobium.app.server.routing.Router;
 import org.oobium.http.HttpRequest;
+import org.oobium.http.constants.Action;
 import org.oobium.http.constants.RequestType;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;

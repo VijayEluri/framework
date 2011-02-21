@@ -1,7 +1,9 @@
 package org.oobium.server;
 
-import static org.mockito.Mockito.*;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.net.URL;
 import java.net.URLConnection;
@@ -15,13 +17,14 @@ import org.oobium.http.HttpRequest;
 import org.oobium.http.HttpRequestHandler;
 import org.oobium.http.HttpResponse;
 import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 
 public class ServerTests {
 
 	@Ignore
 	@Test
 	public void testServer() throws Exception {
-		Logger.getLogger(Server.class).setConsoleLevel(Logger.NEVER);
+		LogProvider.getLogger(Server.class).setConsoleLevel(Logger.NEVER);
 
 		HttpResponse response = mock(HttpResponse.class);
 		when(response.getBuffer()).thenAnswer(new Answer<ByteBuffer>() {

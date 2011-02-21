@@ -16,7 +16,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.oobium.build.workspace.Bundle.Type.Bundle;
+import static org.oobium.build.workspace.Project.Type.Bundle;
 
 import java.io.File;
 import java.util.Iterator;

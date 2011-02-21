@@ -193,7 +193,12 @@ public class ClientThread extends Thread {
 	}
 	
     private void setHeaders(URLConnection connection) {
-		connection.addRequestProperty(Header.USER_AGENT.key(), "Oobium Client");
+    	if(!headers.containsKey(Header.USER_AGENT.key())) {
+    		connection.addRequestProperty(Header.USER_AGENT.key(), "Oobium Client");
+    	}
+    	if(!headers.containsKey(Header.HOST.key())) {
+    		connection.addRequestProperty(Header.HOST.key(), connection.getURL().getHost());
+    	}
 		for(Entry<String, List<String>> entry : headers.entrySet()) {
 			for(String value : entry.getValue()) {
 				connection.addRequestProperty(entry.getKey(), value);

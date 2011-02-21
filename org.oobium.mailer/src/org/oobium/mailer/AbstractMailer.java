@@ -39,11 +39,12 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
 import org.oobium.app.AppService;
-import org.oobium.app.server.controller.Action;
 import org.oobium.app.server.routing.AppRouter;
 import org.oobium.app.server.routing.IUrlRouting;
+import org.oobium.http.constants.Action;
 import org.oobium.http.constants.ContentType;
 import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 import org.oobium.persist.Model;
 import org.oobium.utils.Config;
 
@@ -114,7 +115,7 @@ public abstract class AbstractMailer implements IUrlRouting {
 	public AbstractMailer() {
 		app = AppService.get();
 		if(app == null) {
-			logger = Logger.getLogger();
+			logger = LogProvider.getLogger();
 			router = null;
 		} else {
 			logger = app.getLogger();

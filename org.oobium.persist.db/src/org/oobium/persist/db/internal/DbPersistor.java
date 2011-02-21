@@ -10,11 +10,26 @@
  ******************************************************************************/
 package org.oobium.persist.db.internal;
 
+import static org.oobium.persist.db.internal.DbCache.getCache;
+import static org.oobium.persist.db.internal.DbCache.setCache;
+import static org.oobium.persist.db.internal.QueryUtils.CREATED_AT;
+import static org.oobium.persist.db.internal.QueryUtils.CREATED_ON;
+import static org.oobium.persist.db.internal.QueryUtils.ID;
+import static org.oobium.persist.db.internal.QueryUtils.UPDATED_AT;
+import static org.oobium.persist.db.internal.QueryUtils.UPDATED_ON;
+import static org.oobium.persist.db.internal.QueryUtils.getWhere;
+import static org.oobium.persist.db.internal.QueryUtils.setFields;
+import static org.oobium.utils.SqlUtils.asFieldMaps;
+import static org.oobium.utils.SqlUtils.asLists;
+import static org.oobium.utils.SqlUtils.getSqlType;
+import static org.oobium.utils.SqlUtils.isInsert;
+import static org.oobium.utils.SqlUtils.limit;
+import static org.oobium.utils.SqlUtils.safeSqlWord;
+import static org.oobium.utils.SqlUtils.setObject;
+import static org.oobium.utils.StringUtils.blank;
+import static org.oobium.utils.StringUtils.columnName;
+import static org.oobium.utils.StringUtils.tableName;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
-import static org.oobium.persist.db.internal.DbCache.*;
-import static org.oobium.persist.db.internal.QueryUtils.*;
-import static org.oobium.utils.SqlUtils.*;
-import static org.oobium.utils.StringUtils.*;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -33,6 +48,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
 import org.oobium.persist.Relation;
@@ -47,7 +63,7 @@ public class DbPersistor {
 	private static final Cell createdOn = new Cell(CREATED_ON, Types.DATE, "CURRENT_DATE");
 	private static final Cell updatedOn = new Cell(UPDATED_ON, Types.DATE, "CURRENT_DATE");
 
-	private static final Logger logger = Logger.getLogger(DbPersistService.class);
+	private static final Logger logger = LogProvider.getLogger(DbPersistService.class);
 
 	private static String join(String starter, Object[] segments, String closer, String separator) {
 		Object[] oa = new Object[segments.length];

@@ -24,8 +24,10 @@ import java.util.Set;
 
 import org.oobium.app.AppService;
 import org.oobium.cache.CacheService;
+import org.oobium.http.constants.Action;
 import org.oobium.http.constants.ContentType;
 import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 import org.oobium.persist.Model;
 import org.oobium.persist.Observer;
 import org.oobium.utils.StringUtils;
@@ -37,7 +39,7 @@ import org.oobium.utils.StringUtils;
  */
 public class ActionCache extends Observer {
 
-	protected static final Logger logger = Logger.getLogger();
+	protected static final Logger logger = LogProvider.getLogger();
 	
 	private static final Map<Class<?>, ActionCache> cacheMap = new HashMap<Class<?>, ActionCache>();
 	private static final Map<Class<?>, Set<Action>> caches = new HashMap<Class<?>, Set<Action>>();

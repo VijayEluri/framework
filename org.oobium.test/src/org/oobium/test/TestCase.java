@@ -32,6 +32,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
 import org.oobium.persist.db.DbPersistService;
@@ -82,7 +83,7 @@ public abstract class TestCase {
 	private Map<String, Object> models;
 
 	public TestCase() {
-		logger = Logger.getLogger(getClass());
+		logger = LogProvider.getLogger(getClass());
 	}
 
 	protected void resetSession() {

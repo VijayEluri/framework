@@ -29,16 +29,16 @@ import java.util.Set;
 
 import org.oobium.app.AppService;
 import org.oobium.app.ModuleService;
-import org.oobium.app.server.controller.Action;
 import org.oobium.app.server.controller.ActionCache;
 import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.routing.AppRouter;
 import org.oobium.app.server.routing.Router;
 import org.oobium.build.util.SourceFile;
 import org.oobium.build.workspace.Bundle;
-import org.oobium.build.workspace.Bundle.Type;
+import org.oobium.build.workspace.Project.Type;
 import org.oobium.build.workspace.ExportedPackage;
 import org.oobium.build.workspace.Module;
+import org.oobium.http.constants.Action;
 import org.oobium.mailer.Mailer;
 import org.oobium.persist.Attribute;
 import org.oobium.persist.ModelDescription;
@@ -252,7 +252,7 @@ public class ProjectGenerator {
 
 		writeFile(controllersFolder(project), "ApplicationController.java", src.toSource());
 	}
-	
+
 	public static File createLayout(File project) {
 		StringBuilder sb = new StringBuilder();
 
@@ -383,7 +383,7 @@ public class ProjectGenerator {
 		sb.append("Bundle-Name: ").append(property(properties, "Bundle-Name", name + " Bundle")).append('\n');
 		sb.append("Bundle-SymbolicName: ").append(name).append('\n');
 		sb.append("Bundle-Version: ").append(property(properties, "Bundle-Version", "1.0.0.qualifier")).append('\n');
-		sb.append("Bundle-RequiredExecutionEnvironment: ").append(property(properties, "Bundle-Activator", "JavaSE-1.6")).append('\n');
+		sb.append("Bundle-RequiredExecutionEnvironment: ").append(property(properties, "Bundle-RequiredExecutionEnvironment", "JavaSE-1.6")).append('\n');
 
 		if(projectType >= 0) {
 			sb.append("Oobium-Type: ");
@@ -873,7 +873,7 @@ public class ProjectGenerator {
 		case PTYPE_APP_WS:	sb.append("\t\t<nature>").append(Module.NATURE_WEBSERVICE).append("</nature>\n");	// fall through
 		case PTYPE_APP:		sb.append("\t\t<nature>org.oobium.eclipse.OobiumApplication</nature>\n");	break;
 		case PTYPE_MIG:		sb.append("\t\t<nature>org.oobium.eclipse.OobiumMigration</nature>\n");		break;
-		case PTYPE_MOD_WS:	sb.append("\t\t<nature>org.oobium.eclipse.OobiumWebservice</nature>\n");	// fall through
+		case PTYPE_MOD_WS:	sb.append("\t\t<nature>").append(Module.NATURE_WEBSERVICE).append("</nature>\n");	// fall through
 		case PTYPE_MOD: 	sb.append("\t\t<nature>org.oobium.eclipse.OobiumModule</nature>\n");		break;
 		case PTYPE_TEST:	sb.append("\t\t<nature>org.oobium.eclipse.OobiumTestSuite</nature>\n");		break;
 		}

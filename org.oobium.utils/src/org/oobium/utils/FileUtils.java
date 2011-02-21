@@ -32,6 +32,7 @@ import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 
 import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 
 public class FileUtils {
 
@@ -41,32 +42,7 @@ public class FileUtils {
 	public static final int OVER_WRITE				= 1 << 2;
 	public static final int PERSIST_LAST_MODIFIED 	= 1 << 3;
 
-	private static final Logger logger = Logger.getLogger(FileUtils.class);
-	
-	private static void addFiles(List<File> list, File folder, final String name) {
-		File[] files = folder.listFiles(new FileFilter() {
-			@Override
-			public boolean accept(File file) {
-				return (file.isDirectory() || name == null || file.getName().equals(name));
-			}
-		});
-		for(File file : files) {
-			if(file.isDirectory()) {
-				addFiles(list, file, name);
-			} else {
-				list.add(file);
-			}
-		}
-	}
-	
-	private static boolean endsWith(String name, String[] endsWith) {
-		for(String end : endsWith) {
-			if(name.endsWith(end)) {
-				return true;
-			}
-		}
-		return false;
-	}
+	private static final Logger logger = LogProvider.getLogger(FileUtils.class);
 	
 	private static void addFiles(List<File> list, File folder, final boolean accept$, final String...endsWith) {
 		File[] files = folder.listFiles(new FileFilter() {
@@ -80,6 +56,22 @@ public class FileUtils {
 		for(File file : files) {
 			if(file.isDirectory()) {
 				addFiles(list, file, accept$, endsWith);
+			} else {
+				list.add(file);
+			}
+		}
+	}
+	
+	private static void addFiles(List<File> list, File folder, final String name) {
+		File[] files = folder.listFiles(new FileFilter() {
+			@Override
+			public boolean accept(File file) {
+				return (file.isDirectory() || name == null || file.getName().equals(name));
+			}
+		});
+		for(File file : files) {
+			if(file.isDirectory()) {
+				addFiles(list, file, name);
 			} else {
 				list.add(file);
 			}
@@ -139,7 +131,7 @@ public class FileUtils {
 	public static void copy(File src, File dst, int flags) throws IOException {
 		copy(src, dst, flags, false);
 	}
-
+	
 	/**
 	 * Copy the given source File to the given destination File.  If the source File
 	 * is a directory then a deep copy will be performed, including or skipping hidden
@@ -175,6 +167,121 @@ public class FileUtils {
 		}
 	}
 
+	/**
+	 * Convenience method for copyJarEntry(src, entryName, dst, OVER_WRITE | PERSIST_LAST_MODIFIED)
+	 * @param src the jar file
+	 * @param entryName the name of the entry in the jar file to be used as the source
+	 * @param dst the destination
+	 * @return the destination file
+	 * @throws IOException if there is a problem reading or writing to the file system
+	 * @throws {@link IllegalArgumentException} if the entryName does not exist in the given source jar
+	 * @see #copyJarEntry(File, String, File, int)
+	 */
+	public static File copyJarEntry(File src, String entryName, File dst) throws IOException {
+		return copyJarEntry(src, entryName, dst, OVER_WRITE | PERSIST_LAST_MODIFIED);
+	}
+
+	/**
+	 * Copy the contents of the given jar file's entry to the given destination.<br/>
+	 * If the given destination exists and is a directory, then the jar entry will be
+	 * copied into it, using the entry name as the file name (path separators will be
+	 * adjusted for the current operating system).
+	 * @param src the jar file
+	 * @param entryName the name of the entry in the jar file to be used as the source
+	 * @param dst the destination
+	 * @param flags
+	 * @return the destination file
+	 * @throws IOException if there is a problem reading or writing to the file system
+	 * @throws {@link IllegalArgumentException} if the entryName does not exist in the given source jar
+	 */
+	public static File copyJarEntry(File src, String entryName, File dst, int flags) throws IOException {
+		if(!src.isFile()) {
+			logger.info("nothing to copy: no file at " + src);
+			return null;
+		}
+		if(dst.isDirectory()) {
+			String name = (File.separatorChar != '/') ? entryName.replace('/', File.separatorChar) : entryName;
+			dst = new File(dst, name);
+		}
+		if(dst.exists() && ((flags & OVER_WRITE) != 0)) {
+			if(logger.isLoggingDebug()) {
+				logger.debug("skipping " + dst.getName());
+			}
+			return dst;
+		} else {
+			if(logger.isLoggingDebug()) {
+				logger.debug("copying jar entry " + dst.getName());
+			}
+		}
+		JarFile jar = null;
+		BufferedInputStream in = null;
+		BufferedOutputStream out = null;
+		try {
+			jar = new JarFile(src);
+			ZipEntry entry = jar.getEntry(entryName);
+			if(entry == null) {
+				throw new IllegalArgumentException("entry \"" + entryName + "\" does not exist in " + src.getName());
+			}
+
+			if(!dst.exists()) {
+				File folder = dst.getParentFile();
+				if(!folder.exists()) {
+					folder.mkdirs();
+				}
+				dst.createNewFile();
+			}
+			
+			in = new BufferedInputStream(jar.getInputStream(entry));
+			out = new BufferedOutputStream(new FileOutputStream(dst));
+
+			byte[] buf = new byte[1024];
+			int len;
+			while((len = in.read(buf)) > 0) {
+				out.write(buf, 0, len);
+			}
+
+			if(flags > 0) {
+				if((flags & EXECUTABLE) != 0) {
+					dst.setExecutable(true);
+				}
+				if((flags & READ_ONLY) != 0) {
+					dst.setReadOnly();
+				}
+				if((flags & PERSIST_LAST_MODIFIED) != 0) {
+					long mod = entry.getTime();
+					if(mod == -1) {
+						dst.setLastModified(src.lastModified());
+					} else {
+						dst.setLastModified(mod);
+					}
+				}
+			}
+			return dst;
+		} finally {
+			if(jar != null) {
+				try {
+					jar.close();
+				} catch(IOException e) {
+					// throw away
+				}
+			}
+			if(in != null) {
+				try {
+					in.close();
+				} catch(IOException e) {
+					// throw away
+				}
+			}
+			if(out != null) {
+				try {
+					out.close();
+				} catch(IOException e) {
+					// throw away
+				}
+			}
+		}
+	}
+	
 	public static File createFolder(File parent, String...paths) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(parent.getAbsolutePath());
@@ -187,10 +294,6 @@ public class FileUtils {
 		File folder = new File(sb.toString());
 		folder.mkdirs();
 		return folder;
-	}
-	
-	public static File createJar(File jar, Map<String, File> files) throws IOException {
-		return createJar(jar, files, null);
 	}
 	
 	public static File createJar(File jar, long lastModified, String[]...entries) throws IOException {
@@ -206,7 +309,7 @@ public class FileUtils {
 				fos = new FileOutputStream(jar);
 			} catch(FileNotFoundException e) {
 				// really really shouldn't ever happen...
-				Logger.getLogger(FileUtils.class).error(e);
+				logger.error(e);
 				throw new IOException("file not created, or was moved: " + jar);
 			}
 			jos = new JarOutputStream(fos);
@@ -241,6 +344,10 @@ public class FileUtils {
 		return jar;
 	}
 	
+	public static File createJar(File jar, Map<String, File> files) throws IOException {
+		return createJar(jar, files, null);
+	}
+
 	/**
 	 * Create a jar containing the given files and manifest.
 	 * @param jar the Jar File to create; may or may not exist
@@ -286,7 +393,7 @@ public class FileUtils {
 				}
 			}
 		} catch(Exception e) {
-			Logger.getLogger(FileUtils.class).error(e);
+			logger.error(e);
 		} finally {
 			if(jos != null) {
 				try {
@@ -305,6 +412,14 @@ public class FileUtils {
 		}
 		
 		return jar;
+	}
+
+	public static File createJar(File folder, String name, Map<String, File> files) throws IOException {
+		return createJar(new File(folder, name), files, null);
+	}
+
+	public static File createJar(File folder, String name, Map<String, File> files, Manifest manifest) throws IOException {
+		return createJar(new File(folder, name), files, manifest);
 	}
 	
 	public static List<File> delete(File...files) {
@@ -341,8 +456,8 @@ public class FileUtils {
 			}
 		}
 	}
-	
-	public static void doCopy(File src, File dst, int flags) throws IOException {
+
+	private static void doCopy(File src, File dst, int flags) throws IOException {
 		if(dst.exists() && ((flags & OVER_WRITE) != 0)) {
 			if(logger.isLoggingDebug()) {
 				logger.debug("skipping " + dst.getName());
@@ -398,6 +513,60 @@ public class FileUtils {
 				}
 			}
 		}
+	}
+	
+	public static File copy(InputStream in, File dst) throws IOException {
+		if(dst.exists()) {
+			if(logger.isLoggingDebug()) {
+				logger.debug("skipping " + dst.getName());
+			}
+		} else {
+			if(logger.isLoggingDebug()) {
+				logger.debug("copying to file " + dst.getName());
+			}
+			File folder = dst.getParentFile();
+			if(!folder.exists()) {
+				folder.mkdirs();
+			}
+			dst.createNewFile();
+			
+			BufferedOutputStream out = null;
+			try {
+				out = new BufferedOutputStream(new FileOutputStream(dst));
+
+				// Transfer bytes from in to out
+				byte[] buf = new byte[1024];
+				int len;
+				while((len = in.read(buf)) > 0) {
+					out.write(buf, 0, len);
+				}
+			} finally {
+				if(in != null) {
+					try {
+						in.close();
+					} catch(IOException e) {
+						// throw away
+					}
+				}
+				if(out != null) {
+					try {
+						out.close();
+					} catch(IOException e) {
+						// throw away
+					}
+				}
+			}
+		}
+		return dst;
+	}
+	
+	private static boolean endsWith(String name, String[] endsWith) {
+		for(String end : endsWith) {
+			if(name.endsWith(end)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public static boolean fileExists(File dir, String fileName) {
@@ -476,10 +645,6 @@ public class FileUtils {
 		return findFiles(folder, true, new String[0]);
 	}
 
-	public static File[] findFiles(File folder, String...endsWith) {
-		return findFiles(folder, true, endsWith);
-	}
-	
 	private static File[] findFiles(File folder, boolean accept$, String...endsWith) {
 		if(folder != null && folder.isDirectory()) {
 			List<File> list = new ArrayList<File>();
@@ -488,6 +653,10 @@ public class FileUtils {
 		} else {
 			return new File[0];
 		}
+	}
+	
+	public static File[] findFiles(File folder, String...endsWith) {
+		return findFiles(folder, true, endsWith);
 	}
 	
 	public static File[] findJavaFiles(File folder) {
@@ -625,121 +794,6 @@ public class FileUtils {
 		return readFile(file);
 	}
 
-	/**
-	 * Convenience method for copyJarEntry(src, entryName, dst, OVER_WRITE | PERSIST_LAST_MODIFIED)
-	 * @param src the jar file
-	 * @param entryName the name of the entry in the jar file to be used as the source
-	 * @param dst the destination
-	 * @return the destination file
-	 * @throws IOException if there is a problem reading or writing to the file system
-	 * @throws {@link IllegalArgumentException} if the entryName does not exist in the given source jar
-	 * @see #copyJarEntry(File, String, File, int)
-	 */
-	public static File copyJarEntry(File src, String entryName, File dst) throws IOException {
-		return copyJarEntry(src, entryName, dst, OVER_WRITE | PERSIST_LAST_MODIFIED);
-	}
-	
-	/**
-	 * Copy the contents of the given jar file's entry to the given destination.<br/>
-	 * If the given destination exists and is a directory, then the jar entry will be
-	 * copied into it, using the entry name as the file name (path separators will be
-	 * adjusted for the current operating system).
-	 * @param src the jar file
-	 * @param entryName the name of the entry in the jar file to be used as the source
-	 * @param dst the destination
-	 * @param flags
-	 * @return the destination file
-	 * @throws IOException if there is a problem reading or writing to the file system
-	 * @throws {@link IllegalArgumentException} if the entryName does not exist in the given source jar
-	 */
-	public static File copyJarEntry(File src, String entryName, File dst, int flags) throws IOException {
-		if(!src.isFile()) {
-			logger.info("nothing to copy: no file at " + src);
-			return null;
-		}
-		if(dst.isDirectory()) {
-			String name = (File.separatorChar != '/') ? entryName.replace('/', File.separatorChar) : entryName;
-			dst = new File(dst, name);
-		}
-		if(dst.exists() && ((flags & OVER_WRITE) != 0)) {
-			if(logger.isLoggingDebug()) {
-				logger.debug("skipping " + dst.getName());
-			}
-			return dst;
-		} else {
-			if(logger.isLoggingDebug()) {
-				logger.debug("copying jar entry " + dst.getName());
-			}
-		}
-		JarFile jar = null;
-		BufferedInputStream in = null;
-		BufferedOutputStream out = null;
-		try {
-			jar = new JarFile(src);
-			ZipEntry entry = jar.getEntry(entryName);
-			if(entry == null) {
-				throw new IllegalArgumentException("entry \"" + entryName + "\" does not exist in " + src.getName());
-			}
-
-			if(!dst.exists()) {
-				File folder = dst.getParentFile();
-				if(!folder.exists()) {
-					folder.mkdirs();
-				}
-				dst.createNewFile();
-			}
-			
-			in = new BufferedInputStream(jar.getInputStream(entry));
-			out = new BufferedOutputStream(new FileOutputStream(dst));
-
-			byte[] buf = new byte[1024];
-			int len;
-			while((len = in.read(buf)) > 0) {
-				out.write(buf, 0, len);
-			}
-
-			if(flags > 0) {
-				if((flags & EXECUTABLE) != 0) {
-					dst.setExecutable(true);
-				}
-				if((flags & READ_ONLY) != 0) {
-					dst.setReadOnly();
-				}
-				if((flags & PERSIST_LAST_MODIFIED) != 0) {
-					long mod = entry.getTime();
-					if(mod == -1) {
-						dst.setLastModified(src.lastModified());
-					} else {
-						dst.setLastModified(mod);
-					}
-				}
-			}
-			return dst;
-		} finally {
-			if(jar != null) {
-				try {
-					jar.close();
-				} catch(IOException e) {
-					// throw away
-				}
-			}
-			if(in != null) {
-				try {
-					in.close();
-				} catch(IOException e) {
-					// throw away
-				}
-			}
-			if(out != null) {
-				try {
-					out.close();
-				} catch(IOException e) {
-					// throw away
-				}
-			}
-		}
-	}
-	
 	public static String readJarEntry(File jarFile, String entryName) {
 		if(!jarFile.isFile()) {
 			return null;
@@ -784,8 +838,69 @@ public class FileUtils {
 		return readFile(path, canonicalClassName.replace('.', File.separatorChar)+".java");
 	}
 	
+	public static File writeFile(File dst, InputStream in) throws IOException {
+		return writeFile(dst, in, -1);
+	}
+	
+	public static File writeFile(File dst, InputStream in, int flags) {
+		if(dst.exists() && ((flags & OVER_WRITE) != 0)) {
+			if(logger.isLoggingDebug()) {
+				logger.debug("skipping " + dst.getName());
+			}
+		} else {
+			if(logger.isLoggingDebug()) {
+				logger.debug("copying file " + dst.getName());
+			}
+			BufferedOutputStream out = null;
+			try {
+				if(!dst.exists()) {
+					File folder = dst.getParentFile();
+					if(!folder.exists()) {
+						folder.mkdirs();
+					}
+					dst.createNewFile();
+				}
+				out = new BufferedOutputStream(new FileOutputStream(dst));
+
+				// Transfer bytes from in to out
+				byte[] buf = new byte[1024];
+				int len;
+				while((len = in.read(buf)) > 0) {
+					out.write(buf, 0, len);
+				}
+			} catch(IOException e) {
+				logger.error(e);
+			} finally {
+				if(out != null) {
+					try {
+						out.close();
+					} catch(IOException e) {
+						// throw away
+					}
+				}
+				if(flags > 0) {
+					if((flags & EXECUTABLE) != 0) {
+						dst.setExecutable(true);
+					}
+					if((flags & READ_ONLY) != 0) {
+						dst.setReadOnly();
+					}
+				}
+			}
+		}
+		return dst;
+	}
+	
 	public static File writeFile(File file, String src) {
 		return writeFile(file, src, -1);
+	}
+	
+	public static File writeFile(File dstFolder, String dstName, InputStream in) {
+		return writeFile(new File(dstFolder, dstName), in, -1);
+	}
+	
+	public static File writeFile(File dstFolder, String dstName, InputStream in, int flags) {
+		return writeFile(new File(dstFolder, dstName), in, flags);
 	}
 	
 	public static File writeFile(File file, String src, int flags) {

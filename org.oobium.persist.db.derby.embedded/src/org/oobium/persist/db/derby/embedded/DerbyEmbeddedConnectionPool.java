@@ -17,7 +17,7 @@ import java.util.Map;
 import javax.sql.ConnectionPoolDataSource;
 
 import org.apache.derby.jdbc.EmbeddedConnectionPoolDataSource;
-import org.oobium.logging.Logger;
+import org.oobium.logging.LogProvider;
 import org.oobium.persist.db.ConnectionPool;
 
 public class DerbyEmbeddedConnectionPool extends ConnectionPool {
@@ -53,7 +53,7 @@ public class DerbyEmbeddedConnectionPool extends ConnectionPool {
 	}
 	
 	public DerbyEmbeddedConnectionPool(String client, Map<String, Object> properties) {
-		super(client, properties, Logger.getLogger(DerbyEmbeddedPersistService.class));
+		super(client, properties, LogProvider.getLogger(DerbyEmbeddedPersistService.class));
 	}
 
 	@Override

@@ -15,9 +15,9 @@ import static org.oobium.utils.StringUtils.tableName;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.oobium.app.server.controller.Action;
 import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.routing.Route;
+import org.oobium.http.constants.Action;
 import org.oobium.http.constants.RequestType;
 import org.oobium.persist.Model;
 

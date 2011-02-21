@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="wrap_content"
+	android:layout_height="wrap_content" >
+	<Button
+		android:id="@+id/id"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content" />
+	<LinearLayout
+		android:id="@+id/toolbar"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+    	android:layout_alignParentRight="true" >
+	    <ImageButton
+	    	android:id="@+id/edit"
+	    	android:src="@drawable/edit"
+	    	android:layout_width="wrap_content"
+	    	android:layout_height="wrap_content" />
+	    <ImageButton
+	    	android:id="@+id/destroy"
+	    	android:src="@drawable/destroy"
+	    	android:layout_width="wrap_content"
+	    	android:layout_height="wrap_content" />
+    </LinearLayout>
+    <ScrollView
+    	android:scrollbars="horizontal"
+    	android:layout_width="wrap_content"
+    	android:layout_height="wrap_content"
+		android:layout_toRightOf="@id/id"
+		android:layout_toLeftOf="@id/toolbar" >
+		<LinearLayout
+			android:orientation="vertical"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content" >
+			{inlineFields}
+		</LinearLayout>
+	</ScrollView>
+</RelativeLayout>

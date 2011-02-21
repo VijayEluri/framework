@@ -1,10 +1,15 @@
 package org.oobium.test;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Mockito.*;
-import static org.oobium.app.server.controller.Action.*;
-import static org.oobium.http.constants.Header.*;
-import static org.oobium.http.constants.RequestType.*;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.oobium.http.constants.Action.show;
+import static org.oobium.http.constants.Action.showAll;
+import static org.oobium.http.constants.Header.ACCEPT;
+import static org.oobium.http.constants.RequestType.GET;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -19,7 +24,6 @@ import org.jsoup.select.Elements;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.oobium.app.AppService;
-import org.oobium.app.server.controller.Action;
 import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.routing.AppRouter;
 import org.oobium.app.server.routing.Router;
@@ -27,6 +31,7 @@ import org.oobium.app.server.view.View;
 import org.oobium.http.HttpCookie;
 import org.oobium.http.HttpRequest;
 import org.oobium.http.HttpSession;
+import org.oobium.http.constants.Action;
 import org.oobium.http.constants.ContentType;
 import org.oobium.http.constants.Header;
 import org.oobium.http.constants.RequestType;

@@ -41,7 +41,6 @@ import java.util.regex.Pattern;
 import javax.mail.internet.InternetAddress;
 
 import org.oobium.app.MutableAppConfig;
-import org.oobium.app.server.controller.Action;
 import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.view.View;
 import org.oobium.build.esp.ESourceFile;
@@ -54,6 +53,7 @@ import org.oobium.build.gen.ModelProcessor;
 import org.oobium.build.gen.ProjectGenerator;
 import org.oobium.build.gen.ViewGenerator;
 import org.oobium.build.util.ProjectUtils;
+import org.oobium.http.constants.Action;
 import org.oobium.mailer.Mailer;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelDescription;
@@ -256,6 +256,20 @@ public class Module extends Bundle {
 
 		if(!newsrc.equals(oldsrc)) {
 			FileUtils.writeFile(activator, newsrc);
+			return true;
+		}
+		return false;
+	}
+
+	public boolean addDiscoveryRoute(String path, boolean home) {
+		String src = FileUtils.readFile(activator).toString();
+		
+		if(!Pattern.compile("router.setDiscovery\\s*\\([^\\)]*\\)\\s*;").matcher(src).find()) {
+			src = src.replaceFirst("public\\s+void\\s+addRoutes\\s*\\(\\s*Config\\s+config\\s*,\\s*(App)?Router\\s+router\\s*\\)\\s*\\{\\s*",
+											"public void addRoutes(Config config, $1Router router) {\n" +
+											"\t\t// auto-generated\n" +
+											"\t\trouter.setDiscovery(\"" + path + "\"" + (home ? ", true" : "" ) + ");\n\n\t\t");
+			FileUtils.writeFile(activator, src);
 			return true;
 		}
 		return false;
@@ -683,6 +697,10 @@ public class Module extends Bundle {
 		return new ArrayList<File>(0);
 	}
 	
+	/**
+	 * Get all models that exist in this module.
+	 * @return a List of the models in this module; never null.
+	 */
 	public List<File> findModels() {
 		if(models.isDirectory()) {
 			List<File> files = Arrays.asList(models.listFiles(modelsFilter));
@@ -919,6 +937,23 @@ public class Module extends Bundle {
 		return new File(caches, adjust(name) + ".java");
 	}
 	
+	public File getBinFile(File srcFile) {
+		String path = srcFile.getAbsolutePath();
+		String srcPath = src.getAbsolutePath();
+		int len;
+		if(path.startsWith(srcPath)) {
+			len = srcPath.length();
+		} else {
+			len = generated.getAbsolutePath().length();
+		}
+		if(path.endsWith(".java")) {
+			path = path.substring(len, path.length() - 4) + "class";
+		} else {
+			path = path.substring(len);
+		}
+		return new File(bin, path);
+	}
+
 	public Set<File> getBinFiles(List<File> srcFiles) {
 		Set<File> binFiles = new HashSet<File>();
 
