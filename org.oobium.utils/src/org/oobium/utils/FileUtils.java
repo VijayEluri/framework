@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
@@ -30,6 +32,7 @@ import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import org.oobium.logging.Logger;
 import org.oobium.logging.LogProvider;
@@ -181,6 +184,78 @@ public class FileUtils {
 		return copyJarEntry(src, entryName, dst, OVER_WRITE | PERSIST_LAST_MODIFIED);
 	}
 
+	public static Map<String, File> extract(File compressedFile) throws IOException {
+		String name = compressedFile.getName();
+		name = name.substring(0, name.lastIndexOf('.'));
+		File destinationFolder = new File(compressedFile.getParentFile(), name);
+		return extract(compressedFile, destinationFolder);
+	}
+	
+	public static Map<String, File> extract(File compressedFile, File destinationFolder) throws IOException {
+		return extract(compressedFile, destinationFolder, null);
+	}
+	
+	public static Map<String, File> extract(File compressedFile, File destinationFolder, String regex) throws IOException {
+		if(!destinationFolder.exists()) {
+			destinationFolder.mkdirs();
+		}
+		Map<String, File> files = new LinkedHashMap<String, File>();
+		ZipFile zip = new ZipFile(compressedFile);
+		try {
+			for(Enumeration<? extends ZipEntry> entries = zip.entries(); entries.hasMoreElements(); ) {
+				ZipEntry entry = entries.nextElement();
+				String name = entry.getName();
+				
+				if(regex == null || name.matches(regex)) {
+					File file = new File(destinationFolder, name.replace('/', File.separatorChar));
+					if(name.charAt(name.length()-1) == '/') {
+						if(!file.exists()) {
+							file.mkdirs();
+						}
+					} else {
+						if(!file.exists()) {
+							file.getParentFile().mkdirs();
+							file.createNewFile();
+						}
+		
+						BufferedInputStream in = null;
+						BufferedOutputStream out = null;
+						try {
+							in = new BufferedInputStream(zip.getInputStream(entry));
+							out = new BufferedOutputStream(new FileOutputStream(file));
+				
+							byte[] buf = new byte[4096];
+							int len;
+							while((len = in.read(buf)) > 0) {
+								out.write(buf, 0, len);
+							}
+						} finally {
+							if(in != null) {
+								try {
+									in.close();
+								} catch(IOException e) {
+									// throw away
+								}
+							}
+							if(out != null) {
+								try {
+									out.close();
+								} catch(IOException e) {
+									// throw away
+								}
+							}
+						}
+						
+						files.put(name, file);
+					}
+				}
+			}
+		} finally {
+			zip.close();
+		}
+		return files;
+	}
+	
 	/**
 	 * Copy the contents of the given jar file's entry to the given destination.<br/>
 	 * If the given destination exists and is a directory, then the jar entry will be

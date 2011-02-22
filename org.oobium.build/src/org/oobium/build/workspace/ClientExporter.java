@@ -1,6 +1,8 @@
 package org.oobium.build.workspace;
 
+import static org.oobium.utils.FileUtils.copyJarEntry;
 import static org.oobium.utils.FileUtils.createJar;
+import static org.oobium.utils.FileUtils.extract;
 import static org.oobium.utils.FileUtils.writeFile;
 
 import java.io.File;
@@ -11,8 +13,8 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.oobium.build.BuildBundle;
-import org.oobium.logging.Logger;
 import org.oobium.logging.LogProvider;
+import org.oobium.logging.Logger;
 import org.oobium.utils.Config.Mode;
 import org.oobium.utils.FileUtils;
 
@@ -163,7 +165,7 @@ public class ClientExporter {
 	private void addFiles(String bundleName, Map<String, File> files) throws IOException {
 		Bundle bundle = workspace.getBundle(bundleName);
 		if(bundle.isJar) {
-			throw new UnsupportedOperationException("todo");
+			files.putAll(extract(bundle.file, new File(tmpDir, bundle.name)));
 		} else {
 			files.putAll(bundle.getBuildFiles(includeSource));
 		}
@@ -172,7 +174,12 @@ public class ClientExporter {
 	private void addFile(String bundleName, String className, Map<String, File> files) throws IOException {
 		Bundle bundle = workspace.getBundle(bundleName);
 		if(bundle.isJar) {
-			throw new UnsupportedOperationException("todo");
+			String entryName = className.replace('.', '/') + ".class";
+			String dstName = bundle.file.getName();
+			dstName = dstName.substring(0, dstName.lastIndexOf('.'));
+			File dst = new File(tmpDir, dstName);
+			copyJarEntry(bundle.file, entryName, dst);
+			files.put(entryName, dst);
 		} else {
 			int len = bundle.bin.getAbsolutePath().length() + 1;
 			File srcFile = new File(bundle.src, className.replace('.', File.separatorChar) + ".java");
@@ -187,7 +194,8 @@ public class ClientExporter {
 	private void addFiles(String bundleName, String packageName, Map<String, File> files) throws IOException {
 		Bundle bundle = workspace.getBundle(bundleName);
 		if(bundle.isJar) {
-			throw new UnsupportedOperationException("todo");
+			String regex = packageName.replace('.', '/') + "/.+";
+			files.putAll(extract(bundle.file, new File(tmpDir, bundle.name), regex));
 		} else {
 			File pkg = new File(bundle.src, packageName.replace('.', File.separatorChar));
 			if(pkg.isDirectory()) {

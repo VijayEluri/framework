@@ -18,6 +18,7 @@ import java.io.IOException;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class FileUtilsTests {
@@ -67,5 +68,10 @@ public class FileUtilsTests {
 		s = FileUtils.readJarEntry(jar, "/does/not/Exist.java");
 		System.out.println(s);
 	}
-	
+
+	@Ignore
+	@Test
+	public void testExtract() throws Exception {
+		FileUtils.extract(new File("/home/jeremyd/org.oobium.client_0.6.0.201102211603.jar"), new File("/home/jeremyd/tmp/org.oobium.client"));
+	}
 }
