@@ -25,7 +25,7 @@ public class Show{modelName} extends Activity {
 		
 		id = getIntent().getIntExtra("id", 0);
 
-		setContentView(R.layout.show_{modelVar});
+		setContentView(R.layout.show_{umodelVar});
 
 		((TextView) findViewById(R.id.header)).setText("{modelName}: " + id);
 		

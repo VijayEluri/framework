@@ -22,7 +22,7 @@ public class ShowAll{modelsName} extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.show_all_{modelsVar});
+		setContentView(R.layout.show_all_{umodelsVar});
 		
 		Button b = (Button) findViewById(R.id.create);
 		b.setOnClickListener(new OnClickListener() {
@@ -54,7 +54,7 @@ public class ShowAll{modelsName} extends Activity {
 					runOnUiThread(new Runnable() {
 						@Override
 						public void run() {
-							{modelName}Adapter adapter = new {modelName}Adapter(ShowAll{modelsName}.this, R.layout.{modelVar}_item, {modelsVar});
+							{modelName}Adapter adapter = new {modelName}Adapter(ShowAll{modelsName}.this, R.layout.{umodelVar}_item, {modelsVar});
 							ListView list = (ListView) findViewById(R.id.list);
 							list.setAdapter(adapter);
 							TextView status = (TextView) findViewById(R.id.status);

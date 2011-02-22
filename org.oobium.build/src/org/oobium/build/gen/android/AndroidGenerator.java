@@ -66,6 +66,9 @@ public class AndroidGenerator {
 		String modelsName = plural(modelName);
 		String modelVar = varName(modelName);
 		String modelsVar = varName(modelName, true);
+		String umodelsVar = underscored(modelsVar);
+		String umodelVar = underscored(modelVar);
+		
 
 		ModelParser parser = new ModelParser(model);
 		List<String[]> attrs = parser.getAttributes();
@@ -73,7 +76,7 @@ public class AndroidGenerator {
 		StringBuilder sb = new StringBuilder();
 		for(String[] attr : attrs) {
 			sb.append("\t\tString ").append(attr[1]).append(" = ((TextView) findViewById(R.id.").append(attr[1]).append(")).getText().toString();\n");
-			sb.append("\t\t").append(modelVar).append(".set").append(titleize(attr[1])).append('(').append(attr[1]).append(");\n");
+			sb.append("\t\t").append(modelVar).append(".set(").append(modelName).append('.').append(attr[1].toUpperCase()).append(", ").append(attr[1]).append(");\n");
 		}
 		String setModelFields = sb.delete(0, 2).deleteCharAt(sb.length()-1).toString();
 		
@@ -109,6 +112,8 @@ public class AndroidGenerator {
 			src = src.replace("{modelsName}", modelsName);
 			src = src.replace("{modelVar}", modelVar);
 			src = src.replace("{modelsVar}", modelsVar);
+			src = src.replace("{umodelVar}", umodelVar);
+			src = src.replace("{umodelsVar}", umodelsVar);
 			src = src.replace("{setModelFields}", setModelFields);
 			if(resource.contains("Edit")) {
 				src = src.replace("{setViewFields}", setViewEditFields);
@@ -186,9 +191,9 @@ public class AndroidGenerator {
 			src = src.replace("{inlineFields}", inlineFields);
 			src = src.replace("{stackedFields}", stackedFields);
 			if(resource.contains("models")) {
-				resource = resource.replace("models", underscored(modelsVar));
+				resource = resource.replace("models", umodelsVar);
 			} else {
-				resource = resource.replace("model", underscored(modelVar));
+				resource = resource.replace("model", umodelVar);
 			}
 			files.add(writeFile(dstFolder, resource.substring(4), src));
 		}
