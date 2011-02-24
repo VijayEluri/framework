@@ -17,6 +17,7 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -31,19 +32,19 @@ import org.oobium.http.HttpRequest404Handler;
 import org.oobium.http.HttpRequest500Handler;
 import org.oobium.http.HttpRequestHandler;
 import org.oobium.http.HttpResponse;
-import org.oobium.logging.Logger;
 import org.oobium.logging.LogProvider;
+import org.oobium.logging.Logger;
 
 public class ServerSelector implements Runnable {
 
 	private Logger logger;
 	
 	private Selector selector;
-	private ByteBuffer buffer;
+	private ByteBuffer readBuffer;
 	private Map<Integer, ServerSocketChannel> channels;
 	private Map<Integer, List<HttpRequestHandler>> requestHandlers;
 	private ReadHandler readHandler;
-	private Map<SelectionKey, List<ByteBuffer>> writeQ;
+	private Map<SelectionKey, List<Object>> writeQ;
 	
 	private Map<Integer, List<HttpRequest404Handler>> request404Handlers;
 	private Map<Integer, List<HttpRequest500Handler>> request500Handlers;
@@ -56,11 +57,11 @@ public class ServerSelector implements Runnable {
 		try {
 			selector = Selector.open();
 			
-			buffer = ByteBuffer.allocate(8192);
+			readBuffer = ByteBuffer.allocate(8192);
 			channels = new HashMap<Integer, ServerSocketChannel>();
 			readHandler = new ReadHandler(this);
 			readHandler.start();
-			writeQ = new HashMap<SelectionKey, List<ByteBuffer>>();
+			writeQ = new HashMap<SelectionKey, List<Object>>();
 		} catch(IOException e) {
 			logger.error("could not open selector", e);
 		}
@@ -212,11 +213,11 @@ public class ServerSelector implements Runnable {
 	private void read(SelectionKey key) throws IOException {
 		SocketChannel channel = (SocketChannel) key.channel();
 		
-		buffer.clear();
+		readBuffer.clear();
 		
 		int read;
 		try {
-			read = channel.read(buffer);
+			read = channel.read(readBuffer);
 		} catch(IOException e) {
 			key.cancel();
 			channel.close();
@@ -228,7 +229,7 @@ public class ServerSelector implements Runnable {
 			channel.close();
 		} else {
 			byte[] ba = new byte[read];
-			System.arraycopy(buffer.array(), 0, ba, 0, read);
+			System.arraycopy(readBuffer.array(), 0, ba, 0, read);
 			readHandler.put(key, ba);
 		}
 	}
@@ -349,22 +350,22 @@ public class ServerSelector implements Runnable {
 	}
 
 	public void send(SelectionKey key, byte[] data) {
-		send(key, ByteBuffer.wrap(data), false);
+		doSend(key, ByteBuffer.wrap(data), false);
 	}
 	
 	public void send(SelectionKey key, byte[] data, boolean close) {
-		send(key, ByteBuffer.wrap(data), close);
+		doSend(key, ByteBuffer.wrap(data), close);
 	}
 	
-	private void send(SelectionKey key, ByteBuffer buffer, boolean close) {
+	private void doSend(SelectionKey key, Object value, boolean close) {
 		synchronized(writeQ) {
-			List<ByteBuffer> q = writeQ.get(key);
+			List<Object> q = writeQ.get(key);
 			if(q == null) {
-				q = new ArrayList<ByteBuffer>();
+				q = new ArrayList<Object>();
 				writeQ.put(key, q);
 			}
-			q.add(buffer);
-			if(close && buffer != null) {
+			q.add(value);
+			if(close && value != null) {
 				q.add(null);
 			}
 		}
@@ -379,33 +380,37 @@ public class ServerSelector implements Runnable {
 	 */
 	public void send(SelectionKey key, HttpResponse response) {
 		if(response == null) {
-			send(key, (ByteBuffer) null, false);
+			doSend(key, null, false);
 		} else {
-			send(key, response.getBuffer(), false);
-		}
-	}
-	
-	public void send(SelectionKey key, HttpResponse response, boolean close) {
-		if(response == null) {
-			send(key, (ByteBuffer) null, false);
-		} else {
-			send(key, response.getBuffer(), close);
+			synchronized(writeQ) {
+				List<Object> q = writeQ.get(key);
+				if(q == null) {
+					q = new ArrayList<Object>();
+					writeQ.put(key, q);
+				}
+				q.add(response.getBuffer());
+				if(response.hasDataChannel()) {
+					q.add(response.getDataChannel());
+				}
+			}
+			
+			selector.wakeup();
 		}
 	}
 	
 	public void send(SelectionKey key, String data) {
 		if(data == null) {
-			send(key, (ByteBuffer) null, false);
+			doSend(key, null, false);
 		} else {
-			send(key, ByteBuffer.wrap(data.getBytes()), false);
+			doSend(key, ByteBuffer.wrap(data.getBytes()), false);
 		}
 	}
 	
 	public void send(SelectionKey key, String data, boolean close) {
 		if(data == null) {
-			send(key, (ByteBuffer) null, false);
+			doSend(key, null, false);
 		} else {
-			send(key, ByteBuffer.wrap(data.getBytes()), close);
+			doSend(key, ByteBuffer.wrap(data.getBytes()), close);
 		}
 	}
 	
@@ -413,42 +418,84 @@ public class ServerSelector implements Runnable {
 	private void write(SelectionKey key) throws IOException {
 		synchronized(writeQ) {
 			try {
-				List<ByteBuffer> q = writeQ.get(key);
+				List<Object> q = writeQ.get(key);
 				if(q != null) {
 					SocketChannel socket = (SocketChannel) key.channel();
-					if(logger.isLoggingTrace()) {
-						logger.trace("write: " + socket);
-					}
 					
 					while(!q.isEmpty()) {
-						ByteBuffer buffer = q.get(0);
-						if(buffer == null) {
+						Object o = q.get(0);
+						if(o == null) {
 							socket.close();
 							key.cancel();
 							q.clear();
 						} else {
-							if(logger.isLoggingTrace()) {
-								logger.trace(new String(buffer.array()));
-							}
-							try {
-								socket.write(buffer);
-								if(buffer.hasRemaining()) {
-									break; // can't write any more now, exit the loop w/out removing the buffer
+							if(o instanceof ByteBuffer) {
+								try {
+									ByteBuffer buffer = (ByteBuffer) o;
+									socket.write(buffer);
+									if(buffer.hasRemaining()) {
+										break; // can't write any more now, exit the loop w/out removing the buffer
+									}
+									q.remove(0);
+								} catch(Exception e) {
+									// socket may have been reset by peer
+									if(logger.isLoggingTrace()) logger.trace(e);
+									socket.close();
+									key.cancel();
+									q.clear();
 								}
-							} catch(Exception e) {
-								// socket may have been reset by peer
-								logger.debug(e.getMessage());
+							} else if(o instanceof ReadableByteChannel) {
+								ReadableByteChannel in = (ReadableByteChannel) o;
+								ByteBuffer buffer = ByteBuffer.allocateDirect(16 * 1024);
+								try {
+									buffer.clear();
+									while(in.read(buffer) != -1) {
+										buffer.flip();
+										socket.write(buffer);
+										if(buffer.hasRemaining()) {
+											q.add(0, buffer); // can't write any more now, add buffer to q and exit
+											return;
+										}
+										buffer.compact();
+									}
+									try {
+										in.close();
+									} catch(IOException readE) {
+										if(logger.isLoggingTrace()) logger.trace(readE);
+									}
+									buffer.flip();
+									if(buffer.hasRemaining()) {
+										q.set(0, buffer); // we've read all, but can't write, swap channel for buffer on q and exit
+										return;
+									} else {
+										q.remove(0);
+									}
+								} catch(Exception e) {
+									// socket may have been reset by peer
+									if(logger.isLoggingTrace()) logger.trace(e);
+									socket.close();
+									key.cancel();
+									q.clear();
+									try {
+										in.close();
+									} catch(Exception e2) {
+										// discard
+									}
+								}
+							} else {
+								logger.debug("else: \"" + String.valueOf(o) + "\"");
+								socket.close();
+								key.cancel();
+								q.clear();
 							}
-							q.remove(0);
-							// TODO start of remove this
-							socket.close();
-							key.cancel();
-							q.clear();
-							// TODO end of remove this
 						}
 					}
 					
 					if(q.isEmpty()) {
+						// TODO start of remove this
+						socket.close();
+						key.cancel();
+						// TODO end of remove this
 						writeQ.remove(key);
 						if(key.isValid()) {
 							key.interestOps(OP_READ);

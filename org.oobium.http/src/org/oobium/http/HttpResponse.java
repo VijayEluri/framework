@@ -11,9 +11,14 @@
 package org.oobium.http;
 
 import java.nio.ByteBuffer;
+import java.nio.channels.ReadableByteChannel;
 
 public interface HttpResponse {
 
 	public abstract ByteBuffer getBuffer();
+
+	public abstract boolean hasDataChannel();
+	
+	public abstract ReadableByteChannel getDataChannel();
 	
 }

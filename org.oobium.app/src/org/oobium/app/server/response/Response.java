@@ -22,6 +22,7 @@ import static org.oobium.utils.DateUtils.httpDate;
 import static org.oobium.utils.StringUtils.blank;
 
 import java.nio.ByteBuffer;
+import java.nio.channels.ReadableByteChannel;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -133,11 +134,11 @@ public class Response implements HttpResponse {
 			sb.append('\r').append('\n').append('\n');
 			return ByteBuffer.wrap(sb.toString().getBytes());
 		} else {
-			return getBuffer(sb);
+			return completeBuffer(sb);
 		}
 	}
 	
-	protected ByteBuffer getBuffer(StringBuilder sb) {
+	protected ByteBuffer completeBuffer(StringBuilder sb) {
 		if(hasBody()) {
 			sb.append('\r').append('\n');
 			sb.append(getBody());
@@ -147,6 +148,16 @@ public class Response implements HttpResponse {
 		return ByteBuffer.wrap(sb.toString().getBytes());
 	}
 
+	@Override
+	public boolean hasDataChannel() {
+		return false;
+	}
+
+	@Override
+	public ReadableByteChannel getDataChannel() {
+		return null;
+	}
+	
 	public ContentType getContentType() {
 		return contentType;
 	}

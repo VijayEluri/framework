@@ -31,7 +31,8 @@ public class ByteArrayResponse extends Response {
 		this.data = data;
 	}
 	
-	protected ByteBuffer getBuffer(StringBuilder sb) {
+	@Override
+	protected ByteBuffer completeBuffer(StringBuilder sb) {
 		if(blank(data)) {
 			sb.append('\r').append('\n').append('\n');
 			return ByteBuffer.wrap(sb.toString().getBytes());

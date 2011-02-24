@@ -10,12 +10,11 @@
  ******************************************************************************/
 package org.oobium.app.server.response;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 
 import org.oobium.http.constants.ContentType;
 import org.oobium.http.constants.Header;
@@ -38,41 +37,30 @@ public class AssetResponse extends Response {
 	}
 
 	@Override
-	protected ByteBuffer getBuffer(StringBuilder sb) {
+	public ReadableByteChannel getDataChannel() {
+		try {
+			return Channels.newChannel(url.openStream());
+		} catch(IOException e) {
+			return null;
+		}
+	}
+	
+	@Override
+	public boolean hasDataChannel() {
+		return url != null;
+	}
+	
+	@Override
+	protected ByteBuffer completeBuffer(StringBuilder sb) {
 		sb.append(Header.LAST_MODIFIED.key()).append(':').append(lastModified).append('\r').append('\n');
 		sb.append(Header.CONTENT_LENGTH.key()).append(':').append(length).append('\r').append('\n');
 		sb.append('\r').append('\n');
 
 		if(url == null) { // HEAD request
 			sb.append('\n');
-			return ByteBuffer.wrap(sb.toString().getBytes());
-		} else {
-			int n;
-			byte[] buf = new byte[2048];
-			ByteArrayOutputStream out = new ByteArrayOutputStream(4096);
-			BufferedInputStream bis = null;
-			try {
-				bis = new BufferedInputStream(url.openStream());
-				while((n = bis.read(buf)) > 0) {
-					out.write(buf, 0, n);
-				}
-			} catch(IOException e) {
-				e.printStackTrace();
-			} finally {
-				if(bis != null) {
-					try {
-						bis.close();
-					} catch(IOException e) {
-						
-					}
-				}
-			}
-			byte[] data = out.toByteArray();
-
-			byte[] buffer = Arrays.copyOf(sb.toString().getBytes(), sb.length() + data.length);
-			System.arraycopy(data, 0, buffer, sb.length(), data.length);
-			return ByteBuffer.wrap(buffer);
 		}
+		
+		return ByteBuffer.wrap(sb.toString().getBytes());
 	}
 	
 }
