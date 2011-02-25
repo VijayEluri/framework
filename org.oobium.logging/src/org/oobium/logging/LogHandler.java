@@ -60,10 +60,10 @@ public class LogHandler implements LogListener {
 				try {
 					if(max.toUpperCase().endsWith("KB")) {
 						return Long.parseLong(max.substring(0, max.length() - 2)) * KB;
-					} else if(max.toUpperCase().endsWith("KB")) {
-						return Long.parseLong(max.substring(0, max.length() - 2)) * KB;
-					} else if(max.toUpperCase().endsWith("KB")) {
-						return Long.parseLong(max.substring(0, max.length() - 2)) * KB;
+					} else if(max.toUpperCase().endsWith("MB")) {
+						return Long.parseLong(max.substring(0, max.length() - 2)) * MB;
+					} else if(max.toUpperCase().endsWith("GB")) {
+						return Long.parseLong(max.substring(0, max.length() - 2)) * GB;
 					}
 				} catch(NumberFormatException e2) {
 					// discard
