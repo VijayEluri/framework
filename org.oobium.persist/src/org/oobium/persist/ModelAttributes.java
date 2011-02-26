@@ -90,7 +90,7 @@ public class ModelAttributes {
 		
 		@Override
 		public Class<?> type() {
-			return Date.class;
+			return java.sql.Date.class;
 		}
 		
 		@Override
@@ -204,7 +204,7 @@ public class ModelAttributes {
 		
 		@Override
 		public Class<?> type() {
-			return Date.class;
+			return java.sql.Date.class;
 		}
 		
 		@Override
