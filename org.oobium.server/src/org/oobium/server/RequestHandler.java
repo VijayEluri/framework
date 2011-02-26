@@ -140,7 +140,8 @@ class RequestHandler implements Runnable {
 		try {
 			request = createRequest(data);
 			if(logger.isLoggingInfo()) {
-				logger.info("request: " + data.remoteIpAddress + " -> " + request.getType() + " " + request.getHost() + request.getFullPath());
+				logger.info("request: " + data.remoteIpAddress + " -> " + request.getType() + " " + request.getHost() + request.getFullPath() +
+							" referer: " + request.getHeader(Header.REFERER));
 			}
 		} catch(Exception e) {
 			logger.warn("error creating request: " + data.toString());

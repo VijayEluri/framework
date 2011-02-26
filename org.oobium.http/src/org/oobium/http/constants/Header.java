@@ -13,11 +13,14 @@ package org.oobium.http.constants;
 public enum Header {
 
 	ACCEPT("Accept"),
+	ACCEPT_ENCODING("Accept-Encoding"),
+	ACCEPT_LANGUAGE("Accept-Language"),
 	API_LOCATION("API-Location"),
 	AUTHORIZATION("Authorization"),
 	COOKIE("Cookie"),
 	CONNECTION("Connection"),
 	CONTENT_DISPOSITION("Content-Disposition"),
+	CONTENT_LANGUAGE("Content-Language"),
 	CONTENT_LENGTH("Content-Length"),
 	CONTENT_TYPE("Content-Type"),
 	DATE("Date"),
@@ -28,6 +31,7 @@ public enum Header {
 	LAST_MODIFIED("Last-Modified"),
 	LOCATION("Location"),
 	METHOD("_method"),
+	REFERER("Referer"),
 	SERVER("Server"),
 	SET_COOKIE("Set-Cookie"),
 	STATUS("Status"),
