@@ -12,7 +12,6 @@ package org.oobium.server;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,35 +38,6 @@ public class LoadTests {
 		System.out.println("elapsed time: " + (duration) + " millis");
 		System.out.println("average time: " + ((double) duration / requests) + " millis");
 		System.out.println("req / second: " + (int) ((double) requests / ((double) duration / 1000)));
-	}
-	
-	@Ignore
-	@Test
-	public void testWithCurl() throws Exception {
-		long start = System.currentTimeMillis();
-		int requests = 100;
-		Thread[] threads = new Thread[requests];
-		for(int i = 0; i < requests; i++) {
-			threads[i] = new Thread() {
-				public void run() {
-					try {
-						Runtime.getRuntime().exec(new String[] { "curl", "http://guides.oobium.org/getting_started"});
-					} catch(IOException e) {
-						e.printStackTrace();
-					}
-					System.out.println("ran");
-				};
-			};
-		}
-		for(int i = 0; i < requests; i++) {
-			threads[i].start();
-		}
-		long duration = System.currentTimeMillis() - start;
-		System.out.println("elapsed time: " + (duration) + " millis");
-		System.out.println("average time: " + ((double) duration / requests) + " millis");
-		System.out.println("req / second: " + (int) ((double) requests / ((double) duration / 1000)));
-		
-		Thread.sleep(5000);
 	}
 	
 	@Ignore
