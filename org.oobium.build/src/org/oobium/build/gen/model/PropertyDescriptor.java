@@ -53,18 +53,18 @@ public class PropertyDescriptor {
 	private String relatedType;
 
 	public PropertyDescriptor(ModelAttribute attribute) {
-		this(attribute.getModel().getSimpleName(), attribute.getJavaType(), attribute.getName());
+		this(attribute.model.getSimpleType(), attribute.getJavaType(), attribute.name);
 
-		rawType = attribute.getType();
+		rawType = attribute.type;
 		
-		init = attribute.getInit();
+		init = attribute.init;
 		
 		getterName = StringUtils.getterName(variable);
 		
-		check = attribute.getCheck();
-		readOnly = attribute.isReadOnly();
-		unique = attribute.isUnique();
-		virtual = attribute.isVirtual();
+		check = attribute.check;
+		readOnly = attribute.readOnly;
+		unique = attribute.unique;
+		virtual = attribute.virtual;
 		hasOne = false;
 		relatedType = null;
 		hasMany = false;
@@ -73,29 +73,29 @@ public class PropertyDescriptor {
 	}
 
 	public PropertyDescriptor(ModelRelation relation) {
-		this(relation.getModel().getSimpleName(), relation.getType(), relation.getName());
+		this(relation.model.getSimpleType(), relation.type, relation.name);
 
 		init = null;
 		
-		model = relation.getModel();
+		model = relation.model;
 		opposite = relation.getOpposite();
 		
-		required = relation.isRequired();
-		readOnly = relation.isReadOnly();
-		unique = relation.isUnique();
-		virtual = relation.isVirtual();
-		hasOne = !relation.hasMany();
-		hasMany = relation.hasMany();
-		relatedType = relation.getType();
+		required = relation.required;
+		readOnly = relation.readOnly;
+		unique = relation.unique;
+		virtual = relation.virtual;
+		hasOne = !relation.hasMany;
+		hasMany = relation.hasMany;
+		relatedType = relation.type;
 
-		if(relation.hasMany()) {
+		if(relation.hasMany) {
 			castType = Set.class.getSimpleName();
 			getterName = variable;
 		} else {
 			getterName = StringUtils.getterName(variable);
 		}
 
-		builder = relation.hasMany() ? new HasManyBuilder(this) : new HasOneBuilder(this);
+		builder = relation.hasMany ? new HasManyBuilder(this) : new HasOneBuilder(this);
 	}
 
 	PropertyDescriptor(String modelType, String type, String name) {

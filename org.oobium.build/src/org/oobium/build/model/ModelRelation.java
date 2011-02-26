@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010 Oobium, Inc.
+ * Copyright (c) 2010, 2011 Oobium, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,108 +10,90 @@
  ******************************************************************************/
 package org.oobium.build.model;
 
-import static org.oobium.utils.StringUtils.blank;
-import static org.oobium.utils.StringUtils.simpleName;
-import static org.oobium.utils.StringUtils.varName;
+import static org.oobium.utils.StringUtils.*;
+import static org.oobium.utils.coercion.TypeCoercer.coerce;
+import static org.oobium.build.model.ModelDefinition.getJavaEntries;
+import static org.oobium.build.model.ModelDefinition.getString;
 
-import java.util.Collection;
-
-import javax.lang.model.type.MirroredTypeException;
+import java.util.Map;
 
 import org.oobium.persist.Relation;
 
-
 public class ModelRelation {
 
-	private ModelDefinition model;
-	private Relation annotation;
-	private boolean hasMany;
-	private ModelRelation opposite;
-
-	public ModelRelation(ModelDefinition model, Relation annotation, boolean hasMany) {
+	public final ModelDefinition model;
+	public final boolean hasMany;
+	public final int limit;
+	public final String name;
+	public final String type;
+	public final String opposite;
+	public final String through;
+	public final boolean readOnly;
+	public final boolean required;
+	public final boolean unique;
+	public final boolean virtual;
+	public final int onDelete;
+	public final int onUpdate;
+	
+	private ModelRelation oppositeRelation;
+	
+	public ModelRelation(ModelDefinition model, String annotation, boolean hasMany) {
 		this.model = model;
-		this.annotation = annotation;
 		this.hasMany = hasMany;
-	}
 
-	public int getLimit() {
-		return annotation.limit();
+		char[] ca = annotation.toCharArray();
+		int start = annotation.indexOf('(') + 1;
+		int end = annotation.length() - 1;
+		Map<String, String> entries = getJavaEntries(ca, start, end);
+		
+		this.name = getString(entries.get("name"));
+		this.type = model.getType(entries.get("type"));
+		this.limit = coerce(entries.get("limit"), -1);
+		this.opposite = getString(entries.get("opposite"));
+		this.through = getString(entries.get("through"));
+		this.readOnly = coerce(entries.get("readOnly"), false);
+		this.required = coerce(entries.get("required"), false);
+		this.unique = coerce(entries.get("unique"), false);
+		this.virtual = coerce(entries.get("virtual"), false);
+		this.onDelete = coerce(entries.get("onDelete"), Relation.UNDEFINED);
+		this.onUpdate = coerce(entries.get("onUpdate"), Relation.UNDEFINED);
 	}
-
-	public ModelDefinition getModel() {
-		return model;
-	}
-
-	public String getName() {
-		String name = annotation.name();
-		if(name != null && name.length() > 0) {
-			return name;
-		}
-		name = simpleName(getType());
-		return varName(name, hasMany());
-	}
-
+	
 	public ModelRelation getOpposite() {
-		return opposite;
+		return oppositeRelation;
 	}
 
 	public String getSimpleType() {
-		String type = getType();
-		return type.substring(type.lastIndexOf('.')+1, type.length());
-	}
-
-	public String getType() {
-		try {
-			return annotation.type().getCanonicalName();
-		} catch(MirroredTypeException e1) {
-			return e1.getTypeMirror().toString();
+		int ix = type.lastIndexOf('.');
+		if(ix == -1) {
+			return type;
 		}
-	}
-	
-	public boolean hasMany() {
-		return hasMany;
-	}
-	
-	public boolean hasOpposite() {
-		return annotation.opposite() != null && annotation.opposite().length() > 0;
-	}
-	
-	public boolean isReadOnly() {
-		return annotation.readOnly();
+		return type.substring(ix+1);
 	}
 
-	public boolean isRequired() {
-		return annotation.required();
+	public boolean hasOpposite() {
+		return opposite != null && opposite.length() > 0;
 	}
 	
 	public boolean isThrough() {
-		return !blank(annotation.through());
+		return !blank(through);
 	}
-	
+
 	public boolean isUnique() {
-		return annotation.unique();
+		return unique;
 	}
 
 	public boolean isVirtual() {
-		return annotation.virtual();
+		return virtual;
 	}
 
-	public int onDelete() {
-		return annotation.onDelete();
-	}
-
-	public int onUpdate() {
-		return annotation.onUpdate();
-	}
-
-	void setOpposite(Collection<ModelDefinition> models) {
-		if(hasOpposite() && opposite == null) {
-			String type = getType();
+	void setOpposite(ModelDefinition[] models) {
+		if(hasOpposite() && oppositeRelation == null) {
 			for(ModelDefinition model : models) {
 				if(type.equals(model.getCanonicalName())) {
-					opposite = model.getRelation(annotation.opposite());
-					if(opposite != null) {
-						opposite.opposite = this;
+					oppositeRelation = model.getRelation(opposite);
+					if(oppositeRelation != null) {
+						oppositeRelation.oppositeRelation = this;
 					}
 				}
 			}

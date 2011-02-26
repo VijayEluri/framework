@@ -23,10 +23,10 @@ public class JoinTable {
 	public final String column2;
 
 	public JoinTable(ModelRelation relation1, ModelRelation relation2) {
-		table1 = relation1.getModel().getSimpleName();
-		column1 = relation1.getName();
+		table1 = relation1.model.getSimpleType();
+		column1 = relation1.name;
 		table2 = relation1.getSimpleType();
-		column2 = (relation2 != null) ? relation2.getName() : "null";
+		column2 = (relation2 != null) ? relation2.name : "null";
 		
 		name = StringUtils.tableName(table1, column1, table2, column2);
 	}

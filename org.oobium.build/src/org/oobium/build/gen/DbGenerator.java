@@ -31,7 +31,6 @@ import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -43,6 +42,7 @@ import org.oobium.build.gen.migration.ModelTable;
 import org.oobium.build.model.ModelDefinition;
 import org.oobium.build.model.ModelRelation;
 import org.oobium.build.util.SourceFile;
+import org.oobium.build.workspace.Module;
 import org.oobium.persist.Binary;
 import org.oobium.persist.Text;
 import org.oobium.persist.migrate.AbstractMigration;
@@ -90,21 +90,21 @@ public class DbGenerator {
 		return "String";
 	}
 	
-	public static String generate(String name, String version, String type, Collection<ModelDefinition> models) {
+	public static String generate(Module module, ModelDefinition[] models) {
 		SourceFile sf = new SourceFile();
 		
 		Map<String, ModelTable> tables = new TreeMap<String, ModelTable>();
 		Map<String, JoinTable> joins = new TreeMap<String, JoinTable>();
 		
 		for(ModelDefinition model : models) {
-			tables.put(model.getSimpleName(), new ModelTable(sf, model, models));
+			tables.put(model.getSimpleType(), new ModelTable(sf, model, models));
 		}
 
 		for(ModelDefinition model : models) {
 			for(ModelRelation relation : model.getRelations()) {
-				if(relation.hasMany() && !relation.isThrough()) {
+				if(relation.hasMany && !relation.isThrough()) {
 					ModelRelation oppositeRelation = relation.getOpposite();
-					if(oppositeRelation == null || oppositeRelation.hasMany()) {
+					if(oppositeRelation == null || oppositeRelation.hasMany) {
 						JoinTable joinTable = new JoinTable(relation, oppositeRelation);
 						joins.put(joinTable.name, joinTable);
 					}
@@ -114,7 +114,7 @@ public class DbGenerator {
 		
 
 		sf.isAbstract = true;
-		sf.packageName = name.replace(File.separatorChar, '.') + ".migrator.migrations";
+		sf.packageName = module.name.replace(File.separatorChar, '.') + ".migrator.migrations";
 		sf.simpleName = "AbstractCreateDatabase";
 		sf.superName = AbstractMigration.class.getSimpleName();
 		sf.imports.add(AbstractMigration.class.getCanonicalName());
@@ -197,7 +197,7 @@ public class DbGenerator {
 					}
 					sb.append(");\n");
 				}
-				sb.append("\n\t\t").append(var).append(".update();\n");
+				sb.append("\t\t").append(var).append(".update();\n");
 			}
 		}
 

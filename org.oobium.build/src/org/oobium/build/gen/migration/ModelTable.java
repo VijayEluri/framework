@@ -18,7 +18,6 @@ import static org.oobium.utils.StringUtils.columnName;
 import static org.oobium.utils.StringUtils.tableName;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,24 +41,24 @@ public class ModelTable {
 	public List<Index> indexes;
 	public List<ForeignKey> foreignKeys;
 
-	public ModelTable(SourceFile sf, ModelDefinition model, Collection<ModelDefinition> models) {
+	public ModelTable(SourceFile sf, ModelDefinition model, ModelDefinition[] models) {
 		this.sf = sf;
 		
-		name = tableName(model.getSimpleName());
+		name = tableName(model.getSimpleType());
 		columns = new ArrayList<Column>();
 		foreignKeys = new ArrayList<ForeignKey>();
 		indexes = new ArrayList<Index>();
 
-		boolean datestamps = model.getModel().datestamps();
-		boolean timestamps = model.getModel().timestamps();
+		boolean datestamps = model.datestamps;
+		boolean timestamps = model.timestamps;
 		for(ModelAttribute attribute : model.getAttributes()) {
 			if(datestamps) {
-				if(attribute.getName().equals("createdOn") || attribute.getName().equals("updatedOn")) {
+				if(attribute.name.equals("createdOn") || attribute.name.equals("updatedOn")) {
 					continue;
 				}
 			}
 			if(timestamps) {
-				if(attribute.getName().equals("createdAt") || attribute.getName().equals("updatedAt")) {
+				if(attribute.name.equals("createdAt") || attribute.name.equals("updatedAt")) {
 					continue;
 				}
 			}
@@ -73,7 +72,7 @@ public class ModelTable {
 		}
 		
 		for(ModelRelation relation : model.getRelations()) {
-			if(!relation.hasMany() && !relation.isThrough()) {
+			if(!relation.hasMany && !relation.isThrough()) {
 				addRelation(relation);
 			}
 		}
@@ -84,22 +83,22 @@ public class ModelTable {
 	}
 	
 	private void addAttribute(ModelAttribute attribute) {
-		String name = columnName(attribute.getName());
-		String type = attribute.getType();
+		String name = columnName(attribute.name);
+		String type = attribute.type;
 		
 		Map<String, Object> options = new LinkedHashMap<String, Object>();
 		if(attribute.isPrimitive()) {
 			options.put("required", true);
 		}
-		if("BigDecimal".equals(attribute.getType())) {
-			options.put("precision", attribute.getPrecision());
-			options.put("scale", attribute.getScale());
+		if("BigDecimal".equals(attribute.type)) {
+			options.put("precision", attribute.precision);
+			options.put("scale", attribute.scale);
 		}
-		if(attribute.isUnique()) {
+		if(attribute.unique) {
 			options.put("unique", true);
 		}
-		if(!blank(attribute.getCheck())) {
-			options.put("check", attribute.getCheck());
+		if(!blank(attribute.check)) {
+			options.put("check", attribute.check);
 		}
 		if(attribute.isPrimitive()) {
 			options.put("primitive", true);
@@ -107,8 +106,8 @@ public class ModelTable {
 
 		columns.add(new Column(type, name, options.isEmpty() ? null : options));
 		
-		if(attribute.isIndex()) {
-			indexes.add(new Index(columnName(attribute.getName()), attribute.isUnique()));
+		if(attribute.indexed) {
+			indexes.add(new Index(columnName(attribute.name), attribute.unique));
 		}
 	}
 
@@ -138,24 +137,24 @@ public class ModelTable {
 	
 	private void addRelation(ModelRelation relation) {
 		// add the column
-		String name = columnName(relation.getName());
+		String name = columnName(relation.name);
 		String type = Integer.class.getCanonicalName();
 		Map<String, Object> options = new LinkedHashMap<String, Object>();
-		if(relation.isRequired()) {
+		if(relation.required) {
 			options.put("required", true);
 		}
 		columns.add(new Column(type, name, options.isEmpty() ? null : options));
 
 		// add the foreign key
-		String column = columnName(relation.getName());
+		String column = columnName(relation.name);
 		String reference = tableName(relation.getSimpleType());
 		options = new LinkedHashMap<String, Object>();
-		String onDelete = getRerentialAction(relation.onDelete());
+		String onDelete = getRerentialAction(relation.onDelete);
 		if(onDelete != null) {
 			sf.staticImports.add(Relation.class.getCanonicalName() + "." + onDelete);
 			options.put("onDelete", onDelete);
 		}
-		String onUpdate = getRerentialAction(relation.onUpdate());
+		String onUpdate = getRerentialAction(relation.onUpdate);
 		if(onUpdate != null) {
 			sf.staticImports.add(Relation.class.getCanonicalName() + "." + onUpdate);
 			options.put("onUpdate", onUpdate);

@@ -10,21 +10,20 @@
  ******************************************************************************/
 package org.oobium.build.gen;
 
-import static org.oobium.build.gen.ModelProcessor.GEN_MODELS;
-import static org.oobium.build.gen.ModelProcessor.GEN_SCHEMA;
+import static org.oobium.build.util.ProjectUtils.getSrcAnnotations;
+import static org.oobium.utils.FileUtils.readFile;
+import static org.oobium.utils.FileUtils.writeFile;
+import static org.oobium.utils.StringUtils.plural;
 import static org.oobium.utils.StringUtils.varName;
 
 import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
-
-import org.oobium.build.BuildBundle;
 import org.oobium.build.gen.model.PropertyDescriptor;
 import org.oobium.build.model.ModelAttribute;
 import org.oobium.build.model.ModelDefinition;
@@ -33,14 +32,11 @@ import org.oobium.build.util.PersistConfig;
 import org.oobium.build.util.PersistConfig.Service;
 import org.oobium.build.util.SourceFile;
 import org.oobium.build.workspace.Application;
-import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.Workspace;
-import org.oobium.logging.LogProvider;
 import org.oobium.persist.Model;
 import org.oobium.persist.Paginator;
 import org.oobium.persist.PersistService;
-import org.oobium.persist.migrate.Migration;
 import org.oobium.utils.Config.Mode;
 import org.oobium.utils.StringUtils;
 import org.oobium.utils.json.JsonModel;
@@ -49,97 +45,16 @@ import org.oobium.utils.json.JsonUtils;
 
 public class ModelGenerator {
 
-	public static String generate(String classAnnotations, ModelDefinition model) {
-		SourceFile src = new SourceFile();
+	public static final int
+		GEN_MODELS 	 	= 1 << 0,
+		GEN_VIEWS 		= 1 << 1,
+		GEN_CONTROLLERS = 1 << 2,
+		GEN_SCHEMA		= 1 << 3,
+		GEN_TESTS		= 1 << 4,
+		GEN_APP 		= GEN_MODELS | GEN_VIEWS | GEN_CONTROLLERS,
+		GEN_APP_WS 		= GEN_MODELS | GEN_CONTROLLERS,
+		GEN_ALL 		= GEN_MODELS | GEN_VIEWS | GEN_CONTROLLERS | GEN_SCHEMA | GEN_TESTS;
 
-		src.simpleName = model.getSimpleName() + "Model";
-		src.packageName = model.getPackageName();
-		src.superName = Model.class.getSimpleName();
-		src.isAbstract = true;
-
-		for(ModelAttribute attribute : model.attributes().values()) {
-			src.properties.put(attribute.getName(), new PropertyDescriptor(attribute));
-		}
-
-		for(ModelRelation relation : model.relations().values()) {
-			src.properties.put(relation.getName(), new PropertyDescriptor(relation));
-		}
-
-		src.imports.add(JsonModel.class.getCanonicalName());
-		src.imports.add(Model.class.getCanonicalName());
-		src.imports.add(List.class.getCanonicalName());
-		src.imports.add(Map.class.getCanonicalName());
-		src.imports.add(Paginator.class.getCanonicalName());
-		src.imports.add(SQLException.class.getCanonicalName());
-		src.imports.add(PersistService.class.getCanonicalName());
-
-		List<String> inits = new ArrayList<String>();
-		for(PropertyDescriptor property : src.properties.values()) {
-			src.imports.addAll(property.imports());
-			if(property.hasInit()) {
-				inits.add(createInitializer(src, property));
-			}
-			src.methods.putAll(property.methods());
-		}
-
-		createConstructor(src, inits);
-
-		createOverrideMethods(src, model);
-		
-		src.staticMethods.put("finders", createStaticMethods(model.getSimpleName()));
-		
-		for(Iterator<String> iter = src.imports.iterator(); iter.hasNext(); ) {
-			if(model.getCanonicalName().equals(iter.next())) {
-				iter.remove();
-			}
-		}
-
-		return "/*\n" + classAnnotations + "*/\n" + src.toSource();
-	}
-
-	private static void createConstructor(SourceFile src, List<String> inits) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("\tpublic ").append(src.simpleName).append("() {\n");
-		sb.append("\t\tsuper();\n");
-		for(String init : inits) {
-			sb.append("\t\t").append(init).append('\n');
-		}
-		sb.append("\t}");
-		src.constructors.put(0, sb.toString());
-	}
-	
-	private static void createOverrideMethods(SourceFile src, ModelDefinition model) {
-		String type = model.getSimpleName();
-		
-		src.methods.put("put(String field, Object value)", 	build(type, "put(String field, Object value)", "put(field, value)"));
-		src.methods.put("putAll(JsonModel model)", 			build(type, "putAll(JsonModel model)", "putAll(model)"));
-		src.methods.put("putAll(Map<String, Object> data)", build(type, "putAll(Map<String, Object> data)", "putAll(data)"));
-		src.methods.put("putAll(String json)", 				build(type, "putAll(String json)", "putAll(json)"));
-		src.methods.put("set(String field, Object value)", 	build(type, "set(String field, Object value)", "set(field, value)"));
-		src.methods.put("setAll(Map<String, Object> data)", build(type, "setAll(Map<String, Object> data)", "setAll(data)"));
-		src.methods.put("setAll(String json)", 				build(type, "setAll(String json)", "setAll(json)"));
-		src.methods.put("setId(int id)", 					build(type, "setId(int id)", "setId(id)"));
-	}
-
-	private static String build(String type, String sig, String body) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("\t@Override\n");
-		sb.append("\tpublic ").append(type).append(' ').append(sig).append(" {\n");
-		sb.append("\t\treturn (").append(type).append(") super.").append(body).append(";\n");
-		sb.append("\t}");
-		return sb.toString();
-	}
-	
-	private static String createInitializer(SourceFile src, PropertyDescriptor property) {
-		String init = property.init();
-		if(property.isType(Map.class)) {
-			if(init != null && init.length() > 1 && init.charAt(0) == '{' && init.charAt(init.length()-1) == '}') {
-				src.imports.add(JsonUtils.class.getCanonicalName());
-				init = "JsonUtils.toMap(\"" + init + "\")";
-			}
-		}
-		return "set(" + property.enumProp() + ", " + init + ");";
-	}
 	
 	private static void appendDoc(StringBuilder sb, String javadoc, String...vars) {
 		StringBuilder doc = new StringBuilder(javadoc.length() + StringUtils.count(vars) + 5);
@@ -155,6 +70,50 @@ public class ModelGenerator {
 			sb.append("\t * ").append(line).append('\n');
 		}
 		sb.append("\t*/\n");
+	}
+
+	private static String build(String type, String sig, String body) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("\t@Override\n");
+		sb.append("\tpublic ").append(type).append(' ').append(sig).append(" {\n");
+		sb.append("\t\treturn (").append(type).append(") super.").append(body).append(";\n");
+		sb.append("\t}");
+		return sb.toString();
+	}
+	
+	private static void createConstructor(SourceFile src, List<String> inits) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("\tpublic ").append(src.simpleName).append("() {\n");
+		sb.append("\t\tsuper();\n");
+		for(String init : inits) {
+			sb.append("\t\t").append(init).append('\n');
+		}
+		sb.append("\t}");
+		src.constructors.put(0, sb.toString());
+	}
+
+	private static String createInitializer(SourceFile src, PropertyDescriptor property) {
+		String init = property.init();
+		if(property.isType(Map.class)) {
+			if(init != null && init.length() > 1 && init.charAt(0) == '{' && init.charAt(init.length()-1) == '}') {
+				src.imports.add(JsonUtils.class.getCanonicalName());
+				init = "JsonUtils.toMap(\"" + init + "\")";
+			}
+		}
+		return "set(" + property.enumProp() + ", " + init + ");";
+	}
+	
+	private static void createOverrideMethods(SourceFile src, ModelDefinition model) {
+		String type = model.getSimpleType();
+		
+		src.methods.put("put(String field, Object value)", 	build(type, "put(String field, Object value)", "put(field, value)"));
+		src.methods.put("putAll(JsonModel model)", 			build(type, "putAll(JsonModel model)", "putAll(model)"));
+		src.methods.put("putAll(Map<String, Object> data)", build(type, "putAll(Map<String, Object> data)", "putAll(data)"));
+		src.methods.put("putAll(String json)", 				build(type, "putAll(String json)", "putAll(json)"));
+		src.methods.put("set(String field, Object value)", 	build(type, "set(String field, Object value)", "set(field, value)"));
+		src.methods.put("setAll(Map<String, Object> data)", build(type, "setAll(Map<String, Object> data)", "setAll(data)"));
+		src.methods.put("setAll(String json)", 				build(type, "setAll(String json)", "setAll(json)"));
+		src.methods.put("setId(int id)", 					build(type, "setId(int id)", "setId(id)"));
 	}
 	
 	private static String createStaticMethods(String type) {
@@ -232,20 +191,26 @@ public class ModelGenerator {
 		return sb.toString();
 	}
 	
-
 	public static File[] generate(Workspace workspace, Module module, File...models) {
 		return generate(workspace, module, GEN_MODELS, models);
 	}
 	
+
 	public static File[] generate(Workspace workspace, Module module, File model, int flags) {
 		return generate(workspace, module, flags, new File[] { model });
+	}
+	
+	private static File[] generate(Workspace workspace, Module module, int action, File...models) {
+		ModelGenerator gen = new ModelGenerator(workspace, module, action);
+		gen.process(models);
+		return gen.getFiles();
 	}
 	
 	public static File[] generate(Workspace workspace, Module module, List<File> models) {
 		return generate(workspace, module, GEN_MODELS, models.toArray(new File[models.size()]));
 	}
 	
-	public static void generateSchema(Workspace workspace, Application app, Mode mode) {
+	public static File generateSchema(Workspace workspace, Application app, Mode mode) {
 		PersistConfig config = new PersistConfig(app, mode);
 		
 		List<File> models = new ArrayList<File>();
@@ -272,22 +237,30 @@ public class ModelGenerator {
 			}
 		}
 		
-		generate(workspace, app, GEN_SCHEMA, models.toArray(new File[models.size()]));
-	}
+		ModelDefinition[] defs = new ModelDefinition[models.size()];
 
-	private static File[] generate(Workspace workspace, Module module, int action, File...models) {
-		ModelGenerator gen = new ModelGenerator(workspace, module, action);
-		gen.process(models);
-		return gen.getFiles();
-	}
+		for(int i = 0; i < models.size(); i++) {
+			defs[i] = new ModelDefinition(models.get(i));
+		}
+		
+		for(ModelDefinition def : defs) {
+			def.setOpposites(defs);
+		}
 
+		File schema = app.getSchema();
+		String src = DbGenerator.generate(app, defs);
+		
+		return writeFile(schema, src);
+	}
 
 	private final Workspace workspace;
+
+
 	private final Module module;
 	private int action;
-	final List<File> files;
-
-	ModelGenerator(Workspace workspace, Module module, int action) {
+	private final List<File> files;
+	
+	private ModelGenerator(Workspace workspace, Module module, int action) {
 		this.workspace = workspace;
 		this.module = module;
 		this.action = action;
@@ -298,81 +271,149 @@ public class ModelGenerator {
 		files.add(file);
 	}
 
+	private String generate(String classAnnotations, ModelDefinition model) {
+		SourceFile src = new SourceFile();
+
+		src.simpleName = model.getSimpleType() + "Model";
+		src.packageName = model.getPackageName();
+		src.superName = Model.class.getSimpleName();
+		src.isAbstract = true;
+
+		for(ModelAttribute attribute : model.attributes().values()) {
+			src.properties.put(attribute.name, new PropertyDescriptor(attribute));
+		}
+
+		for(ModelRelation relation : model.relations().values()) {
+			src.properties.put(relation.name, new PropertyDescriptor(relation));
+		}
+
+		src.imports.add(JsonModel.class.getCanonicalName());
+		src.imports.add(Model.class.getCanonicalName());
+		src.imports.add(List.class.getCanonicalName());
+		src.imports.add(Map.class.getCanonicalName());
+		src.imports.add(Paginator.class.getCanonicalName());
+		src.imports.add(SQLException.class.getCanonicalName());
+		src.imports.add(PersistService.class.getCanonicalName());
+
+		List<String> inits = new ArrayList<String>();
+		for(PropertyDescriptor property : src.properties.values()) {
+			src.imports.addAll(property.imports());
+			if(property.hasInit()) {
+				inits.add(createInitializer(src, property));
+			}
+			src.methods.putAll(property.methods());
+		}
+
+		createConstructor(src, inits);
+
+		createOverrideMethods(src, model);
+		
+		src.staticMethods.put("finders", createStaticMethods(model.getSimpleType()));
+		
+		for(Iterator<String> iter = src.imports.iterator(); iter.hasNext(); ) {
+			if(model.getCanonicalName().equals(iter.next())) {
+				iter.remove();
+			}
+		}
+
+		return "/*\n" + classAnnotations + "*/\n" + src.toSource();
+	}
+
+	private void generateControllerFiles(Module module, ModelDefinition[] models) {
+		for(ModelDefinition model : models) {
+			String src = ControllerGenerator.generate(module, model);
+
+			File controller = module.getController(model.getSimpleType());
+			files.add(writeFile(controller, src));
+		}
+	}
+
+	private void generateModelFiles(Module module, ModelDefinition[] models) {
+		for(ModelDefinition model : models) {
+			try {
+				File genFile = module.getGenModel(model.file);
+				String annotations = getSrcAnnotations(model.file);
+				String src = generate(annotations, model);
+				files.add(writeFile(genFile, src));
+			} catch(IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	private void generateViewFiles(Module module, ModelDefinition[] models) {
+		for(ModelDefinition model : models) {
+			String name = model.getSimpleType();
+			String plur = plural(name);
+			File folder = module.getViewsFolder(name);
+			
+			ViewGenerator gen = new ViewGenerator(model);
+
+			files.add(writeFile(folder, "ShowEdit" + name + ".esp", gen.generateShowEditView()));
+			files.add(writeFile(folder, "ShowAll"  + plur + ".esp", gen.generateShowAllView()));
+			files.add(writeFile(folder, "ShowNew"  + name + ".esp", gen.generateShowNewView()));
+			files.add(writeFile(folder, "Show" 	 + name + ".esp", gen.generateShowView()));
+			files.add(writeFile(folder, name	   + "Form" + ".esp", gen.generateForm()));
+		}
+	}
+	
 	File[] getFiles() {
 		return files.toArray(new File[files.size()]);
 	}
+	
+	private ModelDefinition[] getModelDefinitions(File[] models) {
+		ModelDefinition[] defs = new ModelDefinition[models.length];
 
+		for(int i = 0; i < defs.length; i++) {
+			defs[i] = new ModelDefinition(models[i]);
+		}
+		
+		for(ModelDefinition def : defs) {
+			def.setOpposites(defs);
+		}
+		
+		return defs;
+	}
+	
 	public Workspace getWorkspace() {
 		return workspace;
 	}
+
+	private void modifySrcFile(ModelDefinition model) {
+		StringBuilder sb = readFile(model.file);
+		String s = "class " + model.getSimpleType();
+		int start = sb.indexOf(s) + s.length();
+		int end = sb.indexOf("implements", start);
+		if(end == -1) {
+			end = sb.indexOf("{", start);
+		}
+		String superStr = " " + model.getSimpleType() + "Model ";
+		s = sb.toString().substring(start, end);
+		if(!s.contains(superStr)) {
+			sb.replace(start, end, " extends" + superStr);
+			files.add(writeFile(model.file, sb.toString()));
+		}
+	}
 	
-	void process(File[] models) {
-		if(models.length == 0) {
-			return;
-		}
-		
-		StringBuilder classpath = new StringBuilder();
-
-		Bundle builder = workspace.getBuildBundle();
-		if(builder == null) {
-			throw new IllegalStateException("Builder Bundle cannot be found");
-		}
-		
-		classpath.append(builder.file.getAbsolutePath());
-		if(builder.file.isDirectory()) {
-			classpath.append(File.separatorChar).append("bin");
-		}
-		
-		if((action & GEN_SCHEMA) != 0) {
-			Bundle migrator = workspace.getBundle(Migration.class.getPackage().getName());
-			if(migrator == null) {
-				if(action == GEN_SCHEMA) { // an explicit request to build the schema and nothing else
-					throw new IllegalStateException("Migrator Bundle cannot be found");
-				}
-				LogProvider.getLogger(BuildBundle.class).debug("build schema requestd but migrator is not present... continuing anyway");
-				action &= ~GEN_SCHEMA;
-			} else {
-				classpath.append(File.pathSeparatorChar).append(migrator.file.getAbsolutePath());
-				if(migrator.file.isDirectory()) {
-					classpath.append(File.separatorChar).append("bin");
-				}
-			}
-		}
-		
-//		System.out.println(classpath);
-		for(String cpe : module.getClasspathEntries(workspace, Mode.DEV)) {
-//			System.out.println(cpe);
-			classpath.append(File.pathSeparatorChar).append(cpe);
-		}
-		
-		int i = 0;
-		String[] strs = new String[11 + models.length];
-		strs[i++] = "-Aname=" + module.name;
-		strs[i++] = "-Aversion=" + module.version.toString(true);
-		strs[i++] = "-Apath=" + module.file.getAbsolutePath();
-		strs[i++] = "-Atype=" + module.type.name();
-		strs[i++] = "-Aaction=" + action;
-		strs[i++] = "-Awebservice=" + module.hasNature(Module.NATURE_WEBSERVICE);
-		strs[i++] = "-cp";
-		strs[i++] = classpath.toString();
-		strs[i++] = "-processor";
-		strs[i++] = ModelProcessor.class.getCanonicalName();
-		strs[i++] = "-proc:only";
-		for(File model : models) {
-			strs[i++] = model.getAbsolutePath();
-		}
-
-		// hack work-around for different ClassLoader issue
-		ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-		try {
-			Thread.currentThread().setContextClassLoader(Workspace.class.getClassLoader());
-			ModelProcessor.generators.set(this);
-			JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-			compiler.run(System.in, System.out, System.err, strs);
-		} finally {
-			ModelProcessor.generators.set(null);
-			Thread.currentThread().setContextClassLoader(contextClassLoader);
+	private void modifySrcFiles(ModelDefinition[] models) {
+		for(ModelDefinition model : models) {
+			modifySrcFile(model);
 		}
 	}
 
+	private void process(File[] models) {
+		ModelDefinition[] defs = getModelDefinitions(models);
+		
+		if((action & GEN_MODELS) != 0) {
+			generateModelFiles(module, defs);
+			modifySrcFiles(defs);
+		}
+		if((action & GEN_VIEWS) != 0) {
+			generateViewFiles(module, defs);
+		}
+		if((action & GEN_CONTROLLERS) != 0) {
+			generateControllerFiles(module, defs);
+		}
+	}
+	
 }

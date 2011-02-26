@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010 Oobium, Inc.
+ * Copyright (c) 2010, 2011 Oobium, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,57 +10,74 @@
  ******************************************************************************/
 package org.oobium.build.model;
 
-import javax.lang.model.type.MirroredTypeException;
+import static org.oobium.utils.coercion.TypeCoercer.coerce;
+import static org.oobium.build.model.ModelDefinition.*;
 
-import org.oobium.persist.Attribute;
+import java.util.Map;
+
 import org.oobium.persist.Binary;
 import org.oobium.persist.Text;
 
 
 public class ModelAttribute {
 
-	private ModelDefinition model;
-	private Attribute annotation;
-
-	public ModelAttribute(ModelDefinition model, Attribute annotation) {
+	public final ModelDefinition model;
+	public final String check;
+	public final String init;
+	public final String name;
+	public final int precision;
+	public final int scale;
+	public final String type;
+	public final boolean indexed;
+	public final boolean readOnly;
+	public final boolean unique;
+	public final boolean virtual;
+	
+	public ModelAttribute(ModelDefinition model, String annotation) {
 		this.model = model;
-		this.annotation = annotation;
-	}
 
-	public ModelDefinition getModel() {
-		return model;
-	}
-	
-	public String getCheck() {
-		return annotation.check();
-	}
-	
-	public String getInit() {
-		return annotation.init();
-	}
-	
-	public String getName() {
-		return annotation.name();
-	}
-
-	public int getPrecision() {
-		return annotation.precision();
-	}
-	
-	public int getScale() {
-		return annotation.scale();
-	}
-
-	public String getType() {
-		try {
-			return annotation.type().getCanonicalName();
-		} catch(MirroredTypeException e) {
-			return e.getTypeMirror().toString();
+		if("createdOn".equals(annotation) || "updatedOn".equals(annotation)) {
+			this.name = annotation;
+			this.type = "java.sql.Date";
+			this.check = "";
+			this.init = "";
+			this.precision = 0;
+			this.scale = 0;
+			this.indexed = false;
+			this.readOnly = false;
+			this.unique = false;
+			this.virtual = false;
+		} else if("createdAt".equals(annotation) || "updatedAt".equals(annotation)) {
+			this.name = annotation;
+			this.type = "java.util.Date";
+			this.check = "";
+			this.init = "";
+			this.precision = 0;
+			this.scale = 0;
+			this.indexed = false;
+			this.readOnly = false;
+			this.unique = false;
+			this.virtual = false;
+		} else {
+			char[] ca = annotation.toCharArray();
+			int start = annotation.indexOf('(') + 1;
+			int end = annotation.length() - 1;
+			Map<String, String> entries = getJavaEntries(ca, start, end);
+			
+			this.name = getString(entries.get("name"));
+			this.type = model.getType(entries.get("type"));
+			this.check = getString(entries.get("check"));
+			this.init = getString(entries.get("init"));
+			this.precision = coerce(entries.get("precision"), 8);
+			this.scale = coerce(entries.get("scale"), 2);
+			this.indexed = coerce(entries.get("indexed"), false);
+			this.readOnly = coerce(entries.get("readOnly"), false);
+			this.unique = coerce(entries.get("unique"), false);
+			this.virtual = coerce(entries.get("virtual"), false);
 		}
 	}
-
+	
 	public String getJavaType() {
-		String type = getType();
 		if(Text.class.getCanonicalName().equals(type)) {
 			return "java.lang.String";
 		}
@@ -70,25 +87,8 @@ public class ModelAttribute {
 		return type;
 	}
 
-	public boolean isIndex() {
-		return annotation.indexed();
-	}
-	
 	public boolean isPrimitive() {
-		String type = getType();
 		return (type.indexOf('.') == -1) && !type.endsWith("[]");
-	}
-	
-	public boolean isReadOnly() {
-		return annotation.readOnly();
-	}
-
-	public boolean isUnique() {
-		return annotation.unique();
-	}
-	
-	public boolean isVirtual() {
-		return annotation.virtual();
 	}
 	
 }

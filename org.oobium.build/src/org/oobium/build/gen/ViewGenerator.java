@@ -56,14 +56,14 @@ public class ViewGenerator {
 	public ViewGenerator(ModelDefinition model) {
 		properties = new LinkedHashMap<String, PropertyDescriptor>();
 		for(ModelAttribute attribute : model.attributes().values()) {
-			properties.put(attribute.getName(), new PropertyDescriptor(attribute));
+			properties.put(attribute.name, new PropertyDescriptor(attribute));
 		}
 		for(ModelRelation relation : model.relations().values()) {
-			properties.put(relation.getName(), new PropertyDescriptor(relation));
+			properties.put(relation.name, new PropertyDescriptor(relation));
 		}
 
 		mPkg = model.getPackageName();
-		mType = model.getSimpleName();
+		mType = model.getSimpleType();
 		mVar = varName(mType);
 		mVarPlural = varName(mType, true);
 	}

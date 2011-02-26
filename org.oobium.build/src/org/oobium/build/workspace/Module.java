@@ -49,7 +49,6 @@ import org.oobium.build.gen.EFileGenerator;
 import org.oobium.build.gen.Generator;
 import org.oobium.build.gen.MailerGenerator;
 import org.oobium.build.gen.ModelGenerator;
-import org.oobium.build.gen.ModelProcessor;
 import org.oobium.build.gen.ProjectGenerator;
 import org.oobium.build.gen.ViewGenerator;
 import org.oobium.build.util.ProjectUtils;
@@ -59,9 +58,9 @@ import org.oobium.persist.Model;
 import org.oobium.persist.ModelDescription;
 import org.oobium.persist.PersistService;
 import org.oobium.utils.Config;
+import org.oobium.utils.Config.Mode;
 import org.oobium.utils.DateUtils;
 import org.oobium.utils.FileUtils;
-import org.oobium.utils.Config.Mode;
 
 public class Module extends Bundle {
 
@@ -394,10 +393,10 @@ public class Module extends Bundle {
 		if(model.isFile()) {
 			int f = 0;
 			if((flags & CONTROLLER) != 0) {
-				f |= ModelProcessor.GEN_CONTROLLERS;
+				f |= ModelGenerator.GEN_CONTROLLERS;
 			}
 			if((flags & VIEW) != 0) {
-				f |= ModelProcessor.GEN_VIEWS;
+				f |= ModelGenerator.GEN_VIEWS;
 			}
 			
 			changed.addAll(Arrays.asList(ModelGenerator.generate(workspace, this, model, f)));
