@@ -143,6 +143,9 @@ public class JsonUtilsTests {
 		assertEquals("{a=b'c}", toMap("a:'b\\'c'").toString());
 		assertEquals("{a=b\"c}", toMap("{a:\"b\\\"c\"}").toString());
 		assertEquals("{a=b\"c}", toMap("a:\"b\\\"c\"").toString());
+
+		assertEquals("{a:b=b, c:d=d, e:=f}", toMap("\"a:b\":b, \"c:d\":d, \"e:\":f", true).toString());
+		assertEquals("{a:b=b, c:d=d, e:=f}", toMap("'a:b':b, 'c:d':d, 'e:':f", true).toString());
 	}
 	
 	@Test

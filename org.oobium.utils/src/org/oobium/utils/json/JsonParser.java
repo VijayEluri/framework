@@ -12,6 +12,7 @@ package org.oobium.utils.json;
 
 import static org.oobium.utils.CharStreamUtils.closer;
 import static org.oobium.utils.CharStreamUtils.find;
+import static org.oobium.utils.CharStreamUtils.findOutside;
 import static org.oobium.utils.CharStreamUtils.forward;
 import static org.oobium.utils.CharStreamUtils.getDouble;
 import static org.oobium.utils.CharStreamUtils.getInteger;
@@ -251,7 +252,7 @@ public class JsonParser {
 		
 		Map<String, Object> map = keepOrder ? new LinkedHashMap<String, Object>() : new HashMap<String, Object>();
 		
-		s = find(ca, ':', s1, e);
+		s = findOutside(ca, ':', s1, e, '\'', '"');
 		int s2 = reverse(ca, s-1);
 
 		while(s1 > -1 && s1 <= s2 && s2 < e) {
@@ -312,7 +313,7 @@ public class JsonParser {
 				break;
 			}
 			s1 = forward(ca, s1+1, e);
-			s = find(ca, ':', s1, e);
+			s = findOutside(ca, ':', s1, e, '\'', '"');
 			s2 = reverse(ca, s-1);
 		}
 	
