@@ -143,6 +143,11 @@ public class NullPersistService implements PersistService {
 	}
 
 	@Override
+	public void retrieve(Model model, String hasMany) throws SQLException {
+		throw new SQLException(msg);
+	}
+	
+	@Override
 	public void rollback() throws SQLException {
 		throw new SQLException(msg);
 	}

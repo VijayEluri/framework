@@ -21,9 +21,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 
 import org.oobium.build.gen.model.PropertyDescriptor;
-import org.oobium.build.model.ModelAttribute;
 import org.oobium.build.model.ModelDefinition;
-import org.oobium.build.model.ModelRelation;
 import org.oobium.persist.Paginator;
 import org.oobium.persist.Text;
 import org.oobium.utils.StringUtils;
@@ -54,13 +52,7 @@ public class ViewGenerator {
 	private String mVarPlural;
 
 	public ViewGenerator(ModelDefinition model) {
-		properties = new LinkedHashMap<String, PropertyDescriptor>();
-		for(ModelAttribute attribute : model.attributes().values()) {
-			properties.put(attribute.name, new PropertyDescriptor(attribute));
-		}
-		for(ModelRelation relation : model.relations().values()) {
-			properties.put(relation.name, new PropertyDescriptor(relation));
-		}
+		properties = model.getProperties();
 
 		mPkg = model.getPackageName();
 		mType = model.getSimpleType();
@@ -74,33 +66,27 @@ public class ViewGenerator {
 
 	private void generateLabelAndField(StringBuilder sb, PropertyDescriptor property, String var) {
 		String ftype = property.fullType();
-		if(Boolean.class.getCanonicalName().equals(ftype)) {
+		if(is(ftype, boolean.class, Boolean.class)) {
 			sb.append("\t\tcheck(").append(var).append(")\n");
 			sb.append("\t\tlabel(").append(var).append(")\n");
-		} else if(java.sql.Date.class.getCanonicalName().equals(ftype)) {
-			sb.append("\t\tdiv <- label(").append(var).append(")\n");
-			sb.append("\t\tdiv <- date(").append(var).append(")\n");
 		} else {
 			sb.append("\t\tdiv <- label(").append(var).append(")\n");
 			sb.append("\t\tdiv <- ");
-			if(String.class.getCanonicalName().equals(ftype)) {
+			if(is(ftype, String.class)) {
 				if("password".equalsIgnoreCase(var)) {
 					sb.append("password");
-				} else if(Text.class.getCanonicalName().equals(property.rawType())) {
+				} else if(is(property.rawType(), Text.class)) {
 					sb.append("textArea");
 				} else {
 					sb.append("text");
 				}
 			} else if(property.hasOne()) {
 				sb.append("select");
-			} else if(Integer.class.getCanonicalName().equals(ftype)) {
-				sb.append("number");
-			} else if(Double.class.getCanonicalName().equals(ftype)) {
+			} else if(is(ftype, int.class, Integer.class, double.class, Double.class, long.class, Long.class)) {
 				sb.append("number");
 			} else if(property.hasMany()) {
 				sb.append("span hasMany");
-			} else if(Date.class.getCanonicalName().equals(ftype) ||
-					Timestamp.class.getCanonicalName().equals(ftype)) {
+			} else if(is(ftype, Date.class, java.sql.Date.class, Timestamp.class)) {
 				sb.append("date");
 			} else {
 				sb.append("input");
@@ -113,6 +99,15 @@ public class ViewGenerator {
 				sb.append('\n');
 			}
 		}
+	}
+
+	private boolean is(String fullType, Class<?>...classes) {
+		for(Class<?> clazz : classes) {
+			if(fullType.equals(clazz.getCanonicalName())) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	public String generateForm() {

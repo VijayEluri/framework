@@ -130,14 +130,14 @@ public class Routes {
 			ControllerRoute route = null;
 			switch(action) {
 			case create:
-				route = router.addRoute(key, rule, hasManyClass, action);
+				route = router.addRoute(key, rule, parentClass, field, hasManyClass, action);
 				updateParams(route, parentIdParam, hasManyParam);
 				break;
 			case showAll:
-				route = router.addRoute(key, rule, hasManyClass, action);
+				route = router.addRoute(key, rule, parentClass, field, hasManyClass, action);
 				break;
 			case showNew:
-				route = router.addRoute(key, rule + "/new", hasManyClass, action);
+				route = router.addRoute(key, rule + "/new", parentClass, field, hasManyClass, action);
 				updateParams(route, parentIdParam, hasManyParam);
 				break;
 			case destroy:
@@ -154,12 +154,13 @@ public class Routes {
 		return new Routed(router, routed);
 	}
 	
-	public void publish() {
+	public Routes publish() {
 		if(routed != null) {
 			for(Routed r : routed) {
 				r.publish();
 			}
 		}
+		return this;
 	}
 	
 	private void updateParams(ControllerRoute route, String parentIdParam, String hasManyParam) {

@@ -279,11 +279,11 @@ public class ModelGenerator {
 		src.superName = Model.class.getSimpleName();
 		src.isAbstract = true;
 
-		for(ModelAttribute attribute : model.attributes().values()) {
+		for(ModelAttribute attribute : model.attributes.values()) {
 			src.properties.put(attribute.name, new PropertyDescriptor(attribute));
 		}
 
-		for(ModelRelation relation : model.relations().values()) {
+		for(ModelRelation relation : model.relations.values()) {
 			src.properties.put(relation.name, new PropertyDescriptor(relation));
 		}
 

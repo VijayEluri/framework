@@ -91,7 +91,7 @@ public class ModelRelation {
 		if(hasOpposite() && oppositeRelation == null) {
 			for(ModelDefinition model : models) {
 				if(type.equals(model.getCanonicalName())) {
-					oppositeRelation = model.getRelation(opposite);
+					oppositeRelation = model.relations.get(opposite);
 					if(oppositeRelation != null) {
 						oppositeRelation.oppositeRelation = this;
 					}

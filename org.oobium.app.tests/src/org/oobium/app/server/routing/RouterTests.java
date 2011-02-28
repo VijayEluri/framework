@@ -8,7 +8,7 @@
  * Contributors:
  *     Jeremy Dowdall <jeremy@oobium.com> - initial API and implementation
  ******************************************************************************/
-package org.oobium.app.server.routes;
+package org.oobium.app.server.routing;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -32,6 +32,8 @@ import static org.oobium.http.constants.RequestType.GET;
 import static org.oobium.utils.StringUtils.asString;
 
 import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 
 import org.junit.After;
 import org.junit.Before;
@@ -42,6 +44,7 @@ import org.mockito.stubbing.Answer;
 import org.oobium.app.AppService;
 import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.routing.AppRouter;
+import org.oobium.app.server.routing.Route;
 import org.oobium.app.server.routing.RouteHandler;
 import org.oobium.app.server.routing.handlers.AssetHandler;
 import org.oobium.app.server.routing.handlers.AuthorizationHandler;
@@ -2464,6 +2467,26 @@ public class RouterTests {
 	public void testGetPaths() throws Exception {
 		router.addResources(Account.class);
 		System.out.println(router.getPaths());
+	}
+	
+	@Test
+	public void testGetModelRouteMap() throws Exception {
+		router.addResources(Account.class);
+		Map<String, Map<String, Map<String, String>>> map = router.getModelRouteMap();
+		assertEquals(1, map.size());
+		assertEquals(7, map.get(Account.class.getName()).size());
+	}
+
+	@Test
+	public void testGetModelRouteMap_WithNestedRoutes() throws Exception {
+		router.addResources(Account.class).hasMany("categories").publish();
+		Map<String, Map<String, Map<String, String>>> map = router.getModelRouteMap();
+		assertEquals(2, map.size());
+		assertEquals(10, map.get(Account.class.getName()).size());
+		assertEquals(3, map.get(Category.class.getName()).size());
+
+		Set<Route> routes = router.published;
+		System.out.println(routes);
 	}
 
 	@Test

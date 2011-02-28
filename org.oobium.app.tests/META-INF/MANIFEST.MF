@@ -18,4 +18,4 @@ Import-Package: org.oobium.logging,
  org.osgi.service.log
 Export-Package: org.oobium.app,
  org.oobium.app.server.persist,
- org.oobium.app.server.routes
+ org.oobium.app.server.routing

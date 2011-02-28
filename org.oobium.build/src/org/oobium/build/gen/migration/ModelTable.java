@@ -51,7 +51,7 @@ public class ModelTable {
 
 		boolean datestamps = model.datestamps;
 		boolean timestamps = model.timestamps;
-		for(ModelAttribute attribute : model.getAttributes()) {
+		for(ModelAttribute attribute : model.attributes.values()) {
 			if(datestamps) {
 				if(attribute.name.equals("createdOn") || attribute.name.equals("updatedOn")) {
 					continue;
@@ -71,7 +71,7 @@ public class ModelTable {
 			columns.add(new Column(null, TIMESTAMPS));
 		}
 		
-		for(ModelRelation relation : model.getRelations()) {
+		for(ModelRelation relation : model.relations.values()) {
 			if(!relation.hasMany && !relation.isThrough()) {
 				addRelation(relation);
 			}

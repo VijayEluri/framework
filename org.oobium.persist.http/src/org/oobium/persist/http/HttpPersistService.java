@@ -5,7 +5,7 @@ import static org.oobium.http.constants.ContentType.JSON;
 import static org.oobium.http.constants.Action.*;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.getResourceAsString;
-import static org.oobium.utils.StringUtils.varName;
+import static org.oobium.utils.StringUtils.*;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.utils.literal.*;
 import static org.oobium.utils.json.JsonUtils.*;
@@ -49,7 +49,7 @@ public class HttpPersistService implements PersistService {
 		this.logger = LogProvider.getLogger(HttpPersistService.class);
 	}
 
-	private void add(String model, Action action, RequestType type, String url) {
+	private void add(String model, String action, RequestType type, String url) {
 		Request request = new Request();
 		request.type = type;
 		request.url = url;
@@ -164,15 +164,16 @@ public class HttpPersistService implements PersistService {
 			}
 		}
 		
-		ClientResponse response = client.get(path, Map("q", "models"));
+		ClientResponse response = client.get(path, Map("type", "models"));
 		if(response.isSuccess()) {
 			Object r = toObject(response.getBody());
 			if(r instanceof Map<?,?>) {
-				load(u, (Map<?,?>) r);
-			} else if(r instanceof List<?>) {
-				for(Object o : (List<?>) r) {
-					if(o instanceof Map<?,?>) {
-						load(u, (Map<?,?>) o);
+				for(Entry<?,?> e1 : ((Map<?,?>) r).entrySet()) {
+					String model = (String) e1.getKey();
+					for(Entry<?,?> e2 : ((Map<?,?>) e1.getValue()).entrySet()) {
+						String action = (String) e2.getKey();
+						Map<?,?> map = (Map<?,?>) e2.getValue();
+						load(u, model, action, map);
 					}
 				}
 			}
@@ -325,6 +326,10 @@ public class HttpPersistService implements PersistService {
 	}
 
 	private Request getRequest(Class<?> clazz, Action action) {
+		return getRequest(clazz, action.name());
+	}
+	
+	private Request getRequest(Class<?> clazz, String action) {
 		if(requests == null) {
 			for(String url : getDiscoveryUrl()) {
 				try {
@@ -347,6 +352,10 @@ public class HttpPersistService implements PersistService {
 		return getRequest(model.getClass(), action);
 	}
 
+	private Request getRequest(Model model, Action action, String hasMany) {
+		return getRequest(model.getClass(), action.name() + ":" + hasMany);
+	}
+
 	private String[] getDiscoveryUrl() {
 		String s = getResourceAsString(getClass(), "/oobium.server");
 		if(s == null) {
@@ -362,50 +371,32 @@ public class HttpPersistService implements PersistService {
 		return base.getProtocol() + "://" + base.getHost() + ":" + base.getPort() + path;
 	}
 
-	private String getValue(String key, Map<?,?> map) {
-		Object o = map.get(key);
-		if(o instanceof String) {
-			return (String) o;
-		}
-		return null;
-	}
-
 	@Override
 	public boolean isSessionOpen() {
 		throw new UnsupportedOperationException();
 	}
 
-	private String key(Class<?> clazz, Action action) {
+	private String key(Class<?> clazz, String action) {
 		return key(clazz.getName(), action);
 	}
 
-	private String key(String model, Action action) {
+	private String key(String model, String action) {
 		return model + ":" + action;
 	}
 
-	private void load(URL url, Map<?,?> map) {
-		Object model = getValue("model", map);
-		if(model instanceof String) {
-			Object action = map.get("action");
-			Object method = map.get("method");
-			Object path = map.get("path");
-			if(action instanceof String && method instanceof String && path instanceof String) {
-				Action a = null;
-				try {
-					a = Action.valueOf((String) action);
-				} catch(IllegalArgumentException e) {
-					logger.debug("invalid request action: " + action);
-					return;
-				}
-				RequestType t = null;
-				try {
-					t = RequestType.valueOf((String) method);
-				} catch(IllegalArgumentException e) {
-					logger.debug("invalid request type: " + method);
-					return;
-				}
-				add((String) model, a, t, getUrl(url, path));
+	private void load(URL url, String model, String action, Map<?,?> map) {
+//		model = simpleName(model);
+		Object method = map.get("method");
+		Object path = map.get("path");
+		if(method instanceof String && path instanceof String) {
+			RequestType t = null;
+			try {
+				t = RequestType.valueOf((String) method);
+			} catch(IllegalArgumentException e) {
+				logger.debug("invalid request type: " + method);
+				return;
 			}
+			add((String) model, action, t, getUrl(url, path));
 		}
 	}
 
@@ -447,6 +438,36 @@ public class HttpPersistService implements PersistService {
 	public void retrieve(Model... models) throws SQLException {
 		for(Model model : models) {
 			retrieve(model);
+		}
+	}
+	
+	@Override
+	public void retrieve(Model model, String hasMany) throws SQLException {
+		if(model == null) {
+			// throw something?
+			return;
+		}
+		
+		Request request = getRequest(model, show, hasMany);
+		if(request == null) {
+			// throw something?
+			return;
+		}
+		
+		try {
+			Client client = Client.client(request.url);
+			client.setAccepts(JSON);
+			
+			String path = path(client.getPath(), model);
+			Map<String, String> params = getParams(model);
+			
+			ClientResponse response = client.syncRequest(request.type, path, params);
+			if(response.isSuccess()) {
+				model.put(hasMany, response.getBody());
+			}
+			System.out.println(response);
+		} catch(MalformedURLException e) {
+			throw new IllegalStateException("malformed URL should have been caught earlier!");
 		}
 	}
 

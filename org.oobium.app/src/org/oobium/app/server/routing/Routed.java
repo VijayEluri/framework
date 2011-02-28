@@ -27,11 +27,11 @@ public class Routed {
 	
 	Routed(Router router, Collection<Routed> routed) {
 		this.router = router;
-		this.routes = new Route[routed.size()];
 		List<Route> list = new ArrayList<Route>();
 		for(Routed r : routed) {
 			list.addAll(Arrays.asList(r.routes));
 		}
+		this.routes = list.toArray(new Route[list.size()]);
 	}
 	
 	public Routed publish() {

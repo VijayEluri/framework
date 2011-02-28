@@ -10,21 +10,25 @@
  ******************************************************************************/
 package org.oobium.build.model;
 
-import static org.oobium.utils.CharStreamUtils.*;
+import static org.oobium.utils.CharStreamUtils.closer;
+import static org.oobium.utils.CharStreamUtils.find;
+import static org.oobium.utils.CharStreamUtils.findAll;
+import static org.oobium.utils.CharStreamUtils.findEOL;
 import static org.oobium.utils.FileUtils.readFile;
 import static org.oobium.utils.StringUtils.controllerSimpleName;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.oobium.build.gen.model.PropertyDescriptor;
 import org.oobium.utils.json.JsonUtils;
 
 public class ModelDefinition {
@@ -175,9 +179,9 @@ public class ModelDefinition {
 
 	public final String packageName;
 	public final String type;
-	private final Map<String, ModelAttribute> attributes;
-	private final Map<String, ModelRelation> relations;
-	private final List<String> indexes;
+	public final Map<String, ModelAttribute> attributes;
+	public final Map<String, ModelRelation> relations;
+	public final List<String> indexes;
 	public final boolean datestamps;
 	public final boolean timestamps;
 	
@@ -198,18 +202,6 @@ public class ModelDefinition {
 		this.timestamps = attributes.containsKey("timestamps");
 	}
 
-	public Map<String, ModelAttribute> attributes() {
-		return attributes;
-	}
-	
-	public ModelAttribute getAttribute(String name) {
-		return attributes.get(name);
-	}
-	
-	public Collection<ModelAttribute> getAttributes() {
-		return attributes.values();
-	}
-	
 	public String getCanonicalName() {
 		return type;
 	}
@@ -230,12 +222,27 @@ public class ModelDefinition {
 		return type.substring(0, ix);
 	}
 	
-	public ModelRelation getRelation(String name) {
-		return relations.get(name);
-	}
-	
-	public Collection<ModelRelation> getRelations() {
-		return relations.values();
+	public LinkedHashMap<String, PropertyDescriptor> getProperties() {
+		LinkedHashMap<String, PropertyDescriptor> properties = new LinkedHashMap<String, PropertyDescriptor>();
+		for(Entry<String, ModelAttribute> entry : attributes.entrySet()) {
+			properties.put(entry.getKey(), new PropertyDescriptor(entry.getValue()));
+		}
+		for(Entry<String, ModelRelation> entry : relations.entrySet()) {
+			properties.put(entry.getKey(), new PropertyDescriptor(entry.getValue()));
+		}
+		if(properties.containsKey("createdAt")) {
+			properties.put("createdAt", properties.remove("createdAt"));
+		}
+		if(properties.containsKey("createdOn")) {
+			properties.put("createdOn", properties.remove("createdOn"));
+		}
+		if(properties.containsKey("updatedAt")) {
+			properties.put("updatedAt", properties.remove("updatedAt"));
+		}
+		if(properties.containsKey("updatedOn")) {
+			properties.put("updatedOn", properties.remove("updatedOn"));
+		}
+		return properties;
 	}
 
 	public String getSimpleType() {

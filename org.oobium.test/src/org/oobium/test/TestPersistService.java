@@ -121,6 +121,11 @@ public class TestPersistService implements PersistService {
 	}
 
 	@Override
+	public void retrieve(Model model, String hasMany) throws SQLException {
+		service.retrieve(model, hasMany);
+	}
+	
+	@Override
 	public void rollback() throws SQLException {
 		service.rollback();
 	}

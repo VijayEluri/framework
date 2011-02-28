@@ -12,7 +12,11 @@ import android.widget.TextView;
 import {modelPackage}.{modelName};
 import {projectPackage}.R;
 
+{imports}
+
 public class ShowNew{modelName} extends Activity {
+
+	{inits}
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -53,7 +57,12 @@ public class ShowNew{modelName} extends Activity {
 						intent.putExtra("id", {modelVar}.getId());
 						startActivity(intent);
 					} else {
-						// TODO
+						TextView status = (TextView) findViewById(R.id.status);
+						if({modelVar}.getErrorCount() == 1) {
+							status.setText("There was an error");
+						} else {
+							status.setText("There were " + {modelVar}.getErrorCount() + " errors");
+						}
 					}
 				} finally {
 					progress.dismiss();

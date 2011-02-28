@@ -52,7 +52,9 @@ public interface PersistService {
 
     public abstract void retrieve(Model...models) throws SQLException;
 
-	public abstract void update(Model...models) throws SQLException;
+    public abstract void retrieve(Model model, String hasMany) throws SQLException;
+
+    public abstract void update(Model...models) throws SQLException;
 
 	public abstract void destroy(Model...models) throws SQLException;
 	

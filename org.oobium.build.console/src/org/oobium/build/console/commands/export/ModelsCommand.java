@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.BuilderConsoleActivator;
-import org.oobium.build.gen.android.AndroidGenerator;
+import org.oobium.build.gen.android.ScaffoldingGenerator;
 import org.oobium.build.gen.android.GeneratorEvent;
 import org.oobium.build.gen.android.GeneratorListener;
 import org.oobium.build.workspace.AndroidApp;
@@ -87,7 +87,7 @@ public class ModelsCommand extends BuilderCommand {
 				if(target != null) {
 					String s = ask("create scaffolding? [Y/N] ");
 					if("Y".equalsIgnoreCase(s)) {
-						AndroidGenerator gen = new AndroidGenerator(app, target);
+						ScaffoldingGenerator gen = new ScaffoldingGenerator(app, target);
 						gen.setListener(new GeneratorListener() {
 							@Override
 							public void handleEvent(GeneratorEvent event) {

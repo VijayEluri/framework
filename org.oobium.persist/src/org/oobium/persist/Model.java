@@ -445,10 +445,11 @@ public abstract class Model implements JsonModel {
 						load();
 					} else if(hasMany(field)) {
 						try {
-							Model model = getPersistor().find(getClass(), "where id=? include:?", id, field);
-							if(model != null) {
-								set(field, model.get(field));
-							}
+							getPersistor().retrieve(this, field);
+//							Model model = getPersistor().find(getClass(), "where id=? include:?", id, field);
+//							if(model != null) {
+//								set(field, model.get(field));
+//							}
 						} catch(SQLException e) {
 							logger.warn("failed to load relation " + field + " in " + asSimpleString(), e);
 						}

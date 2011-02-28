@@ -110,6 +110,11 @@ public abstract class PersistAdapter implements PersistService {
 	}
 
 	@Override
+	public void retrieve(Model model, String hasMany) throws SQLException {
+		// subclasses to override if necessary
+	}
+	
+	@Override
 	public void rollback() throws SQLException {
 		// subclasses to override if necessary
 	}

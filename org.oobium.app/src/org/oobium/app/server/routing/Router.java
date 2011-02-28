@@ -52,6 +52,7 @@ import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.routing.routes.AssetRoute;
 import org.oobium.app.server.routing.routes.ControllerRoute;
 import org.oobium.app.server.routing.routes.DynamicAssetRoute;
+import org.oobium.app.server.routing.routes.HasManyRoute;
 import org.oobium.app.server.routing.routes.RedirectRoute;
 import org.oobium.app.server.routing.routes.ViewRoute;
 import org.oobium.app.server.view.DynamicAsset;
@@ -477,6 +478,27 @@ public class Router {
 		return route;
 	}
 	
+	ControllerRoute addRoute(String key, String rule, Class<? extends Model> parentClass, String hasManyField, Class<? extends Model> clazz, Action action) {
+		rule = checkRule(rule);
+		RequestType type;
+		switch(action) {
+		case create:	type = POST;	break;
+		case update:	type = PUT;		break;
+		case destroy:	type = DELETE;	break;
+		case show:		type = GET;		break;
+		case showAll:	type = GET;		break;
+		case showEdit:	type = GET;		break;
+		case showNew:	type = GET;		break;
+		default:
+			throw new IllegalArgumentException("unknown action: " + action);
+		}
+		Class<? extends Model> modelClass = Model.class.isAssignableFrom(clazz) ? clazz.asSubclass(Model.class) : null;
+		Class<? extends Controller> controllerClass = getControllerClass(clazz);
+		HasManyRoute route = new HasManyRoute(type, rule, parentClass, hasManyField, modelClass, controllerClass, action);
+		addRoute(key, route);
+		return route;
+	}
+	
 	/**
 	 * Add a route to be handled by the given controller's handleRequest method.
 	 * @param requestType the type of the request this route will handle
@@ -655,14 +677,24 @@ public class Router {
 		return paths;
 	}
 	
+	/**
+	 * Get a Map of all model routes that have been routed, published or not.
+	 * @return the Map of model routes
+	 */
 	public Map<String, Map<String, Map<String, String>>> getModelRouteMap() {
 		return getModelRouteMap(getRoutes());
 	}
-	
+
+	/**
+	 * Get a Map of all model routes that are routed by the provided Collection of routes.
+	 * @param routes the routes to check for models
+	 * @return the Map of model routes
+	 */
 	public Map<String, Map<String, Map<String, String>>> getModelRouteMap(Collection<Route> routes) {
 		Map<String, Map<String, Map<String, String>>> results = new TreeMap<String, Map<String, Map<String, String>>>();
 
 		for(Route route : routes) {
+			System.out.println(route);
 			if(route instanceof ControllerRoute) {
 				ControllerRoute cr = (ControllerRoute) route;
 				Class<?> c = cr.modelClass;
@@ -684,6 +716,30 @@ public class Router {
 						results.put(name, model);
 					}
 					model.put(a.name(), map);
+				}
+			}
+			if(route instanceof HasManyRoute) { // add both (ControllerRoute and HasManyRoute)
+				HasManyRoute hmr = (HasManyRoute) route;
+				Class<?> c = hmr.parentClass;
+				String f = hmr.hasManyField;
+				Action a = hmr.action;
+				if(c != null && a != null) {
+					Map<String, String> map = new LinkedHashMap<String, String>();
+					map.put("method", route.requestType.name());
+					if(route.isFixed()) {
+						map.put("path", route.path);
+						map.put("fixed", "true");
+					} else {
+						map.put("path", route.rule);
+					}
+
+					String name = c.getName();
+					Map<String, Map<String, String>> model = results.get(name);
+					if(model == null) {
+						model = new TreeMap<String, Map<String, String>>();
+						results.put(name, model);
+					}
+					model.put(a.name() + ":" + f, map);
 				}
 			}
 		}

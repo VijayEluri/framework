@@ -9,15 +9,17 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 
 import {modelPackage}.{modelName};
 import {projectPackage}.R;
 
+{imports}
+
 public class ShowEdit{modelName} extends Activity {
 
 	private int id;
+	{inits}
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -111,7 +113,12 @@ public class ShowEdit{modelName} extends Activity {
 						intent.putExtra("id", {modelVar}.getId());
 						startActivity(intent);
 					} else {
-						// TODO
+						TextView status = (TextView) findViewById(R.id.status);
+						if({modelVar}.getErrorCount() == 1) {
+							status.setText("There was an error");
+						} else {
+							status.setText("There were " + {modelVar}.getErrorCount() + " errors");
+						}
 					}
 				} finally {
 					progress.dismiss();

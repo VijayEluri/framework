@@ -336,6 +336,16 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	public void retrieve(Model...models) throws SQLException {
 		handleCrud(RETRIEVE, models);
 	}
+	
+	@Override
+	public void retrieve(Model model, String hasMany) throws SQLException {
+		// TODO hack: re-implement directly in DbPersistor
+		Connection connection = getConnection();
+		Model tmp = persistor.find(connection, model.getClass(), "where id=? include:?", model.getId(), hasMany);
+		if(tmp != null) {
+			model.put(hasMany, model.get(hasMany));
+		}
+	}
 
 	public void start(BundleContext context) throws Exception {
 		this.context = context;

@@ -101,7 +101,7 @@ public class DbGenerator {
 		}
 
 		for(ModelDefinition model : models) {
-			for(ModelRelation relation : model.getRelations()) {
+			for(ModelRelation relation : model.relations.values()) {
 				if(relation.hasMany && !relation.isThrough()) {
 					ModelRelation oppositeRelation = relation.getOpposite();
 					if(oppositeRelation == null || oppositeRelation.hasMany) {
