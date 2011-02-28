@@ -111,6 +111,32 @@ public class MemoryPersistService implements PersistService {
 	
 	@Override
 	public <T extends Model> T find(Class<T> clazz, String where, Object... values) throws SQLException {
+		if(where != null && where.startsWith("where ")) {
+			Map<String, Object> params = new HashMap<String, Object>();
+			String[] sa1 = where.substring(6).split("\\s+[aA][nN][dD]\\s+");
+			int i = 0;
+			for(String s : sa1) {
+				String[] sa2 = s.trim().split("\\s*=\\s*", 2);
+				Object value = "?".equals(sa2[1]) ? values[i++] : JsonUtils.toObject(sa2[1]);
+				params.put(sa2[0].trim(), value);
+			}
+
+			for(Map<String, Object> map : models.values()) {
+				if(map.get("class") == clazz) {
+					boolean match = true;
+					for(Entry<String, Object> entry : params.entrySet()) {
+						if(!entry.getValue().equals(map.get(entry.getKey()))) {
+							match = false;
+							break;
+						}
+					}
+					if(match) {
+						return coerce(map, clazz);
+					}
+				}
+			}
+			return null;
+		}
 		throw new SQLException(msg);
 	}
 
@@ -197,6 +223,11 @@ public class MemoryPersistService implements PersistService {
 				model.putAll(map);
 			}
 		}
+	}
+	
+	@Override
+	public void retrieve(Model model, String hasMany) throws SQLException {
+		throw new UnsupportedOperationException("not yet implemented");
 	}
 
 	@Override

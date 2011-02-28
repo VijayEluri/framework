@@ -209,6 +209,11 @@ public class SimplePersistService implements PersistService {
 			retrieve(model);
 		}
 	}
+	
+	@Override
+	public void retrieve(Model model, String hasMany) throws SQLException {
+		throw new UnsupportedOperationException("not yet implemented");
+	}
 
 	@Override
 	public void rollback() throws SQLException {
