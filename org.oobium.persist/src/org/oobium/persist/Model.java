@@ -1216,7 +1216,7 @@ public abstract class Model implements JsonModel {
 			if(Model.class.isAssignableFrom(type)) {
 				String opposite = getOpposite(field);
 				if(getAdapter(type.asSubclass(Model.class)).hasMany(opposite)) {
-					Model oldModel = (Model) (fields.containsKey(field) ? fields.get(field) : null);
+					Model oldModel = (Model) coerce(fields.get(field), type);
 					if(oldModel != null) {
 						Object o = oldModel.get(opposite);
 						if(o instanceof ActiveSet<?>) {
