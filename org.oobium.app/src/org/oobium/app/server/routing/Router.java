@@ -695,30 +695,7 @@ public class Router {
 
 		for(Route route : routes) {
 			System.out.println(route);
-			if(route instanceof ControllerRoute) {
-				ControllerRoute cr = (ControllerRoute) route;
-				Class<?> c = cr.modelClass;
-				Action a = cr.action;
-				if(c != null && a != null) {
-					Map<String, String> map = new LinkedHashMap<String, String>();
-					map.put("method", route.requestType.name());
-					if(route.isFixed()) {
-						map.put("path", route.path);
-						map.put("fixed", "true");
-					} else {
-						map.put("path", route.rule);
-					}
-
-					String name = c.getName();
-					Map<String, Map<String, String>> model = results.get(name);
-					if(model == null) {
-						model = new TreeMap<String, Map<String, String>>();
-						results.put(name, model);
-					}
-					model.put(a.name(), map);
-				}
-			}
-			if(route instanceof HasManyRoute) { // add both (ControllerRoute and HasManyRoute)
+			if(route instanceof HasManyRoute) {
 				HasManyRoute hmr = (HasManyRoute) route;
 				Class<?> c = hmr.parentClass;
 				String f = hmr.hasManyField;
@@ -740,6 +717,28 @@ public class Router {
 						results.put(name, model);
 					}
 					model.put(a.name() + ":" + f, map);
+				}
+			} else if(route instanceof ControllerRoute) {
+				ControllerRoute cr = (ControllerRoute) route;
+				Class<?> c = cr.modelClass;
+				Action a = cr.action;
+				if(c != null && a != null) {
+					Map<String, String> map = new LinkedHashMap<String, String>();
+					map.put("method", route.requestType.name());
+					if(route.isFixed()) {
+						map.put("path", route.path);
+						map.put("fixed", "true");
+					} else {
+						map.put("path", route.rule);
+					}
+
+					String name = c.getName();
+					Map<String, Map<String, String>> model = results.get(name);
+					if(model == null) {
+						model = new TreeMap<String, Map<String, String>>();
+						results.put(name, model);
+					}
+					model.put(a.name(), map);
 				}
 			}
 		}

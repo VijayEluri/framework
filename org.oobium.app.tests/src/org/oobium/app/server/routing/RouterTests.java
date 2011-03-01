@@ -1049,7 +1049,7 @@ public class RouterTests {
 	@Test
 	public void testAddModelRoutes_AddShowAll() throws Exception {
 		router.addResources(Account.class);
-		router.addResource("{models}/{type:\\w+}", Account.class, showAll);
+		router.addResource("{models}/{type:\\w+}", Account.class, showAll); // the last one added is the one used
 		assertEquals(8, router.getRoutes().size());
 		assertEquals("[GET] /accounts -> AccountController#showAll", 					router.getRoutes().get(0).toString());
 		assertEquals("[GET] /accounts/new -> AccountController#showNew", 				router.getRoutes().get(1).toString());
@@ -1058,6 +1058,7 @@ public class RouterTests {
 		assertEquals("[DELETE] /accounts/(\\d+) -> AccountController#destroy(id)", 		router.getRoutes().get(4).toString());
 		assertEquals("[GET] /accounts/(\\d+) -> AccountController#show(id)", 			router.getRoutes().get(5).toString());
 		assertEquals("[GET] /accounts/(\\d+)/edit -> AccountController#showEdit(id)", 	router.getRoutes().get(6).toString());
+		assertEquals("[GET] /accounts/(\\w+) -> AccountController#showAll(type)",		router.getRoutes().get(7).toString());
 		assertEquals("/accounts", router.pathTo(Account.class, create));
 		assertEquals("/accounts", router.pathTo(Account.class, showAll));
 		assertEquals("/accounts/new", router.pathTo(Account.class, showNew));
@@ -2439,9 +2440,9 @@ public class RouterTests {
 	public void testRouteStyleSheet() throws Exception {
 		router.addAsset(AccountStyles.class);
 		assertEquals(1, router.getRoutes().size());
-		assertEquals("[GET] /org/oobium/app/server/routes/router_tests/account_styles.css -> AccountStyles", router.getRoutes().get(0).toString());
+		assertEquals("[GET] /org/oobium/app/server/routing/router_tests/account_styles.css -> AccountStyles", router.getRoutes().get(0).toString());
 
-		RouteHandler handler = router.getHandler(request("[GET] /org/oobium/app/server/routes/router_tests/account_styles.css"));
+		RouteHandler handler = router.getHandler(request("[GET] /org/oobium/app/server/routing/router_tests/account_styles.css"));
 		assertNotNull(handler);
 		assertEquals(DynamicAssetHandler.class, handler.getClass());
 		DynamicAssetHandler dah = (DynamicAssetHandler) handler;
@@ -2453,9 +2454,9 @@ public class RouterTests {
 	public void testRouteScriptFile() throws Exception {
 		router.addAsset(AccountScripts.class);
 		assertEquals(1, router.getRoutes().size());
-		assertEquals("[GET] /org/oobium/app/server/routes/router_tests/account_scripts.js -> AccountScripts", router.getRoutes().get(0).toString());
+		assertEquals("[GET] /org/oobium/app/server/routing/router_tests/account_scripts.js -> AccountScripts", router.getRoutes().get(0).toString());
 
-		RouteHandler handler = router.getHandler(request("[GET] /org/oobium/app/server/routes/router_tests/account_scripts.js"));
+		RouteHandler handler = router.getHandler(request("[GET] /org/oobium/app/server/routing/router_tests/account_scripts.js"));
 		assertNotNull(handler);
 		assertEquals(DynamicAssetHandler.class, handler.getClass());
 		DynamicAssetHandler dah = (DynamicAssetHandler) handler;
@@ -2481,10 +2482,22 @@ public class RouterTests {
 	public void testGetModelRouteMap_WithNestedRoutes() throws Exception {
 		router.addResources(Account.class).hasMany("categories").publish();
 		Map<String, Map<String, Map<String, String>>> map = router.getModelRouteMap();
+		assertEquals(1, map.size());
+		assertEquals(10, map.get(Account.class.getName()).size());
+
+		Set<Route> routes = router.published;
+		System.out.println(routes);
+	}
+
+	@Test
+	public void testGetModelRouteMap_WithNestedRoutes1() throws Exception {
+		router.addResources(Category.class);
+		router.addResources(Account.class).hasMany("categories").publish();
+		Map<String, Map<String, Map<String, String>>> map = router.getModelRouteMap();
 		assertEquals(2, map.size());
 		assertEquals(10, map.get(Account.class.getName()).size());
-		assertEquals(3, map.get(Category.class.getName()).size());
-
+		assertEquals(7, map.get(Category.class.getName()).size());
+		
 		Set<Route> routes = router.published;
 		System.out.println(routes);
 	}
