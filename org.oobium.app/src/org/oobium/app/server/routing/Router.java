@@ -694,7 +694,6 @@ public class Router {
 		Map<String, Map<String, Map<String, String>>> results = new TreeMap<String, Map<String, Map<String, String>>>();
 
 		for(Route route : routes) {
-			System.out.println(route);
 			if(route instanceof HasManyRoute) {
 				HasManyRoute hmr = (HasManyRoute) route;
 				Class<?> c = hmr.parentClass;
