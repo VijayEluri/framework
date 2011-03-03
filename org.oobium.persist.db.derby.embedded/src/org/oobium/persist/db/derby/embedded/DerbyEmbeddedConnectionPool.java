@@ -32,7 +32,6 @@ public class DerbyEmbeddedConnectionPool extends ConnectionPool {
 			database = new File(System.getProperty("user.dir"), (String) o);
 		}
 		String path = database.getCanonicalPath();
-		System.out.println("db: " + path);
 		return path;
 	}
 	
