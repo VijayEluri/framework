@@ -12,3 +12,4 @@ Import-Package: org.oobium.client,
  org.oobium.utils,
  org.oobium.utils.coercion,
  org.oobium.utils.json
+Export-Package: org.oobium.persist.http

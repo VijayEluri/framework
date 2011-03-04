@@ -1,19 +1,27 @@
 package org.oobium.persist.http;
 
-import static org.oobium.persist.http.PathBuilder.path;
+import static org.oobium.utils.json.JsonUtils.*;
+import static org.oobium.persist.http.Cache.*;
+
+import static org.oobium.http.constants.Action.create;
+import static org.oobium.http.constants.Action.destroy;
+import static org.oobium.http.constants.Action.show;
+import static org.oobium.http.constants.Action.showAll;
+import static org.oobium.http.constants.Action.update;
 import static org.oobium.http.constants.ContentType.JSON;
-import static org.oobium.http.constants.Action.*;
+import static org.oobium.persist.http.PathBuilder.path;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.getResourceAsString;
-import static org.oobium.utils.StringUtils.*;
+import static org.oobium.utils.StringUtils.varName;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
-import static org.oobium.utils.literal.*;
-import static org.oobium.utils.json.JsonUtils.*;
+import static org.oobium.utils.literal.e;
+import static org.oobium.utils.literal.Map;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +44,7 @@ public class HttpPersistService implements PersistService {
 	private class Request {
 		RequestType type;
 		String url;
+		String path;
 	}
 
 	
@@ -43,16 +52,18 @@ public class HttpPersistService implements PersistService {
 	
 	
 	private final Logger logger;
+	private String discoveryUrl;
 	private Map<String, Request> requests;
-	
+
 	public HttpPersistService() {
 		this.logger = LogProvider.getLogger(HttpPersistService.class);
 	}
-
-	private void add(String model, String action, RequestType type, String url) {
+	
+	private void add(String model, String action, RequestType type, String url, String path) {
 		Request request = new Request();
 		request.type = type;
 		request.url = url;
+		request.path = path;
 		
 		if(requests == null) {
 			requests = new HashMap<String, Request>();
@@ -63,12 +74,12 @@ public class HttpPersistService implements PersistService {
 			logger.debug("added request: " + key(model, action) + " -> " + type + " " + url);
 		}
 	}
-	
+
 	@Override
 	public void closeSession() {
-		throw new UnsupportedOperationException();
+		expireCache();
 	}
-
+	
 	@Override
 	public void commit() throws SQLException {
 		throw new UnsupportedOperationException();
@@ -80,61 +91,66 @@ public class HttpPersistService implements PersistService {
 		throw new UnsupportedOperationException("not yet implemented");
 	}
 	
-	private void create(Model model) {
+	private void create(Model model) throws SQLException {
 		if(model == null) {
-			// throw something?
-			return;
+			throw new SQLException("cannot create null model");
 		}
 		
 		Request request = getRequest(model, create);
 		if(request == null) {
-			// throw something?
-			return;
+			throw new SQLException("no published route found for " + model.getClass() + ": create");
 		}
 		
 		try {
 			Client client = Client.client(request.url);
 			client.setAccepts(JSON);
 
-			String path = path(client.getPath(), model);
+			String path = path(request.path, model);
 			Map<String, String> params = getParams(model);
 			
 			ClientResponse response = client.syncRequest(request.type, path, params);
 			if(response.isSuccess()) {
-				model.setId(coerce(response.getHeader(Header.ID.key()), int.class));
+				int id = coerce(response.getHeader(Header.ID.key()), int.class);
+				model.setId(id);
+				setCache(model);
 			}
 		} catch(MalformedURLException e) {
 			throw new IllegalStateException("malformed URL should have been caught earlier!");
 		}
 	}
-	
+
 	@Override
 	public void create(Model... models) throws SQLException {
 		for(Model model : models) {
 			create(model);
 		}
 	}
-
-	private void destroy(Model model) {
+	
+	private void destroy(Model model) throws SQLException {
 		if(model == null) {
-			// throw something?
-			return;
+			throw new SQLException("cannot destroy null model");
 		}
 		
 		Request request = getRequest(model, destroy);
 		if(request == null) {
-			// throw something?
-			return;
+			throw new SQLException("no published route found for " + model.getClass() + ": destroy");
 		}
 		
+		Model cache = getCache(model.getClass(), model.getId());
+
 		try {
 			Client client = Client.client(request.url);
 			client.setAccepts(JSON);
 			
-			String path = path(client.getPath(), model);
+			String path = path(request.path, model);
 			
 			ClientResponse response = client.syncRequest(request.type, path);
-			System.out.println(response);
+			if(response.isSuccess()) {
+				if(cache != null && cache != model) {
+					cache.setId(0);
+					cache.clear();
+				}
+			}
 		} catch(MalformedURLException e) {
 			throw new IllegalStateException("malformed URL should have been caught earlier!");
 		}
@@ -181,7 +197,7 @@ public class HttpPersistService implements PersistService {
 		}
 
 		if(logger.isLoggingDebug()) {
-			logger.debug("discovery was not successful at " + getUrl(u, path));
+			logger.debug("discovery was not successful at " + getUrl(u) + "/" + path);
 		}
 		return null;
 	}
@@ -191,19 +207,19 @@ public class HttpPersistService implements PersistService {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException("not yet implemented");
 	}
-	
+
 	@Override
 	public List<List<Object>> executeQueryLists(String sql, Object... values) throws SQLException {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException("not yet implemented");
 	}
-
+	
 	@Override
 	public Object executeQueryValue(String sql, Object... values) throws SQLException {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException("not yet implemented");
 	}
-	
+
 	@Override
 	public int executeUpdate(String sql, Object... values) throws SQLException {
 		// TODO Auto-generated method stub
@@ -218,26 +234,30 @@ public class HttpPersistService implements PersistService {
 	@Override
 	public <T extends Model> T find(Class<T> clazz, int id) throws SQLException {
 		if(clazz == null) {
-			// throw something?
-			return null;
+			throw new SQLException("cannot find null class with id: " + id);
+		}
+		
+		T model = getCache(clazz, id);
+		if(model != null) {
+			return model;
 		}
 		
 		Request request = getRequest(clazz, show);
 		if(request == null) {
-			// throw something?
-			return null;
+			throw new SQLException("no published route found for " + clazz + ": show");
 		}
 		
 		try {
 			Client client = Client.client(request.url);
 			client.setAccepts(JSON);
 
-			T model = coerce(id, clazz);
-			String path = path(client.getPath(), model);
+			model = coerce(id, clazz);
+			String path = path(request.path, model);
 			
 			ClientResponse response = client.syncRequest(request.type, path);
 			if(response.isSuccess()) {
 				model.putAll(response.getBody());
+				setCache(model);
 				return model;
 			} else {
 				return null;
@@ -249,14 +269,37 @@ public class HttpPersistService implements PersistService {
 
 	@Override
 	public <T extends Model> T find(Class<T> clazz, String where, Object... values) throws SQLException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("not yet implemented");
+		if(clazz == null) {
+			throw new IllegalArgumentException("cannot findAll: null class, where: " + where);
+		}
+		
+		String query = toJson(Map(e("where", where), e("values", values)));
+
+		List<T> models = getCache(clazz, query);
+		if(models != null) {
+			if(models.isEmpty()) {
+				return null;
+			} else {
+				return models.get(0);
+			}
+		}
+		
+		throw new SQLException("not yet implemented");
 	}
 
 	@Override
 	public <T extends Model> List<T> findAll(Class<T> clazz) throws SQLException {
 		if(clazz == null) {
-			throw new IllegalArgumentException("clazz cannot be null");
+			throw new IllegalArgumentException("cannot findAll: null class");
+		}
+		
+		List<T> models = getCache(clazz, "findAll");
+		if(models != null) {
+			if(models.isEmpty()) {
+				return null;
+			} else {
+				return models;
+			}
 		}
 		
 		Request request = getRequest(clazz, showAll);
@@ -268,14 +311,16 @@ public class HttpPersistService implements PersistService {
 			Client client = Client.client(request.url);
 			client.setAccepts(JSON);
 
-			String path = path(client.getPath(), clazz);
+			String path = path(request.path, clazz);
 			
 			ClientResponse response = client.syncRequest(request.type, path);
 			if(response.isSuccess()) {
 				List<Object> list = toList(response.getBody());
-				List<T> models = new ArrayList<T>();
+				models = new ArrayList<T>();
 				for(Object o : list) {
-					models.add(coerce(o, clazz));
+					T model = coerce(o, clazz);
+					setCache(clazz, "findAll", models);
+					models.add(model);
 				}
 				return models;
 			} else {
@@ -291,10 +336,25 @@ public class HttpPersistService implements PersistService {
 
 	@Override
 	public <T extends Model> List<T> findAll(Class<T> clazz, String where, Object... values) throws SQLException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("not yet implemented");
-	}
+		if(clazz == null) {
+			throw new IllegalArgumentException("cannot findAll: null class, where: " + where);
+		}
+		
+		String query = toJson(Map(e("where", where), e("values", values)));
 
+		List<T> models = getCache(clazz, query);
+		if(models != null) {
+			if(models.isEmpty()) {
+				return null;
+			} else {
+				return models;
+			}
+		}
+
+		// TODO Auto-generated method stub
+		throw new SQLException("not yet implemented");
+	}
+	
 	private String getDiscoveryLocation(Client client) {
 		ClientResponse response = client.get();
 		if(response.isSuccess()) {
@@ -303,6 +363,35 @@ public class HttpPersistService implements PersistService {
 		return null;
 	}
 	
+	/**
+	 * Get the discovery URLs from the following locations:
+	 * <ul>
+	 *  <li>System Property: {@value #DISCOVERY_URL}</li>
+	 *  <li>Local Resource: "/oobium.server"</li>
+	 *  <li>Local Variable: {@link #discoveryUrl}</li>
+	 * </ul>
+	 * Each location found will be added to the returned array;
+	 * each location can also be a comma separated list of locations.
+	 * @return the URLs to search for models
+	 * @see #setDiscoveryUrl(String)
+	 */
+	private String[] getDiscoveryUrl() {
+		List<String> urls = new ArrayList<String>();
+		String s = System.getProperty(DISCOVERY_URL);
+		if(s != null) {
+			urls.addAll(Arrays.asList(s.split("\\s*,\\s*")));
+		}
+		s = getResourceAsString(getClass(), "/oobium.server");
+		if(s != null) {
+			urls.addAll(Arrays.asList(s.split("\\s*,\\s*")));
+		}
+		s = discoveryUrl;
+		if(s != null) {
+			urls.addAll(Arrays.asList(s.split("\\s*,\\s*")));
+		}
+		return urls.toArray(new String[urls.size()]);
+	}
+
 	@Override
 	public ServiceInfo getInfo() {
 		// TODO Auto-generated method stub
@@ -324,11 +413,11 @@ public class HttpPersistService implements PersistService {
 		}
 		return params;
 	}
-
+	
 	private Request getRequest(Class<?> clazz, Action action) {
 		return getRequest(clazz, action.name());
 	}
-	
+
 	private Request getRequest(Class<?> clazz, String action) {
 		if(requests == null) {
 			for(String url : getDiscoveryUrl()) {
@@ -347,28 +436,17 @@ public class HttpPersistService implements PersistService {
 			return requests.get(key(clazz, action));
 		}
 	}
-	
+
 	private Request getRequest(Model model, Action action) {
 		return getRequest(model.getClass(), action);
 	}
-
+	
 	private Request getRequest(Model model, Action action, String hasMany) {
 		return getRequest(model.getClass(), action.name() + ":" + hasMany);
 	}
-
-	private String[] getDiscoveryUrl() {
-		String s = getResourceAsString(getClass(), "/oobium.server");
-		if(s == null) {
-			s = System.getProperty(DISCOVERY_URL);
-		}
-		if(s != null) {
-			return s.split("\\s*,\\s*");
-		}
-		return new String[0];
-	}
-
-	private String getUrl(URL base, Object path) {
-		return base.getProtocol() + "://" + base.getHost() + ":" + base.getPort() + path;
+	
+	private String getUrl(URL base) {
+		return base.getProtocol() + "://" + base.getHost() + ":" + base.getPort();
 	}
 
 	@Override
@@ -385,7 +463,6 @@ public class HttpPersistService implements PersistService {
 	}
 
 	private void load(URL url, String model, String action, Map<?,?> map) {
-//		model = simpleName(model);
 		Object method = map.get("method");
 		Object path = map.get("path");
 		if(method instanceof String && path instanceof String) {
@@ -396,81 +473,99 @@ public class HttpPersistService implements PersistService {
 				logger.debug("invalid request type: " + method);
 				return;
 			}
-			add((String) model, action, t, getUrl(url, path));
+			add((String) model, action, t, getUrl(url), (String) path);
 		}
 	}
 
 	@Override
 	public void openSession(String name) {
-		throw new UnsupportedOperationException();
+		expireCache();
 	}
-	
-	private void retrieve(Model model) {
+
+	// always run the query (this is a reload request), but update the cache with the result
+	private void retrieve(Model model) throws SQLException{
 		if(model == null) {
-			// throw something?
-			return;
+			throw new SQLException("cannot retrieve null model");
 		}
 		
 		Request request = getRequest(model, show);
 		if(request == null) {
-			// throw something?
-			return;
+			throw new SQLException("no published route found for " + model.getClass() + ": show");
 		}
 		
 		try {
 			Client client = Client.client(request.url);
 			client.setAccepts(JSON);
 			
-			String path = path(client.getPath(), model);
-			Map<String, String> params = getParams(model);
+			String path = path(request.path, model);
 			
-			ClientResponse response = client.syncRequest(request.type, path, params);
+			ClientResponse response = client.syncRequest(request.type, path);
 			if(response.isSuccess()) {
 				model.putAll(response.getBody());
+				Model cache = getCache(model.getClass(), model.getId());
+				if(cache == null) {
+					setCache(model);
+				} else if(cache != model) {
+					cache.putAll(model);
+					model.putAll(cache);
+				}
 			}
-			System.out.println(response);
 		} catch(MalformedURLException e) {
 			throw new IllegalStateException("malformed URL should have been caught earlier!");
 		}
 	}
-
+	
 	@Override
 	public void retrieve(Model... models) throws SQLException {
 		for(Model model : models) {
 			retrieve(model);
 		}
 	}
-	
+
 	@Override
-	public void retrieve(Model model, String hasMany) throws SQLException {
+	public void retrieve(Model model, String field) throws SQLException {
 		if(model == null) {
-			// throw something?
-			return;
+			throw new SQLException("cannot retrieve null model:" + field);
 		}
 		
-		Request request = getRequest(model, show, hasMany);
+		Request request = getRequest(model, showAll, field);
 		if(request == null) {
-			// throw something?
-			return;
+			throw new SQLException("no published route found for " + model.getClass() + ": showAll:" + field);
 		}
 		
 		try {
 			Client client = Client.client(request.url);
 			client.setAccepts(JSON);
 			
-			String path = path(client.getPath(), model);
-			Map<String, String> params = getParams(model);
+			String path = path(request.path, model, field);
 			
-			ClientResponse response = client.syncRequest(request.type, path, params);
+			ClientResponse response = client.syncRequest(request.type, path);
 			if(response.isSuccess()) {
-				model.put(hasMany, response.getBody());
+				ModelAdapter adapter = ModelAdapter.getAdapter(model);
+				Class<? extends Model> type = adapter.getHasManyMemberClass(field);
+				
+				Object o = toObject(response.getBody());
+				if(o instanceof List) {
+					List<Object> list = new ArrayList<Object>();
+					for(Object e : (List<?>) o) {
+						Model m = coerce(e, type);
+						Model cache = getCache(type, m.getId());
+						if(cache == null) {
+							setCache(m);
+						} else {
+							cache.putAll(model);
+							model.putAll(cache);
+						}
+						list.add(m);
+					}
+					model.put(field, list);
+				}
 			}
-			System.out.println(response);
 		} catch(MalformedURLException e) {
 			throw new IllegalStateException("malformed URL should have been caught earlier!");
 		}
 	}
-
+	
 	@Override
 	public void rollback() throws SQLException {
 		throw new UnsupportedOperationException();
@@ -480,28 +575,38 @@ public class HttpPersistService implements PersistService {
 	public void setAutoCommit(boolean autoCommit) throws SQLException {
 		throw new UnsupportedOperationException();
 	}
+
+	public void setDiscoveryUrl(String url) {
+		this.discoveryUrl = url;
+	}
 	
-	private void update(Model model) {
+	private void update(Model model) throws SQLException {
 		if(model == null) {
-			// throw something?
-			return;
+			throw new SQLException("cannot update null model");
 		}
 		
 		Request request = getRequest(model, update);
 		if(request == null) {
-			// throw something?
-			return;
+			throw new SQLException("no published route found for " + model.getClass() + ": update");
 		}
 		
 		try {
 			Client client = Client.client(request.url);
 			client.setAccepts(JSON);
 			
-			String path = path(client.getPath(), model);
+			String path = path(request.path, model);
 			Map<String, String> params = getParams(model);
 			
 			ClientResponse response = client.syncRequest(request.type, path, params);
-			System.out.println(response);
+			if(response.isSuccess()) {
+				Model cache = getCache(model.getClass(), model.getId());
+				if(cache == null) {
+					setCache(model);
+				} else if(cache != model) {
+					cache.putAll(model);
+					model.putAll(cache);
+				}
+			}
 		} catch(MalformedURLException e) {
 			throw new IllegalStateException("malformed URL should have been caught earlier!");
 		}

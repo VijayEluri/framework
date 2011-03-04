@@ -186,7 +186,7 @@ public @interface Relation {
 	 * The class type that this relation points to
 	 * @return class
 	 */
-	Class<?> type();
+	Class<? extends Model> type();
 	
 	/**
 	 * <p>

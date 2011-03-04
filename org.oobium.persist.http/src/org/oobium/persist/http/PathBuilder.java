@@ -1,15 +1,19 @@
 package org.oobium.persist.http;
 
+import static org.oobium.persist.ModelAdapter.getAdapter;
 import static org.oobium.utils.CharStreamUtils.*;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.encode;
 import static org.oobium.utils.StringUtils.tableName;
+import static org.oobium.utils.StringUtils.varName;
 
 import java.util.regex.Pattern;
 
 import org.oobium.persist.Model;
 
 public class PathBuilder {
+
+	public static final String UNKNOWN_PATH = "/#";
 
 	private static String getValue(Model model, char[] ca, int s1, int s2) {
 		int ix = findAny(ca, s1, s2, ':', '=');
@@ -30,6 +34,37 @@ public class PathBuilder {
 		}
 	}
 	
+	private static String getValue(Model parent, String field, char[] ca, int s1, int s2) {
+		int ix = findAny(ca, s1, s2, ':', '=');
+		if(ix == -1) ix = s2;
+		if(ix < s2 && ca[ix] == '=') {
+			String param = new String(ca, ix+1, s2-ix-1).trim();
+			return param;
+		} else if(isEqual(ca, s1, ix, 'm','o','d','e','l','s')) {
+			return tableName(getAdapter(parent.getClass()).getRelationClass(field));
+		} else {
+			String param = new String(ca, s1, ix-s1).trim();
+			Object value;
+			int ix2 = find(ca, '[', s1, ix);
+			if(ix2 == -1) {
+				throw new IllegalArgumentException("not a valid variable: " + param);
+			} else {
+				String cname = new String(ca, s1, ix2-s1);
+				if(cname.equals(varName(parent.getClass()))) {
+					String f = new String(ca, ix2+1, ix-ix2-2);
+					value = parent.get(f);
+				} else {
+					throw new IllegalArgumentException("not a valid variable: " + param);
+				}
+			}
+			if(value instanceof Model) {
+				return String.valueOf(((Model) value).getId());
+			} else {
+				return String.valueOf(value);
+			}
+		}
+	}
+
 	public static String path(String path, Class<?> clazz) {
 		return pathToClass(path, clazz);
 	}
@@ -38,6 +73,10 @@ public class PathBuilder {
 		return pathToModel(path, model);
 	}
 
+	public static String path(String path, Model model, String field) {
+		return pathToHasMany(path, model, field);
+	}
+	
 	private static String pathToClass(String path, Class<?> clazz, Object...params) {
 		StringBuilder sb = new StringBuilder(path.length() + 20);
 		char[] ca = path.toCharArray();
@@ -97,6 +136,48 @@ public class PathBuilder {
 				}
 			}
 			
+			s0 = s2 + 1;
+			s1 = find(ca, '{', s0);
+		}
+		if(s0 < ca.length) {
+			sb.append(ca, s0, ca.length-s0);
+		}
+		if(sb.charAt(sb.length()-1) == '?') {
+			sb.deleteCharAt(sb.length()-1);
+		}
+		return sb.toString();
+	}
+
+	private static String pathToHasMany(String path, Model parent, String field) {
+		if(path == null) {
+			return UNKNOWN_PATH;
+		}
+		
+		StringBuilder sb = new StringBuilder(path.length() + 20);
+		char[] ca = path.toCharArray();
+		int pix = find(ca, '?');
+		if(pix == -1) pix = ca.length;
+		int s0 = 0;
+		int s1 = find(ca, '{');
+		while(s1 != -1) {
+			sb.append(ca, s0, s1-s0);
+			int s2 = closer(ca, s1);
+			s1++;
+			if(s1 < pix) {
+				sb.append(getValue(parent, field, ca, s1, s2));
+			} else { // in parameter section
+				int ix = find(ca, ':', s1, s2);
+				if(ix != -1) {
+					String f = new String(ca, s1, ix-s1).trim();
+					Object value = parent.get(f);
+					sb.append(f).append('=');
+					if(!blank(value)) sb.append(encode(value.toString()));
+				} else {
+					if(find(ca, '=', s1, s2) == -1) {
+						sb.append(getValue(parent, field, ca, s1, s2));
+					}
+				}
+			}
 			s0 = s2 + 1;
 			s1 = find(ca, '{', s0);
 		}

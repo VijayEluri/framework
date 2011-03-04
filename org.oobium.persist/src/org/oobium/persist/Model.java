@@ -426,19 +426,6 @@ public abstract class Model implements JsonModel {
 					return set(field, value, type);
 				}
 			} else {
-				if(hasMany(field)) {
-					Set<?> set;
-					if(isThrough(field)) {
-						set = new LinkedHashSet<Model>();
-					} else if(isManyToNone(field)) {
-						set = new LinkedHashSet<Model>();
-					} else if(isOppositeRequired(field)) {
-						set = new RequiredSet<Model>(this, field, getOpposite(field));
-					} else {
-						set = new ActiveSet<Model>(this, field, getOpposite(field), isManyToMany(field));
-					}
-					fields.put(field, set);
-				}
 				if(load && !isNew()) {
 					if(hasContained(field)) {
 						// TODO include the requested field if it is a hasOne...?
@@ -446,16 +433,27 @@ public abstract class Model implements JsonModel {
 					} else if(hasMany(field)) {
 						try {
 							getPersistor().retrieve(this, field);
-//							Model model = getPersistor().find(getClass(), "where id=? include:?", id, field);
-//							if(model != null) {
-//								set(field, model.get(field));
-//							}
 						} catch(SQLException e) {
 							logger.warn("failed to load relation " + field + " in " + asSimpleString(), e);
 						}
 					}
+					return get(field, false); // exit through the if(fields.containsKey(field)) block above
+				} else {
+					if(hasMany(field)) {
+						Set<?> set;
+						if(isThrough(field)) {
+							set = new LinkedHashSet<Model>();
+						} else if(isManyToNone(field)) {
+							set = new LinkedHashSet<Model>();
+						} else if(isOppositeRequired(field)) {
+							set = new RequiredSet<Model>(this, field, getOpposite(field));
+						} else {
+							set = new ActiveSet<Model>(this, field, getOpposite(field), isManyToMany(field));
+						}
+						fields.put(field, set);
+					}
+					return fields.get(field);
 				}
-				return fields.get(field);
 			}
 		}
 	}

@@ -120,7 +120,7 @@ public class ScaffoldingGenerator {
 					return getEditText(var, indent, "text");
 				}
 			} else if(p.hasOne()) {
-				return "TODO: hasOne";
+				return getEditText(var, indent, "number");
 			} else if(is(ftype, int.class, Integer.class, long.class, Long.class)) {
 				return getEditText(var, indent, "number|numberSigned");
 			} else if(is(ftype, double.class, Double.class, short.class, Short.class)) {
@@ -128,8 +128,14 @@ public class ScaffoldingGenerator {
 			} else if(p.hasMany()) {
 				return "";
 			} else if(is(ftype, Date.class, Timestamp.class)) {
+				if(var.equals("createdAt") || var.equals("updatedAt")) {
+					return "";
+				}
 				return getEditText(var, indent, "datetime");
 			} else if(is(ftype, java.sql.Date.class)) {
+				if(var.equals("createdOn") || var.equals("updatedOn")) {
+					return "";
+				}
 				return getEditText(var, indent, "date");
 			} else {
 				return getEditText(var, indent, "text");
@@ -159,10 +165,20 @@ public class ScaffoldingGenerator {
 					imports.add("android.widget.EditText");
 				} else if(property.hasMany()) {
 					// TODO hasMany
+				} else if(is(ftype, Date.class, Timestamp.class)) {
+					String var = property.variable();
+					if(!var.equals("createdAt") && !var.equals("updatedAt")) {
+						imports.add("android.widget.EditText");
+						imports.add("java.text.DateFormat");
+						imports.add("java.text.ParseException");
+					}
 				} else if(is(ftype, Date.class, Timestamp.class, java.sql.Date.class)) {
-					imports.add("android.widget.EditText");
-					imports.add("java.text.DateFormat");
-					imports.add("java.text.ParseException");
+					String var = property.variable();
+					if(!var.equals("createdOn") && !var.equals("updatedOn")) {
+						imports.add("android.widget.EditText");
+						imports.add("java.text.DateFormat");
+						imports.add("java.text.ParseException");
+					}
 				} else {
 					imports.add("android.widget.EditText");
 				}
@@ -182,11 +198,16 @@ public class ScaffoldingGenerator {
 	private String getInits(Collection<PropertyDescriptor> properties) {
 		Set<String> inits = new TreeSet<String>();
 		for(PropertyDescriptor property : properties) {
+			String var = property.variable();
 			String ftype = property.fullType();
-			if(is(ftype, Date.class, Timestamp.class, java.sql.Date.class)) {
-				inits.add("\tprivate DateFormat __dtf = DateFormat.getDateTimeInstance();\n");
+			if(is(ftype, Date.class, Timestamp.class)) {
+				if(!var.equals("createdAt") && !var.equals("updatedAt")) {
+					inits.add("\tprivate DateFormat __dtf = DateFormat.getDateTimeInstance();\n");
+				}
 			} else if(is(ftype, java.sql.Date.class)) {
-				inits.add("\tprivate DateFormat __df = DateFormat.getDateInstance();\n");
+				if(!var.equals("createdOn") && !var.equals("updatedOn")) {
+					inits.add("\tprivate DateFormat __df = DateFormat.getDateInstance();\n");
+				}
 			}
 		}
 		if(inits.isEmpty()) {
@@ -215,7 +236,8 @@ public class ScaffoldingGenerator {
 				return	"\t\tString " + var + " = ((EditText) findViewById(R.id." + var + ")).getText().toString();\n" +
 						"\t\t" + modelVar + ".set(" + modelName + "." + constant(var) + ", " + var + ");\n";
 			} else if(p.hasOne()) {
-				return "\t\t// TODO: hasOne\n";
+				return	"\t\tString " + var + " = ((EditText) findViewById(R.id." + var + ")).getText().toString();\n" +
+						"\t\t" + modelVar + ".set(" + modelName + "." + constant(var) + ", " + var + ");\n";
 			} else if(is(ftype, int.class, long.class, double.class, short.class)) {
 				return	"\t\tString " + var + " = ((EditText) findViewById(R.id." + var + ")).getText().toString();\n" +
 						"\t\t" + modelVar + ".set(" + modelName + "." + constant(var) + ", " + var + ");\n";
@@ -225,6 +247,9 @@ public class ScaffoldingGenerator {
 			} else if(p.hasMany()) {
 				return "\t\t// TODO: hasMany\n";
 			} else if(is(ftype, Date.class, Timestamp.class)) {
+				if(var.equals("createdAt") || var.equals("updatedAt")) {
+					return "";
+				}
 				return	"\t\ttry {\n" +
 						"\t\t\tString " + var + " = ((EditText) findViewById(R.id." + var + ")).getText().toString();\n" +
 						"\t\t\t" + modelVar + ".set(" + modelName + "." + constant(var) + ", __dtf.parse(" + var + "));\n" +
@@ -232,6 +257,9 @@ public class ScaffoldingGenerator {
 						"\t\t\te.printStackTrace();\n" +
 						"\t\t}\n";
 			} else if(is(ftype, java.sql.Date.class)) {
+				if(var.equals("createdOn") || var.equals("updatedOn")) {
+					return "";
+				}
 				return	"\t\ttry {\n" +
 						"\t\t\tString " + var + " = ((EditText) findViewById(R.id." + var + ")).getText().toString();\n" +
 						"\t\t\t" + modelVar + ".set(" + modelName + "." + constant(var) + ", __df.parse(" + var + "));\n" +
@@ -257,7 +285,11 @@ public class ScaffoldingGenerator {
 			if(is(ftype, String.class)) {
 				return "\t\t((EditText) view.findViewById(R.id." + var + ")).setText(" + modelVar + "." + p.getterName() + "());\n";
 			} else if(p.hasOne()) {
-				return "\t\t// TODO: hasOne\n";
+				return	"\t\tif(" + modelVar + "." + p.hasserName() + "()) {\n" +
+						"\t\t\t((EditText) view.findViewById(R.id." + var + ")).setText(String.valueOf(" + modelVar + "." + p.getterName() + "().getId()));\n" +
+						"\t\t} else {\n" +
+						"\t\t\t((EditText) view.findViewById(R.id." + var + ")).setText(null);\n" +
+						"\t\t}\n";
 			} else if(is(ftype, int.class, long.class, double.class, short.class)) {
 				return "\t\t((EditText) view.findViewById(R.id." + var + ")).setText(String.valueOf(" + modelVar + "." + p.getterName() + "()));\n";
 			} else if(is(ftype, Double.class, Integer.class, Long.class, Short.class)) {
@@ -269,12 +301,18 @@ public class ScaffoldingGenerator {
 			} else if(p.hasMany()) {
 				return "\t\t// TODO: hasMany\n";
 			} else if(is(ftype, Date.class, Timestamp.class)) {
+				if(var.equals("createdAt") || var.equals("updatedAt")) {
+					return "";
+				}
 				return	"\t\tif(" + modelVar + "." + p.hasserName() + "()) {\n" +
 						"\t\t\t((EditText) view.findViewById(R.id." + var + ")).setText(__dtf.format(" + modelVar + "." + p.getterName() + "()));\n" +
 						"\t\t} else {\n" +
 						"\t\t\t((EditText) view.findViewById(R.id." + var + ")).setText(null);\n" +
 						"\t\t}\n";
 			} else if(is(ftype, java.sql.Date.class)) {
+				if(var.equals("createdOn") || var.equals("updatedOn")) {
+					return "";
+				}
 				return	"\t\tif(" + modelVar + "." + p.hasserName() + "()) {\n" +
 						"\t\t\t((EditText) view.findViewById(R.id." + var + ")).setText(__df.format(" + modelVar + "." + p.getterName() + "()));\n" +
 						"\t\t} else {\n" +
@@ -337,6 +375,20 @@ public class ScaffoldingGenerator {
 		}
 		String setViewFields = sb.delete(0, 2).deleteCharAt(sb.length()-1).toString();
 
+		sb = new StringBuilder();
+		for(PropertyDescriptor p : properties) {
+			String var = p.variable();
+			if(p.hasMany()) {
+				sb.append("\t\t((TextView) view.findViewById(R.id.").append(var).append(")).setText(");
+				sb.append(modelVar).append(".").append(p.getterName()).append("().toString());\n");
+			} else {
+				sb.append("\t\t((TextView) view.findViewById(R.id.").append(var).append(")).setText(");
+				sb.append(modelVar).append(".").append(p.hasserName()).append("() ? ");
+				sb.append(modelVar).append(".").append(p.getterName()).append("().toString() : null);\n");
+			}
+		}
+		String setViewStackedFields = sb.delete(0, 2).deleteCharAt(sb.length()-1).toString();
+
 		File dstFolder = new File(android.main, "activities" + File.separator + modelsVar);
 
 		String[] resources = new String[] {
@@ -360,6 +412,8 @@ public class ScaffoldingGenerator {
 			src = src.replace("{setModelFields}", setModelFields);
 			if(resource.contains("Edit")) {
 				src = src.replace("{setViewFields}", setViewEditFields);
+			} else if(resource.contains("Show")) {
+				src = src.replace("{setViewFields}", setViewStackedFields);
 			} else {
 				src = src.replace("{setViewFields}", setViewFields);
 			}
