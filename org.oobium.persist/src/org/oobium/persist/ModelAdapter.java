@@ -91,6 +91,14 @@ public class ModelAdapter {
 		return fields.toArray(new String[fields.size()]);
 	}
 	
+	/**
+	 * Get the class of the hasMany field.
+	 * @param field the field to get the class of
+	 * @return the class of the hasMany field if it exists; null otherwise
+	 * @see ActiveSet
+	 * @see RequiredSet
+	 * @see LinkedHashSet
+	 */
 	public Class<?> getHasManyClass(String field) {
 		if(hasMany.containsKey(field)) {
 			if(isThrough(field) || isManyToNone(field)) {
@@ -108,6 +116,12 @@ public class ModelAdapter {
 		return hasMany.keySet();
 	}
 	
+	/**
+	 * Get the member class of the given hasMany field. hasMany fields are always a
+	 * collection; use this method to find out of what.
+	 * @param field
+	 * @return the class of the members of the hasMany field, if it exists; null otherwise
+	 */
 	public Class<? extends Model> getHasManyMemberClass(String field) {
 		if(hasMany.containsKey(field)) {
 			Class<?> clazz = hasMany.get(field).type();
