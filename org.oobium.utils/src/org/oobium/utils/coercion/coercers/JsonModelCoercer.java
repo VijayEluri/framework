@@ -56,10 +56,15 @@ public class JsonModelCoercer extends AbstractCoercer {
 		}
 	}
 	
+	/** 
+	 * The JSON data is the raw state of the model object, not a bunch of parameters to be "set",
+	 * therefore set it directly to the model's map.
+	 * <p>This also allows attribute.init to work properly.</p>
+	 */
 	private JsonModel createModel(Map<?,?> data, Class<? extends JsonModel> toType) {
 		try {
 			JsonModel model = toType.newInstance();
-			Method method = toType.getMethod("setAll", Map.class);
+			Method method = toType.getMethod("putAll", Map.class);
 			method.invoke(model, data);
 			return model;
 		} catch(Exception e) {
@@ -70,7 +75,8 @@ public class JsonModelCoercer extends AbstractCoercer {
 	private JsonModel createModel(String json, Class<? extends JsonModel> toType) {
 		try {
 			JsonModel model = toType.newInstance();
-			Method method = toType.getMethod("setAll", String.class);
+			// see comment in #createModel(Map, Class)
+			Method method = toType.getMethod("putAll", String.class);
 			method.invoke(model, json);
 			return model;
 		} catch(Exception e) {
