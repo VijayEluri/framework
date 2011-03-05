@@ -722,7 +722,9 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 	public Map<String, Object> params(String...names) {
 		Map<String, Object> params = new HashMap<String, Object>();
 		for(String name : names) {
-			params.put(name, getParam(name));
+			if(hasParam(name)) {
+				params.put(name, getParam(name));
+			}
 		}
 		return params;
 	}
