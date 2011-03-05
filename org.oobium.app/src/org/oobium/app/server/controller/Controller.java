@@ -701,11 +701,7 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 	
 	@Override
 	public String param(String name) {
-		Object p = getParam(name);
-		if(p != null) {
-			return p.toString();
-		}
-		return null;
+		return coerce(getParam(name), String.class);
 	}
 	
 	@Override
@@ -721,6 +717,14 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 	@Override
 	public Map<String, Object> params() {
 		return getParams();
+	}
+
+	public Map<String, Object> params(String...names) {
+		Map<String, Object> params = new HashMap<String, Object>();
+		for(String name : names) {
+			params.put(name, getParam(name));
+		}
+		return params;
 	}
 	
 	@Override
