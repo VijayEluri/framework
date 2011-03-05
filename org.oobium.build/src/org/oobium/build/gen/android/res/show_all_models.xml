@@ -9,6 +9,12 @@
 		android:layout_height="wrap_content"
 		android:textStyle="bold"
 		android:textSize="12pt" />
+	<TextView
+		android:id="@+id/status"
+		android:visibility="gone"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_below="@id/header" />
 	<RelativeLayout
 		android:id="@+id/footer"
 		android:layout_width="fill_parent"
@@ -31,14 +37,7 @@
 		android:layout_width="fill_parent"
 		android:layout_height="0dip"
 		android:choiceMode="singleChoice"
-		android:layout_below="@id/header"
+		android:layout_below="@id/status"
 		android:layout_above="@id/footer" >
 	</ListView>
-	<TextView
-		android:id="@+id/status"
-		android:visibility="gone"
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:layout_below="@id/header"
-		android:layout_above="@id/footer" />
 </RelativeLayout>

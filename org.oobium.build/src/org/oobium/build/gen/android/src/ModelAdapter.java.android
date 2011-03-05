@@ -2,6 +2,9 @@ package {projectPackage}.activities.{modelsVar};
 
 import java.util.List;
 
+import org.oobium.persist.http.RemoteWorker;
+import org.oobium.persist.http.RemoteWorkers;
+
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -72,11 +75,11 @@ public class {modelName}Adapter extends ArrayAdapter<{modelName}> implements OnC
 				@Override
 				public void onClick(DialogInterface dialog, int which) {
 					remove({modelVar});
-					new Thread("destroy {modelVar}: " + {modelVar}.getId()) {
-						public void run() {
-							{modelVar}.destroy();
+					RemoteWorkers.submit(new RemoteWorker<Boolean>() {
+						protected Boolean run() throws Exception {
+							return {modelVar}.destroy();
 						};
-					}.start();
+					});
 				}
 			});
 			dlg.show();

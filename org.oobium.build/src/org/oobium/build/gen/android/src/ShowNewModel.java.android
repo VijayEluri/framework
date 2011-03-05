@@ -1,5 +1,8 @@
 package {projectPackage}.activities.{modelsVar};
 
+import org.oobium.persist.http.RemoteWorker;
+import org.oobium.persist.http.RemoteWorkers;
+
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
@@ -45,31 +48,46 @@ public class ShowNew{modelName} extends Activity {
 	private void create() {
 		final ProgressDialog progress = ProgressDialog.show(this, "Please wait...", "Sending data...", true);
 
-		Thread thread = new Thread("creating {modelVar}") {
-			public void run() {
-				try {
-					{modelName} {modelVar} = new {modelName}();
-					
-					setModelFields({modelVar});
-					
-					if({modelVar}.create()) {
-						Intent intent = new Intent(ShowNew{modelName}.this, Show{modelName}.class);
-						intent.putExtra("id", {modelVar}.getId());
-						startActivity(intent);
+		findViewById(R.id.status).setVisibility(View.INVISIBLE);
+
+		RemoteWorkers.submit(new RemoteWorker<{modelName}>() {
+			@Override
+			protected {modelName} run() throws Exception {
+				{modelName} {modelVar} = new {modelName}();
+				
+				setModelFields({modelVar});
+				
+				if({modelVar}.create()) {
+					Intent intent = new Intent(ShowNew{modelName}.this, Show{modelName}.class);
+					intent.putExtra("id", {modelVar}.getId());
+					startActivity(intent);
+				} else {
+					TextView status = (TextView) findViewById(R.id.status);
+					status.setVisibility(View.VISIBLE);
+					if({modelVar}.getErrorCount() == 1) {
+						status.setText("There was an error");
 					} else {
-						TextView status = (TextView) findViewById(R.id.status);
-						if({modelVar}.getErrorCount() == 1) {
-							status.setText("There was an error");
-						} else {
-							status.setText("There were " + {modelVar}.getErrorCount() + " errors");
-						}
+						status.setText("There were " + {modelVar}.getErrorCount() + " errors");
 					}
-				} finally {
-					progress.dismiss();
 				}
+				return {modelVar};
 			}
-		};
-		thread.start();
+			@Override
+			protected void onError(final Exception error) {
+				runOnUiThread(new Runnable() {
+					@Override
+					public void run() {
+						TextView status = (TextView) findViewById(R.id.status);
+						status.setText("Error creating {modelVar}: " + error.getMessage());
+						status.setVisibility(View.VISIBLE);
+					}
+				});
+			}
+			@Override
+			protected void onComplete({modelName} {modelVar}, Exception error) {
+				progress.dismiss();
+			}
+		});
 	}
 
 	private void setModelFields({modelName} {modelVar}) {

@@ -1,6 +1,7 @@
 package {projectPackage}.activities.{modelsVar};
 
-import java.sql.SQLException;
+import org.oobium.persist.http.RemoteWorker;
+import org.oobium.persist.http.RemoteWorkers;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -60,72 +61,94 @@ public class ShowEdit{modelName} extends Activity {
 	private void load() {
 		final ProgressDialog progress = ProgressDialog.show(this, "Please wait...", "Retrieving data...", true);
 
-		Thread thread = new Thread("loading {modelVar} " + id) {
-			public void run() {
-				try {
-					final {modelName} {modelVar} = {modelName}.find(id);
-					runOnUiThread(new Runnable() {
-						@Override
-						public void run() {
-							View form = findViewById(R.id.form);
-							TextView status = (TextView) findViewById(R.id.status);
-							if({modelVar} == null) {
-								status.setText("There is no {modelVar} with the given id: " + id);
-								status.setVisibility(View.VISIBLE);
-								form.setVisibility(View.GONE);
-							} else {
-								setViewFields(form, {modelVar});
-								form.setVisibility(View.VISIBLE);
-								status.setVisibility(View.GONE);
-							}
-						}
-					});
-				} catch(SQLException e) {
-					final String message = e.getMessage();
-					runOnUiThread(new Runnable() {
-						@Override
-						public void run() {
-							TextView status = (TextView) findViewById(R.id.status);
-							status.setText("Error loading {modelVar}{" + id + "}: " + message);
+		findViewById(R.id.status).setVisibility(View.INVISIBLE);
+		findViewById(R.id.form).setVisibility(View.INVISIBLE);
+
+		RemoteWorkers.submit(new RemoteWorker<{modelName}>() {
+			@Override
+			protected {modelName} run() throws Exception {
+				return {modelName}.find(id);
+			}
+			@Override
+			protected void onSuccess(final {modelName} {modelVar}) {
+				runOnUiThread(new Runnable() {
+					@Override
+					public void run() {
+						View form = findViewById(R.id.form);
+						TextView status = (TextView) findViewById(R.id.status);
+						if({modelVar} == null) {
+							status.setText("There is no {modelVar} with the given id: " + id);
 							status.setVisibility(View.VISIBLE);
+							form.setVisibility(View.GONE);
+						} else {
+							setViewFields(form, {modelVar});
+							form.setVisibility(View.VISIBLE);
+							status.setVisibility(View.GONE);
 						}
-					});
-				} finally {
-					progress.dismiss();
-				}
-			};
-		};
-		thread.start();
+					}
+				});
+			}
+			@Override
+			protected void onError(final Exception error) {
+				runOnUiThread(new Runnable() {
+					@Override
+					public void run() {
+						TextView status = (TextView) findViewById(R.id.status);
+						status.setText("Error loading {modelVar}{" + id + "}: " + error.getMessage());
+						status.setVisibility(View.VISIBLE);
+					}
+				});
+			}
+			@Override
+			protected void onComplete({modelName} {modelVar}, Exception error) {
+				progress.dismiss();
+			}
+		});
 	}
 
 	private void update() {
 		final ProgressDialog progress = ProgressDialog.show(this, "Please wait...", "Sending data...", true);
 
-		Thread thread = new Thread("updating {modelVar}") {
-			public void run() {
-				try {
-					{modelName} {modelVar} = new {modelName}().setId(id);
-					
-					setModelFields({modelVar});
-					
-					if({modelVar}.update()) {
-						Intent intent = new Intent(ShowEdit{modelName}.this, Show{modelName}.class);
-						intent.putExtra("id", {modelVar}.getId());
-						startActivity(intent);
+		findViewById(R.id.status).setVisibility(View.INVISIBLE);
+
+		RemoteWorkers.submit(new RemoteWorker<{modelName}>() {
+			@Override
+			protected {modelName} run() throws Exception {
+				{modelName} {modelVar} = new {modelName}().setId(id);
+				
+				setModelFields({modelVar});
+				
+				if({modelVar}.update()) {
+					Intent intent = new Intent(ShowEdit{modelName}.this, Show{modelName}.class);
+					intent.putExtra("id", {modelVar}.getId());
+					startActivity(intent);
+				} else {
+					TextView status = (TextView) findViewById(R.id.status);
+					status.setVisibility(View.VISIBLE);
+					if({modelVar}.getErrorCount() == 1) {
+						status.setText("There was an error");
 					} else {
-						TextView status = (TextView) findViewById(R.id.status);
-						if({modelVar}.getErrorCount() == 1) {
-							status.setText("There was an error");
-						} else {
-							status.setText("There were " + {modelVar}.getErrorCount() + " errors");
-						}
+						status.setText("There were " + {modelVar}.getErrorCount() + " errors");
 					}
-				} finally {
-					progress.dismiss();
 				}
+				return {modelVar};
 			}
-		};
-		thread.start();
+			@Override
+			protected void onError(final Exception error) {
+				runOnUiThread(new Runnable() {
+					@Override
+					public void run() {
+						TextView status = (TextView) findViewById(R.id.status);
+						status.setText("Error updating {modelVar}{" + id + "}: " + error.getMessage());
+						status.setVisibility(View.VISIBLE);
+					}
+				});
+			}
+			@Override
+			protected void onComplete({modelName} {modelVar}, Exception error) {
+				progress.dismiss();
+			}
+		});
 	}
 
 	private void setModelFields({modelName} {modelVar}) {

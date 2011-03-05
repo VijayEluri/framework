@@ -1,7 +1,9 @@
 package {projectPackage}.activities.{modelsVar};
 
-import java.sql.SQLException;
 import java.util.List;
+
+import org.oobium.persist.http.RemoteWorker;
+import org.oobium.persist.http.RemoteWorkers;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -47,41 +49,51 @@ public class ShowAll{modelsName} extends Activity {
 	private void load() {
 		final ProgressDialog progress = ProgressDialog.show(this, "Please wait...", "Retrieving data...", true);
 
-		Thread thread = new Thread("loading {modelsVar}") {
-			public void run() {
-				try {
-					final List<{modelName}> {modelsVar} = {modelName}.findAll();
-					runOnUiThread(new Runnable() {
-						@Override
-						public void run() {
-							{modelName}Adapter adapter = new {modelName}Adapter(ShowAll{modelsName}.this, R.layout.{umodelVar}_item, {modelsVar});
-							ListView list = (ListView) findViewById(R.id.list);
-							list.setAdapter(adapter);
-							TextView status = (TextView) findViewById(R.id.status);
-							if({modelsVar}.size() == 0) {
-								status.setText("There are no {modelsVar}");
-								status.setVisibility(View.VISIBLE);
-							} else {
-								status.setVisibility(View.GONE);
-							}
-						}
-					});
-				} catch(SQLException e) {
-					final String message = e.getMessage();
-					runOnUiThread(new Runnable() {
-						@Override
-						public void run() {
-							TextView status = (TextView) findViewById(R.id.status);
-							status.setText("Error loading {modelsVar}: " + message);
+		((TextView) findViewById(R.id.status)).setVisibility(View.INVISIBLE);
+		{modelName}Adapter adapter = ({modelName}Adapter) ((ListView) findViewById(R.id.list)).getAdapter();
+		if(adapter != null) {
+			adapter.clear();
+		}
+
+		RemoteWorkers.submit(new RemoteWorker<List<{modelName}>>() {
+			@Override
+			protected List<{modelName}> run() throws Exception {
+				return {modelName}.findAll({include});
+			}
+			@Override
+			protected void onSuccess(final List<{modelName}> {modelsVar}) {
+				runOnUiThread(new Runnable() {
+					@Override
+					public void run() {
+						{modelName}Adapter adapter = new {modelName}Adapter(ShowAll{modelsName}.this, R.layout.{umodelVar}_item, {modelsVar});
+						ListView list = (ListView) findViewById(R.id.list);
+						list.setAdapter(adapter);
+						TextView status = (TextView) findViewById(R.id.status);
+						if({modelsVar}.size() == 0) {
+							status.setText("There are no {modelsVar}");
 							status.setVisibility(View.VISIBLE);
+						} else {
+							status.setVisibility(View.GONE);
 						}
-					});
-				} finally {
-					progress.dismiss();
-				}
-			};
-		};
-		thread.start();
+					}
+				});
+			}
+			@Override
+			protected void onError(final Exception error) {
+				runOnUiThread(new Runnable() {
+					@Override
+					public void run() {
+						TextView status = (TextView) findViewById(R.id.status);
+						status.setText("Error loading {modelsVar}: " + error.getMessage());
+						status.setVisibility(View.VISIBLE);
+					}
+				});
+			}
+			@Override
+			protected void onComplete(List<{modelName}> {modelsVar}, Exception error) {
+				progress.dismiss();
+			}
+		});
 	}
 	
 }

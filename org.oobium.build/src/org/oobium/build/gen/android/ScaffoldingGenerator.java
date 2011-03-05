@@ -356,6 +356,24 @@ public class ScaffoldingGenerator {
 		Collection<PropertyDescriptor> properties = model.getProperties().values();
 		
 		StringBuilder sb = new StringBuilder();
+		List<String> includes = new ArrayList<String>();
+		for(PropertyDescriptor property : properties) {
+			if(property.hasMany()) {
+				includes.add(property.variable());
+			}
+		}
+		if(includes.size() == 1) {
+			sb.append("\"include:").append(includes.get(0)).append('"');
+		} else if(!includes.isEmpty()) {
+			sb.append("\"include:[");
+			for(String include : includes) {
+				sb.append(include).append(',');
+			}
+			sb.deleteCharAt(sb.length()-1).append("]\"");
+		}
+		String include = sb.toString();
+
+		sb = new StringBuilder();
 		for(PropertyDescriptor property : properties) {
 			sb.append(getModelFieldSetter(modelName, modelVar, property));
 		}
@@ -410,6 +428,11 @@ public class ScaffoldingGenerator {
 			src = src.replace("{umodelVar}", umodelVar);
 			src = src.replace("{umodelsVar}", umodelsVar);
 			src = src.replace("{setModelFields}", setModelFields);
+			if(resource.equals("src/ShowModel.java.android")) {
+				src = src.replace("{include}", include.isEmpty() ? "" : (", " + include));
+			} else if(resource.equals("src/ShowAllModels.java.android")) {
+				src = src.replace("{include}", include);
+			}
 			if(resource.contains("Edit")) {
 				src = src.replace("{setViewFields}", setViewEditFields);
 			} else if(resource.contains("Show")) {
