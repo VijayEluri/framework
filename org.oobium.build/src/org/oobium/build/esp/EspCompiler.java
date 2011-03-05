@@ -728,13 +728,13 @@ public class EspCompiler {
 			if(action != null) {
 				if("create".equalsIgnoreCase(action)) {
 					method = "post";
-					body.append(" action=\\\"\").append(pathTo(").append(model).append(", create)).append(\"\\\"");
+					body.append(" action=\\\"\").append(pathTo(").append(model).append(", Action.create)).append(\"\\\"");
 				} else if("update".equalsIgnoreCase(action)) {
 					method = "put";
-					body.append(" action=\\\"\").append(pathTo(").append(model).append(", update)).append(\"\\\"");
+					body.append(" action=\\\"\").append(pathTo(").append(model).append(", Action.update)).append(\"\\\"");
 				} else if("delete".equalsIgnoreCase(action)) {
 					method = "delete";
-					body.append(" action=\\\"\").append(pathTo(").append(model).append(", destroy)).append(\"\\\"");
+					body.append(" action=\\\"\").append(pathTo(").append(model).append(", Action.destroy)).append(\"\\\"");
 				} else {
 					method = "post";
 					body.append(" action=\\\"\").append(pathTo(").append(modelVal).append(", ").append(action).append(")).append(\"\\\"");
@@ -750,13 +750,13 @@ public class EspCompiler {
 						body.append("\\\"");
 					} else {
 						if("post".equalsIgnoreCase(method)) {
-							body.append(" action=\\\"\").append(pathTo(").append(model).append(", create)).append(\"\\\"");
+							body.append(" action=\\\"\").append(pathTo(").append(model).append(", Action.create)).append(\"\\\"");
 						} else if("put".equalsIgnoreCase(method)) {
-							body.append(" action=\\\"\").append(pathTo(").append(model).append(", update)).append(\"\\\"");
+							body.append(" action=\\\"\").append(pathTo(").append(model).append(", Action.update)).append(\"\\\"");
 						} else if("delete".equalsIgnoreCase(method)) {
-							body.append(" action=\\\"\").append(pathTo(").append(model).append(", destroy)).append(\"\\\"");
+							body.append(" action=\\\"\").append(pathTo(").append(model).append(", Action.destroy)).append(\"\\\"");
 						} else {
-							body.append(" action=\\\"\").append(pathTo(").append(model).append(", create)).append(\"\\\"");
+							body.append(" action=\\\"\").append(pathTo(").append(model).append(", Action.create)).append(\"\\\"");
 						}
 					}
 				}
@@ -767,13 +767,13 @@ public class EspCompiler {
 					action = value.getText();
 					if("create".equalsIgnoreCase(action)) {
 						method = "post";
-						body.append(" action=\\\"\").append(pathTo(").append(model).append(", create)).append(\"\\\"");
+						body.append(" action=\\\"\").append(pathTo(").append(model).append(", Action.create)).append(\"\\\"");
 					} else if("update".equalsIgnoreCase(action)) {
 						method = "put";
-						body.append(" action=\\\"\").append(pathTo(").append(model).append(", update)).append(\"\\\"");
+						body.append(" action=\\\"\").append(pathTo(").append(model).append(", Action.update)).append(\"\\\"");
 					} else if("delete".equalsIgnoreCase(action)) {
 						method = "delete";
-						body.append(" action=\\\"\").append(pathTo(").append(model).append(", destroy)).append(\"\\\"");
+						body.append(" action=\\\"\").append(pathTo(").append(model).append(", Action.destroy)).append(\"\\\"");
 					} else {
 						method = "post";
 						body.append(" action=\\\"");
@@ -783,7 +783,7 @@ public class EspCompiler {
 				}
 			}
 			if(method == null) {
-				body.append(" action=\\\"\").append(pathTo(").append(model).append(", ").append(model).append(".isNew() ? create : update)).append(\"\\\"");
+				body.append(" action=\\\"\").append(pathTo(").append(model).append(", ").append(model).append(".isNew() ? Action.create : Action.update)).append(\"\\\"");
 			}
 			body.append(" method=\\\"POST\\\"");
 			if(form.hasEntry("enctype")) {
@@ -1227,19 +1227,19 @@ public class EspCompiler {
 				if(dom.isEsp()) {
 					action = dom.isEsp() ? link.getArg(1).getText().trim() : null;
 					if("create".equals(action)) {
-						appendCreateJs("pathTo(" + target.getText().trim() + ", create)", link.getEntries());
+						appendCreateJs("pathTo(" + target.getText().trim() + ", Action.create)", link.getEntries());
 					} else if("update".equals(action)) {
-						appendUpdateJs("pathTo(" + target.getText().trim() + ", update)", link.getEntries());
+						appendUpdateJs("pathTo(" + target.getText().trim() + ", Action.update)", link.getEntries());
 					} else if("destroy".equals(action)) {
-						appendDeleteJs("pathTo(" + target.getText().trim() + ", destroy)", link.getEntries());
+						appendDeleteJs("pathTo(" + target.getText().trim() + ", Action.destroy)", link.getEntries());
 					} else if("show".equals(action)) {
-						body.append(" href=\\\"\").append(").append("pathTo(").append(target.getText().trim()).append(", show)").append(").append(\"\\\"");
+						body.append(" href=\\\"\").append(").append("pathTo(").append(target.getText().trim()).append(", Action.show)").append(").append(\"\\\"");
 					} else if("showAll".equals(action)) {
-						body.append(" href=\\\"\").append(").append("pathTo(").append(target.getText().trim()).append(", showAll)").append(").append(\"\\\"");
+						body.append(" href=\\\"\").append(").append("pathTo(").append(target.getText().trim()).append(", Action.showAll)").append(").append(\"\\\"");
 					} else if("showEdit".equals(action)) {
-						body.append(" href=\\\"\").append(").append("pathTo(").append(target.getText().trim()).append(", showEdit)").append(").append(\"\\\"");
+						body.append(" href=\\\"\").append(").append("pathTo(").append(target.getText().trim()).append(", Action.showEdit)").append(").append(\"\\\"");
 					} else if("showNew".equals(action)) {
-						body.append(" href=\\\"\").append(").append("pathTo(").append(target.getText().trim()).append(", showNew)").append(").append(\"\\\"");
+						body.append(" href=\\\"\").append(").append("pathTo(").append(target.getText().trim()).append(", Action.showNew)").append(").append(\"\\\"");
 					} else {
 						body.append(" href=\\\"\").append(").append("pathTo(").append(target.getText().trim()).append(", ").append(action).append(')').append(").append(\"\\\"");
 					}
@@ -1857,11 +1857,11 @@ public class EspCompiler {
 		bodyLocations = new ArrayList<EspLocation>();
 
 		esf.setPackage(pkg);
-		esf.addStaticImport(Action.class.getCanonicalName() + ".*");
 		esf.addStaticImport(ArrayUtils.class.getCanonicalName() + ".*");
 		esf.addStaticImport(JsonUtils.class.getCanonicalName() + ".*");
 		esf.addStaticImport(StringUtils.class.getCanonicalName() + ".*");
 		esf.addStaticImport(Utils.class.getCanonicalName() + ".*");
+		esf.addImport(Action.class.getCanonicalName());
 		esf.addImport(MailerTemplate.class.getCanonicalName());
 		esf.addClassAnnotation("@SuppressWarnings(\"unused\")");
 		esf.setSimpleName(dom.getName());
@@ -1931,11 +1931,11 @@ public class EspCompiler {
 		titleLocations = new ArrayList<EspLocation>();
 
 		esf.setPackage(pkg);
-		esf.addStaticImport(Action.class.getCanonicalName() + ".*");
 		esf.addStaticImport(ArrayUtils.class.getCanonicalName() + ".*");
 		esf.addStaticImport(JsonUtils.class.getCanonicalName() + ".*");
 		esf.addStaticImport(StringUtils.class.getCanonicalName() + ".*");
 		esf.addStaticImport(Utils.class.getCanonicalName() + ".*");
+		esf.addImport(Action.class.getCanonicalName());
 		esf.addImport(View.class.getCanonicalName());
 		esf.addImport(Controller.class.getCanonicalName());
 		esf.addClassAnnotation("@SuppressWarnings(\"unused\")");
