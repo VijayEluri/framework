@@ -109,14 +109,20 @@ public abstract class Model implements JsonModel {
 				StringBuilder sb = new StringBuilder();
 				List<Object> list = new ArrayList<Object>();
 				
-				sb.append("where ");
 				for(Entry<?, ?> entry : query.entrySet()) {
-					sb.append(entry.getKey()).append("=?,");
-					list.add(entry.getValue());
+					String name = String.valueOf(entry.getKey());
+					if(entries.length == 0 || contains(entries, name)) {
+						sb.append(name).append("=?,");
+						list.add(entry.getValue());
+					}
 				}
-				sb.deleteCharAt(sb.length()-1);
-
-				return Model.findAll(clazz, sb.toString(), list.toArray());
+				
+				if(sb.length() > 0) {
+					sb.insert(0, "where ");
+					sb.deleteCharAt(sb.length()-1);
+	
+					return Model.findAll(clazz, sb.toString(), list.toArray());
+				}
 			}
 		}		
 		return Model.findAll(clazz);
