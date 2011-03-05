@@ -116,6 +116,8 @@ public class HttpPersistService implements PersistService {
 				int id = coerce(response.getHeader(Header.ID.key()), int.class);
 				model.setId(id);
 				setCache(model);
+			} else if(response.exceptionThrown()) {
+				throw new SQLException(response.getException().getLocalizedMessage());
 			}
 		} catch(MalformedURLException e) {
 			throw new IllegalStateException("malformed URL should have been caught earlier!");
@@ -153,6 +155,8 @@ public class HttpPersistService implements PersistService {
 					cache.setId(0);
 					cache.clear();
 				}
+			} else if(response.exceptionThrown()) {
+				throw new SQLException(response.getException().getLocalizedMessage());
 			}
 		} catch(MalformedURLException e) {
 			throw new IllegalStateException("malformed URL should have been caught earlier!");
@@ -280,6 +284,9 @@ public class HttpPersistService implements PersistService {
 				setCache(model);
 				return model;
 			} else {
+				if(response.exceptionThrown()) {
+					throw new SQLException(response.getException().getLocalizedMessage());
+				}
 				return null;
 			}
 		} catch(MalformedURLException e) {
@@ -358,7 +365,7 @@ public class HttpPersistService implements PersistService {
 				return models;
 			} else {
 				if(response.exceptionThrown()) {
-					throw new SQLException(response.getException());
+					throw new SQLException(response.getException().getLocalizedMessage());
 				}
 				throw new SQLException("could not retrieve data from the server\nstatus: " + response.getStatus() + "\ncontent: " + response.getBody());
 			}
@@ -565,6 +572,8 @@ public class HttpPersistService implements PersistService {
 					cache.putAll(model);
 					model.putAll(cache);
 				}
+			} else if(response.exceptionThrown()) {
+				throw new SQLException(response.getException().getLocalizedMessage());
 			}
 		} catch(MalformedURLException e) {
 			throw new IllegalStateException("malformed URL should have been caught earlier!");
@@ -616,6 +625,8 @@ public class HttpPersistService implements PersistService {
 					}
 					model.put(field, list);
 				}
+			} else if(response.exceptionThrown()) {
+				throw new SQLException(response.getException().getLocalizedMessage());
 			}
 		} catch(MalformedURLException e) {
 			throw new IllegalStateException("malformed URL should have been caught earlier!");
@@ -662,6 +673,8 @@ public class HttpPersistService implements PersistService {
 					cache.putAll(model);
 					model.putAll(cache);
 				}
+			} else if(response.exceptionThrown()) {
+				throw new SQLException(response.getException().getLocalizedMessage());
 			}
 		} catch(MalformedURLException e) {
 			throw new IllegalStateException("malformed URL should have been caught earlier!");
