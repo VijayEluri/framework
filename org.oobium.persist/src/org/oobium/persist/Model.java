@@ -12,6 +12,7 @@ package org.oobium.persist;
 
 import static org.oobium.persist.ModelAdapter.getAdapter;
 import static org.oobium.utils.StringUtils.blank;
+import static org.oobium.utils.StringUtils.contains;
 import static org.oobium.utils.StringUtils.titleize;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.utils.json.JsonUtils.toList;
@@ -32,8 +33,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.oobium.logging.Logger;
 import org.oobium.logging.LogProvider;
+import org.oobium.logging.Logger;
 import org.oobium.utils.StringUtils;
 import org.oobium.utils.coercion.TypeCoercer;
 import org.oobium.utils.json.JsonModel;
@@ -74,6 +75,53 @@ public abstract class Model implements JsonModel {
 		return getPersistService(clazz).findAll(clazz);
 	}
 
+	public static <T extends Model> List<T> findAll(Class<T> clazz, Map<?, ?> query, String...entries) throws SQLException {
+		if(query != null && !query.isEmpty()) {
+			Object wheretmp = query.remove("where");
+			Object includetmp = query.remove("include");
+			Object valuestmp = query.remove("values");
+
+			if(query.isEmpty()) {
+				String sql = (entries.length == 0 || contains(entries, "where")) ? coerce(wheretmp, String.class) : null;
+				if(sql != null && sql.length() > 0) {
+					sql = "where " + sql;
+				}
+				
+				String include = (entries.length == 0 || contains(entries, "include")) ? coerce(includetmp, String.class) : null;
+				if(include != null && include.length() > 0) {
+					if(sql == null) {
+						sql = "include:" + include;
+					} else {
+						// query map values overwrite
+						int ix = sql.indexOf("include");
+						if(ix != -1) {
+							sql = sql.substring(ix);
+						}
+						sql = sql + " include:" + include;
+					}
+				}
+				
+				if(sql != null && sql.length() > 0) {
+					Object[] values = (entries.length == 0 || contains(entries, "values")) ? coerce(valuestmp, Object[].class) : new Object[0];
+					return Model.findAll(clazz, sql, values);
+				}
+			} else {
+				StringBuilder sb = new StringBuilder();
+				List<Object> list = new ArrayList<Object>();
+				
+				sb.append("where ");
+				for(Entry<?, ?> entry : query.entrySet()) {
+					sb.append(entry.getKey()).append("=?,");
+					list.add(entry.getValue());
+				}
+				sb.deleteCharAt(sb.length()-1);
+
+				return Model.findAll(clazz, sb.toString(), list.toArray());
+			}
+		}		
+		return Model.findAll(clazz);
+	}
+	
 	public static <T extends Model> List<T> findAll(Class<T> clazz, String sql, Object...values) throws SQLException {
 		return getPersistService(clazz).findAll(clazz, sql, values);
 	}
@@ -439,7 +487,7 @@ public abstract class Model implements JsonModel {
 					}
 					return get(field, false); // exit through the if(fields.containsKey(field)) block above
 				} else {
-					if(hasMany(field)) {
+					if(hasMany(field)) { // prevents returning a null for a hasMany field
 						Set<?> set;
 						if(isThrough(field)) {
 							set = new LinkedHashSet<Model>();
