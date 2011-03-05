@@ -1,20 +1,22 @@
 package org.oobium.persist.http;
 
-import static org.oobium.utils.json.JsonUtils.*;
-import static org.oobium.persist.http.Cache.*;
-
 import static org.oobium.http.constants.Action.create;
 import static org.oobium.http.constants.Action.destroy;
 import static org.oobium.http.constants.Action.show;
 import static org.oobium.http.constants.Action.showAll;
 import static org.oobium.http.constants.Action.update;
 import static org.oobium.http.constants.ContentType.JSON;
+import static org.oobium.persist.http.Cache.expireCache;
+import static org.oobium.persist.http.Cache.getCache;
+import static org.oobium.persist.http.Cache.setCache;
 import static org.oobium.persist.http.PathBuilder.path;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.getResourceAsString;
 import static org.oobium.utils.StringUtils.varName;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
-import static org.oobium.utils.literal.e;
+import static org.oobium.utils.json.JsonUtils.toJson;
+import static org.oobium.utils.json.JsonUtils.toList;
+import static org.oobium.utils.json.JsonUtils.toObject;
 import static org.oobium.utils.literal.Map;
 
 import java.net.MalformedURLException;
@@ -23,6 +25,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -237,6 +240,10 @@ public class HttpPersistService implements PersistService {
 			throw new SQLException("cannot find null class with id: " + id);
 		}
 		
+		return find(clazz, id, null);
+	}
+	
+	private <T extends Model> T find(Class<T> clazz, int id, String include) throws SQLException {
 		T model = getCache(clazz, id);
 		if(model != null) {
 			return model;
@@ -253,8 +260,21 @@ public class HttpPersistService implements PersistService {
 
 			model = coerce(id, clazz);
 			String path = path(request.path, model);
+
+			Map<String, ?> params = null;
+			if(include != null) {
+				if(include.startsWith("include")) {
+					int ix = include.indexOf(':');
+					if(ix != -1) {
+						include = include.substring(ix+1);
+						params = Map("include", include);
+					}
+				} else {
+					params = Map("include", include);
+				}
+			}
 			
-			ClientResponse response = client.syncRequest(request.type, path);
+			ClientResponse response = client.syncRequest(request.type, path, params);
 			if(response.isSuccess()) {
 				model.putAll(response.getBody());
 				setCache(model);
@@ -270,21 +290,34 @@ public class HttpPersistService implements PersistService {
 	@Override
 	public <T extends Model> T find(Class<T> clazz, String where, Object... values) throws SQLException {
 		if(clazz == null) {
-			throw new IllegalArgumentException("cannot findAll: null class, where: " + where);
+			throw new IllegalArgumentException("cannot find: null class");
 		}
-		
-		String query = toJson(Map(e("where", where), e("values", values)));
 
-		List<T> models = getCache(clazz, query);
-		if(models != null) {
-			if(models.isEmpty()) {
-				return null;
+		if(where == null) {
+			where = "limit 1";
+		} else {
+			int ix = where.indexOf("include");
+			if(ix == -1) {
+				if(where.equals("where id=?") && values.length == 1) {
+					return find(clazz, coerce(values[0], int.class));
+				}
+				where = where + " limit 1";
+			} else if(ix == 0) {
+				where = "limit 1 " + where;
+			} else if(where.startsWith("where id=? include")) {
+				return find(clazz, coerce(values[0], int.class), where.substring(ix));
 			} else {
-				return models.get(0);
+				StringBuilder sb = new StringBuilder(where);
+				sb.insert(ix, "limit 1 ");
+				where = sb.toString();
 			}
 		}
 		
-		throw new SQLException("not yet implemented");
+		List<T> models = findAll(clazz, where, values);
+		if(models.isEmpty()) {
+			return null;
+		}
+		return models.get(0);
 	}
 
 	@Override
@@ -292,16 +325,16 @@ public class HttpPersistService implements PersistService {
 		if(clazz == null) {
 			throw new IllegalArgumentException("cannot findAll: null class");
 		}
-		
-		List<T> models = getCache(clazz, "findAll");
+
+		return findAll(clazz, "findAll", (Map<String,?>) null);
+	}
+
+	private <T extends Model> List<T> findAll(Class<T> clazz, String queryString, Map<String, ?> query) throws SQLException {
+		List<T> models = getCache(clazz, queryString);
 		if(models != null) {
-			if(models.isEmpty()) {
-				return null;
-			} else {
-				return models;
-			}
+			return models;
 		}
-		
+
 		Request request = getRequest(clazz, showAll);
 		if(request == null) {
 			throw new SQLException("no published route found for " + clazz + ": showAll");
@@ -313,15 +346,15 @@ public class HttpPersistService implements PersistService {
 
 			String path = path(request.path, clazz);
 			
-			ClientResponse response = client.syncRequest(request.type, path);
+			ClientResponse response = client.syncRequest(request.type, path, query);
 			if(response.isSuccess()) {
 				List<Object> list = toList(response.getBody());
 				models = new ArrayList<T>();
 				for(Object o : list) {
 					T model = coerce(o, clazz);
-					setCache(clazz, "findAll", models);
 					models.add(model);
 				}
+				setCache(clazz, queryString, models);
 				return models;
 			} else {
 				if(response.exceptionThrown()) {
@@ -333,26 +366,49 @@ public class HttpPersistService implements PersistService {
 			throw new IllegalStateException("malformed URL should have been caught earlier!");
 		}
 	}
-
+	
 	@Override
 	public <T extends Model> List<T> findAll(Class<T> clazz, String where, Object... values) throws SQLException {
 		if(clazz == null) {
 			throw new IllegalArgumentException("cannot findAll: null class, where: " + where);
 		}
-		
-		String query = toJson(Map(e("where", where), e("values", values)));
 
-		List<T> models = getCache(clazz, query);
-		if(models != null) {
-			if(models.isEmpty()) {
-				return null;
+		if(where.startsWith("where ")) {
+			where = where.substring(6);
+		}
+		
+		String include;
+		int ix = where.indexOf("include");
+		if(ix == -1) {
+			include = null;
+		} else {
+			include = where.substring(ix).trim();
+			where = where.substring(0, ix).trim();
+			if(where.length() == 0) {
+				where = null;
+			}
+			ix = include.indexOf(':');
+			if(ix == -1) {
+				include = null;
 			} else {
-				return models;
+				include = include.substring(ix+1);
 			}
 		}
 
-		// TODO Auto-generated method stub
-		throw new SQLException("not yet implemented");
+		Map<String, Object> query = new HashMap<String, Object>();
+		Map<String, Object> map = new LinkedHashMap<String, Object>();
+		if(where != null) {
+			map.put("where", where);
+		}
+		if(include != null) {
+			map.put("include", include);
+		}
+		map.put("values", values);
+		query.put("query", map);
+
+		String queryString = toJson(query);
+		
+		return findAll(clazz, queryString, query);
 	}
 	
 	private String getDiscoveryLocation(Client client) {
