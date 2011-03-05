@@ -204,17 +204,14 @@ public class QueryProcessor<E extends Model> {
 		String sql = query.getSql(models);
 		
 		List<Map<String, Map<String, Object>>> results = executeQuery(connection, sql);
-		if(results.isEmpty()) {
-			for(Model model : models) {
-				model.get(query.getField(), false);
+		List<E> objects = createModels(query, results);
+		if(!objects.isEmpty() && query.hasChildren()) {
+			for(Query child : query.getChildren()) {
+				processQuery(connection, query, child, objects);
 			}
-		} else {
-			List<E> objects = createModels(query, results);
-			if(!objects.isEmpty() && query.hasChildren()) {
-				for(Query child : query.getChildren()) {
-					processQuery(connection, query, child, objects);
-				}
-			}
+		}
+		for(Model model : models) { // makes sure that the field is set for all models, even if no results (empty set)
+			model.get(query.getField(), false);
 		}
 	}
 	
