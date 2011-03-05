@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.oobium.persist.http;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -32,11 +33,19 @@ public class RemoteWorkers {
 		}
 	}
 
-	public static long submit(RemoteWorker worker) {
+	public static <T> long submit(RemoteWorker<T> worker) {
 		if(worker.id == 0) { // non-zero id: worker has already been submitted
 			worker.workers = instance;
 			worker.id = instance.workerCount.addAndGet(1);
 			worker.future = instance.executor.submit(worker.task, worker);
+			if(instance.workers == null) {
+				synchronized(instance) {
+					if(instance.workers == null) {
+						instance.workers = new HashMap<Long, RemoteWorker<?>>();
+					}
+				}
+			}
+			instance.workers.put(worker.id, worker);
 		}
 		return worker.id;
 	}
@@ -47,7 +56,7 @@ public class RemoteWorkers {
 
 	private final ExecutorService executor;
 	private final AtomicLong workerCount;
-	private Map<Long, RemoteWorker> workers;
+	private Map<Long, RemoteWorker<?>> workers;
 	
 	private RemoteWorkers() {
 		service = new HttpPersistService();
@@ -57,9 +66,18 @@ public class RemoteWorkers {
 	}
 	
 	void complete(long id) {
-		RemoteWorker worker = workers.remove(id);
-		if(worker != null) {
-			worker.workers = null;
+		if(workers != null) {
+			RemoteWorker<?> worker = workers.remove(id);
+			if(worker != null) {
+				worker.workers = null;
+			}
+			if(workers.isEmpty()) {
+				synchronized(instance) {
+					if(workers.isEmpty()) {
+						workers = null;
+					}
+				}
+			}
 		}
 	}
 	
