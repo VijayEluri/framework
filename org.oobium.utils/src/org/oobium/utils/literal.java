@@ -59,14 +59,14 @@ public class literal {
 		return new HashMap<K, V>(0);
 	}
 	
-	public static <K, V> Map<K, V> Map(Entry<K, V> entry1, Entry<K, V> entry2) {
+	public static <K, V> Map<K, V> Map(Entry<? extends K, ? extends V> entry1, Entry<? extends K, ? extends V> entry2) {
 		Map<K, V> map = new HashMap<K, V>();
 		map.put(entry1.key, entry1.value);
 		map.put(entry2.key, entry2.value);
 		return map;
 	}
 
-	public static <K, V> Map<K, V> Map(Entry<K, V> entry1, Entry<K, V> entry2, Entry<K, V> entry3) {
+	public static <K, V> Map<K, V> Map(Entry<? extends K, ? extends V> entry1, Entry<? extends K, ? extends V> entry2, Entry<? extends K, ? extends V> entry3) {
 		Map<K, V> map = new HashMap<K, V>();
 		map.put(entry1.key, entry1.value);
 		map.put(entry2.key, entry2.value);
@@ -74,7 +74,7 @@ public class literal {
 		return map;
 	}
 
-	public static <K, V> Map<K, V> Map(Entry<K, V> entry1, Entry<K, V> entry2, Entry<K, V> entry3, Entry<K, V> entry4) {
+	public static <K, V> Map<K, V> Map(Entry<? extends K, ? extends V> entry1, Entry<? extends K, ? extends V> entry2, Entry<? extends K, ? extends V> entry3, Entry<? extends K, ? extends V> entry4) {
 		Map<K, V> map = new HashMap<K, V>();
 		map.put(entry1.key, entry1.value);
 		map.put(entry2.key, entry2.value);
@@ -83,7 +83,7 @@ public class literal {
 		return map;
 	}
 
-	public static <K, V> Map<K, V> Map(Entry<K, V> entry1, Entry<K, V> entry2, Entry<K, V> entry3, Entry<K, V> entry4, Entry<K, V> entry5) {
+	public static <K, V> Map<K, V> Map(Entry<? extends K, ? extends V> entry1, Entry<? extends K, ? extends V> entry2, Entry<? extends K, ? extends V> entry3, Entry<? extends K, ? extends V> entry4, Entry<? extends K, ? extends V> entry5) {
 		Map<K, V> map = new HashMap<K, V>();
 		map.put(entry1.key, entry1.value);
 		map.put(entry2.key, entry2.value);
