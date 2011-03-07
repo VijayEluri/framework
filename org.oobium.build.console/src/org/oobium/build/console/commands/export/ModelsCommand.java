@@ -2,6 +2,7 @@ package org.oobium.build.console.commands.export;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 import org.oobium.build.console.BuilderCommand;
@@ -50,10 +51,11 @@ public class ModelsCommand extends BuilderCommand {
 						target = (AndroidApp) projects[0];
 					}
 				} else if(projects.length > 1) {
+					Arrays.sort(projects);
 					StringBuilder sb = new StringBuilder();
 					sb.append(projects.length).append(" Android projects found:");
 					for(int i = 0; i < projects.length; i++) {
-						sb.append("\n  " + i + " - " + projects[i]);
+						sb.append("\n  " + i + " - " + projects[i].name);
 					}
 					sb.append("\nselect which to use as the target (0-" + (projects.length - 1) + "), or <Enter> for none ");
 					String s = ask(sb.toString());
@@ -98,7 +100,25 @@ public class ModelsCommand extends BuilderCommand {
 						for(File file : files) {
 							int len = target.file.getAbsolutePath().length();
 							String path = target.file.getAbsolutePath() + "#" + file.getAbsolutePath().substring(len+1);
-							console.out.println("exported <a href=\"open file " + path + "\">" + file.getName() + "</a>");
+							console.out.println("  exported <a href=\"open file " + path + "\">" + file.getName() + "</a>");
+						}
+
+						File[] ma = target.getMainActivities();
+						if(ma.length == 1) {
+							String name = ma[0].getName();
+							name = name.substring(0, name.length()-5);
+							s = ask("add launch buttons to the '" + name + "' activity? [Y/N] ");
+							if("Y".equalsIgnoreCase(s)) {
+								File layout = gen.generateLaunchButton(ma[0]);
+								if(layout != null) {
+									int len = target.file.getAbsolutePath().length();
+									String path = target.file.getAbsolutePath() + "#" + ma[0].getAbsolutePath().substring(len+1);
+									console.out.println("  modified activity <a href=\"open file " + path + "\">" + ma[0].getName() + "</a>");
+									
+									path = target.file.getAbsolutePath() + "#" + layout.getAbsolutePath().substring(len+1);
+									console.out.println("  modified layout <a href=\"open file " + path + "\">" + layout.getName() + "</a>");
+								}
+							}
 						}
 					}
 

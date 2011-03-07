@@ -1,5 +1,6 @@
 package org.oobium.build.gen.android;
 
+import static org.oobium.utils.CharStreamUtils.*;
 import static org.oobium.utils.FileUtils.*;
 import static org.oobium.utils.StringUtils.*;
 
@@ -13,6 +14,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.oobium.build.gen.android.GeneratorEvent.Type;
 import org.oobium.build.gen.model.PropertyDescriptor;
@@ -23,6 +26,22 @@ import org.oobium.persist.Text;
 
 public class ScaffoldingGenerator {
 
+	private static final String buttonXml =
+		"<Button\n" +
+		"\tandroid:id=\"@+id/{modelsVar}\"\n" +
+		"\tandroid:text=\"{modelsName}\"\n" +
+	    "\tandroid:layout_width=\"fill_parent\"\n" +
+	    "\tandroid:layout_height=\"wrap_content\" />";
+
+	private static final String buttonSrc =
+        "\t\t((Button) findViewById(R.id.{modelsVar})).setOnClickListener(new OnClickListener() {\n" +
+		"\t\t\t@Override\n" +
+		"\t\t\tpublic void onClick(View v) {\n" +
+		"\t\t\t\tIntent intent = new Intent({activityName}.this, ShowAll{modelsName}.class);\n" +
+		"\t\t\t\tstartActivity(intent);\n" +
+		"\t\t\t}\n" +
+		"\t\t});";
+	
 	private static final String checkBox =
 		"{i}<CheckBox\n" +
 		"{i}\tandroid:id=\"@+id/{field}\"\n" +
@@ -75,6 +94,77 @@ public class ScaffoldingGenerator {
 	public ScaffoldingGenerator(Application app, AndroidApp androidApp) {
 		this.android = androidApp;
 		this.application = app;
+	}
+	
+	public File generateLaunchButton(File activity) {
+		String src = readFile(activity).toString();
+		Pattern p = Pattern.compile("public\\s+void\\s+onCreate\\s*\\(");
+		Matcher m = p.matcher(src);
+		if(m.find()) {
+			char[] ca = src.toCharArray();
+			int start = find(ca, '{');
+			int end = closer(ca, start);
+			if(start != -1 && end != -1) {
+				p = Pattern.compile("setContentView\\s*\\(\\s*([\\w\\.]+)\\s*\\)");
+				m = p.matcher(new String(ca, start, end-start+1));
+				if(m.find()) {
+					File layout = android.getLayout(m.group(1));
+					if(layout.isFile()) {
+						String projectPackage = android.packageName(android.main);
+						String activityName = activity.getName();
+						activityName = activityName.substring(0, activityName.length() - 5);
+	
+						StringBuilder imports = new StringBuilder();
+						StringBuilder buttonsXml = new StringBuilder();
+						StringBuilder buttonsSrc = new StringBuilder();
+						buttonsSrc.append("\n\t\t// TODO auto-generated code\n");
+						for(File model : application.findModels()) {
+							String modelName = application.getModelName(model);
+							String modelsName = plural(modelName);
+							String modelsVar = varName(modelName, true);
+							imports.append("import ").append(projectPackage).append(".activities.").append(modelsVar).append(".ShowAll").append(modelsName).append(";\n");
+							buttonsXml.append(buttonXml.replace("{modelsVar}", modelsVar).replace("{modelsName}", modelsName)).append('\n');
+							buttonsSrc.append(buttonSrc.replace("{modelsVar}", modelsVar).replace("{activityName}", activityName).replace("{modelsName}", modelsName)).append("\n\n");
+						}
+						buttonsSrc.setCharAt(buttonsSrc.length()-1, '\t');
+	
+						StringBuilder sb = new StringBuilder(src.length() + buttonsSrc.length() + 15);
+						sb.append(src);
+						sb.insert(reverse(ca, end-1), buttonsSrc);
+						int s = findAll(ca, 0, "package ".toCharArray());
+						s = find(ca, '\n', s);
+						s = forward(ca, s);
+						sb.insert(s-1, '\n');
+						sb.insert(s, imports);
+						if(!Pattern.compile("import\\s+android\\.widget\\.Button\\s*;").matcher(src).find()) {
+							sb.insert(s, "import android.widget.Button;\n");
+						}
+						if(!Pattern.compile("import\\s+android\\.view\\.View\\.OnClickListener\\s*;").matcher(src).find()) {
+							sb.insert(s, "import android.view.View.OnClickListener;\n");
+						}
+						if(!Pattern.compile("import\\s+android\\.view\\.View\\s*;").matcher(src).find()) {
+							sb.insert(s, "import android.view.View;\n");
+						}
+						if(!Pattern.compile("import\\s+android\\.content\\.Intent\\s*;").matcher(src).find()) {
+							sb.insert(s, "import android.content.Intent;\n");
+						}
+						writeFile(activity, sb.toString());
+						
+						src = readFile(layout).toString();
+						ca = src.toCharArray();
+	
+						sb = new StringBuilder(src.length() + buttonsXml.length() + 15);
+						sb.append(src);
+						sb.insert(reverse(ca, '<', ca.length - 1), buttonsXml);
+						writeFile(layout, sb.toString());
+						
+						return layout;
+					}
+				}
+			}
+		}
+		
+		return null;
 	}
 	
 	public List<File> generateScaffolding() {
