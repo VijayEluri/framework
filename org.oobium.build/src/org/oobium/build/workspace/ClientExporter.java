@@ -177,8 +177,11 @@ public class ClientExporter {
 			String entryName = className.replace('.', '/') + ".class";
 			String dstName = bundle.file.getName();
 			dstName = dstName.substring(0, dstName.lastIndexOf('.'));
-			File dst = new File(tmpDir, dstName);
-			copyJarEntry(bundle.file, entryName, dst);
+			File dir = new File(tmpDir, dstName);
+			if(!dir.isDirectory()) {
+				dir.mkdirs();
+			}
+			File dst = copyJarEntry(bundle.file, entryName, dir);
 			files.put(entryName, dst);
 		} else {
 			int len = bundle.bin.getAbsolutePath().length() + 1;
