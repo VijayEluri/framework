@@ -278,7 +278,7 @@ public class FileUtils {
 			String name = (File.separatorChar != '/') ? entryName.replace('/', File.separatorChar) : entryName;
 			dst = new File(dst, name);
 		}
-		if(dst.exists() && ((flags & OVER_WRITE) != 0)) {
+		if(dst.exists() && ((flags & OVER_WRITE) == 0)) {
 			if(logger.isLoggingDebug()) {
 				logger.debug("skipping " + dst.getName());
 			}
@@ -533,7 +533,7 @@ public class FileUtils {
 	}
 
 	private static void doCopy(File src, File dst, int flags) throws IOException {
-		if(dst.exists() && ((flags & OVER_WRITE) != 0)) {
+		if(dst.exists() && ((flags & OVER_WRITE) == 0)) {
 			if(logger.isLoggingDebug()) {
 				logger.debug("skipping " + dst.getName());
 			}
@@ -918,7 +918,7 @@ public class FileUtils {
 	}
 	
 	public static File writeFile(File dst, InputStream in, int flags) {
-		if(dst.exists() && ((flags & OVER_WRITE) != 0)) {
+		if(dst.exists() && ((flags & OVER_WRITE) == 0)) {
 			if(logger.isLoggingDebug()) {
 				logger.debug("skipping " + dst.getName());
 			}
