@@ -841,10 +841,18 @@ public class StringUtils {
 	}
 	
 	public static String optionTags(Object options) {
-		return optionTags(options, null);
+		return optionTags(options, null, false);
+	}
+	
+	public static String optionTags(Object options, boolean required) {
+		return optionTags(options, null, required);
 	}
 	
 	public static String optionTags(Object options, Object selection) {
+		return optionTags(options, selection, false);
+	}
+	
+	public static String optionTags(Object options, Object selection, boolean required) {
 		if(options == null) {
 			return "";
 		}
@@ -853,6 +861,9 @@ public class StringUtils {
 		}
 		if(options instanceof Iterable<?>) {
 			StringBuilder sb = new StringBuilder();
+			if(!required) {
+				optionTag(sb, "select", "", selection);
+			}
 			for(Object option : (Iterable<?>) options) {
 				if(option instanceof Iterable<?>) {
 					Iterator<?> iter = ((Iterable<?>) option).iterator();

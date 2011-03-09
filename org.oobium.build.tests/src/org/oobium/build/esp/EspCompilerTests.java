@@ -740,7 +740,9 @@ public class EspCompilerTests {
 						"if(member.hasErrors(\"firstName\")) {\n" +
 						"\t__sb__.append(\" class=\\\"fieldWithErrors\\\"\");\n" +
 						"}\n" +
-						"__sb__.append(\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\">\");\n__sb__.append(optionTags(members, member.getFirstName()));\n__sb__.append(\"</select></form>\");",
+						"__sb__.append(\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\">\");\n" +
+						"__sb__.append(optionTags(members, member.getFirstName(), member.isRequired(\"firstName\")));\n" +
+						"__sb__.append(\"</select></form>\");",
 				html("form(member, create)\n\tselect(firstName)<-options(members)"));
 		assertEquals("String formModelName$0 = \"member\";\n" +
 						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, Action.create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(member.getId()).append(\"\\\" /><select id=\\\"\").append(formModelName$0).append(\"[firstName]\\\"\");\n" +

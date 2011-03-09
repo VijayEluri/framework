@@ -1525,7 +1525,7 @@ public class EspCompiler {
 		return val;
 	}
 	
-	// options<Member>(findAllMembers(), text:"option.getNameLF()", value:"option.getId(), sort:"option.getNameLF()")
+	// options<Member>(findAllMembers(), text:"option.getNameLF()", value:"option.getId(), required: "false", sort:"option.getNameLF()")
 	private void buildSelectOptions(HtmlElement element) {
 		if(element.hasArgs()) {
 			prepForJava(body);
@@ -1570,10 +1570,38 @@ public class EspCompiler {
 					body.append("}\n");
 				}
 			} else {
+				String required = null;
+				if(element.hasEntry("required")) {
+					required = element.hasEntryValue("required") ? toArg(element.getEntryValue("required").getText()) : "false";
+				}
 				if(blank(selectionGetter)) {
-					body.append(sbName).append(".append(optionTags(").append(options).append("));\n");
+					body.append(sbName).append(".append(optionTags(").append(options);
+					if(blank(required)) {
+						body.append("));\n");
+					} else {
+						body.append("), ").append(required).append(");\n");
+					}
 				} else {
-					body.append(sbName).append(".append(optionTags(").append(options).append(", ").append(selectionGetter).append("));\n");
+					body.append(sbName).append(".append(optionTags(").append(options).append(", ").append(selectionGetter);
+					if(blank(required)) {
+						String model = getFormModel(element);
+						if(!blank(model)) {
+							List<EspPart> fields = ((HtmlElement) element.getParent()).getArgs();
+							StringBuilder sb= new StringBuilder();
+							sb.append(model).append(".isRequired(\"");
+							for(int i = 0; i < fields.size(); i++) {
+								if(i != 0) sb.append("\", \"");
+								build(fields.get(i), sb);
+							}
+							sb.append("\")");
+							required = sb.toString();
+							body.append(", ").append(required).append("));\n");
+						} else {
+							body.append("));\n");
+						}
+					} else {
+						body.append(", ").append(required).append("));\n");
+					}
 				}
 			}
 
