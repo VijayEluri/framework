@@ -1268,8 +1268,9 @@ public abstract class Model implements JsonModel {
 			if(Model.class.isAssignableFrom(type)) {
 				String opposite = getOpposite(field);
 				if(getAdapter(type.asSubclass(Model.class)).hasMany(opposite)) {
+					Model newModel = (Model) coercedValue;
 					Model oldModel = (Model) coerce(fields.get(field), type);
-					if(oldModel != null) {
+					if(oldModel != null && !oldModel.equals(newModel)) {
 						Object o = oldModel.get(opposite);
 						if(o instanceof ActiveSet<?>) {
 							((ActiveSet<?>) oldModel.get(opposite)).doRemove(this);
@@ -1277,8 +1278,7 @@ public abstract class Model implements JsonModel {
 							((RequiredSet<?>) oldModel.get(opposite)).doRemove(this);
 						}
 					}
-					Model newModel = (Model) coercedValue;
-					if(newModel != null) {
+					if(newModel != null && !newModel.equals(oldModel)) {
 						Object o = newModel.get(opposite);
 						if(o instanceof ActiveSet<?>) {
 							((ActiveSet<?>) o).doAdd(this);
