@@ -253,15 +253,22 @@ public class ModelDefinition {
 		return type.substring(ix+1);
 	}
 	
+	// type imports: pac.kage.name
+	// const imports: pac.kage.class.const
 	String getType(String name) {
 		String type = null;
 		boolean array = name.endsWith("[]");
 		if(array) name = name.substring(0, name.length()-2);
 		if(name.endsWith(".class")) name = name.substring(0, name.length() - 6);
-		Pattern p = Pattern.compile("import\\s+([\\w\\d\\._\\$]+\\." + name + ");");
+
+		Pattern p = Pattern.compile("import\\s+(static\\s+)?([\\w\\d\\._\\$]+\\." + name + ");");
+		
 		Matcher m = p.matcher(source);
 		if(m.find()) {
-			type = m.group(1);
+			type = m.group(2);
+			if(m.group(1) != null) {
+				type = type.substring(0, type.lastIndexOf('.'));
+			}
 		} else {
 			String src = name + ".java";
 			String[] siblings = file.getParentFile().list();

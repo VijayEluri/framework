@@ -15,6 +15,7 @@ import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.build.model.ModelDefinition.getJavaEntries;
 import static org.oobium.build.model.ModelDefinition.getString;
 
+import java.lang.reflect.Field;
 import java.util.Map;
 
 import org.oobium.persist.Relation;
@@ -22,6 +23,7 @@ import org.oobium.persist.Relation;
 public class ModelRelation {
 
 	public final ModelDefinition model;
+
 	public final boolean hasMany;
 	public final int limit;
 	public final String name;
@@ -34,7 +36,6 @@ public class ModelRelation {
 	public final boolean virtual;
 	public final int onDelete;
 	public final int onUpdate;
-	
 	private ModelRelation oppositeRelation;
 	
 	public ModelRelation(ModelDefinition model, String annotation, boolean hasMany) {
@@ -55,12 +56,36 @@ public class ModelRelation {
 		this.required = coerce(entries.get("required"), false);
 		this.unique = coerce(entries.get("unique"), false);
 		this.virtual = coerce(entries.get("virtual"), false);
-		this.onDelete = coerce(entries.get("onDelete"), Relation.UNDEFINED);
-		this.onUpdate = coerce(entries.get("onUpdate"), Relation.UNDEFINED);
+		this.onDelete = getReferential(entries.get("onDelete"));
+		this.onUpdate = getReferential(entries.get("onUpdate"));
 	}
 	
 	public ModelRelation getOpposite() {
 		return oppositeRelation;
+	}
+	
+	private int getReferential(String referential) {
+		try {
+			return coerce(referential, Relation.UNDEFINED);
+		} catch(Exception e) {
+			String constant;
+			String type;
+			int ix = referential.indexOf('.');
+			if(ix == -1) {
+				constant = referential;
+				type = model.getType(constant);
+			} else {
+				constant = referential.substring(ix+1);
+				type = model.getType(referential.substring(0, ix));
+			}
+			try {
+				Class<?> c = Class.forName(type);
+				Field f = c.getField(constant);
+				return f.getInt(c);
+			} catch(Exception e2) {
+				return Relation.UNDEFINED;
+			}
+		}
 	}
 
 	public String getSimpleType() {
