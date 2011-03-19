@@ -255,9 +255,9 @@ public class ModelDefinition {
 	
 	String getType(String name) {
 		String type = null;
+		if(name.endsWith(".class")) name = name.substring(0, name.length() - 6);
 		boolean array = name.endsWith("[]");
 		if(array) name = name.substring(0, name.length()-2);
-		if(name.endsWith(".class")) name = name.substring(0, name.length() - 6);
 		
 		if(name.indexOf('.') != -1) {
 			return array ? (name + "[]") : name;
