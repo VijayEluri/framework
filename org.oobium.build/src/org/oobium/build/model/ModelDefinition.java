@@ -253,16 +253,21 @@ public class ModelDefinition {
 		return type.substring(ix+1);
 	}
 	
-	// type imports: pac.kage.name
-	// const imports: pac.kage.class.const
 	String getType(String name) {
 		String type = null;
 		boolean array = name.endsWith("[]");
 		if(array) name = name.substring(0, name.length()-2);
 		if(name.endsWith(".class")) name = name.substring(0, name.length() - 6);
-
-		Pattern p = Pattern.compile("import\\s+(static\\s+)?([\\w\\d\\._\\$]+\\." + name + ");");
 		
+		if(name.indexOf('.') != -1) {
+			return array ? (name + "[]") : name;
+		}
+		
+		if(primitives.contains(name)) {
+			return array ? (name + "[]") : name;
+		}
+		
+		Pattern p = Pattern.compile("import\\s+(static\\s+)?([\\w\\d\\._\\$]+\\." + name + ");");
 		Matcher m = p.matcher(source);
 		if(m.find()) {
 			type = m.group(2);
