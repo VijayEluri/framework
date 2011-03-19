@@ -124,7 +124,7 @@ public class ModelTable {
 		indexes.add(new Index(columns, unique));
 	}
 
-	private String getRerentialAction(int action) {
+	private String getReferentialAction(int action) {
 		switch(action) {
 		case CASCADE:		return "CASCADE";
 		case NO_ACTION:		return "NO ACTION";
@@ -149,12 +149,12 @@ public class ModelTable {
 		String column = columnName(relation.name);
 		String reference = tableName(relation.getSimpleType());
 		options = new LinkedHashMap<String, Object>();
-		String onDelete = getRerentialAction(relation.onDelete);
+		String onDelete = getReferentialAction(relation.onDelete);
 		if(onDelete != null) {
 			sf.staticImports.add(Relation.class.getCanonicalName() + "." + onDelete);
 			options.put("onDelete", onDelete);
 		}
-		String onUpdate = getRerentialAction(relation.onUpdate);
+		String onUpdate = getReferentialAction(relation.onUpdate);
 		if(onUpdate != null) {
 			sf.staticImports.add(Relation.class.getCanonicalName() + "." + onUpdate);
 			options.put("onUpdate", onUpdate);
