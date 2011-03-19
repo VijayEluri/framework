@@ -942,6 +942,8 @@ public class EspCompiler {
 				buildResetInput(element);
 			} else if("title".equals(tag)) {
 				buildTitle(element);
+			} else if("option".equals(tag)) {
+				buildSelectOption(element);
 			} else if(!"head".equals(tag)) {
 				body.append('<').append(tag);
 				buildId(element);
@@ -1511,6 +1513,23 @@ public class EspCompiler {
 		body.append("<select");
 		buildFormField(select, false);
 		body.append(">");
+	}
+
+	private void buildSelectOption(HtmlElement option) {
+		body.append("<option");
+		buildId(option);
+		buildClasses(option);
+		if(option.hasArgs()) {
+			buildAttrs(option, "value");
+			body.append(" value=");
+			build(option.getArg(0), body, true);
+		} else {
+			buildAttrs(option);
+		}
+		body.append('>');
+		if(option.hasInnerText()) {
+			build(option.getInnerText(), body);
+		}
 	}
 
 	/**

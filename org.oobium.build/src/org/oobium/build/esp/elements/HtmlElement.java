@@ -503,6 +503,9 @@ public class HtmlElement extends EspElement {
 		} else if("select".equals(tag)) {
 			type = Type.HtmlElement;
 			style = ID | CLASSES | ARGS | ENTRIES | STYLES | CHILDREN | CLOSING_TAG;
+		} else if("option".equals(tag)) {
+			type = Type.HtmlElement;
+			style = ID | CLASSES | ARGS | STYLES | INNER_TEXT | CLOSING_TAG;
 		} else if("options".equals(tag)) {
 			type = Type.HtmlElement;
 			style = JAVA_TYPE | ARGS | ENTRIES;
