@@ -120,8 +120,6 @@ public @interface Relation {
 	 */
 	boolean include() default false;
 	
-	Class<?> key() default String.class;
-	
 	int limit() default -1;
 
 	/**
