@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.oobium.utils.json.JsonUtils;
+
 
 public class AttributeBuilder extends PropertyBuilder {
 
@@ -38,9 +40,15 @@ public class AttributeBuilder extends PropertyBuilder {
 
 	private String getGetterMethod() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("\tpublic ").append(descriptor.type()).append(' ').append(descriptor.getterName()).append("() {\n");
-		sb.append("\t\treturn get(").append(descriptor.enumProp()).append(", ").append(descriptor.type()).append(".class);\n");
-		sb.append("\t}");
+		if("Map".equals(descriptor.type())) {
+			sb.append("\tpublic Map<String, String> ").append(descriptor.getterName()).append("() {\n");
+			sb.append("\t\treturn JsonUtils.toStringMap(get(").append(descriptor.enumProp()).append(", String.class));\n");
+			sb.append("\t}");
+		} else {
+			sb.append("\tpublic ").append(descriptor.type()).append(' ').append(descriptor.getterName()).append("() {\n");
+			sb.append("\t\treturn get(").append(descriptor.enumProp()).append(", ").append(descriptor.type()).append(".class);\n");
+			sb.append("\t}");
+		}
 		return sb.toString();
 	}
 	
@@ -58,6 +66,9 @@ public class AttributeBuilder extends PropertyBuilder {
 		if(descriptor.hasImport()) {
 			String fullType = descriptor.fullType();
 			imports.add(fullType);
+			if("Map".equals(descriptor.type())) {
+				imports.add(JsonUtils.class.getCanonicalName());
+			}
 		}
 		return imports;
 	}
@@ -88,8 +99,9 @@ public class AttributeBuilder extends PropertyBuilder {
 		String type = descriptor.modelType();
 		String prop = descriptor.enumProp();
 		String var = descriptor.variable();
+		String varType = "Map".equals(descriptor.type()) ? "Map<String, String>" : descriptor.type();
 		StringBuilder sb = new StringBuilder();
-		sb.append("\tpublic ").append(type).append(' ').append(descriptor.setterName()).append("(").append(descriptor.type()).append(" ").append(var).append(") {\n");
+		sb.append("\tpublic ").append(type).append(' ').append(descriptor.setterName()).append("(").append(varType).append(" ").append(var).append(") {\n");
 		if(descriptor.hasCheck()) {
 			sb.append("\t\tif((").append(descriptor.getCheck()).append(")) {\n");
 			sb.append("\t\t\treturn set(").append(prop).append(", ").append(var).append(");\n");
