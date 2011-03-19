@@ -111,7 +111,6 @@ public class DbGenerator {
 				}
 			}
 		}
-		
 
 		sf.isAbstract = true;
 		sf.packageName = module.name.replace(File.separatorChar, '.') + ".migrator.migrations";
@@ -195,9 +194,9 @@ public class DbGenerator {
 					if(fk.options.hasAny()) {
 						appendOptions(sf, sb, fk.options);
 					}
-					sb.append(");\n");
+					sb.append(");");
 				}
-				sb.append("\t\t").append(var).append(".update();\n");
+				sb.append("\n\t\t").append(var).append(".update();\n");
 			}
 		}
 
