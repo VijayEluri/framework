@@ -11,8 +11,8 @@ import org.oobium.build.gen.android.ScaffoldingGenerator;
 import org.oobium.build.gen.android.GeneratorEvent;
 import org.oobium.build.gen.android.GeneratorListener;
 import org.oobium.build.workspace.AndroidApp;
-import org.oobium.build.workspace.Application;
 import org.oobium.build.workspace.ClientExporter;
+import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.Project;
 import org.oobium.build.workspace.Workspace;
 import org.oobium.build.workspace.Project.Type;
@@ -21,14 +21,14 @@ public class ModelsCommand extends BuilderCommand {
 
 	@Override
 	protected void configure() {
-		applicationRequired = true;
+		moduleRequired = true;
 	}
 	
 	@Override
 	protected void run() {
-		Application app = getApplication();
-		if(app.hasModels()) {
-			Workspace workspace = getWorkspace();
+		Workspace workspace = getWorkspace();
+		Module module = getModule();
+		if(module.hasModels()) {
 			AndroidApp target = null;
 			if(hasParam("target")) {
 				Project project = workspace.getProject(param("target"));
@@ -70,7 +70,7 @@ public class ModelsCommand extends BuilderCommand {
 				}
 			}
 			try {
-				ClientExporter exporter = new ClientExporter(getWorkspace(), getApplication());
+				ClientExporter exporter = new ClientExporter(workspace, module);
 				exporter.includeSource(true);
 				exporter.setTarget(target);
 				File[] jars = exporter.export();
@@ -89,7 +89,7 @@ public class ModelsCommand extends BuilderCommand {
 				if(target != null) {
 					String s = ask("create scaffolding? [Y/N] ");
 					if("Y".equalsIgnoreCase(s)) {
-						ScaffoldingGenerator gen = new ScaffoldingGenerator(app, target);
+						ScaffoldingGenerator gen = new ScaffoldingGenerator(module, target);
 						gen.setListener(new GeneratorListener() {
 							@Override
 							public void handleEvent(GeneratorEvent event) {
@@ -130,7 +130,7 @@ public class ModelsCommand extends BuilderCommand {
 				console.err.print(e);
 			}
 		} else {
-			console.err.println(app + " does not have any models");
+			console.err.println(module + " does not have any models");
 		}
 	}
 	

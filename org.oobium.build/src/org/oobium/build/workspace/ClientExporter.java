@@ -22,7 +22,7 @@ public class ClientExporter {
 
 	private final Logger logger;
 	private final Workspace workspace;
-	private final Application application;
+	private final Module module;
 	private final File exportDir;
 	private final File tmpDir;
 
@@ -31,10 +31,10 @@ public class ClientExporter {
 	private boolean clean;
 	private boolean includeSource;
 	
-	public ClientExporter(Workspace workspace, Application application) {
+	public ClientExporter(Workspace workspace, Module module) {
 		this.logger = LogProvider.getLogger(BuildBundle.class);
 		this.workspace = workspace;
-		this.application = application;
+		this.module = module;
 		this.exportDir = workspace.getExportDir();
 		this.tmpDir = new File(exportDir, "tmp");
 		
@@ -116,15 +116,15 @@ public class ClientExporter {
 
 			// export application jar
 			Set<Bundle> bundles = new TreeSet<Bundle>();
-			Set<Bundle> deps = application.getDependencies(workspace, mode);
+			Set<Bundle> deps = module.getDependencies(workspace, mode);
 			bundles.addAll(deps);
-			bundles.add(application);
+			bundles.add(module);
 			
-			int len = application.bin.getAbsolutePath().length() + 1;
-			for(File model : application.findModels()) {
-				File genModel = application.getGenModel(model);
-				File modelClass = application.getBinFile(model);
-				File genModelClass = application.getBinFile(genModel);
+			int len = module.bin.getAbsolutePath().length() + 1;
+			for(File model : module.findModels()) {
+				File genModel = module.getGenModel(model);
+				File modelClass = module.getBinFile(model);
+				File genModelClass = module.getBinFile(genModel);
 				files.put(relativePath(modelClass, len), modelClass);
 				files.put(relativePath(genModelClass, len), genModelClass);
 				if(includeSource) {
@@ -133,7 +133,7 @@ public class ClientExporter {
 				}
 			}
 	
-			String name = application.name + ".android.jar";
+			String name = module.name + ".android.jar";
 			logger.info("creating client jar: " + name);
 			File applicationJar = createJar(targetDir, name, files);
 			if(target != null) {

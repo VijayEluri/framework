@@ -1,8 +1,20 @@
 package org.oobium.build.gen.android;
 
-import static org.oobium.utils.CharStreamUtils.*;
-import static org.oobium.utils.FileUtils.*;
-import static org.oobium.utils.StringUtils.*;
+import static org.oobium.utils.CharStreamUtils.closer;
+import static org.oobium.utils.CharStreamUtils.find;
+import static org.oobium.utils.CharStreamUtils.findAll;
+import static org.oobium.utils.CharStreamUtils.forward;
+import static org.oobium.utils.CharStreamUtils.reverse;
+import static org.oobium.utils.FileUtils.copy;
+import static org.oobium.utils.FileUtils.readFile;
+import static org.oobium.utils.FileUtils.writeFile;
+import static org.oobium.utils.StringUtils.constant;
+import static org.oobium.utils.StringUtils.getResourceAsString;
+import static org.oobium.utils.StringUtils.plural;
+import static org.oobium.utils.StringUtils.repeat;
+import static org.oobium.utils.StringUtils.titleize;
+import static org.oobium.utils.StringUtils.underscored;
+import static org.oobium.utils.StringUtils.varName;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,7 +33,7 @@ import org.oobium.build.gen.android.GeneratorEvent.Type;
 import org.oobium.build.gen.model.PropertyDescriptor;
 import org.oobium.build.model.ModelDefinition;
 import org.oobium.build.workspace.AndroidApp;
-import org.oobium.build.workspace.Application;
+import org.oobium.build.workspace.Module;
 import org.oobium.persist.Text;
 
 public class ScaffoldingGenerator {
@@ -86,14 +98,14 @@ public class ScaffoldingGenerator {
 		"{i}\tandroid:layout_height=\"wrap_content\" />\n";
 
 	
-	private Application application;
+	private Module module;
 	private AndroidApp android;
 
 	private GeneratorListener listener;
 	
-	public ScaffoldingGenerator(Application app, AndroidApp androidApp) {
+	public ScaffoldingGenerator(Module module, AndroidApp androidApp) {
 		this.android = androidApp;
-		this.application = app;
+		this.module = module;
 	}
 	
 	public File generateLaunchButton(File activity) {
@@ -118,8 +130,8 @@ public class ScaffoldingGenerator {
 						StringBuilder buttonsXml = new StringBuilder();
 						StringBuilder buttonsSrc = new StringBuilder();
 						buttonsSrc.append("\n\t\t// TODO auto-generated code\n");
-						for(File model : application.findModels()) {
-							String modelName = application.getModelName(model);
+						for(File model : module.findModels()) {
+							String modelName = module.getModelName(model);
 							String modelsName = plural(modelName);
 							String modelsVar = varName(modelName, true);
 							imports.append("import ").append(projectPackage).append(".activities.").append(modelsVar).append(".ShowAll").append(modelsName).append(";\n");
@@ -170,15 +182,15 @@ public class ScaffoldingGenerator {
 	public List<File> generateScaffolding() {
 		List<File> files = new ArrayList<File>();
 		try {
-			for(File model : application.findModels()) {
-				notify("  generating scaffolding for " + application.getModelName(model));
+			for(File model : module.findModels()) {
+				notify("  generating scaffolding for " + module.getModelName(model));
 				files.addAll(scaffold(model));
 			}
 			notify("  adding Internet permission to Android manifest file");
 			android.addPermission("android.permission.INTERNET");
 			
-			if(application.addDiscoveryRoute("/api", true)) {
-				files.add(application.activator);
+			if(module.addDiscoveryRoute("/api", true)) {
+				files.add(module.activator);
 			}
 			
 			File server = new File(android.src, "oobium.server");
@@ -434,8 +446,8 @@ public class ScaffoldingGenerator {
 		List<File> files = new ArrayList<File>();
 		
 		String projectPackage = android.packageName(android.main);
-		String modelPackage = application.packageName(file);
-		String modelName = application.getModelName(file);
+		String modelPackage = module.packageName(file);
+		String modelName = module.getModelName(file);
 		String modelsName = plural(modelName);
 		String modelVar = varName(modelName);
 		String modelsVar = varName(modelName, true);
