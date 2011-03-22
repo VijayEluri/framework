@@ -169,7 +169,25 @@ public class ModelDefinition {
 			return "";
 		}
 		if(in.length() > 1 && in.charAt(0) == '"' && in.charAt(in.length()-1) == '"') {
-			return in.substring(1, in.length()-1);
+			// it is a string literal - escape special characters
+			StringBuilder sb = new StringBuilder(in.length());
+			for(int j = 1; j < in.length()-1; j++) {
+				char c = in.charAt(j);
+				switch(c) {
+				case '\\':
+					if(j < in.length()-2) {
+						char c2 = in.charAt(j+1);
+						switch(c2) {
+						case '\\':
+						case '"':
+							c = c2;
+							j++; // skip the next character (don't add it twice)
+						}
+					}
+				default:	sb.append(c); break;
+				}
+			}
+			return sb.toString();
 		}
 		return in;
 	}
