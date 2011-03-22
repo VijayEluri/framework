@@ -259,7 +259,10 @@ public class ModelDefinition {
 		boolean array = name.endsWith("[]");
 		if(array) name = name.substring(0, name.length()-2);
 		
-		if(name.indexOf('.') != -1) {
+		int ix = name.indexOf('.');
+		if(ix != -1) {
+			// handle inner classes
+			name = getType(name.substring(0, ix)) + name.substring(ix);
 			return array ? (name + "[]") : name;
 		}
 		
