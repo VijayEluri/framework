@@ -461,6 +461,18 @@ public class ModelAdapter {
 	}
 	
 	public boolean isRequired(String field) {
+		if(attribute.containsKey(field)) {
+			ModelDescription description = clazz.getAnnotation(ModelDescription.class);
+			for(Validate validate : description.validations()) {
+				String[] fields = validate.field().split("\\s*,\\s*");
+				for(String f : fields) {
+					if(f.equals(field)) {
+						return validate.isNotBlank() || validate.isNotNull();
+					}
+				}
+			}
+			return false;
+		}
 		if(hasOne.containsKey(field)) {
 			return hasOne.get(field).required();
 		}
