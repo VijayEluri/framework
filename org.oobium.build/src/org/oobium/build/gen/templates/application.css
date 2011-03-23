@@ -56,3 +56,6 @@ label.fieldWithErrors {
   list-style: square;
 }
 
+.required {
+  color: red;
+}
