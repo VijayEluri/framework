@@ -2576,4 +2576,20 @@ public class RouterTests {
 		assertTrue(router.getRoutes().isEmpty());
 	}
 	
+	@Test
+	public void testAddView() throws Exception {
+		router.addView("/business?{type=business}", AccountView.class);
+		router.addView("/personal?{type=personal}", AccountView.class);
+		assertEquals(2, router.getRoutes().size());
+		assertEquals("[GET] /business -> AccountView(type=business)", router.getRoutes().get(0).toString());
+		assertEquals("[GET] /personal -> AccountView(type=personal)", router.getRoutes().get(1).toString());
+
+		RouteHandler handler = router.getHandler(request("[GET] /business"));
+		assertNotNull(handler);
+		assertEquals(ViewHandler.class, handler.getClass());
+		ViewHandler vh = (ViewHandler) handler;
+		assertEquals(AccountView.class, vh.viewClass);
+		assertEquals("[[type, business]]", asString(vh.params));
+	}
+	
 }

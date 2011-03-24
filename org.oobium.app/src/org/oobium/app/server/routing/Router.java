@@ -627,19 +627,18 @@ public class Router {
 	}
 
 	private String getName(Action action, String path) {
-		String name = getName(path);
-		return action.name() + camelCase(name);
+		return action.name() + getName(path);
 	}
 
 	private String getName(String path) {
 		String name = (path.charAt(0) == '/') ? path.substring(1) : path;
 		name = name.replaceAll("\\{([^\\}^\\:^\\=]+)[\\:\\=]?[^\\}]*\\}", "$1").replace('/', '_');
+		name = camelCase(name).replace('?', '_');
 		return name;
 	}
 
 	private String getName(RequestType type, String path) {
-		String name = getName(path);
-		return type.name().toLowerCase() + camelCase(name);
+		return type.name().toLowerCase() + getName(path);
 	}
 	
 	public List<String> getPaths() {
