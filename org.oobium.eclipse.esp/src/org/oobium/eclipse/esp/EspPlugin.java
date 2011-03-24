@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.oobium.eclipse.esp;
 
+import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.oobium.eclipse.esp.editor.EspColorProvider;
 
@@ -45,4 +46,13 @@ public class EspPlugin extends AbstractUIPlugin {
 		return colorProvider;
 	}
 
+	public static ImageDescriptor getImageDescriptor(String key) {
+		ImageDescriptor descriptor = instance.getImageRegistry().getDescriptor(key);
+		if(descriptor == null) {
+			descriptor = ImageDescriptor.createFromFile(EspPlugin.class, key);
+			instance.getImageRegistry().put(key, descriptor);
+		}
+		return descriptor;
+	}
+	
 }

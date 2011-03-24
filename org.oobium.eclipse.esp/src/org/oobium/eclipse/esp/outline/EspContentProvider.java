@@ -15,6 +15,8 @@ import static org.oobium.build.esp.EspPart.Type.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 import org.eclipse.jface.text.BadLocationException;
@@ -42,6 +44,16 @@ import org.oobium.eclipse.esp.EspCore;
  */
 class EspContentProvider implements ITreeContentProvider, PropertyChangeListener {
 
+	private Comparator<Object> sorter = new Comparator<Object>() {
+		private EspLabelProvider lp = new EspLabelProvider();
+		@Override
+		public int compare(Object o1, Object o2) {
+			String s1 = lp.getText(o1).toLowerCase();
+			String s2 = lp.getText(o2).toLowerCase();
+			return s1.compareTo(s2);
+		}
+	};
+
 	private final static String SEGMENTS= "__esp_segments"; //$NON-NLS-1$
 	private IPositionUpdater positionUpdater= new DefaultPositionUpdater(SEGMENTS);
 	
@@ -49,19 +61,21 @@ class EspContentProvider implements ITreeContentProvider, PropertyChangeListener
 	private IDocument document;
 	private Imports imports;
 	
+	private boolean sort;
+	
 	public void dispose() {
 		if(document != null) {
 //			EspCore.get(document).removeListener(this);
 		}
 	}
 
-	
 	public Object[] getChildren(Object element) {
+		Object[] oa = null;
 		if(element instanceof HtmlElement) {
-			return ((HtmlElement) element).getChildren().toArray();
+			oa = ((HtmlElement) element).getChildren().toArray();
 		}
 		if(element instanceof JavaElement) {
-			return ((JavaElement) element).getChildren().toArray();
+			oa = ((JavaElement) element).getChildren().toArray();
 		}
 		if(element instanceof StyleElement) {
 			List<Object> selectors = new ArrayList<Object>();
@@ -70,12 +84,20 @@ class EspContentProvider implements ITreeContentProvider, PropertyChangeListener
 					selectors.add(selector);
 				}
 			}
-			return selectors.toArray();
+			oa = selectors.toArray();
 		}
 		if(element instanceof Imports) {
-			return ((Imports) element).getChildren().toArray();
+			oa = ((Imports) element).getChildren().toArray();
 		}
-		return new Object[0];
+		
+		if(oa == null) {
+			return new Object[0];
+		} else {
+			if(sort) {
+				Arrays.sort(oa, sorter);
+			}
+			return oa;
+		}
 	}
 
 	public Object[] getElements(Object element) {
@@ -104,7 +126,11 @@ class EspContentProvider implements ITreeContentProvider, PropertyChangeListener
 			if(imports != null) {
 				elements.add(0, imports);
 			}
-			return elements.toArray();
+			Object[] oa = elements.toArray();
+			if(dom.isStyle() && oa.length > 0 && sort) {
+				Arrays.sort(oa, sorter);
+			}
+			return oa;
 		}
 		return new Object[0];
 	}
@@ -199,6 +225,18 @@ class EspContentProvider implements ITreeContentProvider, PropertyChangeListener
 				viewer.refresh();
 			}
 		});
+	}
+	
+	public void setSort(boolean sort) {
+		if(this.sort != sort) {
+			this.sort = sort;
+			Display.getDefault().asyncExec(new Runnable() {
+				@Override
+				public void run() {
+					viewer.refresh();
+				}
+			});
+		}
 	}
 	
 }

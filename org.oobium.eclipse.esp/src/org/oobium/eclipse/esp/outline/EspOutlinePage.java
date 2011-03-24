@@ -10,12 +10,16 @@
  ******************************************************************************/
 package org.oobium.eclipse.esp.outline;
 
+import org.eclipse.jface.action.IToolBarManager;
+import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.texteditor.IDocumentProvider;
 import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.ui.views.contentoutline.ContentOutlinePage;
+import org.oobium.eclipse.esp.outline.actions.SortAction;
 
 /**
  * A content outline page which always represents the content of the connected
@@ -23,46 +27,59 @@ import org.eclipse.ui.views.contentoutline.ContentOutlinePage;
  */
 public class EspOutlinePage extends ContentOutlinePage {
 
-	private IDocument input;
+	private IDocument document;
+	private EspContentProvider contentProvider;
+	private SortAction sortAction;
 
-	/**
-	 * Creates a content outline page using the given provider and the given
-	 * editor.
-	 * 
-	 * @param provider
-	 *            the document provider
-	 * @param editor
-	 *            the editor
-	 */
 	public EspOutlinePage(IDocumentProvider provider, ITextEditor editor) {
 		super();
 	}
 
+	private void createActions() {
+		sortAction = new SortAction(this);
+	}
+	
 	public void createControl(Composite parent) {
 		super.createControl(parent);
 
+		createActions();
+		
 		TreeViewer viewer = getTreeViewer();
-		viewer.setContentProvider(new EspContentProvider());
+		viewer.setContentProvider(contentProvider = new EspContentProvider());
 		viewer.setLabelProvider(new EspLabelProvider());
 		viewer.addSelectionChangedListener(this);
 
-		if(input != null) {
-			viewer.setInput(input);
+		createToolBar();
+		
+		if(document != null) {
+			viewer.setInput(document);
 		}
+	}
+	
+	private void createToolBar() {
+		IToolBarManager manager = getSite().getActionBars().getToolBarManager();
+
+		manager.add(sortAction);
+		
+		manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
 	}
 
 	/**
 	 * Sets the input of the outline page
 	 * 
-	 * @param input
+	 * @param document
 	 *            the input of this outline page
 	 */
 	public void setInput(IDocument document) {
-		this.input = document;
+		this.document = document;
 		TreeViewer viewer = getTreeViewer();
 		if(viewer != null && !viewer.getControl().isDisposed()) {
-			viewer.setInput(this.input);
+			viewer.setInput(this.document);
 		}
 	}
 
+	public void setSort(boolean sort) {
+		contentProvider.setSort(sort);
+	}
+	
 }
