@@ -109,7 +109,7 @@ public class Router {
 	protected Map<String, String> hasMany;
 
 	protected Map<RequestType, Map<String, Realm>> authentications;
-	private Map<String, Realm> realms;
+	protected Map<String, Realm> realms;
 	
 	Set<Route> published;
 	
@@ -193,6 +193,13 @@ public class Router {
 			authentications.put(requestType, auth);
 		}
 		auth.put(path, r);
+	}
+
+	/**
+	 * An alias for {@link #addBasicAuthorization(String, String, String)}
+	 */
+	public void addRealm(String realm, String username, String password) {
+		addBasicAuthorization(realm, username, password);
 	}
 	
 	public void addBasicAuthorization(String realm, String username, String password) {

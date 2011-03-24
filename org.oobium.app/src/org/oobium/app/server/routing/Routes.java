@@ -163,6 +163,15 @@ public class Routes {
 		return this;
 	}
 	
+	public Routes setRealm(String realm) {
+		if(routed != null) {
+			for(Routed r : routed) {
+				r.setRealm(realm);
+			}
+		}
+		return this;
+	}
+
 	private void updateParams(ControllerRoute route, String parentIdParam, String hasManyParam) {
 		if(hasManyParam != null) {
 			for(int i = 0; i < route.params.length; i++) {

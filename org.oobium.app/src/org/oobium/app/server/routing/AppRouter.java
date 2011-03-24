@@ -121,6 +121,18 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		return null;
 	}
 	
+	private RouteHandler checkAuthorization(HttpRequest request, Router router, ControllerRoute route) {
+		if(route.realm != null) {
+			Realm realm = router.realms.get(route.realm);
+			if(realm != null) {
+				if(!router.isAuthorized(request, realm)) {
+					return new AuthorizationHandler(router, realm.name());
+				}
+			}
+		}
+		return null;
+	}
+	
 	private RouteHandler checkAuthorizations(HttpRequest request) {
 		RouteHandler handler = checkAuthorization(request, this);
 		if(handler == null && moduleRouters != null) {
@@ -370,7 +382,8 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 							throw new UnsupportedOperationException();
 						case Route.CONTROLLER:
 							ControllerRoute cr = (ControllerRoute) route;
-							return new ControllerHandler(router, cr.controllerClass, cr.action, getParams(cr, matcher));
+							RouteHandler unauth = checkAuthorization(request, router, cr);
+							return (unauth != null) ? unauth : new ControllerHandler(router, cr.controllerClass, cr.action, getParams(cr, matcher));
 						case Route.REDIRECT:
 							RedirectRoute rr = (RedirectRoute) route;
 							return new RedirectHandler(router, rr.to);

@@ -27,6 +27,8 @@ public class ControllerRoute extends Route {
 	public final Class<? extends Controller> controllerClass;
 	public final Action action;
 	public final String[][] params;
+	
+	public String realm;
 
 	
 	public ControllerRoute(RequestType requestType, String rule, Controller controller, Action action) {
