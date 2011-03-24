@@ -63,6 +63,9 @@ public class JavaElement extends EspElement {
 			switch(ca[offset]) {
 			case '"':
 				offset = closer(ca, offset);
+				if(offset == -1) {
+					return ca.length;
+				}
 				break;
 			case '\n':
 				return offset;

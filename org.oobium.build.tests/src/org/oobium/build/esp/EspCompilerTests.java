@@ -394,6 +394,7 @@ public class EspCompilerTests {
 
 	@Test
 	public void testJavaLines() throws Exception {
+		assertEquals("\"", html("- \"")); // unclosed quotes
 		assertEquals("line1\nline2", html("- line1\n- line2"));
 		assertEquals("if(true) {\n\t__sb__.append(\"<div>hello</div>\");\n}", html("- if(true) {\n\t\tdiv hello\n- }"));
 		assertEquals("if(true) {\n\t__sb__.append(\"<div>hello</div>\");\n} else {\n\t__sb__.append(\"<div>goodbye</div>\");\n}", html("- if(true) {\n\t\tdiv hello\n- } else {\n\t\tdiv goodbye\n- }"));
