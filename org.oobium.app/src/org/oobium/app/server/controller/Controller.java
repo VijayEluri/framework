@@ -663,13 +663,15 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 	public boolean isAction(Action action) {
 		return getAction() == action;
 	}
-	
+
+	@Override
 	public boolean isAuthenticated() {
 		resolveSession(true);
 		long start = coerce(session.get(AUTHENTICATED_AT), long.class);
 		return (System.currentTimeMillis() - start) < AUTHENTICATION_INTERVAL;
 	}
 	
+	@Override
 	public boolean isAuthenticated(Model model) {
 		if(model != null) {
 			resolveSession(true);
@@ -687,6 +689,11 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 	
 	protected boolean isAuthorized(String username, String password) {
 		return appRouter.isAuthorized(request, username, password);
+	}
+	
+	@Override
+	public boolean isPath(String path) {
+		return request.getPath().equals(path);
 	}
 	
 	public boolean isRendered() {

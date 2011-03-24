@@ -396,6 +396,11 @@ public class View implements ICache, IFlash, IParams, IPathRouting, IUrlRouting,
 	}
 	
 	@Override
+	public boolean isPath(String path) {
+		return request.getPath().equals(path);
+	}
+	
+	@Override
 	public boolean isXhr() {
 		return controller.isXhr();
 	}

@@ -20,6 +20,7 @@ public interface IHelpers {
 	public abstract String getControllerName();
 
 	public abstract boolean isAction(Action action);
+	public abstract boolean isPath(String path);
 	public abstract boolean isXhr();
 	
 	public abstract boolean accepts(ContentType type);
