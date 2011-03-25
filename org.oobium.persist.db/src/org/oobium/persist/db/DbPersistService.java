@@ -343,7 +343,7 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		Connection connection = getConnection();
 		Model tmp = persistor.find(connection, model.getClass(), "where id=? include:?", model.getId(), hasMany);
 		if(tmp != null) {
-			model.put(hasMany, model.get(hasMany));
+			model.put(hasMany, tmp.get(hasMany));
 		}
 	}
 
