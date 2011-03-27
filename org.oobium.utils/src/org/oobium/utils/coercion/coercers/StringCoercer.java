@@ -23,13 +23,16 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 
+import org.oobium.utils.Base64;
 import org.oobium.utils.json.JsonModel;
 import org.oobium.utils.json.JsonUtils;
 
 public class StringCoercer extends AbstractCoercer {
 
 	public String coerce(byte[] ba, Class<?> toType) {
-		return new String(ba);
+		StringBuilder sb = new StringBuilder(new String(Base64.encode(ba)));
+		sb.insert(0, "/Base64(").append(")/");
+		return sb.toString();
 	}
 	
 	public String coerce(JsonModel model, Class<?> toType) {

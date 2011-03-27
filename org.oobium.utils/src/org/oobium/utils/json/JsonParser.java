@@ -28,6 +28,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.oobium.utils.Base64;
+
 public class JsonParser {
 
 	private boolean keepOrder;
@@ -77,6 +79,8 @@ public class JsonParser {
 				}
 				if(isNext(ca, s1+1, new char[] {'/','D','a','t','e','('}) && ca[s2-3] == ')' && ca[s2-2] == '/') {
 					return new Date(getLong(ca, s1+7, s2-3));
+				} else if(isNext(ca, s1+1, new char[] {'/','B','a','s','e','6','4','('}) && ca[s2-3] == ')' && ca[s2-2] == '/') {
+					return Base64.decode(new String(ca, s1+7, s2-3));
 				} else {
 					// remove escape characters, if any
 					StringBuilder sb = new StringBuilder(s2-s1-2);

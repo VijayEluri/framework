@@ -16,6 +16,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
+import org.oobium.utils.Base64;
 import org.oobium.utils.coercion.TypeCoercer;
 import org.oobium.utils.json.JsonUtils;
 
@@ -34,10 +35,14 @@ public class ArrayCoercer extends AbstractCoercer {
 		}
 		
 		if(object instanceof String) {
+			String s = (String) object;
 			if(componentType == byte.class) {
-				return ((String) object).getBytes();
+				if(s.startsWith("/Base64(") && s.endsWith(")/")) {
+					return Base64.decode(s.substring(8, s.length()-2));
+				}
+				return s.getBytes();
 			}
-			object = JsonUtils.toList((String) object);
+			object = JsonUtils.toList(s);
 		}
 		
 		if(object instanceof Collection) {

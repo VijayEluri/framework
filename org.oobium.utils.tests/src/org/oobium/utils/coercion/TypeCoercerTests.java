@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.junit.Test;
+import org.oobium.utils.Base64;
 import org.oobium.utils.json.JsonModel;
 import org.oobium.utils.json.JsonUtils;
 
@@ -154,7 +155,33 @@ public class TypeCoercerTests {
 
 	@Test
 	public void testByteArrayToString() throws Exception {
-		assertEquals("hello", coerce("hello".getBytes(), String.class));
+		assertEquals("/Base64(" + Base64.encode("hello") + ")/", coerce("hello".getBytes(), String.class));
+	}
+	
+	@Test
+	public void testByteArrayToStringAndBack() throws Exception {
+		byte[] bytes = new byte[] { 1, 2, 3 };
+		String string = coerce(bytes, String.class);
+		assertEquals("/Base64(" + new String(Base64.encode(bytes)) + ")/", string);
+		assertArrayEquals(bytes, coerce(string, byte[].class));
+	}
+	
+	@Test
+	public void testStringToByteArray() throws Exception {
+		assertArrayEquals("hello".getBytes(), coerce("hello", byte[].class));
+		assertArrayEquals(new byte[] { 1, 2, 3 }, coerce("/Base64(" + new String(Base64.encode(new byte[] { 1, 2, 3 })) + ")/", byte[].class));
+	}
+	
+	@Test
+	public void testStringToByteArrayAndBack() throws Exception {
+		// not really what it is intended for... storing bytes as a string is generally more useful
+		String string1 = "hello";
+		byte[] bytes = coerce(string1, byte[].class);
+		assertArrayEquals("hello".getBytes(), bytes);
+		
+		String string2 = "/Base64(" + Base64.encode("hello") + ")/";
+		assertEquals(string2, coerce(bytes, String.class));
+		assertEquals(string1, new String(coerce(string2, byte[].class)));
 	}
 	
 }

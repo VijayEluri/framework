@@ -117,7 +117,7 @@ public class JsonBuilder {
 			return toJson((Iterable<?>) value);
 		}
 		if(value instanceof byte[]) {
-			return "\"" + new String(Base64.encode((byte[]) value)) + "\"";
+			return "\"/Base64(" + new String(Base64.encode((byte[]) value)) + ")/\"";
 		}
 		if(value instanceof java.util.Date) {
 			return "\"/Date(" + ((Date) value).getTime() + ")/\"";

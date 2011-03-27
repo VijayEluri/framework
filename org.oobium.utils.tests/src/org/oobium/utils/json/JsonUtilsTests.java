@@ -216,7 +216,7 @@ public class JsonUtilsTests {
 		assertEquals("{\"a\":\"b\"}", toJson(Collections.singletonMap("a", "\"b\"")));
 		assertEquals("[\"a\"]", toJson(Collections.singletonList("a")));
 		assertEquals("['a']", toJson(Collections.singletonList('a')));
-		assertEquals("\"" + new String(Base64.encode("test".getBytes())) + "\"", toJson("test".getBytes()));
+		assertEquals("\"/Base64(" + new String(Base64.encode("test".getBytes())) + ")/\"", toJson("test".getBytes()));
 
 		Date date = new Date();
 		assertEquals("\"/Date(" + date.getTime() + ")/\"", toJson(date));
