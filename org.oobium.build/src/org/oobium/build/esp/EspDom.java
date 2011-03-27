@@ -18,9 +18,9 @@ import static org.oobium.utils.StringUtils.when;
 import org.oobium.build.BuildBundle;
 import org.oobium.build.esp.elements.CommentElement;
 import org.oobium.build.esp.elements.ConstructorElement;
-import org.oobium.build.esp.elements.HtmlElement;
 import org.oobium.build.esp.elements.ImportElement;
 import org.oobium.build.esp.elements.JavaElement;
+import org.oobium.build.esp.elements.MarkupElement;
 import org.oobium.build.esp.elements.ScriptElement;
 import org.oobium.build.esp.elements.StyleElement;
 import org.oobium.logging.LogProvider;
@@ -196,7 +196,7 @@ public class EspDom extends EspPart {
 					} else if(isNext(start, 's', 't', 'y', 'l', 'e')) {
 						element = new StyleElement(this, offset);
 					} else if(Character.isLowerCase(ca[start])){
-						element = new HtmlElement(this, offset);
+						element = new MarkupElement(this, offset);
 					}
 				}
 			}

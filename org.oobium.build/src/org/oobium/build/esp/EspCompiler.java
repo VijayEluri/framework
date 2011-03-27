@@ -12,7 +12,7 @@ package org.oobium.build.esp;
 
 import static org.oobium.build.esp.EspPart.Type.ConstructorElement;
 import static org.oobium.build.esp.EspPart.Type.DOM;
-import static org.oobium.build.esp.EspPart.Type.HtmlElement;
+import static org.oobium.build.esp.EspPart.Type.MarkupElement;
 import static org.oobium.build.esp.EspPart.Type.ImportElement;
 import static org.oobium.build.esp.EspPart.Type.InnerTextElement;
 import static org.oobium.build.esp.EspPart.Type.JavaElement;
@@ -42,7 +42,7 @@ import org.oobium.app.server.view.View;
 import org.oobium.build.esp.ESourceFile.EspLocation;
 import org.oobium.build.esp.ESourceFile.JavaSourcePart;
 import org.oobium.build.esp.elements.ConstructorElement;
-import org.oobium.build.esp.elements.HtmlElement;
+import org.oobium.build.esp.elements.MarkupElement;
 import org.oobium.build.esp.elements.ImportElement;
 import org.oobium.build.esp.elements.InnerTextElement;
 import org.oobium.build.esp.elements.JavaElement;
@@ -91,7 +91,7 @@ public class EspCompiler {
 		return "formModel$" + start;
 	}
 	
-	private static String getFormModelVar(HtmlElement form) {
+	private static String getFormModelVar(MarkupElement form) {
 		if(form.hasJavaType()) {
 			return getFormModelVar(form.getStart());
 		} else {
@@ -356,7 +356,7 @@ public class EspCompiler {
 		}
 	}
 	
-	private void buildAttrs(HtmlElement element, String...skip) {
+	private void buildAttrs(MarkupElement element, String...skip) {
 		Set<String> skipSet = Set(skip);
 		if(element.hasEntries()) {
 			Map<String, EntryPart> entries = element.getEntries();
@@ -402,7 +402,7 @@ public class EspCompiler {
 		}
 	}
 
-	private void buildCheck(HtmlElement check) {
+	private void buildCheck(MarkupElement check) {
 		if(check.hasArgs()) {
 			List<EspPart> fields = check.getArgs();
 			String model = getFormModel(check);
@@ -458,7 +458,7 @@ public class EspCompiler {
 		body.append(" />");
 	}
 	
-	private void buildClasses(HtmlElement element) {
+	private void buildClasses(MarkupElement element) {
 		if(element.hasClassNames()) {
 			body.append(" class=\\\"");
 			for(Iterator<EspPart> ci = element.getClassNames().iterator(); ci.hasNext(); ) {
@@ -541,7 +541,7 @@ public class EspCompiler {
 		esf.addConstructor(new JavaSourcePart(sb.toString(), locations));
 	}
 	
-	private void buildDateInputs(HtmlElement date) {
+	private void buildDateInputs(MarkupElement date) {
 		body.append("<span");
 		buildFormField(date, false);
 		body.append(">\");\n");
@@ -578,8 +578,8 @@ public class EspCompiler {
 	
 	private void buildElement(EspElement element) {
 		switch(element.getType()) {
-		case HtmlElement:
-			buildHtml((HtmlElement) element);
+		case MarkupElement:
+			buildHtml((MarkupElement) element);
 			break;
 		case ScriptElement:
 			buildScript((ScriptElement) element);
@@ -588,7 +588,7 @@ public class EspCompiler {
 			buildStyle((StyleElement) element);
 			break;
 		case YieldElement:
-			buildYield((HtmlElement) element);
+			buildYield((MarkupElement) element);
 			lastBodyIsJava = true;
 			break;
 		}
@@ -660,7 +660,7 @@ public class EspCompiler {
 		sb.append("<link rel='stylesheet' type='text/css' href='/\").append(path$").append(pos).append(").append(\".css' />");
 	}
 	
-	private void buildFields(HtmlElement fields) {
+	private void buildFields(MarkupElement fields) {
 		List<EspPart> args = fields.getArgs();
 		if(args != null && args.size() == 1) {
 			String type = fields.hasJavaType() ? fields.getJavaType() : "Model";
@@ -684,7 +684,7 @@ public class EspCompiler {
 		}
 	}
 	
-	private void buildForm(HtmlElement form) {
+	private void buildForm(MarkupElement form) {
 		List<EspPart> args = form.getArgs();
 		if(args != null && (args.size() == 1 || args.size() == 2)) {
 			String action = (args.size() == 2) ? args.get(1).getText().trim() : null;
@@ -839,7 +839,7 @@ public class EspCompiler {
 		prepForMarkup(body);
 	}
 	
-	private void buildClasses(HtmlElement element, String model, List<EspPart> fields) {
+	private void buildClasses(MarkupElement element, String model, List<EspPart> fields) {
 		if(!"hidden".equals(element.getTag())) {
 			if(element.hasClassNames()) {
 				body.append(" class=\\\"");
@@ -857,7 +857,7 @@ public class EspCompiler {
 		}
 	}
 	
-	private void buildFormField(HtmlElement input, boolean hasValue) {
+	private void buildFormField(MarkupElement input, boolean hasValue) {
 		if(input.hasArgs()) {
 			List<EspPart> fields = input.getArgs();
 			String model = getFormModel(input);
@@ -898,7 +898,7 @@ public class EspCompiler {
 		}
 	}
 	
-	private void buildHtml(HtmlElement element) {
+	private void buildHtml(MarkupElement element) {
 		String tag = element.getTag();
 		if("view".equals(tag)) {
 			buildView(element);
@@ -998,7 +998,7 @@ public class EspCompiler {
 		}
 	}
 
-	private void buildId(HtmlElement element) {
+	private void buildId(MarkupElement element) {
 		if(element.hasId()) {
 			body.append(" id=\\\"");
 			build(element.getId(), body);
@@ -1006,7 +1006,7 @@ public class EspCompiler {
 		}
 	}
 	
-	private void buildImage(HtmlElement image) {
+	private void buildImage(MarkupElement image) {
 		body.append("<img");
 		buildId(image);
 		buildClasses(image);
@@ -1067,7 +1067,7 @@ public class EspCompiler {
 		sb.append("</style>");
 	}
 	
-	private void buildInput(String tag, HtmlElement input) {
+	private void buildInput(String tag, MarkupElement input) {
 		if(input.hasEntry("type")) {
 			body.append("<input type=\\\"");
 			build(input.getEntry("type").getValue(), body);
@@ -1112,7 +1112,7 @@ public class EspCompiler {
 		}
 	}
 
-	private void buildLabel(HtmlElement label) {
+	private void buildLabel(MarkupElement label) {
 		prepForMarkup(body);
 		lastBodyIsJava = false; // set true below if necessary
 		body.append("<label");
@@ -1192,7 +1192,7 @@ public class EspCompiler {
 		}
 	}
 	
-	private void buildLink(HtmlElement link) {
+	private void buildLink(MarkupElement link) {
 		body.append('<').append(link.getTag());
 		buildId(link);
 		buildClasses(link);
@@ -1280,7 +1280,7 @@ public class EspCompiler {
 		}
 	}
 	
-	private void buildErrors(HtmlElement element) {
+	private void buildErrors(MarkupElement element) {
 		prepForJava(body);
 
 		body.append("errorsBlock(").append(sbName).append(", ");
@@ -1313,7 +1313,7 @@ public class EspCompiler {
 		lastBodyIsJava = true;
 	}
 
-	private void buildMessages(HtmlElement element) {
+	private void buildMessages(MarkupElement element) {
 		prepForJava(body);
 
 		body.append("messagesBlock(").append(sbName).append(");\n");
@@ -1340,7 +1340,7 @@ public class EspCompiler {
 		}
 	}
 	
-	private void buildNumber(HtmlElement input) {
+	private void buildNumber(MarkupElement input) {
 		body.append("<input type=\\\"text\\\"");
 		if(input.hasArgs()) {
 			List<EspPart> fields = input.getArgs();
@@ -1398,7 +1398,7 @@ public class EspCompiler {
 		body.append(" />");
 	}
 
-	private void buildResetInput(HtmlElement element) {
+	private void buildResetInput(MarkupElement element) {
 		body.append("<input");
 		body.append(" type=\\\"reset\\\"");
 		buildId(element);
@@ -1509,13 +1509,13 @@ public class EspCompiler {
 		}
 	}
 	
-	private void buildSelect(HtmlElement select) {
+	private void buildSelect(MarkupElement select) {
 		body.append("<select");
 		buildFormField(select, false);
 		body.append(">");
 	}
 
-	private void buildSelectOption(HtmlElement option) {
+	private void buildSelectOption(MarkupElement option) {
 		body.append("<option");
 		buildId(option);
 		buildClasses(option);
@@ -1545,7 +1545,7 @@ public class EspCompiler {
 	}
 	
 	// options<Member>(findAllMembers(), text:"option.getNameLF()", value:"option.getId(), required: "false", sort:"option.getNameLF()")
-	private void buildSelectOptions(HtmlElement element) {
+	private void buildSelectOptions(MarkupElement element) {
 		if(element.hasArgs()) {
 			prepForJava(body);
 
@@ -1605,7 +1605,7 @@ public class EspCompiler {
 					if(blank(required)) {
 						String model = getFormModel(element);
 						if(!blank(model)) {
-							List<EspPart> fields = ((HtmlElement) element.getParent()).getArgs();
+							List<EspPart> fields = ((MarkupElement) element.getParent()).getArgs();
 							StringBuilder sb= new StringBuilder();
 							sb.append(model).append(".isRequired(\"");
 							for(int i = 0; i < fields.size(); i++) {
@@ -1666,11 +1666,12 @@ public class EspCompiler {
 			}
 			if(element.hasChildren()) {
 				boolean firstChild = true;
-				List<StyleChildElement> children = element.getChildren();
+				List<EspElement> children = element.getChildren();
 				if(!dom.isEss()) {
 					sb.append("<style>");
 				}
-				for(StyleChildElement child : children) {
+				for(EspElement childElement : children) {
+					StyleChildElement child = (StyleChildElement) childElement;
 					if(child.hasSelectors() && child.hasProperties()) {
 						if(firstChild) firstChild = false;
 						else sb.append(' ');
@@ -1713,7 +1714,7 @@ public class EspCompiler {
 		}
 	}
 	
-	private void buildSubmit(HtmlElement element) {
+	private void buildSubmit(MarkupElement element) {
 		body.append("<input");
 		body.append(" type=\\\"submit\\\"");
 		buildId(element);
@@ -1739,7 +1740,7 @@ public class EspCompiler {
 		body.append(" />");
 	}
 	
-	private void buildTextArea(HtmlElement textarea) {
+	private void buildTextArea(MarkupElement textarea) {
 		body.append("<textarea");
 		buildFormField(textarea, false);
 		body.append(">");
@@ -1754,7 +1755,7 @@ public class EspCompiler {
 		}
 	}
 
-	private void buildTitle(HtmlElement element) {
+	private void buildTitle(MarkupElement element) {
 		if(element.hasInnerText()) {
 			EspPart part = element.getInnerText();
 			if(part.getText().startsWith("+= ")) {
@@ -1771,7 +1772,7 @@ public class EspCompiler {
 		}
 	}
 
-	private void buildView(HtmlElement view) {
+	private void buildView(MarkupElement view) {
 		String type = view.getJavaType();
 		if(type != null) {
 			
@@ -1810,7 +1811,7 @@ public class EspCompiler {
 		}
 	}
 
-	private void buildYield(HtmlElement element) {
+	private void buildYield(MarkupElement element) {
 		prepForJava(body);
 
 		if(dom.isEsp()) {
@@ -2096,8 +2097,8 @@ public class EspCompiler {
 
 	private boolean containsFileInput(EspElement element) {
 		switch(element.getType()) {
-		case HtmlElement:
-			HtmlElement h = (HtmlElement) element;
+		case MarkupElement:
+			MarkupElement h = (MarkupElement) element;
 			if("file".equals(h.getTag())) {
 				return true;
 			}
@@ -2124,11 +2125,11 @@ public class EspCompiler {
 		}
 	}
 	
-	private HtmlElement getForm(HtmlElement formField) {
+	private MarkupElement getForm(MarkupElement formField) {
 		EspPart parent = formField.getParent();
 		while(parent != null) {
-			if(parent.isA(HtmlElement)) {
-				HtmlElement h = (HtmlElement) parent;
+			if(parent.isA(MarkupElement)) {
+				MarkupElement h = (MarkupElement) parent;
 				if("form".equals(h.getTag())) {
 					List<EspPart> args = h.getArgs();
 					if(args != null && (args.size() == 1 || args.size() == 2)) {
@@ -2148,11 +2149,11 @@ public class EspCompiler {
 		return null;
 	}
 	
-	private String getFormAction(HtmlElement formField) {
+	private String getFormAction(MarkupElement formField) {
 		EspPart parent = formField.getParent();
 		while(parent != null) {
-			if(parent.isA(HtmlElement)) {
-				HtmlElement h = (HtmlElement) parent;
+			if(parent.isA(MarkupElement)) {
+				MarkupElement h = (MarkupElement) parent;
 				if("form".equals(h.getTag())) {
 					List<EspPart> args = h.getArgs();
 					if(args != null && args.size() == 2) {
@@ -2185,23 +2186,23 @@ public class EspCompiler {
 		return null;
 	}
 	
-	private String getFormModel(HtmlElement formField) {
-		HtmlElement form = getForm(formField);
+	private String getFormModel(MarkupElement formField) {
+		MarkupElement form = getForm(formField);
 		if(form != null) {
 			return getFormModelVar(form);
 		}
 		return null;
 	}
 	
-	private String getFormModelName(HtmlElement formField) {
-		HtmlElement form = getForm(formField);
+	private String getFormModelName(MarkupElement formField) {
+		MarkupElement form = getForm(formField);
 		if(form != null) {
 			return getFormModelNameVar(form.getStart());
 		}
 		return null;
 	}
 	
-	private String getFormModelNameValue(HtmlElement form) {
+	private String getFormModelNameValue(MarkupElement form) {
 		if(form.hasEntry("as")) {
 			return form.getEntryValue("as").getText().trim();
 		}
@@ -2214,10 +2215,10 @@ public class EspCompiler {
 		return "\"" + arg + "\"";
 	}
 
-	private String getSelectionGetter(HtmlElement options) {
+	private String getSelectionGetter(MarkupElement options) {
 		EspPart parent = options.getParent();
-		if(parent instanceof HtmlElement && "select".equals(((HtmlElement) parent).getTag())) {
-			HtmlElement select = (HtmlElement) parent;
+		if(parent instanceof MarkupElement && "select".equals(((MarkupElement) parent).getTag())) {
+			MarkupElement select = (MarkupElement) parent;
 			String model = getFormModel(select);
 			if(!blank(model)) {
 				StringBuilder sb = new StringBuilder();
@@ -2257,8 +2258,8 @@ public class EspCompiler {
 			switch(parent.getType()) {
 			case DOM:
 				return false;
-			case HtmlElement:
-				if("head".equals(((HtmlElement) parent).getTag())) {
+			case MarkupElement:
+				if("head".equals(((MarkupElement) parent).getTag())) {
 					return true;
 				}
 			default:
@@ -2323,7 +2324,7 @@ public class EspCompiler {
 		return SBNAME;
 	}
 	
-	private void startCapture(HtmlElement capture) {
+	private void startCapture(MarkupElement capture) {
 		prepForJava(body);
 
 		if(capture.hasArgs()) {
@@ -2337,7 +2338,7 @@ public class EspCompiler {
 		lastBodyIsJava = true;
 	}
 	
-	private void startContent(HtmlElement content) {
+	private void startContent(MarkupElement content) {
 		prepForJava(body);
 
 		if(content.hasArgs()) {

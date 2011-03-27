@@ -32,9 +32,9 @@ import org.eclipse.swt.widgets.Display;
 import org.oobium.build.esp.EspDom;
 import org.oobium.build.esp.EspElement;
 import org.oobium.build.esp.EspPart;
-import org.oobium.build.esp.elements.HtmlElement;
 import org.oobium.build.esp.elements.ImportElement;
 import org.oobium.build.esp.elements.JavaElement;
+import org.oobium.build.esp.elements.MarkupElement;
 import org.oobium.build.esp.elements.StyleChildElement;
 import org.oobium.build.esp.elements.StyleElement;
 import org.oobium.eclipse.esp.EspCore;
@@ -71,16 +71,16 @@ class EspContentProvider implements ITreeContentProvider, PropertyChangeListener
 
 	public Object[] getChildren(Object element) {
 		Object[] oa = null;
-		if(element instanceof HtmlElement) {
-			oa = ((HtmlElement) element).getChildren().toArray();
+		if(element instanceof MarkupElement) {
+			oa = ((MarkupElement) element).getChildren().toArray();
 		}
 		if(element instanceof JavaElement) {
 			oa = ((JavaElement) element).getChildren().toArray();
 		}
 		if(element instanceof StyleElement) {
 			List<Object> selectors = new ArrayList<Object>();
-			for(StyleChildElement child : ((StyleElement) element).getChildren()) {
-				for(EspPart selector : child.getSelectorGroups()) {
+			for(EspElement child : ((MarkupElement) element).getChildren()) {
+				for(EspPart selector : ((StyleChildElement) child).getSelectorGroups()) {
 					selectors.add(selector);
 				}
 			}
@@ -115,9 +115,9 @@ class EspContentProvider implements ITreeContentProvider, PropertyChangeListener
 					if(level == 0) {
 						elements.add(e);
 					} else if(level < 1 && e instanceof StyleElement) { // CSS or ESS file
-						for(StyleChildElement child : ((StyleElement) e).getChildren()) {
-							for(EspPart sg : child.getSelectorGroups()) {
-								elements.add(sg);
+						for(EspElement child : ((MarkupElement) element).getChildren()) {
+							for(EspPart selector : ((StyleChildElement) child).getSelectorGroups()) {
+								elements.add(selector);
 							}
 						}
 					}
@@ -152,8 +152,8 @@ class EspContentProvider implements ITreeContentProvider, PropertyChangeListener
 	}
 
 	public boolean hasChildren(Object element) {
-		if(element instanceof HtmlElement) {
-			return ((HtmlElement) element).hasChildren();
+		if(element instanceof MarkupElement) {
+			return ((MarkupElement) element).hasChildren();
 		}
 		if(element instanceof JavaElement) {
 			return ((JavaElement) element).hasChildren();

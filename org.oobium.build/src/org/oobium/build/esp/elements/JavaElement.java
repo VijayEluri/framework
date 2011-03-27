@@ -46,7 +46,7 @@ public class JavaElement extends EspElement {
 			} else if(isNext(start, 's', 't', 'y', 'l', 'e')) {
 				element = new StyleElement(this, offset);
 			} else if(Character.isLowerCase(ca[start])) {
-				element = new HtmlElement(this, offset);
+				element = new MarkupElement(this, offset);
 			} else {
 				return findEOL(ca, offset);
 			}

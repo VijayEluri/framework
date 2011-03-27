@@ -48,9 +48,9 @@ public class StyleChildElement extends EspElement {
 				}
 				s1 = s2 = s2 + 1;
 			} else {
-				int s = commentCloser(ca, s2);
+				int s = commentCheck(this, s2);
 				if(s >= eol) {
-					addProperty(s1, eol);
+					addProperty(s1, s2);
 					return s;
 				} else {
 					s2 = s + 1;

@@ -29,7 +29,7 @@ public class CommentPart extends EspPart {
 
 	private void setEnd() {
 		int s = start + 2;
-		if(ca[start+1] == '*') {
+		if(ca[start+1] == '*') { // multi line comment
 			while(s < ca.length) {
 				if(ca[s] == '/' && ca[s-1] == '*') {
 					end = s + 1;

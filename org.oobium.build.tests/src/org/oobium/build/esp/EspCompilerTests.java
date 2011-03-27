@@ -45,6 +45,11 @@ public class EspCompilerTests {
 	}
 	
 	@Test
+	public void testComments() throws Exception {
+		assertEquals("__sb__.append(\"<div></div>\");", html("// c1\ndiv\n//c2"));
+	}
+	
+	@Test
 	public void testImport() throws Exception {
 		assertTrue(src("import com.mydomain.MyClass").hasImport("com.mydomain.MyClass"));
 		assertEquals("com.mydomain.MyClass", src("import com.mydomain.MyClass").getImport("com.mydomain.MyClass"));
@@ -169,7 +174,8 @@ public class EspCompilerTests {
 		assertEquals("if(true)\n\t__sb__.append(\"<script>alert('hello');</script>\");", html("-if(true)\n\tscript alert('hello');"));
 
 		// including an EJS file
-		assertEquals("__sb__.append(\"<script>\");\nMyScripts myScripts$0 = new MyScripts();\nmyScripts$0.render(__sb__);\n__sb__.append(\"</script>\");", html("script<MyScripts>"));
+		assertEquals("__sb__.append(\"<script>\");\nMyScripts myScripts$0 = new MyScripts();\nmyScripts$0.render(__sb__);\n__sb__.append(\"</script>\");",
+				html("script<MyScripts>"));
 	}
 	
 	@Test
@@ -440,10 +446,10 @@ public class EspCompilerTests {
 	
 	@Test
 	public void testLink() throws Exception {
-		assertEquals("__sb__.append(\"<a href=\\\"/home\\\">/home</a>\");", html("a(\"/home\")"));
-		assertEquals("__sb__.append(\"<a href=\\\"/home\\\"></a>\");", html("a(href:\"/home\")"));
-
-		assertEquals("__sb__.append(\"<a href=\\\"\").append(h(pathTo(something))).append(\"\\\">something</a>\");", html("a({pathTo(something)}) something"));
+//		assertEquals("__sb__.append(\"<a href=\\\"/home\\\">/home</a>\");", html("a(\"/home\")"));
+//		assertEquals("__sb__.append(\"<a href=\\\"/home\\\"></a>\");", html("a(href:\"/home\")"));
+//
+//		assertEquals("__sb__.append(\"<a href=\\\"\").append(h(pathTo(something))).append(\"\\\">something</a>\");", html("a({pathTo(something)}) something"));
 
 		assertEquals("__sb__.append(\"<a href=\\\"http://mydomain.com/home\\\">http://mydomain.com/home</a>\");", html("a(\"http://mydomain.com/home\")"));
 		assertEquals("__sb__.append(\"<a href=\\\"http://mydomain.com/home\\\"></a>\");", html("a(href:\"http://mydomain.com/home\")"));

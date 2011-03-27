@@ -77,7 +77,7 @@ public class StylePropertyPart extends EspPart {
 						}
 						return;
 					}
-					s = commentCloser(ca, s);
+					s = commentCheck(this, s);
 				}
 				
 				// no ':' found
@@ -91,7 +91,7 @@ public class StylePropertyPart extends EspPart {
 						name = new EspPart(this, Type.StylePropertyNamePart, s1, s2+1);
 						break;
 					}
-					s2 = commentCloser(ca, s2);
+					s2 = commentCheck(this, s2);
 					if(s2 >= end) {
 						name = new EspPart(this, Type.StylePropertyNamePart, s1, end);
 						break;

@@ -66,7 +66,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 				switch(element.getType()) {
 				case ConstructorElement:
 					return computeConstructorProposals(doc, element, part, offset);
-				case HtmlElement:
+				case MarkupElement:
 					return computeHtmlProposals(doc, element, part, offset);
 				case ImportElement:
 					return computeImportProposals(doc, element, part, offset);

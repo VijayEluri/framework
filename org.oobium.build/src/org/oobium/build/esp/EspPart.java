@@ -22,7 +22,7 @@ public class EspPart implements CharSequence {
 		DOM,
 		ImportElement, ImportPart,
 		ConstructorElement, CtorArgPart, VarTypePart, VarNamePart, DefaultValuePart,
-		HtmlElement, InnerTextElement, YieldElement,
+		MarkupElement, InnerTextElement, YieldElement,
 		JavaElement, JavaPart, JavaSourcePart,
 		JavaTypePart, TagPart, IdPart, ClassPart, ArgPart, EntryPart, StyleEntryPart, EntryKeyPart, EntryValuePart, InnerTextPart, StylePart,
 		CommentElement, Unknown,
@@ -38,7 +38,7 @@ public class EspPart implements CharSequence {
 	
 	private static int commentCheck(EspPart parent, char[] ca, int ix) {
 		if(ix >= 0) {
-			if(ix < ca.length-1 && ca[ix] == '/' && ca[ix+1] == '*') {
+			if(ix < ca.length-1 && ca[ix] == '/' && (ca[ix+1] == '*' || ca[ix+1] == '/')) {
 				CommentPart comment = new CommentPart(parent, ix);
 				ix = comment.getEnd();
 			}
@@ -46,14 +46,24 @@ public class EspPart implements CharSequence {
 		return ix;
 	}
 	
-	public static int commentCloser(char[] ca, int ix) {
-		if(ix < ca.length-1 && ca[ix] == '/' && ca[ix+1] == '*') {
-			ix += 2;
-			while(ix < ca.length) {
-				if(ca[ix] == '/' && ca[ix-1] == '*') {
-					break;
+	public static int commentCloser_Bak(char[] ca, int ix) {
+		if(ix < ca.length-1 && ca[ix] == '/') {
+			if(ca[ix+1] == '*') { // multi line comment
+				ix += 2;
+				while(ix < ca.length) {
+					if(ca[ix] == '/' && ca[ix-1] == '*') {
+						break;
+					}
+					ix++;
 				}
-				ix++;
+			} else if(ca[ix+1] == '/') { // single line comment
+				ix += 2;
+				while(ix < ca.length) {
+					if(ca[ix] == '\n') {
+						break;
+					}
+					ix++;
+				}
 			}
 		}
 		return ix;

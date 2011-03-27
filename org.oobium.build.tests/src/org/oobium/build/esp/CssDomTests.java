@@ -11,25 +11,8 @@
 package org.oobium.build.esp;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.oobium.build.esp.EspPart.Type.*;
 
-import org.junit.Ignore;
 import org.junit.Test;
-import org.oobium.build.esp.EspDom;
-import org.oobium.build.esp.EspElement;
-import org.oobium.build.esp.EspPart.Type;
-import org.oobium.build.esp.elements.CommentElement;
-import org.oobium.build.esp.elements.ConstructorElement;
-import org.oobium.build.esp.elements.HtmlElement;
-import org.oobium.build.esp.elements.ImportElement;
-import org.oobium.build.esp.elements.InnerTextElement;
-import org.oobium.build.esp.elements.JavaElement;
-import org.oobium.build.esp.parts.JavaPart;
 
 public class CssDomTests {
 

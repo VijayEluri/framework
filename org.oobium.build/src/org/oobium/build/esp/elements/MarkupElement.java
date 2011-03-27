@@ -10,7 +10,12 @@
  ******************************************************************************/
 package org.oobium.build.esp.elements;
 
-import static org.oobium.utils.CharStreamUtils.*;
+import static org.oobium.utils.CharStreamUtils.closer;
+import static org.oobium.utils.CharStreamUtils.findEOL;
+import static org.oobium.utils.CharStreamUtils.forward;
+import static org.oobium.utils.CharStreamUtils.isEqual;
+import static org.oobium.utils.CharStreamUtils.isWhitespace;
+import static org.oobium.utils.CharStreamUtils.reverse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,8 +27,7 @@ import org.oobium.build.esp.EspPart;
 import org.oobium.build.esp.parts.EntryPart;
 import org.oobium.build.esp.parts.JavaContainerPart;
 
-
-public class HtmlElement extends EspElement {
+public class MarkupElement extends EspElement {
 
 	public static final int NONE				= 0;
 	public static final int JAVA_TYPE			= 1 << 0;
@@ -39,20 +43,19 @@ public class HtmlElement extends EspElement {
 	public static final int CHILDREN			= 1 << 10;
 	public static final int CLOSING_TAG			= 1 << 11;
 
-
-	private int style;
-
-	private EspPart tag;
-	private EspPart javaType;
+	
+	protected int style;
+	protected EspPart tag;
+	protected EspPart javaType;
 	private EspPart id;
 	private List<EspPart> classNames;
-	private List<EspPart> args;
-	private Map<String, EntryPart> entries;
 	private boolean hide;
-	private EspPart innerText;
-	private List<EspElement> children;
+	protected List<EspPart> args;
+	protected Map<String, EntryPart> entries;
+	protected EspPart innerText;
+	protected List<EspElement> children;
 	
-	public HtmlElement(EspPart parent, int start) {
+	public MarkupElement(EspPart parent, int start) {
 		super(parent, start);
 		parse();
 	}
@@ -75,7 +78,14 @@ public class HtmlElement extends EspElement {
 			}
 		}
 	}
-
+	
+	protected void addChild(EspElement child) {
+		if(children == null) {
+			children = new ArrayList<EspElement>();
+		}
+		children.add(child);
+	}
+	
 	private void addClassName(int start, int end) {
 		if(classNames == null) {
 			classNames = new ArrayList<EspPart>();
@@ -92,7 +102,7 @@ public class HtmlElement extends EspElement {
 		entries.put((key == null) ? "" : key.getText(), entry);
 	}
 	
-	private int createChild(int offset) {
+	protected int createChild(int offset) {
 		int start = forward(ca, offset);
 		if(start == -1) {
 			return offset;
@@ -111,19 +121,16 @@ public class HtmlElement extends EspElement {
 			} else if(isNext(start, 's', 't', 'y', 'l', 'e')) {
 				element = new StyleElement(this, offset);
 			} else if(Character.isLowerCase(ca[start])) {
-				element = new HtmlElement(this, offset);
+				element = new MarkupElement(this, offset);
 			} else {
 				return findEOL(ca, offset);
 			}
-			if(children == null) {
-				children = new ArrayList<EspElement>();
-			}
-			children.add(element);
+			addChild(element);
 			return element.getEnd();
 		}
 	}
-	
-	private int findEnd(int offset) {
+
+	protected int findEnd(int offset) {
 		int eol = findEOL(ca, offset);
 		while(offset < eol) {
 			switch(ca[offset]) {
@@ -151,7 +158,7 @@ public class HtmlElement extends EspElement {
 					if(ca[offset+1] == '/') {
 						return offset;
 					} else if(ca[offset+1] == '*') {
-						offset = commentCloser(ca, offset);
+						offset = commentCheck(this, offset);
 						if(offset >= ca.length) {
 							return ca.length;
 						}
@@ -163,7 +170,7 @@ public class HtmlElement extends EspElement {
 		}
 		return offset;
 	}
-
+	
 	public EspPart getArg(int index) {
 		return args.get(index);
 	}
@@ -182,36 +189,6 @@ public class HtmlElement extends EspElement {
 
 	public List<EspPart> getClassNames() {
 		return classNames;
-	}
-
-	public Map<String, EntryPart> getEntries() {
-		return entries;
-	}
-
-	public EntryPart getEntry(String name) {
-		return entries.get(name);
-	}
-	
-	public EspPart getEntryKey(String name) {
-		EntryPart entry = entries.get(name);
-		return (entry != null) ? entry.getKey() : null;
-	}
-	
-	public EspPart getEntryValue(String name) {
-		EntryPart entry = entries.get(name);
-		return (entry != null) ? entry.getValue() : null;
-	}
-
-	public EspPart getId() {
-		return id;
-	}
-	
-	public EspPart getInnerText() {
-		return innerText;
-	}
-	
-	public String getJavaType() {
-		return (javaType != null) ? javaType.getText() : null;
 	}
 	
 	@Override
@@ -232,18 +209,49 @@ public class HtmlElement extends EspElement {
 		return getText();
 	}
 	
-	public String getTag() {
-		return (tag != null) ? tag.getText() : "";
+	public Map<String, EntryPart> getEntries() {
+		return entries;
 	}
 	
-	public Type getType() {
-		return type;
+	public EntryPart getEntry(String name) {
+		return entries.get(name);
+	}
+	
+	public EspPart getEntryKey(String name) {
+		EntryPart entry = entries.get(name);
+		return (entry != null) ? entry.getKey() : null;
+	}
+	
+	public String getEntryText(String name) {
+		EspPart part = getEntryValue(name);
+		return (part != null) ? part.getText() : null;
+	}
+	
+	public EspPart getEntryValue(String name) {
+		EntryPart entry = (entries != null) ? entries.get(name) : null;
+		return (entry != null) ? entry.getValue() : null;
+	}
+	
+	public EspPart getId() {
+		return id;
+	}
+	
+	public EspPart getInnerText() {
+		return innerText;
+	}
+
+	public String getJavaType() {
+		return (javaType != null) ? javaType.getText() : null;
+	}
+	
+	public String getTag() {
+		return (tag != null) ? tag.getText() : "";
 	}
 	
 	public boolean handlesChildren() {
 		return (style & CHILDREN) != 0;
 	}
-	
+
 	public boolean hasArgs() {
 		return args != null;
 	}
@@ -251,7 +259,7 @@ public class HtmlElement extends EspElement {
 	public boolean hasChildren() {
 		return children != null;
 	}
-	
+
 	public boolean hasClassNames() {
 		return classNames != null;
 	}
@@ -267,7 +275,7 @@ public class HtmlElement extends EspElement {
 	public boolean hasEntry(String name) {
 		return (entries != null) && entries.containsKey(name);
 	}
-	
+
 	public boolean hasEntryValue(String name) {
 		return (entries != null) && entries.containsKey(name) && (entries.get(name).getValue() != null);
 	}
@@ -275,15 +283,15 @@ public class HtmlElement extends EspElement {
 	public boolean hasId() {
 		return id != null;
 	}
-
+	
 	public boolean hasInnerText() {
 		return innerText != null;
 	}
-	
+
 	public boolean hasJavaType() {
 		return javaType != null && javaType.getLength() > 0;
 	}
-
+	
 	public boolean isHidden() {
 		return hide;
 	}
@@ -292,92 +300,59 @@ public class HtmlElement extends EspElement {
 		int s1 = start;
 		int eoe = findEnd(s1);
 
-		// Tag
-		while(s1 < eoe && (ca[s1] == '_' || Character.isLetterOrDigit(ca[s1]))) {
-			s1++;
-		}
-		setTagTypeAndStyle(start, s1);
+		s1 = setTagTypeAndStyle(start, eoe);
 
-		s1 = commentCheck(this, s1);
-		if((style & JAVA_TYPE) != 0) {
-			if(s1 < eoe && ca[s1] == '<') { // Type
-				int s2 = closer(ca, s1, eoe, true);
+		s1 = parseJavaType(s1, eoe);
+
+		s1 = parseId(s1, eoe);
+
+		s1 = parseClasses(s1, eoe);
+		
+		s1 = parseStyles(s1, eoe); // Styles (before arguments)
+		
+		s1 = parseArgsAndEntries(s1, eoe);
+		
+		s1 = parseStyles(s1, eoe); // Styles (after arguments)
+		
+		s1 = parseInnerText(s1, eoe);
+
+		s1 = parseChildren(s1, eoe);
+		
+		end = (s1 < ca.length) ? s1 : ca.length;
+	}
+	
+	protected void parseArgs(int start, int end) {
+		boolean isEntry = false;
+		int s1 = forward(ca, start, end);
+		for(int s = s1; s1 != -1 && s < end; s++) {
+			if(ca[s] == '"' || ca[s] == '{') {
+				int s2 = closer(ca, s, end, true);
 				if(s2 == -1) {
-					s2 = eoe;
+					s2 = end;
 				}
-				javaType = new EspPart(this, Type.JavaTypePart, ++s1, s2);
-				s1 = s2+1;
+				s = s2;
+				if(s >= end-1) {
+					addArg(s1, reverse(ca, end-1) + 1, isEntry);
+				}
+			} else if(ca[s] == ',') {
+				if(s != 0) {
+					addArg(s1, reverse(ca, s-1) + 1, isEntry);
+					isEntry = false;
+					s1 = forward(ca, s + 1, end);
+				}
+			} else if(ca[s] == ':') {
+				isEntry = true;
+				if(s == end-1) {
+					addArg(s1, s + 1, isEntry);
+				}
+			} else if(s == end-1) {
+				addArg(s1, reverse(ca, s) + 1, isEntry);
 			}
 		}
-		
-		s1 = commentCheck(this, s1);
-		if((style & ID) != 0) {
-			if(s1 < eoe && ca[s1] == '#') { // ID
-				int s2 = s1 = s1 + 1;
-				while(s2 < eoe) {
-					if('[' != ca[s2] && ']' != ca[s2] && '_' != ca[s2] && '-' != ca[s2] && !Character.isLetterOrDigit(ca[s2])) {
-						if('{' == ca[s2]) {
-							s2 = closer(ca, s2, eoe, true);
-							if(s2 == -1) {
-								s2 = eoe;
-								break;
-							}
-						} else {
-							break;
-						}
-					}
-					s2++;
-				}
-				if(s2 > s1) {
-					id = new JavaContainerPart(this, Type.IdPart, s1, s2);
-					s1 = s2;
-				}
-			}
-		}
-		
-		s1 = commentCheck(this, s1);
-		if((style & CLASSES) != 0) {
-			while(s1 < eoe && ca[s1] == '.') { // Class(es)
-				int s2 = s1 = s1 + 1;
-				while(s2 < eoe) {
-					if('_' != ca[s2] && '-' != ca[s2] && !Character.isLetterOrDigit(ca[s2])) {
-						if('{' == ca[s2]) {
-							s2 = closer(ca, s2, eoe, true);
-							if(s2 == -1) {
-								s2 = eoe;
-								break;
-							} else if((ca[s2] == '*' && ca[s2-1] == '/') || (ca[s2] == '*' && ca[s2-1] == '/')) {
-								
-							}
-						} else {
-							break;
-						}
-					}
-					s2++;
-				}
-				if(s2 > s1) {
-					addClassName(s1, s2);
-					s1 = s2;
-				}
-			}
-		}
-		
-		s1 = commentCheck(this, s1);
-		if((style & STYLES) != 0) {
-			if(s1 < eoe && ca[s1] == '|') { // Styles (before arguments)
-				int s2 = s1 + 1;
-				while(s2 < eoe && Character.isLetter(ca[s2])) {
-					s2++;
-				}
-				if(isEqual(ca, s1+1, s2, "hide")) {
-					hide = true;
-				}
-				new EspPart(this, Type.StylePart, s1+1, s2);
-				s1 = s2;
-			}
-		}
-		
-		s1 = commentCheck(this, s1);
+	}
+	
+	protected int parseArgsAndEntries(int start, int eoe) {
+		int s1 = commentCheck(this, start);
 		if((style & (ARGS | ENTRIES | CTOR_ARGS)) != 0) {
 			if(s1 < eoe && ca[s1] == '(') { // Args
 				int s2 = closer(ca, s1, eoe, true);
@@ -391,34 +366,11 @@ public class HtmlElement extends EspElement {
 				s1 = s2 + 1;
 			}
 		}
-		
-		s1 = commentCheck(this, s1);
-		if((style & STYLES) != 0) {
-			if(s1 < eoe && ca[s1] == '|') { // Styles (after arguments)
-				int s2 = s1 + 1;
-				while(s2 < eoe && Character.isLetter(ca[s2])) {
-					s2++;
-				}
-				if(isEqual(ca, s1+1, s2, "hide")) {
-					hide = true;
-				}
-				new EspPart(this, Type.StylePart, s1+1, s2);
-				s1 = s2;
-			}
-		}
-		
-		s1 = commentCheck(this, s1);
-		if((style & INNER_TEXT) != 0) {
-			if(s1 < eoe-1 && ca[s1] == ' ') { // inner html
-				if((style & INNER_TEXT_JAVA) != 0) {
-					innerText = new JavaContainerPart(this, Type.InnerTextPart, s1+1, eoe);
-				} else {
-					innerText = new EspPart(this, Type.InnerTextPart, s1+1, eoe);
-				}
-			}
-		}
-		
-		s1 = commentCheck(this, s1);
+		return s1;
+	}
+
+	protected int parseChildren(int start, int eoe) {
+		int s1 = commentCheck(this, start);
 		if(eoe < ca.length && ca[eoe] == '/') { // a comment finishes the line
 			s1 = createChild(eoe);
 		} else if(eoe < ca.length && ca[eoe] == '<') { // in-line child
@@ -450,111 +402,190 @@ public class HtmlElement extends EspElement {
 				}
 			}
 		}
-		
-		end = (s1 < ca.length) ? s1 : ca.length;
+		return s1;
 	}
 	
-	private void parseArgs(int start, int end) {
-		boolean isEntry = false;
-		int s1 = forward(ca, start, end);
-		for(int s = s1; s1 != -1 && s < end; s++) {
-			if(ca[s] == '"' || ca[s] == '{') {
-				int s2 = closer(ca, s, end, true);
-				if(s2 == -1) {
-					s2 = end;
+	protected int parseClasses(int start, int eoe) {
+		int s1 = commentCheck(this, start);
+		if((style & CLASSES) != 0) {
+			while(s1 < eoe && ca[s1] == '.') { // Class(es)
+				int s2 = s1 = s1 + 1;
+				while(s2 < eoe) {
+					if('_' != ca[s2] && '-' != ca[s2] && !Character.isLetterOrDigit(ca[s2])) {
+						if('{' == ca[s2]) {
+							s2 = closer(ca, s2, eoe, true);
+							if(s2 == -1) {
+								s2 = eoe;
+								break;
+							} else if((ca[s2] == '*' && ca[s2-1] == '/') || (ca[s2] == '*' && ca[s2-1] == '/')) {
+								
+							}
+						} else {
+							break;
+						}
+					}
+					s2++;
 				}
-				s = s2;
-				if(s >= end-1) {
-					addArg(s1, reverse(ca, end-1) + 1, isEntry);
+				if(s2 > s1) {
+					addClassName(s1, s2);
+					s1 = s2;
 				}
-			} else if(ca[s] == ',') {
-				if(s != 0) {
-					addArg(s1, reverse(ca, s-1) + 1, isEntry);
-					isEntry = false;
-					s1 = forward(ca, s + 1, end);
-				}
-			} else if(ca[s] == ':') {
-				isEntry = true;
-				if(s == end-1) {
-					addArg(s1, s + 1, isEntry);
-				}
-			} else if(s == end-1) {
-				addArg(s1, reverse(ca, s) + 1, isEntry);
 			}
 		}
+		return s1;
+	}
+	
+	protected int parseId(int start, int eoe) {
+		int s1 = commentCheck(this, start);
+		if((style & ID) != 0) {
+			if(s1 < eoe && ca[s1] == '#') { // ID
+				int s2 = s1 = s1 + 1;
+				while(s2 < eoe) {
+					if('[' != ca[s2] && ']' != ca[s2] && '_' != ca[s2] && '-' != ca[s2] && !Character.isLetterOrDigit(ca[s2])) {
+						if('{' == ca[s2]) {
+							s2 = closer(ca, s2, eoe, true);
+							if(s2 == -1) {
+								s2 = eoe;
+								break;
+							}
+						} else {
+							break;
+						}
+					}
+					s2++;
+				}
+				if(s2 > s1) {
+					id = new JavaContainerPart(this, Type.IdPart, s1, s2);
+					s1 = s2;
+				}
+			}
+		}
+		return s1;
+	}
+	
+	protected int parseInnerText(int start, int eoe) {
+		int s1 = commentCheck(this, start);
+		if((style & INNER_TEXT) != 0) {
+			if(s1 < eoe-1 && ca[s1] == ' ') { // inner html
+				if((style & INNER_TEXT_JAVA) != 0) {
+					innerText = new JavaContainerPart(this, Type.InnerTextPart, s1+1, eoe);
+				} else {
+					innerText = new EspPart(this, Type.InnerTextPart, s1+1, eoe);
+				}
+			}
+		}
+		return s1;
 	}
 
-	private void setTagTypeAndStyle(int start, int end) {
-		tag = new EspPart(this, Type.TagPart, start, end);
+	protected int parseJavaType(int start, int eoe) {
+		int s1 = commentCheck(this, start);
+		if((style & JAVA_TYPE) != 0) {
+			if(s1 < eoe && ca[s1] == '<') { // Type
+				int s2 = closer(ca, s1, eoe, true);
+				if(s2 == -1) {
+					s2 = eoe;
+				}
+				javaType = new EspPart(this, Type.JavaTypePart, ++s1, s2);
+				s1 = s2+1;
+			}
+		}
+		return s1;
+	}
+
+	private int parseStyles(int start, int eoe) {
+		int s1 = commentCheck(this, start);
+		if((style & STYLES) != 0) {
+			if(s1 < eoe && ca[s1] == '|') { // Styles (after arguments)
+				int s2 = s1 + 1;
+				while(s2 < eoe && Character.isLetter(ca[s2])) {
+					s2++;
+				}
+				if(isEqual(ca, s1+1, s2, "hide")) {
+					hide = true;
+				}
+				new EspPart(this, Type.StylePart, s1+1, s2);
+				s1 = s2;
+			}
+		}
+		return s1;
+	}
+
+	protected int setTagTypeAndStyle(int start, int end) {
+		int s1 = start;
+		while(s1 < end && (ca[s1] == '_' || Character.isLetterOrDigit(ca[s1]))) {
+			s1++;
+		}
+
+		tag = new EspPart(this, Type.TagPart, start, s1);
 		
-		String tag = new String(ca, start, end-start);
+		String tag = new String(ca, start, s1-start);
 		if("form".equals(tag)) {
-			type = Type.HtmlElement;
+			type = Type.MarkupElement;
 			style = JAVA_TYPE | ID | CLASSES | ARGS | ENTRIES | STYLES | INNER_TEXT | INNER_TEXT_JAVA | CHILDREN | CLOSING_TAG;
 		} else if("a".equals(tag) || "link".equals(tag) || "button".equals(tag)) {
-			type = Type.HtmlElement;
+			type = Type.MarkupElement;
 			style = ID | CLASSES | ARGS | ENTRIES | STYLES | INNER_TEXT | INNER_TEXT_JAVA | CHILDREN | CLOSING_TAG;
 		} else if("fields".equals(tag)) {
-			type = Type.HtmlElement;
+			type = Type.MarkupElement;
 			style = ARGS | ENTRIES;
 		} else if("textArea".equals(tag)) {
-			type = Type.HtmlElement;
+			type = Type.MarkupElement;
 			style = ID | CLASSES | ARGS | ENTRIES | STYLES | CLOSING_TAG;
 		} else if("select".equals(tag)) {
-			type = Type.HtmlElement;
+			type = Type.MarkupElement;
 			style = ID | CLASSES | ARGS | ENTRIES | STYLES | CHILDREN | CLOSING_TAG;
 		} else if("option".equals(tag)) {
-			type = Type.HtmlElement;
+			type = Type.MarkupElement;
 			style = ID | CLASSES | ARGS | STYLES | INNER_TEXT | CLOSING_TAG;
 		} else if("options".equals(tag)) {
-			type = Type.HtmlElement;
+			type = Type.MarkupElement;
 			style = JAVA_TYPE | ARGS | ENTRIES;
 		} else if("label".equals(tag)) {
-			type = Type.HtmlElement;
+			type = Type.MarkupElement;
 			style = JAVA_TYPE | ID | CLASSES | ARGS | ENTRIES | STYLES | INNER_TEXT | INNER_TEXT_JAVA | CHILDREN | CLOSING_TAG;
 		} else if("radio".equals(tag) || "reset".equals(tag) || "date".equals(tag)
 				|| "submit".equals(tag) || "hidden".equals(tag) || "check".equals(tag)
 				|| "file".equals(tag) || "input".equals(tag) || "number".equals(tag)
 				|| "password".equals(tag) || "text".equals(tag)) {
-			type = Type.HtmlElement;
+			type = Type.MarkupElement;
 			style = ID | CLASSES | ARGS | ENTRIES | STYLES;
 		} else if("img".equals(tag)) {
-			type = Type.HtmlElement;
+			type = Type.MarkupElement;
 			style = ID | CLASSES | ARGS | ENTRIES | STYLES | INNER_TEXT | INNER_TEXT_JAVA | CHILDREN | CLOSING_TAG;
 		} else if("capture".equals(tag) || "contentFor".equals(tag)) {
-			type = Type.HtmlElement;
+			type = Type.MarkupElement;
 			style = ARGS | CHILDREN;
 		} else if("view".equals(tag)) {
-			type = Type.HtmlElement;
+			type = Type.MarkupElement;
 			style = JAVA_TYPE | JAVA_TYPE_REQUIRED | ARGS | ENTRIES;
 		} else if("head".equals(tag)) {
-			type = Type.HtmlElement;
+			type = Type.MarkupElement;
 			style = CHILDREN;
 		} else if("errors".equals(tag)) {
-			type = Type.HtmlElement;
+			type = Type.MarkupElement;
 			style = ARGS | ENTRIES;
 		} else if("messages".equals(tag)) {
-			type = Type.HtmlElement;
+			type = Type.MarkupElement;
 			style = NONE;
 		} else if("title".equals(tag)) {
-			type = Type.HtmlElement;
+			type = Type.MarkupElement;
 			style = INNER_TEXT | INNER_TEXT_JAVA;
 		} else if("meta".equals(tag)) {
-			type = Type.HtmlElement;
+			type = Type.MarkupElement;
 			style = ENTRIES;
 		} else if("script".equals(tag)) {
-			type = Type.ScriptElement;
-			style = ARGS | ENTRIES | INNER_TEXT | CHILDREN | CLOSING_TAG;
+			throw new IllegalStateException("parsing a script element as a markup element");
 		} else if("style".equals(tag)) {
-			type = Type.StyleElement;
-			style = ARGS | ENTRIES | INNER_TEXT | CHILDREN | CLOSING_TAG;
+			throw new IllegalStateException("parsing a style element as a markup element");
 		} else if("yield".equals(tag)) {
 			type = Type.YieldElement;
 			style = ARGS;
 		} else {
-			type = Type.HtmlElement;
+			type = Type.MarkupElement;
 			style = ID | CLASSES | ENTRIES | STYLES | INNER_TEXT | INNER_TEXT_JAVA | CHILDREN | CLOSING_TAG;
 		}
+		
+		return s1;
 	}
-	
+
 }

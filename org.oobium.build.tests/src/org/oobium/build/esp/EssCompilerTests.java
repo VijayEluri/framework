@@ -33,9 +33,12 @@ public class EssCompilerTests {
 	
 	private String css(String ess) {
 		ESourceFile src = src(ess);
-		String str = body(src.getMethod("doRender"));
-		System.out.println(src.getMethod("doRender").replace("\n\t", "\n"));
-		return str;
+		if(src.hasMethod("doRender")) {
+			String str = body(src.getMethod("doRender"));
+			System.out.println(src.getMethod("doRender").replace("\n\t", "\n"));
+			return str;
+		}
+		return "";
 	}
 	
 	private ESourceFile src(String ess) {
@@ -46,7 +49,8 @@ public class EssCompilerTests {
 
 	@Test
 	public void testEmpty() throws Exception {
-		assertFalse(src("").hasMethod("render"));
+		assertEquals("", css(""));
+		assertEquals("", css(".test1\n.test2"));
 	}
 	
 	@Test
@@ -93,4 +97,13 @@ public class EssCompilerTests {
 		assertEquals("int width = 10;\n__sb__.append(\".myClass{width:\").append((width * 2) + \"px\").append(\"}\");", css(ess));
 	}
 
+	@Test
+	public void testComments() throws Exception {
+		assertEquals("__sb__.append(\".test1{color:green} .test3{color:blue}\");",
+				css("//.test0{color: red}\n.test1{color: green}\n//.test2{color: yellow}\n.test3{color: blue}"));
+
+		assertEquals("__sb__.append(\".test1{color:green}\");", css(".test1{color: green} // red}"));
+		assertEquals("__sb__.append(\".test1{color:green}\");", css(".test1\n\tcolor: green // red}"));
+	}
+	
 }

@@ -24,7 +24,7 @@ import org.oobium.build.esp.EspElement;
 import org.oobium.build.esp.EspPart.Type;
 import org.oobium.build.esp.elements.CommentElement;
 import org.oobium.build.esp.elements.ConstructorElement;
-import org.oobium.build.esp.elements.HtmlElement;
+import org.oobium.build.esp.elements.MarkupElement;
 import org.oobium.build.esp.elements.ImportElement;
 import org.oobium.build.esp.elements.InnerTextElement;
 import org.oobium.build.esp.elements.JavaElement;
@@ -236,7 +236,7 @@ public class EspDomTests {
 		assertEquals("div", dom(esp).getPart(offset++).getText());
 		assertEquals("div", dom(esp).getPart(offset++).getText());
 		assertEquals("div", dom(esp).getPart(offset++).getText());
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertTrue(dom(esp).getPart(offset++).isA(InnerTextPart));
 		assertTrue(dom(esp).getPart(offset++).isA(InnerTextPart));
 
@@ -245,24 +245,24 @@ public class EspDomTests {
 		assertEquals("div", dom(esp).getPart(offset++).getText());
 		assertEquals("div", dom(esp).getPart(offset++).getText());
 		assertEquals("div", dom(esp).getPart(offset++).getText());
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertEquals("id1", dom(esp).getPart(offset++).getText());
 		assertEquals("id1", dom(esp).getPart(offset++).getText());
 		assertEquals("id1", dom(esp).getPart(offset++).getText());
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertEquals("c1", dom(esp).getPart(offset++).getText());
 		assertEquals("c1", dom(esp).getPart(offset++).getText());
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertEquals("c2", dom(esp).getPart(offset++).getText());
 		assertEquals("c2", dom(esp).getPart(offset++).getText());
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertEquals("k1", dom(esp).getPart(offset++).getText());
 		assertEquals("k1", dom(esp).getPart(offset++).getText());
 		assertTrue(dom(esp).getPart(offset++).isA(EntryPart));
 		assertEquals("v1", dom(esp).getPart(offset++).getText());
 		assertEquals("v1", dom(esp).getPart(offset++).getText());
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertEquals("k2", dom(esp).getPart(offset++).getText());
 		assertEquals("k2", dom(esp).getPart(offset++).getText());
 		assertTrue(dom(esp).getPart(offset++).isA(EntryPart));
@@ -270,11 +270,11 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(EntryPart));
 		assertEquals("v2", dom(esp).getPart(offset++).getText());
 		assertEquals("v2", dom(esp).getPart(offset++).getText());
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertEquals("s", dom(esp).getPart(offset++).getText());
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertEquals("t1 ", dom(esp).getPart(offset++).getText());
 		assertEquals("t1 ", dom(esp).getPart(offset++).getText());
 		assertEquals("t1 ", dom(esp).getPart(offset++).getText());
@@ -286,18 +286,18 @@ public class EspDomTests {
 		assertEquals("div", dom(esp).getPart(offset++).getText());
 		assertEquals("div", dom(esp).getPart(offset++).getText());
 		assertEquals("div", dom(esp).getPart(offset++).getText());
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertEquals("id2", dom(esp).getPart(offset++).getText());
 		assertEquals("id2", dom(esp).getPart(offset++).getText());
 		assertEquals("id2", dom(esp).getPart(offset++).getText());
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertEquals("c3", dom(esp).getPart(offset++).getText());
 		assertEquals("c3", dom(esp).getPart(offset++).getText());
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertEquals("c4", dom(esp).getPart(offset++).getText());
 		assertEquals("c4", dom(esp).getPart(offset++).getText());
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertEquals("k3", dom(esp).getPart(offset++).getText());
 		assertEquals("k3", dom(esp).getPart(offset++).getText());
 		assertTrue(dom(esp).getPart(offset++).isA(EntryPart));
@@ -305,17 +305,17 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(EntryPart));
 		assertEquals("v3", dom(esp).getPart(offset++).getText());
 		assertEquals("v3", dom(esp).getPart(offset++).getText());
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertEquals("k4", dom(esp).getPart(offset++).getText());
 		assertEquals("k4", dom(esp).getPart(offset++).getText());
 		assertTrue(dom(esp).getPart(offset++).isA(EntryPart));
 		assertEquals("v4", dom(esp).getPart(offset++).getText());
 		assertEquals("v4", dom(esp).getPart(offset++).getText());
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertEquals("h", dom(esp).getPart(offset++).getText());
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertEquals("t2", dom(esp).getPart(offset++).getText());
 		assertEquals("t2", dom(esp).getPart(offset++).getText());
 
@@ -326,18 +326,18 @@ public class EspDomTests {
 		assertEquals("div", dom(esp).getPart(offset++).getText());
 		assertEquals("div", dom(esp).getPart(offset++).getText());
 		assertEquals("div", dom(esp).getPart(offset++).getText());
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertEquals("id3", dom(esp).getPart(offset++).getText());
 		assertEquals("id3", dom(esp).getPart(offset++).getText());
 		assertEquals("id3", dom(esp).getPart(offset++).getText());
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertEquals("c5", dom(esp).getPart(offset++).getText());
 		assertEquals("c5", dom(esp).getPart(offset++).getText());
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertEquals("c6", dom(esp).getPart(offset++).getText());
 		assertEquals("c6", dom(esp).getPart(offset++).getText());
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertEquals("k5", dom(esp).getPart(offset++).getText());
 		assertEquals("k5", dom(esp).getPart(offset++).getText());
 		assertTrue(dom(esp).getPart(offset++).isA(EntryPart));
@@ -345,15 +345,15 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(EntryPart));
 		assertEquals("v5", dom(esp).getPart(offset++).getText());
 		assertEquals("v5", dom(esp).getPart(offset++).getText());
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertEquals("k6", dom(esp).getPart(offset++).getText());
 		assertEquals("k6", dom(esp).getPart(offset++).getText());
 		assertTrue(dom(esp).getPart(offset++).isA(EntryPart));
 		assertEquals("v6", dom(esp).getPart(offset++).getText());
 		assertEquals("v6", dom(esp).getPart(offset++).getText());
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertEquals("t3", dom(esp).getPart(offset++).getText());
 		assertEquals("t3", dom(esp).getPart(offset++).getText());
 		assertNull(dom(esp).getPart(offset++));
@@ -363,10 +363,10 @@ public class EspDomTests {
 		assertEquals("div", dom(esp).getPart(offset++).getText());
 		assertEquals("div", dom(esp).getPart(offset++).getText());
 		assertEquals("div", dom(esp).getPart(offset++).getText());
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertEquals("id", dom(esp).getPart(offset++).getText());
 		assertEquals("id", dom(esp).getPart(offset++).getText());
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertEquals("t{ es }t", dom(esp).getPart(offset++).getText());
 		assertEquals("{ es }", dom(esp).getPart(offset++).getText());
 		assertEquals("{ es }", dom(esp).getPart(offset++).getText());
@@ -382,122 +382,122 @@ public class EspDomTests {
 	public void testHtmlArgs() throws Exception {
 		String esp;
 		esp = "div()";
-		assertFalse(elem(esp, HtmlElement.class).hasArgs());
-		assertFalse(elem(esp, HtmlElement.class).hasEntries());
+		assertFalse(elem(esp, MarkupElement.class).hasArgs());
+		assertFalse(elem(esp, MarkupElement.class).hasEntries());
 		
 		esp = "div( )";
-		assertFalse(elem(esp, HtmlElement.class).hasArgs());
-		assertFalse(elem(esp, HtmlElement.class).hasEntries());
+		assertFalse(elem(esp, MarkupElement.class).hasArgs());
+		assertFalse(elem(esp, MarkupElement.class).hasEntries());
 		
 		esp = "div#myDiv.myClass1.myClass2(style:\"display:none\")";
-		assertFalse(elem(esp, HtmlElement.class).hasArgs());
-		assertTrue(elem(esp, HtmlElement.class).hasEntries());
-		assertTrue(elem(esp, HtmlElement.class).hasEntry("style"));
-		assertEquals("\"display:none\"", elem(esp, HtmlElement.class).getEntryValue("style").getText());
+		assertFalse(elem(esp, MarkupElement.class).hasArgs());
+		assertTrue(elem(esp, MarkupElement.class).hasEntries());
+		assertTrue(elem(esp, MarkupElement.class).hasEntry("style"));
+		assertEquals("\"display:none\"", elem(esp, MarkupElement.class).getEntryValue("style").getText());
 		
 		esp = "view(var1)";
-		assertTrue(elem(esp, HtmlElement.class).hasArgs());
-		assertFalse(elem(esp, HtmlElement.class).hasEntries());
-		assertEquals(1, elem(esp, HtmlElement.class).getArgs().size());
-		assertEquals("var1", elem(esp, HtmlElement.class).getArgs().get(0).getText());
+		assertTrue(elem(esp, MarkupElement.class).hasArgs());
+		assertFalse(elem(esp, MarkupElement.class).hasEntries());
+		assertEquals(1, elem(esp, MarkupElement.class).getArgs().size());
+		assertEquals("var1", elem(esp, MarkupElement.class).getArgs().get(0).getText());
 
 		esp = "view(var1, var2)";
-		assertTrue(elem(esp, HtmlElement.class).hasArgs());
-		assertFalse(elem(esp, HtmlElement.class).hasEntries());
-		assertEquals(2, elem(esp, HtmlElement.class).getArgs().size());
-		assertEquals("var1", elem(esp, HtmlElement.class).getArgs().get(0).getText());
-		assertEquals("var2", elem(esp, HtmlElement.class).getArgs().get(1).getText());
+		assertTrue(elem(esp, MarkupElement.class).hasArgs());
+		assertFalse(elem(esp, MarkupElement.class).hasEntries());
+		assertEquals(2, elem(esp, MarkupElement.class).getArgs().size());
+		assertEquals("var1", elem(esp, MarkupElement.class).getArgs().get(0).getText());
+		assertEquals("var2", elem(esp, MarkupElement.class).getArgs().get(1).getText());
 
 		esp = "view( var1, var2, var3 )";
-		assertTrue(elem(esp, HtmlElement.class).hasArgs());
-		assertFalse(elem(esp, HtmlElement.class).hasEntries());
-		assertEquals(3, elem(esp, HtmlElement.class).getArgs().size());
-		assertEquals("var1", elem(esp, HtmlElement.class).getArgs().get(0).getText());
-		assertEquals("var2", elem(esp, HtmlElement.class).getArgs().get(1).getText());
-		assertEquals("var3", elem(esp, HtmlElement.class).getArgs().get(2).getText());
+		assertTrue(elem(esp, MarkupElement.class).hasArgs());
+		assertFalse(elem(esp, MarkupElement.class).hasEntries());
+		assertEquals(3, elem(esp, MarkupElement.class).getArgs().size());
+		assertEquals("var1", elem(esp, MarkupElement.class).getArgs().get(0).getText());
+		assertEquals("var2", elem(esp, MarkupElement.class).getArgs().get(1).getText());
+		assertEquals("var3", elem(esp, MarkupElement.class).getArgs().get(2).getText());
 	}
 
 	@Test
 	public void testHtmlArgsAndEntries() throws Exception {
 		String esp;
 		esp = "form( var1, var2, var3, key1: value1, key2: value2, key3: value3 )";
-		assertTrue(elem(esp, HtmlElement.class).hasArgs());
-		assertTrue(elem(esp, HtmlElement.class).hasEntries());
-		assertEquals(3, elem(esp, HtmlElement.class).getArgs().size());
-		assertEquals("var1", elem(esp, HtmlElement.class).getArgs().get(0).getText());
-		assertEquals("var2", elem(esp, HtmlElement.class).getArgs().get(1).getText());
-		assertEquals("var3", elem(esp, HtmlElement.class).getArgs().get(2).getText());
-		assertEquals(3, elem(esp, HtmlElement.class).getEntries().size());
-		assertEquals("key1: value1", elem(esp, HtmlElement.class).getEntries().get("key1").getText());
-		assertEquals("key1", elem(esp, HtmlElement.class).getEntries().get("key1").getKey().getText());
-		assertEquals("value1", elem(esp, HtmlElement.class).getEntries().get("key1").getValue().getText());
-		assertEquals("key2: value2", elem(esp, HtmlElement.class).getEntries().get("key2").getText());
-		assertEquals("key2", elem(esp, HtmlElement.class).getEntries().get("key2").getKey().getText());
-		assertEquals("value2", elem(esp, HtmlElement.class).getEntries().get("key2").getValue().getText());
-		assertEquals("key3: value3", elem(esp, HtmlElement.class).getEntries().get("key3").getText());
-		assertEquals("key3", elem(esp, HtmlElement.class).getEntries().get("key3").getKey().getText());
-		assertEquals("value3", elem(esp, HtmlElement.class).getEntries().get("key3").getValue().getText());
+		assertTrue(elem(esp, MarkupElement.class).hasArgs());
+		assertTrue(elem(esp, MarkupElement.class).hasEntries());
+		assertEquals(3, elem(esp, MarkupElement.class).getArgs().size());
+		assertEquals("var1", elem(esp, MarkupElement.class).getArgs().get(0).getText());
+		assertEquals("var2", elem(esp, MarkupElement.class).getArgs().get(1).getText());
+		assertEquals("var3", elem(esp, MarkupElement.class).getArgs().get(2).getText());
+		assertEquals(3, elem(esp, MarkupElement.class).getEntries().size());
+		assertEquals("key1: value1", elem(esp, MarkupElement.class).getEntries().get("key1").getText());
+		assertEquals("key1", elem(esp, MarkupElement.class).getEntries().get("key1").getKey().getText());
+		assertEquals("value1", elem(esp, MarkupElement.class).getEntries().get("key1").getValue().getText());
+		assertEquals("key2: value2", elem(esp, MarkupElement.class).getEntries().get("key2").getText());
+		assertEquals("key2", elem(esp, MarkupElement.class).getEntries().get("key2").getKey().getText());
+		assertEquals("value2", elem(esp, MarkupElement.class).getEntries().get("key2").getValue().getText());
+		assertEquals("key3: value3", elem(esp, MarkupElement.class).getEntries().get("key3").getText());
+		assertEquals("key3", elem(esp, MarkupElement.class).getEntries().get("key3").getKey().getText());
+		assertEquals("value3", elem(esp, MarkupElement.class).getEntries().get("key3").getValue().getText());
 	}
 	
 	@Test
 	public void testHtmlArgumentParts() throws Exception {
 		String esp;
 		esp = "div(key1: \"value1 + value2\")";
-		assertFalse(elem(esp, HtmlElement.class).hasArgs());
-		assertTrue(elem(esp, HtmlElement.class).hasEntries());
-		assertEquals(1, elem(esp, HtmlElement.class).getEntries().size());
-		assertEquals("key1: \"value1 + value2\"", elem(esp, HtmlElement.class).getEntries().get("key1").getText());
-		assertEquals("key1", elem(esp, HtmlElement.class).getEntries().get("key1").getKey().getText());
-		assertEquals("\"value1 + value2\"", elem(esp, HtmlElement.class).getEntries().get("key1").getValue().getText());
+		assertFalse(elem(esp, MarkupElement.class).hasArgs());
+		assertTrue(elem(esp, MarkupElement.class).hasEntries());
+		assertEquals(1, elem(esp, MarkupElement.class).getEntries().size());
+		assertEquals("key1: \"value1 + value2\"", elem(esp, MarkupElement.class).getEntries().get("key1").getText());
+		assertEquals("key1", elem(esp, MarkupElement.class).getEntries().get("key1").getKey().getText());
+		assertEquals("\"value1 + value2\"", elem(esp, MarkupElement.class).getEntries().get("key1").getValue().getText());
 
 		esp = "div(key1: \", key2: value2\")";
-		assertFalse(elem(esp, HtmlElement.class).hasArgs());
-		assertTrue(elem(esp, HtmlElement.class).hasEntries());
-		assertEquals(1, elem(esp, HtmlElement.class).getEntries().size());
-		assertEquals("key1: \", key2: value2\"", elem(esp, HtmlElement.class).getEntries().get("key1").getText());
-		assertEquals("key1", elem(esp, HtmlElement.class).getEntries().get("key1").getKey().getText());
-		assertEquals("\", key2: value2\"", elem(esp, HtmlElement.class).getEntries().get("key1").getValue().getText());
+		assertFalse(elem(esp, MarkupElement.class).hasArgs());
+		assertTrue(elem(esp, MarkupElement.class).hasEntries());
+		assertEquals(1, elem(esp, MarkupElement.class).getEntries().size());
+		assertEquals("key1: \", key2: value2\"", elem(esp, MarkupElement.class).getEntries().get("key1").getText());
+		assertEquals("key1", elem(esp, MarkupElement.class).getEntries().get("key1").getKey().getText());
+		assertEquals("\", key2: value2\"", elem(esp, MarkupElement.class).getEntries().get("key1").getValue().getText());
 
 		esp = "img(src:\"/software/cdatetime.png\", width:200, height:200)";
-		assertFalse(elem(esp, HtmlElement.class).hasArgs());
-		assertTrue(elem(esp, HtmlElement.class).hasEntries());
-		assertEquals(3, elem(esp, HtmlElement.class).getEntries().size());
-		assertEquals("height:200", elem(esp, HtmlElement.class).getEntries().get("height").getText());
-		assertEquals("height", elem(esp, HtmlElement.class).getEntries().get("height").getKey().getText());
-		assertEquals("200", elem(esp, HtmlElement.class).getEntries().get("height").getValue().getText());
+		assertFalse(elem(esp, MarkupElement.class).hasArgs());
+		assertTrue(elem(esp, MarkupElement.class).hasEntries());
+		assertEquals(3, elem(esp, MarkupElement.class).getEntries().size());
+		assertEquals("height:200", elem(esp, MarkupElement.class).getEntries().get("height").getText());
+		assertEquals("height", elem(esp, MarkupElement.class).getEntries().get("height").getKey().getText());
+		assertEquals("200", elem(esp, MarkupElement.class).getEntries().get("height").getValue().getText());
 		
 		esp = "div(key1: {java})";
-		assertFalse(elem(esp, HtmlElement.class).hasArgs());
-		assertTrue(elem(esp, HtmlElement.class).hasEntries());
-		assertEquals(1, elem(esp, HtmlElement.class).getEntries().size());
-		assertEquals("key1: {java}", elem(esp, HtmlElement.class).getEntries().get("key1").getText());
-		assertEquals("key1", elem(esp, HtmlElement.class).getEntries().get("key1").getKey().getText());
-		assertEquals("{java}", elem(esp, HtmlElement.class).getEntries().get("key1").getValue().getText());
-		assertTrue(elem(esp, HtmlElement.class).getEntryValue("key1").hasParts());
-		assertEquals(1, elem(esp, HtmlElement.class).getEntryValue("key1").getParts().size());
-		assertTrue(elem(esp, HtmlElement.class).getEntryValue("key1").getParts().get(0).isA(JavaPart));
+		assertFalse(elem(esp, MarkupElement.class).hasArgs());
+		assertTrue(elem(esp, MarkupElement.class).hasEntries());
+		assertEquals(1, elem(esp, MarkupElement.class).getEntries().size());
+		assertEquals("key1: {java}", elem(esp, MarkupElement.class).getEntries().get("key1").getText());
+		assertEquals("key1", elem(esp, MarkupElement.class).getEntries().get("key1").getKey().getText());
+		assertEquals("{java}", elem(esp, MarkupElement.class).getEntries().get("key1").getValue().getText());
+		assertTrue(elem(esp, MarkupElement.class).getEntryValue("key1").hasParts());
+		assertEquals(1, elem(esp, MarkupElement.class).getEntryValue("key1").getParts().size());
+		assertTrue(elem(esp, MarkupElement.class).getEntryValue("key1").getParts().get(0).isA(JavaPart));
 
 		esp = "div(key1: \"{java}\")";
-		assertFalse(elem(esp, HtmlElement.class).hasArgs());
-		assertTrue(elem(esp, HtmlElement.class).hasEntries());
-		assertEquals(1, elem(esp, HtmlElement.class).getEntries().size());
-		assertEquals("key1: \"{java}\"", elem(esp, HtmlElement.class).getEntries().get("key1").getText());
-		assertEquals("key1", elem(esp, HtmlElement.class).getEntries().get("key1").getKey().getText());
-		assertEquals("\"{java}\"", elem(esp, HtmlElement.class).getEntries().get("key1").getValue().getText());
-		assertTrue(elem(esp, HtmlElement.class).getEntries().get("key1").getValue().hasParts());
-		assertEquals(1, elem(esp, HtmlElement.class).getEntries().get("key1").getValue().getParts().size());
-		assertTrue(elem(esp, HtmlElement.class).getEntries().get("key1").getValue().getParts().get(0) instanceof JavaPart);
+		assertFalse(elem(esp, MarkupElement.class).hasArgs());
+		assertTrue(elem(esp, MarkupElement.class).hasEntries());
+		assertEquals(1, elem(esp, MarkupElement.class).getEntries().size());
+		assertEquals("key1: \"{java}\"", elem(esp, MarkupElement.class).getEntries().get("key1").getText());
+		assertEquals("key1", elem(esp, MarkupElement.class).getEntries().get("key1").getKey().getText());
+		assertEquals("\"{java}\"", elem(esp, MarkupElement.class).getEntries().get("key1").getValue().getText());
+		assertTrue(elem(esp, MarkupElement.class).getEntries().get("key1").getValue().hasParts());
+		assertEquals(1, elem(esp, MarkupElement.class).getEntries().get("key1").getValue().getParts().size());
+		assertTrue(elem(esp, MarkupElement.class).getEntries().get("key1").getValue().getParts().get(0) instanceof JavaPart);
 
 		esp = "div(attr1:v{var3}1)";
-		assertFalse(elem(esp, HtmlElement.class).hasArgs());
-		assertTrue(elem(esp, HtmlElement.class).hasEntries());
-		assertEquals(1, elem(esp, HtmlElement.class).getEntries().size());
-		assertEquals("attr1:v{var3}1", elem(esp, HtmlElement.class).getEntries().get("attr1").getText());
-		assertEquals("attr1", elem(esp, HtmlElement.class).getEntries().get("attr1").getKey().getText());
-		assertEquals("v{var3}1", elem(esp, HtmlElement.class).getEntries().get("attr1").getValue().getText());
-		assertTrue(elem(esp, HtmlElement.class).getEntries().get("attr1").getValue().hasParts());
-		assertEquals(1, elem(esp, HtmlElement.class).getEntries().get("attr1").getValue().getParts().size());
-		assertTrue(elem(esp, HtmlElement.class).getEntries().get("attr1").getValue().getParts().get(0) instanceof JavaPart);
+		assertFalse(elem(esp, MarkupElement.class).hasArgs());
+		assertTrue(elem(esp, MarkupElement.class).hasEntries());
+		assertEquals(1, elem(esp, MarkupElement.class).getEntries().size());
+		assertEquals("attr1:v{var3}1", elem(esp, MarkupElement.class).getEntries().get("attr1").getText());
+		assertEquals("attr1", elem(esp, MarkupElement.class).getEntries().get("attr1").getKey().getText());
+		assertEquals("v{var3}1", elem(esp, MarkupElement.class).getEntries().get("attr1").getValue().getText());
+		assertTrue(elem(esp, MarkupElement.class).getEntries().get("attr1").getValue().hasParts());
+		assertEquals(1, elem(esp, MarkupElement.class).getEntries().get("attr1").getValue().getParts().size());
+		assertTrue(elem(esp, MarkupElement.class).getEntries().get("attr1").getValue().getParts().get(0) instanceof JavaPart);
 	}
 
 	@Test
@@ -505,145 +505,145 @@ public class EspDomTests {
 		String esp;
 		esp = "div\nspan";
 		assertEquals(2, dom(esp).size());
-		assertFalse(elem(esp, HtmlElement.class).hasChildren());
+		assertFalse(elem(esp, MarkupElement.class).hasChildren());
 
 		esp = "div\n\tspan";
 		assertEquals(1, dom(esp).size());
-		assertTrue(elem(esp, HtmlElement.class).hasChildren());
-		assertEquals(1, elem(esp, HtmlElement.class).getChildren().size());
-		assertFalse(((HtmlElement) elem(esp, HtmlElement.class).getChildren().get(0)).hasChildren());
+		assertTrue(elem(esp, MarkupElement.class).hasChildren());
+		assertEquals(1, elem(esp, MarkupElement.class).getChildren().size());
+		assertFalse(((MarkupElement) elem(esp, MarkupElement.class).getChildren().get(0)).hasChildren());
 
 		esp = "div\n\tdiv\n\t\tdiv";
 		assertEquals(1, dom(esp).size());
-		assertEquals(1, elem(esp, HtmlElement.class).getChildren().size());
-		assertEquals(1, ((HtmlElement) elem(esp, HtmlElement.class).getChildren().get(0)).getChildren().size());
+		assertEquals(1, elem(esp, MarkupElement.class).getChildren().size());
+		assertEquals(1, ((MarkupElement) elem(esp, MarkupElement.class).getChildren().get(0)).getChildren().size());
 
 		esp = "div\n\tdiv\n\t\tdiv\n\tdiv";
 		assertEquals(1, dom(esp).size());
-		assertEquals(2, elem(esp, HtmlElement.class).getChildren().size());
-		assertEquals(1, ((HtmlElement) elem(esp, HtmlElement.class).getChildren().get(0)).getChildren().size());
+		assertEquals(2, elem(esp, MarkupElement.class).getChildren().size());
+		assertEquals(1, ((MarkupElement) elem(esp, MarkupElement.class).getChildren().get(0)).getChildren().size());
 
 		esp = "div\n\t\n\tdiv\n\t\tdiv";
 		assertEquals(1, dom(esp).size());
-		assertEquals(1, elem(esp, HtmlElement.class).getChildren().size());
-		assertEquals(1, ((HtmlElement) elem(esp, HtmlElement.class).getChildren().get(0)).getChildren().size());
+		assertEquals(1, elem(esp, MarkupElement.class).getChildren().size());
+		assertEquals(1, ((MarkupElement) elem(esp, MarkupElement.class).getChildren().get(0)).getChildren().size());
 	}
 	
 	@Test
 	public void testHtmlClassNames() throws Exception {
-		assertNull(elem("div", HtmlElement.class).getClassNames());
-		assertNull(elem("div.", HtmlElement.class).getClassNames());
-		assertNull(elem("div.(key1:val1)", HtmlElement.class).getClassNames());
+		assertNull(elem("div", MarkupElement.class).getClassNames());
+		assertNull(elem("div.", MarkupElement.class).getClassNames());
+		assertNull(elem("div.(key1:val1)", MarkupElement.class).getClassNames());
 
 		String esp;
 		esp = "div.myClass";
-		assertNotNull(elem(esp, HtmlElement.class).getClassNames());
-		assertEquals(1, elem(esp, HtmlElement.class).getClassNames().size());
-		assertEquals("myClass", elem(esp, HtmlElement.class).getClassNames().get(0).getText());
+		assertNotNull(elem(esp, MarkupElement.class).getClassNames());
+		assertEquals(1, elem(esp, MarkupElement.class).getClassNames().size());
+		assertEquals("myClass", elem(esp, MarkupElement.class).getClassNames().get(0).getText());
 		
 		esp = "div.myClass1.myClass2";
-		assertNotNull(elem(esp, HtmlElement.class).getClassNames());
-		assertEquals(2, elem(esp, HtmlElement.class).getClassNames().size());
-		assertEquals("myClass1", elem(esp, HtmlElement.class).getClassNames().get(0).getText());
-		assertEquals("myClass2", elem(esp, HtmlElement.class).getClassNames().get(1).getText());
+		assertNotNull(elem(esp, MarkupElement.class).getClassNames());
+		assertEquals(2, elem(esp, MarkupElement.class).getClassNames().size());
+		assertEquals("myClass1", elem(esp, MarkupElement.class).getClassNames().get(0).getText());
+		assertEquals("myClass2", elem(esp, MarkupElement.class).getClassNames().get(1).getText());
 
 		esp = "div#myDiv.myClass1.myClass2";
-		assertNotNull(elem(esp, HtmlElement.class).getClassNames());
-		assertEquals(2, elem(esp, HtmlElement.class).getClassNames().size());
-		assertEquals("myClass1", elem(esp, HtmlElement.class).getClassNames().get(0).getText());
-		assertEquals("myClass2", elem(esp, HtmlElement.class).getClassNames().get(1).getText());
+		assertNotNull(elem(esp, MarkupElement.class).getClassNames());
+		assertEquals(2, elem(esp, MarkupElement.class).getClassNames().size());
+		assertEquals("myClass1", elem(esp, MarkupElement.class).getClassNames().get(0).getText());
+		assertEquals("myClass2", elem(esp, MarkupElement.class).getClassNames().get(1).getText());
 
 		esp = "div#myDiv.myClass1.myClass2(style:\"display:none\")";
-		assertNotNull(elem(esp, HtmlElement.class).getClassNames());
-		assertEquals(2, elem(esp, HtmlElement.class).getClassNames().size());
-		assertEquals("myClass1", elem(esp, HtmlElement.class).getClassNames().get(0).getText());
-		assertEquals("myClass2", elem(esp, HtmlElement.class).getClassNames().get(1).getText());
+		assertNotNull(elem(esp, MarkupElement.class).getClassNames());
+		assertEquals(2, elem(esp, MarkupElement.class).getClassNames().size());
+		assertEquals("myClass1", elem(esp, MarkupElement.class).getClassNames().get(0).getText());
+		assertEquals("myClass2", elem(esp, MarkupElement.class).getClassNames().get(1).getText());
 
 		esp = "div.{my}Class";
-		assertNotNull(elem(esp, HtmlElement.class).getClassNames());
-		assertEquals(1, elem(esp, HtmlElement.class).getClassNames().size());
-		assertEquals("{my}Class", elem(esp, HtmlElement.class).getClassNames().get(0).getText());
-		assertTrue(elem(esp, HtmlElement.class).getClassNames().get(0).hasParts());
-		assertNotNull(elem(esp, HtmlElement.class).getClassNames().get(0).getParts());
-		assertEquals(1, elem(esp, HtmlElement.class).getClassNames().get(0).getParts().size());
-		assertEquals("{my}", elem(esp, HtmlElement.class).getClassNames().get(0).getParts().get(0).getText());
-		assertEquals("my", ((JavaPart) elem(esp, HtmlElement.class).getClassNames().get(0).getParts().get(0)).getSource());
+		assertNotNull(elem(esp, MarkupElement.class).getClassNames());
+		assertEquals(1, elem(esp, MarkupElement.class).getClassNames().size());
+		assertEquals("{my}Class", elem(esp, MarkupElement.class).getClassNames().get(0).getText());
+		assertTrue(elem(esp, MarkupElement.class).getClassNames().get(0).hasParts());
+		assertNotNull(elem(esp, MarkupElement.class).getClassNames().get(0).getParts());
+		assertEquals(1, elem(esp, MarkupElement.class).getClassNames().get(0).getParts().size());
+		assertEquals("{my}", elem(esp, MarkupElement.class).getClassNames().get(0).getParts().get(0).getText());
+		assertEquals("my", ((JavaPart) elem(esp, MarkupElement.class).getClassNames().get(0).getParts().get(0)).getSource());
 		
 		esp = "div.my{Cla}ss";
-		assertNotNull(elem(esp, HtmlElement.class).getClassNames());
-		assertEquals(1, elem(esp, HtmlElement.class).getClassNames().size());
-		assertEquals("my{Cla}ss", elem(esp, HtmlElement.class).getClassNames().get(0).getText());
-		assertTrue(elem(esp, HtmlElement.class).getClassNames().get(0).hasParts());
-		assertNotNull(elem(esp, HtmlElement.class).getClassNames().get(0).getParts());
-		assertEquals(1, elem(esp, HtmlElement.class).getClassNames().get(0).getParts().size());
-		assertEquals("{Cla}", elem(esp, HtmlElement.class).getClassNames().get(0).getParts().get(0).getText());
-		assertEquals("Cla", ((JavaPart) elem(esp, HtmlElement.class).getClassNames().get(0).getParts().get(0)).getSource());
+		assertNotNull(elem(esp, MarkupElement.class).getClassNames());
+		assertEquals(1, elem(esp, MarkupElement.class).getClassNames().size());
+		assertEquals("my{Cla}ss", elem(esp, MarkupElement.class).getClassNames().get(0).getText());
+		assertTrue(elem(esp, MarkupElement.class).getClassNames().get(0).hasParts());
+		assertNotNull(elem(esp, MarkupElement.class).getClassNames().get(0).getParts());
+		assertEquals(1, elem(esp, MarkupElement.class).getClassNames().get(0).getParts().size());
+		assertEquals("{Cla}", elem(esp, MarkupElement.class).getClassNames().get(0).getParts().get(0).getText());
+		assertEquals("Cla", ((JavaPart) elem(esp, MarkupElement.class).getClassNames().get(0).getParts().get(0)).getSource());
 
 		esp = "div.my{Class}";
-		assertNotNull(elem(esp, HtmlElement.class).getClassNames());
-		assertEquals(1, elem(esp, HtmlElement.class).getClassNames().size());
-		assertEquals("my{Class}", elem(esp, HtmlElement.class).getClassNames().get(0).getText());
-		assertTrue(elem(esp, HtmlElement.class).getClassNames().get(0).hasParts());
-		assertNotNull(elem(esp, HtmlElement.class).getClassNames().get(0).getParts());
-		assertEquals(1, elem(esp, HtmlElement.class).getClassNames().get(0).getParts().size());
-		assertEquals("{Class}", elem(esp, HtmlElement.class).getClassNames().get(0).getParts().get(0).getText());
-		assertEquals("Class", ((JavaPart) elem(esp, HtmlElement.class).getClassNames().get(0).getParts().get(0)).getSource());
+		assertNotNull(elem(esp, MarkupElement.class).getClassNames());
+		assertEquals(1, elem(esp, MarkupElement.class).getClassNames().size());
+		assertEquals("my{Class}", elem(esp, MarkupElement.class).getClassNames().get(0).getText());
+		assertTrue(elem(esp, MarkupElement.class).getClassNames().get(0).hasParts());
+		assertNotNull(elem(esp, MarkupElement.class).getClassNames().get(0).getParts());
+		assertEquals(1, elem(esp, MarkupElement.class).getClassNames().get(0).getParts().size());
+		assertEquals("{Class}", elem(esp, MarkupElement.class).getClassNames().get(0).getParts().get(0).getText());
+		assertEquals("Class", ((JavaPart) elem(esp, MarkupElement.class).getClassNames().get(0).getParts().get(0)).getSource());
 
 		esp = "div.{myClass}";
-		assertNotNull(elem(esp, HtmlElement.class).getClassNames());
-		assertEquals(1, elem(esp, HtmlElement.class).getClassNames().size());
-		assertEquals("{myClass}", elem(esp, HtmlElement.class).getClassNames().get(0).getText());
-		assertTrue(elem(esp, HtmlElement.class).getClassNames().get(0).hasParts());
-		assertNotNull(elem(esp, HtmlElement.class).getClassNames().get(0).getParts());
-		assertEquals(1, elem(esp, HtmlElement.class).getClassNames().get(0).getParts().size());
-		assertEquals("{myClass}", elem(esp, HtmlElement.class).getClassNames().get(0).getParts().get(0).getText());
-		assertEquals("myClass", ((JavaPart) elem(esp, HtmlElement.class).getClassNames().get(0).getParts().get(0)).getSource());
+		assertNotNull(elem(esp, MarkupElement.class).getClassNames());
+		assertEquals(1, elem(esp, MarkupElement.class).getClassNames().size());
+		assertEquals("{myClass}", elem(esp, MarkupElement.class).getClassNames().get(0).getText());
+		assertTrue(elem(esp, MarkupElement.class).getClassNames().get(0).hasParts());
+		assertNotNull(elem(esp, MarkupElement.class).getClassNames().get(0).getParts());
+		assertEquals(1, elem(esp, MarkupElement.class).getClassNames().get(0).getParts().size());
+		assertEquals("{myClass}", elem(esp, MarkupElement.class).getClassNames().get(0).getParts().get(0).getText());
+		assertEquals("myClass", ((JavaPart) elem(esp, MarkupElement.class).getClassNames().get(0).getParts().get(0)).getSource());
 
 		esp = "div.{my}{Class}";
-		assertNotNull(elem(esp, HtmlElement.class).getClassNames());
-		assertEquals(1, elem(esp, HtmlElement.class).getClassNames().size());
-		assertEquals("{my}{Class}", elem(esp, HtmlElement.class).getClassNames().get(0).getText());
-		assertTrue(elem(esp, HtmlElement.class).getClassNames().get(0).hasParts());
-		assertNotNull(elem(esp, HtmlElement.class).getClassNames().get(0).getParts());
-		assertEquals(2, elem(esp, HtmlElement.class).getClassNames().get(0).getParts().size());
-		assertEquals("{my}", elem(esp, HtmlElement.class).getClassNames().get(0).getParts().get(0).getText());
-		assertEquals("my", ((JavaPart) elem(esp, HtmlElement.class).getClassNames().get(0).getParts().get(0)).getSource());
-		assertEquals("{Class}", elem(esp, HtmlElement.class).getClassNames().get(0).getParts().get(1).getText());
-		assertEquals("Class", ((JavaPart) elem(esp, HtmlElement.class).getClassNames().get(0).getParts().get(1)).getSource());
+		assertNotNull(elem(esp, MarkupElement.class).getClassNames());
+		assertEquals(1, elem(esp, MarkupElement.class).getClassNames().size());
+		assertEquals("{my}{Class}", elem(esp, MarkupElement.class).getClassNames().get(0).getText());
+		assertTrue(elem(esp, MarkupElement.class).getClassNames().get(0).hasParts());
+		assertNotNull(elem(esp, MarkupElement.class).getClassNames().get(0).getParts());
+		assertEquals(2, elem(esp, MarkupElement.class).getClassNames().get(0).getParts().size());
+		assertEquals("{my}", elem(esp, MarkupElement.class).getClassNames().get(0).getParts().get(0).getText());
+		assertEquals("my", ((JavaPart) elem(esp, MarkupElement.class).getClassNames().get(0).getParts().get(0)).getSource());
+		assertEquals("{Class}", elem(esp, MarkupElement.class).getClassNames().get(0).getParts().get(1).getText());
+		assertEquals("Class", ((JavaPart) elem(esp, MarkupElement.class).getClassNames().get(0).getParts().get(1)).getSource());
 
 		esp = "div.{ my }{ Class }";
-		assertNotNull(elem(esp, HtmlElement.class).getClassNames());
-		assertEquals(1, elem(esp, HtmlElement.class).getClassNames().size());
-		assertEquals("{ my }{ Class }", elem(esp, HtmlElement.class).getClassNames().get(0).getText());
-		assertTrue(elem(esp, HtmlElement.class).getClassNames().get(0).hasParts());
-		assertNotNull(elem(esp, HtmlElement.class).getClassNames().get(0).getParts());
-		assertEquals(2, elem(esp, HtmlElement.class).getClassNames().get(0).getParts().size());
-		assertEquals("{ my }", elem(esp, HtmlElement.class).getClassNames().get(0).getParts().get(0).getText());
-		assertEquals("my", ((JavaPart) elem(esp, HtmlElement.class).getClassNames().get(0).getParts().get(0)).getSource());
-		assertEquals("{ Class }", elem(esp, HtmlElement.class).getClassNames().get(0).getParts().get(1).getText());
-		assertEquals("Class", ((JavaPart) elem(esp, HtmlElement.class).getClassNames().get(0).getParts().get(1)).getSource());
+		assertNotNull(elem(esp, MarkupElement.class).getClassNames());
+		assertEquals(1, elem(esp, MarkupElement.class).getClassNames().size());
+		assertEquals("{ my }{ Class }", elem(esp, MarkupElement.class).getClassNames().get(0).getText());
+		assertTrue(elem(esp, MarkupElement.class).getClassNames().get(0).hasParts());
+		assertNotNull(elem(esp, MarkupElement.class).getClassNames().get(0).getParts());
+		assertEquals(2, elem(esp, MarkupElement.class).getClassNames().get(0).getParts().size());
+		assertEquals("{ my }", elem(esp, MarkupElement.class).getClassNames().get(0).getParts().get(0).getText());
+		assertEquals("my", ((JavaPart) elem(esp, MarkupElement.class).getClassNames().get(0).getParts().get(0)).getSource());
+		assertEquals("{ Class }", elem(esp, MarkupElement.class).getClassNames().get(0).getParts().get(1).getText());
+		assertEquals("Class", ((JavaPart) elem(esp, MarkupElement.class).getClassNames().get(0).getParts().get(1)).getSource());
 	}
 
 	@Test
 	public void testHtmlComment() throws Exception {
 		assertTrue(elem("// comment").isA(Type.CommentElement));
-		assertTrue(elem("div innerHtml// comment", HtmlElement.class).hasChildren());
-		assertTrue(elem("div innerHtml// comment", HtmlElement.class).getChild(0).isA(Type.CommentElement));
-		assertEquals("//comment", elem("div innerHtml//comment", HtmlElement.class).getChild(0).getText());
-		assertTrue(elem("div innerHtml//comment", HtmlElement.class).getChild(0).isA(CommentElement));
-		assertEquals("comment", ((CommentElement) elem("div innerHtml//comment", HtmlElement.class).getChild(0)).getComment());
-		assertEquals("// comment", elem("div innerHtml// comment", HtmlElement.class).getChild(0).getText());
-		assertTrue(elem("div innerHtml//comment", HtmlElement.class).getChild(0).isA(CommentElement));
-		assertEquals("comment", ((CommentElement) elem("div innerHtml// comment", HtmlElement.class).getChild(0)).getComment());
-		assertEquals("// comment", elem("div innerHtml // comment", HtmlElement.class).getChild(0).getText());
-		assertTrue(elem("div innerHtml//comment", HtmlElement.class).getChild(0).isA(CommentElement));
-		assertEquals("comment", ((CommentElement) elem("div innerHtml // comment", HtmlElement.class).getChild(0)).getComment());
-		assertEquals("//comment", elem("div innerHtml //comment", HtmlElement.class).getChild(0).getText());
-		assertTrue(elem("div innerHtml//comment", HtmlElement.class).getChild(0).isA(CommentElement));
-		assertEquals("comment", ((CommentElement) elem("div innerHtml //comment", HtmlElement.class).getChild(0)).getComment());
-		assertEquals("// comment", elem("div { \"http://mydomain.com\" } // comment", HtmlElement.class).getChild(0).getText());
-		assertTrue(elem("div innerHtml//comment", HtmlElement.class).getChild(0).isA(CommentElement));
-		assertEquals("comment", ((CommentElement) elem("div { \"http://mydomain.com\" } // comment", HtmlElement.class).getChild(0)).getComment());
+		assertTrue(elem("div innerHtml// comment", MarkupElement.class).hasChildren());
+		assertTrue(elem("div innerHtml// comment", MarkupElement.class).getChild(0).isA(Type.CommentElement));
+		assertEquals("//comment", elem("div innerHtml//comment", MarkupElement.class).getChild(0).getText());
+		assertTrue(elem("div innerHtml//comment", MarkupElement.class).getChild(0).isA(CommentElement));
+		assertEquals("comment", ((CommentElement) elem("div innerHtml//comment", MarkupElement.class).getChild(0)).getComment());
+		assertEquals("// comment", elem("div innerHtml// comment", MarkupElement.class).getChild(0).getText());
+		assertTrue(elem("div innerHtml//comment", MarkupElement.class).getChild(0).isA(CommentElement));
+		assertEquals("comment", ((CommentElement) elem("div innerHtml// comment", MarkupElement.class).getChild(0)).getComment());
+		assertEquals("// comment", elem("div innerHtml // comment", MarkupElement.class).getChild(0).getText());
+		assertTrue(elem("div innerHtml//comment", MarkupElement.class).getChild(0).isA(CommentElement));
+		assertEquals("comment", ((CommentElement) elem("div innerHtml // comment", MarkupElement.class).getChild(0)).getComment());
+		assertEquals("//comment", elem("div innerHtml //comment", MarkupElement.class).getChild(0).getText());
+		assertTrue(elem("div innerHtml//comment", MarkupElement.class).getChild(0).isA(CommentElement));
+		assertEquals("comment", ((CommentElement) elem("div innerHtml //comment", MarkupElement.class).getChild(0)).getComment());
+		assertEquals("// comment", elem("div { \"http://mydomain.com\" } // comment", MarkupElement.class).getChild(0).getText());
+		assertTrue(elem("div innerHtml//comment", MarkupElement.class).getChild(0).isA(CommentElement));
+		assertEquals("comment", ((CommentElement) elem("div { \"http://mydomain.com\" } // comment", MarkupElement.class).getChild(0)).getComment());
 	}
 
 	@Test
@@ -652,105 +652,105 @@ public class EspDomTests {
 		assertNotNull(dom(esp));
 		assertFalse(dom(esp).isEmpty());
 		assertEquals(1, dom(esp).size());
-		assertTrue(elem(esp).isElementA(HtmlElement));
-		assertEquals("div", elem(esp, HtmlElement.class).getTag());
+		assertTrue(elem(esp).isElementA(MarkupElement));
+		assertEquals("div", elem(esp, MarkupElement.class).getTag());
 	}
 
 	@Test
 	public void testHtmlEntries() throws Exception {
 		String esp;
 		esp = "div(: value1)";
-		assertNotNull(elem(esp, HtmlElement.class));
-		assertFalse(elem(esp, HtmlElement.class).hasArgs());
-		assertTrue(elem(esp, HtmlElement.class).hasEntries());
-		assertEquals(1, elem(esp, HtmlElement.class).getEntries().size());
-		assertEquals(": value1", elem(esp, HtmlElement.class).getEntries().get("").getText());
-		assertNull(elem(esp, HtmlElement.class).getEntries().get("").getKey());
-		assertEquals("value1", elem(esp, HtmlElement.class).getEntries().get("").getValue().getText());
+		assertNotNull(elem(esp, MarkupElement.class));
+		assertFalse(elem(esp, MarkupElement.class).hasArgs());
+		assertTrue(elem(esp, MarkupElement.class).hasEntries());
+		assertEquals(1, elem(esp, MarkupElement.class).getEntries().size());
+		assertEquals(": value1", elem(esp, MarkupElement.class).getEntries().get("").getText());
+		assertNull(elem(esp, MarkupElement.class).getEntries().get("").getKey());
+		assertEquals("value1", elem(esp, MarkupElement.class).getEntries().get("").getValue().getText());
 
 		esp = "div( : value1)";
-		assertNotNull(elem(esp, HtmlElement.class));
-		assertFalse(elem(esp, HtmlElement.class).hasArgs());
-		assertTrue(elem(esp, HtmlElement.class).hasEntries());
-		assertEquals(1, elem(esp, HtmlElement.class).getEntries().size());
-		assertEquals(": value1", elem(esp, HtmlElement.class).getEntries().get("").getText());
-		assertNull(elem(esp, HtmlElement.class).getEntries().get("").getKey());
-		assertEquals("value1", elem(esp, HtmlElement.class).getEntries().get("").getValue().getText());
+		assertNotNull(elem(esp, MarkupElement.class));
+		assertFalse(elem(esp, MarkupElement.class).hasArgs());
+		assertTrue(elem(esp, MarkupElement.class).hasEntries());
+		assertEquals(1, elem(esp, MarkupElement.class).getEntries().size());
+		assertEquals(": value1", elem(esp, MarkupElement.class).getEntries().get("").getText());
+		assertNull(elem(esp, MarkupElement.class).getEntries().get("").getKey());
+		assertEquals("value1", elem(esp, MarkupElement.class).getEntries().get("").getValue().getText());
 
 		esp = "div(key1:)";
-		assertNotNull(elem(esp, HtmlElement.class));
-		assertFalse(elem(esp, HtmlElement.class).hasArgs());
-		assertTrue(elem(esp, HtmlElement.class).hasEntries());
-		assertEquals(1, elem(esp, HtmlElement.class).getEntries().size());
-		assertEquals("key1:", elem(esp, HtmlElement.class).getEntries().get("key1").getText());
-		assertEquals("key1", elem(esp, HtmlElement.class).getEntries().get("key1").getKey().getText());
-		assertNull(elem(esp, HtmlElement.class).getEntries().get("key1").getValue());
+		assertNotNull(elem(esp, MarkupElement.class));
+		assertFalse(elem(esp, MarkupElement.class).hasArgs());
+		assertTrue(elem(esp, MarkupElement.class).hasEntries());
+		assertEquals(1, elem(esp, MarkupElement.class).getEntries().size());
+		assertEquals("key1:", elem(esp, MarkupElement.class).getEntries().get("key1").getText());
+		assertEquals("key1", elem(esp, MarkupElement.class).getEntries().get("key1").getKey().getText());
+		assertNull(elem(esp, MarkupElement.class).getEntries().get("key1").getValue());
 
 		esp = "div(key1: )";
-		assertNotNull(elem(esp, HtmlElement.class));
-		assertFalse(elem(esp, HtmlElement.class).hasArgs());
-		assertTrue(elem(esp, HtmlElement.class).hasEntries());
-		assertEquals(1, elem(esp, HtmlElement.class).getEntries().size());
-		assertEquals("key1:", elem(esp, HtmlElement.class).getEntries().get("key1").getText());
-		assertEquals("key1", elem(esp, HtmlElement.class).getEntries().get("key1").getKey().getText());
-		assertNull(elem(esp, HtmlElement.class).getEntries().get("key1").getValue());
+		assertNotNull(elem(esp, MarkupElement.class));
+		assertFalse(elem(esp, MarkupElement.class).hasArgs());
+		assertTrue(elem(esp, MarkupElement.class).hasEntries());
+		assertEquals(1, elem(esp, MarkupElement.class).getEntries().size());
+		assertEquals("key1:", elem(esp, MarkupElement.class).getEntries().get("key1").getText());
+		assertEquals("key1", elem(esp, MarkupElement.class).getEntries().get("key1").getKey().getText());
+		assertNull(elem(esp, MarkupElement.class).getEntries().get("key1").getValue());
 
 		esp = "div(key1: value1)";
-		assertNotNull(elem(esp, HtmlElement.class));
-		assertFalse(elem(esp, HtmlElement.class).hasArgs());
-		assertTrue(elem(esp, HtmlElement.class).hasEntries());
-		assertEquals(1, elem(esp, HtmlElement.class).getEntries().size());
-		assertEquals("key1: value1", elem(esp, HtmlElement.class).getEntries().get("key1").getText());
-		assertEquals("key1", elem(esp, HtmlElement.class).getEntries().get("key1").getKey().getText());
-		assertEquals("value1", elem(esp, HtmlElement.class).getEntries().get("key1").getValue().getText());
+		assertNotNull(elem(esp, MarkupElement.class));
+		assertFalse(elem(esp, MarkupElement.class).hasArgs());
+		assertTrue(elem(esp, MarkupElement.class).hasEntries());
+		assertEquals(1, elem(esp, MarkupElement.class).getEntries().size());
+		assertEquals("key1: value1", elem(esp, MarkupElement.class).getEntries().get("key1").getText());
+		assertEquals("key1", elem(esp, MarkupElement.class).getEntries().get("key1").getKey().getText());
+		assertEquals("value1", elem(esp, MarkupElement.class).getEntries().get("key1").getValue().getText());
 
 		esp = "div(key1 : value1)";
-		assertNotNull(elem(esp, HtmlElement.class));
-		assertFalse(elem(esp, HtmlElement.class).hasArgs());
-		assertTrue(elem(esp, HtmlElement.class).hasEntries());
-		assertEquals(1, elem(esp, HtmlElement.class).getEntries().size());
-		assertEquals("key1 : value1", elem(esp, HtmlElement.class).getEntries().get("key1").getText());
-		assertEquals("key1", elem(esp, HtmlElement.class).getEntries().get("key1").getKey().getText());
-		assertEquals("value1", elem(esp, HtmlElement.class).getEntries().get("key1").getValue().getText());
+		assertNotNull(elem(esp, MarkupElement.class));
+		assertFalse(elem(esp, MarkupElement.class).hasArgs());
+		assertTrue(elem(esp, MarkupElement.class).hasEntries());
+		assertEquals(1, elem(esp, MarkupElement.class).getEntries().size());
+		assertEquals("key1 : value1", elem(esp, MarkupElement.class).getEntries().get("key1").getText());
+		assertEquals("key1", elem(esp, MarkupElement.class).getEntries().get("key1").getKey().getText());
+		assertEquals("value1", elem(esp, MarkupElement.class).getEntries().get("key1").getValue().getText());
 
 		esp = "div(key1: value1, : value2)";
-		assertNotNull(elem(esp, HtmlElement.class));
-		assertFalse(elem(esp, HtmlElement.class).hasArgs());
-		assertTrue(elem(esp, HtmlElement.class).hasEntries());
-		assertEquals(2, elem(esp, HtmlElement.class).getEntries().size());
-		assertEquals("key1: value1", elem(esp, HtmlElement.class).getEntries().get("key1").getText());
-		assertEquals("key1", elem(esp, HtmlElement.class).getEntries().get("key1").getKey().getText());
-		assertEquals("value1", elem(esp, HtmlElement.class).getEntries().get("key1").getValue().getText());
-		assertEquals(": value2", elem(esp, HtmlElement.class).getEntries().get("").getText());
-		assertNull(elem(esp, HtmlElement.class).getEntries().get("").getKey());
-		assertEquals("value2", elem(esp, HtmlElement.class).getEntries().get("").getValue().getText());
+		assertNotNull(elem(esp, MarkupElement.class));
+		assertFalse(elem(esp, MarkupElement.class).hasArgs());
+		assertTrue(elem(esp, MarkupElement.class).hasEntries());
+		assertEquals(2, elem(esp, MarkupElement.class).getEntries().size());
+		assertEquals("key1: value1", elem(esp, MarkupElement.class).getEntries().get("key1").getText());
+		assertEquals("key1", elem(esp, MarkupElement.class).getEntries().get("key1").getKey().getText());
+		assertEquals("value1", elem(esp, MarkupElement.class).getEntries().get("key1").getValue().getText());
+		assertEquals(": value2", elem(esp, MarkupElement.class).getEntries().get("").getText());
+		assertNull(elem(esp, MarkupElement.class).getEntries().get("").getKey());
+		assertEquals("value2", elem(esp, MarkupElement.class).getEntries().get("").getValue().getText());
 
 		esp = "div(key1: value1, key2: value2)";
-		assertNotNull(elem(esp, HtmlElement.class));
-		assertFalse(elem(esp, HtmlElement.class).hasArgs());
-		assertTrue(elem(esp, HtmlElement.class).hasEntries());
-		assertEquals(2, elem(esp, HtmlElement.class).getEntries().size());
-		assertEquals("key1: value1", elem(esp, HtmlElement.class).getEntries().get("key1").getText());
-		assertEquals("key1", elem(esp, HtmlElement.class).getEntries().get("key1").getKey().getText());
-		assertEquals("value1", elem(esp, HtmlElement.class).getEntries().get("key1").getValue().getText());
-		assertEquals("key2: value2", elem(esp, HtmlElement.class).getEntries().get("key2").getText());
-		assertEquals("key2", elem(esp, HtmlElement.class).getEntries().get("key2").getKey().getText());
-		assertEquals("value2", elem(esp, HtmlElement.class).getEntries().get("key2").getValue().getText());
+		assertNotNull(elem(esp, MarkupElement.class));
+		assertFalse(elem(esp, MarkupElement.class).hasArgs());
+		assertTrue(elem(esp, MarkupElement.class).hasEntries());
+		assertEquals(2, elem(esp, MarkupElement.class).getEntries().size());
+		assertEquals("key1: value1", elem(esp, MarkupElement.class).getEntries().get("key1").getText());
+		assertEquals("key1", elem(esp, MarkupElement.class).getEntries().get("key1").getKey().getText());
+		assertEquals("value1", elem(esp, MarkupElement.class).getEntries().get("key1").getValue().getText());
+		assertEquals("key2: value2", elem(esp, MarkupElement.class).getEntries().get("key2").getText());
+		assertEquals("key2", elem(esp, MarkupElement.class).getEntries().get("key2").getKey().getText());
+		assertEquals("value2", elem(esp, MarkupElement.class).getEntries().get("key2").getValue().getText());
 
 		esp = "div( key1: value1, key2: value2, key3: value3 )";
-		assertNotNull(elem(esp, HtmlElement.class));
-		assertFalse(elem(esp, HtmlElement.class).hasArgs());
-		assertTrue(elem(esp, HtmlElement.class).hasEntries());
-		assertEquals(3, elem(esp, HtmlElement.class).getEntries().size());
-		assertEquals("key1: value1", elem(esp, HtmlElement.class).getEntries().get("key1").getText());
-		assertEquals("key1", elem(esp, HtmlElement.class).getEntries().get("key1").getKey().getText());
-		assertEquals("value1", elem(esp, HtmlElement.class).getEntries().get("key1").getValue().getText());
-		assertEquals("key2: value2", elem(esp, HtmlElement.class).getEntries().get("key2").getText());
-		assertEquals("key2", elem(esp, HtmlElement.class).getEntries().get("key2").getKey().getText());
-		assertEquals("value2", elem(esp, HtmlElement.class).getEntries().get("key2").getValue().getText());
-		assertEquals("key3: value3", elem(esp, HtmlElement.class).getEntries().get("key3").getText());
-		assertEquals("key3", elem(esp, HtmlElement.class).getEntries().get("key3").getKey().getText());
-		assertEquals("value3", elem(esp, HtmlElement.class).getEntries().get("key3").getValue().getText());
+		assertNotNull(elem(esp, MarkupElement.class));
+		assertFalse(elem(esp, MarkupElement.class).hasArgs());
+		assertTrue(elem(esp, MarkupElement.class).hasEntries());
+		assertEquals(3, elem(esp, MarkupElement.class).getEntries().size());
+		assertEquals("key1: value1", elem(esp, MarkupElement.class).getEntries().get("key1").getText());
+		assertEquals("key1", elem(esp, MarkupElement.class).getEntries().get("key1").getKey().getText());
+		assertEquals("value1", elem(esp, MarkupElement.class).getEntries().get("key1").getValue().getText());
+		assertEquals("key2: value2", elem(esp, MarkupElement.class).getEntries().get("key2").getText());
+		assertEquals("key2", elem(esp, MarkupElement.class).getEntries().get("key2").getKey().getText());
+		assertEquals("value2", elem(esp, MarkupElement.class).getEntries().get("key2").getValue().getText());
+		assertEquals("key3: value3", elem(esp, MarkupElement.class).getEntries().get("key3").getText());
+		assertEquals("key3", elem(esp, MarkupElement.class).getEntries().get("key3").getKey().getText());
+		assertEquals("value3", elem(esp, MarkupElement.class).getEntries().get("key3").getValue().getText());
 	}
 
 	@Test
@@ -759,168 +759,168 @@ public class EspDomTests {
 		assertNotNull(dom(esp));
 		assertFalse(dom(esp).isEmpty());
 		assertEquals(1, dom(esp).size());
-		assertTrue(elem(esp).isElementA(HtmlElement));
-		assertEquals("h2", elem(esp, HtmlElement.class).getTag());
+		assertTrue(elem(esp).isElementA(MarkupElement));
+		assertEquals("h2", elem(esp, MarkupElement.class).getTag());
 	}
 	
 	@Test
 	public void testHtmlHidden() throws Exception {
-		assertTrue(elem("div|hide", HtmlElement.class).isHidden());
-		assertTrue(elem("div|hide text", HtmlElement.class).isHidden());
-		assertTrue(elem("div#myDiv|hide", HtmlElement.class).isHidden());
-		assertTrue(elem("div.myClass|hide", HtmlElement.class).isHidden());
-		assertTrue(elem("div(key1:val1)|hide", HtmlElement.class).isHidden());
-		assertTrue(elem("div|hide(key1:val1)", HtmlElement.class).isHidden());
-		assertTrue(elem("div()|hide", HtmlElement.class).isHidden());
-		assertTrue(elem("div|hide()", HtmlElement.class).isHidden());
-		assertFalse(elem("div |hide", HtmlElement.class).isHidden());
+		assertTrue(elem("div|hide", MarkupElement.class).isHidden());
+		assertTrue(elem("div|hide text", MarkupElement.class).isHidden());
+		assertTrue(elem("div#myDiv|hide", MarkupElement.class).isHidden());
+		assertTrue(elem("div.myClass|hide", MarkupElement.class).isHidden());
+		assertTrue(elem("div(key1:val1)|hide", MarkupElement.class).isHidden());
+		assertTrue(elem("div|hide(key1:val1)", MarkupElement.class).isHidden());
+		assertTrue(elem("div()|hide", MarkupElement.class).isHidden());
+		assertTrue(elem("div|hide()", MarkupElement.class).isHidden());
+		assertFalse(elem("div |hide", MarkupElement.class).isHidden());
 	}
 	
 	@Test
 	public void testHtmlId() throws Exception {
 		String esp;
 		
-		assertNull(elem("div", HtmlElement.class).getId());
-		assertNull(elem("div#", HtmlElement.class).getId());
-		assertNull(elem("div#.myClass", HtmlElement.class).getId());
-		assertNotNull(elem("div#myDiv", HtmlElement.class).getId());
-		assertEquals("myDiv", elem("div#myDiv", HtmlElement.class).getId().getText());
-		assertEquals("myDiv", elem("div#myDiv.myClass1", HtmlElement.class).getId().getText());
-		assertEquals("myDiv", elem("div#myDiv(style:\"display:none\")", HtmlElement.class).getId().getText());
+		assertNull(elem("div", MarkupElement.class).getId());
+		assertNull(elem("div#", MarkupElement.class).getId());
+		assertNull(elem("div#.myClass", MarkupElement.class).getId());
+		assertNotNull(elem("div#myDiv", MarkupElement.class).getId());
+		assertEquals("myDiv", elem("div#myDiv", MarkupElement.class).getId().getText());
+		assertEquals("myDiv", elem("div#myDiv.myClass1", MarkupElement.class).getId().getText());
+		assertEquals("myDiv", elem("div#myDiv(style:\"display:none\")", MarkupElement.class).getId().getText());
 
 		esp = "div#{my}Div";
-		assertNotNull(elem(esp, HtmlElement.class).getId());
-		assertEquals("{my}Div", elem(esp, HtmlElement.class).getId().getText());
-		assertTrue(elem(esp, HtmlElement.class).getId().hasParts());
-		assertNotNull(elem(esp, HtmlElement.class).getId().getParts());
-		assertEquals(1, elem(esp, HtmlElement.class).getId().getParts().size());
-		assertEquals("{my}", elem(esp, HtmlElement.class).getId().getParts().get(0).getText());
-		assertEquals("my", ((JavaPart) elem(esp, HtmlElement.class).getId().getParts().get(0)).getSource());
+		assertNotNull(elem(esp, MarkupElement.class).getId());
+		assertEquals("{my}Div", elem(esp, MarkupElement.class).getId().getText());
+		assertTrue(elem(esp, MarkupElement.class).getId().hasParts());
+		assertNotNull(elem(esp, MarkupElement.class).getId().getParts());
+		assertEquals(1, elem(esp, MarkupElement.class).getId().getParts().size());
+		assertEquals("{my}", elem(esp, MarkupElement.class).getId().getParts().get(0).getText());
+		assertEquals("my", ((JavaPart) elem(esp, MarkupElement.class).getId().getParts().get(0)).getSource());
 
 		esp = "div#{ my }Div";
-		assertNotNull(elem(esp, HtmlElement.class).getId());
-		assertEquals("{ my }Div", elem(esp, HtmlElement.class).getId().getText());
-		assertTrue(elem(esp, HtmlElement.class).getId().hasParts());
-		assertNotNull(elem(esp, HtmlElement.class).getId().getParts());
-		assertEquals(1, elem(esp, HtmlElement.class).getId().getParts().size());
-		assertEquals("{ my }", elem(esp, HtmlElement.class).getId().getParts().get(0).getText());
-		assertEquals("my", ((JavaPart) elem(esp, HtmlElement.class).getId().getParts().get(0)).getSource());
+		assertNotNull(elem(esp, MarkupElement.class).getId());
+		assertEquals("{ my }Div", elem(esp, MarkupElement.class).getId().getText());
+		assertTrue(elem(esp, MarkupElement.class).getId().hasParts());
+		assertNotNull(elem(esp, MarkupElement.class).getId().getParts());
+		assertEquals(1, elem(esp, MarkupElement.class).getId().getParts().size());
+		assertEquals("{ my }", elem(esp, MarkupElement.class).getId().getParts().get(0).getText());
+		assertEquals("my", ((JavaPart) elem(esp, MarkupElement.class).getId().getParts().get(0)).getSource());
 
 		esp = "div#m{yDi}v";
-		assertNotNull(elem(esp, HtmlElement.class).getId());
-		assertEquals("m{yDi}v", elem(esp, HtmlElement.class).getId().getText());
-		assertTrue(elem(esp, HtmlElement.class).getId().hasParts());
-		assertNotNull(elem(esp, HtmlElement.class).getId().getParts());
-		assertEquals(1, elem(esp, HtmlElement.class).getId().getParts().size());
-		assertEquals("{yDi}", elem(esp, HtmlElement.class).getId().getParts().get(0).getText());
-		assertEquals("yDi", ((JavaPart) elem(esp, HtmlElement.class).getId().getParts().get(0)).getSource());
+		assertNotNull(elem(esp, MarkupElement.class).getId());
+		assertEquals("m{yDi}v", elem(esp, MarkupElement.class).getId().getText());
+		assertTrue(elem(esp, MarkupElement.class).getId().hasParts());
+		assertNotNull(elem(esp, MarkupElement.class).getId().getParts());
+		assertEquals(1, elem(esp, MarkupElement.class).getId().getParts().size());
+		assertEquals("{yDi}", elem(esp, MarkupElement.class).getId().getParts().get(0).getText());
+		assertEquals("yDi", ((JavaPart) elem(esp, MarkupElement.class).getId().getParts().get(0)).getSource());
 
 		esp = "div#my{Div}";
-		assertNotNull(elem(esp, HtmlElement.class).getId());
-		assertEquals("my{Div}", elem(esp, HtmlElement.class).getId().getText());
-		assertTrue(elem(esp, HtmlElement.class).getId().hasParts());
-		assertNotNull(elem(esp, HtmlElement.class).getId().getParts());
-		assertEquals(1, elem(esp, HtmlElement.class).getId().getParts().size());
-		assertEquals("{Div}", elem(esp, HtmlElement.class).getId().getParts().get(0).getText());
-		assertEquals("Div", ((JavaPart) elem(esp, HtmlElement.class).getId().getParts().get(0)).getSource());
+		assertNotNull(elem(esp, MarkupElement.class).getId());
+		assertEquals("my{Div}", elem(esp, MarkupElement.class).getId().getText());
+		assertTrue(elem(esp, MarkupElement.class).getId().hasParts());
+		assertNotNull(elem(esp, MarkupElement.class).getId().getParts());
+		assertEquals(1, elem(esp, MarkupElement.class).getId().getParts().size());
+		assertEquals("{Div}", elem(esp, MarkupElement.class).getId().getParts().get(0).getText());
+		assertEquals("Div", ((JavaPart) elem(esp, MarkupElement.class).getId().getParts().get(0)).getSource());
 
 		esp = "div#{my}{Div}";
-		assertNotNull(elem(esp, HtmlElement.class).getId());
-		assertEquals("{my}{Div}", elem(esp, HtmlElement.class).getId().getText());
-		assertTrue(elem(esp, HtmlElement.class).getId().hasParts());
-		assertNotNull(elem(esp, HtmlElement.class).getId().getParts());
-		assertEquals(2, elem(esp, HtmlElement.class).getId().getParts().size());
-		assertEquals("{my}", elem(esp, HtmlElement.class).getId().getParts().get(0).getText());
-		assertEquals("my", ((JavaPart) elem(esp, HtmlElement.class).getId().getParts().get(0)).getSource());
-		assertEquals("{Div}", elem(esp, HtmlElement.class).getId().getParts().get(1).getText());
-		assertEquals("Div", ((JavaPart) elem(esp, HtmlElement.class).getId().getParts().get(1)).getSource());
+		assertNotNull(elem(esp, MarkupElement.class).getId());
+		assertEquals("{my}{Div}", elem(esp, MarkupElement.class).getId().getText());
+		assertTrue(elem(esp, MarkupElement.class).getId().hasParts());
+		assertNotNull(elem(esp, MarkupElement.class).getId().getParts());
+		assertEquals(2, elem(esp, MarkupElement.class).getId().getParts().size());
+		assertEquals("{my}", elem(esp, MarkupElement.class).getId().getParts().get(0).getText());
+		assertEquals("my", ((JavaPart) elem(esp, MarkupElement.class).getId().getParts().get(0)).getSource());
+		assertEquals("{Div}", elem(esp, MarkupElement.class).getId().getParts().get(1).getText());
+		assertEquals("Div", ((JavaPart) elem(esp, MarkupElement.class).getId().getParts().get(1)).getSource());
 	}
 	
 	@Test
 	public void testHtmlInnerText() throws Exception {
-		assertFalse(elem("div ", HtmlElement.class).hasInnerText());
-		assertEquals(" ", elem("div  ", HtmlElement.class).getInnerText().getText());
-		assertEquals("  ", elem("div   ", HtmlElement.class).getInnerText().getText());
-		assertEquals("/", elem("div /", HtmlElement.class).getInnerText().getText());
-		assertEquals("a", elem("div a", HtmlElement.class).getInnerText().getText());
-		assertEquals("innerHtml", elem("div innerHtml", HtmlElement.class).getInnerText().getText());
-		assertEquals("innerHtml", elem("div innerHtml// comment", HtmlElement.class).getInnerText().getText());
-		assertEquals("innerHtml ", elem("div innerHtml // comment", HtmlElement.class).getInnerText().getText());
-		assertEquals(" innerHtml ", elem("div  innerHtml // comment", HtmlElement.class).getInnerText().getText());
-		assertEquals("{ innerHtml }", elem("div { innerHtml }", HtmlElement.class).getInnerText().getText());
-		assertEquals("{ \"innerHtml\" }", elem("div { \"innerHtml\" }", HtmlElement.class).getInnerText().getText());
-		assertEquals("{ \"http://mydomain.com\" }", elem("div { \"http://mydomain.com\" }", HtmlElement.class).getInnerText().getText());
-		assertEquals("{ \"http://mydomain.com\" } ", elem("div { \"http://mydomain.com\" } // comment", HtmlElement.class).getInnerText().getText());
-		assertEquals(" { \"http://mydomain.com\" } ", elem("div  { \"http://mydomain.com\" } // comment", HtmlElement.class).getInnerText().getText());
-		assertEquals("<a href=\"/contact\">contact me</a>", elem("span <a href=\"/contact\">contact me</a>", HtmlElement.class).getInnerText().getText());
+		assertFalse(elem("div ", MarkupElement.class).hasInnerText());
+		assertEquals(" ", elem("div  ", MarkupElement.class).getInnerText().getText());
+		assertEquals("  ", elem("div   ", MarkupElement.class).getInnerText().getText());
+		assertEquals("/", elem("div /", MarkupElement.class).getInnerText().getText());
+		assertEquals("a", elem("div a", MarkupElement.class).getInnerText().getText());
+		assertEquals("innerHtml", elem("div innerHtml", MarkupElement.class).getInnerText().getText());
+		assertEquals("innerHtml", elem("div innerHtml// comment", MarkupElement.class).getInnerText().getText());
+		assertEquals("innerHtml ", elem("div innerHtml // comment", MarkupElement.class).getInnerText().getText());
+		assertEquals(" innerHtml ", elem("div  innerHtml // comment", MarkupElement.class).getInnerText().getText());
+		assertEquals("{ innerHtml }", elem("div { innerHtml }", MarkupElement.class).getInnerText().getText());
+		assertEquals("{ \"innerHtml\" }", elem("div { \"innerHtml\" }", MarkupElement.class).getInnerText().getText());
+		assertEquals("{ \"http://mydomain.com\" }", elem("div { \"http://mydomain.com\" }", MarkupElement.class).getInnerText().getText());
+		assertEquals("{ \"http://mydomain.com\" } ", elem("div { \"http://mydomain.com\" } // comment", MarkupElement.class).getInnerText().getText());
+		assertEquals(" { \"http://mydomain.com\" } ", elem("div  { \"http://mydomain.com\" } // comment", MarkupElement.class).getInnerText().getText());
+		assertEquals("<a href=\"/contact\">contact me</a>", elem("span <a href=\"/contact\">contact me</a>", MarkupElement.class).getInnerText().getText());
 	}
 	
 	@Test
 	public void testInnerText() throws Exception {
 		String esp;
 		esp = "div start";
-		assertTrue(elem(esp, HtmlElement.class).hasInnerText());
-		assertEquals("start", elem(esp, HtmlElement.class).getInnerText().getText());
+		assertTrue(elem(esp, MarkupElement.class).hasInnerText());
+		assertEquals("start", elem(esp, MarkupElement.class).getInnerText().getText());
 
 		esp = "div st{ar}t";
-		assertTrue(elem(esp, HtmlElement.class).hasInnerText());
-		assertEquals("st{ar}t", elem(esp, HtmlElement.class).getInnerText().getText());
-		assertTrue(elem(esp, HtmlElement.class).getInnerText().hasParts());
-		assertEquals("{ar}", elem(esp, HtmlElement.class).getInnerText().getParts().get(0).getText());
+		assertTrue(elem(esp, MarkupElement.class).hasInnerText());
+		assertEquals("st{ar}t", elem(esp, MarkupElement.class).getInnerText().getText());
+		assertTrue(elem(esp, MarkupElement.class).getInnerText().hasParts());
+		assertEquals("{ar}", elem(esp, MarkupElement.class).getInnerText().getParts().get(0).getText());
 
 		esp = "div st{ \"ar\" }t";
-		assertTrue(elem(esp, HtmlElement.class).hasInnerText());
-		assertEquals("st{ \"ar\" }t", elem(esp, HtmlElement.class).getInnerText().getText());
-		assertTrue(elem(esp, HtmlElement.class).getInnerText().hasParts());
-		assertEquals("{ \"ar\" }", elem(esp, HtmlElement.class).getInnerText().getParts().get(0).getText());
+		assertTrue(elem(esp, MarkupElement.class).hasInnerText());
+		assertEquals("st{ \"ar\" }t", elem(esp, MarkupElement.class).getInnerText().getText());
+		assertTrue(elem(esp, MarkupElement.class).getInnerText().hasParts());
+		assertEquals("{ \"ar\" }", elem(esp, MarkupElement.class).getInnerText().getParts().get(0).getText());
 
 		esp = "div st{ \"\" }t";
-		assertTrue(elem(esp, HtmlElement.class).hasInnerText());
-		assertEquals("st{ \"\" }t", elem(esp, HtmlElement.class).getInnerText().getText());
-		assertTrue(elem(esp, HtmlElement.class).getInnerText().hasParts());
-		assertEquals("{ \"\" }", elem(esp, HtmlElement.class).getInnerText().getParts().get(0).getText());
+		assertTrue(elem(esp, MarkupElement.class).hasInnerText());
+		assertEquals("st{ \"\" }t", elem(esp, MarkupElement.class).getInnerText().getText());
+		assertTrue(elem(esp, MarkupElement.class).getInnerText().hasParts());
+		assertEquals("{ \"\" }", elem(esp, MarkupElement.class).getInnerText().getParts().get(0).getText());
 
 		esp = "div st{ \" }t";
-		assertTrue(elem(esp, HtmlElement.class).hasInnerText());
-		assertEquals("st{ \" }t", elem(esp, HtmlElement.class).getInnerText().getText());
-		assertTrue(elem(esp, HtmlElement.class).getInnerText().hasParts());
-		assertEquals("{ \" }t", elem(esp, HtmlElement.class).getInnerText().getParts().get(0).getText());
+		assertTrue(elem(esp, MarkupElement.class).hasInnerText());
+		assertEquals("st{ \" }t", elem(esp, MarkupElement.class).getInnerText().getText());
+		assertTrue(elem(esp, MarkupElement.class).getInnerText().hasParts());
+		assertEquals("{ \" }t", elem(esp, MarkupElement.class).getInnerText().getParts().get(0).getText());
 
 		esp = "div start\n\t+=";
-		assertFalse(elem(esp, HtmlElement.class).hasChildren());
+		assertFalse(elem(esp, MarkupElement.class).hasChildren());
 
 		esp = "div start\n\t+= ";
-		assertTrue(elem(esp, HtmlElement.class).hasChildren());
-		assertTrue(elem(esp, HtmlElement.class).getChild(0).isA(InnerTextElement));
-		assertFalse(((InnerTextElement) elem(esp, HtmlElement.class).getChild(0)).hasInnerText());
+		assertTrue(elem(esp, MarkupElement.class).hasChildren());
+		assertTrue(elem(esp, MarkupElement.class).getChild(0).isA(InnerTextElement));
+		assertFalse(((InnerTextElement) elem(esp, MarkupElement.class).getChild(0)).hasInnerText());
 
 		esp = "div start\n\t+=  ";
-		assertTrue(elem(esp, HtmlElement.class).hasChildren());
-		assertTrue(elem(esp, HtmlElement.class).getChild(0).isA(InnerTextElement));
-		assertTrue(((InnerTextElement) elem(esp, HtmlElement.class).getChild(0)).hasInnerText());
-		assertEquals(" ", ((InnerTextElement) elem(esp, HtmlElement.class).getChild(0)).getInnerText().getText());
+		assertTrue(elem(esp, MarkupElement.class).hasChildren());
+		assertTrue(elem(esp, MarkupElement.class).getChild(0).isA(InnerTextElement));
+		assertTrue(((InnerTextElement) elem(esp, MarkupElement.class).getChild(0)).hasInnerText());
+		assertEquals(" ", ((InnerTextElement) elem(esp, MarkupElement.class).getChild(0)).getInnerText().getText());
 
 		esp = "div start\n\t+= end";
-		assertTrue(elem(esp, HtmlElement.class).hasChildren());
-		assertTrue(elem(esp, HtmlElement.class).getChild(0).isA(InnerTextElement));
-		assertTrue(((InnerTextElement) elem(esp, HtmlElement.class).getChild(0)).hasInnerText());
-		assertEquals("end", ((InnerTextElement) elem(esp, HtmlElement.class).getChild(0)).getInnerText().getText());
+		assertTrue(elem(esp, MarkupElement.class).hasChildren());
+		assertTrue(elem(esp, MarkupElement.class).getChild(0).isA(InnerTextElement));
+		assertTrue(((InnerTextElement) elem(esp, MarkupElement.class).getChild(0)).hasInnerText());
+		assertEquals("end", ((InnerTextElement) elem(esp, MarkupElement.class).getChild(0)).getInnerText().getText());
 
 		esp = "div start\n\t+=end";
-		assertFalse(elem(esp, HtmlElement.class).hasChildren());
+		assertFalse(elem(esp, MarkupElement.class).hasChildren());
 
 		esp = "div start\n\t+=  end";
-		assertTrue(elem(esp, HtmlElement.class).hasChildren());
-		assertTrue(elem(esp, HtmlElement.class).getChild(0).isA(InnerTextElement));
-		assertTrue(((InnerTextElement) elem(esp, HtmlElement.class).getChild(0)).hasInnerText());
-		assertEquals(" end", ((InnerTextElement) elem(esp, HtmlElement.class).getChild(0)).getInnerText().getText());
+		assertTrue(elem(esp, MarkupElement.class).hasChildren());
+		assertTrue(elem(esp, MarkupElement.class).getChild(0).isA(InnerTextElement));
+		assertTrue(((InnerTextElement) elem(esp, MarkupElement.class).getChild(0)).hasInnerText());
+		assertEquals(" end", ((InnerTextElement) elem(esp, MarkupElement.class).getChild(0)).getInnerText().getText());
 
 		esp = "div start\n\t+=  {end}";
-		assertTrue(elem(esp, HtmlElement.class).hasChildren());
-		assertTrue(elem(esp, HtmlElement.class).getChild(0).isA(InnerTextElement));
-		assertTrue(((InnerTextElement) elem(esp, HtmlElement.class).getChild(0)).hasInnerText());
-		assertEquals(" {end}", ((InnerTextElement) elem(esp, HtmlElement.class).getChild(0)).getInnerText().getText());
-		assertTrue(((InnerTextElement) elem(esp, HtmlElement.class).getChild(0)).hasParts());
+		assertTrue(elem(esp, MarkupElement.class).hasChildren());
+		assertTrue(elem(esp, MarkupElement.class).getChild(0).isA(InnerTextElement));
+		assertTrue(((InnerTextElement) elem(esp, MarkupElement.class).getChild(0)).hasInnerText());
+		assertEquals(" {end}", ((InnerTextElement) elem(esp, MarkupElement.class).getChild(0)).getInnerText().getText());
+		assertTrue(((InnerTextElement) elem(esp, MarkupElement.class).getChild(0)).hasParts());
 	}
 	
 	@Test
@@ -935,46 +935,46 @@ public class EspDomTests {
 		String esp;
 		esp = "div <- img";
 		assertEquals(1, dom(esp).size());
-		assertTrue(elem(esp, HtmlElement.class).hasChildren());
-		assertEquals(1, elem(esp, HtmlElement.class).getChildren().size());
+		assertTrue(elem(esp, MarkupElement.class).hasChildren());
+		assertEquals(1, elem(esp, MarkupElement.class).getChildren().size());
 		assertEquals("div <- img", elem(esp).getText());
-		assertEquals("img", elem(esp, HtmlElement.class).getChild(0).getText());
-		assertEquals("div", elem(esp, HtmlElement.class).getTag());
-		assertEquals("img", ((HtmlElement) elem(esp, HtmlElement.class).getChild(0)).getTag());
+		assertEquals("img", elem(esp, MarkupElement.class).getChild(0).getText());
+		assertEquals("div", elem(esp, MarkupElement.class).getTag());
+		assertEquals("img", ((MarkupElement) elem(esp, MarkupElement.class).getChild(0)).getTag());
 
 		esp = "div#myDiv.myClass1(key1:\"val0;val1\") <- img#myImg.myClass2(key2:val2)";
 		assertEquals(1, dom(esp).size());
-		assertTrue(elem(esp, HtmlElement.class).hasChildren());
-		assertEquals(1, elem(esp, HtmlElement.class).getChildren().size());
+		assertTrue(elem(esp, MarkupElement.class).hasChildren());
+		assertEquals(1, elem(esp, MarkupElement.class).getChildren().size());
 		assertEquals("div#myDiv.myClass1(key1:\"val0;val1\") <- img#myImg.myClass2(key2:val2)", elem(esp).getText());
-		assertEquals("img#myImg.myClass2(key2:val2)", elem(esp, HtmlElement.class).getChild(0).getText());
-		assertTrue(elem(esp).isA(HtmlElement));
-		assertTrue(elem(esp, HtmlElement.class).getChild(0).isA(HtmlElement));
-		assertEquals("div", elem(esp, HtmlElement.class).getTag());									// tags
-		assertEquals("img", ((HtmlElement) elem(esp, HtmlElement.class).getChild(0)).getTag());
-		assertEquals("myDiv", elem(esp, HtmlElement.class).getId().getText());						// ids
-		assertEquals("myImg", ((HtmlElement) elem(esp, HtmlElement.class).getChild(0)).getId().getText());
-		assertEquals(1, elem(esp, HtmlElement.class).getClassNames().size());						// classes
-		assertEquals(1, ((HtmlElement) elem(esp, HtmlElement.class).getChild(0)).getClassNames().size());
-		assertEquals("myClass1", elem(esp, HtmlElement.class).getClassNames().get(0).getText());
-		assertEquals("myClass2", ((HtmlElement) elem(esp, HtmlElement.class).getChild(0)).getClassNames().get(0).getText());
-		assertTrue(elem(esp, HtmlElement.class).hasEntries());
-		assertTrue(((HtmlElement) elem(esp, HtmlElement.class).getChild(0)).hasEntries());
-		assertEquals(1, elem(esp, HtmlElement.class).getEntries().size());
-		assertEquals(1, ((HtmlElement) elem(esp, HtmlElement.class).getChild(0)).getEntries().size());
-		assertTrue(elem(esp, HtmlElement.class).hasEntry("key1"));
-		assertTrue(((HtmlElement) elem(esp, HtmlElement.class).getChild(0)).hasEntry("key2"));
-		assertEquals("\"val0;val1\"", elem(esp, HtmlElement.class).getEntryValue("key1").getText());
-		assertEquals("val2", ((HtmlElement) elem(esp, HtmlElement.class).getChild(0)).getEntryValue("key2").getText());
+		assertEquals("img#myImg.myClass2(key2:val2)", elem(esp, MarkupElement.class).getChild(0).getText());
+		assertTrue(elem(esp).isA(MarkupElement));
+		assertTrue(elem(esp, MarkupElement.class).getChild(0).isA(MarkupElement));
+		assertEquals("div", elem(esp, MarkupElement.class).getTag());									// tags
+		assertEquals("img", ((MarkupElement) elem(esp, MarkupElement.class).getChild(0)).getTag());
+		assertEquals("myDiv", elem(esp, MarkupElement.class).getId().getText());						// ids
+		assertEquals("myImg", ((MarkupElement) elem(esp, MarkupElement.class).getChild(0)).getId().getText());
+		assertEquals(1, elem(esp, MarkupElement.class).getClassNames().size());						// classes
+		assertEquals(1, ((MarkupElement) elem(esp, MarkupElement.class).getChild(0)).getClassNames().size());
+		assertEquals("myClass1", elem(esp, MarkupElement.class).getClassNames().get(0).getText());
+		assertEquals("myClass2", ((MarkupElement) elem(esp, MarkupElement.class).getChild(0)).getClassNames().get(0).getText());
+		assertTrue(elem(esp, MarkupElement.class).hasEntries());
+		assertTrue(((MarkupElement) elem(esp, MarkupElement.class).getChild(0)).hasEntries());
+		assertEquals(1, elem(esp, MarkupElement.class).getEntries().size());
+		assertEquals(1, ((MarkupElement) elem(esp, MarkupElement.class).getChild(0)).getEntries().size());
+		assertTrue(elem(esp, MarkupElement.class).hasEntry("key1"));
+		assertTrue(((MarkupElement) elem(esp, MarkupElement.class).getChild(0)).hasEntry("key2"));
+		assertEquals("\"val0;val1\"", elem(esp, MarkupElement.class).getEntryValue("key1").getText());
+		assertEquals("val2", ((MarkupElement) elem(esp, MarkupElement.class).getChild(0)).getEntryValue("key2").getText());
 	}
 	
 	@Test
 	public void testHtmlTag() throws Exception {
-		assertEquals("div", elem("div", HtmlElement.class).getTag());
-		assertEquals("div", elem("\tdiv", HtmlElement.class).getTag());
-		assertEquals("div", elem("\tdiv#myDiv", HtmlElement.class).getTag());
-		assertEquals("div", elem("\tdiv.myClass", HtmlElement.class).getTag());
-		assertEquals("div", elem("\tdiv(key1:val1)", HtmlElement.class).getTag());
+		assertEquals("div", elem("div", MarkupElement.class).getTag());
+		assertEquals("div", elem("\tdiv", MarkupElement.class).getTag());
+		assertEquals("div", elem("\tdiv#myDiv", MarkupElement.class).getTag());
+		assertEquals("div", elem("\tdiv.myClass", MarkupElement.class).getTag());
+		assertEquals("div", elem("\tdiv(key1:val1)", MarkupElement.class).getTag());
 	}
 	
 	@Test
@@ -985,15 +985,15 @@ public class EspDomTests {
 	
 	@Test
 	public void testHtmlView() throws Exception {
-		HtmlElement elem;
-		elem = elem("view", HtmlElement.class);
+		MarkupElement elem;
+		elem = elem("view", MarkupElement.class);
 		assertEquals("view", elem.getTag());
 
-		elem = elem("view<MyEsp>", HtmlElement.class);
+		elem = elem("view<MyEsp>", MarkupElement.class);
 		assertEquals("view", elem.getTag());
 		assertEquals("MyEsp", elem.getJavaType());
 
-		elem = elem("view<MyEsp>(arg1)", HtmlElement.class);
+		elem = elem("view<MyEsp>(arg1)", MarkupElement.class);
 		assertEquals("view", elem.getTag());
 		assertEquals("MyEsp", elem.getJavaType());
 		assertNull(elem.getId());
@@ -1001,7 +1001,7 @@ public class EspDomTests {
 		assertEquals(1, elem.getArgs().size());
 		assertEquals("arg1", elem.getArgs().get(0).getText());
 
-		elem = elem("view<MyEsp>(\"arg1\")", HtmlElement.class);
+		elem = elem("view<MyEsp>(\"arg1\")", MarkupElement.class);
 		assertEquals("view", elem.getTag());
 		assertEquals("MyEsp", elem.getJavaType());
 		assertNull(elem.getId());
@@ -1009,7 +1009,7 @@ public class EspDomTests {
 		assertEquals(1, elem.getArgs().size());
 		assertEquals("\"arg1\"", elem.getArgs().get(0).getText());
 
-		elem = elem("view<MyEsp>(\"arg1\",arg2)", HtmlElement.class);
+		elem = elem("view<MyEsp>(\"arg1\",arg2)", MarkupElement.class);
 		assertEquals("view", elem.getTag());
 		assertEquals("MyEsp", elem.getJavaType());
 		assertNull(elem.getId());
@@ -1045,12 +1045,12 @@ public class EspDomTests {
 		String esp;
 		esp = "div<-div";
 		assertEquals(1, dom(esp).size());
-		assertEquals("div", elem(esp, HtmlElement.class).getTag());
-		assertEquals("div", ((HtmlElement) elem(esp, HtmlElement.class).getChild(0)).getTag());
+		assertEquals("div", elem(esp, MarkupElement.class).getTag());
+		assertEquals("div", ((MarkupElement) elem(esp, MarkupElement.class).getChild(0)).getTag());
 
 		esp = "div<-";
 		assertEquals(1, dom(esp).size());
-		assertEquals("div", elem(esp, HtmlElement.class).getTag());
+		assertEquals("div", elem(esp, MarkupElement.class).getTag());
 
 		esp = "<-div";
 		assertTrue(dom(esp).isEmpty());
@@ -1060,9 +1060,9 @@ public class EspDomTests {
 
 		esp = "div <- div";
 		assertEquals(1, dom(esp).size());
-		assertTrue(elem(esp, HtmlElement.class).hasChildren());
-		assertEquals("div", elem(esp, HtmlElement.class).getTag());
-		assertEquals("div", ((HtmlElement) elem(esp, HtmlElement.class).getChild(0)).getTag());
+		assertTrue(elem(esp, MarkupElement.class).hasChildren());
+		assertEquals("div", elem(esp, MarkupElement.class).getTag());
+		assertEquals("div", ((MarkupElement) elem(esp, MarkupElement.class).getChild(0)).getTag());
 	}
 	
 	@Ignore
@@ -1080,8 +1080,8 @@ public class EspDomTests {
 		assertEquals(3, dom(esp).size());
 		assertEquals(1, elem(esp, JavaElement.class).getChildren().size());
 		assertEquals("java1", elem(esp, JavaElement.class).getSource());
-		assertTrue(elem(esp, JavaElement.class).getChildren().get(0).isA(HtmlElement));
-		assertEquals("div", ((HtmlElement) elem(esp, JavaElement.class).getChildren().get(0)).getTag());
+		assertTrue(elem(esp, JavaElement.class).getChildren().get(0).isA(MarkupElement));
+		assertEquals("div", ((MarkupElement) elem(esp, JavaElement.class).getChildren().get(0)).getTag());
 
 		esp = "- java1\n\t- javaChild\n- java2";
 		assertEquals(3, dom(esp).size());
@@ -1093,11 +1093,11 @@ public class EspDomTests {
 		esp = "- if(true) {\n\tdiv hello\n- } else {\n\tdiv goodbye\n- }";
 		assertEquals(3, dom(esp).size());
 		assertEquals(1, elem(esp, JavaElement.class).getChildren().size());
-		assertTrue(elem(esp, JavaElement.class).getChildren().get(0).isA(HtmlElement));
-		assertEquals("\tdiv hello", ((HtmlElement) elem(esp, JavaElement.class).getChildren().get(0)).getTag());
+		assertTrue(elem(esp, JavaElement.class).getChildren().get(0).isA(MarkupElement));
+		assertEquals("\tdiv hello", ((MarkupElement) elem(esp, JavaElement.class).getChildren().get(0)).getTag());
 		assertEquals(1, elem(esp, 1, JavaElement.class).getChildren().size());
-		assertTrue(elem(esp, 1, JavaElement.class).getChildren().get(0).isA(HtmlElement));
-		assertEquals("\tdiv hello", ((HtmlElement) elem(esp, 1, JavaElement.class).getChildren().get(0)).getTag());
+		assertTrue(elem(esp, 1, JavaElement.class).getChildren().get(0).isA(MarkupElement));
+		assertEquals("\tdiv hello", ((MarkupElement) elem(esp, 1, JavaElement.class).getChildren().get(0)).getTag());
 		assertEquals(0, elem(esp, 2, JavaElement.class).getChildren().size());
 	}
 
@@ -1130,8 +1130,8 @@ public class EspDomTests {
 		String esp;
 		esp = "title hello";
 		assertEquals(1, dom(esp).size());
-		assertTrue(elem(esp).isA(HtmlElement));
-		assertEquals("hello", elem(esp, HtmlElement.class).getInnerText().getText());
+		assertTrue(elem(esp).isA(MarkupElement));
+		assertEquals("hello", elem(esp, MarkupElement.class).getInnerText().getText());
 	}
 
 	@Test
@@ -1277,8 +1277,8 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
@@ -1310,8 +1310,8 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
@@ -1699,7 +1699,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(StylePropertyPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StylePropertyValuePart));
 		assertTrue(dom(esp).getPart(offset++).isA(StylePropertyValuePart));
-		assertTrue(dom(esp).getPart(offset++).isA(StylePropertyValuePart));
+		assertTrue(dom(esp).getPart(offset++).isA(StylePropertyPart));
 		for( ; offset < esp.length(); offset++) {
 			assertTrue(dom(esp).getPart(offset) + " @ " + offset, dom(esp).getPart(offset).isA(CommentPart));
 		}
@@ -1821,9 +1821,9 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(CommentPart));
 		assertTrue(dom(esp).getPart(offset++).isA(CommentPart));
 		assertTrue(dom(esp).getPart(offset++).isA(CommentPart));
-		assertTrue(dom(esp).getPart(offset++).isA(StylePropertyPart));
-		assertTrue(dom(esp).getPart(offset++).isA(StylePropertyPart));
-		assertTrue(dom(esp).getPart(offset++).isA(StylePropertyPart));
+		assertTrue(dom(esp).getPart(offset++).isA(StylePropertyNamePart));
+		assertTrue(dom(esp).getPart(offset++).isA(StylePropertyNamePart));
+		assertTrue(dom(esp).getPart(offset++).isA(StylePropertyNamePart));
 		assertTrue(dom(esp).getPart(offset++).isA(StylePropertyPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleChildElement));
 		assertNull(dom(esp).getPart(offset++));
@@ -1889,7 +1889,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertTrue(dom(esp).getPart(offset++).isA(EntryKeyPart));
 		assertTrue(dom(esp).getPart(offset++).isA(EntryKeyPart));
 		assertTrue(dom(esp).getPart(offset++).isA(EntryKeyPart));
@@ -1903,7 +1903,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(StylePropertyValuePart));
 		assertTrue(dom(esp).getPart(offset++).isA(StylePropertyValuePart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleEntryPart));
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertNull(dom(esp).getPart(offset++));
 
 		offset = 0;
@@ -1911,7 +1911,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertTrue(dom(esp).getPart(offset++).isA(EntryKeyPart));
 		assertTrue(dom(esp).getPart(offset++).isA(EntryKeyPart));
 		assertTrue(dom(esp).getPart(offset++).isA(EntryKeyPart));
@@ -1927,7 +1927,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(StylePropertyValuePart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleEntryPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleEntryPart));
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertNull(dom(esp).getPart(offset++));
 
 		offset = 0;
@@ -1935,7 +1935,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertTrue(dom(esp).getPart(offset++).isA(EntryKeyPart));
 		assertTrue(dom(esp).getPart(offset++).isA(EntryKeyPart));
 		assertTrue(dom(esp).getPart(offset++).isA(EntryKeyPart));
@@ -1959,7 +1959,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(StylePropertyValuePart));
 		assertTrue(dom(esp).getPart(offset++).isA(StylePropertyPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleEntryPart));
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertNull(dom(esp).getPart(offset++));
 
 		offset = 0;
@@ -1967,7 +1967,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertTrue(dom(esp).getPart(offset++).isA(EntryKeyPart));
 		assertTrue(dom(esp).getPart(offset++).isA(EntryKeyPart));
 		assertTrue(dom(esp).getPart(offset++).isA(EntryKeyPart));
@@ -1988,7 +1988,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(StylePropertyPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StylePropertyPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleEntryPart));
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertNull(dom(esp).getPart(offset++));
 
 		offset = 0;
@@ -1996,7 +1996,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
 		assertTrue(dom(esp).getPart(offset++).isA(TagPart));
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertTrue(dom(esp).getPart(offset++).isA(EntryKeyPart));
 		assertTrue(dom(esp).getPart(offset++).isA(EntryKeyPart));
 		assertTrue(dom(esp).getPart(offset++).isA(EntryKeyPart));
@@ -2014,7 +2014,7 @@ public class EspDomTests {
 		assertTrue(dom(esp).getPart(offset++).isA(StylePropertyNamePart));
 		assertTrue(dom(esp).getPart(offset++).isA(StylePropertyPart));
 		assertTrue(dom(esp).getPart(offset++).isA(StyleEntryPart));
-		assertTrue(dom(esp).getPart(offset++).isA(HtmlElement));
+		assertTrue(dom(esp).getPart(offset++).isA(MarkupElement));
 		assertNull(dom(esp).getPart(offset++));
 	}
 	

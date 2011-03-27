@@ -93,7 +93,7 @@ public class EspLabelProvider extends LabelProvider implements IColorProvider, I
 			case JavaElement: return images[JAVA_LINE];
 			case ScriptElement: return images[SCRIPT];
 			case StyleElement: return images[STYLE];
-			case HtmlElement:
+			case MarkupElement:
 				if(espElement.getElementText().startsWith("title ")) {
 					return images[TITLE];
 				}
