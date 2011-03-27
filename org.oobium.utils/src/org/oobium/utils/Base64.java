@@ -199,7 +199,11 @@ public class Base64 {
 	}
 
 	public static String encode(String data) {
-		return new String(encode(data.getBytes()));
+		return (data == null) ? "" : new String(encode(data.getBytes()));
+	}
+
+	public static byte[] decode(String data) {
+		return (data == null) ? new byte[0] : decode(data.getBytes());
 	}
 
 }
