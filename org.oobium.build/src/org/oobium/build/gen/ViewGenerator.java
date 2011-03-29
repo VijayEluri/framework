@@ -70,7 +70,7 @@ public class ViewGenerator {
 			sb.append("\t\tcheck(").append(var).append(")\n");
 			sb.append("\t\tlabel(").append(var).append(")\n");
 		} else {
-			sb.append("\t\tdiv <- label(").append(var).append(")\n");
+			sb.append("\t\tdiv <- label(\"").append(var).append("\")\n");
 			sb.append("\t\tdiv <- ");
 			if(is(ftype, String.class)) {
 				if("password".equalsIgnoreCase(var)) {
@@ -91,7 +91,7 @@ public class ViewGenerator {
 			} else {
 				sb.append("input");
 			}
-			sb.append("(").append(var).append(')');
+			sb.append("(\"").append(var).append("\")");
 			if(property.hasOne()) {
 				String type = StringUtils.simpleName(property.relatedType());
 				sb.append(" <- options(").append(type).append(".findAll())\n");

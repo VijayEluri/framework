@@ -26,6 +26,7 @@ import org.oobium.build.esp.EspElement;
 import org.oobium.build.esp.EspPart;
 import org.oobium.build.esp.parts.EntryPart;
 import org.oobium.build.esp.parts.JavaContainerPart;
+import org.oobium.build.esp.parts.JavaSourcePart;
 
 public class MarkupElement extends EspElement {
 
@@ -50,7 +51,7 @@ public class MarkupElement extends EspElement {
 	private EspPart id;
 	private List<EspPart> classNames;
 	private boolean hide;
-	protected List<EspPart> args;
+	protected List<JavaSourcePart> args;
 	protected Map<String, EntryPart> entries;
 	protected EspPart innerText;
 	protected List<EspElement> children;
@@ -62,9 +63,9 @@ public class MarkupElement extends EspElement {
 
 	private void addArg(int start, int end) {
 		if(args == null) {
-			args = new ArrayList<EspPart>();
+			args = new ArrayList<JavaSourcePart>();
 		}
-		args.add(new JavaContainerPart(this, Type.ArgPart, start, end));
+		args.add(new JavaSourcePart(this, Type.JavaSourcePart, start, end));
 	}
 	
 	private void addArg(int start, int end, boolean isEntry) {
@@ -171,11 +172,11 @@ public class MarkupElement extends EspElement {
 		return offset;
 	}
 	
-	public EspPart getArg(int index) {
+	public JavaSourcePart getArg(int index) {
 		return args.get(index);
 	}
 	
-	public List<EspPart> getArgs() {
+	public List<JavaSourcePart> getArgs() {
 		return args;
 	}
 	

@@ -17,10 +17,11 @@ import java.util.List;
 
 import org.oobium.build.esp.EspElement;
 import org.oobium.build.esp.EspPart;
+import org.oobium.build.esp.parts.JavaSourcePart;
 
 public class JavaElement extends EspElement {
 
-	private EspPart source;
+	private JavaSourcePart source;
 	private List<EspElement> children;
 	
 	public JavaElement(EspPart parent, int start) {
@@ -137,7 +138,7 @@ public class JavaElement extends EspElement {
 		}
 		int sourceEnd = reverse(ca, eoe-1) + 1;
 		if(sourceEnd > sourceStart) {
-			source = new EspPart(this, Type.JavaSourcePart, sourceStart, sourceEnd);
+			source = new JavaSourcePart(this, Type.JavaSourcePart, sourceStart, sourceEnd);
 		}
 		
 		s1 = eoe;

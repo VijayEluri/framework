@@ -10,6 +10,13 @@
  ******************************************************************************/
 package org.oobium.eclipse.esp.editor;
 
+import static org.oobium.utils.StringUtils.join;
+
+import java.util.Set;
+import java.util.TreeSet;
+
+import org.eclipse.core.resources.IMarker;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.text.*;
 import org.eclipse.swt.graphics.Point;
 import org.oobium.build.esp.Constants;
@@ -20,13 +27,50 @@ import org.oobium.utils.StringUtils;
 
 public class EspTextHover implements ITextHover {
 
+	private EspEditor editor;
+	
+	public EspTextHover(EspEditor editor) {
+		this.editor = editor;
+	}
+	
 	public String getHoverInfo(ITextViewer viewer, IRegion region) {
 		if (region != null) {
 			try {
 				IDocument doc = viewer.getDocument();
-				EspPart part = EspCore.get(doc).getPart(region.getOffset());
+				int offset = region.getOffset();
+
+				IMarker[] markers = editor.getMarkers(offset);
+				if(markers != null) {
+					Set<String> set = null;
+					for(IMarker marker : markers) {
+						try {
+							Object o = marker.getAttribute(IMarker.CHAR_START);
+							if(o instanceof Integer) {
+								int start = (Integer) o;
+								o = marker.getAttribute(IMarker.CHAR_END);
+								if(o instanceof Integer) {
+									int end = (Integer) o;
+									if(start <= offset && offset < end) {
+										if(set == null) {
+											set = new TreeSet<String>();
+										}
+										set.add(String.valueOf(marker.getAttribute(IMarker.MESSAGE)));
+									}
+								}
+							}
+						} catch(CoreException e) {
+							// discard
+						}
+					}
+					if(set != null) {
+						return join(set, '\n');
+					}
+				}
+
+				// if no message from markers, return info about the part
+				EspPart part = EspCore.get(doc).getPart(offset);
 				if(region.getLength() > 0) {
-					if(part != EspCore.get(doc).getPart(region.getOffset())) {
+					if(part != EspCore.get(doc).getPart(offset)) {
 						part = null;
 					}
 				}
@@ -45,7 +89,7 @@ public class EspTextHover implements ITextHover {
 						return info;
 					}
 				} else {
-					return doc.get(region.getOffset(), region.getLength());
+					return doc.get(offset, region.getLength());
 				}
 			} catch (BadLocationException x) {
 			}

@@ -40,7 +40,7 @@ import org.oobium.app.server.view.ScriptFile;
 import org.oobium.app.server.view.StyleSheet;
 import org.oobium.app.server.view.View;
 import org.oobium.build.esp.ESourceFile.EspLocation;
-import org.oobium.build.esp.ESourceFile.JavaSourcePart;
+import org.oobium.build.esp.ESourceFile.JavaSource;
 import org.oobium.build.esp.elements.ConstructorElement;
 import org.oobium.build.esp.elements.MarkupElement;
 import org.oobium.build.esp.elements.ImportElement;
@@ -52,6 +52,8 @@ import org.oobium.build.esp.elements.StyleElement;
 import org.oobium.build.esp.parts.ConstructorArg;
 import org.oobium.build.esp.parts.EntryPart;
 import org.oobium.build.esp.parts.JavaPart;
+import org.oobium.build.esp.parts.JavaSourcePart;
+import org.oobium.build.esp.parts.JavaSourceStringPart;
 import org.oobium.build.esp.parts.ScriptJavaPart;
 import org.oobium.build.esp.parts.ScriptPart;
 import org.oobium.build.esp.parts.StylePropertyPart;
@@ -143,19 +145,31 @@ public class EspCompiler {
 		this.captureLevel = -1;
 	}
 
+	/**
+	 * append an HTML attribute, ensuring that double quotes are around the value, whether is a simple string or Java expression
+	 */
 	private void appendAttr(String name, EspPart value) {
 		body.append(' ').append(name).append('=');
-		int pos = body.length();
+		int q1 = body.length();
 		build(value, body);
-		if(pos < body.length()) {
-			if(body.charAt(pos) != '\\' || (pos+1 < body.length() && body.charAt(pos+1) != '"')) {
-				body.insert(pos, "\\\"");
+		ensureQuotes(body, q1, true);
+	}
+	
+	/**
+	 * @param sb the StringBuilder to modify
+	 * @param q1 the position of the first quote
+	 * @param escaped escape the quotes so they can be used inside a string (like with HTML attributes)
+	 */
+	private void ensureQuotes(StringBuilder sb, int q1, boolean escaped) {
+		if(q1 < sb.length()) {
+			if(sb.charAt(q1) != '\\' || (q1+1 < sb.length() && sb.charAt(q1+1) != '"')) {
+				sb.insert(q1, escaped ? "\\\"" : "\"");
 			}
-			if(body.charAt(body.length()-2) != '\\' || body.charAt(body.length()-1) != '"') {
-				body.append("\\\"");
+			if(sb.charAt(sb.length()-2) != '\\' || sb.charAt(sb.length()-1) != '"') {
+				sb.append(escaped ? "\\\"" : "\"");
 			}
 		} else {
-			body.append("\\\"\\\"");
+			sb.append(escaped ? "\\\"\\\"" : "\"\"");
 		}
 	}
 	
@@ -166,7 +180,7 @@ public class EspCompiler {
 		body.append(" onclick=\\\"");
 		if(entries != null && entries.containsKey("confirm")) {
 			body.append("if(confirm('\").append(h(");
-			build(entries.get("confirm").getValue(), body, true);
+			build(entries.get("confirm").getValue(), body);
 			body.append(")).append(\"')) {");
 		}
 		body.append("var f = document.createElement('form');");
@@ -191,19 +205,29 @@ public class EspCompiler {
 		body.append("return false;\\\"");
 	}
 	
-	private void appendDeleteJs(String target, Map<String, EntryPart> entries) {
-		body.append(" href=\\\"\").append(").append(target).append(").append(\"\\\"");
+	private void appendDeleteJs(JavaSourcePart target, Map<String, EntryPart> entries) {
+		body.append(" href=\\\"\").append(pathTo(");
+		build(target, body, true);
+		body.append(", destroy)).append(\"\\\"");
 		body.append(" onclick=\\\"");
 		if(entries != null && entries.containsKey("confirm")) {
-			body.append("if(confirm('\").append(h(");
-			build(entries.get("confirm").getValue(), body, true);
-			body.append(")).append(\"')) {");
+			JavaSourcePart part = (JavaSourcePart) entries.get("confirm").getValue();
+			body.append("if(confirm('");
+			if(part.isSimple()) {
+				String text = part.getText();
+				body.append(text.substring(1, text.length()-1));
+			} else {
+				build(part, body);
+			}
+			body.append("')) {");
 		}
 		body.append("var f = document.createElement('form');");
 		body.append("f.style.display = 'none';");
 		body.append("this.parentNode.appendChild(f);");
 		body.append("f.method = 'POST';");
-		body.append("f.action = '\").append(").append(target).append(").append(\"';");
+		body.append("f.action = '\").append(pathTo(");
+		build(target, body, true);
+		body.append(", destroy)).append(\"';");
 		body.append("var m = document.createElement('input');");
 		body.append("m.setAttribute('type', 'hidden');");
 		body.append("m.setAttribute('name', '_method');");
@@ -221,11 +245,16 @@ public class EspCompiler {
 		body.append("return false;\\\"");
 	}
 
-	private void appendFormFieldName(String name, List<EspPart> fields) {
+	private void appendFormFieldName(String name, List<JavaSourcePart> fields) {
 		body.append("\").append(").append(name).append(").append(\"");
-		for(EspPart field : fields) {
+		for(JavaSourcePart field : fields) {
 			body.append('[');
-			build(field, body, true);
+			if(field.isSimple()) {
+				String text = field.getText();
+				body.append(text.substring(1, text.length()-1));
+			} else {
+				build(field, body, true);
+			}
 			body.append(']');
 		}
 	}
@@ -237,7 +266,7 @@ public class EspCompiler {
 		body.append(" onclick=\\\"");
 		if(entries != null && entries.containsKey("confirm")) {
 			body.append("if(confirm('\").append(h(");
-			build(entries.get("confirm").getValue(), body, true);
+			build(entries.get("confirm").getValue(), body);
 			body.append(")).append(\"')) {");
 		}
 		body.append("var f = document.createElement('form');");
@@ -267,15 +296,23 @@ public class EspCompiler {
 		body.append("return false;\\\"");
 	}
 	
-	private void appendValueGetter(String model, List<EspPart> fields) {
+	private String getter(JavaSourcePart part) {
+		String text = part.getText();
+		if(part.isSimple()) {
+			return getterName(text.substring(1, text.length()-1)) + "()";
+		}
+		return "get(" + text + ")";
+	}
+	
+	private void appendValueGetter(String model, List<JavaSourcePart> fields) {
 		if(fields.size() == 1) {
-			body.append(model).append('.').append(getterName(fields.get(0).getText())).append('(').append(')');
+			body.append(model).append('.').append(getter(fields.get(0)));
 		} else {
 			int last = fields.size() - 1;
 			for(int i = 0; i < fields.size(); i++) {
 				body.append(model);
 				for(int j = 0; j <= i; j++) {
-					body.append('.').append((j == i && j != last) ? hasserName(fields.get(j).getText()) : getterName(fields.get(j).getText())).append("()");
+					body.append('.').append((j == i && j != last) ? hasserName(fields.get(j).getText()) : getter(fields.get(j)));
 				}
 				if(i < last) {
 					body.append("?(");
@@ -290,22 +327,80 @@ public class EspCompiler {
 	private void build(EspPart part, StringBuilder sb) {
 		build(part, sb, false);
 	}
-	
-	private void build(EspPart part, StringBuilder sb, boolean isArg) {
+
+	/**
+	 * @param forceLastIsJava if true, then will behave as if lastIsJava(sb) returns true
+	 */
+	private void build(EspPart part, StringBuilder sb, boolean forceLastIsJava) {
 		if(part == null) {
-			return; // occurs when part is supposed to be the value of an entry part, but it has not been created yet (key:)
+			return; // occurs when part is supposed to be the value of an entry part, but it has not been created yet: "key:"
 		}
 		String text = part.getText();
-//		if(!isArg && text.startsWith("\"") && text.endsWith("\"")) {
-//			text = text.substring(1, text.length()-1);
-//		}
 		if(part.isA(StyleEntryPart)) {
 			appendEscaped(sb, text);
+		} else if(part instanceof JavaSourcePart) {
+			JavaSourcePart jpart = (JavaSourcePart) part;
+			if(jpart.isSimple()) {
+				if(forceLastIsJava || lastIsJava(sb)) {
+					bodyLocations.add(new EspLocation(sb.length(), part));
+					sb.append(text);
+				} else {
+					bodyLocations.add(new EspLocation(sb.length(), part));
+					appendEscaped(sb, text);
+				}
+			} else {
+				if(jpart.hasParts()) {
+					List<EspPart> parts = part.getParts();
+					for(int i = 0; i < parts.size(); i++) {
+						EspPart sub = parts.get(i);
+						if(sub instanceof JavaSourceStringPart) {
+							JavaSourceStringPart jsspart = (JavaSourceStringPart) sub;
+							int s1 = jsspart.getStart() - part.getStart();
+							int s2 = s1 + jsspart.getLength();
+							if(i == 0) {
+								if(s1 > 0) {
+									appendEscaped(sb, text, 0, s1);
+								}
+							} else {
+								int s0 = parts.get(i-1).getEnd() - part.getStart();
+								if(s0 < s1) {
+									appendEscaped(sb, text, s0, s1);
+								}
+							}
+							sb.append("\").append(h(");
+							EspPart spart = jsspart.getSourcePart();
+							if(spart != null) {
+								bodyLocations.add(new EspLocation(sb.length(), spart));
+							}
+							sb.append(jsspart.getSource());
+							sb.append(")).append(\"");
+							if(i == parts.size() - 1) {
+								if(s2 < text.length()) {
+									appendEscaped(sb, text, s2, text.length());
+								}
+							}
+						} else {
+							build(sub, sb);
+						}
+					}
+				} else {
+					if(forceLastIsJava || lastIsJava(sb)) {
+						bodyLocations.add(new EspLocation(sb.length(), part));
+						sb.append(text);
+					} else {
+						sb.append("\").append(h(");
+						bodyLocations.add(new EspLocation(sb.length(), part));
+						sb.append(text);
+						sb.append(")).append(\"");
+					}
+				}
+			}
 		} else if(part.hasParts()) {
 			List<EspPart> parts = part.getParts();
 			for(int i = 0; i < parts.size(); i++) {
-				if(parts.get(i) instanceof JavaPart) {
-					JavaPart jpart = (JavaPart) parts.get(i);
+				EspPart sub = parts.get(i);
+				if(sub instanceof JavaPart) {
+					JavaPart jpart = (JavaPart) sub;
 					int s1 = jpart.getStart() - part.getStart();
 					int s2 = s1 + jpart.getLength();
 					if(i == 0) {
@@ -313,7 +408,7 @@ public class EspCompiler {
 							appendEscaped(sb, text, 0, s1);
 						}
 					} else {
-						int s0 = parts.get(i-1).getEnd();
+						int s0 = parts.get(i-1).getEnd() - part.getStart();
 						if(s0 < s1) {
 							appendEscaped(sb, text, s0, s1);
 						}
@@ -344,15 +439,11 @@ public class EspCompiler {
 						}
 					}
 				} else {
-					build(parts.get(i), sb);
+					build(sub, sb);
 				}
 			}
 		} else {
-			if(isArg) {
-				sb.append(text);
-			} else {
-				appendEscaped(sb, text);
-			}
+			appendEscaped(sb, text);
 		}
 	}
 	
@@ -404,7 +495,7 @@ public class EspCompiler {
 
 	private void buildCheck(MarkupElement check) {
 		if(check.hasArgs()) {
-			List<EspPart> fields = check.getArgs();
+			List<JavaSourcePart> fields = check.getArgs();
 			String model = getFormModel(check);
 			String modelName = getFormModelName(check);
 			if(!blank(modelName)) {
@@ -495,7 +586,7 @@ public class EspCompiler {
 					sb.append(";\n");
 				}
 				sb.append("\t}");
-				esf.addConstructor(new JavaSourcePart(sb.toString()));
+				esf.addConstructor(new JavaSource(sb.toString()));
 			}
 		}
 
@@ -538,7 +629,7 @@ public class EspCompiler {
 			sb.append(";\n");
 		}
 		sb.append("\t}");
-		esf.addConstructor(new JavaSourcePart(sb.toString(), locations));
+		esf.addConstructor(new JavaSource(sb.toString(), locations));
 	}
 	
 	private void buildDateInputs(MarkupElement date) {
@@ -547,18 +638,19 @@ public class EspCompiler {
 		body.append(">\");\n");
 		indent(body);
 		body.append(sbName).append(".append(dateTimeTags(\"");
+		lastIsJava(body, true);
 		if(date.hasEntry("name")) {
-			build(date.getEntryValue("name"), body, true);
+			build(date.getEntryValue("name"), body);
 		} else if(date.hasId()) {
-			build(date.getId(), body, true);
+			build(date.getId(), body);
 		} else if(date.hasEntry("id")) {
-			build(date.getEntryValue("id"), body, true);
+			build(date.getEntryValue("id"), body);
 		} else {
 			body.append("datetime");
 		}
 		body.append("\", ");
 		if(date.hasEntry("format")) {
-			build(date.getEntryValue("format"), body, true);
+			build(date.getEntryValue("format"), body);
 		} else {
 			body.append("\"MMM/dd/yyyy\"");
 		}
@@ -566,7 +658,7 @@ public class EspCompiler {
 			body.append(", ");
 			String model = getFormModel(date);
 			if(blank(model)) {
-				build(date.getArg(0), body, true);
+				build(date.getArg(0), body);
 			} else {
 				appendValueGetter(model, date.getArgs());
 			}
@@ -574,6 +666,7 @@ public class EspCompiler {
 		body.append("));\n");
 		indent(body);
 		body.append(sbName).append(".append(\"</span>");
+		lastIsJava(body, false);
 	}
 	
 	private void buildElement(EspElement element) {
@@ -661,7 +754,7 @@ public class EspCompiler {
 	}
 	
 	private void buildFields(MarkupElement fields) {
-		List<EspPart> args = fields.getArgs();
+		List<JavaSourcePart> args = fields.getArgs();
 		if(args != null && args.size() == 1) {
 			String type = fields.hasJavaType() ? fields.getJavaType() : "Model";
 			String model = getFormModelVar(fields);
@@ -685,7 +778,7 @@ public class EspCompiler {
 	}
 	
 	private void buildForm(MarkupElement form) {
-		List<EspPart> args = form.getArgs();
+		List<JavaSourcePart> args = form.getArgs();
 		if(args != null && (args.size() == 1 || args.size() == 2)) {
 			String action = (args.size() == 2) ? args.get(1).getText().trim() : null;
 			boolean hasMany = !(action == null || "create".equalsIgnoreCase(action) || "update".equalsIgnoreCase(action) || "delete".equalsIgnoreCase(action));
@@ -728,13 +821,16 @@ public class EspCompiler {
 			if(action != null) {
 				if("create".equalsIgnoreCase(action)) {
 					method = "post";
-					body.append(" action=\\\"\").append(pathTo(").append(model).append(", Action.create)).append(\"\\\"");
+					esf.addStaticImport(Action.class.getCanonicalName() + ".create");
+					body.append(" action=\\\"\").append(pathTo(").append(model).append(", create)).append(\"\\\"");
 				} else if("update".equalsIgnoreCase(action)) {
 					method = "put";
-					body.append(" action=\\\"\").append(pathTo(").append(model).append(", Action.update)).append(\"\\\"");
-				} else if("delete".equalsIgnoreCase(action)) {
+					esf.addStaticImport(Action.class.getCanonicalName() + ".update");
+					body.append(" action=\\\"\").append(pathTo(").append(model).append(", update)).append(\"\\\"");
+				} else if("destroy".equalsIgnoreCase(action)) {
 					method = "delete";
-					body.append(" action=\\\"\").append(pathTo(").append(model).append(", Action.destroy)).append(\"\\\"");
+					esf.addStaticImport(Action.class.getCanonicalName() + ".destroy");
+					body.append(" action=\\\"\").append(pathTo(").append(model).append(", destroy)).append(\"\\\"");
 				} else {
 					method = "post";
 					body.append(" action=\\\"\").append(pathTo(").append(modelVal).append(", ").append(action).append(")).append(\"\\\"");
@@ -750,13 +846,17 @@ public class EspCompiler {
 						body.append("\\\"");
 					} else {
 						if("post".equalsIgnoreCase(method)) {
-							body.append(" action=\\\"\").append(pathTo(").append(model).append(", Action.create)).append(\"\\\"");
+							esf.addStaticImport(Action.class.getCanonicalName() + ".create");
+							body.append(" action=\\\"\").append(pathTo(").append(model).append(", create)).append(\"\\\"");
 						} else if("put".equalsIgnoreCase(method)) {
-							body.append(" action=\\\"\").append(pathTo(").append(model).append(", Action.update)).append(\"\\\"");
+							esf.addStaticImport(Action.class.getCanonicalName() + ".update");
+							body.append(" action=\\\"\").append(pathTo(").append(model).append(", update)).append(\"\\\"");
 						} else if("delete".equalsIgnoreCase(method)) {
-							body.append(" action=\\\"\").append(pathTo(").append(model).append(", Action.destroy)).append(\"\\\"");
+							esf.addStaticImport(Action.class.getCanonicalName() + ".destroy");
+							body.append(" action=\\\"\").append(pathTo(").append(model).append(", destroy)).append(\"\\\"");
 						} else {
-							body.append(" action=\\\"\").append(pathTo(").append(model).append(", Action.create)).append(\"\\\"");
+							esf.addStaticImport(Action.class.getCanonicalName() + ".create");
+							body.append(" action=\\\"\").append(pathTo(").append(model).append(", create)).append(\"\\\"");
 						}
 					}
 				}
@@ -767,13 +867,16 @@ public class EspCompiler {
 					action = value.getText();
 					if("create".equalsIgnoreCase(action)) {
 						method = "post";
-						body.append(" action=\\\"\").append(pathTo(").append(model).append(", Action.create)).append(\"\\\"");
+						esf.addStaticImport(Action.class.getCanonicalName() + ".create");
+						body.append(" action=\\\"\").append(pathTo(").append(model).append(", create)).append(\"\\\"");
 					} else if("update".equalsIgnoreCase(action)) {
 						method = "put";
-						body.append(" action=\\\"\").append(pathTo(").append(model).append(", Action.update)).append(\"\\\"");
-					} else if("delete".equalsIgnoreCase(action)) {
+						esf.addStaticImport(Action.class.getCanonicalName() + ".update");
+						body.append(" action=\\\"\").append(pathTo(").append(model).append(", update)).append(\"\\\"");
+					} else if("destroy".equalsIgnoreCase(action)) {
 						method = "delete";
-						body.append(" action=\\\"\").append(pathTo(").append(model).append(", Action.destroy)).append(\"\\\"");
+						esf.addStaticImport(Action.class.getCanonicalName() + ".destroy");
+						body.append(" action=\\\"\").append(pathTo(").append(model).append(", destroy)).append(\"\\\"");
 					} else {
 						method = "post";
 						body.append(" action=\\\"");
@@ -783,6 +886,7 @@ public class EspCompiler {
 				}
 			}
 			if(method == null) {
+				esf.addImport(Action.class.getCanonicalName());
 				body.append(" action=\\\"\").append(pathTo(").append(model).append(", ").append(model).append(".isNew() ? Action.create : Action.update)).append(\"\\\"");
 			}
 			body.append(" method=\\\"POST\\\"");
@@ -824,14 +928,14 @@ public class EspCompiler {
 		}
 	}
 
-	private void appendFieldError(String model, List<EspPart> fields, String str) {
+	private void appendFieldError(String model, List<JavaSourcePart> fields, String str) {
 		prepForJava(body);
-		body.append("if(").append(model).append(".hasErrors(\"");
+		body.append("if(").append(model).append(".hasErrors(");
 		for(int i = 0; i < fields.size(); i++) {
-			if(i != 0) body.append("\", \"");
+			if(i != 0) body.append(", ");
 			build(fields.get(i), body);
 		}
-		body.append("\")) {\n");
+		body.append(")) {\n");
 		indent(body);
 		body.append('\t').append(sbName).append(".append(\"").append(str).append("\");\n");
 		indent(body);
@@ -839,7 +943,7 @@ public class EspCompiler {
 		prepForMarkup(body);
 	}
 	
-	private void buildClasses(MarkupElement element, String model, List<EspPart> fields) {
+	private void buildClasses(MarkupElement element, String model, List<JavaSourcePart> fields) {
 		if(!"hidden".equals(element.getTag())) {
 			if(element.hasClassNames()) {
 				body.append(" class=\\\"");
@@ -859,7 +963,7 @@ public class EspCompiler {
 	
 	private void buildFormField(MarkupElement input, boolean hasValue) {
 		if(input.hasArgs()) {
-			List<EspPart> fields = input.getArgs();
+			List<JavaSourcePart> fields = input.getArgs();
 			String model = getFormModel(input);
 			String modelName = getFormModelName(input);
 			if(!blank(modelName)) {
@@ -1025,20 +1129,20 @@ public class EspCompiler {
 	private void buildImport(ImportElement element) {
 		if(element.hasImport()) {
 			if(element.isStatic()) {
-				esf.addStaticImport(new JavaSourcePart(element.getImport(), element.getImportPart()));
+				esf.addStaticImport(new JavaSource(element.getImport(), element.getImportPart()));
 			} else {
-				esf.addImport(new JavaSourcePart(element.getImport(), element.getImportPart()));
+				esf.addImport(new JavaSource(element.getImport(), element.getImportPart()));
 			}
 		}
 	}
 
-	private void buildInlineDynamicAsset(StringBuilder sb, String type, int start, List<EspPart> args) {
+	private void buildInlineDynamicAsset(StringBuilder sb, String type, int start, List<JavaSourcePart> args) {
 		String varName = varName(type) + "$" + start;
 		sb.append(type).append(' ').append(varName).append(" = new ").append(type);
 		if(args != null && !args.isEmpty()) {
 			sb.append("(");
-			for(Iterator<EspPart> iter = args.iterator(); iter.hasNext(); ) {
-				build(iter.next(), sb, true);
+			for(Iterator<JavaSourcePart> iter = args.iterator(); iter.hasNext(); ) {
+				build(iter.next(), sb);
 				if(iter.hasNext()) sb.append(',').append(' ');
 			}
 			sb.append(");\n");
@@ -1068,12 +1172,10 @@ public class EspCompiler {
 	}
 	
 	private void buildInput(String tag, MarkupElement input) {
+		body.append("<input");
 		if(input.hasEntry("type")) {
-			body.append("<input type=\\\"");
-			build(input.getEntry("type").getValue(), body);
-			body.append("\\\"");
+			appendAttr("type", input.getEntry("type").getValue());
 		} else {
-			body.append("<input");
 			if("hidden".equals(tag))		body.append(" type=\\\"hidden\\\"");
 			else if("radio".equals(tag))	body.append(" type=\\\"radio\\\"");
 			else if("file".equals(tag))		body.append(" type=\\\"file\\\"");
@@ -1114,23 +1216,24 @@ public class EspCompiler {
 
 	private void buildLabel(MarkupElement label) {
 		prepForMarkup(body);
-		lastBodyIsJava = false; // set true below if necessary
+		lastIsJava(body, false); // set true below if necessary
 		body.append("<label");
 		buildId(label);
 		if(label.hasArgs()) {
-			List<EspPart> fields = label.getArgs();
+			List<JavaSourcePart> fields = label.getArgs();
 			String model = getFormModel(label);
 			String modelName = getFormModelName(label);
 			if(!blank(modelName)) {
 				buildClasses(label, model, fields);
 				buildAttrs(label, "for", "text");
-				body.append(" for=\\\"");
+				body.append(" for=");
+				int q1 = body.length();
 				if(label.hasEntry("for")) {
 					build(label.getEntry("for").getValue(), body);
 				} else {
 					appendFormFieldName(modelName, fields);
 				}
-				body.append("\\\"");
+				ensureQuotes(body, q1, true);
 				
 				body.append('>');
 				if(label.hasEntry("text")) {
@@ -1145,42 +1248,45 @@ public class EspCompiler {
 						}
 					}
 				} else {
-					body.append(titleize(fields.get(fields.size()-1).getText()));
+					JavaSourcePart jpart = fields.get(fields.size()-1);
+					if(jpart.isSimple()) {
+						String text = jpart.getText();
+						body.append(titleize(text.substring(1, text.length()-1)));
+					} else {
+						build(jpart, body);
+					}
 				}
 				if(label.hasInnerText()) {
 					build(label.getInnerText(), body);
 				}
 				
-				StringBuilder required = null;
+				body.append("\");\n");
+				indent(body);
+				body.append("if(");
 				if(label.hasEntry("required")) {
-					required = new StringBuilder();
-					build(label.getEntry("required").getValue(), required);
+					build(label.getEntry("required").getValue(), body);
 				} else {
-					required = new StringBuilder();
-					required.append(model).append(".isRequired(\"");
+					body.append(model).append(".isRequired(");
+					lastIsJava(body, true);
 					for(int i = 0; i < fields.size(); i++) {
-						if(i != 0) required.append("\", \"");
-						build(fields.get(i), required);
+						if(i != 0) body.append(", ");
+						build(fields.get(i), body);
 					}
-					required.append("\")");
+					body.append(")");
 				}
-				if(required != null) {
-					body.append("\");\n");
+				body.append(") {\n");
+				if(label.hasEntry("requiredClass")) {
 					indent(body);
-					body.append("if(").append(required).append(") {\n");
-					if(label.hasEntry("requiredClass")) {
-						indent(body);
-						body.append('\t').append(sbName).append(".append(\"<span class=\\\"");
-						build(label.getEntry("requiredClass").getValue(), body);
-						body.append("\\\">*</span>\");\n");
-					} else {
-						indent(body);
-						body.append('\t').append(sbName).append(".append(\"<span class=\\\"required\\\">*</span>\");\n");
-					}
+					body.append('\t').append(sbName).append(".append(\"<span class=\\\"");
+					build(label.getEntry("requiredClass").getValue(), body);
+					body.append("\\\">*</span>\");\n");
+				} else {
 					indent(body);
-					body.append("}\n");
-					lastBodyIsJava = true;
+					body.append('\t').append(sbName).append(".append(\"<span class=\\\"required\\\">*</span>\");\n");
 				}
+				indent(body);
+				body.append("}\n");
+				lastIsJava(body, true);
 			}
 		} else {
 			buildClasses(label);
@@ -1196,54 +1302,39 @@ public class EspCompiler {
 		body.append('<').append(link.getTag());
 		buildId(link);
 		buildClasses(link);
-		EspPart target = null;
+		JavaSourcePart target = null;
 		String action = null;
 		if(link.hasArgs() && link.getArgs().size() <= 2) {
 			buildAttrs(link, "href", "action", "confirm", "update", "field", "value");
 			target = link.getArg(0);
 			if(link.getArgs().size() == 1) {
-				if(dom.isEsp()) {
-					action = link.hasEntryValue("action") ? link.getEntry("action").getValue().getText().trim() : null;
-					if("create".equals(action)) {
-						appendCreateJs(target.getText().trim(), link.getEntries());
-					} else if("update".equals(action)) {
-						appendUpdateJs(target.getText().trim(), link.getEntries());
-					} else if("destroy".equals(action)) {
-						appendDeleteJs(target.getText().trim(), link.getEntries());
-					} else {
-						String method = link.hasEntryValue("method") ? link.getEntry("method").getValue().getText().trim().toLowerCase() : null;
-						if("post".equals(method)) {
-							appendCreateJs(target.getText().trim(), link.getEntries());
-						} else if("put".equals(method)) {
-							appendUpdateJs(target.getText().trim(), link.getEntries());
-						} else if("delete".equals(method) || "destroy".equals(action)) {
-							appendDeleteJs(target.getText().trim(), link.getEntries());
-						} else {
-							appendAttr("href", target);
-						}
-					}
+				appendAttr("href", target);
+			} else if(dom.isEsp()) { // size == 2
+				JavaSourcePart part = dom.isEsp() ? link.getArg(1) : null;
+				if(part == null) {
+					body.append(" href=\\\"\").append(").append("pathTo(").append(target.getText().trim()).append(", null)).append(\"\\\"");
 				} else {
-					appendAttr("href", target);
-				}
-			} else { // size == 2
-				if(dom.isEsp()) {
-					action = dom.isEsp() ? link.getArg(1).getText().trim() : null;
+					action = part.getText().trim();
 					if("create".equals(action)) {
-						appendCreateJs("pathTo(" + target.getText().trim() + ", Action.create)", link.getEntries());
+						esf.addStaticImport(Action.class.getCanonicalName() + ".create");
+						appendCreateJs("pathTo(" + target.getText().trim() + ", create)", link.getEntries());
 					} else if("update".equals(action)) {
-						appendUpdateJs("pathTo(" + target.getText().trim() + ", Action.update)", link.getEntries());
+						esf.addStaticImport(Action.class.getCanonicalName() + ".update");
+						appendUpdateJs("pathTo(" + target.getText().trim() + ", update)", link.getEntries());
 					} else if("destroy".equals(action)) {
-						appendDeleteJs("pathTo(" + target.getText().trim() + ", Action.destroy)", link.getEntries());
-					} else if("show".equals(action)) {
-						body.append(" href=\\\"\").append(").append("pathTo(").append(target.getText().trim()).append(", Action.show)").append(").append(\"\\\"");
-					} else if("showAll".equals(action)) {
-						body.append(" href=\\\"\").append(").append("pathTo(").append(target.getText().trim()).append(", Action.showAll)").append(").append(\"\\\"");
-					} else if("showEdit".equals(action)) {
-						body.append(" href=\\\"\").append(").append("pathTo(").append(target.getText().trim()).append(", Action.showEdit)").append(").append(\"\\\"");
-					} else if("showNew".equals(action)) {
-						body.append(" href=\\\"\").append(").append("pathTo(").append(target.getText().trim()).append(", Action.showNew)").append(").append(\"\\\"");
+						esf.addStaticImport(Action.class.getCanonicalName() + ".destroy");
+						appendDeleteJs(target, link.getEntries());
 					} else {
-						body.append(" href=\\\"\").append(").append("pathTo(").append(target.getText().trim()).append(", ").append(action).append(')').append(").append(\"\\\"");
+						body.append(" href=\\\"\").append(").append("pathTo(");
+						build(target, body, true);
+						body.append(", ");
+						if("show".equals(action) || "showAll".equals(action) || "showEdit".equals(action) || "showNew".equals(action)) {
+							esf.addStaticImport(Action.class.getCanonicalName() + "." + action);
+							body.append(action);
+						} else {
+							build(part, body, true);
+						}
+						body.append(")).append(\"\\\"");
 					}
 				}
 			}
@@ -1296,14 +1387,14 @@ public class EspCompiler {
 
 		if(element.hasEntryValue("title")) {
 			body.append(", ");
-			build(element.getEntryValue("title"), body, true);
+			build(element.getEntryValue("title"), body);
 		} else {
 			body.append(", null");
 		}
 		
 		if(element.hasEntryValue("message")) {
 			body.append(", ");
-			build(element.getEntryValue("message"), body, true);
+			build(element.getEntryValue("message"), body);
 		} else {
 			body.append(", null");
 		}
@@ -1343,11 +1434,12 @@ public class EspCompiler {
 	private void buildNumber(MarkupElement input) {
 		body.append("<input type=\\\"text\\\"");
 		if(input.hasArgs()) {
-			List<EspPart> fields = input.getArgs();
+			List<JavaSourcePart> fields = input.getArgs();
 			String model = getFormModel(input);
 			String modelName = getFormModelName(input);
 			if(!blank(modelName)) {
-				body.append(" id=\\\"");
+				body.append(" id=");
+				int q1 = body.length();
 				if(input.hasId()) {
 					build(input.getId(), body);
 				} else if(input.hasEntry("id")) {
@@ -1355,19 +1447,21 @@ public class EspCompiler {
 				} else {
 					appendFormFieldName(modelName, fields);
 				}
-				body.append("\\\"");
+				ensureQuotes(body, q1, true);
 				buildClasses(input, model, fields);
-				body.append(" name=\\\"");
+				body.append(" name=");
+				q1 = body.length();
 				if(input.hasEntry("name")) {
 					build(input.getEntry("name").getValue(), body);
 				} else {
 					appendFormFieldName(modelName, fields);
 				}
-				body.append("\\\"");
+				ensureQuotes(body, q1, true);
 				if(input.hasEntry("value")) {
-					body.append(" value=\\\"");
+					body.append(" value=");
+					q1 = body.length();
 					build(input.getEntry("value").getValue(), body);
-					body.append("\\\"");
+					ensureQuotes(body, q1, true);
 				} else {
 					body.append(" value=\\\"\").append(f(");
 					appendValueGetter(model, fields);
@@ -1386,9 +1480,15 @@ public class EspCompiler {
 			buildAttrs(input, "type", "onkeypress");
 		}
 		if(input.hasEntryValue("onkeypress")) {
-			String f = input.getEntry("onkeypress").getValue().getText();
-			body.append(" onkeypress=\\\"").append(f);
-			if(!f.endsWith(";")) {
+			ScriptPart part = (ScriptPart) input.getEntry("onkeypress").getValue();
+			if(part.isSimple()) {
+				String text = part.getText();
+				body.append(" onkeypress=\\\"").append(text.substring(1, text.length()-1));
+			} else {
+				body.append(" onkeypress=\\\"");
+				build(part, body);
+			}
+			if(body.charAt(body.length()-1) != ';') {
 				body.append(';');
 			}
 			body.append("var k=window.event?event.keyCode:event.which;return !(k>31&&(k<48||k>57));\\\"");
@@ -1522,7 +1622,7 @@ public class EspCompiler {
 		if(option.hasArgs()) {
 			buildAttrs(option, "value");
 			body.append(" value=");
-			build(option.getArg(0), body, true);
+			build(option.getArg(0), body);
 		} else {
 			buildAttrs(option);
 		}
@@ -1549,15 +1649,18 @@ public class EspCompiler {
 		if(element.hasArgs()) {
 			prepForJava(body);
 
-			String options = element.getArgs().get(0).getText();
+			JavaSourcePart options = element.getArgs().get(0);
 			String selectionGetter = getSelectionGetter(element);
 			if(element.hasEntry("text") || element.hasEntry("value")) {
+				// TODO refactor all of these strings to use build(part, body) instead
 				String type = element.hasJavaType() ? element.getJavaType() : "Object";
 				String text = element.hasEntry("text") ? toArg(element.getEntryValue("text").getText()) : "String.valueOf(option)";
 				String value = element.hasEntry("value") ? toArg(element.getEntryValue("value").getText()) : "option";
 				String title = element.hasEntry("title") ? toArg(element.getEntryValue("title").getText()) : null;
 				if(blank(selectionGetter)) {
-					body.append("for(").append(type).append(" option : ").append(options).append(") {\n");
+					body.append("for(").append(type).append(" option : ");
+					build(options, body, true);
+					body.append(") {\n");
 					if(blank(title)) {
 						indent(body);
 						body.append('\t').append(sbName).append(".append(\"<option value=\\\"\"+f(");
@@ -1574,7 +1677,9 @@ public class EspCompiler {
 					
 					body.append("Object ").append(selectionVar).append(" = ").append(selectionGetter).append(";\n");
 					indent(body);
-					body.append("for(").append(type).append(" option : ").append(options).append(") {\n");
+					body.append("for(").append(type).append(" option : ");
+					build(options, body, true);
+					body.append(") {\n");
 					indent(body);
 					body.append("\tboolean ").append(selectedVar).append(" = isEqual(").append(value).append(", ").append(selectionVar).append(");\n");
 					if(blank(title)) {
@@ -1594,27 +1699,28 @@ public class EspCompiler {
 					required = element.hasEntryValue("required") ? toArg(element.getEntryValue("required").getText()) : "false";
 				}
 				if(blank(selectionGetter)) {
-					body.append(sbName).append(".append(optionTags(").append(options);
+					body.append(sbName).append(".append(optionTags(");
+					build(options, body, true);
 					if(blank(required)) {
 						body.append("));\n");
 					} else {
 						body.append("), ").append(required).append(");\n");
 					}
 				} else {
-					body.append(sbName).append(".append(optionTags(").append(options).append(", ").append(selectionGetter);
+					body.append(sbName).append(".append(optionTags(");
+					build(options, body, true);
+					body.append(", ").append(selectionGetter);
 					if(blank(required)) {
 						String model = getFormModel(element);
 						if(!blank(model)) {
-							List<EspPart> fields = ((MarkupElement) element.getParent()).getArgs();
-							StringBuilder sb= new StringBuilder();
-							sb.append(model).append(".isRequired(\"");
+							List<JavaSourcePart> fields = ((MarkupElement) element.getParent()).getArgs();
+							body.append(", ").append(model).append(".isRequired(");
+							lastBodyIsJava = true;
 							for(int i = 0; i < fields.size(); i++) {
-								if(i != 0) sb.append("\", \"");
-								build(fields.get(i), sb);
+								if(i != 0) body.append(", ");
+								build(fields.get(i), body);
 							}
-							sb.append("\")");
-							required = sb.toString();
-							body.append(", ").append(required).append("));\n");
+							body.append(")));\n");
 						} else {
 							body.append("));\n");
 						}
@@ -1798,8 +1904,8 @@ public class EspCompiler {
 				body.append("yield(new ").append(type);
 				if(view.hasArgs()) {
 					body.append("(");
-					for(Iterator<EspPart> iter = view.getArgs().iterator(); iter.hasNext(); ) {
-						build(iter.next(), body, true);
+					for(Iterator<JavaSourcePart> iter = view.getArgs().iterator(); iter.hasNext(); ) {
+						build(iter.next(), body);
 						if(iter.hasNext()) body.append(',').append(' ');
 					}
 					body.append("), ").append(sbName).append(");\n");
@@ -1817,7 +1923,7 @@ public class EspCompiler {
 		if(dom.isEsp()) {
 			if(element.hasArgs()) {
 				body.append("yield(");
-				build(element.getArg(0), body, true);
+				build(element.getArg(0), body);
 				body.append(", ").append(sbName).append(");\n");
 			} else {
 				body.append("yield(").append(sbName).append(");\n");
@@ -2131,13 +2237,13 @@ public class EspCompiler {
 			if(parent.isA(MarkupElement)) {
 				MarkupElement h = (MarkupElement) parent;
 				if("form".equals(h.getTag())) {
-					List<EspPart> args = h.getArgs();
+					List<JavaSourcePart> args = h.getArgs();
 					if(args != null && (args.size() == 1 || args.size() == 2)) {
 						return h; // args.get(0).getText().trim();
 					}
 					break; // forms shouldn't be nested...
 				} else if("fields".equals(h.getTag())) {
-					List<EspPart> args = h.getArgs();
+					List<JavaSourcePart> args = h.getArgs();
 					if(args != null && args.size() == 1) {
 						return h; // args.get(0).getText().trim();
 					}
@@ -2155,7 +2261,7 @@ public class EspCompiler {
 			if(parent.isA(MarkupElement)) {
 				MarkupElement h = (MarkupElement) parent;
 				if("form".equals(h.getTag())) {
-					List<EspPart> args = h.getArgs();
+					List<JavaSourcePart> args = h.getArgs();
 					if(args != null && args.size() == 2) {
 						return args.get(1).getText().trim();
 					}
@@ -2222,15 +2328,15 @@ public class EspCompiler {
 			String model = getFormModel(select);
 			if(!blank(model)) {
 				StringBuilder sb = new StringBuilder();
-				List<EspPart> fields = select.getArgs();
+				List<JavaSourcePart> fields = select.getArgs();
 				if(fields.size() == 1) {
-					sb.append(model).append('.').append(getterName(fields.get(0).getText())).append('(').append(')');
+					sb.append(model).append('.').append(getter(fields.get(0)));
 				} else {
 					int last = fields.size() - 1;
 					for(int i = 0; i < fields.size(); i++) {
 						sb.append(model);
 						for(int j = 0; j <= i; j++) {
-							sb.append('.').append((j == i && j != last) ? hasserName(fields.get(j).getText()) : getterName(fields.get(j).getText())).append("()");
+							sb.append('.').append((j == i && j != last) ? hasserName(fields.get(j).getText()) : getter(fields.get(j)));
 						}
 						if(i < last) {
 							sb.append("?(");

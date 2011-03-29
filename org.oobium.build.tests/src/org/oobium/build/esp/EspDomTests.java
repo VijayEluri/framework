@@ -465,39 +465,6 @@ public class EspDomTests {
 		assertEquals("height:200", elem(esp, MarkupElement.class).getEntries().get("height").getText());
 		assertEquals("height", elem(esp, MarkupElement.class).getEntries().get("height").getKey().getText());
 		assertEquals("200", elem(esp, MarkupElement.class).getEntries().get("height").getValue().getText());
-		
-		esp = "div(key1: {java})";
-		assertFalse(elem(esp, MarkupElement.class).hasArgs());
-		assertTrue(elem(esp, MarkupElement.class).hasEntries());
-		assertEquals(1, elem(esp, MarkupElement.class).getEntries().size());
-		assertEquals("key1: {java}", elem(esp, MarkupElement.class).getEntries().get("key1").getText());
-		assertEquals("key1", elem(esp, MarkupElement.class).getEntries().get("key1").getKey().getText());
-		assertEquals("{java}", elem(esp, MarkupElement.class).getEntries().get("key1").getValue().getText());
-		assertTrue(elem(esp, MarkupElement.class).getEntryValue("key1").hasParts());
-		assertEquals(1, elem(esp, MarkupElement.class).getEntryValue("key1").getParts().size());
-		assertTrue(elem(esp, MarkupElement.class).getEntryValue("key1").getParts().get(0).isA(JavaPart));
-
-		esp = "div(key1: \"{java}\")";
-		assertFalse(elem(esp, MarkupElement.class).hasArgs());
-		assertTrue(elem(esp, MarkupElement.class).hasEntries());
-		assertEquals(1, elem(esp, MarkupElement.class).getEntries().size());
-		assertEquals("key1: \"{java}\"", elem(esp, MarkupElement.class).getEntries().get("key1").getText());
-		assertEquals("key1", elem(esp, MarkupElement.class).getEntries().get("key1").getKey().getText());
-		assertEquals("\"{java}\"", elem(esp, MarkupElement.class).getEntries().get("key1").getValue().getText());
-		assertTrue(elem(esp, MarkupElement.class).getEntries().get("key1").getValue().hasParts());
-		assertEquals(1, elem(esp, MarkupElement.class).getEntries().get("key1").getValue().getParts().size());
-		assertTrue(elem(esp, MarkupElement.class).getEntries().get("key1").getValue().getParts().get(0) instanceof JavaPart);
-
-		esp = "div(attr1:v{var3}1)";
-		assertFalse(elem(esp, MarkupElement.class).hasArgs());
-		assertTrue(elem(esp, MarkupElement.class).hasEntries());
-		assertEquals(1, elem(esp, MarkupElement.class).getEntries().size());
-		assertEquals("attr1:v{var3}1", elem(esp, MarkupElement.class).getEntries().get("attr1").getText());
-		assertEquals("attr1", elem(esp, MarkupElement.class).getEntries().get("attr1").getKey().getText());
-		assertEquals("v{var3}1", elem(esp, MarkupElement.class).getEntries().get("attr1").getValue().getText());
-		assertTrue(elem(esp, MarkupElement.class).getEntries().get("attr1").getValue().hasParts());
-		assertEquals(1, elem(esp, MarkupElement.class).getEntries().get("attr1").getValue().getParts().size());
-		assertTrue(elem(esp, MarkupElement.class).getEntries().get("attr1").getValue().getParts().get(0) instanceof JavaPart);
 	}
 
 	@Test

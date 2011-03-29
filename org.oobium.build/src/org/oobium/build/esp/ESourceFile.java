@@ -27,15 +27,15 @@ public class ESourceFile {
 		public String toString() { return "offset: " + offset + ", part: " + part; }
 	}
 	
-	public static class JavaSourcePart implements Comparable<JavaSourcePart> {
+	public static class JavaSource implements Comparable<JavaSource> {
 		String source;
 		EspLocation[] locations;
-		public JavaSourcePart(String source) { this.source = source; }
-		public JavaSourcePart(String source, EspLocation location) { this.source = source; this.locations = new EspLocation[] { location }; }
-		public JavaSourcePart(String source, EspPart part) { this.source = source; this.locations = new EspLocation[] { new EspLocation(0, part) }; }
-		public JavaSourcePart(String source, List<EspLocation> locations) { this.source = source; this.locations = locations.toArray(new EspLocation[locations.size()]); }
+		public JavaSource(String source) { this.source = source; }
+		public JavaSource(String source, EspLocation location) { this.source = source; this.locations = new EspLocation[] { location }; }
+		public JavaSource(String source, EspPart part) { this.source = source; this.locations = new EspLocation[] { new EspLocation(0, part) }; }
+		public JavaSource(String source, List<EspLocation> locations) { this.source = source; this.locations = locations.toArray(new EspLocation[locations.size()]); }
+		public int compareTo(JavaSource jsp) { return source.compareTo(jsp.source); }
 		public String toString() { return source; }
-		public int compareTo(JavaSourcePart jsp) { return source.compareTo(jsp.source); }
 	}
 
 	
@@ -46,35 +46,35 @@ public class ESourceFile {
 	private String packageName;
 	private String superName;
 
-	private TreeMap<Integer, JavaSourcePart> classAnnotations = new TreeMap<Integer, JavaSourcePart>();
-	private TreeMap<String, JavaSourcePart> staticImports = new TreeMap<String, JavaSourcePart>();
-	private TreeMap<String, JavaSourcePart> imports = new TreeMap<String, JavaSourcePart>();
-	private TreeMap<String, JavaSourcePart> variables = new TreeMap<String, JavaSourcePart>();
-	private TreeMap<Integer, JavaSourcePart> constructors = new TreeMap<Integer, JavaSourcePart>();
-	private TreeMap<String, JavaSourcePart> methods = new TreeMap<String, JavaSourcePart>();
+	private TreeMap<Integer, JavaSource> classAnnotations = new TreeMap<Integer, JavaSource>();
+	private TreeMap<String, JavaSource> staticImports = new TreeMap<String, JavaSource>();
+	private TreeMap<String, JavaSource> imports = new TreeMap<String, JavaSource>();
+	private TreeMap<String, JavaSource> variables = new TreeMap<String, JavaSource>();
+	private TreeMap<Integer, JavaSource> constructors = new TreeMap<Integer, JavaSource>();
+	private TreeMap<String, JavaSource> methods = new TreeMap<String, JavaSource>();
 
 
-	public void addClassAnnotation(int index, JavaSourcePart source) {
+	public void addClassAnnotation(int index, JavaSource source) {
 		checkSource();
 		classAnnotations.put(index, source);
 	}
 	
 	public void addClassAnnotation(String source) {
 		checkSource();
-		classAnnotations.put(classAnnotations.size(), new JavaSourcePart(source));
+		classAnnotations.put(classAnnotations.size(), new JavaSource(source));
 	}
 	
-	public void addConstructor(int index, JavaSourcePart source) {
+	public void addConstructor(int index, JavaSource source) {
 		checkSource();
 		constructors.put(index, source);
 	}
 	
-	public void addConstructor(JavaSourcePart source) {
+	public void addConstructor(JavaSource source) {
 		checkSource();
 		constructors.put(constructors.size(), source);
 	}
 	
-	public void addImport(JavaSourcePart source) {
+	public void addImport(JavaSource source) {
 		checkSource();
 		String src = source.source;
 		if(src.charAt(src.length()-1) == ';') {
@@ -85,51 +85,51 @@ public class ESourceFile {
 	
 	public void addImport(String source) {
 		checkSource();
-		imports.put(source, new JavaSourcePart(source));
+		imports.put(source, new JavaSource(source));
+	}
+	
+	private void addLocations(int offset, JavaSource part) {
+		if(!blank(part.locations)) {
+			for(EspLocation location : part.locations) {
+				location.offset += offset;
+				locations.add(location);
+			}
+		}
 	}
 	
 	public void addMethod(String name, String source) {
 		checkSource();
-		methods.put(name, new JavaSourcePart(source));
+		methods.put(name, new JavaSource(source));
 	}
 	
 	public void addMethod(String name, String source, List<EspLocation> locations) {
 		checkSource();
-		methods.put(name, new JavaSourcePart(source, locations));
+		methods.put(name, new JavaSource(source, locations));
 	}
 	
-	public void addStaticImport(JavaSourcePart source) {
+	public void addStaticImport(JavaSource source) {
 		checkSource();
 		staticImports.put(source.source, source);
 	}
 	
 	public void addStaticImport(String source) {
 		checkSource();
-		staticImports.put(source, new JavaSourcePart(source));
+		staticImports.put(source, new JavaSource(source));
 	}
-	
-	public void addVariable(String name, JavaSourcePart source) {
+
+	public void addVariable(String name, JavaSource source) {
 		checkSource();
 		variables.put(name, source);
 	}
-
+	
 	public void addVariable(String name, String source) {
 		checkSource();
-		variables.put(name, new JavaSourcePart(source));
+		variables.put(name, new JavaSource(source));
 	}
-	
+
 	private void checkSource() {
 		if(source != null) {
 			throw new IllegalStateException("Source cannot be modified once being finalized");
-		}
-	}
-
-	private void addLocations(int offset, JavaSourcePart part) {
-		if(!blank(part.locations)) {
-			for(EspLocation location : part.locations) {
-				location.offset += offset;
-				locations.add(location);
-			}
 		}
 	}
 	
@@ -142,7 +142,7 @@ public class ESourceFile {
 			sb.append('\n');
 		}
 		if(!staticImports.isEmpty()) {
-			for(JavaSourcePart imp : staticImports.values()) {
+			for(JavaSource imp : staticImports.values()) {
 				sb.append("import static ");
 				addLocations(sb.length(), imp);
 				sb.append(imp).append(";\n");
@@ -150,14 +150,14 @@ public class ESourceFile {
 			sb.append('\n');
 		}
 		if(!imports.isEmpty()) {
-			for(JavaSourcePart imp : imports.values()) {
+			for(JavaSource imp : imports.values()) {
 				sb.append("import ");
 				addLocations(sb.length(), imp);
 				sb.append(imp).append(';').append('\n');
 			}
 			sb.append('\n');
 		}
-		for(JavaSourcePart ann : classAnnotations.values()) {
+		for(JavaSource ann : classAnnotations.values()) {
 			addLocations(sb.length(), ann);
 			sb.append(ann).append('\n');
 		}
@@ -168,7 +168,7 @@ public class ESourceFile {
 		sb.append(" {\n");
 		if(!variables.isEmpty()) {
 			sb.append('\n');
-			for(JavaSourcePart var : variables.values()) {
+			for(JavaSource var : variables.values()) {
 				sb.append("\t");
 				if(var.source.startsWith("public ") || var.source.startsWith("protected ") || var.source.startsWith("private ")) {
 					addLocations(sb.length(), var);
@@ -184,12 +184,12 @@ public class ESourceFile {
 				sb.append('\n');
 			}
 		}
-		for(JavaSourcePart constructor : constructors.values()) {
+		for(JavaSource constructor : constructors.values()) {
 			sb.append('\n');
 			addLocations(sb.length(), constructor);
 			sb.append(constructor).append('\n');
 		}
-		for(JavaSourcePart method : methods.values()) {
+		for(JavaSource method : methods.values()) {
 			sb.append('\n');
 			addLocations(sb.length(), method);
 			sb.append(method).append('\n');
@@ -204,7 +204,7 @@ public class ESourceFile {
 	}
 	
 	public String getConstructor(int index) {
-		JavaSourcePart part = constructors.get(index);
+		JavaSource part = constructors.get(index);
 		if(part != null) {
 			return part.source;
 		}
@@ -215,14 +215,6 @@ public class ESourceFile {
 		return constructors.size();
 	}
 	
-	public String getFileName() {
-		return simpleName + ".java";
-	}
-	
-	public String getFilePath() {
-		return getCanonicalName().replace('.', File.separatorChar) + ".java";
-	}
-
 	public int getEspOffset(int javaOffset) {
 		for(EspLocation location : locations) {
 			if(location.offset <= javaOffset && javaOffset < (location.offset + location.length)) {
@@ -233,8 +225,16 @@ public class ESourceFile {
 		return -1;
 	}
 	
+	public String getFileName() {
+		return simpleName + ".java";
+	}
+
+	public String getFilePath() {
+		return getCanonicalName().replace('.', File.separatorChar) + ".java";
+	}
+	
 	public String getImport(String key) {
-		JavaSourcePart part = imports.get(key);
+		JavaSource part = imports.get(key);
 		if(part != null) {
 			return part.toString();
 		}
@@ -253,7 +253,7 @@ public class ESourceFile {
 	}
 	
 	public String getMethod(String name) {
-		JavaSourcePart part = methods.get(name);
+		JavaSource part = methods.get(name);
 		if(part != null) {
 			return part.source;
 		}
@@ -276,8 +276,16 @@ public class ESourceFile {
 		return source;
 	}
 	
+	public String getStaticImport(String key) {
+		JavaSource part = staticImports.get(key);
+		if(part != null) {
+			return part.toString();
+		}
+		return null;
+	}
+	
 	public String getVariable(String name) {
-		JavaSourcePart part = variables.get(name);
+		JavaSource part = variables.get(name);
 		if(part != null) {
 			return part.source;
 		}

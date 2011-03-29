@@ -25,6 +25,10 @@ public class ScriptPart extends EspPart {
 		return end;
 	}
 
+	public boolean isSimple() {
+		return true;
+	}
+	
 	private int skip(char[] ca, int start, int end) {
 		int i = start;
 		switch(ca[i]) {

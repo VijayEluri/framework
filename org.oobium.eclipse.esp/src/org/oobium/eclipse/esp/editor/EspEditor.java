@@ -372,6 +372,20 @@ public class EspEditor extends TextEditor {
 		return jResource;
 	}
 	
+	public IMarker[] getMarkers(int offset) {
+		IFile file = getEResource();
+		if(!file.exists() || !OobiumCore.isEFile(file)) {
+			return null;
+		}
+
+		try {
+			return file.findMarkers(IMarker.MARKER, true, IResource.DEPTH_ZERO);
+		} catch(CoreException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
 	private String getName() {
 		IResource resource = getEResource();
 		return resource.getName();
@@ -393,7 +407,7 @@ public class EspEditor extends TextEditor {
 			outlinePage.addSelectionChangedListener(selListener);
 		}
 	}
-	
+
 	protected void initializeEditor() {
 		super.initializeEditor();
 		setSourceViewerConfiguration(new EspSourceViewerConfiguration(this));

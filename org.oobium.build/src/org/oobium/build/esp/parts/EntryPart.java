@@ -53,8 +53,8 @@ public class EntryPart extends EspPart {
 					value = new ScriptPart(this, s1, s2);
 				}
 			}
-			if(value == null) { // default to JavaContainerPart
-				value = new JavaContainerPart(this, Type.EntryValuePart, s1, s2);
+			if(value == null) { // default
+				value = new JavaSourcePart(this, Type.JavaSourcePart, s1, s2);
 			}
 		}
 	}

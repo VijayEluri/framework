@@ -92,7 +92,7 @@ public class EspSourceViewerConfiguration extends SourceViewerConfiguration {
 	}
 	
 	public ITextHover getTextHover(ISourceViewer sourceViewer, String contentType) {
-		return new EspTextHover();
+		return new EspTextHover(editor);
 	}
 	
 }
