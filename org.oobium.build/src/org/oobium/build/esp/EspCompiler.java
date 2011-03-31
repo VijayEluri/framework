@@ -155,63 +155,15 @@ public class EspCompiler {
 		ensureQuotes(body, q1, true);
 	}
 	
-	/**
-	 * @param sb the StringBuilder to modify
-	 * @param q1 the position of the first quote
-	 * @param escaped escape the quotes so they can be used inside a string (like with HTML attributes)
-	 */
-	private void ensureQuotes(StringBuilder sb, int q1, boolean escaped) {
-		if(q1 < sb.length()) {
-			if(sb.charAt(q1) != '\\' || (q1+1 < sb.length() && sb.charAt(q1+1) != '"')) {
-				sb.insert(q1, escaped ? "\\\"" : "\"");
-			}
-			if(sb.charAt(sb.length()-2) != '\\' || sb.charAt(sb.length()-1) != '"') {
-				sb.append(escaped ? "\\\"" : "\"");
-			}
-		} else {
-			sb.append(escaped ? "\\\"\\\"" : "\"\"");
-		}
-	}
-	
-	private void appendCreateJs(String target, Map<String, EntryPart> entries) {
-		String field = (entries != null && entries.get("field") != null) ? entries.get("field").getValue().getText().trim() : null;
-		String value = (entries != null && entries.get("value") != null) ? entries.get("value").getValue().getText().trim() : null;
-		body.append(" href=\\\"\").append(").append(target).append(").append(\"\\\"");
-		body.append(" onclick=\\\"");
-		if(entries != null && entries.containsKey("confirm")) {
-			body.append("if(confirm('\").append(h(");
-			build(entries.get("confirm").getValue(), body);
-			body.append(")).append(\"')) {");
-		}
-		body.append("var f = document.createElement('form');");
-		body.append("f.style.display = 'none';");
-		body.append("this.parentNode.appendChild(f);");
-		body.append("f.method = 'POST';");
-		body.append("f.action = '\").append(").append(target).append(").append(\"';");
-		body.append("var m = document.createElement('input');");
-		body.append("m.setAttribute('type', 'hidden');");
-		body.append("m.setAttribute('name', '").append(field).append("');");
-		body.append("m.setAttribute('value', '").append(value).append("');");
-		body.append("f.appendChild(m);");
-//					sb.append("var s = document.createElement('input');");
-//					sb.append("s.setAttribute('type', 'hidden');");
-//					sb.append("s.setAttribute('name', 'authenticity_token');");
-//					sb.append("s.setAttribute('value', 'b9373bb3936620b9457ec2edc19f597b32faf6bf');");
-//					sb.append("f.appendChild(s);");
-		body.append("f.submit();");
-		if(entries != null && entries.containsKey("confirm")) {
+	private void appendConfirmCloser(MarkupElement element) {
+		if(element.hasEntryValue("confirm")) {
 			body.append("}");
 		}
-		body.append("return false;\\\"");
 	}
 	
-	private void appendDeleteJs(JavaSourcePart target, Map<String, EntryPart> entries) {
-		body.append(" href=\\\"\").append(pathTo(");
-		build(target, body, true);
-		body.append(", destroy)).append(\"\\\"");
-		body.append(" onclick=\\\"");
-		if(entries != null && entries.containsKey("confirm")) {
-			JavaSourcePart part = (JavaSourcePart) entries.get("confirm").getValue();
+	private void appendConfirmOpener(MarkupElement element) {
+		if(element.hasEntryValue("confirm")) {
+			JavaSourcePart part = (JavaSourcePart) element.getEntryValue("confirm");
 			body.append("if(confirm('");
 			if(part.isSimple()) {
 				String text = part.getText();
@@ -221,6 +173,46 @@ public class EspCompiler {
 			}
 			body.append("')) {");
 		}
+	}
+	
+	private void appendCreateJs(MarkupElement element, JavaSourcePart target) {
+		body.append(" href=\\\"\").append(pathTo(");
+		build(target, body, true);
+		body.append(", create)).append(\"\\\"");
+		body.append(" onclick=\\\"");
+		appendConfirmOpener(element);
+		body.append("var f = document.createElement('form');");
+		body.append("f.style.display = 'none';");
+		body.append("this.parentNode.appendChild(f);");
+		body.append("f.method = 'POST';");
+		body.append("f.action = '\").append(pathTo(");
+		build(target, body, true);
+		body.append(", create)).append(\"';");
+		body.append("var m = document.createElement('input');");
+		body.append("m.setAttribute('type', 'hidden');");
+		body.append("m.setAttribute('name', '");
+		build(element.getEntryValue("field"), body);
+		body.append("');");
+		body.append("m.setAttribute('value', '");
+		build(element.getEntryValue("value"), body);
+		body.append("');");
+		body.append("f.appendChild(m);");
+//					sb.append("var s = document.createElement('input');");
+//					sb.append("s.setAttribute('type', 'hidden');");
+//					sb.append("s.setAttribute('name', 'authenticity_token');");
+//					sb.append("s.setAttribute('value', 'b9373bb3936620b9457ec2edc19f597b32faf6bf');");
+//					sb.append("f.appendChild(s);");
+		body.append("f.submit();");
+		appendConfirmCloser(element);
+		body.append("return false;\\\"");
+	}
+
+	private void appendDeleteJs(MarkupElement element, JavaSourcePart target) {
+		body.append(" href=\\\"\").append(pathTo(");
+		build(target, body, true);
+		body.append(", destroy)).append(\"\\\"");
+		body.append(" onclick=\\\"");
+		appendConfirmOpener(element);
 		body.append("var f = document.createElement('form');");
 		body.append("f.style.display = 'none';");
 		body.append("this.parentNode.appendChild(f);");
@@ -239,12 +231,35 @@ public class EspCompiler {
 //					sb.append("s.setAttribute('value', 'b9373bb3936620b9457ec2edc19f597b32faf6bf');");
 //					sb.append("f.appendChild(s);");
 		body.append("f.submit();");
-		if(entries != null && entries.containsKey("confirm")) {
-			body.append("}");
-		}
+		appendConfirmCloser(element);
 		body.append("return false;\\\"");
 	}
 
+	private void appendEntryValueWithoutQuotes(MarkupElement element, String key) {
+		JavaSourcePart part = (JavaSourcePart) element.getEntryValue(key);
+		if(part.isSimple()) {
+			String text = part.getText();
+			body.append(text.substring(1, text.length()-1));
+		} else {
+			build(part, body, true);
+		}
+	}
+	
+	private void appendFieldError(String model, List<JavaSourcePart> fields, String str) {
+		prepForJava(body);
+		body.append("if(").append(model).append(".hasErrors(");
+		for(int i = 0; i < fields.size(); i++) {
+			if(i != 0) body.append(", ");
+			build(fields.get(i), body);
+		}
+		body.append(")) {\n");
+		indent(body);
+		body.append('\t').append(sbName).append(".append(\"").append(str).append("\");\n");
+		indent(body);
+		body.append("}\n");
+		prepForMarkup(body);
+	}
+	
 	private void appendFormFieldName(String name, List<JavaSourcePart> fields) {
 		body.append("\").append(").append(name).append(").append(\"");
 		for(JavaSourcePart field : fields) {
@@ -253,27 +268,38 @@ public class EspCompiler {
 				String text = field.getText();
 				body.append(text.substring(1, text.length()-1));
 			} else {
-				build(field, body, true);
+				build(field, body);
 			}
 			body.append(']');
 		}
 	}
 	
-	private void appendUpdateJs(String target, Map<String, EntryPart> entries) {
-		String field = (entries != null && entries.get("field") != null) ? entries.get("field").getValue().getText().trim() : null;
-		String value = (entries != null && entries.get("value") != null) ? entries.get("value").getValue().getText().trim() : null;
-		body.append(" href=\\\"\").append(").append(target).append(").append(\"\\\"");
-		body.append(" onclick=\\\"");
-		if(entries != null && entries.containsKey("confirm")) {
-			body.append("if(confirm('\").append(h(");
-			build(entries.get("confirm").getValue(), body);
-			body.append(")).append(\"')) {");
+	private void appendJavaType(MarkupElement element, Class<?> defaultType) {
+		if(element.hasJavaType()) {
+			bodyLocations.add(new EspLocation(body.length(), element.getJavaTypePart()));
+			body.append(element.getJavaType());
+		} else if(defaultType != null) {
+			body.append(defaultType.getSimpleName());
+			String name = defaultType.getCanonicalName();
+			if(!name.startsWith("java.lang.")) {
+				esf.addImport(name);
+			}
 		}
+	}
+	
+	private void appendUpdateJs(MarkupElement element, JavaSourcePart target) {
+		body.append(" href=\\\"\").append(pathTo(");
+		build(target, body, true);
+		body.append(", update)).append(\"\\\"");
+		body.append(" onclick=\\\"");
+		appendConfirmOpener(element);
 		body.append("var f = document.createElement('form');");
 		body.append("f.style.display = 'none';");
 		body.append("this.parentNode.appendChild(f);");
 		body.append("f.method = 'POST';");
-		body.append("f.action = '\").append(").append(target).append(").append(\"';");
+		body.append("f.action = '\").append(pathTo(");
+		build(target, body, true);
+		body.append(", update)).append(\"';");
 		body.append("var m = document.createElement('input');");
 		body.append("m.setAttribute('type', 'hidden');");
 		body.append("m.setAttribute('name', '_method');");
@@ -281,8 +307,12 @@ public class EspCompiler {
 		body.append("f.appendChild(m);");
 		body.append("var m = document.createElement('input');");
 		body.append("m.setAttribute('type', 'hidden');");
-		body.append("m.setAttribute('name', '").append(field).append("');");
-		body.append("m.setAttribute('value', '").append(value).append("');");
+		body.append("m.setAttribute('name', '");
+		build(element.getEntryValue("field"), body);
+		body.append("');");
+		body.append("m.setAttribute('value', '");
+		build(element.getEntryValue("value"), body);
+		body.append("');");
 		body.append("f.appendChild(m);");
 //					sb.append("var s = document.createElement('input');");
 //					sb.append("s.setAttribute('type', 'hidden');");
@@ -290,18 +320,8 @@ public class EspCompiler {
 //					sb.append("s.setAttribute('value', 'b9373bb3936620b9457ec2edc19f597b32faf6bf');");
 //					sb.append("f.appendChild(s);");
 		body.append("f.submit();");
-		if(entries != null && entries.containsKey("confirm")) {
-			body.append("}");
-		}
+		appendConfirmCloser(element);
 		body.append("return false;\\\"");
-	}
-	
-	private String getter(JavaSourcePart part) {
-		String text = part.getText();
-		if(part.isSimple()) {
-			return getterName(text.substring(1, text.length()-1)) + "()";
-		}
-		return "get(" + text + ")";
 	}
 	
 	private void appendValueGetter(String model, List<JavaSourcePart> fields) {
@@ -312,7 +332,7 @@ public class EspCompiler {
 			for(int i = 0; i < fields.size(); i++) {
 				body.append(model);
 				for(int j = 0; j <= i; j++) {
-					body.append('.').append((j == i && j != last) ? hasserName(fields.get(j).getText()) : getter(fields.get(j)));
+					body.append('.').append((j == i && j != last) ? hasser(fields.get(j)) : getter(fields.get(j)));
 				}
 				if(i < last) {
 					body.append("?(");
@@ -323,11 +343,11 @@ public class EspCompiler {
 			}
 		}
 	}
-	
+
 	private void build(EspPart part, StringBuilder sb) {
 		build(part, sb, false);
 	}
-
+	
 	/**
 	 * @param forceLastIsJava if true, then will behave as if lastIsJava(sb) returns true
 	 */
@@ -446,7 +466,7 @@ public class EspCompiler {
 			appendEscaped(sb, text);
 		}
 	}
-	
+
 	private void buildAttrs(MarkupElement element, String...skip) {
 		Set<String> skipSet = Set(skip);
 		if(element.hasEntries()) {
@@ -492,7 +512,7 @@ public class EspCompiler {
 			body.append(" style=\\\"display:none\\\"");
 		}
 	}
-
+	
 	private void buildCheck(MarkupElement check) {
 		if(check.hasArgs()) {
 			List<JavaSourcePart> fields = check.getArgs();
@@ -557,6 +577,24 @@ public class EspCompiler {
 				if(ci.hasNext()) body.append(' ');
 			}
 			body.append("\\\"");
+		}
+	}
+	
+	private void buildClasses(MarkupElement element, String model, List<JavaSourcePart> fields) {
+		if(!"hidden".equals(element.getTag())) {
+			if(element.hasClassNames()) {
+				body.append(" class=\\\"");
+				for(Iterator<EspPart> ci = element.getClassNames().iterator(); ci.hasNext(); ) {
+					build(ci.next(), body);
+					if(ci.hasNext()) body.append(' ');
+				}
+				
+				appendFieldError(model, fields, "fieldWithErrors");
+				
+				body.append("\\\"");
+			} else {
+				appendFieldError(model, fields, " class=\\\"fieldWithErrors\\\"");
+			}
 		}
 	}
 	
@@ -631,7 +669,7 @@ public class EspCompiler {
 		sb.append("\t}");
 		esf.addConstructor(new JavaSource(sb.toString(), locations));
 	}
-	
+
 	private void buildDateInputs(MarkupElement date) {
 		body.append("<span");
 		buildFormField(date, false);
@@ -686,7 +724,40 @@ public class EspCompiler {
 			break;
 		}
 	}
+	
+	private void buildErrors(MarkupElement element) {
+		prepForJava(body);
 
+		body.append("errorsBlock(").append(sbName).append(", ");
+
+		if(element.hasArgs()) {
+			build(element.getArg(0), body);
+		} else {
+			String model = getFormModel(element);
+			if(!blank(model)) {
+				body.append(model);
+			}
+		}
+
+		if(element.hasEntryValue("title")) {
+			body.append(", ");
+			build(element.getEntryValue("title"), body);
+		} else {
+			body.append(", null");
+		}
+		
+		if(element.hasEntryValue("message")) {
+			body.append(", ");
+			build(element.getEntryValue("message"), body);
+		} else {
+			body.append(", null");
+		}
+		
+		body.append(");\n");
+		
+		lastBodyIsJava = true;
+	}
+	
 	private void buildEspMethods() {
 		buildMethod(
 				body,
@@ -744,7 +815,7 @@ public class EspCompiler {
 		prepForMarkup(sb);
 		sb.append("<script src='/\").append(path$").append(pos).append(").append(\".js'></script>");
 	}
-	
+
 	private void buildExternalEss(StringBuilder sb, String type, StyleElement element) {
 		prepForJava(sb);
 		int pos = element.getStart();
@@ -756,24 +827,16 @@ public class EspCompiler {
 	private void buildFields(MarkupElement fields) {
 		List<JavaSourcePart> args = fields.getArgs();
 		if(args != null && args.size() == 1) {
-			String type = fields.hasJavaType() ? fields.getJavaType() : "Model";
-			String model = getFormModelVar(fields);
-			String modelVal = args.get(0).getText().trim();
 			String modelName = getFormModelNameVar(fields.getStart());
 
 			prepForJava(body);
-			if(!model.equals(modelVal)) {
-				if(type.equals("Model")) {
-					esf.addImport(Model.class.getCanonicalName());
-				}
-				body.append(type).append(' ').append(model).append(" = ").append(modelVal).append(";\n");
-				indent(body);
-			}
 			body.append("String ").append(modelName).append(" = ").append(getFormModelNameValue(fields)).append(";\n");
 			prepForMarkup(body);
 
 			body.append("<input type=\\\"hidden\\\" name=\\\"\").append(").append(modelName).append(").append(\"[id]\\\"");
-			body.append(" value=\\\"\").append(").append(model).append(".getId()).append(\"").append("\\\" />");
+			body.append(" value=\\\"\").append(f(");
+			build(fields.getArg(0), body, true);
+			body.append(")).append(\"").append("\\\" />");
 		}
 	}
 	
@@ -914,10 +977,14 @@ public class EspCompiler {
 				body.append("<input type=\\\"hidden\\\" name=\\\"_method\\\" value=\\\"DELETE\\\" />");
 			}
 			if(hasMany) {
-				body.append("<input type=\\\"hidden\\\" name=\\\"id\\\" value=\\\"\").append(").append(modelVal).append(".getId()).append(\"").append("\\\" />");
+				body.append("<input type=\\\"hidden\\\" name=\\\"id\\\" value=\\\"\").append(f(");
+				build(args.get(0), body, true);
+				body.append(")).append(\"").append("\\\" />");
 			} else {
 				body.append("<input type=\\\"hidden\\\" name=\\\"\").append(").append(modelName).append(").append(\"[id]\\\"");
-				body.append(" value=\\\"\").append(").append(model).append(".getId()).append(\"").append("\\\" />");
+				body.append(" value=\\\"\").append(f(");
+				build(args.get(0), body, true);
+				body.append(")).append(\"").append("\\\" />");
 			}
 		} else {
 			body.append('<').append(form.getTag());
@@ -925,39 +992,6 @@ public class EspCompiler {
 			buildClasses(form);
 			buildAttrs(form);
 			body.append('>');
-		}
-	}
-
-	private void appendFieldError(String model, List<JavaSourcePart> fields, String str) {
-		prepForJava(body);
-		body.append("if(").append(model).append(".hasErrors(");
-		for(int i = 0; i < fields.size(); i++) {
-			if(i != 0) body.append(", ");
-			build(fields.get(i), body);
-		}
-		body.append(")) {\n");
-		indent(body);
-		body.append('\t').append(sbName).append(".append(\"").append(str).append("\");\n");
-		indent(body);
-		body.append("}\n");
-		prepForMarkup(body);
-	}
-	
-	private void buildClasses(MarkupElement element, String model, List<JavaSourcePart> fields) {
-		if(!"hidden".equals(element.getTag())) {
-			if(element.hasClassNames()) {
-				body.append(" class=\\\"");
-				for(Iterator<EspPart> ci = element.getClassNames().iterator(); ci.hasNext(); ) {
-					build(ci.next(), body);
-					if(ci.hasNext()) body.append(' ');
-				}
-				
-				appendFieldError(model, fields, "fieldWithErrors");
-				
-				body.append("\\\"");
-			} else {
-				appendFieldError(model, fields, " class=\\\"fieldWithErrors\\\"");
-			}
 		}
 	}
 	
@@ -1001,7 +1035,7 @@ public class EspCompiler {
 			buildAttrs(input, "type");
 		}
 	}
-	
+
 	private void buildHtml(MarkupElement element) {
 		String tag = element.getTag();
 		if("view".equals(tag)) {
@@ -1101,7 +1135,7 @@ public class EspCompiler {
 			lastBodyIsJava = false;
 		}
 	}
-
+	
 	private void buildId(MarkupElement element) {
 		if(element.hasId()) {
 			body.append(" id=\\\"");
@@ -1125,7 +1159,7 @@ public class EspCompiler {
 			build(image.getInnerText(), body);
 		}
 	}
-	
+
 	private void buildImport(ImportElement element) {
 		if(element.hasImport()) {
 			if(element.isStatic()) {
@@ -1161,7 +1195,7 @@ public class EspCompiler {
 		prepForMarkup(sb);
 		sb.append("</script>");
 	}
-
+	
 	private void buildInlineEss(StringBuilder sb, String type, StyleElement element) {
 		prepForMarkup(sb);
 		sb.append("<style>");
@@ -1186,7 +1220,7 @@ public class EspCompiler {
 		buildFormField(input, true);
 		body.append(" />");
 	}
-	
+
 	private void buildJava(JavaElement element, boolean isStart) {
 		EspPart source = element.getSourcePart();
 		if(source != null) {
@@ -1213,7 +1247,7 @@ public class EspCompiler {
 			lastBodyIsJava = true;
 		}
 	}
-
+	
 	private void buildLabel(MarkupElement label) {
 		prepForMarkup(body);
 		lastIsJava(body, false); // set true below if necessary
@@ -1312,18 +1346,20 @@ public class EspCompiler {
 			} else if(dom.isEsp()) { // size == 2
 				JavaSourcePart part = dom.isEsp() ? link.getArg(1) : null;
 				if(part == null) {
-					body.append(" href=\\\"\").append(").append("pathTo(").append(target.getText().trim()).append(", null)).append(\"\\\"");
+					body.append(" href=\\\"\").append(").append("pathTo(");
+					build(target, body, true);
+					body.append(", null)).append(\"\\\"");
 				} else {
 					action = part.getText().trim();
 					if("create".equals(action)) {
 						esf.addStaticImport(Action.class.getCanonicalName() + ".create");
-						appendCreateJs("pathTo(" + target.getText().trim() + ", create)", link.getEntries());
+						appendCreateJs(link, target);
 					} else if("update".equals(action)) {
 						esf.addStaticImport(Action.class.getCanonicalName() + ".update");
-						appendUpdateJs("pathTo(" + target.getText().trim() + ", update)", link.getEntries());
+						appendUpdateJs(link, target);
 					} else if("destroy".equals(action)) {
 						esf.addStaticImport(Action.class.getCanonicalName() + ".destroy");
-						appendDeleteJs(target, link.getEntries());
+						appendDeleteJs(link, target);
 					} else {
 						body.append(" href=\\\"\").append(").append("pathTo(");
 						build(target, body, true);
@@ -1369,39 +1405,6 @@ public class EspCompiler {
 				body.append(txt);
 			}
 		}
-	}
-	
-	private void buildErrors(MarkupElement element) {
-		prepForJava(body);
-
-		body.append("errorsBlock(").append(sbName).append(", ");
-
-		if(element.hasArgs()) {
-			body.append(element.getArg(0).getText());
-		} else {
-			String model = getFormModel(element);
-			if(!blank(model)) {
-				body.append(model);
-			}
-		}
-
-		if(element.hasEntryValue("title")) {
-			body.append(", ");
-			build(element.getEntryValue("title"), body);
-		} else {
-			body.append(", null");
-		}
-		
-		if(element.hasEntryValue("message")) {
-			body.append(", ");
-			build(element.getEntryValue("message"), body);
-		} else {
-			body.append(", null");
-		}
-		
-		body.append(");\n");
-		
-		lastBodyIsJava = true;
 	}
 
 	private void buildMessages(MarkupElement element) {
@@ -1614,7 +1617,7 @@ public class EspCompiler {
 		buildFormField(select, false);
 		body.append(">");
 	}
-
+	
 	private void buildSelectOption(MarkupElement option) {
 		body.append("<option");
 		buildId(option);
@@ -1631,18 +1634,6 @@ public class EspCompiler {
 			build(option.getInnerText(), body);
 		}
 	}
-
-	/**
-	 * Strip the quotes from an entry value to use it as a Java argument
-	 */
-	private String toArg(String val) {
-		if(val != null && val.length() > 1) {
-			if(val.charAt(0) == '"' && val.charAt(val.length()-1) == '"') {
-				return val.substring(1, val.length()-1);
-			}
-		}
-		return val;
-	}
 	
 	// options<Member>(findAllMembers(), text:"option.getNameLF()", value:"option.getId(), required: "false", sort:"option.getNameLF()")
 	private void buildSelectOptions(MarkupElement element) {
@@ -1652,23 +1643,33 @@ public class EspCompiler {
 			JavaSourcePart options = element.getArgs().get(0);
 			String selectionGetter = getSelectionGetter(element);
 			if(element.hasEntry("text") || element.hasEntry("value")) {
-				// TODO refactor all of these strings to use build(part, body) instead
-				String type = element.hasJavaType() ? element.getJavaType() : "Object";
-				String text = element.hasEntry("text") ? toArg(element.getEntryValue("text").getText()) : "String.valueOf(option)";
-				String value = element.hasEntry("value") ? toArg(element.getEntryValue("value").getText()) : "option";
-				String title = element.hasEntry("title") ? toArg(element.getEntryValue("title").getText()) : null;
 				if(blank(selectionGetter)) {
-					body.append("for(").append(type).append(" option : ");
+					body.append("for(");
+					appendJavaType(element, Object.class);
+					body.append(" option : ");
 					build(options, body, true);
 					body.append(") {\n");
-					if(blank(title)) {
+					if(element.hasEntryValue("title")) {
 						indent(body);
-						body.append('\t').append(sbName).append(".append(\"<option value=\\\"\"+f(");
+						body.append('\t').append(sbName).append(".append(\"<option title=\\\"\").append(h(");
+						appendEntryValueWithoutQuotes(element, "title");
+						body.append(")).append(\"\\\" value=\\\"\").append(f(");
 					} else {
 						indent(body);
-						body.append('\t').append(sbName).append(".append(\"<option title=\\\"\"+h(").append(title).append(")+\"\\\" value=\\\"\"+f(");
+						body.append('\t').append(sbName).append(".append(\"<option value=\\\"\").append(f(");
 					}
-					body.append(value).append(")+\"\\\" >\"+h(").append(text).append(")+\"</option>\");\n");
+					if(element.hasEntryValue("value")) {
+						appendEntryValueWithoutQuotes(element, "value");
+					} else {
+						body.append("option");
+					}
+					body.append(")).append(\"\\\" >\").append(h(");
+					if(element.hasEntryValue("text")) {
+						appendEntryValueWithoutQuotes(element, "text");
+					} else {
+						body.append("String.valueOf(option)");
+					}
+					body.append(")).append(\"</option>\");\n");
 					indent(body);
 					body.append("}\n");
 				} else {
@@ -1677,19 +1678,40 @@ public class EspCompiler {
 					
 					body.append("Object ").append(selectionVar).append(" = ").append(selectionGetter).append(";\n");
 					indent(body);
-					body.append("for(").append(type).append(" option : ");
+					body.append("for(");
+					appendJavaType(element, Object.class);
+					body.append(" option : ");
 					build(options, body, true);
 					body.append(") {\n");
 					indent(body);
-					body.append("\tboolean ").append(selectedVar).append(" = isEqual(").append(value).append(", ").append(selectionVar).append(");\n");
-					if(blank(title)) {
+					body.append("\tboolean ").append(selectedVar).append(" = isEqual(");
+					if(element.hasEntryValue("value")) {
+						appendEntryValueWithoutQuotes(element, "value");
+					} else {
+						body.append("option");
+					}
+					body.append(", ").append(selectionVar).append(");\n");
+					if(element.hasEntryValue("title")) {
 						indent(body);
-						body.append('\t').append(sbName).append(".append(\"<option value=\\\"\"+f(");
+						body.append('\t').append(sbName).append(".append(\"<option title=\\\"\").append(h(");
+						appendEntryValueWithoutQuotes(element, "title");
+						body.append(")).append(\"\\\" value=\\\"\").append(f(");
 					} else {
 						indent(body);
-						body.append('\t').append(sbName).append(".append(\"<option title=\\\"\"+h(").append(title).append(")+\"\\\" value=\\\"\"+f(");
+						body.append('\t').append(sbName).append(".append(\"<option value=\\\"\").append(f(");
 					}
-					body.append(value).append(")+\"\\\" \"+(").append(selectedVar).append(" ? \"selected >\" : \">\")+h(").append(text).append(")+\"</option>\");\n");
+					if(element.hasEntryValue("value")) {
+						appendEntryValueWithoutQuotes(element, "value");
+					} else {
+						body.append("option");
+					}
+					body.append(")).append(\"\\\" \").append(").append(selectedVar).append(" ? \"selected >\" : \">\").append(h(");
+					if(element.hasEntryValue("text")) {
+						appendEntryValueWithoutQuotes(element, "text");
+					} else {
+						body.append("String.valueOf(option)");
+					}
+					body.append(")).append(\"</option>\");\n");
 					indent(body);
 					body.append("}\n");
 				}
@@ -1819,7 +1841,7 @@ public class EspCompiler {
 			lastIsJava(sb, false);
 		}
 	}
-	
+
 	private void buildSubmit(MarkupElement element) {
 		body.append("<input");
 		body.append(" type=\\\"submit\\\"");
@@ -1877,7 +1899,7 @@ public class EspCompiler {
 			}
 		}
 	}
-
+	
 	private void buildView(MarkupElement view) {
 		String type = view.getJavaType();
 		if(type != null) {
@@ -1916,7 +1938,7 @@ public class EspCompiler {
 			}
 		}
 	}
-
+	
 	private void buildYield(MarkupElement element) {
 		prepForJava(body);
 
@@ -1934,8 +1956,7 @@ public class EspCompiler {
 
 		lastBodyIsJava = true;
 	}
-	
-	// TODO refactor compile methods (lots of overlap)
+
 	public ESourceFile compile() {
 		switch(dom.getDocType()) {
 		case ESP: return compileEsp();
@@ -1946,7 +1967,7 @@ public class EspCompiler {
 			throw new IllegalArgumentException("don't know how to compile DocType: " + dom.getDocType());
 		}
 	}
-	
+
 	private ESourceFile compileEjs() {
 		esf = new ESourceFile();
 		body = new StringBuilder();
@@ -2004,7 +2025,7 @@ public class EspCompiler {
 		
 		return esf;
 	}
-	
+
 	private ESourceFile compileEmt() {
 		esf = new ESourceFile();
 		body = new StringBuilder();
@@ -2200,7 +2221,7 @@ public class EspCompiler {
 		
 		return esf;
 	}
-
+	
 	private boolean containsFileInput(EspElement element) {
 		switch(element.getType()) {
 		case MarkupElement:
@@ -2231,21 +2252,39 @@ public class EspCompiler {
 		}
 	}
 	
+	/**
+	 * @param sb the StringBuilder to modify
+	 * @param q1 the position of the first quote
+	 * @param escaped escape the quotes so they can be used inside a string (like with HTML attributes)
+	 */
+	private void ensureQuotes(StringBuilder sb, int q1, boolean escaped) {
+		if(q1 < sb.length()) {
+			if(sb.charAt(q1) != '\\' || (q1+1 < sb.length() && sb.charAt(q1+1) != '"')) {
+				sb.insert(q1, escaped ? "\\\"" : "\"");
+			}
+			if(sb.charAt(sb.length()-2) != '\\' || sb.charAt(sb.length()-1) != '"') {
+				sb.append(escaped ? "\\\"" : "\"");
+			}
+		} else {
+			sb.append(escaped ? "\\\"\\\"" : "\"\"");
+		}
+	}
+	
 	private MarkupElement getForm(MarkupElement formField) {
 		EspPart parent = formField.getParent();
 		while(parent != null) {
 			if(parent.isA(MarkupElement)) {
-				MarkupElement h = (MarkupElement) parent;
-				if("form".equals(h.getTag())) {
-					List<JavaSourcePart> args = h.getArgs();
+				MarkupElement element = (MarkupElement) parent;
+				if("form".equals(element.getTag())) {
+					List<JavaSourcePart> args = element.getArgs();
 					if(args != null && (args.size() == 1 || args.size() == 2)) {
-						return h; // args.get(0).getText().trim();
+						return element;
 					}
 					break; // forms shouldn't be nested...
-				} else if("fields".equals(h.getTag())) {
-					List<JavaSourcePart> args = h.getArgs();
+				} else if("fields".equals(element.getTag())) {
+					List<JavaSourcePart> args = element.getArgs();
 					if(args != null && args.size() == 1) {
-						return h; // args.get(0).getText().trim();
+						return element; // args.get(0).getText().trim();
 					}
 					// fields section may be nested...
 				}
@@ -2254,7 +2293,7 @@ public class EspCompiler {
 		}
 		return null;
 	}
-	
+
 	private String getFormAction(MarkupElement formField) {
 		EspPart parent = formField.getParent();
 		while(parent != null) {
@@ -2320,7 +2359,7 @@ public class EspCompiler {
 		}
 		return "\"" + arg + "\"";
 	}
-
+	
 	private String getSelectionGetter(MarkupElement options) {
 		EspPart parent = options.getParent();
 		if(parent instanceof MarkupElement && "select".equals(((MarkupElement) parent).getTag())) {
@@ -2336,7 +2375,7 @@ public class EspCompiler {
 					for(int i = 0; i < fields.size(); i++) {
 						sb.append(model);
 						for(int j = 0; j <= i; j++) {
-							sb.append('.').append((j == i && j != last) ? hasserName(fields.get(j).getText()) : getter(fields.get(j)));
+							sb.append('.').append((j == i && j != last) ? hasser(fields.get(j)) : getter(fields.get(j)));
 						}
 						if(i < last) {
 							sb.append("?(");
@@ -2352,6 +2391,22 @@ public class EspCompiler {
 		return null;
 	}
 	
+	private String getter(JavaSourcePart part) {
+		String text = part.getText();
+		if(part.isSimple()) {
+			return getterName(text.substring(1, text.length()-1)) + "()";
+		}
+		return "get(" + text + ")";
+	}
+	
+	private String hasser(JavaSourcePart part) {
+		String text = part.getText();
+		if(part.isSimple()) {
+			return hasserName(text.substring(1, text.length()-1)) + "()";
+		}
+		return "isSet(" + text + ")";
+	}
+
 	private void indent(StringBuilder sb) {
 		for(int i = 0; i < level(sb)+2; i++) {
 			sb.append('\t');
@@ -2387,14 +2442,14 @@ public class EspCompiler {
 		if(sb == script) lastScriptIsJava = lastIsJava;
 		if(sb == style) lastStyleIsJava = lastIsJava;
 	}
-
+	
 	private int level(StringBuilder sb) {
 		if(sb == body) return javaBodyLevel;
 		if(sb == script) return javaScriptLevel;
 		if(sb == style) return javaStyleLevel;
 		return 0;
 	}
-	
+
 	private void prepForJava(StringBuilder sb) {
 		if(lastIsJava(sb)) {
 			indent(sb);
@@ -2482,7 +2537,7 @@ public class EspCompiler {
 			lastBodyIsJava = true;
 		}
 	}
-
+	
 	private void stopContent() {
 		prepForJava(body);
 
@@ -2495,6 +2550,18 @@ public class EspCompiler {
 		sbName = SBNAME;
 		
 		lastBodyIsJava = true;
+	}
+
+	/**
+	 * Strip the quotes from an entry value to use it as a Java argument
+	 */
+	private String toArg(String val) {
+		if(val != null && val.length() > 1) {
+			if(val.charAt(0) == '"' && val.charAt(val.length()-1) == '"') {
+				return val.substring(1, val.length()-1);
+			}
+		}
+		return val;
 	}
 	
 	/**

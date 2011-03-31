@@ -35,7 +35,7 @@ public class JavaSourceStringPart extends EspPart {
 				end = s2;
 				s1 = forward(ca, s1+1);
 				s2 = reverse(ca, s2-1);
-				source = new EspPart(this, Type.JavaPart, s1, s2);
+				source = new EspPart(this, Type.JavaPart, s1, s2); // TODO JavaPart instead?
 			} else if(Character.isJavaIdentifierStart(ca[s1])) { // variable
 				int s2 = s1+1;
 				while(s2 < end) {

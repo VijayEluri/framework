@@ -245,6 +245,10 @@ public class MarkupElement extends EspElement {
 		return (javaType != null) ? javaType.getText() : null;
 	}
 	
+	public EspPart getJavaTypePart() {
+		return javaType;
+	}
+	
 	public String getTag() {
 		return (tag != null) ? tag.getText() : "";
 	}
