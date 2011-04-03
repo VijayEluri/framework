@@ -46,11 +46,11 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	private static final int RETRIEVE = 2;
 	private static final int UPDATE = 3;
 
-	private final Logger logger;
+	protected final Logger logger;
 	private BundleContext context;
 	private DbPersistor persistor;
 	private Map<String, ConnectionPool> connectionPools;
-	private SingleConnectionManager sConnManager;
+	protected SingleConnectionManager sConnManager;
 
 	private ServiceTracker appTracker;
 
@@ -78,6 +78,22 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		openSession(client);
 		persistor = new DbPersistor();
 		sConnManager = new SingleConnectionManager(threadClient.get(), inMemory);
+	}
+	
+	protected void dropDatabase() {
+		if(inMemory()) {
+			try {
+				sConnManager.dropDatabase();
+			} catch(SQLException e) {
+				logger.error("ERROR dropping database", e);
+			}
+		} else {
+			throw new UnsupportedOperationException();
+		}
+	}
+	
+	public boolean inMemory() {
+		return (sConnManager != null) && sConnManager.inMemory();
 	}
 	
 	private void addDatabase(String client, Map<String, Object> properties) {

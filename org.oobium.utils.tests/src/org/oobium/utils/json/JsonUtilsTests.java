@@ -99,6 +99,7 @@ public class JsonUtilsTests {
 		assertEquals(1.0, toObject("1.0"));
 		assertEquals(-1, toObject("-1"));
 		assertEquals('1', toObject("'1'"));
+		assertEquals("\n", toObject("\"\n\""));
 		assertEquals('\n', toObject("'\n'"));
 		assertEquals('\n', toObject("'\\u000A'"));
 		assertEquals("1", toObject("\"1\""));
@@ -212,6 +213,7 @@ public class JsonUtilsTests {
 		assertEquals("\"1\"", toJson("1"));
 		assertEquals("'1'", toJson("'1'"));
 		assertEquals("\"1\"", toJson("\"1\""));
+		assertEquals("\"test\n\"", toJson("test\n"));
 		assertEquals("{\"a\":\"b\"}", toJson(Collections.singletonMap("a", "b")));
 		assertEquals("{\"a\":\"b\"}", toJson(Collections.singletonMap("a", "\"b\"")));
 		assertEquals("[\"a\"]", toJson(Collections.singletonList("a")));

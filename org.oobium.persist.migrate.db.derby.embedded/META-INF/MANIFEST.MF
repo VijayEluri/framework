@@ -21,3 +21,4 @@ Import-Package: org.oobium.app.persist,
 Require-Bundle: org.oobium.persist.migrate
 Bundle-ActivationPolicy: lazy
 Oobium-Service: org.oobium.persist.migrate.db.DbMigrationService
+Export-Package: org.oobium.persist.migrate.db.derby.embedded

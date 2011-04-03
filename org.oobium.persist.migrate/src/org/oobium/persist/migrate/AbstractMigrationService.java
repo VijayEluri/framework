@@ -27,6 +27,10 @@ public abstract class AbstractMigrationService implements MigrationService, Bund
 	public AbstractMigrationService() {
 		logger = LogProvider.getLogger(getClass());
 	}
+	
+	public AbstractMigrationService(Logger logger) {
+		this.logger = logger;
+	}
 
 	@Override
 	public void start(BundleContext context) throws Exception {

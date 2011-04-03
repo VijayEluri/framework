@@ -89,11 +89,7 @@ public class ModelRelation {
 	}
 
 	public String getSimpleType() {
-		int ix = type.lastIndexOf('.');
-		if(ix == -1) {
-			return type;
-		}
-		return type.substring(ix+1);
+		return simpleName(type);
 	}
 
 	public boolean hasOpposite() {

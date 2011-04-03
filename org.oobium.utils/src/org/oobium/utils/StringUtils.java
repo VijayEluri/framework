@@ -245,17 +245,13 @@ public class StringUtils {
 		return underscored(variable);
 	}
 	
-	public static String columnName(String model, String relation) {
-		return tableName(model) + "__" + columnName(relation);
+	public static String columnName(String table, String column) {
+		return table + "__" + column;
 	}
 
-	public static String[] columnNames(Class<?> model1, String relation1, Class<?> model2, String relation2) {
-		return columnNames(model1.getSimpleName(), relation1, model2.getSimpleName(), relation2);
-	}
-
-	public static String[] columnNames(String model1, String relation1, String model2, String relation2) {
-		String name1 = columnName(model1, relation1);
-		String name2 = columnName(model2, relation2);
+	public static String[] columnNames(String table1, String column1, String table2, String column2) {
+		String name1 = columnName(table1, column1);
+		String name2 = columnName(table2, column2);
 		if(name1.compareTo(name2) <= 0) {
 			return new String[] { name1, name2 };
 		} else {
@@ -263,6 +259,16 @@ public class StringUtils {
 		}
 	}
 
+	public static String joinColumn(String table1, String column1, String table2, String column2) {
+		String name1 = columnName(table1, column1);
+		String name2 = columnName(table2, column2);
+		if(name1.compareTo(name2) <= 0) {
+			return "b";
+		} else {
+			return "a";
+		}
+	}
+	
 	/**
 	 * convert the given string to one that is appropriate for use as a Java
 	 * Constant: MyModel -> MY_MODEL myModel -> MY_MODEL
@@ -920,7 +926,7 @@ public class StringUtils {
 	public static String packageName(String type) {
 		int ix = type.lastIndexOf('.');
 		if(ix == -1) {
-			return type;
+			return null; // there is no package (default)
 		}
 		return type.substring(0, ix);
 	}
@@ -965,6 +971,8 @@ public class StringUtils {
 		}
 		if(singular.equalsIgnoreCase("person")) {
 			return singular.charAt(0) + "eople";
+		} else if(singular.equalsIgnoreCase("child")) {
+			return singular.charAt(0) + "hildren";
 		} else if(singular.equalsIgnoreCase("alumnus")) {
 			return singular.charAt(0) + "lumni";
 		} else if('y' == singular.charAt(singular.length()-1)) {
@@ -1092,7 +1100,7 @@ public class StringUtils {
 	}
 	
 	public static String tableName(Class<?> model1, String relation1, Class<?> model2, String relation2) {
-		return tableName(model1.getSimpleName(), relation1, model2.getSimpleName(), relation2);
+		return tableName(tableName(model1), relation1, tableName(model2), relation2);
 	}
 	
 	public static String tableName(Object model) {
@@ -1111,10 +1119,10 @@ public class StringUtils {
 		}
 	}
 
-	public static String tableName(String model1, String relation1, String model2, String relation2) {
-		String column1 = tableName(model1) + "__" + columnName(relation1);
-		String column2 = tableName(model2) + "__" + columnName(relation2);
-		return tableName(column1, column2);
+	public static String tableName(String table1, String column1, String table2, String column2) {
+		String c1 = table1 + "__" + column1;
+		String c2 = table2 + "__" + column2;
+		return tableName(c1, c2);
 	}
 	
 	public static String[] tableNames(Class<?>[] classes) {
@@ -1125,13 +1133,11 @@ public class StringUtils {
 		return tables;
 	}
 
-	public static String[] tableNames(String model1, String model2) {
-		String name1 = tableName(model1);
-		String name2 = tableName(model2);
-		if(name1.compareTo(name2) <= 0) {
-			return new String[] { name1, name2 };
+	public static String[] tableNames(String table1, String table2) {
+		if(table1.compareTo(table2) <= 0) {
+			return new String[] { table1, table2 };
 		} else {
-			return new String[] { name2, name1 };
+			return new String[] { table2, table1 };
 		}
 	}
 

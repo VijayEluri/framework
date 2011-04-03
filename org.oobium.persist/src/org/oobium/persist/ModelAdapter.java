@@ -24,6 +24,13 @@ public class ModelAdapter {
 
 	private static final Map<Class<?>, ModelAdapter> adapters = new HashMap<Class<?>, ModelAdapter>();
 	
+	private static ModelAdapter createAdapter(Class<? extends Model> modelClass) {
+		ModelAdapter adapter = new ModelAdapter(modelClass);
+		adapter.init();
+		adapters.put(modelClass, adapter);
+		return adapter;
+	}
+
 	public static ModelAdapter getAdapter(Class<? extends Model> clazz) {
 		if(clazz != null) {
 			ModelAdapter adapter = adapters.get(clazz);
@@ -31,9 +38,25 @@ public class ModelAdapter {
 				synchronized(adapters) {
 					adapter = adapters.get(clazz);
 					if(adapter == null) {
-						adapter = new ModelAdapter(clazz);
-						adapter.init();
-						adapters.put(clazz, adapter);
+						 // support cases where the given class is a subclass of the actual model class (mock and spy especially)
+						Class<? extends Model> modelClass = clazz;
+						while(modelClass.getAnnotation(ModelDescription.class) == null && modelClass != Model.class) {
+							modelClass = modelClass.getSuperclass().asSubclass(Model.class);
+						}
+						if(modelClass == clazz) { // the simple case
+							adapter = createAdapter(modelClass);
+						} else {
+							adapter = adapters.get(modelClass); // the actual model class may have been adapted earlier - check for it
+							if(adapter == null) {
+								adapter = createAdapter(modelClass);
+							}
+							// save for all subclasses of the model class, so we don't have to do this again... leak?
+							Class<? extends Model> c = clazz;
+							while(c != modelClass) {
+								adapters.put(c, adapter);
+								c = c.getSuperclass().asSubclass(Model.class);
+							}
+						}
 					}
 				}
 			}
@@ -71,7 +94,7 @@ public class ModelAdapter {
 		this.modelFields = new HashSet<String>();
 		this.virtualFields = new HashSet<String>();
 		this.attribute = new HashMap<String, Attribute>();
-	} 
+	}
 
 	public Set<String> getAttributeFields() {
 		return attribute.keySet();
@@ -387,41 +410,27 @@ public class ModelAdapter {
 	public boolean isManyToNone(String field) {
 		Relation relation = hasMany.get(field);
 		if(relation != null) {
-			return relation.opposite() == null;
+			return blank(relation.opposite());
 		}
 		return false;
 	}
 	
 	public boolean isManyToOne(String field) {
-		Relation relation = hasMany.get(field);
-		if(relation != null) {
-			String opposite = relation.opposite();
-			if(opposite != null) {
-				ModelDescription md = relation.type().getAnnotation(ModelDescription.class);
-				if(md != null) {
-					for(Relation r : md.hasOne()) {
-						if(r.name().equals(opposite)) {
-							if(r.type().isAssignableFrom(this.clazz) && r.opposite().equals(field)) {
-								return true;
-							} else {
-								return false;
-							}
-						}
-					}
-				}
-			}
-		}
-		return false;
+		return isThisOpposite(hasMany, field);
+	}
+	
+	public boolean isOneToMany(String field) {
+		return isThisOpposite(hasOne, field);
 	}
 	
 	public boolean isOneToNone(String field) {
 		Relation relation = hasOne.get(field);
 		if(relation != null) {
-			return relation.opposite() == null;
+			return blank(relation.opposite());
 		}
 		return false;
 	}
-
+	
 	public boolean isOppositeRequired(String field) {
 		Relation relation = hasMany.get(field);
 		if(relation == null) {
@@ -459,7 +468,7 @@ public class ModelAdapter {
 		}
 		return ModelDescription.ID.equals(field);
 	}
-	
+
 	public boolean isRequired(String field) {
 		if(attribute.containsKey(field)) {
 			ModelDescription description = clazz.getAnnotation(ModelDescription.class);
@@ -477,6 +486,28 @@ public class ModelAdapter {
 			return hasOne.get(field).required();
 		}
 		return field.equals("createdAt") || field.equals("createdOn") || field.equals("updatedAt") || field.equals("updatedOn");
+	}
+	
+	private boolean isThisOpposite(Map<String, Relation> map, String field) {
+		Relation relation = map.get(field);
+		if(relation != null) {
+			String opposite = relation.opposite();
+			if(opposite != null) {
+				ModelDescription md = relation.type().getAnnotation(ModelDescription.class);
+				if(md != null) {
+					for(Relation r : md.hasOne()) {
+						if(r.name().equals(opposite)) {
+							if(r.type().isAssignableFrom(this.clazz) && r.opposite().equals(field)) {
+								return true;
+							} else {
+								return false;
+							}
+						}
+					}
+				}
+			}
+		}
+		return false;
 	}
 
 	public boolean isThrough(String field) {

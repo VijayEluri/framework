@@ -16,6 +16,7 @@ import static org.oobium.persist.migrate.defs.Column.TIMESTAMPS;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.columnName;
 import static org.oobium.utils.StringUtils.tableName;
+import static org.oobium.utils.StringUtils.underscored;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -135,34 +136,67 @@ public class ModelTable {
 		}
 	}
 	
-	private void addRelation(ModelRelation relation) {
-		// add the column
-		String name = columnName(relation.name);
-		String type = Integer.class.getCanonicalName();
-		Map<String, Object> options = new LinkedHashMap<String, Object>();
-		if(relation.required) {
-			options.put("required", true);
-		}
-		columns.add(new Column(type, name, options.isEmpty() ? null : options));
+	public void addRelation(ModelRelation relation) {
+		if(relation.hasMany) { // this is a 'hidden' key for the hasMany of the opposite model
+			// add the column
+			String column = "mk_" + underscored(relation.model.getSimpleType()) + "__" + columnName(relation.name);
+			String type = Integer.class.getCanonicalName();
+			columns.add(new Column(type, column, null));
+	
+			// add the foreign key
+			String reference = tableName(relation.model.getSimpleType());
+			Map<String, Object> options = new LinkedHashMap<String, Object>();
+			String onDelete = getReferentialAction(relation.onDelete);
+			if(onDelete != null) {
+				sf.staticImports.add(Relation.class.getCanonicalName() + "." + onDelete);
+				options.put("onDelete", onDelete);
+			}
+			String onUpdate = getReferentialAction(relation.onUpdate);
+			if(onUpdate != null) {
+				sf.staticImports.add(Relation.class.getCanonicalName() + "." + onUpdate);
+				options.put("onUpdate", onUpdate);
+			}
+			foreignKeys.add(new ForeignKey(column, reference, options.isEmpty() ? null : options));
+	
+			// add the index
+			indexes.add(new Index(column, relation.isUnique()));
+		} else {
+			// don't add if 1:1 and this table is less than the opposite table
+			ModelRelation oppositeRelation = relation.getOpposite();
+			if(oppositeRelation != null && !oppositeRelation.hasMany) {
+				if(name.compareTo(tableName(oppositeRelation.model.type)) > 0) {
+					return;
+				}
+			}
+			
+			String column = columnName(relation.name);
 
-		// add the foreign key
-		String column = columnName(relation.name);
-		String reference = tableName(relation.getSimpleType());
-		options = new LinkedHashMap<String, Object>();
-		String onDelete = getReferentialAction(relation.onDelete);
-		if(onDelete != null) {
-			sf.staticImports.add(Relation.class.getCanonicalName() + "." + onDelete);
-			options.put("onDelete", onDelete);
+			// add the column
+			String type = Integer.class.getCanonicalName();
+			Map<String, Object> options = new LinkedHashMap<String, Object>();
+			if(relation.required) {
+				options.put("required", true);
+			}
+			columns.add(new Column(type, column, options.isEmpty() ? null : options));
+	
+			// add the foreign key
+			String reference = tableName(relation.getSimpleType());
+			options = new LinkedHashMap<String, Object>();
+			String onDelete = getReferentialAction(relation.onDelete);
+			if(onDelete != null) {
+				sf.staticImports.add(Relation.class.getCanonicalName() + "." + onDelete);
+				options.put("onDelete", onDelete);
+			}
+			String onUpdate = getReferentialAction(relation.onUpdate);
+			if(onUpdate != null) {
+				sf.staticImports.add(Relation.class.getCanonicalName() + "." + onUpdate);
+				options.put("onUpdate", onUpdate);
+			}
+			foreignKeys.add(new ForeignKey(column, reference, options.isEmpty() ? null : options));
+	
+			// add the index
+			indexes.add(new Index(column, relation.isUnique()));
 		}
-		String onUpdate = getReferentialAction(relation.onUpdate);
-		if(onUpdate != null) {
-			sf.staticImports.add(Relation.class.getCanonicalName() + "." + onUpdate);
-			options.put("onUpdate", onUpdate);
-		}
-		foreignKeys.add(new ForeignKey(column, reference, options.isEmpty() ? null : options));
-
-		// add the index
-		indexes.add(new Index(column, relation.isUnique()));
 	}
 
 	public boolean hasForeignKey() {

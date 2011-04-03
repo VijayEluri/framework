@@ -52,7 +52,12 @@ public class Column {
 
 	@Override
 	public String toString() {
-		return name + "<" + type + ">" + " " + options;
+		StringBuilder sb = new StringBuilder();
+		sb.append(name).append('<').append(type).append('>');
+		if(options != null && options.hasAny()) {
+			sb.append(' ').append(options);
+		}
+		return sb.toString();
 	}
 	
 }

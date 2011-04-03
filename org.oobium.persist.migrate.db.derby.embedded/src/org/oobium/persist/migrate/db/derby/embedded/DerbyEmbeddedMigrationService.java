@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.oobium.logging.Logger;
 import org.oobium.persist.migrate.db.DbMigrationService;
 import org.oobium.persist.migrate.defs.Table;
 import org.oobium.utils.SqlUtils;
@@ -32,11 +33,16 @@ public class DerbyEmbeddedMigrationService extends DbMigrationService {
 		sqlTypes.put("timestamp", 	"TIMESTAMP");
 	}
 	
+	public DerbyEmbeddedMigrationService() {
+		super();
+	}
+	
+	public DerbyEmbeddedMigrationService(Logger logger) {
+		super(logger);
+	}
+	
 	@Override
 	public void dropAll() {
-		
-//		TODO can't we just delete the files? (this is an embedded db)
-		
 		logger.info("dropping all tables...");
 		
 		String sql = "select t.tablename, c.constraintname" + " from sys.sysconstraints c, sys.systables t"

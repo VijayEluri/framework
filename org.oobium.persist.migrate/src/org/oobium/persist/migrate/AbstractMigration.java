@@ -1,5 +1,7 @@
 package org.oobium.persist.migrate;
 
+import static org.oobium.utils.StringUtils.*;
+
 import static org.oobium.persist.migrate.defs.Column.*;
 import static org.oobium.persist.migrate.defs.Column.BOOLEAN;
 import static org.oobium.persist.migrate.defs.Column.DATE;
@@ -29,7 +31,6 @@ import org.oobium.persist.migrate.defs.changes.RemoveForeignKey;
 import org.oobium.persist.migrate.defs.changes.RemoveIndex;
 import org.oobium.persist.migrate.defs.changes.Rename;
 import org.oobium.persist.migrate.defs.columns.ForeignKey;
-import org.oobium.utils.StringUtils;
 
 public abstract class AbstractMigration implements Migration {
 
@@ -227,19 +228,23 @@ public abstract class AbstractMigration implements Migration {
 	}
 
     public void createJoinTable(String table1, String column1, String table2, String column2) throws SQLException {
-		String name = StringUtils.tableName(table1, column1, table2, column2);
-		String[] columns = StringUtils.columnNames(table1, column1, table2, column2);
-		String[] references = StringUtils.tableNames(table1, table2);
+		String name = tableName(table1, column1, table2, column2);
+//		String[] columns = columnNames(table1, column1, table2, column2);
+		String[] references = tableNames(table1, table2);
 
 		Table table = new Table(getService(), name, null);
 		table.setPrimaryKey(false);
-		table.add(ForeignKey(columns[0], references[1]));
-		table.add(ForeignKey(columns[1], references[0]));
-		table.add(Index(columns[0]));
-		table.add(Index(columns[1]));
+		table.add(ForeignKey("a", references[1]));
+		table.add(ForeignKey("b", references[0]));
+		table.add(Index("a"));
+		table.add(Index("b"));
 		table.create();
 	}
 
+    public void createJoinTable(Table table1, String column1, Table table2, String column2) throws SQLException {
+    	createJoinTable(table1.name, column1, table2.name, column2);
+    }
+    
     public Table createTable(String name, Column...elements) throws SQLException {
 		return createTable(name, null, elements);
 	}

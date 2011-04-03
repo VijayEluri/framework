@@ -40,6 +40,7 @@ import java.util.TreeMap;
 import org.oobium.logging.Logger;
 import org.oobium.logging.LogProvider;
 import org.oobium.utils.json.JsonModel;
+import org.oobium.utils.json.JsonUtils;
 
 public class SqlUtils {
 
@@ -538,9 +539,11 @@ public class SqlUtils {
 		if(Integer.class == clazz || int.class == clazz) {
 			return Types.INTEGER;
 		}
-		if(Map.class.isAssignableFrom(clazz) || JsonModel.class.isAssignableFrom(clazz)) {
-			// will use the id field in setObject
-			return Types.INTEGER;
+		if(JsonModel.class.isAssignableFrom(clazz)) {
+			return Types.INTEGER; // will use the id field in setObject
+		}
+		if(Map.class.isAssignableFrom(clazz)) {
+			return Types.VARCHAR; // Map attributes are stored as JSON strings
 		}
 		if(Long.class == clazz || long.class == clazz) {
 			return Types.BIGINT;
@@ -700,7 +703,10 @@ public class SqlUtils {
 			if(type == Types.TIMESTAMP && object instanceof Date) {
 				Timestamp ts = new Timestamp(((Date) object).getTime());
 				ps.setObject(index, ts, type);
+			} else if(type == Types.VARCHAR && object instanceof Map) {
+				ps.setObject(index, JsonUtils.toJson((Map<?,?>) object), type);
 			} else if(type == Types.INTEGER && object instanceof Map) {
+				// when would this ever be true?
 				Map<?,?> map = (Map<?,?>) object;
 				Object id = map.get("id");
 				if(id instanceof Number) {

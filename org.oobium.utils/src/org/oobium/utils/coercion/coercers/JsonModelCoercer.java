@@ -13,6 +13,7 @@ package org.oobium.utils.coercion.coercers;
 import java.lang.reflect.Method;
 import java.util.Map;
 
+import org.oobium.logging.LogProvider;
 import org.oobium.utils.json.JsonModel;
 
 public class JsonModelCoercer extends AbstractCoercer {
@@ -52,6 +53,7 @@ public class JsonModelCoercer extends AbstractCoercer {
 			method.invoke(model, id);
 			return model;
 		} catch(Exception e) {
+			LogProvider.getLogger().warn(e.getClass().getSimpleName() + ": " + e.getMessage());
 			return null;
 		}
 	}

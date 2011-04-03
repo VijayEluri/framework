@@ -16,6 +16,7 @@ import static org.oobium.utils.CharStreamUtils.findAll;
 import static org.oobium.utils.CharStreamUtils.findEOL;
 import static org.oobium.utils.FileUtils.readFile;
 import static org.oobium.utils.StringUtils.controllerSimpleName;
+import static org.oobium.utils.StringUtils.simpleName;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -68,6 +69,9 @@ public class ModelDefinition {
 			case '[':
 			case '"':
 				s = closer(ca, s, end, true) + 1;
+				if(s == 0) {
+					s = end;
+				}
 				break;
 			case '/':
 				if(ca[s-1] == '/') { // line comment
@@ -91,7 +95,7 @@ public class ModelDefinition {
 			}
 		}
 
-		if(end > s1) {
+		if(end >= s1) {
 			String value = new String(ca, s1, end-s1).trim();
 			if(value.length() > 0) {
 				args.add(value);
@@ -127,6 +131,9 @@ public class ModelDefinition {
 			case '[':
 			case '"':
 				s = closer(ca, s, end, true) + 1;
+				if(s == 0) {
+					s = end;
+				}
 				break;
 			case '/':
 				if(ca[s-1] == '/') { // line comment
@@ -192,7 +199,7 @@ public class ModelDefinition {
 		return in;
 	}
 
-	public final File file;
+	public File file; // TODO this file object will no work when we need to deal with jars...
 	private final String source;
 
 	public final String packageName;
@@ -202,13 +209,21 @@ public class ModelDefinition {
 	public final List<String> indexes;
 	public final boolean datestamps;
 	public final boolean timestamps;
-	
+
+	public String[] siblings;
+
 	public ModelDefinition(File file) {
+		this(file.getName(), readFile(file).toString(), null);
 		this.file = file;
-		this.source = readFile(file).toString();
+	}
+
+	public ModelDefinition(String simpleName, String source, String[] siblings) {
+		this.source = source;
 
 		this.packageName = parsePackageName();
-		this.type = parseType();
+		this.type = parseType(simpleName);
+
+		this.siblings = siblings;
 		
 		this.attributes = new LinkedHashMap<String, ModelAttribute>();
 		this.relations = new LinkedHashMap<String, ModelRelation>();
@@ -263,14 +278,17 @@ public class ModelDefinition {
 		return properties;
 	}
 
-	public String getSimpleType() {
-		int ix = type.lastIndexOf('.');
-		if(ix == -1) {
-			return type;
+	protected String[] getSiblings() {
+		if(siblings != null) {
+			return siblings;
 		}
-		return type.substring(ix+1);
+		return (file != null) ? file.getParentFile().list() : new String[0];
 	}
 	
+	public String getSimpleType() {
+		return simpleName(type);
+	}
+
 	String getType(String name) {
 		String type = null;
 		if(name.endsWith(".class")) name = name.substring(0, name.length() - 6);
@@ -296,16 +314,20 @@ public class ModelDefinition {
 				type = type.substring(0, type.lastIndexOf('.'));
 			}
 		} else {
-			String src = name + ".java";
-			String[] siblings = file.getParentFile().list();
-			for(String sibling : siblings) {
-				if(src.equals(sibling)) {
-					type = packageName + "." + name;
-					break;
+			if("String".equals(name)) {
+				type = "java.lang.String";
+			} else {
+				String src = name + ".java"; // TODO will be ".class" if this is in a jar
+				String[] siblings = getSiblings();
+				for(String sibling : siblings) {
+					if(src.equals(sibling)) {
+						type = (packageName != null) ? (packageName + "." + name) : name;
+						break;
+					}
 				}
-			}
-			if(type == null) {
-				type = "java.lang." + name;
+				if(type == null) {
+					type = "java.lang." + name;
+				}
 			}
 		}
 		if(array) {
@@ -408,10 +430,15 @@ public class ModelDefinition {
 		}
 	}
 
-	private String parseType() {
-		String name = file.getName();
-		name = name.substring(0, name.length() - 5);
-		return packageName + "." + name;
+	private String parseType(String name) {
+		int ix = name.indexOf('.');
+		if(ix != -1) {
+			name = name.substring(0, ix);
+		}
+		if(packageName != null) {
+			return packageName + "." + name;
+		}
+		return name;
 	}
 
 	public Map<String, ModelRelation> relations() {
@@ -426,7 +453,7 @@ public class ModelDefinition {
 	
 	@Override
 	public String toString() {
-		return super.toString()+" {"+type+" => "+"}";
+		return type + " => {" + "}";
 	}
 
 }

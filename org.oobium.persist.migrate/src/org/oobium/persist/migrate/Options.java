@@ -22,14 +22,6 @@ public class Options {
 		return (T) ((option != null) ? option : defaultValue);
 	}
 	
-	public boolean has(String key) {
-		return options != null && options.containsKey(key);
-	}
-	
-	public boolean hasAny() {
-		return options != null && !options.isEmpty();
-	}
-
 	public Set<String> getKeys() {
 		return options.keySet();
 	}
@@ -39,6 +31,18 @@ public class Options {
 			return new HashMap<String, Object>(options);
 		}
 		return new HashMap<String, Object>(0);
+	}
+	
+	public boolean has(String key) {
+		return options != null && options.containsKey(key);
+	}
+
+	public boolean hasAny() {
+		return options != null && !options.isEmpty();
+	}
+	
+	public boolean isEmpty() {
+		return options == null || options.isEmpty();
 	}
 	
 	public int size() {

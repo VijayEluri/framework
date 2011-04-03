@@ -24,6 +24,7 @@ import static org.oobium.persist.migrate.defs.Column.TEXT;
 import static org.oobium.persist.migrate.defs.Column.TIME;
 import static org.oobium.persist.migrate.defs.Column.TIMESTAMP;
 import static org.oobium.persist.migrate.defs.Column.TIMESTAMPS;
+import static org.oobium.utils.StringUtils.columnName;
 import static org.oobium.utils.StringUtils.varName;
 
 import java.io.File;
@@ -33,8 +34,10 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import org.oobium.build.gen.migration.JoinTable;
@@ -42,7 +45,6 @@ import org.oobium.build.gen.migration.ModelTable;
 import org.oobium.build.model.ModelDefinition;
 import org.oobium.build.model.ModelRelation;
 import org.oobium.build.util.SourceFile;
-import org.oobium.build.workspace.Module;
 import org.oobium.persist.Binary;
 import org.oobium.persist.Text;
 import org.oobium.persist.migrate.AbstractMigration;
@@ -79,6 +81,10 @@ public class DbGenerator {
 		migrationTypes.put(BigDecimal.class.getCanonicalName(),		DECIMAL);
 	}
 	
+	public static String generate(String moduleName, ModelDefinition[] models) {
+		return new DbGenerator(moduleName, models).generate().getSource();
+	}
+	
 	/**
 	 * convert a Java type into a method
 	 */
@@ -90,31 +96,93 @@ public class DbGenerator {
 		return "String";
 	}
 	
-	public static String generate(Module module, ModelDefinition[] models) {
+	
+	private final String packageName;
+	private final String simpleName;
+	private ModelDefinition[] models;
+	private boolean isAbstract;
+
+	private String source;
+	
+	public DbGenerator(String moduleName, ModelDefinition[] models) {
+		this.packageName = moduleName.replace(File.separatorChar, '.') + ".migrator.migrations";
+		this.simpleName = "AbstractCreateDatabase";
+		this.models = models;
+		this.isAbstract = true;
+	}
+
+	public DbGenerator(String packageName, String simpleName, ModelDefinition[] models) {
+		this.packageName = packageName;
+		this.simpleName = simpleName;
+		this.models = models;
+		this.isAbstract = false;
+	}
+	
+	private void appendOptions(SourceFile sf, StringBuilder sb, Options options) {
+		sf.staticImports.add(literal.class.getCanonicalName() + ".Map");
+		sb.append(", Map(");
+		if(options.size() == 1) {
+			String key = options.getKeys().iterator().next();
+			sb.append("\"").append(key).append("\", ").append(options.get(key)).append(')');
+		} else {
+			sf.staticImports.add(literal.class.getCanonicalName() + ".e");
+			for(Iterator<String> iter = options.getKeys().iterator(); iter.hasNext(); ) {
+				String key = iter.next();
+				sb.append("\n\t\t\t\te(\"").append(key).append("\", ").append(options.get(key)).append(')');
+				if(iter.hasNext()) sb.append(", ");
+			}
+			sb.append("\n\t\t\t)");
+		}
+	}
+
+	public DbGenerator generate() {
 		SourceFile sf = new SourceFile();
-		
+
+		for(ModelDefinition model : models) {
+			model.setOpposites(models);
+		}
+
 		Map<String, ModelTable> tables = new TreeMap<String, ModelTable>();
 		Map<String, JoinTable> joins = new TreeMap<String, JoinTable>();
+		Set<ModelTable> joinedModels = new HashSet<ModelTable>();
 		
 		for(ModelDefinition model : models) {
 			tables.put(model.getSimpleType(), new ModelTable(sf, model, models));
+		}
+		
+		for(ModelDefinition model : models) {
+			for(ModelRelation relation : model.relations.values()) {
+				if(relation.hasMany && !relation.isThrough()) {
+					ModelRelation oppositeRelation = relation.getOpposite();
+					if(oppositeRelation == null) {
+						ModelTable oppositeTable = tables.get(relation.getSimpleType());
+						oppositeTable.addRelation(relation);
+					}
+				}
+			}
 		}
 
 		for(ModelDefinition model : models) {
 			for(ModelRelation relation : model.relations.values()) {
 				if(relation.hasMany && !relation.isThrough()) {
 					ModelRelation oppositeRelation = relation.getOpposite();
-					if(oppositeRelation == null || oppositeRelation.hasMany) {
-						JoinTable joinTable = new JoinTable(relation, oppositeRelation);
-						joins.put(joinTable.name, joinTable);
+					if(oppositeRelation != null && oppositeRelation.hasMany) {
+						ModelTable table1 = tables.get(model.getSimpleType());
+						ModelTable table2 = tables.get(oppositeRelation.model.getSimpleType());
+						JoinTable joinTable = new JoinTable(varName(table1.name), columnName(relation.name), varName(table2.name), columnName(oppositeRelation.name));
+						if(!joins.containsKey(joinTable.name)) {
+							joins.put(joinTable.name, joinTable);
+							joinedModels.add(table1);
+							joinedModels.add(table2);
+						}
 					}
 				}
 			}
 		}
 
-		sf.isAbstract = true;
-		sf.packageName = module.name.replace(File.separatorChar, '.') + ".migrator.migrations";
-		sf.simpleName = "AbstractCreateDatabase";
+		sf.isAbstract = isAbstract;
+		sf.packageName = packageName;
+		sf.simpleName = simpleName;
 		sf.superName = AbstractMigration.class.getSimpleName();
 		sf.imports.add(AbstractMigration.class.getCanonicalName());
 		sf.imports.add(Map.class.getCanonicalName());
@@ -122,8 +190,12 @@ public class DbGenerator {
 		sf.imports.add(SQLException.class.getCanonicalName());
 
 		sf.variables.put("tableOptions", "private Map<String, Map<String, Object>> tableOptions");
-		sf.constructors.put(0, "\tpublic AbstractCreateDatabase() {\n\t\ttableOptions = new HashMap<String, Map<String,Object>>();\n\t}");
+		sf.constructors.put(0, "\tpublic " + simpleName + "() {\n\t\ttableOptions = new HashMap<String, Map<String,Object>>();\n\t}");
 		sf.methods.put("1", "\tprotected void setOptions(String table, Map<String, Object> options) {\n\t\ttableOptions.put(table, options);\n\t}");
+
+		if(!isAbstract) {
+			sf.methods.put("3", "\t@Override\n\tpublic void down() throws SQLException {\n\t\tdropDatabase();\n\t}");
+		}
 		
 		StringBuilder sb = new StringBuilder();
 		sb.append("\t@Override\n\tpublic void up() throws SQLException {");
@@ -131,31 +203,36 @@ public class DbGenerator {
 		for(ModelTable table : tables.values()) {
 			sb.append('\n');
 			String var = varName(table.name);
-			if(table.hasForeignKey() || table.hasIndex()) {
+			if(table.hasForeignKey() || table.hasIndex() || joinedModels.contains(table)) {
 				sf.imports.add(Table.class.getCanonicalName());
-				sb.append("\t\tTable ").append(var).append(" = createTable(\"").append(table.name).append("\", tableOptions.get(\"").append(table.name).append("\"),\n");
+				sb.append("\t\tTable ").append(var).append(" = createTable(\"").append(table.name).append("\", tableOptions.get(\"").append(table.name).append("\")");
 			} else {
-				sb.append("\t\tcreateTable(\"").append(table.name).append("\", tableOptions.get(\"").append(table.name).append("\"),\n");
+				sb.append("\t\tcreateTable(\"").append(table.name).append("\", tableOptions.get(\"").append(table.name).append("\")");
 			}
-			for(Iterator<Column> iter = table.columns.iterator(); iter.hasNext(); ) {
-				Column column = iter.next();
-				if(DATESTAMPS.equals(column.name)) {
-					sb.append("\t\t\tDatestamps(");
-				} else if(TIMESTAMPS.equals(column.name)) {
-					sb.append("\t\t\tTimestamps(");
-				} else {
-					sb.append("\t\t\t").append(getMethod(column.type)).append("(\"").append(column.name).append("\"");
-					if(column.options.hasAny()) {
-						appendOptions(sf, sb, column.options);
+			if(table.columns.isEmpty()) {
+				sb.append(");\n");
+			} else {
+				sb.append(",\n");
+				for(Iterator<Column> iter = table.columns.iterator(); iter.hasNext(); ) {
+					Column column = iter.next();
+					if(DATESTAMPS.equals(column.name)) {
+						sb.append("\t\t\tDatestamps(");
+					} else if(TIMESTAMPS.equals(column.name)) {
+						sb.append("\t\t\tTimestamps(");
+					} else {
+						sb.append("\t\t\t").append(getMethod(column.type)).append("(\"").append(column.name).append("\"");
+						if(column.options.hasAny()) {
+							appendOptions(sf, sb, column.options);
+						}
+					}
+					if(iter.hasNext()) {
+						sb.append("),\n");
+					} else {
+						sb.append(")\n");
 					}
 				}
-				if(iter.hasNext()) {
-					sb.append("),\n");
-				} else {
-					sb.append(")\n");
-				}
+				sb.append("\t\t);\n");
 			}
-			sb.append("\t\t);\n");
 			if(table.hasIndex()) {
 				for(Index index : table.indexes) {
 					if(index.unique) {
@@ -178,9 +255,9 @@ public class DbGenerator {
 		if(!joins.isEmpty()) {
 			sb.append('\n');
 			for(JoinTable join : joins.values()) {
-				sb.append("\t\tcreateJoinTable(\"");
-				sb.append(join.table1).append("\", \"").append(join.column1).append("\", \"");
-				sb.append(join.table2).append("\", \"").append(join.column2).append("\");\n");
+				sb.append("\t\tcreateJoinTable(");
+				sb.append(join.tableVar1).append(", \"").append(join.column1).append("\", ");
+				sb.append(join.tableVar2).append(", \"").append(join.column2).append("\");\n");
 			}
 		}
 		
@@ -203,24 +280,32 @@ public class DbGenerator {
 		sb.append("\t}");
 		sf.methods.put("2", sb.toString());
 		
-		return sf.toSource();
+		source = sf.toSource();
+		
+		return this;
 	}
-
-	private static void appendOptions(SourceFile sf, StringBuilder sb, Options options) {
-		sf.staticImports.add(literal.class.getCanonicalName() + ".Map");
-		sb.append(", Map(");
-		if(options.size() == 1) {
-			String key = options.getKeys().iterator().next();
-			sb.append("\"").append(key).append("\", ").append(options.get(key)).append(')');
-		} else {
-			sf.staticImports.add(literal.class.getCanonicalName() + ".e");
-			for(Iterator<String> iter = options.getKeys().iterator(); iter.hasNext(); ) {
-				String key = iter.next();
-				sb.append("\n\t\t\t\te(\"").append(key).append("\", ").append(options.get(key)).append(')');
-				if(iter.hasNext()) sb.append(", ");
-			}
-			sb.append("\n\t\t\t)");
+	
+	public String getFullName() {
+		if(packageName != null) {
+			return packageName + "." + simpleName;
 		}
+		return simpleName;
+	}
+	
+	public String getPackageName() {
+		return packageName;
+	}
+	
+	public String getSimpleName() {
+		return simpleName;
+	}
+	
+	public String getSource() {
+		return source;
+	}
+	
+	public boolean isAbstract() {
+		return isAbstract;
 	}
 	
 }

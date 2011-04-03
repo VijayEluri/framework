@@ -10,8 +10,10 @@
  ******************************************************************************/
 package org.oobium.utils.coercion.coercers;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -28,6 +30,14 @@ public class CollectionCoercer extends AbstractCoercer {
 		}
 		if(o instanceof Collection) {
 			return coerce((Collection<?>) o, toType);
+		}
+		if(o != null && o.getClass().isArray()) {
+			int length = Array.getLength(o);
+			List<Object> list = new ArrayList<Object>();
+			for(int i = 0; i < length; i++) {
+				list.add(Array.get(o, i));
+			}
+			return coerce(list, toType);
 		}
 		throw new IllegalArgumentException();
 	}

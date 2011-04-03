@@ -252,12 +252,8 @@ public class ModelGenerator {
 			defs[i] = new ModelDefinition(models.get(i));
 		}
 		
-		for(ModelDefinition def : defs) {
-			def.setOpposites(defs);
-		}
-
 		File schema = app.getSchema();
-		String src = DbGenerator.generate(app, defs);
+		String src = DbGenerator.generate(app.name, defs);
 		
 		return writeFile(schema, src);
 	}

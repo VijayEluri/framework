@@ -357,9 +357,10 @@ public abstract class Model implements JsonModel {
 					Observer.runBeforeDestroy(this);
 					if(!hasErrors()) {
 						try {
+							destroyDependents(true);
 							getPersistor().destroy(this);
+							destroyDependents(false);
 							id = 0;
-							destroyDependents();
 							fields.clear();
 							Observer.runAfterDestroy(this);
 						} catch(SQLException e) {
@@ -376,20 +377,47 @@ public abstract class Model implements JsonModel {
 		return false;
 	}
 
-	private void destroyDependents() {
+	private void destroy(String field) {
+		Object o = get(field);
+		if(o instanceof Model) {
+			Model related = (Model) o;
+			if(related != null && !related.isNew()) {
+				related.destroy();
+			}
+		} else if(o instanceof Collection) {
+			Collection<?> collection = (Collection<?>) o;
+			for(Object model : collection) {
+				Model related = (Model) model;
+				if(related != null && !related.isNew()) {
+					related.destroy();
+				}
+			}
+		}
+	}
+	
+	private void destroyDependents(boolean beforeDestroy) {
 		ModelAdapter adapter = ModelAdapter.getAdapter(this);
-		for(String field : adapter.getRelations()) {
-			Relation relation = adapter.getRelation(field);
-			if(relation.dependent() == Relation.DESTROY) {
-				if(adapter.hasOne(field)) {
-					Model related = (Model) get(field);
-					if(related != null) {
-						related.destroy();
+		if(beforeDestroy) {
+			for(String field : adapter.getHasManyFields()) {
+				if(!adapter.isManyToMany(field)) {
+					Relation relation = adapter.getRelation(field);
+					if(relation.dependent() == Relation.DESTROY) {
+						destroy(field);
 					}
-				} else {
-					Collection<?> related = (Collection<?>) get(field);
-					for(Object o : related) {
-						((Model) o).destroy();
+				}
+			}
+		} else {
+			for(String field : adapter.getHasOneFields()) {
+				Relation relation = adapter.getRelation(field);
+				if(relation.dependent() == Relation.DESTROY) {
+					destroy(field);
+				}
+			}
+			for(String field : adapter.getHasManyFields()) {
+				if(adapter.isManyToMany(field)) {
+					Relation relation = adapter.getRelation(field);
+					if(relation.dependent() == Relation.DESTROY) {
+						destroy(field);
 					}
 				}
 			}
@@ -1261,13 +1289,25 @@ public abstract class Model implements JsonModel {
 				fields.put(field, set);
 				return set;
 			} else {
-				return coerce(models, type);
+				Object o = coerce(models, type);
+				fields.put(field, o);
+				return o;
 			}
 		} else {
 			Object coercedValue = coerce(value, type);
 			if(Model.class.isAssignableFrom(type)) {
 				String opposite = getOpposite(field);
-				if(getAdapter(type.asSubclass(Model.class)).hasMany(opposite)) {
+				ModelAdapter adapter = getAdapter(type.asSubclass(Model.class));
+				if(adapter.hasOne(opposite)) {
+					Model newModel = (Model) coercedValue;
+					if(newModel != null) {
+						newModel.put(opposite, this);
+					}
+					Model oldModel = (Model) coerce(fields.get(field), type);
+					if(oldModel != null) {
+						oldModel.put(opposite, null);
+					}
+				} else if(adapter.hasMany(opposite)) {
 					Model newModel = (Model) coercedValue;
 					Model oldModel = (Model) coerce(fields.get(field), type);
 					if(oldModel != null && !oldModel.equals(newModel)) {

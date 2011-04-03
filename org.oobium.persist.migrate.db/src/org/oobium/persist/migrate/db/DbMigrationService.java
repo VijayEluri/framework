@@ -20,9 +20,11 @@ import static org.oobium.utils.StringUtils.join;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.oobium.logging.Logger;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.db.DbPersistService;
 import org.oobium.persist.migrate.AbstractMigrationService;
@@ -43,6 +45,14 @@ import org.oobium.persist.migrate.defs.columns.PrimaryKey;
 public abstract class DbMigrationService extends AbstractMigrationService {
 
 	protected DbPersistService persistor;
+
+	public DbMigrationService() {
+		super();
+	}
+	
+	public DbMigrationService(Logger logger) {
+		super(logger);
+	}
 
 	public void addColumn(Table table, AddColumn change) throws SQLException {
 		long start = -1;
@@ -324,20 +334,25 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 	protected abstract String getCreateTableOptionsSql(Table table);
 	
 	protected String getCreateTableSql(Table table) {
+		List<Column> columns = table.getColumns();
+		String options = getCreateTableOptionsSql(table);
+
 		StringBuilder sb = new StringBuilder();
 		sb.append("CREATE TABLE ").append(getSqlSafe(table.name)).append('(');
 		if(table.hasPrimaryKey()) {
 			sb.append(getCreatePrimaryKeySql(table.getPrimaryKey()));
+			if(!columns.isEmpty() || options != null) sb.append(',');
 		}
-		for(Column column : table.getColumns()) {
-			sb.append(',');
+		for(Iterator<Column> iter = columns.iterator(); iter.hasNext(); ) {
+			Column column = iter.next();
 			switch(column.ctype) {
 			case Column:	 sb.append(getColumnDefinitionSql(column));	break;
 			case ForeignKey: sb.append(getCreateForeignKeyColumnSql((ForeignKey) column)); break;
 			}
+			if(iter.hasNext()) sb.append(',');
 		}
-		String options = getCreateTableOptionsSql(table);
 		if(options != null) {
+			if(!columns.isEmpty()) sb.append(',');
 			sb.append(options);
 		}
 		sb.append(")");

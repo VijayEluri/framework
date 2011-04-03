@@ -17,19 +17,24 @@ public class ForeignKey extends Column {
 	public final String reference;
 
 	public ForeignKey(String column, String reference, Map<String , ? extends Object> options) {
-		super(ColumnType.ForeignKey, "integer", null, options);
+		super(ColumnType.ForeignKey, INTEGER, null, options);
 		this.column = column;
 		this.reference = reference;
 	}
 	
 	private ForeignKey(String name, ForeignKey fk) {
-		super(ColumnType.ForeignKey, "integer", name, (fk.options != null) ? fk.options.getMap() : null);
+		super(ColumnType.ForeignKey, INTEGER, name, (fk.options != null) ? fk.options.getMap() : null);
 		this.column = fk.column;
 		this.reference = fk.reference;
 	}
 	
 	public ForeignKey withName(String name) {
 		return new ForeignKey(name, this);
+	}
+	
+	@Override
+	public String toString() {
+		return column + " -> " + reference + "(id)";
 	}
 	
 }

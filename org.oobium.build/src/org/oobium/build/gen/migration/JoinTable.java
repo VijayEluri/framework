@@ -10,25 +10,24 @@
  ******************************************************************************/
 package org.oobium.build.gen.migration;
 
-import org.oobium.build.model.ModelRelation;
 import org.oobium.utils.StringUtils;
 
 public class JoinTable {
 
 	public final String name;
 	
-	public final String table1;
+	public final String tableVar1;
 	public final String column1;
-	public final String table2;
+	public final String tableVar2;
 	public final String column2;
 
-	public JoinTable(ModelRelation relation1, ModelRelation relation2) {
-		table1 = relation1.model.getSimpleType();
-		column1 = relation1.name;
-		table2 = relation1.getSimpleType();
-		column2 = (relation2 != null) ? relation2.name : "null";
+	public JoinTable(String tableVar1, String column1, String tableVar2, String column2) {
+		this.tableVar1 = tableVar1;
+		this.column1 = column1;
+		this.tableVar2 = tableVar2;
+		this.column2 = column2;
 		
-		name = StringUtils.tableName(table1, column1, table2, column2);
+		name = StringUtils.tableName(tableVar1, column1, tableVar2, column2);
 	}
 
 }

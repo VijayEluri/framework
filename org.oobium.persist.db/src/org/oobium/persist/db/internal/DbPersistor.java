@@ -28,6 +28,7 @@ import static org.oobium.utils.SqlUtils.safeSqlWord;
 import static org.oobium.utils.SqlUtils.setObject;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.columnName;
+import static org.oobium.utils.StringUtils.joinColumn;
 import static org.oobium.utils.StringUtils.tableName;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 
@@ -47,8 +48,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.oobium.logging.Logger;
 import org.oobium.logging.LogProvider;
+import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
 import org.oobium.persist.Relation;
@@ -330,35 +331,38 @@ public class DbPersistor {
 			logger.debug("start doDestroy " + model.asSimpleString());
 		}
 
-//		Class<? extends Model> clazz = model.getClass();
-//		ModelAdapter adapter = ModelAdapter.getAdapter(clazz);
-//		for(String field : adapter.getHasManys()) {
-//			if(!adapter.isManyToOne(field) && !adapter.isThrough(field)) {
-//				Class<?> dClazz = adapter.getHasManyClass(field);
-//				String dField = adapter.getOpposite(field);
-//				String column = columnName(clazz, field);
-//				String dColumn = columnName(dClazz, dField);
-//				String table = tableName(column, dColumn);
-//	
-//				String sql = "DELETE FROM " + table + " WHERE " + dColumn + "=" + model.getId();
-//				logger.trace(sql);
-//				
-//				System.out.println(sql);
-//	
-//				Statement s = null;
-//				try {
-//					s = connection.createStatement();
-//					s.executeUpdate(sql);
-//				} finally {
-//					s.close();
-//				}
-//			}
-//		}
-		
-		StringBuilder sb = new StringBuilder();
-		sb.append("DELETE FROM ").append(tableName(model)).append(" WHERE id=").append(model.getId());
+		ModelAdapter adapter = ModelAdapter.getAdapter(model);
+		for(String field : adapter.getHasManyFields()) {
+			if(adapter.isManyToMany(field)) {
+				String table1 = tableName(adapter.getModelClass());
+				String column1 = columnName(field);
+				String table2 = tableName(adapter.getHasManyMemberClass(field));
+				String column2 = columnName(adapter.getOpposite(field));
+				
+				String table = tableName(table1, column1, table2, column2);
+				String column = joinColumn(table1, column1, table2, column2);
 
-		String sql = sb.toString();
+				String sql = "DELETE FROM " + table + " WHERE " + column + "=" + model.getId();
+				logger.trace(sql);
+	
+				Statement s = null;
+				try {
+					s = connection.createStatement();
+					s.executeUpdate(sql);
+				} finally {
+					if(s != null) {
+						try {
+							s.close();
+						} catch(SQLException e) {
+							// discard
+						}
+					}
+				}
+			}
+		}
+		
+		
+		String sql = "DELETE FROM " + tableName(adapter.getModelClass()) + " WHERE id=" + model.getId();
 		logger.trace(sql);
 
 		Statement s = null;
@@ -366,7 +370,13 @@ public class DbPersistor {
 			s = connection.createStatement();
 			s.executeUpdate(sql);
 		} finally {
-			s.close();
+			if(s != null) {
+				try {
+					s.close();
+				} catch(SQLException e) {
+					// discard
+				}
+			}
 		}
 
 		logger.debug("end doDestroy");

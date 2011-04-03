@@ -72,6 +72,33 @@ public class SingleConnectionManager {
         
         return connection;
     }
+	
+	public void dropDatabase() throws SQLException {
+		if(inMemory) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("jdbc:derby:memory:");
+			if(database.charAt(0) != File.separatorChar) {
+				sb.append(System.getProperty("user.dir")).append(File.separatorChar);
+			}
+			sb.append(database);
+			sb.append(";drop=true;user=\"session\";password=\"session\"");
+	
+			String dbURL = sb.toString();
+			if(logger.isLoggingDebug()) {
+				logger.debug("drop database connection: " + dbURL);
+			}
+
+			try {
+				DriverManager.getConnection(dbURL);
+			} catch(SQLException e) {
+				if(!e.getSQLState().equals("08006")) { // 08006 indicates success
+					throw e;
+				}
+			}
+		} else {
+			throw new UnsupportedOperationException();
+		}
+	}
 
 	public Connection getConnection() throws SQLException {
 		if(!hasConnection()) {
@@ -93,5 +120,9 @@ public class SingleConnectionManager {
 			return false;
 		}
     }
+	
+	public boolean inMemory() {
+		return inMemory;
+	}
 	
 }
