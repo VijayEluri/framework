@@ -398,6 +398,14 @@ public abstract class Model implements JsonModel {
 	private void destroyDependents(boolean beforeDestroy) {
 		ModelAdapter adapter = ModelAdapter.getAdapter(this);
 		if(beforeDestroy) {
+			for(String field : adapter.getHasOneFields()) {
+				Relation relation = adapter.getRelation(field);
+				if(relation.dependent() == Relation.DESTROY) {
+					if(adapter.isOneToOne(field) && !adapter.hasKey(field)) {
+						destroy(field);
+					}
+				}
+			}
 			for(String field : adapter.getHasManyFields()) {
 				if(!adapter.isManyToMany(field)) {
 					Relation relation = adapter.getRelation(field);
@@ -410,7 +418,9 @@ public abstract class Model implements JsonModel {
 			for(String field : adapter.getHasOneFields()) {
 				Relation relation = adapter.getRelation(field);
 				if(relation.dependent() == Relation.DESTROY) {
-					destroy(field);
+					if(!adapter.isOneToOne(field) || adapter.hasKey(field)) {
+						destroy(field);
+					}
 				}
 			}
 			for(String field : adapter.getHasManyFields()) {
@@ -502,7 +512,7 @@ public abstract class Model implements JsonModel {
 					return fields.get(field);
 				} else {
 					Object value = fields.get(field);
-					if(value == null || value.getClass() == type) { // TODO also check if correct type for primitive
+					if(value == null || type.isAssignableFrom(value.getClass())) { // TODO also check if correct type for primitive
 						return value;
 					}
 					return set(field, value, type);
@@ -560,6 +570,10 @@ public abstract class Model implements JsonModel {
 		return new HashMap<String, Object>(fields);
 	}
 
+	public String getError(int index) {
+		return getError(null, index);
+	}
+	
 	public String getError(String subject) {
 		return getError(subject, 0);
 	}
@@ -574,6 +588,10 @@ public abstract class Model implements JsonModel {
 		return null;
 	}
 	
+	/**
+	 * Get the number of errors.
+	 * @return the number of errors; never less than zero.
+	 */
 	public int getErrorCount() {
 		if(errors == null) {
 			return 0;
@@ -1277,7 +1295,8 @@ public abstract class Model implements JsonModel {
 			fields.put(field, value);
 			return value;
 		} else if(Collection.class.isAssignableFrom(type)) {
-			Class<? extends Model> mtype = getAdapter(this).getHasManyMemberClass(field);
+			ModelAdapter adapter = getAdapter(this);
+			Class<? extends Model> mtype = adapter.getHasManyMemberClass(field);
 			Model[] models = (Model[]) coerce(value, Array.newInstance(mtype, 0).getClass());
 			if(type == ActiveSet.class || type == RequiredSet.class) {
 				Set<Model> set;
@@ -1285,6 +1304,14 @@ public abstract class Model implements JsonModel {
 					set = new ActiveSet<Model>(this, field, getOpposite(field), isManyToMany(field), models);
 				} else {
 					set = new RequiredSet<Model>(this, field, getOpposite(field), models);
+				}
+				if(adapter.isManyToOne(field)) {
+					String opposite = adapter.getOpposite(field);
+					for(Model model : set) {
+						if(model.isNew()) {
+							model.put(opposite, this);
+						}
+					}
 				}
 				fields.put(field, set);
 				return set;
@@ -1443,7 +1470,7 @@ public abstract class Model implements JsonModel {
 	
 	private void validateDependents() {
 		ModelAdapter adapter = ModelAdapter.getAdapter(this);
-		for(String field : adapter.getRelations()) {
+		for(String field : adapter.getRelationFields()) {
 			Relation relation = adapter.getRelation(field);
 			if(relation.dependent() == Relation.DESTROY) {
 				if(adapter.hasOne(field)) {

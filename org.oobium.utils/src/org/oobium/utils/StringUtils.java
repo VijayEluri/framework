@@ -268,7 +268,27 @@ public class StringUtils {
 			return "a";
 		}
 	}
-	
+
+	public static String[] joinColumns(String table1, String column1, String table2, String column2) {
+		String name1 = columnName(table1, column1);
+		String name2 = columnName(table2, column2);
+		if(name1.compareTo(name2) <= 0) {
+			return new String[] { "a", "b" };
+		} else {
+			return new String[] { "b", "a" };
+		}
+	}
+
+	public static String joinTable(String table1, String column1, String table2, String column2) {
+		String name1 = columnName(table1, column1);
+		String name2 = columnName(table2, column2);
+		if(name1.compareTo(name2) <= 0) {
+			return tableName(name1, name2);
+		} else {
+			return tableName(name2, name1);
+		}
+	}
+
 	/**
 	 * convert the given string to one that is appropriate for use as a Java
 	 * Constant: MyModel -> MY_MODEL myModel -> MY_MODEL

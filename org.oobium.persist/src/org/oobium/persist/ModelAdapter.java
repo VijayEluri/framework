@@ -10,12 +10,14 @@
  ******************************************************************************/
 package org.oobium.persist;
 
-import static org.oobium.utils.StringUtils.blank;
+import static org.oobium.utils.StringUtils.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -169,6 +171,13 @@ public class ModelAdapter {
 		return hasOne.keySet();
 	}
 
+	/**
+	 * The model class is the class which has the @ModelDescription annotation.
+	 * This may or may not be the class passed into getAdapter, but will be the correct
+	 * class for use in table name methods. It is always best to use the result of this
+	 * class rather than just calling getClass() on the model object.
+	 * @return the true model class (that with the @ModelDescription annotation)
+	 */
 	public Class<? extends Model> getModelClass() {
 		return this.clazz;
 	}
@@ -178,15 +187,17 @@ public class ModelAdapter {
 	}
 	
 	public String getOpposite(String field) {
-		if(hasMany.containsKey(field)) {
-			String opposite = hasMany.get(field).opposite();
-			if(!blank(opposite)) return opposite;
-		}
-		if(hasOne.containsKey(field)) {
-			String opposite = hasOne.get(field).opposite();
+		Relation relation = getRelation(field);
+		if(relation != null) {
+			String opposite = relation.opposite();
 			if(!blank(opposite)) return opposite;
 		}
 		return null;
+	}
+	
+	public Class<? extends Model> getOppositeType(String field) {
+		Relation relation = getRelation(field);
+		return (relation != null) ? relation.type() : null;
 	}
 	
 	public Class<?> getRawClass(String field) {
@@ -220,10 +231,23 @@ public class ModelAdapter {
 		return null;
 	}
 	
-	public Set<String> getRelations() {
-		Set<String> rels = new HashSet<String>();
+	/**
+	 * Get a set of all hasOne and hasMany fields
+	 */
+	public Set<String> getRelationFields() {
+		Set<String> rels = new LinkedHashSet<String>();
 		rels.addAll(hasOne.keySet());
 		rels.addAll(hasMany.keySet());
+		return rels;
+	}
+
+	/**
+	 * Get a set of all hasOne and hasMany relationships
+	 */
+	public Set<Relation> getRelationships() {
+		Set<Relation> rels = new LinkedHashSet<Relation>();
+		rels.addAll(hasOne.values());
+		rels.addAll(hasMany.values());
 		return rels;
 	}
 
@@ -261,6 +285,19 @@ public class ModelAdapter {
 		return fields.contains(field);
 	}
 
+	/**
+	 * Find out if this field holds the foreign key in a 1:1 relationship.
+	 * Only valid for 1:1 relationships - check with {@link #isOneToOne(String)}
+	 * @return true if this field holds the key, false if it is held by the opposite field.
+	 * @see #isOneToOne(String)
+	 */
+	public boolean hasKey(String field) {
+		Relation relation = hasOne.get(field);
+		String column1 = columnName(tableName(clazz), columnName(field));
+		String column2 = columnName(tableName(relation.type()), columnName(relation.opposite()));
+		return column1.compareTo(column2) < 0; // the lower sort order contains the key
+	}
+	
 	public boolean hasMany(String field) {
 		return hasMany.containsKey(field);
 	}
@@ -416,11 +453,15 @@ public class ModelAdapter {
 	}
 	
 	public boolean isManyToOne(String field) {
-		return isThisOpposite(hasMany, field);
+		return isThisOpposite(hasMany, field, true);
 	}
 	
 	public boolean isOneToMany(String field) {
-		return isThisOpposite(hasOne, field);
+		return isThisOpposite(hasOne, field, false);
+	}
+	
+	public boolean isOneToOne(String field) {
+		return isThisOpposite(hasOne, field, true);
 	}
 	
 	public boolean isOneToNone(String field) {
@@ -429,6 +470,28 @@ public class ModelAdapter {
 			return blank(relation.opposite());
 		}
 		return false;
+	}
+	
+	/**
+	 * Get a list of all the fields that link back to this model
+	 * from the related model.<br>
+	 * For example, if AModel hasOne BModel, and
+	 * BModel hasOne AModel, calling this method on getAdapter(AModel).getRelationLinkBacks("bModels")
+	 * would return [ "aModels" ].
+	 */
+	public List<String> getRelationLinkBacks(String field) {
+		Relation relation = getRelation(field);
+		if(relation != null) {
+			List<String> linkbacks = new ArrayList<String>();
+			ModelAdapter adapter = getAdapter(relation.type());
+			for(Relation r : adapter.hasOne.values()) {
+				if(r.type() == clazz) {
+					linkbacks.add(r.name());
+				}
+			}
+			return linkbacks;
+		}
+		return new ArrayList<String>(0);
 	}
 	
 	public boolean isOppositeRequired(String field) {
@@ -488,14 +551,14 @@ public class ModelAdapter {
 		return field.equals("createdAt") || field.equals("createdOn") || field.equals("updatedAt") || field.equals("updatedOn");
 	}
 	
-	private boolean isThisOpposite(Map<String, Relation> map, String field) {
+	private boolean isThisOpposite(Map<String, Relation> map, String field, boolean toOne) {
 		Relation relation = map.get(field);
 		if(relation != null) {
 			String opposite = relation.opposite();
 			if(opposite != null) {
 				ModelDescription md = relation.type().getAnnotation(ModelDescription.class);
 				if(md != null) {
-					for(Relation r : md.hasOne()) {
+					for(Relation r : (toOne ? md.hasOne() : md.hasMany())) {
 						if(r.name().equals(opposite)) {
 							if(r.type().isAssignableFrom(this.clazz) && r.opposite().equals(field)) {
 								return true;

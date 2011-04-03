@@ -11,5 +11,6 @@ Require-Bundle: org.junit;bundle-version="4.7.0",
  org.mockito,
  org.oobium.http,
  org.oobium.logging,
- org.oobium.server
+ org.oobium.server,
+ org.oobium.utils
 Export-Package: org.oobium.server

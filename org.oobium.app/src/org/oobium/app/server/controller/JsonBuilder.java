@@ -49,7 +49,7 @@ public class JsonBuilder {
 
 	private void addIncludes(ModelAdapter adapter) {
 		if(!addWildcards(adapter, includes)) {
-			for(String field : adapter.getRelations()) {
+			for(String field : adapter.getRelationFields()) {
 				if(adapter.isIncluded(field)) {
 					if(!contains(includes, field)) {
 						includes.add(field);
@@ -138,7 +138,7 @@ public class JsonBuilder {
 	
 	private boolean addWildcards(ModelAdapter adapter, List<Object> list) {
 		if(list.remove("*")) {
-			for(String field : adapter.getRelations()) {
+			for(String field : adapter.getRelationFields()) {
 				if(!contains(list, field)) {
 					list.add(field);
 				}
@@ -290,7 +290,7 @@ public class JsonBuilder {
 	
 	private List<Object> getModelIncludes(ModelAdapter adapter) {
 		List<Object> includes = new ArrayList<Object>();
-		for(String field : adapter.getRelations()) {
+		for(String field : adapter.getRelationFields()) {
 			if(adapter.isIncluded(field)) {
 				includes.add(field);
 			}
