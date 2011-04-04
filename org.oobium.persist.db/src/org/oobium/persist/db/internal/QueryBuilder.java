@@ -22,7 +22,7 @@ import static org.oobium.utils.SqlUtils.safeSqlWord;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.columnName;
 import static org.oobium.utils.StringUtils.join;
-import static org.oobium.utils.StringUtils.tableName;
+import static org.oobium.utils.StringUtils.*;
 import static org.oobium.utils.json.JsonUtils.toObject;
 
 import java.sql.SQLException;
@@ -103,7 +103,7 @@ public class QueryBuilder {
 	private void addColumns(String alias, ModelAdapter adapter) {
 		columns.add(column(alias, ID));
 		for(String field : adapter.getFields()) {
-			if(!adapter.hasMany(field) && !adapter.isVirtual(field)) {
+			if(!adapter.hasMany(field) && !adapter.isVirtual(field) && (!adapter.isOneToOne(field) || adapter.hasKey(field))) {
 				columns.add(column(alias, field));
 			}
 		}
@@ -425,30 +425,30 @@ public class QueryBuilder {
 				alias = "b";
 			}
 		} else {
-			if(parentAdapter.isManyToOne(field)) {
-				String col = "b." + safeSqlWord(columnName(parentAdapter.getOpposite(field)));
-	
+			if(parentAdapter.isManyToMany(field)) {
+				String table1 = tableName(parentAdapter.getModelClass());
+				String column1 = columnName(field);
+				String table2 = tableName(query.getType());
+				String column2 = columnName(parentAdapter.getOpposite(field));
+				
+				String jtable = joinTable(table1, column1, table2, column2);
+				String[] jcolumns = joinColumns(table1, column1, table2, column2);
+
+				this.columns.add("a." + jcolumns[1] + " a_id");
+				addColumns("b", adapter);
+				tables.add(jtable + " a INNER JOIN " + table2 + " b ON a." + jcolumns[0] + "=b.id AND a." + jcolumns[1] + " IN (" + Query.ID_MARKER + ")");
+				alias = "b";
+			} else {
+				String col;
+				if(parentAdapter.isManyToOne(field)) {
+					col = "b." + safeSqlWord(columnName(parentAdapter.getOpposite(field)));
+				} else { // isManyToNone
+					col = "b.mk_" + columnName(underscored(parentAdapter.getModelClass().getSimpleName()), columnName(field));
+				}
 				columns.add(col + " a_id");
 				addColumns("b", adapter);
 				tables.add(tableName(adapter.getModelClass()) + " b");
 				whereClauses.add(col + " IN (" + Query.ID_MARKER + ")");
-				alias = "b";
-			} else {
-				Class<?> class1 = parentAdapter.getModelClass();
-				Class<?> class2 = query.getType();
-				String rel1 = field;
-				String rel2 = (parentAdapter.getOpposite(field));
-				String col1 = columnName(class1, rel1);
-				String col2 = columnName(class2, rel2);
-				String table1 = tableName(col1, col2);
-				String table2 = tableName(class2);
-				
-				String safeCol1 = safeSqlWord(col1);
-				String safeCol2 = safeSqlWord(col2);
-				
-				columns.add("a." + safeCol2 + " a_id");
-				addColumns("b", adapter);
-				tables.add(table1 + " a INNER JOIN " + table2 + " b ON a." + safeCol1 + "=b.id AND a." + safeCol2 + " IN (" + Query.ID_MARKER + ")");
 				alias = "b";
 			}
 		}
@@ -539,11 +539,15 @@ public class QueryBuilder {
 		query.putAdapter(alias, adapter);
 		query.putField(alias, field);
 		
-		String column = safeSqlWord(columnName(field));
-		
 		StringBuilder sb = new StringBuilder();
 		sb.append("LEFT JOIN ").append(includeTable).append(' ').append(alias);
-		sb.append(" ON ").append(parentAlias).append('.').append(column).append('=').append(alias).append(".id");
+		if(parentAdapter.isOneToOne(field) && !parentAdapter.hasKey(field)) {
+			String column = safeSqlWord(columnName(parentAdapter.getOpposite(field)));
+			sb.append(" ON ").append(alias).append('.').append(column).append('=').append(parentAlias).append(".id");
+		} else {
+			String column = safeSqlWord(columnName(field));
+			sb.append(" ON ").append(parentAlias).append('.').append(column).append('=').append(alias).append(".id");
+		}
 		if(!blank(where)) {
 			sb.append(" AND ").append(escape(adapter, where));
 		}

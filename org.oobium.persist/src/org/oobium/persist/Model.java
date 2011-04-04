@@ -519,9 +519,16 @@ public abstract class Model implements JsonModel {
 				}
 			} else {
 				if(load && !isNew()) {
+					ModelAdapter adapter = getAdapter(this);
 					if(hasContained(field)) {
 						// TODO include the requested field if it is a hasOne...?
 						load();
+					} else if(adapter.isOneToOne(field) && !adapter.hasKey(field)) {
+						try {
+							getPersistor().retrieve(this, field);
+						} catch(SQLException e) {
+							logger.warn("failed to load relation " + field + " in " + asSimpleString(), e);
+						}
 					} else if(hasMany(field)) {
 						try {
 							getPersistor().retrieve(this, field);
@@ -761,7 +768,7 @@ public abstract class Model implements JsonModel {
 	 */
 	private boolean hasContained(String field) {
 		ModelAdapter adapter = getAdapter(getClass());
-		return adapter.hasAttribute(field) || adapter.hasOne(field);
+		return adapter.hasAttribute(field) || (adapter.hasOne(field) && (!adapter.isOneToOne(field) || adapter.hasKey(field)));
 	}
 
 	/**

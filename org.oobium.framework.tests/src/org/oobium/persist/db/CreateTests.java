@@ -176,7 +176,7 @@ public class CreateTests extends BaseDbTestCase {
 
 	@Test
 	public void testHasManyToOne() throws Exception {
-		// same as testHasOnToMany, except save the from the "many" side
+		// same as testHasOneToMany, except save the from the "many" side
 		DynModel am = DynModels.getClass(pkg, "AModel").timestamps().addHasOne("bModel", "BModel.class", "opposite=\"aModels\"");
 		DynModel bm = DynModels.getClass(pkg, "BModel").timestamps().addHasMany("aModels", "AModel.class", "opposite=\"bModel\"");
 

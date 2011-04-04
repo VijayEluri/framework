@@ -15,6 +15,7 @@ import static org.oobium.utils.literal.Properties;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
+import org.oobium.persist.ModelAdapter;
 import org.oobium.persist.PersistClient;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.db.internal.DbPersistor;
@@ -352,14 +354,17 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	public void retrieve(Model...models) throws SQLException {
 		handleCrud(RETRIEVE, models);
 	}
-	
+
+	/**
+	 * @param relation may be a hasMany or hasOne (if 1:1 and opposite holds the key)
+	 */
 	@Override
-	public void retrieve(Model model, String hasMany) throws SQLException {
+	public void retrieve(Model model, String relation) throws SQLException {
 		// TODO hack: re-implement directly in DbPersistor
 		Connection connection = getConnection();
-		Model tmp = persistor.find(connection, model.getClass(), "where id=? include:?", model.getId(), hasMany);
-		if(tmp != null) {
-			model.put(hasMany, tmp.get(hasMany));
+		Model tmp = persistor.find(connection, model.getClass(), "where id=? include:?", model.getId(), relation);
+		if(tmp != null || ModelAdapter.getAdapter(model).hasOne(relation)) {
+			model.put(relation, tmp.get(relation));
 		}
 	}
 
