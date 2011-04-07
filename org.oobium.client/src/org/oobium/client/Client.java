@@ -12,20 +12,33 @@ package org.oobium.client;
 
 import static org.oobium.http.constants.RequestType.DELETE;
 import static org.oobium.http.constants.RequestType.GET;
+import static org.oobium.http.constants.RequestType.HEAD;
 import static org.oobium.http.constants.RequestType.POST;
 import static org.oobium.http.constants.RequestType.PUT;
+import static org.oobium.utils.StringUtils.attrEncode;
+import static org.oobium.utils.StringUtils.attrsEncode;
+import static org.oobium.utils.coercion.TypeCoercer.coerce;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.oobium.http.constants.ContentType;
 import org.oobium.http.constants.Header;
 import org.oobium.http.constants.RequestType;
+import org.oobium.utils.StringUtils;
 
 public class Client {
 
@@ -41,12 +54,22 @@ public class Client {
 		return new Client(host, port);
 	}
 	
-	final URL url;
-	final String protocol;
-	final String host;
-	final int port;
+	
+	private RequestType type;
+	private final URL url;
+	private final String protocol;
+	private final String host;
+	private final int port;
+	private String path;
 	private Map<String, List<String>> headers;
+	private Map<String, ?> parameters;
 
+	private String boundary;
+	private boolean sendBinaryAsJson;
+	
+	private ClientResponse response;
+
+	
 	public Client(String url) throws MalformedURLException {
 		if(url != null && url.length() > 0 && url.indexOf("://") == -1) {
 			url = "http://" + url;
@@ -58,18 +81,18 @@ public class Client {
 
 		this.headers = new LinkedHashMap<String, List<String>>();
 	}
-	
+
 	public Client(String host, int port) {
 		this.protocol = "http";
 		this.host = host;
 		this.port = port;
 		this.url = null;
 	}
-
+	
 	public void addHeader(Header header, String value) {
 		addHeader(header.key(), value);
 	}
-	
+
 	public void addHeader(String key, String value) {
 		List<String> list = headers.get(key);
 		if(list == null) {
@@ -79,112 +102,62 @@ public class Client {
 		list.add(value);
 	}
 
-	public void aDelete() {
-		asyncRequest(DELETE, getPath(), null, null);
+	public void addParameter(String key, Object value) {
+		doAddParameter(key, value);
 	}
 	
-	public void aDelete(String path) {
-		asyncRequest(DELETE, path, null, null);
-	}
-	
-	public void aDelete(String path, Map<String, ?> parameters) {
-		asyncRequest(DELETE, path, parameters, null);
-	}
-	
-	public void aGet(String path) {
-		asyncRequest(DELETE, path, null, null);
-	}
-	
-	public void aGet(String path, Map<String, ?> parameters) {
-		asyncRequest(DELETE, path, parameters, null);
-	}
-	
-	public void aPost(Map<String, ?> parameters) {
-		asyncRequest(POST, getPath(), parameters, null);
-	}
-	
-	public void aPost(Map<String, ?> parameters, ClientCallback callback) {
-		asyncRequest(POST, getPath(), parameters, callback);
-	}
-	
-	public void aPost(String path) {
-		asyncRequest(POST, path, null, null);
-	}
-	
-	public void aPost(String path, Map<String, ?> parameters) {
-		asyncRequest(POST, path, parameters, null);
-	}
-	
-	public void aPut(String path) {
-		asyncRequest(PUT, path, null, null);
-	}
-	
-	public void aPut(String path, Map<String, ?> parameters) {
-		asyncRequest(PUT, path, parameters, null);
-	}
-	
-	public void asyncRequest(RequestType type, String path, ClientCallback callback) {
-		asyncRequest(type, path, null, callback);
-	}
-	
-	public void asyncRequest(RequestType type, String path, Map<String, ?> parameters, ClientCallback callback) {
-		ClientThread c = new ClientThread(this, type, path, headers, parameters);
-		c.setCallback(callback);
-		c.start();
-	}
-
 	public ClientResponse delete() {
-		return syncRequest(DELETE, getPath());
+		return request(DELETE, getPath());
 	}
-
+	
+	public ClientResponse delete(Map<String, ?> parameters) {
+		return request(DELETE, parameters);
+	}
+	
 	public ClientResponse delete(String path) {
-		return syncRequest(DELETE, path);
-	}
-
-	public void delete(String path, ClientCallback callback) {
-		asyncRequest(DELETE, path, null, callback);
+		return request(DELETE, path);
 	}
 	
 	public ClientResponse delete(String path, Map<String, ?> parameters) {
-		return syncRequest(DELETE, path, parameters);
+		return request(DELETE, path, parameters);
 	}
-	
-	public void delete(String path, Map<String, ?> parameters, ClientCallback callback) {
-		asyncRequest(DELETE, path, parameters, callback);
+
+	@SuppressWarnings("unchecked")
+	private void doAddParameter(String key, Object value) {
+		if(parameters == null) {
+			parameters = new LinkedHashMap<String, Object>();
+		}
+		((Map<String, Object>) parameters).put(key, value);
 	}
 	
 	public ClientResponse get() {
-		return get(new HashMap<String, Object>(0));
+		return request(GET);
 	}
 	
 	public ClientResponse get(Map<String, ?> parameters) {
-		return syncRequest(GET, getPath(), parameters);
+		return request(GET, getPath(), parameters);
 	}
-	
+
 	public ClientResponse get(String path) {
-		return syncRequest(GET, path, null);
+		return request(GET, path, null);
 	}
-
-	public void get(String path, ClientCallback callback) {
-		asyncRequest(GET, path, null, callback);
-	}
-
+	
 	public ClientResponse get(String path, Map<String, ?> parameters) {
-		return syncRequest(GET, path, parameters);
+		return request(GET, path, parameters);
 	}
 	
-	public void get(String path, Map<String, ?> parameters, ClientCallback callback) {
-		asyncRequest(GET, path, parameters, callback);
+	public String getBoundary() {
+		return boundary;
 	}
-	
+
 	public String getHost() {
 		return (url != null) ? url.getHost() : host;
 	}
-	
+
 	public String getPath() {
 		return (url != null) ? url.getPath() : null;
 	}
-
+	
 	public int getPort() {
 		return (url != null) ? url.getPort() : port;
 	}
@@ -193,6 +166,10 @@ public class Client {
 		return (url != null) ? url.getProtocol() : protocol;
 	}
 	
+	public ClientResponse getResponse() {
+		return response;
+	}
+
 	public URL getUrl() {
 		try {
 			return (url != null) ? url : new URL(protocol, host, port, null);
@@ -200,49 +177,207 @@ public class Client {
 			return null;
 		}
 	}
+	
+	private URL getURL(Map<String, String> parameters) throws MalformedURLException {
+		String path = this.path;
+		if(parameters != null && !parameters.isEmpty()) {
+			switch(type) {
+			case GET:
+			case HEAD:
+			case DELETE:
+				path = path + ((path.indexOf('?') == -1) ? "?" : "&") + StringUtils.attrsEncode(parameters);
+				break;
+			}
+		}
+		if(url != null) {
+			return new URL(url.getProtocol(), url.getHost(), url.getPort(), path);
+		} else {
+			return new URL(protocol, host, port, path);
+		}
+	}
+	
+	public ClientResponse head() {
+		return request(HEAD);
+	}
+	
+	public ClientResponse head(Map<String, ?> parameters) {
+		return request(HEAD, parameters);
+	}
+	
+	public ClientResponse head(String path) {
+		return request(HEAD, path);
+	}
+	
+	public ClientResponse head(String path, Map<String, ?> parameters) {
+		return request(HEAD, path, parameters);
+	}
+
+	public ClientResponse post() {
+		return request(POST);
+	}
 
 	public ClientResponse post(Map<String, ?> parameters) {
-		return syncRequest(POST, getPath(), parameters);
+		return request(POST, parameters);
 	}
 
 	public ClientResponse post(String path) {
-		return syncRequest(POST, path);
-	}
-	
-	public void post(String path, ClientCallback callback) {
-		asyncRequest(POST, path, null, callback);
+		return request(POST, path);
 	}
 	
 	public ClientResponse post(String path, Map<String, ?> parameters) {
-		return syncRequest(POST, path, parameters);
-	}
-	
-	public void post(String path, Map<String, ?> parameters, ClientCallback callback) {
-		asyncRequest(POST, path, parameters, callback);
-	}
-	
-	public ClientResponse put(String path) {
-		return syncRequest(PUT, path);
-	}
-	
-	public void put(String path, ClientCallback callback) {
-		asyncRequest(PUT, path, null, callback);
-	}
-	
-	public ClientResponse put(String path, Map<String, ?> parameters) {
-		return syncRequest(PUT, path, parameters);
+		return request(POST, path, parameters);
 	}
 
-	public void put(String path, Map<String, ?> parameters, ClientCallback callback) {
-		asyncRequest(PUT, path, parameters, callback);
+	public ClientResponse put() {
+		return request(PUT);
+	}
+
+	public ClientResponse put(Map<String, ?> parameters) {
+		return request(PUT, parameters);
+	}
+
+	public ClientResponse put(String path) {
+		return request(PUT, path);
+	}
+
+	public ClientResponse put(String path, Map<String, ?> parameters) {
+		return request(PUT, path, parameters);
 	}
 	
+	public ClientResponse request(RequestType type) {
+		return request(type, getPath(), null);
+	}
+	
+	public ClientResponse request(RequestType type, Map<String, ?> parameters) {
+		return request(type, getPath(), parameters);
+	}
+
+	public ClientResponse request(RequestType type, String path) {
+		return request(type, path, parameters);
+	}
+
+	public ClientResponse request(RequestType type, String path, Map<String, ?> parameters) {
+		if(path == null) {
+			path = "/";
+		} else if(!path.startsWith("/")) {
+			path = "/" + path;
+		}
+		this.type = type;
+		this.path = path;
+		this.parameters = parameters;
+		
+		run();
+		
+		return response;
+	}
+	
+	public void sendBinaryAsJson(boolean sendAsJson) {
+		this.sendBinaryAsJson = sendAsJson;
+	}
+	
+	private void run() {
+		try {
+			Map<String, String> params = null;
+			Map<String, MessagePart> parts = null;
+			if(parameters != null) {
+				params = new LinkedHashMap<String, String>();
+				for(Entry<String, ?> entry : parameters.entrySet()) {
+					String key = entry.getKey();
+					Object val = entry.getValue();
+					if(val instanceof File) {
+						File file = (File) val;
+						String name = file.getName();
+						int ix = name.lastIndexOf('.');
+						String ext = (ix == -1) ? null : name.substring(ix+1);
+						MessagePart part = new MessagePart(new FileInputStream(file), ext);
+						part.put("filename", name);
+						val = part;
+					} else if(val instanceof InputStream) {
+						val = new MessagePart((InputStream) val);
+					} else if(!sendBinaryAsJson && val != null && val.getClass().getComponentType() == byte.class) {
+						val = new MessagePart(new ByteArrayInputStream((byte[]) val));
+					}
+					if(val instanceof MessagePart) {
+						if(parts == null) {
+							parts = new LinkedHashMap<String, MessagePart>();
+						}
+						parts.put(key, (MessagePart) val);
+					} else {
+						params.put(key, coerce(val, String.class));
+					}
+				}
+			}
+			
+			URL url = getURL(params);
+	        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+	        conn.setRequestMethod(type.name());
+	        setHeaders(conn);
+	        if(type == POST || type == PUT) {
+	        	conn.setDoOutput(true);
+	        	if(parts == null) {
+			        OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream());
+			        out.write(attrsEncode(params));
+			        out.flush();
+			        out.close();
+	        	} else {
+	        		String boundary = this.boundary;
+	        		if(boundary == null) {
+		        		List<String> ctypes = headers.get(Header.CONTENT_TYPE.key());
+		        		if(ctypes != null && !ctypes.isEmpty()) {
+		        			for(String ctype : ctypes) {
+		        				String[] sa = ctype.split("\\s*;\\s*");
+		        				for(int i = 0; i < sa.length; i++) {
+		        					if(sa[i].startsWith("boundary=")) {
+		        						if(sa[i].length() > 9) {
+		        							boundary = (sa[i].substring(9));
+		        						}
+		        						break;
+		        					}
+		        				}
+		        				if(boundary != null) {
+		        					break;
+		        				}
+		        			}
+		        		}
+		        		if(boundary == null) {
+		        			boundary = "---------------------------OobiumBoundary";
+		        		}
+	        		}
+	        		conn.setRequestProperty(Header.CONTENT_TYPE.key(), "multipart/form-data; boundary=" + boundary);
+	                DataOutputStream out = new DataOutputStream(conn.getOutputStream());
+	                out.writeBytes("--" + boundary + "\r\n");
+	                for(Entry<String, String> entry : params.entrySet()) {
+	                	writeParam(out, entry.getKey(), entry.getValue(), boundary);
+	                }
+	                for(Entry<String, MessagePart> entry : parts.entrySet()) {
+	                	writePart(out, entry.getKey(), entry.getValue(), boundary);
+	                }
+	                out.flush();
+	                out.close();
+	        	}
+	        }
+	        response = new ClientResponse(conn);
+		} catch(Exception e) {
+	        response = new ClientResponse(e);
+		}
+	}
+
 	public void setAccepts(ContentType...types) {
 		for(ContentType type : types) {
 			addHeader(Header.ACCEPT, type.getRequestProperty());
 		}
 	}
-	
+
+	public void setAccepts(String...types) {
+		for(String type : types) {
+			addHeader(Header.ACCEPT, type);
+		}
+	}
+
+	public void setBoundary(String boundary) {
+		this.boundary = boundary;
+	}
+
 	public void setHeaders(String...headers) {
 		for(String header : headers) {
 			String[] sa = header.split("\\s*:\\s*", 2);
@@ -252,30 +387,57 @@ public class Client {
 		}
 	}
 	
-	public ClientResponse syncRequest(RequestType type) {
-		return syncRequest(type, getPath(), null);
+	private void setHeaders(URLConnection connection) {
+		if(headers == null) {
+    		connection.addRequestProperty(Header.USER_AGENT.key(), "Oobium Client");
+    		connection.addRequestProperty(Header.HOST.key(), connection.getURL().getHost());
+		} else {
+	    	if(!headers.containsKey(Header.USER_AGENT.key())) {
+	    		connection.addRequestProperty(Header.USER_AGENT.key(), "Oobium Client");
+	    	}
+	    	if(!headers.containsKey(Header.HOST.key())) {
+	    		connection.addRequestProperty(Header.HOST.key(), connection.getURL().getHost());
+	    	}
+			for(Entry<String, List<String>> entry : headers.entrySet()) {
+				for(String value : entry.getValue()) {
+					connection.addRequestProperty(entry.getKey(), value);
+				}
+			}
+		}
 	}
 	
-	public ClientResponse syncRequest(RequestType type, Map<String, ?> parameters) {
-		ClientThread c = new ClientThread(this, type, getPath(), headers, parameters);
-		c.run();
-		return c.getResponse();
-	}
-	
-	public ClientResponse syncRequest(RequestType type, String path) {
-		return syncRequest(type, path, null);
-	}
-
-	public ClientResponse syncRequest(RequestType type, String path, Map<String, ?> parameters) {
-		ClientThread c = new ClientThread(this, type, path, headers, parameters);
-		c.run();
-		return c.getResponse();
-	}
-
-	@Override
+    @Override
 	public String toString() {
 		if(url != null) return url.toString();
 		return protocol + "://" + host + ":" + port;
 	}
+ 	    
+	private void writeParam(DataOutputStream out, String name, String value, String boundary) throws Exception {
+        out.writeBytes("content-disposition: form-data; name=\"" + name + "\"\r\n\r\n");
+        out.writeBytes(value);
+        out.writeBytes("\r\n" + "--" + boundary + "\r\n");
+    }
 	
+	private void writePart(DataOutputStream out, String name, MessagePart part, String boundary) throws Exception {
+		StringBuilder sb = new StringBuilder();
+		sb.append(Header.CONTENT_DISPOSITION.key()).append(": form-data; name=\"").append(name).append('"');
+		for(Entry<String, String> entry : part.getParameters().entrySet()) {
+			sb.append(';').append(attrEncode(entry.getKey(), entry.getValue())).append('"');
+		}
+		sb.append("\r\n");
+		if(part.hasContentType()) {
+			sb.append(Header.CONTENT_TYPE.key()).append(": ").append(part.getContentType()).append("\r\n");
+		}
+		sb.append("\r\n");
+		out.writeBytes(sb.toString());
+		InputStream in = part.getStream();
+		byte[] bytes = new byte[4*1024];
+		int read;
+		while((read = in.read(bytes)) > 0) {
+			out.write(bytes, 0, read);
+		}
+		in.close();
+		out.writeBytes("\r\n" + "--" + boundary + "\r\n");
+    }
+
 }

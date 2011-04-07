@@ -191,6 +191,7 @@ public class ClientResponse {
 
 	@Override
 	public String toString() {
+		if(exception != null) return exception.getLocalizedMessage();
 		return super.toString() + " {" + getStatus() + "}";
 	}
 
