@@ -54,8 +54,13 @@ public class ActionCacheCommand extends BuilderCommand {
 					}
 				}
 				try {
-					module.createActionCache(name, modelName, getActions());
+					File file = module.createActionCache(name, modelName, getActions());
 					BuilderConsoleActivator.sendRefresh(module, cache, 1000);
+					
+					name = file.getName();
+					name = name.substring(0, name.length()-5);
+					console.out.println("created action cache <a href=\"open action_cache " + name + "\">" + name + "</a>");
+
 				} catch(IllegalArgumentException e) {
 					console.err.println(e.getLocalizedMessage());
 				}

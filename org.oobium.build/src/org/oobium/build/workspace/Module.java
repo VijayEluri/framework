@@ -422,8 +422,8 @@ public class Module extends Bundle {
 		return new File[0];
 	}
 	
-	public void createActionCache(String name, String modelName, Action...actions) {
-		ProjectGenerator.createActionCache(this, adjust(name), adjust(modelName), actions);
+	public File createActionCache(String name, String modelName, Action...actions) {
+		return ProjectGenerator.createActionCache(this, adjust(name), adjust(modelName), actions);
 	}
 	
 	public File createController(File controller) {

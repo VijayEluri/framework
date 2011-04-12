@@ -533,7 +533,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 
 	private String pathError(Object obj1, String field) {
 		if(obj1 == null) {
-			logger.warn(new RoutingException("cannot find a path to a null object"));
+			logger.warn(new Exception("cannot find a path to a null object"));
 		} else if(obj1 instanceof Model) {
 			if(field == null) {
 				logger.warn(new Exception("could not find path for model: " + obj1.getClass().getSimpleName()));

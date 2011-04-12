@@ -21,10 +21,11 @@ import java.util.Properties;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import org.oobium.app.server.controller.ActionCache;
 import org.oobium.app.server.controller.Controller;
 import org.oobium.app.server.routing.Router;
-import org.oobium.logging.Logger;
 import org.oobium.logging.LogProvider;
+import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.persist.Observer;
 import org.oobium.utils.Config;
@@ -74,11 +75,6 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 		logger = LogProvider.getLogger(getClass());
 	}
 
-	@SuppressWarnings("unchecked")
-	private void addObserver(Class<?> clazz) {
-		Observer.addObserver((Class<? extends Observer<?>>) clazz);
-	}
-	
 	/**
 	 * Add this module's routes to the given router. Routes can be
 	 * added and removed later as necessary.
@@ -260,6 +256,18 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 		return Config.loadConfiguration(clazz);
 	}
 
+	@SuppressWarnings("unchecked")
+	void loadActionCaches(AppService app, Config config) throws Exception {
+		logger.info("initializing ActionCache classes");
+
+		String pkg = pkg(config.getPathToCaches(pkgPath()));
+		for(Class<?> clazz : loadClassesInPackage(pkg)) {
+			if(ActionCache.class.isAssignableFrom(clazz)) {
+				ActionCache.addCache(app, this, (Class<? extends ActionCache<?>>) clazz);
+			}
+		}
+	}
+
 	void loadModels(Config config) throws Exception {
 		logger.info("loading Model classes");
 
@@ -267,13 +275,14 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 		loadClassesInPackage(pkg);
 	}
 	
+	@SuppressWarnings("unchecked")
 	void loadObservers(Config config) throws Exception {
 		logger.info("loading Observer classes");
 
 		String pkg = pkg(config.getPathToObservers(pkgPath()));
 		for(Class<?> clazz : loadClassesInPackage(pkg)) {
 			if(Observer.class.isAssignableFrom(clazz)) {
-				addObserver(clazz);
+				Observer.addObserver((Class<? extends Observer<?>>) clazz);
 			}
 		}
 	}
@@ -388,6 +397,16 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 	@Override
 	public String toString() {
 		return "Module " + getName();
+	}
+
+	void unloadActionCaches(Config config) throws Exception {
+		logger.info("unloading ActionCache classes");
+
+		String pkg = pkg(config.getPathToCaches(pkgPath()));
+		List<Class<?>> classes = loadClassesInPackage(pkg);
+		for(Class<?> clazz : classes) {
+			ActionCache.removeCache(this, clazz);
+		}
 	}
 
 	void unloadModels(Config config) throws Exception {

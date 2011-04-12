@@ -12,17 +12,21 @@ package org.oobium.app.server.controller;
 
 import static org.oobium.app.server.controller.Controller.createActionCacheKey;
 import static org.oobium.app.server.controller.Controller.createCacheKey;
-import static org.oobium.utils.StringUtils.join;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.oobium.app.AppService;
+import org.oobium.app.ModuleService;
 import org.oobium.cache.CacheService;
 import org.oobium.http.constants.Action;
 import org.oobium.http.constants.ContentType;
@@ -30,75 +34,66 @@ import org.oobium.logging.Logger;
 import org.oobium.logging.LogProvider;
 import org.oobium.persist.Model;
 import org.oobium.persist.Observer;
-import org.oobium.utils.StringUtils;
 
-/**
- * ActionCache is broken.
- * Observer have been made generic and ActionCache has not been updated yet.
- * Will be done the first chance I need an ActionCache - submit a bug if you need it sooner.
- */
-public class ActionCache extends Observer {
+public class ActionCache<T extends Model> extends Observer<T> {
 
 	protected static final Logger logger = LogProvider.getLogger();
 	
-	private static final Map<Class<?>, ActionCache> cacheMap = new HashMap<Class<?>, ActionCache>();
-	private static final Map<Class<?>, Set<Action>> caches = new HashMap<Class<?>, Set<Action>>();
+	private static final Map<Class<?>, ActionCache<?>> cacheMap = new HashMap<Class<?>, ActionCache<?>>();
+	private static final Map<Class<?>, Set<Action>> actionMap = new HashMap<Class<?>, Set<Action>>();
 	
-	public static final void addCache(Class<? extends ActionCache> cacheClass, Class<? extends Model> modelClass, Action...actions) {
-		addCache(cacheClass, modelClass, null, actions);
-	}
-	
-	public static final void addCache(Class<? extends ActionCache> cacheClass, Class<? extends Model> modelClass, Class<? extends Controller> controllerClass) {
-		addCache(cacheClass, modelClass, controllerClass, new Action[0]);
-	}
-	
-	@SuppressWarnings("unchecked")
-	public static final void addCache(Class<? extends ActionCache> cacheClass, Class<? extends Model> modelClass, Class<? extends Controller> controllerClass, Action...actions) {
-		if(logger.isLoggingInfo()) {
-			logger.info("adding cache (" + cacheClass.getSimpleName() + ", " + modelClass.getSimpleName() + ", " + 
-					(controllerClass != null ? controllerClass.getSimpleName() : "null") + ", " + 
-					(actions.length > 0 ? join(actions, ", ") : "<All>") + ")");
+	protected static void forActions(Action...actions) {
+		if(actions == null || actions.length == 0) {
+			actions = Action.values();
 		}
-
+		actionMap.put(ActionCache.class, new HashSet<Action>(Arrays.asList(actions)));
+	}
+	
+	
+	public synchronized static final void addCache(AppService handler, ModuleService module, Class<? extends ActionCache<?>> cacheClass) {
 		if(cacheMap.containsKey(cacheClass)) {
-			logger.warn("cache already added - skipping");
-			return;
-		}
-		
-		try {
-			if(controllerClass == null) {
-				String name = modelClass.getCanonicalName().replace(".models.", ".controllers.") + "Controller";
-				controllerClass = (Class<? extends Controller>) Class.forName(name, true, modelClass.getClassLoader());
-			}
-			if(actions == null || actions.length == 0) {
-				actions = Action.values();
-			}
-
-			ActionCache cache = cacheClass.newInstance();
-			cache.controllerClass = controllerClass;
-			cache.actions = actions;
-
-			cacheMap.put(cacheClass, cache);
-			
-			addObserver(cache);
-			
-			for(Action action : actions) {
-				if(!caches.containsKey(controllerClass)) {
-					caches.put(controllerClass, new HashSet<Action>());
+			logger.warn("cache " + cacheClass.getSimpleName() + " already added - skipping");
+		} else {
+			try {
+				ActionCache<?> cache = cacheClass.newInstance();
+				addCache(handler, module, cache);
+				if(logger.isLoggingInfo()) {
+					logger.info("added action cache (" + cache.getClass().getSimpleName() + ")");
 				}
-				caches.get(controllerClass).add(action);
+			} catch(Exception e) {
+				logger.error("error adding cache " + cacheClass, e);
+				throw new RuntimeException(e);
+			} finally {
+				actionMap.remove(ActionCache.class);
 			}
-		} catch(Exception e) {
-			logger.error("failed to add cache (" + cacheClass.getSimpleName() + ", " + modelClass.getSimpleName() + ", " + 
-					(controllerClass != null ? controllerClass.getSimpleName() : "null") + ", " + StringUtils.join(actions, ", ") + ")");
-			throw new RuntimeException(e);
 		}
 	}
 
-	public static List<ActionCache> getCaches(Collection<Class<?>> classes) {
-		List<ActionCache> caches = new ArrayList<ActionCache>();
+	private synchronized static void addCache(AppService handler, ModuleService module, ActionCache<? extends Model> cache) {
+		Type type = cache.getClass().getGenericSuperclass();
+		if(type instanceof ParameterizedType) {
+			ParameterizedType pt = (ParameterizedType) type;
+			Class<?> clazz = (Class<?>) pt.getActualTypeArguments()[0];
+			addCacheToMap(handler, module, cache, clazz.asSubclass(Model.class));
+		} else {
+			throw new IllegalArgumentException("ActionCache class must be parameterized");
+		}
+	}
+
+	private static void addCacheToMap(AppService handler, ModuleService module, ActionCache<? extends Model> cache, Class<? extends Model> modelClass) {
+		cache.handler = handler;
+		cache.controllerClass = module.getControllerClass(modelClass);
+		
+		cacheMap.put(cache.controllerClass, cache);
+		actionMap.put(cache.controllerClass, actionMap.get(ActionCache.class));
+		
+		addObserver(cache);
+	}
+
+	public static List<ActionCache<? extends Model>> getCaches(Collection<Class<?>> classes) {
+		List<ActionCache<? extends Model>> caches = new ArrayList<ActionCache<? extends Model>>();
 		for(Class<?> clazz : classes) {
-			ActionCache cache = cacheMap.get(clazz);
+			ActionCache<? extends Model> cache = cacheMap.get(clazz);
 			if(cache != null) {
 				caches.add(cache);
 			}
@@ -108,16 +103,37 @@ public class ActionCache extends Observer {
 	
 	public static boolean isCaching(Controller controller, Action action) {
 		Class<? extends Controller> controllerClass = controller.getClass();
-		return caches.containsKey(controllerClass) && caches.get(controllerClass).contains(action);
+		return actionMap.containsKey(controllerClass) && actionMap.get(controllerClass).contains(action);
 	}
 
+	public synchronized static void removeCache(ModuleService app, Class<?> clazz) {
+		if(Model.class.isAssignableFrom(clazz)) {
+			Class<?> controllerClass = app.getControllerClass(clazz.asSubclass(Model.class));
+			ActionCache<?> cache = cacheMap.remove(controllerClass);
+			actionMap.remove(controllerClass);
+			if(logger.isLoggingInfo() && cache != null) {
+				logger.info("removed action cache (" + cache.getClass().getSimpleName() + ")");
+			}
+		} else if(ActionCache.class.isAssignableFrom(clazz)) {
+			for(Iterator<ActionCache<?>> cacheIter = cacheMap.values().iterator(); cacheIter.hasNext(); ) {
+				ActionCache<?> cache = cacheIter.next();
+				if(cache.getClass() == clazz) {
+					cacheIter.remove();
+					actionMap.remove(cache.controllerClass);
+					if(logger.isLoggingInfo() && cache != null) {
+						logger.info("removed action cache (" + cache.getClass().getSimpleName() + ")");
+					}
+				}
+			}
+		}
+	}
+	
 	
 	private Class<? extends Controller> controllerClass;
-	private Action[] actions;
 	private AppService handler;
 
 	public void expire() {
-		for(Action action : actions) {
+		for(Action action : actionMap.get(controllerClass)) {
 			expire(action);
 		}
 	}
@@ -144,8 +160,4 @@ public class ActionCache extends Observer {
 		}
 	}
 
-	public final void setHandler(AppService handler) {
-		this.handler = handler;
-	}
-	
 }

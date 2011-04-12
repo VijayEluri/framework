@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.oobium.app.persist.PersistServices;
-import org.oobium.app.server.controller.ActionCache;
 import org.oobium.app.server.response.Response;
 import org.oobium.app.server.routing.AppRouter;
 import org.oobium.app.server.routing.RouteHandler;
@@ -113,6 +112,7 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 
 			module.loadModels(modConfig);
 			module.loadObservers(modConfig);
+			module.loadActionCaches(this, modConfig);
 			
 			if(module instanceof HttpRequest404Handler) {
 				request404HandlerRegistration.unregister();
@@ -180,6 +180,7 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 
 		loadModels(config);
 		loadObservers(config);
+		loadActionCaches(this, config);
 		setErrorViewClasses(config);
 
 		// register handlers
@@ -366,8 +367,6 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		String cache = config.getString(Config.CACHE);
 		if(!blank(cache)) {
 			BundleContext context = getContext();
-			
-			loadActionCaches();
 
 			String str = "(&(" + Constants.OBJECTCLASS + "=" + CacheService.class.getName() + ")" +
 						"(" + CacheService.TYPE + "=" + cache + "))";
@@ -448,17 +447,6 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		}
 	}
 	
-	private void loadActionCaches() throws Exception {
-		logger.info("initializing ActionCache classes");
-
-		String pkg = getClass().getPackage().getName() + ".controllers.caches";
-		List<Class<?>> classes = loadClassesInPackage(pkg);
-		
-		for(ActionCache cache : ActionCache.getCaches(classes)) {
-			cache.setHandler(this);
-		}
-	}
-
 	private void removeModule(ServiceReference reference, ModuleService module, Config config) {
 		Config modConfig = config.getModuleConfig(module.getClass());
 		try {
