@@ -39,9 +39,9 @@ public class QueryProcessor<E extends Model> {
 
 	private static final Logger logger = LogProvider.getLogger(DbPersistService.class);
 
-	public static <T extends Model> QueryProcessor<T> create(Class<T> clazz, String sql, Object...values) throws SQLException {
+	public static <T extends Model> QueryProcessor<T> create(int dbType, Class<T> clazz, String sql, Object...values) throws SQLException {
 		QueryProcessor<T> processor = new QueryProcessor<T>();
-		processor.build(clazz, sql, values);
+		processor.build(dbType, clazz, sql, values);
 		return processor;
 	}
 
@@ -52,7 +52,7 @@ public class QueryProcessor<E extends Model> {
 		// private constructor
 	}
 	
-	private void build(Class<E> clazz, String sql, Object...values) throws SQLException {
+	private void build(int dbType, Class<E> clazz, String sql, Object...values) throws SQLException {
 		if(sql != null) {
 			StringBuilder sb = new StringBuilder(sql);
 			int i = 0, ix = 0;
@@ -65,9 +65,9 @@ public class QueryProcessor<E extends Model> {
 			if(i != values.length) {
 				throw new SQLException("The number of values does not match the number of place holders");
 			}
-			this.query = QueryBuilder.build(clazz, sb.toString(), values);
+			this.query = QueryBuilder.build(dbType, clazz, sb.toString(), values);
 		} else {
-			this.query = QueryBuilder.build(clazz, null);
+			this.query = QueryBuilder.build(dbType, clazz, null);
 		}
 		this.values = values;
 	}

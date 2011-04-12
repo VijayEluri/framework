@@ -16,6 +16,7 @@ import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.columnName;
 import static org.oobium.utils.StringUtils.tableName;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -30,6 +31,10 @@ import org.oobium.persist.db.DbPersistService;
 
 public class QueryUtils {
 
+	public static final int DERBY		= 1;
+	public static final int MYSQL		= 2;
+	public static final int POSTGRESQL	= 3;
+	
 	private static final Logger logger = LogProvider.getLogger(DbPersistService.class);
 	
 	public static final String ID = columnName(ModelDescription.ID);
@@ -82,6 +87,17 @@ public class QueryUtils {
 		throw new SQLException("could not adapt class of type " + clazz.getSimpleName());
 	}
 
+	public static int getDbType(Connection connection) {
+		String name = connection.getClass().getCanonicalName();
+		if(name.contains(".mysql.")) {
+			return MYSQL;
+		}
+		if(name.contains(".postgresql.")) {
+			return POSTGRESQL;
+		}
+		return DERBY;
+	}
+	
 	public static Object getObject(Class<? extends Model> clazz, int id) throws InstantiationException, IllegalAccessException, NoSuchFieldException {
 		Model model = getCache(clazz, id);
 		if(model == null) {

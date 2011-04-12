@@ -1206,7 +1206,7 @@ public class StringUtils {
 	 * @return
 	 */
 	public static String underscored(String string) {
-		if(string == null) {
+		if(string == null || string.length() == 0) {
 			return "null";
 		}
 		

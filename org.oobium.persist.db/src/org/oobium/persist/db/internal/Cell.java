@@ -12,10 +12,10 @@ package org.oobium.persist.db.internal;
 
 class Cell {
 
-	String column;
-	int type;
-	Object value;
-	boolean isQuery;
+	final String column;
+	final int type;
+	final Object value;
+	final boolean isQuery;
 
 	Cell(String column, int type, Object value) {
 		this.column = column;
@@ -26,10 +26,15 @@ class Cell {
 	
 	Cell(String column, String query) {
 		this.column = column;
+		this.type = -1;
 		this.value = query;
 		this.isQuery = true;
 	}
 
+	public Cell withValue(Object value) {
+		return new Cell(column, type, value);
+	}
+	
 	public String query() {
 		return (String) value;
 	}

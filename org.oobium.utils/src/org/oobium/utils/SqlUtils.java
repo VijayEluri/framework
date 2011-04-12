@@ -260,29 +260,6 @@ public class SqlUtils {
 	    _reservedWords.add("YEAR".toLowerCase());
 	}
 
-	public static Map<String, Object> asFieldMap(ResultSet rs) {
-		try {
-			List<String> columns = new ArrayList<String>();
-			ResultSetMetaData meta = rs.getMetaData();
-			for(int i = 1; i <= meta.getColumnCount(); i++) {
-				columns.add(meta.getColumnName(i));
-			}
-			if(rs.next()) {
-				Map<String, Object> map = new HashMap<String, Object>();
-				for(int i = 0; i < columns.size(); i++) {
-					String column = columns.get(i);
-					int type = meta.getColumnType(i+1);
-					String var = StringUtils.varName(column);
-					map.put(var, get(type, rs, i+1));
-				}
-				return map;
-			}
-		} catch(Exception e) {
-			logger.warn(e);
-		}
-		return null;
-	}
-	
 	public static List<Map<String, Object>> asFieldMaps(Connection connection, String sql) throws SQLException {
 		Statement s = null;
 		ResultSet rs = null;
@@ -306,7 +283,7 @@ public class SqlUtils {
 			List<String> columns = new ArrayList<String>();
 			ResultSetMetaData meta = rs.getMetaData();
 			for(int i = 1; i <= meta.getColumnCount(); i++) {
-				columns.add(meta.getColumnName(i));
+				columns.add(meta.getColumnLabel(i));
 			}
 			while(rs.next()) {
 				Map<String, Object> row = new LinkedHashMap<String, Object>();
@@ -322,74 +299,13 @@ public class SqlUtils {
 		return new ArrayList<Map<String,Object>>(0);
 	}
 	
-	/**
-	 * return a list of the first column in the result set
-	 * @param rs
-	 * @return
-	 */
-	public static List<Object> asList(ResultSet rs) {
-		try {
-			List<Object> list = new ArrayList<Object>();
-			int type = rs.getMetaData().getColumnType(1);
-			while(rs.next()) {
-				if(Types.SMALLINT == type) {
-					list.add(rs.getBoolean(1));
-				} else {
-					list.add(rs.getObject(1));
-				}
-				return list;
-			}
-		} catch(Exception e) {
-			logger.warn(e);
-		}
-		return null;
-	}
-	
-	/**
-	 * return a list of the first column in the result set
-	 * @param rs
-	 * @return
-	 */
-	public static <E> List<E> asList(ResultSet rs, Class<E> type) {
-		try {
-			List<E> list = new ArrayList<E>();
-			while(rs.next()) {
-				Object obj = rs.getObject(1);
-				if(obj.getClass().isAssignableFrom(type)) {
-					list.add(type.cast(obj));
-				}
-			}
-			return list;
-		} catch(Exception e) {
-			logger.warn(e);
-		}
-		return null;
-	}
-
-	public static List<List<Object>> asLists(Connection connection, String sql, boolean includeHeader) throws SQLException {
-		Statement s = null;
-		ResultSet rs = null;
-		try {
-			s = connection.createStatement();
-			rs = s.executeQuery(sql);
-			return asLists(rs, includeHeader);
-		} finally {
-			if(s != null) {
-				s.close();
-			}
-			if(rs != null) {
-				rs.close();
-			}
-		}
-	}
-
 	public static List<List<Object>> asLists(ResultSet rs, boolean includeHeader) {
 		try {
 			List<List<Object>> lists = new ArrayList<List<Object>>();
 			List<Object> columns = new ArrayList<Object>();
 			ResultSetMetaData meta = rs.getMetaData();
 			for(int i = 1; i <= meta.getColumnCount(); i++) {
-				columns.add(meta.getColumnName(i));
+				columns.add(meta.getColumnLabel(i));
 			}
 			if(includeHeader) {
 				lists.add(columns);
@@ -414,7 +330,7 @@ public class SqlUtils {
 			List<String> columns = new ArrayList<String>();
 			ResultSetMetaData meta = rs.getMetaData();
 			for(int i = 1; i <= meta.getColumnCount(); i++) {
-				columns.add(meta.getColumnName(i));
+				columns.add(meta.getColumnLabel(i));
 			}
 			while(rs.next()) {
 				Map<String, Map<String, Object>> row = new TreeMap<String, Map<String,Object>>(new Comparator<String>() {
@@ -453,85 +369,14 @@ public class SqlUtils {
 		return new ArrayList<Map<String,Map<String,Object>>>(0);
 	}
 	
-	public static String createIndexSql(String table, boolean unique, String...columns) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("CREATE ");
-		if(unique) {
-			sb.append("UNIQUE ");
-		}
-		sb.append("INDEX idx_").append(table);
-		for(String column : columns) {
-			sb.append('_').append(column);
-		}
-		sb.append(" ON ").append(table).append('(');
-		for(int i = 0; i < columns.length; i++) {
-			if(i != 0) {
-				sb.append(',');
-			}
-			sb.append(safeSqlWord(columns[i]));
-		}
-		sb.append(')');
-		return sb.toString();
-	}
-	
 	private static Object get(int type, ResultSet resultSet, int columnIndex) throws SQLException {
 		switch(type) {
 		case Types.BLOB:		return resultSet.getBytes(columnIndex);
 		case Types.CLOB:		return resultSet.getString(columnIndex);
-		case Types.SMALLINT:	return resultSet.getBoolean(columnIndex);
 		default:				return resultSet.getObject(columnIndex);
 		}
 	}
 
-	public static String getColumnType(Class<?> clazz) {
-		return getColumnType(clazz.getCanonicalName());
-	}
-	
-	public static String getColumnType(String type) {
-		if(String.class.getCanonicalName().equals(type)) {
-			return "VARCHAR(32672)";
-		}
-		if("org.oobium.persist.Text".equals(type)) {
-			return "TEXT";
-		}
-		if(Integer.class.getCanonicalName().equals(type) || int.class.getCanonicalName().equals(type)) {
-			return "INTEGER";
-		}
-		if(Long.class.getCanonicalName().equals(type) || long.class.getCanonicalName().equals(type)) {
-			return "BIGINT";
-		}
-		if(Boolean.class.getCanonicalName().equals(type) || boolean.class.getCanonicalName().equals(type)) {
-			return "SMALLINT";
-		}
-		if(Double.class.getCanonicalName().equals(type) || double.class.getCanonicalName().equals(type)) {
-			return "DOUBLE";
-		}
-		if(java.sql.Date.class.getCanonicalName().equals(type)) {
-			return "DATE";
-		}
-		if(Date.class.getCanonicalName().equals(type) || Timestamp.class.getCanonicalName().equals(type)) {
-			return "TIMESTAMP";
-		}
-		if(Time.class.getCanonicalName().equals(type)) {
-			return "TIME";
-		}
-		if(BigDecimal.class.getCanonicalName().equals(type)) {
-			return "DECIMAL";
-		}
-		if(byte[].class.getCanonicalName().equals(type)) {
-			return "BLOB";
-		}
-		if(char[].class.getCanonicalName().equals(type)) {
-			return "CLOB";
-		}
-		if(type != null) {
-			if(type.startsWith("java.sql.")) {
-				return type.substring(9).toUpperCase();
-			}
-		}
-		return "VARCHAR(32672)";
-	}
-	
 	public static int getSqlType(Class<?> clazz) {
 		if(String.class == clazz) {
 			return Types.VARCHAR;
@@ -549,13 +394,13 @@ public class SqlUtils {
 			return Types.BIGINT;
 		}
 		if(Boolean.class == clazz || boolean.class == clazz) {
-			return Types.SMALLINT;
+			return Types.BOOLEAN;
 		}
 		if(Double.class == clazz || double.class == clazz) {
 			return Types.DOUBLE;
 		}
 		if(Date.class == clazz) {
-			return Types.TIMESTAMP;
+			return Types.BIGINT;
 		}
 		if(java.sql.Date.class == clazz) {
 			return Types.DATE;
@@ -564,7 +409,7 @@ public class SqlUtils {
 			return Types.TIME;
 		}
 		if(Timestamp.class == clazz) {
-			return Types.TIMESTAMP;
+			return Types.BIGINT;
 		}
 		if(BigDecimal.class == clazz) {
 			return Types.DECIMAL;
@@ -579,23 +424,6 @@ public class SqlUtils {
 		return Types.VARCHAR;
 	}
 	
-	public static List<String> getStatements(String sql) {
-		List<String> stmts = new ArrayList<String>();
-		for(String stmt : sql.split(";")) {
-			stmts.add(stmt.trim());
-		}
-		return stmts;
-	}
-	
-	public static String getValueAsString(String type, String value) {
-		if(value == null || value == "null" || type.contains("INT")) {
-			return value;
-		} else if(type.contains("CHAR")) {
-			return "'" + value.replaceAll("'", "''") + "'";
-		}
-		return null;
-	}
-
 	public static boolean isDDL(String sql) {
     	try {
 	    	String cmd = sql.trim().split(" ", 2)[0].toUpperCase();
@@ -700,9 +528,15 @@ public class SqlUtils {
     	if(object == null) {
     		ps.setNull(index, type);
     	} else {
-			if(type == Types.TIMESTAMP && object instanceof Date) {
-				Timestamp ts = new Timestamp(((Date) object).getTime());
-				ps.setObject(index, ts, type);
+			if(object instanceof Date) {
+				long l = ((Date) object).getTime();
+				switch(type) {
+				case Types.BIGINT:		object = l; break;
+				case Types.DATE:		object = new java.sql.Date(l); break;
+				case Types.TIME:		object = new Time(l); break;
+				case Types.TIMESTAMP:	object = new Timestamp(l); break;
+				}
+				ps.setObject(index, object, type);
 			} else if(type == Types.VARCHAR && object instanceof Map) {
 				ps.setObject(index, JsonUtils.toJson((Map<?,?>) object), type);
 			} else if(type == Types.INTEGER && object instanceof Map) {

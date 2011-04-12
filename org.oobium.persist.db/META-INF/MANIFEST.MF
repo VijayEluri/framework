@@ -15,4 +15,4 @@ Import-Package: javax.sql,
  org.osgi.framework;version="1.4.0",
  org.osgi.util.tracker;version="1.3.3"
 Export-Package: org.oobium.persist.db,
- org.oobium.persist.db.internal;x-friends:="org.oobium.persist.db.tests"
+ org.oobium.persist.db.internal;x-friends:="org.oobium.framework.tests"

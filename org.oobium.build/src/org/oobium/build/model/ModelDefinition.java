@@ -191,7 +191,9 @@ public class ModelDefinition {
 							j++; // skip the next character (don't add it twice)
 						}
 					}
-				default:	sb.append(c); break;
+				default:
+					sb.append(c);
+					break;
 				}
 			}
 			return sb.toString();
@@ -199,7 +201,7 @@ public class ModelDefinition {
 		return in;
 	}
 
-	public File file; // TODO this file object will no work when we need to deal with jars...
+	public final File file; // TODO this file object will no work when we need to deal with jars...
 	private final String source;
 
 	public final String packageName;
@@ -213,16 +215,20 @@ public class ModelDefinition {
 	public String[] siblings;
 
 	public ModelDefinition(File file) {
-		this(file.getName(), readFile(file).toString(), null);
-		this.file = file;
+		this(file.getName(), readFile(file).toString(), file, null);
 	}
 
 	public ModelDefinition(String simpleName, String source, String[] siblings) {
+		this(simpleName, source, null, siblings);
+	}
+
+	public ModelDefinition(String simpleName, String source, File file, String[] siblings) {
 		this.source = source;
 
 		this.packageName = parsePackageName();
 		this.type = parseType(simpleName);
 
+		this.file = file;
 		this.siblings = siblings;
 		
 		this.attributes = new LinkedHashMap<String, ModelAttribute>();

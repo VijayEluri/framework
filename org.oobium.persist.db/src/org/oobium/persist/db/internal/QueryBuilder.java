@@ -42,26 +42,29 @@ import org.oobium.utils.json.JsonUtils;
 
 public class QueryBuilder {
 
-	private static Query build(Class<? extends Model> parentClass, String field, Class<? extends Model> clazz, String sql, Object...values) throws SQLException {
+	private static Query build(int dbType, Class<? extends Model> parentClass, String field, Class<? extends Model> clazz, String sql, Object...values) throws SQLException {
 		Query query = new Query(parentClass, field, clazz);
-		QueryBuilder builder = new QueryBuilder(parentClass, query, sql, values);
+		QueryBuilder builder = new QueryBuilder(dbType, parentClass, query, sql, values);
 		builder.build();
 		return query;
 	}
 	
-	public static Query build(Class<? extends Model> clazz, String sql, Object...values) throws SQLException {
+	public static Query build(int dbType, Class<? extends Model> clazz, String sql, Object...values) throws SQLException {
 		Query query = new Query(clazz);
-		QueryBuilder builder = new QueryBuilder(query, sql, values);
+		QueryBuilder builder = new QueryBuilder(dbType, query, sql, values);
 		builder.build();
 		return query;
 	}
 	
-	static List<Object> processModelIncludes(Class<? extends Model> clazz, String sql, Object...values) throws SQLException {
+	static List<Object> processModelIncludes(int dbType, Class<? extends Model> clazz, String sql, Object...values) throws SQLException {
 		Query query = new Query(clazz);
-		QueryBuilder builder = new QueryBuilder(query, sql, values);
+		QueryBuilder builder = new QueryBuilder(dbType, query, sql, values);
 		builder.build();
 		return builder.includes;
 	}
+	
+	
+	int dbType;
 	
 	ModelAdapter parentAdapter;
 	
@@ -80,12 +83,13 @@ public class QueryBuilder {
 
 	String alias;
 
-	private QueryBuilder(Class<? extends Model> parentClass, Query query, String sql, Object...values) {
-		this(query, sql, values);
+	private QueryBuilder(int dbType, Class<? extends Model> parentClass, Query query, String sql, Object...values) {
+		this(dbType, query, sql, values);
 		parentAdapter = ModelAdapter.getAdapter(parentClass);
 	}
 	
-	private QueryBuilder(Query query, String sql, Object...values) {
+	private QueryBuilder(int dbType, Query query, String sql, Object...values) {
+		this.dbType = dbType;
 		this.query = query;
 
 		this.adapter = ModelAdapter.getAdapter(query.getType());
@@ -291,21 +295,41 @@ public class QueryBuilder {
 			sb.append(" ORDER BY ");
 			sb.append(join(orderClauses, ','));
 		}
-		if(offset > 0) {
-			if(offset == 1) {
-				sb.append(" OFFSET 1 ROW");
-			} else {
-				sb.append(" OFFSET ").append(offset).append(" ROWS");
-			}
-		}
-		if(limit > 0) {
-			if(limit == 1) {
-				sb.append(" FETCH NEXT ROW ONLY");
-			} else {
-				sb.append(" FETCH NEXT ").append(limit).append(" ROWS ONLY");
-			}
-		}
+		buildLimitSql(sb);
 		return sb.toString();
+	}
+	
+	private void buildLimitSql(StringBuilder sb) {
+		switch(dbType) {
+		case QueryUtils.DERBY:
+		case QueryUtils.POSTGRESQL:
+			if(offset > 0) {
+				if(offset == 1) {
+					sb.append(" OFFSET 1 ROW");
+				} else {
+					sb.append(" OFFSET ").append(offset).append(" ROWS");
+				}
+			}
+			if(limit > 0) {
+				if(limit == 1) {
+					sb.append(" FETCH NEXT ROW ONLY");
+				} else {
+					sb.append(" FETCH NEXT ").append(limit).append(" ROWS ONLY");
+				}
+			}
+			break;
+		case QueryUtils.MYSQL:
+			if(limit > 0 && offset > 0) {
+				sb.append(" LIMIT ").append(offset).append(',').append(limit);
+			} else if(offset > 0) {
+				sb.append(" LIMIT ").append(offset).append(',').append(Long.MAX_VALUE);
+			} else if(limit > 0) {
+				sb.append(" LIMIT ").append(limit);
+			}
+			break;
+		default:
+			throw new UnsupportedOperationException("dbType not yet supported: " + dbType);
+		}
 	}
 	
 	private String column(String alias, String field) {
@@ -425,7 +449,14 @@ public class QueryBuilder {
 				alias = "b";
 			}
 		} else {
-			if(parentAdapter.isManyToMany(field)) {
+			if(parentAdapter.isManyToOne(field)) {
+				String col = "b." + safeSqlWord(columnName(parentAdapter.getOpposite(field)));
+				columns.add(col + " a_id");
+				addColumns("b", adapter);
+				tables.add(tableName(adapter.getModelClass()) + " b");
+				whereClauses.add(col + " IN (" + Query.ID_MARKER + ")");
+				alias = "b";
+			} else {
 				String table1 = tableName(parentAdapter.getModelClass());
 				String column1 = columnName(field);
 				String table2 = tableName(query.getType());
@@ -437,18 +468,6 @@ public class QueryBuilder {
 				this.columns.add("a." + jcolumns[1] + " a_id");
 				addColumns("b", adapter);
 				tables.add(jtable + " a INNER JOIN " + table2 + " b ON a." + jcolumns[0] + "=b.id AND a." + jcolumns[1] + " IN (" + Query.ID_MARKER + ")");
-				alias = "b";
-			} else {
-				String col;
-				if(parentAdapter.isManyToOne(field)) {
-					col = "b." + safeSqlWord(columnName(parentAdapter.getOpposite(field)));
-				} else { // isManyToNone
-					col = "b.mk_" + columnName(underscored(parentAdapter.getModelClass().getSimpleName()), columnName(field));
-				}
-				columns.add(col + " a_id");
-				addColumns("b", adapter);
-				tables.add(tableName(adapter.getModelClass()) + " b");
-				whereClauses.add(col + " IN (" + Query.ID_MARKER + ")");
 				alias = "b";
 			}
 		}
@@ -594,7 +613,7 @@ public class QueryBuilder {
 				Class<? extends Model> parentClass = parentAdapter.getModelClass();
 				Class<? extends Model> clazz = parentAdapter.getRelationClass(field);
 				String sql = blank(child) ? "" : ("include:" + JsonUtils.toJson(child));
-				Query query = QueryBuilder.build(parentClass, field, clazz, sql);
+				Query query = QueryBuilder.build(dbType, parentClass, field, clazz, sql);
 				this.query.addChild(query);
 			} else {
 				throw new SQLException("field not found: " + field + " in " + parentAdapter);

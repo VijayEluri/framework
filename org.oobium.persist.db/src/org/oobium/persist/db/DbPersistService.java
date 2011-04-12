@@ -15,7 +15,6 @@ import static org.oobium.utils.literal.Properties;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +28,6 @@ import org.oobium.persist.ModelAdapter;
 import org.oobium.persist.PersistClient;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.db.internal.DbPersistor;
-import org.oobium.persist.db.internal.SingleConnectionManager;
 import org.oobium.utils.json.JsonUtils;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
@@ -52,7 +50,7 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	private BundleContext context;
 	private DbPersistor persistor;
 	private Map<String, ConnectionPool> connectionPools;
-	protected SingleConnectionManager sConnManager;
+	protected ConnectionManager connectionManager;
 
 	private ServiceTracker appTracker;
 
@@ -75,17 +73,29 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	 * @param client
 	 * @param timeout
 	 */
-	public DbPersistService(String client, boolean inMemory) {
+	public DbPersistService(ConnectionManager connectionManager) {
 		logger = LogProvider.getLogger(DbPersistService.class);
-		openSession(client);
+		openSession(connectionManager.getDatabase());
 		persistor = new DbPersistor();
-		sConnManager = new SingleConnectionManager(threadClient.get(), inMemory);
+		this.connectionManager = connectionManager;
+	}
+	
+	protected void createDatabase() {
+		if(connectionManager != null) {
+			try {
+				connectionManager.createDatabase();
+			} catch(SQLException e) {
+				logger.error("ERROR creating database", e);
+			}
+		} else {
+			throw new UnsupportedOperationException();
+		}
 	}
 	
 	protected void dropDatabase() {
-		if(inMemory()) {
+		if(connectionManager != null) {
 			try {
-				sConnManager.dropDatabase();
+				connectionManager.dropDatabase();
 			} catch(SQLException e) {
 				logger.error("ERROR dropping database", e);
 			}
@@ -95,7 +105,7 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	}
 	
 	public boolean inMemory() {
-		return (sConnManager != null) && sConnManager.inMemory();
+		return (connectionManager != null) && connectionManager.inMemory();
 	}
 	
 	private void addDatabase(String client, Map<String, Object> properties) {
@@ -273,8 +283,8 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 						throw new SQLException("database for " + clientName + " has not been setup");
 					}
 					connection = cp.getConnection();
-				} else if(sConnManager != null) {
-					connection = sConnManager.getConnection();
+				} else if(connectionManager != null) {
+					connection = connectionManager.getConnection();
 				} else {
 					throw new SQLException("no connection pool or manager has been setup");
 				}

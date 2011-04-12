@@ -27,8 +27,8 @@ public class DerbyEmbeddedPersistService extends DbPersistService {
 		super();
 	}
 	
-	public DerbyEmbeddedPersistService(String schema, boolean inMemory) {
-		super(schema, inMemory);
+	public DerbyEmbeddedPersistService(String database, boolean inMemory) {
+		super(new DerbyEmbeddedConnectionManager(database, inMemory));
 	}
 	
 	private String adjustSql(String sql) {

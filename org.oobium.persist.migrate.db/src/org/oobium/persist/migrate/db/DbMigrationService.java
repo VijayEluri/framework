@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.oobium.persist.migrate.db;
 
+import static org.oobium.persist.migrate.defs.Column.*;
 import static org.oobium.persist.Relation.CASCADE;
 import static org.oobium.persist.Relation.NO_ACTION;
 import static org.oobium.persist.Relation.RESTRICT;
@@ -233,7 +234,7 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		sb.append(getSqlSafe(column.name));
 		sb.append(' ');
 		sb.append(getSqlType(column.type));
-		if("decimal".equals(getSqlType(column.type))) {
+		if(DECIMAL.equals(getSqlType(column.type))) {
 			String precision = column.options.get("precision", 2).toString();
 			String scale = column.options.get("scale", 8).toString();
 			sb.append("(").append(precision).append(",").append(scale).append(")");
@@ -255,26 +256,7 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		return sb.toString();
 	}
 
-	protected String getCreateForeignKeyColumnSql(ForeignKey fk) {
-		StringBuilder sb = new StringBuilder();
-		sb.append(getSqlSafe(fk.column)).append(' ').append(getSqlType(fk.type)).append(" CONSTRAINT ");
-		sb.append(fk.name).append(" REFERENCES ").append(getSqlSafe(fk.reference)).append(" (id)");
-		switch(fk.options.get("onDelete", -1)) {
-		case CASCADE:		sb.append(" ON DELETE CASCADE");	break;
-		case NO_ACTION:		sb.append(" ON DELETE NO ACTION");	break;
-		case RESTRICT:		sb.append(" ON DELETE RESTRICT");	break;
-		case SET_DEFAULT:	sb.append(" ON DELETE SET DEFAULT");break;
-		case SET_NULL:		sb.append(" ON DELETE SET NULL");	break;
-		}
-		switch(fk.options.get("onUpdate", -1)) {
-		case CASCADE:		sb.append(" ON UPDATE CASCADE");	break;
-		case NO_ACTION:		sb.append(" ON UPDATE NO ACTION");	break;
-		case RESTRICT:		sb.append(" ON UPDATE RESTRICT");	break;
-		case SET_DEFAULT:	sb.append(" ON UPDATE SET DEFAULT");break;
-		case SET_NULL:		sb.append(" ON UPDATE SET NULL");	break;
-		}
-		return sb.toString();
-	}
+	protected abstract String getCreateForeignKeyColumnSql(ForeignKey fk);
 
 	/**
 	 * Generate the SQL to create a foreign key constraint on an existing column.
@@ -323,13 +305,7 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		return sb.toString();
 	}
 
-	protected String getCreatePrimaryKeySql(PrimaryKey pk) {
-		StringBuilder sb = new StringBuilder();
-		sb.append(getSqlSafe(pk.name)).append(' ').append(getSqlType(pk.type));
-		if(pk.autoIncrement) sb.append(" GENERATED ALWAYS");
-		sb.append(" AS IDENTITY PRIMARY KEY");
-		return sb.toString();
-	}
+	protected abstract String getCreatePrimaryKeySql(PrimaryKey pk);
 	
 	protected abstract String getCreateTableOptionsSql(Table table);
 	
@@ -351,11 +327,10 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 			}
 			if(iter.hasNext()) sb.append(',');
 		}
-		if(options != null) {
-			if(!columns.isEmpty()) sb.append(',');
-			sb.append(options);
-		}
 		sb.append(")");
+		if(options != null) {
+			sb.append(' ').append(options);
+		}
 		return sb.toString();
 	}
 	
@@ -372,7 +347,9 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		return sb.toString();
 	}
 	
-	protected abstract String getSqlForPrimitive(String type);
+	protected String getSqlForPrimitive(String type) {
+		return Column.BOOLEAN.equals(type) ? "false" : "0";
+	}
 
 	protected abstract String getSqlSafe(String rawString);
 	

@@ -4,17 +4,18 @@ import static org.junit.Assert.*;
 
 import java.sql.Timestamp;
 import java.util.Collection;
+import java.util.Date;
 
 import org.junit.Test;
+import org.oobium.framework.tests.dyn.DynModel;
+import org.oobium.framework.tests.dyn.DynClasses;
 import org.oobium.persist.Model;
-import org.oobium.persist.dyn.DynModel;
-import org.oobium.persist.dyn.DynModels;
 
 public class RetrieveTests extends BaseDbTestCase {
 
 	@Test
 	public void testAttr() throws Exception {
-		DynModel am = DynModels.getClass(pkg, "AModel").addAttr("name", "String.class");
+		DynModel am = DynClasses.getModel(pkg, "AModel").addAttr("name", "String.class");
 		
 		migrate(am);
 		
@@ -29,8 +30,8 @@ public class RetrieveTests extends BaseDbTestCase {
 	
 	@Test
 	public void testHasOne() throws Exception {
-		DynModel am = DynModels.getClass(pkg, "AModel").addHasOne("bModel", "BModel.class");
-		DynModel bm = DynModels.getClass(pkg, "BModel").addAttr("name", "String.class");
+		DynModel am = DynClasses.getModel(pkg, "AModel").addHasOne("bModel", "BModel.class");
+		DynModel bm = DynClasses.getModel(pkg, "BModel").addAttr("name", "String.class");
 		
 		migrate(am, bm);
 
@@ -47,13 +48,13 @@ public class RetrieveTests extends BaseDbTestCase {
 
 	@Test
 	public void testHasOneToOne() throws Exception {
-		DynModel am = DynModels.getClass(pkg, "AModel").timestamps().addHasOne("bModel", "BModel.class", "opposite=\"aModel\"");
-		DynModel bm = DynModels.getClass(pkg, "BModel").timestamps().addHasOne("aModel", "AModel.class", "opposite=\"bModel\"");
+		DynModel am = DynClasses.getModel(pkg, "AModel").timestamps().addHasOne("bModel", "BModel.class", "opposite=\"aModel\"");
+		DynModel bm = DynClasses.getModel(pkg, "BModel").timestamps().addHasOne("aModel", "AModel.class", "opposite=\"bModel\"");
 
 		migrate(am, bm);
 
-		Timestamp ts = new Timestamp(System.currentTimeMillis());
-		persistService.executeUpdate("INSERT INTO b_models(created_at) VALUES(?)", ts);
+		long createdAt = System.currentTimeMillis();
+		persistService.executeUpdate("INSERT INTO b_models(created_at) VALUES(?)", createdAt);
 		persistService.executeUpdate("INSERT INTO a_models(b_model) VALUES(?)", 1);
 
 		Model a = am.newInstance();
@@ -61,13 +62,14 @@ public class RetrieveTests extends BaseDbTestCase {
 		a.load();
 		
 		assertNotNull(a.get("bModel"));
-		assertTrue(ts.equals(((Model) a.get("bModel")).get("createdAt")));
+		assertNotNull(((Model) a.get("bModel")).get("createdAt"));
+		assertEquals(createdAt, ((Date) ((Model) a.get("bModel")).get("createdAt")).getTime());
 	}
 	
 	@Test
 	public void testHasOneToOne_FromNonKey() throws Exception {
-		DynModel am = DynModels.getClass(pkg, "AModel").timestamps().addHasOne("bModel", "BModel.class", "opposite=\"aModel\"");
-		DynModel bm = DynModels.getClass(pkg, "BModel").timestamps().addHasOne("aModel", "AModel.class", "opposite=\"bModel\"");
+		DynModel am = DynClasses.getModel(pkg, "AModel").timestamps().addHasOne("bModel", "BModel.class", "opposite=\"aModel\"");
+		DynModel bm = DynClasses.getModel(pkg, "BModel").timestamps().addHasOne("aModel", "AModel.class", "opposite=\"bModel\"");
 
 		migrate(am, bm);
 
@@ -84,8 +86,8 @@ public class RetrieveTests extends BaseDbTestCase {
 	
 	@Test
 	public void testHasOneToMany() throws Exception {
-		DynModel am = DynModels.getClass(pkg, "AModel").timestamps().addHasOne("bModel", "BModel.class", "opposite=\"aModels\"");
-		DynModel bm = DynModels.getClass(pkg, "BModel").timestamps().addHasMany("aModels", "AModel.class", "opposite=\"bModel\"");
+		DynModel am = DynClasses.getModel(pkg, "AModel").timestamps().addHasOne("bModel", "BModel.class", "opposite=\"aModels\"");
+		DynModel bm = DynClasses.getModel(pkg, "BModel").timestamps().addHasMany("aModels", "AModel.class", "opposite=\"bModel\"");
 
 		migrate(am, bm);
 
@@ -103,8 +105,8 @@ public class RetrieveTests extends BaseDbTestCase {
 	@Test
 	public void testHasManyToOne() throws Exception {
 		// same as testHasOneToMany, except save the from the "many" side
-		DynModel am = DynModels.getClass(pkg, "AModel").timestamps().addHasOne("bModel", "BModel.class", "opposite=\"aModels\"");
-		DynModel bm = DynModels.getClass(pkg, "BModel").timestamps().addHasMany("aModels", "AModel.class", "opposite=\"bModel\"");
+		DynModel am = DynClasses.getModel(pkg, "AModel").timestamps().addHasOne("bModel", "BModel.class", "opposite=\"aModels\"");
+		DynModel bm = DynClasses.getModel(pkg, "BModel").timestamps().addHasMany("aModels", "AModel.class", "opposite=\"bModel\"");
 
 		migrate(am, bm);
 
@@ -121,13 +123,14 @@ public class RetrieveTests extends BaseDbTestCase {
 
 	@Test
 	public void testHasManyToNone() throws Exception {
-		DynModel am = DynModels.getClass(pkg, "AModel").timestamps().addHasMany("bModels", "BModel.class");
-		DynModel bm = DynModels.getClass(pkg, "BModel").timestamps().addHasOne("aModel", "AModel.class");
+		DynModel am = DynClasses.getModel(pkg, "AModel").timestamps().addHasMany("bModels", "BModel.class");
+		DynModel bm = DynClasses.getModel(pkg, "BModel").timestamps().addHasOne("aModel", "AModel.class");
 
 		migrate(am, bm);
 
 		persistService.executeUpdate("INSERT INTO a_models(created_at) VALUES(?)", new Timestamp(System.currentTimeMillis()));
-		persistService.executeUpdate("INSERT INTO b_models(mk_a_model__b_models) VALUES(?)", 1);
+		persistService.executeUpdate("INSERT INTO b_models(created_at) VALUES(?)", new Timestamp(System.currentTimeMillis()));
+		persistService.executeUpdate("INSERT INTO a_models__b_models___b_models__null(a,b) VALUES(?,?)", 1, 1);
 
 		Model a = am.newInstance();
 		a.setId(1);
@@ -138,8 +141,8 @@ public class RetrieveTests extends BaseDbTestCase {
 
 	@Test
 	public void testHasManyToMany() throws Exception {
-		DynModel am = DynModels.getClass(pkg, "AModel").timestamps().addHasMany("bModels", "BModel.class", "opposite=\"aModels\"");
-		DynModel bm = DynModels.getClass(pkg, "BModel").timestamps().addHasMany("aModels", "AModel.class", "opposite=\"bModels\"");
+		DynModel am = DynClasses.getModel(pkg, "AModel").timestamps().addHasMany("bModels", "BModel.class", "opposite=\"aModels\"");
+		DynModel bm = DynClasses.getModel(pkg, "BModel").timestamps().addHasMany("aModels", "AModel.class", "opposite=\"bModels\"");
 
 		migrate(am, bm);
 
@@ -161,8 +164,8 @@ public class RetrieveTests extends BaseDbTestCase {
 
 	@Test
 	public void testHasManyToMany_FromB() throws Exception {
-		DynModel am = DynModels.getClass(pkg, "AModel").timestamps().addHasMany("bModels", "BModel.class", "opposite=\"aModels\"");
-		DynModel bm = DynModels.getClass(pkg, "BModel").timestamps().addHasMany("aModels", "AModel.class", "opposite=\"bModels\"");
+		DynModel am = DynClasses.getModel(pkg, "AModel").timestamps().addHasMany("bModels", "BModel.class", "opposite=\"aModels\"");
+		DynModel bm = DynClasses.getModel(pkg, "BModel").timestamps().addHasMany("aModels", "AModel.class", "opposite=\"bModels\"");
 
 		migrate(am, bm);
 

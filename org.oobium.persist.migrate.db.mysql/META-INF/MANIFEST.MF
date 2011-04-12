@@ -1,0 +1,19 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: MySQL Migration Service
+Bundle-SymbolicName: org.oobium.persist.migrate.db.mysql
+Bundle-Version: 1.0.0.qualifier
+Bundle-Activator: org.oobium.persist.migrate.db.mysql.MySqlMigrationService
+Bundle-Vendor: oobium.org
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Import-Package: org.oobium.logging,
+ org.oobium.persist,
+ org.oobium.persist.migrate,
+ org.oobium.persist.migrate.db,
+ org.oobium.persist.migrate.defs,
+ org.oobium.persist.migrate.defs.changes,
+ org.oobium.persist.migrate.defs.columns,
+ org.oobium.utils,
+ org.osgi.framework;version="1.3.0"
+Bundle-ActivationPolicy: lazy
+Export-Package: org.oobium.persist.migrate.db.mysql

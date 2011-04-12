@@ -146,7 +146,7 @@ public abstract class AbstractMigration implements Migration {
     }
 
     public Change addUniqueIndex(String...columns) {
-    	return new AddIndex(columns, false);
+    	return new AddIndex(columns, true);
     }
 
     public Column Binary(String name) {
@@ -260,7 +260,7 @@ public abstract class AbstractMigration implements Migration {
 
     public void createUniqueIndex(String tableName, String...columns) throws SQLException {
     	Table table = new Table(getService(), tableName, null);
-    	table.addIndex(columns);
+    	table.addUniqueIndex(columns);
     	table.update();
 	}
     

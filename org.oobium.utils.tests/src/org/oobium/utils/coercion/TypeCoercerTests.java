@@ -58,7 +58,31 @@ public class TypeCoercerTests {
 		public String toJson() { return data.toString(); }
 	}
 	
+	@Test
+	public void testBoolean() throws Exception {
+		assertFalse(coerce(0, Boolean.class));
+		assertFalse(coerce(0, boolean.class));
+		assertTrue(coerce(1, Boolean.class));
+		assertTrue(coerce(1, boolean.class));
 
+		assertFalse(coerce(0.0f, Boolean.class));
+		assertFalse(coerce(0.0f, boolean.class));
+		assertTrue(coerce(0.01f, Boolean.class));
+		assertTrue(coerce(0.1f, boolean.class));
+		assertTrue(coerce(1.0f, Boolean.class));
+		assertTrue(coerce(1.0f, boolean.class));
+
+		assertFalse(coerce(0l, Boolean.class));
+		assertFalse(coerce(0l, boolean.class));
+		assertTrue(coerce(1l, Boolean.class));
+		assertTrue(coerce(1l, boolean.class));
+		
+		assertFalse(coerce("t", Boolean.class));
+		assertFalse(coerce("t", boolean.class));
+		assertTrue(coerce("true", Boolean.class));
+		assertTrue(coerce("true", boolean.class));
+	}
+	
 	@Test
 	public void testDate() throws Exception {
 		long date = System.currentTimeMillis();

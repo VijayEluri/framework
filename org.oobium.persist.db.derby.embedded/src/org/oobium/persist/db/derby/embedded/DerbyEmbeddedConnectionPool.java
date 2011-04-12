@@ -10,6 +10,8 @@
  ******************************************************************************/
 package org.oobium.persist.db.derby.embedded;
 
+import static org.oobium.utils.coercion.TypeCoercer.coerce;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
@@ -35,22 +37,6 @@ public class DerbyEmbeddedConnectionPool extends ConnectionPool {
 		return path;
 	}
 	
-	private static String getPassword(Map<String, Object> properties) {
-		Object password = properties.get("password");
-		if(password instanceof String) {
-			return (String) password;
-		}
-		return "";
-	}
-	
-	private static String getUsername(Map<String, Object> properties) {
-		Object username = properties.get("username");
-		if(username instanceof String) {
-			return (String) username;
-		}
-		return "root";
-	}
-	
 	public DerbyEmbeddedConnectionPool(String client, Map<String, Object> properties) {
 		super(client, properties, LogProvider.getLogger(DerbyEmbeddedPersistService.class));
 	}
@@ -68,8 +54,8 @@ public class DerbyEmbeddedConnectionPool extends ConnectionPool {
 		EmbeddedConnectionPoolDataSource ds = new EmbeddedConnectionPoolDataSource();
 		ds.setCreateDatabase("create");
 		ds.setDatabaseName(database);
-		ds.setUser(getUsername(properties));
-		ds.setPassword(getPassword(properties));
+		ds.setUser(coerce(properties.get("username"), "root"));
+		ds.setPassword(coerce(properties.get("password"), ""));
 		return ds;
 	}
 

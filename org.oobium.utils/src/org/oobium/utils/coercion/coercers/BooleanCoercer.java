@@ -13,6 +13,30 @@ package org.oobium.utils.coercion.coercers;
 
 public class BooleanCoercer extends AbstractCoercer {
 
+	public Boolean coerce(Integer i, Class<?> toType) {
+		return i != null && i.intValue() != 0;
+	}
+	
+	public Boolean coerce(Short s, Class<?> toType) {
+		return s != null && s.shortValue() != 0;
+	}
+	
+	public Boolean coerce(Byte b, Class<?> toType) {
+		return b != null && b.byteValue() != 0;
+	}
+	
+	public Boolean coerce(Long l, Class<?> toType) {
+		return l != null && l.longValue() != 0;
+	}
+	
+	public Boolean coerce(Double d, Class<?> toType) {
+		return d != null && d.doubleValue() != 0;
+	}
+	
+	public Boolean coerce(Float f, Class<?> toType) {
+		return f != null && f.floatValue() != 0;
+	}
+	
 	public Boolean coerce(String string, Class<?> toType) {
 		return new Boolean(string);
 	}

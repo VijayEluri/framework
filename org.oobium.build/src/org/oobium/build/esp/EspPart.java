@@ -185,7 +185,7 @@ public class EspPart implements CharSequence {
 	}
 	
 	public String getText() {
-		return new String(ca, start, end-start);
+		return (end > start) ? new String(ca, start, end-start) : "";
 	}
 	
 	public Type getType() {

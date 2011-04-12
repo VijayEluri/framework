@@ -153,23 +153,11 @@ public class DbGenerator {
 		for(ModelDefinition model : models) {
 			for(ModelRelation relation : model.relations.values()) {
 				if(relation.hasMany && !relation.isThrough()) {
-					ModelRelation oppositeRelation = relation.getOpposite();
-					if(oppositeRelation == null) {
-						ModelTable oppositeTable = tables.get(relation.getSimpleType());
-						oppositeTable.addRelation(relation);
-					}
-				}
-			}
-		}
-
-		for(ModelDefinition model : models) {
-			for(ModelRelation relation : model.relations.values()) {
-				if(relation.hasMany && !relation.isThrough()) {
-					ModelRelation oppositeRelation = relation.getOpposite();
-					if(oppositeRelation != null && oppositeRelation.hasMany) {
+					ModelRelation opposite = relation.getOpposite();
+					if(opposite == null || opposite.hasMany) {
 						ModelTable table1 = tables.get(model.getSimpleType());
-						ModelTable table2 = tables.get(oppositeRelation.model.getSimpleType());
-						JoinTable joinTable = new JoinTable(varName(table1.name), columnName(relation.name), varName(table2.name), columnName(oppositeRelation.name));
+						ModelTable table2 = tables.get(relation.getSimpleType());
+						JoinTable joinTable = new JoinTable(varName(table1.name), columnName(relation.name), varName(table2.name), columnName(relation.opposite));
 						if(!joins.containsKey(joinTable.name)) {
 							joins.put(joinTable.name, joinTable);
 							joinedModels.add(table1);

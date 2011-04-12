@@ -407,7 +407,7 @@ public abstract class Model implements JsonModel {
 				}
 			}
 			for(String field : adapter.getHasManyFields()) {
-				if(!adapter.isManyToMany(field)) {
+				if(adapter.isManyToOne(field)) {
 					Relation relation = adapter.getRelation(field);
 					if(relation.dependent() == Relation.DESTROY) {
 						destroy(field);
@@ -424,7 +424,7 @@ public abstract class Model implements JsonModel {
 				}
 			}
 			for(String field : adapter.getHasManyFields()) {
-				if(adapter.isManyToMany(field)) {
+				if(!adapter.isManyToOne(field)) {
 					Relation relation = adapter.getRelation(field);
 					if(relation.dependent() == Relation.DESTROY) {
 						destroy(field);
@@ -716,7 +716,8 @@ public abstract class Model implements JsonModel {
 								if(fadapter.hasAttribute(ffield)) {
 									fmap.put(ffield, model.get(ffield));
 								} else if(fadapter.hasOne(ffield)) {
-									fmap.put(ffield, ((Model) model.get(ffield)).getId());
+									Model m = (Model) model.get(ffield);
+									fmap.put(ffield, (m != null) ? m.getId() : null);
 								} else if(fadapter.hasMany(ffield)) {
 									Collection<?> collection = (Collection<?>) model.get(ffield);
 									List<Object> list = new ArrayList<Object>();

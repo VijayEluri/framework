@@ -1,5 +1,11 @@
 package org.oobium.persist.migrate.db.derby.embedded;
 
+import static org.oobium.persist.Relation.CASCADE;
+import static org.oobium.persist.Relation.NO_ACTION;
+import static org.oobium.persist.Relation.RESTRICT;
+import static org.oobium.persist.Relation.SET_DEFAULT;
+import static org.oobium.persist.Relation.SET_NULL;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -11,6 +17,8 @@ import java.util.Map;
 import org.oobium.logging.Logger;
 import org.oobium.persist.migrate.db.DbMigrationService;
 import org.oobium.persist.migrate.defs.Table;
+import org.oobium.persist.migrate.defs.columns.ForeignKey;
+import org.oobium.persist.migrate.defs.columns.PrimaryKey;
 import org.oobium.utils.SqlUtils;
 
 public class DerbyEmbeddedMigrationService extends DbMigrationService {
@@ -20,7 +28,7 @@ public class DerbyEmbeddedMigrationService extends DbMigrationService {
 	static {
 		sqlTypes = new HashMap<String, String>();
 		sqlTypes.put("binary",		"BLOB");
-		sqlTypes.put("boolean", 	"SMALLINT");
+		sqlTypes.put("boolean", 	"BOOLEAN");
 		sqlTypes.put("date", 		"DATE");
 		sqlTypes.put("decimal", 	"DECIMAL");
 		sqlTypes.put("double", 		"DOUBLE");
@@ -30,8 +38,9 @@ public class DerbyEmbeddedMigrationService extends DbMigrationService {
 		sqlTypes.put("string", 		"VARCHAR(255)");
 		sqlTypes.put("text", 		"CLOB");
 		sqlTypes.put("time", 		"TIME");
-		sqlTypes.put("timestamp", 	"TIMESTAMP");
+		sqlTypes.put("timestamp", 	"BIGINT");
 	}
+	
 	
 	public DerbyEmbeddedMigrationService() {
 		super();
@@ -103,19 +112,44 @@ public class DerbyEmbeddedMigrationService extends DbMigrationService {
 	}
 	
 	@Override
+	protected String getCreateForeignKeyColumnSql(ForeignKey fk) {
+		StringBuilder sb = new StringBuilder();
+		sb.append(getSqlSafe(fk.column)).append(' ').append(getSqlType(fk.type)).append(" CONSTRAINT ");
+		sb.append(fk.name).append(" REFERENCES ").append(getSqlSafe(fk.reference)).append(" (id)");
+		switch(fk.options.get("onDelete", -1)) {
+		case CASCADE:		sb.append(" ON DELETE CASCADE");	break;
+		case NO_ACTION:		sb.append(" ON DELETE NO ACTION");	break;
+		case RESTRICT:		sb.append(" ON DELETE RESTRICT");	break;
+		case SET_DEFAULT:	sb.append(" ON DELETE SET DEFAULT");break;
+		case SET_NULL:		sb.append(" ON DELETE SET NULL");	break;
+		}
+		switch(fk.options.get("onUpdate", -1)) {
+		case CASCADE:		sb.append(" ON UPDATE CASCADE");	break;
+		case NO_ACTION:		sb.append(" ON UPDATE NO ACTION");	break;
+		case RESTRICT:		sb.append(" ON UPDATE RESTRICT");	break;
+		case SET_DEFAULT:	sb.append(" ON UPDATE SET DEFAULT");break;
+		case SET_NULL:		sb.append(" ON UPDATE SET NULL");	break;
+		}
+		return sb.toString();
+	}
+
+	@Override
+	protected String getCreatePrimaryKeySql(PrimaryKey pk) {
+		StringBuilder sb = new StringBuilder();
+		sb.append(getSqlSafe(pk.name)).append(' ').append(getSqlType(pk.type));
+		if(pk.autoIncrement) sb.append(" GENERATED ALWAYS");
+		sb.append(" AS IDENTITY PRIMARY KEY");
+		return sb.toString();
+	}
+	
+	@Override
 	protected String getCreateTableOptionsSql(Table table) {
 		return null;
 	}
 
 	@Override
-	protected String getSqlForPrimitive(String type) {
-		return "0";
-	}
-
-	@Override
 	protected String getSqlSafe(String rawString) {
 		return SqlUtils.safeSqlWord(rawString);
-//		return reservedWords.contains(rawString) ? ("\"" + rawString + "\"") : rawString;
 	}
 	
 	@Override

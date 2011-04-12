@@ -70,7 +70,7 @@ public class ProjectGenerator {
 
 	private static File controllersFolder(File project)	{ return new File(appFolder(project), "controllers"); }
 
-	public static boolean createActionCache(Module module, String name, String model, Action...actions) {
+	public static File createActionCache(Module module, String name, String model, Action...actions) {
 		SourceFile src = new SourceFile();
 		
 		src.packageName = module.packageName(module.caches);
@@ -92,8 +92,7 @@ public class ProjectGenerator {
 		src.rawSource =  sb.toString();
 		
 		File folder = createFolder(module.caches);
-		writeFile(folder, name + ".java", src.toSource());
-		return true;
+		return writeFile(folder, name + ".java", src.toSource());
 	}
 
 	private static void createAppActivator(File project, boolean createViews) {

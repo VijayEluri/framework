@@ -16,7 +16,6 @@ import static org.oobium.persist.migrate.defs.Column.TIMESTAMPS;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.columnName;
 import static org.oobium.utils.StringUtils.tableName;
-import static org.oobium.utils.StringUtils.underscored;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -137,66 +136,44 @@ public class ModelTable {
 	}
 	
 	public void addRelation(ModelRelation relation) {
-		if(relation.hasMany) { // this is a 'hidden' key for the hasMany of the opposite model
-			// add the column
-			String column = "mk_" + underscored(relation.model.getSimpleType()) + "__" + columnName(relation.name);
-			String type = Integer.class.getCanonicalName();
-			columns.add(new Column(type, column, null));
-	
-			// add the foreign key
-			String reference = tableName(relation.model.getSimpleType());
-			Map<String, Object> options = new LinkedHashMap<String, Object>();
-			String onDelete = getReferentialAction(relation.onDelete);
-			if(onDelete != null) {
-				sf.staticImports.add(Relation.class.getCanonicalName() + "." + onDelete);
-				options.put("onDelete", onDelete);
+		boolean isOneToOneKey = false;
+		ModelRelation oppositeRelation = relation.getOpposite();
+		if(oppositeRelation != null && !oppositeRelation.hasMany) {
+			if(name.compareTo(tableName(oppositeRelation.model.type)) > 0) {
+				// don't add if 1:1 and this table is less than the opposite table
+				return;
+			} else {
+				isOneToOneKey = true;
 			}
-			String onUpdate = getReferentialAction(relation.onUpdate);
-			if(onUpdate != null) {
-				sf.staticImports.add(Relation.class.getCanonicalName() + "." + onUpdate);
-				options.put("onUpdate", onUpdate);
-			}
-			foreignKeys.add(new ForeignKey(column, reference, options.isEmpty() ? null : options));
-	
-			// add the index
-			indexes.add(new Index(column, relation.isUnique()));
-		} else {
-			// don't add if 1:1 and this table is less than the opposite table
-			ModelRelation oppositeRelation = relation.getOpposite();
-			if(oppositeRelation != null && !oppositeRelation.hasMany) {
-				if(name.compareTo(tableName(oppositeRelation.model.type)) > 0) {
-					return;
-				}
-			}
-			
-			String column = columnName(relation.name);
-
-			// add the column
-			String type = Integer.class.getCanonicalName();
-			Map<String, Object> options = new LinkedHashMap<String, Object>();
-			if(relation.required) {
-				options.put("required", true);
-			}
-			columns.add(new Column(type, column, options.isEmpty() ? null : options));
-	
-			// add the foreign key
-			String reference = tableName(relation.getSimpleType());
-			options = new LinkedHashMap<String, Object>();
-			String onDelete = getReferentialAction(relation.onDelete);
-			if(onDelete != null) {
-				sf.staticImports.add(Relation.class.getCanonicalName() + "." + onDelete);
-				options.put("onDelete", onDelete);
-			}
-			String onUpdate = getReferentialAction(relation.onUpdate);
-			if(onUpdate != null) {
-				sf.staticImports.add(Relation.class.getCanonicalName() + "." + onUpdate);
-				options.put("onUpdate", onUpdate);
-			}
-			foreignKeys.add(new ForeignKey(column, reference, options.isEmpty() ? null : options));
-	
-			// add the index
-			indexes.add(new Index(column, relation.isUnique()));
 		}
+		
+		String column = columnName(relation.name);
+
+		// add the column
+		String type = Integer.class.getCanonicalName();
+		Map<String, Object> options = new LinkedHashMap<String, Object>();
+		if(relation.required) {
+			options.put("required", true);
+		}
+		columns.add(new Column(type, column, options.isEmpty() ? null : options));
+
+		// add the foreign key
+		String reference = tableName(relation.getSimpleType());
+		options = new LinkedHashMap<String, Object>();
+		String onDelete = getReferentialAction(relation.onDelete);
+		if(onDelete != null) {
+			sf.staticImports.add(Relation.class.getCanonicalName() + "." + onDelete);
+			options.put("onDelete", onDelete);
+		}
+		String onUpdate = getReferentialAction(relation.onUpdate);
+		if(onUpdate != null) {
+			sf.staticImports.add(Relation.class.getCanonicalName() + "." + onUpdate);
+			options.put("onUpdate", onUpdate);
+		}
+		foreignKeys.add(new ForeignKey(column, reference, options.isEmpty() ? null : options));
+
+		// add the index
+		indexes.add(new Index(column, isOneToOneKey || relation.isUnique()));
 	}
 
 	public boolean hasForeignKey() {

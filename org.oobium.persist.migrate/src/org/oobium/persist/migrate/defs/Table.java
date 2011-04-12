@@ -265,7 +265,7 @@ public class Table {
     }
 
     public Table addUniqueIndex(String...columns) {
-    	return add(new AddIndex(columns, false));
+    	return add(new AddIndex(columns, true));
     }
 
     public void create() throws SQLException {
