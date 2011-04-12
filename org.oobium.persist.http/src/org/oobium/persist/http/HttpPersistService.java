@@ -111,7 +111,7 @@ public class HttpPersistService implements PersistService {
 			String path = path(request.path, model);
 			Map<String, String> params = getParams(model);
 			
-			ClientResponse response = client.syncRequest(request.type, path, params);
+			ClientResponse response = client.request(request.type, path, params);
 			if(response.isSuccess()) {
 				int id = coerce(response.getHeader(Header.ID.key()), int.class);
 				model.setId(id);
@@ -149,7 +149,7 @@ public class HttpPersistService implements PersistService {
 			
 			String path = path(request.path, model);
 			
-			ClientResponse response = client.syncRequest(request.type, path);
+			ClientResponse response = client.request(request.type, path);
 			if(response.isSuccess()) {
 				if(cache != null && cache != model) {
 					cache.setId(0);
@@ -278,7 +278,7 @@ public class HttpPersistService implements PersistService {
 				}
 			}
 			
-			ClientResponse response = client.syncRequest(request.type, path, params);
+			ClientResponse response = client.request(request.type, path, params);
 			if(response.isSuccess()) {
 				model.putAll(response.getBody());
 				setCache(model);
@@ -353,7 +353,7 @@ public class HttpPersistService implements PersistService {
 
 			String path = path(request.path, clazz);
 			
-			ClientResponse response = client.syncRequest(request.type, path, query);
+			ClientResponse response = client.request(request.type, path, query);
 			if(response.isSuccess()) {
 				List<Object> list = toList(response.getBody());
 				models = new ArrayList<T>();
@@ -562,7 +562,7 @@ public class HttpPersistService implements PersistService {
 			
 			String path = path(request.path, model);
 			
-			ClientResponse response = client.syncRequest(request.type, path);
+			ClientResponse response = client.request(request.type, path);
 			if(response.isSuccess()) {
 				model.putAll(response.getBody());
 				Model cache = getCache(model.getClass(), model.getId());
@@ -604,7 +604,7 @@ public class HttpPersistService implements PersistService {
 			
 			String path = path(request.path, model, field);
 			
-			ClientResponse response = client.syncRequest(request.type, path);
+			ClientResponse response = client.request(request.type, path);
 			if(response.isSuccess()) {
 				ModelAdapter adapter = ModelAdapter.getAdapter(model);
 				Class<? extends Model> type = adapter.getHasManyMemberClass(field);
@@ -664,7 +664,7 @@ public class HttpPersistService implements PersistService {
 			String path = path(request.path, model);
 			Map<String, String> params = getParams(model);
 			
-			ClientResponse response = client.syncRequest(request.type, path, params);
+			ClientResponse response = client.request(request.type, path, params);
 			if(response.isSuccess()) {
 				Model cache = getCache(model.getClass(), model.getId());
 				if(cache == null) {

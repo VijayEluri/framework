@@ -15,7 +15,7 @@ public class MigrateRedo extends Action {
 	
 	@Override
 	public void run() {
-		client("localhost", 5001).aPost("/migrate/redo");
+		client("localhost", 5001).post("/migrate/redo");
 	}
 	
 }

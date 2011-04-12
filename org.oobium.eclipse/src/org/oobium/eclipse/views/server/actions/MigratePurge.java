@@ -23,7 +23,7 @@ public class MigratePurge extends Action {
 		msg.setMessage("This will destroy all data!!!  Continue anyway?");
 		int r = msg.open();
 		if(r == SWT.YES) {
-			client("localhost", 5001).aPost("/migrate/purge");
+			client("localhost", 5001).post("/migrate/purge");
 		}
 	}
 	

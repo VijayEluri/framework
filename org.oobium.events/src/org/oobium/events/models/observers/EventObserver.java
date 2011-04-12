@@ -19,7 +19,6 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
-import org.oobium.client.ClientCallback;
 import org.oobium.client.ClientResponse;
 import org.oobium.events.models.Event;
 import org.oobium.events.models.Listener;
@@ -27,7 +26,7 @@ import org.oobium.persist.Observer;
 import org.oobium.persist.PersistService;
 import org.oobium.utils.json.JsonUtils;
 
-public class EventObserver extends Observer<Event> implements ClientCallback {
+public class EventObserver extends Observer<Event> {
 
 	@Override
 	protected void afterCreate(Event event) {
@@ -46,7 +45,14 @@ public class EventObserver extends Observer<Event> implements ClientCallback {
 			for(Listener listener : listeners) {
 				try {
 					Map<String, String> map = Map(e("event", JsonUtils.toJson(event.getAll(), "data")), e("listener", String.valueOf(listener.getId())));
-					client(listener.getCallback()).aPost(map, this);
+					ClientResponse response = client(listener.getCallback()).post(map);
+					if(!response.isSuccess()) {
+						if(response.exceptionThrown()) {
+							logger.info("listener notification failed", response.getException());
+						} else {
+							logger.info("listener notification failed: " + response.getBody());
+						}
+					}
 				} catch(MalformedURLException e) {
 					logger.warn(e);
 				}
@@ -57,17 +63,6 @@ public class EventObserver extends Observer<Event> implements ClientCallback {
 			}
 		} catch(SQLException e) {
 			logger.error(e);
-		}
-	}
-
-	@Override
-	public void handleCallback(ClientResponse response) {
-		if(!response.isSuccess()) {
-			if(response.exceptionThrown()) {
-				logger.info("listener notification failed", response.getException());
-			} else {
-				logger.info("listener notification failed: " + response.getBody());
-			}
 		}
 	}
 

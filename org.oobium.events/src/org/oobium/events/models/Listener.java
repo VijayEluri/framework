@@ -118,7 +118,7 @@ public class Listener extends ListenerModel {
 			
 			if(hasRemoteUrl()) {
 				try {
-					client(getRemoteUrl() + "/" + getRemoteId()).aDelete();
+					client(getRemoteUrl() + "/" + getRemoteId()).delete();
 				} catch(MalformedURLException e) {
 					addError(e.getLocalizedMessage());
 				}

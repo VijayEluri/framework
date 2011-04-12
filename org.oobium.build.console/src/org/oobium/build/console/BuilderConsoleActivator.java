@@ -33,7 +33,7 @@ public class BuilderConsoleActivator implements BundleActivator {
 	}
 	
 	public static void sendImport(File project) {
-		client(instance.port).aPost("commands/import", Map(e("project", project.getName()), e("file", project.getAbsolutePath())));
+		client(instance.port).post("commands/import", Map(e("project", project.getName()), e("file", project.getAbsolutePath())));
 	}
 	
 	public static void sendOpen(Project project, File file) {
@@ -66,7 +66,7 @@ public class BuilderConsoleActivator implements BundleActivator {
 	public static void sendOpen(File project, File file) {
 		String projectName = project.getName();
 		String filePath = file.getAbsolutePath().substring(project.getAbsolutePath().length());
-		client(instance.port).aPost("commands/open", Map(e("project", projectName), e("file", filePath)));
+		client(instance.port).post("commands/open", Map(e("project", projectName), e("file", filePath)));
 	}
 	
 	public static void sendOpenResource(String resource) {
@@ -74,7 +74,7 @@ public class BuilderConsoleActivator implements BundleActivator {
 	}
 	
 	public static void sendOpenResource(String resource, String line) {
-		client(instance.port).aPost("commands/open_resource", Map("resource", resource));
+		client(instance.port).post("commands/open_resource", Map("resource", resource));
 	}
 	
 	public static void sendOpenType(String type) {
@@ -82,7 +82,7 @@ public class BuilderConsoleActivator implements BundleActivator {
 	}
 	
 	public static void sendOpenType(String type, String line) {
-		client(instance.port).aPost("commands/open_type", Map(e("type", type), e("line", line)));
+		client(instance.port).post("commands/open_type", Map(e("type", type), e("line", line)));
 	}
 
 	public static void sendRefresh(Project project, long delay) {
@@ -100,7 +100,7 @@ public class BuilderConsoleActivator implements BundleActivator {
 			public void run() {
 				try {
 					sleep(delay);
-					client(instance.port).aPost("commands/refresh", Map("project", project.getName()));
+					client(instance.port).post("commands/refresh", Map("project", project.getName()));
 				} catch(InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -115,7 +115,7 @@ public class BuilderConsoleActivator implements BundleActivator {
 			public void run() {
 				try {
 					sleep(delay);
-					client(instance.port).aPost("commands/refresh", Map(e("project", projectName), e("file", filePath)));
+					client(instance.port).post("commands/refresh", Map(e("project", projectName), e("file", filePath)));
 				} catch(InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -124,7 +124,7 @@ public class BuilderConsoleActivator implements BundleActivator {
 	}
 	
 	public static void sendRemove(File project) {
-		client(instance.port).aPost("commands/remove", Map("project", project.getName()));
+		client(instance.port).post("commands/remove", Map("project", project.getName()));
 	}
 
 	
