@@ -115,7 +115,7 @@ class EspContentProvider implements ITreeContentProvider, PropertyChangeListener
 					if(level == 0) {
 						elements.add(e);
 					} else if(level < 1 && e instanceof StyleElement) { // CSS or ESS file
-						for(EspElement child : ((MarkupElement) element).getChildren()) {
+						for(EspElement child : ((StyleElement) e).getChildren()) {
 							for(EspPart selector : ((StyleChildElement) child).getSelectorGroups()) {
 								elements.add(selector);
 							}
