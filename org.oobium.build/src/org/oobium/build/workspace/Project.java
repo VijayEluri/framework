@@ -246,14 +246,6 @@ public class Project implements Comparable<Project> {
 		}
 	}
 
-	protected File setManifest() {
-		return new File(file, "META-INF" + File.separator + "MANIFEST.MF");
-	}
-	
-	protected File setMain() {
-		return new File(src, name.replace('.', File.separatorChar));
-	}
-
 	public boolean addBuildPath(String path, String kind) {
 		if(classpath.isFile()) {
 			try {
@@ -291,6 +283,36 @@ public class Project implements Comparable<Project> {
 		return false;
 	}
 	
+	private void addClasspathEntries(Set<String> cpes) {
+		if(classpath != null && classpath.isFile()) {
+			try {
+				DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
+				DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
+				Document doc = docBuilder.parse(classpath);
+				NodeList list = doc.getElementsByTagName("classpathentry");
+				for(int i = 0; i < list.getLength(); i++) {
+					Node node = list.item(i);
+					if(node.getNodeType() == Node.ELEMENT_NODE) {
+						Element cpe = (Element) node;
+						String kind = cpe.getAttribute("kind");
+						if("src".equals(kind)) {
+							String path = file.getAbsolutePath() + File.separator + cpe.getAttribute("path");
+							cpes.add(path);
+						}
+					}
+				}
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
+		if(file.isDirectory()) {
+			cpes.add(file.getAbsolutePath() + File.separator + "bin");
+		} else {
+			cpes.add(file.getAbsolutePath());
+		}
+	}
+
 	public boolean addNature(String nature) {
 		if(project.isFile()) {
 			try {
@@ -326,7 +348,7 @@ public class Project implements Comparable<Project> {
 		}
 		return false;
 	}
-
+	
 	public void clean() {
 		FileUtils.deleteContents(bin);
 	}
@@ -379,7 +401,7 @@ public class Project implements Comparable<Project> {
 	public Map<String, File> getBuildFiles() throws IOException {
 		return getBuildFiles(false);
 	}
-	
+
 	public Map<String, File> getBuildFiles(boolean includeSource) throws IOException {
 		Map<String, File> buildFiles = new HashMap<String, File>();
 		File[] files = findFiles(bin);
@@ -419,6 +441,71 @@ public class Project implements Comparable<Project> {
 			buildFiles.putAll(getSourceBuildFiles());
 		}
 		return buildFiles;
+	}
+	
+	public String getClasspath() {
+		return StringUtils.join(getClasspathEntries(), File.pathSeparatorChar);
+	}
+
+	public String getClasspath(Workspace workspace) {
+		return StringUtils.join(getClasspathEntries(workspace), File.pathSeparatorChar);
+	}
+
+	public String getClasspath(Workspace workspace, Mode mode) {
+		return StringUtils.join(getClasspathEntries(workspace, mode), File.pathSeparatorChar);
+	}
+
+	public Set<String> getClasspathEntries() {
+		Set<String> cpes = new LinkedHashSet<String>();
+		addClasspathEntries(cpes);
+		return cpes;
+	}
+
+	public Set<String> getClasspathEntries(Workspace workspace) {
+		Set<String> cpes = new LinkedHashSet<String>();
+		addClasspathEntries(cpes);
+		return cpes;
+	}
+
+	public Set<String> getClasspathEntries(Workspace workspace, Mode mode) {
+		Set<String> cpes = new LinkedHashSet<String>();
+		addClasspathEntries(cpes);
+		return cpes;
+	}
+
+	public String getManifestAttribute(String key) {
+		Manifest manifest = manifest(file);
+		return manifest.getMainAttributes().getValue(key);
+	}
+
+	/**
+	 * Get the full name of this bundle without the qualifier: "com.test.blog_1.0.0"
+	 * @return the full name of this bundle
+	 */
+	public String getName() {
+		return name;
+	}
+
+	public Set<String> getNatures() {
+		Set<String> natures = new LinkedHashSet<String>();
+		if(project.isFile()) {
+			try {
+				DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
+				DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
+				Document doc = docBuilder.parse(project);
+				NodeList list = doc.getElementsByTagName("nature");
+				for(int i = 0; i < list.getLength(); i++) {
+					Node node = list.item(i);
+					if(node.getNodeType() == Node.ELEMENT_NODE) {
+						String nature = node.getFirstChild().getNodeValue();
+						natures.add(nature);
+					}
+				}
+			} catch(Exception e) {
+				logger.warn(e);
+			}
+		}
+		return natures;
 	}
 
 	public Map<String, File> getSourceBuildFiles() {
@@ -479,96 +566,6 @@ public class Project implements Comparable<Project> {
 		return buildFiles;
 	}
 
-	public String getClasspath() {
-		return StringUtils.join(getClasspathEntries(), File.pathSeparatorChar);
-	}
-
-	public String getClasspath(Workspace workspace) {
-		return StringUtils.join(getClasspathEntries(workspace), File.pathSeparatorChar);
-	}
-
-	public String getClasspath(Workspace workspace, Mode mode) {
-		return StringUtils.join(getClasspathEntries(workspace, mode), File.pathSeparatorChar);
-	}
-
-	private void addClasspathEntries(Set<String> cpes) {
-		if(classpath != null && classpath.isFile()) {
-			try {
-				DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
-				DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
-				Document doc = docBuilder.parse(classpath);
-				NodeList list = doc.getElementsByTagName("classpathentry");
-				for(int i = 0; i < list.getLength(); i++) {
-					Node node = list.item(i);
-					if(node.getNodeType() == Node.ELEMENT_NODE) {
-						Element cpe = (Element) node;
-						String kind = cpe.getAttribute("kind");
-						if("src".equals(kind)) {
-							String path = file.getAbsolutePath() + File.separator + cpe.getAttribute("path");
-							cpes.add(path);
-						}
-					}
-				}
-			} catch(Exception e) {
-				e.printStackTrace();
-			}
-		}
-		
-		if(file.isDirectory()) {
-			cpes.add(file.getAbsolutePath() + File.separator + "bin");
-		} else {
-			cpes.add(file.getAbsolutePath());
-		}
-	}
-
-	public Set<String> getClasspathEntries() {
-		Set<String> cpes = new LinkedHashSet<String>();
-		addClasspathEntries(cpes);
-		return cpes;
-	}
-
-	public Set<String> getClasspathEntries(Workspace workspace) {
-		Set<String> cpes = new LinkedHashSet<String>();
-		addClasspathEntries(cpes);
-		return cpes;
-	}
-
-	public Set<String> getClasspathEntries(Workspace workspace, Mode mode) {
-		Set<String> cpes = new LinkedHashSet<String>();
-		addClasspathEntries(cpes);
-		return cpes;
-	}
-
-	/**
-	 * Get the full name of this bundle without the qualifier: "com.test.blog_1.0.0"
-	 * @return the full name of this bundle
-	 */
-	public String getName() {
-		return name;
-	}
-
-	public Set<String> getNatures() {
-		Set<String> natures = new LinkedHashSet<String>();
-		if(project.isFile()) {
-			try {
-				DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
-				DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
-				Document doc = docBuilder.parse(project);
-				NodeList list = doc.getElementsByTagName("nature");
-				for(int i = 0; i < list.getLength(); i++) {
-					Node node = list.item(i);
-					if(node.getNodeType() == Node.ELEMENT_NODE) {
-						String nature = node.getFirstChild().getNodeValue();
-						natures.add(nature);
-					}
-				}
-			} catch(Exception e) {
-				logger.warn(e);
-			}
-		}
-		return natures;
-	}
-
 	public boolean hasNature(String nature) {
 		return getNatures().contains(nature);
 	}
@@ -579,14 +576,14 @@ public class Project implements Comparable<Project> {
 	public boolean isAndroid() {
 		return type == Type.Android;
 	}
-	
+
 	/**
 	 * @return true if this is a Oobium Application.
 	 */
 	public boolean isApplication() {
 		return type == Type.Application;
 	}
-
+	
 	/**
 	 * Checks whether or not this bundle is an OSGi framework bundle, meaning
 	 * that it exports the org.osgi.framework package.
@@ -709,6 +706,14 @@ public class Project implements Comparable<Project> {
 			}
 		}
 		return false;
+	}
+
+	protected File setMain() {
+		return new File(src, name.replace('.', File.separatorChar));
+	}
+	
+	protected File setManifest() {
+		return new File(file, "META-INF" + File.separator + "MANIFEST.MF");
 	}
 
 	@Override

@@ -31,6 +31,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.jar.Manifest;
 
@@ -51,6 +52,19 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class Bundle extends Project {
+
+	public static final String OOBIUM_SERVICE = "Oobium-Service";
+	public static final String OOBIUM_MIGRATION_SERVICE = "Oobium-MigrationService";
+	
+
+	private static String createPath(String name, Version version) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("/bundles/").append(name);
+		if(version != null) {
+			sb.append('_').append(version);
+		}
+		return sb.toString();
+	}
 
 	@Deprecated
 	public static List<Bundle> deploy(String domain, int port, Bundle... bundles) {
@@ -148,15 +162,6 @@ public class Bundle extends Project {
 			}
 		}
 		return false;
-	}
-
-	private static String createPath(String name, Version version) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("/bundles/").append(name);
-		if(version != null) {
-			sb.append('_').append(version);
-		}
-		return sb.toString();
 	}
 
 	public static void refresh(String domain, int port) {
@@ -387,10 +392,64 @@ public class Bundle extends Project {
 		}
 	}
 
+	private void addClasspathEntries(Set<String> cpes) {
+		if(classpath != null && classpath.isFile()) {
+			try {
+				DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
+				DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
+				Document doc = docBuilder.parse(classpath);
+				NodeList list = doc.getElementsByTagName("classpathentry");
+				for(int i = 0; i < list.getLength(); i++) {
+					Node node = list.item(i);
+					if(node.getNodeType() == Node.ELEMENT_NODE) {
+						Element cpe = (Element) node;
+						String kind = cpe.getAttribute("kind");
+						if("src".equals(kind)) {
+							String path = file.getAbsolutePath() + File.separator + cpe.getAttribute("path");
+							cpes.add(path);
+						}
+					}
+				}
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
+		if(file.isDirectory()) {
+			cpes.add(file.getAbsolutePath() + File.separator + "bin");
+		} else {
+			cpes.add(file.getAbsolutePath());
+		}
+	}
+	
+	/**
+	 * @see #getDependencies()
+	 */
+	protected final void addDependencies(Workspace workspace, Map<Bundle, List<Bundle>> dependencies) {
+		if(requiredBundles != null) {
+			for(RequiredBundle requiredBundle : requiredBundles) {
+				Bundle bundle = workspace.getBundle(requiredBundle);
+				if(bundle != null) {
+					addDependency(dependencies, bundle);
+					bundle.addDependencies(workspace, dependencies);
+				}
+			}
+		}
+		if(importedPackages != null) {
+			for(ImportedPackage importedPackage : importedPackages) {
+				Bundle bundle = workspace.getBundle(importedPackage);
+				if(bundle != null && bundle != this && !dependencies.containsKey(bundle)) {
+					addDependency(dependencies, bundle);
+					bundle.addDependencies(workspace, dependencies);
+				}
+			}
+		}
+	}
+
 	/**
 	 * @see #getDependencies(Mode)
 	 */
-	protected void addDependencies(Workspace workspace, Mode mode, Set<Bundle> dependencies) {
+	protected void addDependencies(Workspace workspace, Mode mode, Map<Bundle, List<Bundle>> dependencies) {
 		if(requiredBundles != null) {
 			for(RequiredBundle requiredBundle : requiredBundles) {
 				Bundle bundle = workspace.getBundle(requiredBundle);
@@ -398,7 +457,7 @@ public class Bundle extends Project {
 					if(bundle.name.startsWith("org.oobium.build")) {
 						System.out.println("   !!!   requiredBundle: " + this);
 					}
-					dependencies.add(bundle);
+					addDependency(dependencies, bundle);
 					bundle.addDependencies(workspace, mode, dependencies);
 				}
 			}
@@ -406,39 +465,24 @@ public class Bundle extends Project {
 		if(importedPackages != null) {
 			for(ImportedPackage importedPackage : importedPackages) {
 				Bundle bundle = workspace.getBundle(importedPackage);
-				if(bundle != null && bundle != this && !dependencies.contains(bundle)) {
+				if(bundle != null && bundle != this && !dependencies.containsKey(bundle)) {
 					if(bundle.name.startsWith("org.oobium.build")) {
 						System.out.println("   !!!   Import-Package: " + importedPackage + " in: " + this);
 					}
-					dependencies.add(bundle);
+					addDependency(dependencies, bundle);
 					bundle.addDependencies(workspace, mode, dependencies);
 				}
 			}
 		}
 	}
 
-	/**
-	 * @see #getDependencies()
-	 */
-	protected final void addDependencies(Workspace workspace, Set<Bundle> dependencies) {
-		if(requiredBundles != null) {
-			for(RequiredBundle requiredBundle : requiredBundles) {
-				Bundle bundle = workspace.getBundle(requiredBundle);
-				if(bundle != null) {
-					dependencies.add(bundle);
-					bundle.addDependencies(workspace, dependencies);
-				}
-			}
+	protected void addDependency(Map<Bundle, List<Bundle>> dependencies, Bundle bundle) {
+		List<Bundle> list = dependencies.get(bundle);
+		if(list == null) {
+			list = new ArrayList<Bundle>();
+			dependencies.put(bundle, list);
 		}
-		if(importedPackages != null) {
-			for(ImportedPackage importedPackage : importedPackages) {
-				Bundle bundle = workspace.getBundle(importedPackage);
-				if(bundle != null && bundle != this && !dependencies.contains(bundle)) {
-					dependencies.add(bundle);
-					bundle.addDependencies(workspace, dependencies);
-				}
-			}
-		}
+		list.add(this);
 	}
 
 	private void addExportedPackage(String str, Set<ExportedPackage> packages) {
@@ -551,48 +595,29 @@ public class Bundle extends Project {
 		FileUtils.createJar(jar, files, manifest);
 	}
 
+	public boolean exports(String regex) {
+		if(exportedPackages != null) {
+			for(ExportedPackage ep : exportedPackages) {
+				if(ep.name.matches(regex)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	
 	public boolean exportsModels() {
 		if(this instanceof Module) {
 			return exportedPackages.contains(new ExportedPackage(name + ".models"));
 		}
 		return false;
 	}
-
-	private void addClasspathEntries(Set<String> cpes) {
-		if(classpath != null && classpath.isFile()) {
-			try {
-				DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
-				DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
-				Document doc = docBuilder.parse(classpath);
-				NodeList list = doc.getElementsByTagName("classpathentry");
-				for(int i = 0; i < list.getLength(); i++) {
-					Node node = list.item(i);
-					if(node.getNodeType() == Node.ELEMENT_NODE) {
-						Element cpe = (Element) node;
-						String kind = cpe.getAttribute("kind");
-						if("src".equals(kind)) {
-							String path = file.getAbsolutePath() + File.separator + cpe.getAttribute("path");
-							cpes.add(path);
-						}
-					}
-				}
-			} catch(Exception e) {
-				e.printStackTrace();
-			}
-		}
-		
-		if(file.isDirectory()) {
-			cpes.add(file.getAbsolutePath() + File.separator + "bin");
-		} else {
-			cpes.add(file.getAbsolutePath());
-		}
-	}
-
+	
 	public Set<String> getClasspathEntries(Workspace workspace) {
 		Set<String> cpes = new LinkedHashSet<String>();
 		addClasspathEntries(cpes);
 		
-		for(Bundle bundle : getDependencies(workspace)) {
+		for(Bundle bundle : getDependencies(workspace).keySet()) {
 			bundle.addClasspathEntries(cpes);
 		}
 
@@ -603,7 +628,7 @@ public class Bundle extends Project {
 		Set<String> cpes = new LinkedHashSet<String>();
 		addClasspathEntries(cpes);
 		
-		for(Bundle bundle : getDependencies(workspace, mode)) {
+		for(Bundle bundle : getDependencies(workspace, mode).keySet()) {
 			bundle.addClasspathEntries(cpes);
 		}
 
@@ -616,8 +641,8 @@ public class Bundle extends Project {
 	 * 
 	 * @return a set of bundles that are required to build this bundle
 	 */
-	public final Set<Bundle> getDependencies(Workspace workspace) {
-		Set<Bundle> dependencies = new TreeSet<Bundle>();
+	public final Map<Bundle, List<Bundle>> getDependencies(Workspace workspace) {
+		Map<Bundle, List<Bundle>> dependencies = new TreeMap<Bundle, List<Bundle>>();
 		addDependencies(workspace, dependencies);
 		return dependencies;
 	}
@@ -629,8 +654,8 @@ public class Bundle extends Project {
 	 * @return a set of bundles that are required to build and deploy this
 	 *         bundle
 	 */
-	public Set<Bundle> getDependencies(Workspace workspace, Mode mode) {
-		Set<Bundle> dependencies = new TreeSet<Bundle>();
+	public Map<Bundle, List<Bundle>> getDependencies(Workspace workspace, Mode mode) {
+		Map<Bundle, List<Bundle>> dependencies = new TreeMap<Bundle, List<Bundle>>();
 		// long start = System.currentTimeMillis();
 		addDependencies(workspace, mode, dependencies);
 		// logger.debug("getDependencies(" + mode + "): " +
@@ -667,6 +692,17 @@ public class Bundle extends Project {
 
 	public List<RequiredBundle> getRequiredBundles() {
 		return (requiredBundles == null) ? new ArrayList<RequiredBundle>(0) : new ArrayList<RequiredBundle>(requiredBundles);
+	}
+
+	public boolean imports(String regex) {
+		if(importedPackages != null) {
+			for(ImportedPackage ip : importedPackages) {
+				if(ip.name.matches(regex)) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -794,7 +830,7 @@ public class Bundle extends Project {
 	 * @return an array of service names that this module registers
 	 */
 	private String[] parseServices(Manifest manifest) {
-		String serviceHeader = (String) manifest.getMainAttributes().getValue("Oobium-Service");
+		String serviceHeader = (String) manifest.getMainAttributes().getValue(OOBIUM_SERVICE);
 		if(serviceHeader != null) {
 			return serviceHeader.split(",");
 		} else {
@@ -886,6 +922,17 @@ public class Bundle extends Project {
 
 		writeFile(manifest, sb.toString());
 		return true;
+	}
+
+	public boolean requires(String regex) {
+		if(requiredBundles != null) {
+			for(RequiredBundle rb : requiredBundles) {
+				if(rb.name.matches(regex)) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	public boolean resolves(ImportedPackage importedPackage) {

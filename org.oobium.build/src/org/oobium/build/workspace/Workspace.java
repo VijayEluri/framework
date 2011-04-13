@@ -11,6 +11,7 @@
 package org.oobium.build.workspace;
 
 import static java.util.Arrays.asList;
+import static org.oobium.utils.Config.PERSIST;
 import static org.oobium.utils.StringUtils.blank;
 
 import java.io.File;
@@ -33,6 +34,7 @@ import org.oobium.build.gen.ProjectGenerator;
 import org.oobium.build.workspace.Project.Type;
 import org.oobium.logging.Logger;
 import org.oobium.logging.LogProvider;
+import org.oobium.persist.PersistService;
 import org.oobium.utils.Config;
 import org.oobium.utils.Config.Mode;
 import org.oobium.utils.Config.OsgiRuntime;
@@ -173,6 +175,19 @@ public class Workspace {
 		}
 	}
 
+	private void addPersistServiceName(Object persist, List<String> names) {
+		if(persist instanceof String) {
+			names.add((String) persist);
+		} else if(persist instanceof List<?>) {
+			for(Object o : (List<?>) persist) {
+				addPersistServiceName(o, names);
+			}
+		} else if(persist instanceof Map<?,?>) {
+			String name = (String) ((Map<?,?>) persist).get(PersistService.SERVICE);
+			names.add(name);
+		}
+	}
+	
 	public void addRepository(File repo) {
 		lock.writeLock().lock();
 		try {
@@ -208,19 +223,19 @@ public class Workspace {
 	
 	public Migrator createMigrator(Module module) {
 		if(module != null) {
-			Set<Bundle> dependencies = module.getDependencies(this);
-			return (Migrator) load(ProjectGenerator.createMigrator(module, dependencies));
+			Map<Bundle, List<Bundle>> dependencies = module.getDependencies(this);
+			return (Migrator) load(ProjectGenerator.createMigrator(module, dependencies.keySet()));
 		}
 		return null;
 	}
-	
+
 	public Module createModule(File file, Map<String, String> properties) {
 		if(file != null) {
 			return (Module) load(ProjectGenerator.createModule(file, properties));
 		}
 		return null;
 	}
-
+	
 	public TestSuite createTestSuite(Module module) {
 		if(module != null) {
 			return (TestSuite) load(ProjectGenerator.createTestSuite(module, null));
@@ -234,7 +249,7 @@ public class Workspace {
 		}
 		return null;
 	}
-	
+
 	private void doAddRepository(File repo) {
 		if(repos != null) {
 			if(repos.containsKey(repo)) {
@@ -251,7 +266,7 @@ public class Workspace {
 			add(project);
 		}
 	}
-
+	
 	private List<File> doRemoveRepository(File repo) {
 		if(repos != null) {
 			List<File> bundles = repos.get(repo);
@@ -284,7 +299,7 @@ public class Workspace {
 	public File exportMigrator(Application application, Mode mode) throws IOException {
 		return exportMigrator(application, mode, new HashMap<String, String>(0));
 	}
-	
+
 	public File exportMigrator(Application application, Mode mode, Map<String, String> properties) throws IOException {
 		Exporter exporter = new Exporter(this, application);
 		exporter.setMode(mode);
@@ -292,7 +307,7 @@ public class Workspace {
 		exporter.setMigrator(true);
 		return exporter.export();
 	}
-
+	
 	public File exportWithMigrators(Application application, Mode mode) throws IOException {
 		return exportWithMigrators(application, mode, new HashMap<String, String>(0));
 	}
@@ -513,11 +528,11 @@ public class Workspace {
 			lock.readLock().unlock();
 		}
 	}
-
+	
 	public Bundle getBundle(String name, String version) {
 		return getBundle(name, new Version(version));
 	}
-
+	
 	/**
 	 * Get the bundle that matches the given name and exact version.
 	 * @param name the name of the bundle
@@ -545,7 +560,7 @@ public class Workspace {
 			lock.readLock().unlock();
 		}
 	}
-	
+
 	/**
 	 * Get an array of paths for the bundle repositories that this workspace is currently using.
 	 * @return an array of absolute paths; never null
@@ -560,11 +575,65 @@ public class Workspace {
 		}
 		return new String[0];
 	}
-	
+
 	public Bundle[] getBundles() {
 		lock.readLock().lock();
 		try {
 			return bundles.values().toArray(new Bundle[bundles.size()]);
+		} finally {
+			lock.readLock().unlock();
+		}
+	}
+	
+	public Bundle[] getBundles(ExportedPackage exportedPackage) {
+		lock.readLock().lock();
+		try {
+			List<Bundle> list = new ArrayList<Bundle>();
+			for(Bundle bundle : bundles.values()) {
+				if(bundle.exports(exportedPackage.name)) {
+					list.add(bundle);
+				}
+			}
+			if(parentWorkspace != null) {
+				list.addAll(Arrays.asList(parentWorkspace.getBundles(exportedPackage)));
+			}
+			return list.toArray(new Bundle[list.size()]);
+		} finally {
+			lock.readLock().unlock();
+		}
+	}
+	
+	public Bundle[] getBundles(ImportedPackage importedPackage) {
+		lock.readLock().lock();
+		try {
+			List<Bundle> list = new ArrayList<Bundle>();
+			for(Bundle bundle : bundles.values()) {
+				if(bundle.imports(importedPackage.name)) {
+					list.add(bundle);
+				}
+			}
+			if(parentWorkspace != null) {
+				list.addAll(Arrays.asList(parentWorkspace.getBundles(importedPackage)));
+			}
+			return list.toArray(new Bundle[list.size()]);
+		} finally {
+			lock.readLock().unlock();
+		}
+	}
+
+	public Bundle[] getBundles(RequiredBundle requiredBundle) {
+		lock.readLock().lock();
+		try {
+			List<Bundle> list = new ArrayList<Bundle>();
+			for(Bundle bundle : bundles.values()) {
+				if(bundle.requires(requiredBundle.name)) {
+					list.add(bundle);
+				}
+			}
+			if(parentWorkspace != null) {
+				list.addAll(Arrays.asList(parentWorkspace.getBundles(requiredBundle)));
+			}
+			return list.toArray(new Bundle[list.size()]);
 		} finally {
 			lock.readLock().unlock();
 		}
@@ -612,7 +681,7 @@ public class Workspace {
 			lock.readLock().unlock();
 		}
 	}
-
+	
 	public ClientBundle getClientBundle(File file) {
 		Bundle bundle = getBundle(file);
 		if(bundle instanceof ClientBundle) {
@@ -636,11 +705,11 @@ public class Workspace {
 	public Object getData(String key) {
 		return (data instanceof Map<?,?>) ? ((Map<?,?>) data).get(key) : null;
 	}
-	
+
 	public File getExportDir() {
 		return new File(getWorkingDirectory(), "export");
 	}
-
+	
 	public Migrator getMigrator(File file) {
 		Bundle bundle = getBundle(file);
 		if(bundle instanceof Migrator) {
@@ -662,11 +731,36 @@ public class Workspace {
 		}
 		return null;
 	}
-	
+
 	public Migrator getMigratorFor(Module module) {
 		return getMigrator(module.migrator);
 	}
 	
+	public List<Bundle> getMigratorServicesFor(Module module, Mode mode) {
+		Config config = module.loadConfiguration();
+		Object persist = config.get(PERSIST, mode);
+		if(persist != null) {
+			List<String> names = new ArrayList<String>();
+			addPersistServiceName(persist, names);
+			if(!names.isEmpty()) {
+				List<Bundle> bundles = new ArrayList<Bundle>();
+				for(String name : names) {
+					Bundle bundle = getBundle(name);
+					if(bundle == null) {
+						throw new IllegalStateException("persist service missing: " + name);
+					}
+					bundle = getBundle(bundle.getManifestAttribute(Bundle.OOBIUM_MIGRATION_SERVICE));
+					if(bundle == null) {
+						throw new IllegalStateException("migrator service missing: " + name);
+					}
+					bundles.add(bundle);
+				}
+				return bundles;
+			}
+		}
+		return null;
+	}
+
 	public Mode getMode() {
 		return mode;
 	}
@@ -797,6 +891,25 @@ public class Workspace {
 		}
 	}
 	
+	private File[] getProjects(File repo) {
+		if(repo.isDirectory()) {
+			File[] files = repo.listFiles(new FileFilter() {
+				@Override
+				public boolean accept(File file) {
+					if(file.isFile() && file.getName().endsWith(".jar")) {
+						return true;
+					}
+					if(file.isDirectory()) {
+						return new File(file, "META-INF" + File.separator + "MANIFEST.MF").exists();
+					}
+					return false;
+				}
+			});
+			return files;
+		}
+		return new File[0];
+	}
+	
 	/**
 	 * Get all projects in this workspace. Includes values from both the projects
 	 * and bundles Maps; does not includes projects from the parentWorkspace.
@@ -832,25 +945,6 @@ public class Workspace {
 		} finally {
 			lock.readLock().unlock();
 		}
-	}
-	
-	private File[] getProjects(File repo) {
-		if(repo.isDirectory()) {
-			File[] files = repo.listFiles(new FileFilter() {
-				@Override
-				public boolean accept(File file) {
-					if(file.isFile() && file.getName().endsWith(".jar")) {
-						return true;
-					}
-					if(file.isDirectory()) {
-						return new File(file, "META-INF" + File.separator + "MANIFEST.MF").exists();
-					}
-					return false;
-				}
-			});
-			return files;
-		}
-		return new File[0];
 	}
 	
 	public TestSuite getTestSuite(File file) {
@@ -1013,23 +1107,6 @@ public class Workspace {
 		fireEvent(EventType.Bundle, oldBundle, newBundle);
 	}
 	
-	public void unload(Bundle bundle) {
-		unload(bundle.file);
-	}
-	
-	public void unload(File file) {
-		Project oldBundle;
-		lock.writeLock().lock();
-		try {
-			oldBundle = remove(file);
-			if(oldBundle != null) {
-				fireEvent(EventType.Bundle, oldBundle, null);
-			}
-		} finally {
-			lock.writeLock().unlock();
-		}
-	}
-	
 	private Project remove(File file) {
 		if(repos != null) removeFromRepos(file);
 		if(applications != null) applications.remove(file);
@@ -1039,7 +1116,7 @@ public class Workspace {
 		}
 		return project;
 	}
-
+	
 	private void removeFromRepos(File bundle) {
 		for(List<File> bundles : repos.values()) {
 			if(bundles != null && bundles.remove(bundle)) {
@@ -1061,7 +1138,7 @@ public class Workspace {
 			}
 		}
 	}
-	
+
 	public void removeRepository(File repo) {
 		lock.writeLock().lock();
 		try {
@@ -1086,7 +1163,7 @@ public class Workspace {
 			bundles.remove(bundle);
 		}
 	}
-
+	
 	public void setData(Object data) {
 		this.data = data;
 	}
@@ -1109,7 +1186,7 @@ public class Workspace {
 	public void setParent(Workspace workspace) {
 		this.parentWorkspace = workspace;
 	}
-	
+
 	/**
 	 * Set the repositories to the given list of repositories. Removes
 	 * any existing repositories first.
@@ -1132,7 +1209,7 @@ public class Workspace {
 			lock.writeLock().unlock();
 		}
 	}
-
+	
 	/**
 	 * @param commaSeparatedRepos a comma separated list of absolute file paths
 	 */
@@ -1147,11 +1224,11 @@ public class Workspace {
 		}
 		setRepositories(repos);
 	}
-
+	
 	public void setRuntimeBundle(Config configuration, Mode mode, Collection<Bundle> bundles) {
 		setRuntimeBundle(configuration.getRuntime(mode), bundles);
 	}
-	
+
 	public void setRuntimeBundle(OsgiRuntime runtime, Collection<Bundle> bundles) {
 		Bundle equinox = getBundle(OsgiRuntime.Equinox);
 		Bundle felix = getBundle(OsgiRuntime.Felix);
@@ -1197,6 +1274,23 @@ public class Workspace {
 			dir.mkdirs();
 		}
 		this.workingDir = dir;
+	}
+	
+	public void unload(Bundle bundle) {
+		unload(bundle.file);
+	}
+
+	public void unload(File file) {
+		Project oldBundle;
+		lock.writeLock().lock();
+		try {
+			oldBundle = remove(file);
+			if(oldBundle != null) {
+				fireEvent(EventType.Bundle, oldBundle, null);
+			}
+		} finally {
+			lock.writeLock().unlock();
+		}
 	}
 	
 }

@@ -321,7 +321,8 @@ public class Exporter {
 			} else {
 				logger.info("including migrator");
 				addStart(migrator);
-				addStart(migrator.getMigratorService(workspace, mode));
+				List<Bundle> services = workspace.getMigratorServicesFor(application, mode);
+				addStart(services);
 			}
 		}
 		
@@ -329,14 +330,17 @@ public class Exporter {
 		Set<Bundle> bundles = new TreeSet<Bundle>();
 		for(Application application : applications) {
 			if(!bundles.contains(application)) {
-				Set<Bundle> deps = application.getDependencies(workspace, mode);
-				bundles.addAll(deps);
+				Map<Bundle, List<Bundle>> deps = application.getDependencies(workspace, mode);
+				printDependencies(deps);
+				bundles.addAll(deps.keySet());
 				bundles.add(application);
 			}
 		}
 		for(Bundle bundle : includes) {
 			if(!bundles.contains(bundle)) {
-				bundles.addAll(bundle.getDependencies(workspace, mode));
+				Map<Bundle, List<Bundle>> deps = bundle.getDependencies(workspace, mode);
+				printDependencies(deps);
+				bundles.addAll(deps.keySet());
 				bundles.add(bundle);
 			}
 		}
@@ -378,6 +382,18 @@ public class Exporter {
 		createScripts();
 		
 		return exportDir;
+	}
+
+	private void printDependencies(Map<Bundle, List<Bundle>> deps) {
+		if(logger.isLoggingDebug()) {
+			logger.debug("dependencies:");
+			for(Entry<Bundle, List<Bundle>> entry : deps.entrySet()) {
+				logger.debug("  " + entry.getKey().name);
+				for(Bundle bundle : entry.getValue()) {
+					logger.debug("    " + bundle.name);
+				}
+			}
+		}
 	}
 
 	private Bundle export(Bundle bundle) throws IOException {

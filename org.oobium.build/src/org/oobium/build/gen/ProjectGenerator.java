@@ -499,18 +499,6 @@ public class ProjectGenerator {
 
 		writeFile(mainFolder(migration), src.simpleName + ".java", src.toSource());
 
-		
-		// Configuration
-		sb = new StringBuilder();
-		sb.append("({\n");
-		sb.append('\n');
-		sb.append("migration.service: \"org.oobium.persist.migrate.db.derby.embedded\",\n");
-		sb.append('\n');
-		sb.append("});");
-		
-		writeFile(mainFolder(migration), "configuration.js", sb.toString());
-
-		
 		// Migration
 		src = new SourceFile();
 		src.packageName = migration.getName().replace(File.separatorChar, '.') + ".migrations";

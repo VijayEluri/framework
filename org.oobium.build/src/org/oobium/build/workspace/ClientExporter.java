@@ -8,6 +8,7 @@ import static org.oobium.utils.FileUtils.writeFile;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -116,8 +117,8 @@ public class ClientExporter {
 
 			// export application jar
 			Set<Bundle> bundles = new TreeSet<Bundle>();
-			Set<Bundle> deps = module.getDependencies(workspace, mode);
-			bundles.addAll(deps);
+			Map<Bundle, List<Bundle>> deps = module.getDependencies(workspace, mode);
+			bundles.addAll(deps.keySet());
 			bundles.add(module);
 			
 			int len = module.bin.getAbsolutePath().length() + 1;

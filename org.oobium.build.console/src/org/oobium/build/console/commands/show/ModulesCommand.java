@@ -21,7 +21,7 @@ public class ModulesCommand extends BuilderCommand {
 	@Override
 	public void run() {
 		Mode mode = Mode.parse(param("mode"));
-		Bundle[] bundles = getBundle().getDependencies(getWorkspace(), mode).toArray(new Bundle[0]);
+		Bundle[] bundles = getBundle().getDependencies(getWorkspace(), mode).keySet().toArray(new Bundle[0]);
 		if(bundles != null) {
 			Arrays.sort(bundles);
 			for(Bundle bundle : bundles) {

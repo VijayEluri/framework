@@ -58,7 +58,7 @@ class UpdaterThread extends Thread {
 		this.bundles = new HashMap<Bundle, Long>();
 		this.exported = new HashMap<Bundle, Bundle>();
 		this.bundles.put(application, getLastModified(application));
-		for(Bundle bundle : application.getDependencies(workspace, mode)) {
+		for(Bundle bundle : application.getDependencies(workspace, mode).keySet()) {
 			this.bundles.put(bundle, getLastModified(bundle));
 		}
 	}

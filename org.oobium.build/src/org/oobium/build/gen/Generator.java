@@ -68,7 +68,8 @@ public class Generator {
 		Set<Bundle> bundles = new TreeSet<Bundle>();
 		for(Module module : modules) {
 			if(mode != null) {
-				bundles.addAll(module.getDependencies(workspace, mode));
+				Map<Bundle, List<Bundle>> deps = module.getDependencies(workspace, mode);
+				bundles.addAll(deps.keySet());
 			}
 			bundles.add(module);
 		}

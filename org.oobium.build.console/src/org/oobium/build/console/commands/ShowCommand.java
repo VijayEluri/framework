@@ -14,6 +14,7 @@ import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.commands.show.BundlesCommand;
 import org.oobium.build.console.commands.show.ConfigurationCommand;
 import org.oobium.build.console.commands.show.ControllersCommand;
+import org.oobium.build.console.commands.show.DependenciesCommand;
 import org.oobium.build.console.commands.show.MailersCommand;
 import org.oobium.build.console.commands.show.ManifestCommand;
 import org.oobium.build.console.commands.show.MigrationsCommand;
@@ -32,6 +33,7 @@ public class ShowCommand extends BuilderCommand {
 		add(new BundlesCommand());
 		add(new ConfigurationCommand());
 		add(new ControllersCommand());
+		add(new DependenciesCommand());
 		add(new MailersCommand());
 		add(new ManifestCommand());
 		add(new MigrationsCommand());

@@ -14,28 +14,50 @@ import java.util.Arrays;
 
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.workspace.Bundle;
+import org.oobium.build.workspace.ExportedPackage;
+import org.oobium.build.workspace.ImportedPackage;
+import org.oobium.build.workspace.RequiredBundle;
+import org.oobium.build.workspace.Workspace;
 import org.oobium.utils.Config.Mode;
 
 public class BundlesCommand extends BuilderCommand {
 
 	@Override
-	public void configure() {
-		bundleRequired = true;
-	}
-	
-	@Override
 	public void run() {
-		Bundle[] bundles = null;
-		try {
-			Mode mode = Mode.valueOf(param("mode").toUpperCase());
-			bundles = getBundle().getDependencies(getWorkspace(), mode).toArray(new Bundle[0]);
-		} catch(Exception e) {
-			bundles = getBundle().getDependencies(getWorkspace()).toArray(new Bundle[0]);
+		Workspace ws = getWorkspace();
+		Bundle bundle = hasParam("bundle") ? ws.getBundle(param("bundle")) : getBundle();
+		if(bundle == null) {
+			console.err.println(hasParam("bundle") ? ("no bundle \"" + param("bundle") + "\" found in workspace") : "no bundle currently selected");
+			return;
 		}
+		
+		Bundle[] bundles = null;
+
+		if(hasParam("exporting")) {
+			bundles = ws.getBundles(new ExportedPackage(param("exporting")));
+		}
+		
+		if(bundles == null && hasParam("importing")) {
+			bundles = ws.getBundles(new ImportedPackage(param("importing")));
+		}
+		
+		if(bundles == null && hasParam("requiring")) {
+			bundles = ws.getBundles(new RequiredBundle(param("requiring")));
+		}
+
+		if(bundles == null) {
+			try {
+				Mode mode = Mode.valueOf(param("mode").toUpperCase());
+				bundles = bundle.getDependencies(ws, mode).keySet().toArray(new Bundle[0]);
+			} catch(Exception e) {
+				bundles = bundle.getDependencies(ws).keySet().toArray(new Bundle[0]);
+			}
+		}
+		
 		if(bundles != null) {
 			Arrays.sort(bundles);
-			for(Bundle bundle : bundles) {
-				console.out.println(bundle.name, "set bundle " + bundle.name);
+			for(Bundle b : bundles) {
+				console.out.println(b.getName());
 			}
 		}
 	}

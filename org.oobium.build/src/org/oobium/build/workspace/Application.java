@@ -13,7 +13,8 @@ package org.oobium.build.workspace;
 import static org.oobium.utils.Config.SERVER;
 
 import java.io.File;
-import java.util.Set;
+import java.util.List;
+import java.util.Map;
 import java.util.jar.Manifest;
 
 import org.oobium.build.gen.ModelGenerator;
@@ -39,7 +40,7 @@ public class Application extends Module {
 	}
 	
 	@Override
-	protected void addDependencies(Workspace workspace, Mode mode, Set<Bundle> dependencies) {
+	protected void addDependencies(Workspace workspace, Mode mode, Map<Bundle, List<Bundle>> dependencies) {
 		super.addDependencies(workspace, mode, dependencies);
 		
 		Config configuration = loadConfiguration();

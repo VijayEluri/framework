@@ -210,7 +210,7 @@ public class Module extends Bundle {
 	}
 
 	@Override
-	protected void addDependencies(Workspace workspace, Mode mode, Set<Bundle> dependencies) {
+	protected void addDependencies(Workspace workspace, Mode mode, Map<Bundle, List<Bundle>> dependencies) {
 		super.addDependencies(workspace, mode, dependencies);
 		
 		Config configuration = loadConfiguration();
@@ -221,11 +221,11 @@ public class Module extends Bundle {
 		addModulesDependency(workspace, mode, configuration.get(MODULES, mode), dependencies);
 	}
 	
-	protected void addDependency(Workspace workspace, Mode mode, String fullName, Set<Bundle> dependencies) {
+	protected void addDependency(Workspace workspace, Mode mode, String fullName, Map<Bundle, List<Bundle>> dependencies) {
 		if(!blank(fullName)) {
 			Bundle bundle = workspace.getBundle(fullName);
 			if(bundle != null) {
-				dependencies.add(bundle);
+				addDependency(dependencies, bundle);
 				bundle.addDependencies(workspace, mode, dependencies);
 			} else {
 				throw new IllegalStateException(this + " has an unresolved requirement: " + fullName);
@@ -288,7 +288,7 @@ public class Module extends Bundle {
 		}
 	}
 	
-	protected void addModulesDependency(Workspace workspace, Mode mode, Object obj, Set<Bundle> dependencies) {
+	protected void addModulesDependency(Workspace workspace, Mode mode, Object obj, Map<Bundle, List<Bundle>> dependencies) {
 		if(!blank(obj)) {
 			if(obj instanceof Map) {
 				obj = ((Map<?,?>) obj).keySet().iterator().next();
@@ -315,7 +315,7 @@ public class Module extends Bundle {
 		}
 	}
 	
-	protected void addPersistDependency(Workspace workspace, Mode mode, Object obj, Set<Bundle> dependencies) {
+	protected void addPersistDependency(Workspace workspace, Mode mode, Object obj, Map<Bundle, List<Bundle>> dependencies) {
 		if(!blank(obj)) {
 			if(obj instanceof String) {
 				addDependency(workspace, mode, (String) obj, dependencies);

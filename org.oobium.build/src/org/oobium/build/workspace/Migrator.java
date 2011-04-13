@@ -14,7 +14,8 @@ import static org.oobium.utils.Config.MIGRATION_SERVICE;
 import static org.oobium.utils.StringUtils.blank;
 
 import java.io.File;
-import java.util.Set;
+import java.util.List;
+import java.util.Map;
 import java.util.jar.Manifest;
 
 import org.oobium.utils.Config;
@@ -74,17 +75,12 @@ public class Migrator extends Bundle {
 		this.module = new File(file.getParent(), moduleName);
 	}
 
-	public Bundle getMigratorService(Workspace workspace, Mode mode) {
-		Config config = loadConfiguration();
-		return workspace.getBundle(config.getString(MIGRATION_SERVICE, mode));
-	}
-
 	public Config loadConfiguration() {
 		return Config.loadConfiguration(config);
 	}
 
 	@Override
-	protected void addDependencies(Workspace workspace, Mode mode, Set<Bundle> dependencies) {
+	protected void addDependencies(Workspace workspace, Mode mode, Map<Bundle, List<Bundle>> dependencies) {
 		super.addDependencies(workspace, mode, dependencies);
 		
 		Config configuration = loadConfiguration();
@@ -92,11 +88,11 @@ public class Migrator extends Bundle {
 		addDependency(workspace, mode, configuration.getString(MIGRATION_SERVICE, mode), dependencies);
 	}
 
-	protected void addDependency(Workspace workspace, Mode mode, String fullName, Set<Bundle> dependencies) {
+	protected void addDependency(Workspace workspace, Mode mode, String fullName, Map<Bundle, List<Bundle>> dependencies) {
 		if(!blank(fullName)) {
 			Bundle bundle = workspace.getBundle(fullName);
 			if(bundle != null) {
-				dependencies.add(bundle);
+				addDependency(dependencies, bundle);
 				bundle.addDependencies(workspace, mode, dependencies);
 			} else {
 				throw new IllegalStateException(this + " has an unresolved requirement: " + fullName);
