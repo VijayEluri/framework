@@ -43,7 +43,6 @@ import org.oobium.persist.PersistServiceProvider;
 import org.oobium.utils.Config;
 import org.oobium.utils.Config.Mode;
 import org.oobium.utils.StringUtils;
-import org.oobium.utils.json.JsonUtils;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
@@ -406,6 +405,33 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 			logger.info("moduleTracker started {" + StringUtils.asString(modules) + "}");
 		}
 	}
+
+	private void registerPersistService(String service, Map<?, ?> options) throws Exception {
+		if(logger.isLoggingDebug()) {
+			logger.debug("registering for persist service: " + service);
+		}
+		Properties properties = new Properties();
+		properties.setProperty(PersistService.SERVICE, service);
+		properties.setProperty(PersistService.CLIENT, getPersistClientName());
+		if(options != null && !options.isEmpty()) {
+			properties.putAll(options);
+		}
+		getContext().registerService(PersistClient.class.getName(), this, properties);
+	}
+
+	private void registerPersistServices(Object persist) throws Exception {
+		if(persist instanceof String) {
+			registerPersistService((String) persist, null);
+		} else if(persist instanceof List<?>) {
+			for(Object o : (List<?>) persist) {
+				registerPersistServices(o);
+			}
+		} else if(persist instanceof Map<?,?>) {
+			Map<?,?> options = (Map<?,?>) persist;
+			String service = (String) options.remove(PersistService.SERVICE);
+			registerPersistService(service, options);
+		}
+	}
 	
 	protected final void initializePersistServices(Config config) throws Exception {
 		if(persistServices != null) {
@@ -417,17 +443,7 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 			if(services.isEmpty()) {
 				logger.debug("no presist services configured - skipping registration");
 			} else {
-				if(logger.isLoggingDebug()) {
-					if(services.size() == 1) {
-						logger.debug("registering for persist service: " + services.get(0));
-					} else {
-						logger.debug("registering for persist services: " + StringUtils.asString(services));
-					}
-				}
-				Properties properties = new Properties();
-				properties.setProperty(PersistService.CLIENT, getPersistClientName());
-				properties.setProperty(PersistService.SERVICE, JsonUtils.toJson(services));
-				getContext().registerService(PersistClient.class.getName(), this, properties);
+				registerPersistServices(persist);
 			}
 		}
 	}

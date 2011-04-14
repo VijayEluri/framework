@@ -2,7 +2,6 @@ package org.oobium.persist.db;
 
 import static org.oobium.utils.StringUtils.simpleName;
 
-import java.io.File;
 import java.sql.SQLException;
 
 import org.junit.After;
@@ -10,9 +9,9 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.oobium.build.gen.DbGenerator;
 import org.oobium.build.model.ModelDefinition;
-import org.oobium.framework.tests.dyn.SimpleDynClass;
-import org.oobium.framework.tests.dyn.DynModel;
 import org.oobium.framework.tests.dyn.DynClasses;
+import org.oobium.framework.tests.dyn.DynModel;
+import org.oobium.framework.tests.dyn.SimpleDynClass;
 import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
@@ -29,12 +28,12 @@ import org.oobium.persist.migrate.db.postgresql.PostgreSqlMigrationService;
 
 public class BaseDbTestCase {
 
-	protected final int dbType = QueryUtils.DERBY;
+//	protected final int dbType = QueryUtils.DERBY;
 //	protected final int dbType = QueryUtils.MYSQL;
-//	protected final int dbType = QueryUtils.POSTGRESQL;
+	protected final int dbType = QueryUtils.POSTGRESQL;
 
 	protected static final Logger logger = LogProvider.getLogger(DbPersistService.class);
-	protected static final String schema = System.getProperty("user.dir") + File.separator + "dbtest";
+	protected static final String client = "testClient";
 	
 	protected static DbPersistService persistService;
 	protected static DbMigrationService migrationService;
@@ -62,19 +61,19 @@ public class BaseDbTestCase {
 	protected static String pkg;
 	private static int count;
 
-	private void setupPersistence() {
+	private void createPersistence() {
 		switch(dbType) {
 		case QueryUtils.DERBY:
-			persistService = new DerbyEmbeddedPersistService(schema, true);
-			migrationService = new DerbyEmbeddedMigrationService(logger);
+			persistService = new DerbyEmbeddedPersistService(client, "testDatabase", true);
+			migrationService = new DerbyEmbeddedMigrationService(client, logger);
 			break;
 		case QueryUtils.MYSQL:
-			persistService = new MySqlPersistService("root:sepultra@localhost/test");
-			migrationService = new MySqlMigrationService(logger);
+			persistService = new MySqlPersistService(client, "root:sepultra@localhost/testDatabase");
+			migrationService = new MySqlMigrationService(client, logger);
 			break;
 		case QueryUtils.POSTGRESQL:
-			persistService = new PostgreSqlPersistService("postgres:sepultra@localhost/test");
-			migrationService = new PostgreSqlMigrationService(logger);
+			persistService = new PostgreSqlPersistService(client, "postgres:sepultra@localhost/testDatabase");
+			migrationService = new PostgreSqlMigrationService(client, logger);
 			break;
 		default:
 			throw new IllegalStateException();
@@ -82,22 +81,22 @@ public class BaseDbTestCase {
 	}
 	
 	@Before
-	public void setup() {
+	public void setup() throws SQLException {
 		DynClasses.reset();
 		pkg = "test" + count++;
-		setupPersistence();
-		persistService.createDatabase();
+		createPersistence();
 		migrationService.setPersistService(persistService);
+		migrationService.createDatabase();
 		Model.setLogger(logger);
 		Model.setPersistServiceProvider(new SimplePersistServiceProvider(persistService));
 	}
 
 	@After
-	public void tearDown() {
+	public void tearDown() throws SQLException {
 		Model.setLogger(null);
 		Model.setPersistServiceProvider(null);
 		persistService.closeSession();
-		persistService.dropDatabase();
+		migrationService.dropDatabase();
 		persistService = null;
 	}
 

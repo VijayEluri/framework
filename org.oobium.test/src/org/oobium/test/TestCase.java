@@ -45,7 +45,7 @@ import org.oobium.utils.json.JsonUtils;
  */
 public abstract class TestCase {
 
-	protected static final DbPersistService service = new DerbyEmbeddedPersistService("test", true);
+	protected static final DbPersistService service = new DerbyEmbeddedPersistService("testClient", "testDatabase", true);
 
 	private static final NumberFormat nf = NumberFormat.getInstance();
 	static {

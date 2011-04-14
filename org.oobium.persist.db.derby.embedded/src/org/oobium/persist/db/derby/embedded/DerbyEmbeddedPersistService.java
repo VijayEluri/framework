@@ -10,25 +10,31 @@
  ******************************************************************************/
 package org.oobium.persist.db.derby.embedded;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.oobium.persist.ServiceInfo;
-import org.oobium.persist.db.ConnectionPool;
+import org.oobium.persist.db.Database;
 import org.oobium.persist.db.DbPersistService;
 
 public class DerbyEmbeddedPersistService extends DbPersistService {
 
+	
+	
 	public DerbyEmbeddedPersistService() {
 		super();
 	}
 	
-	public DerbyEmbeddedPersistService(String database, boolean inMemory) {
-		super(new DerbyEmbeddedConnectionManager(database, inMemory));
+	public DerbyEmbeddedPersistService(String client, final String database, final boolean inMemory) {
+		super(client, new HashMap<String, Object>() {
+							private static final long serialVersionUID = 1L;
+							{
+								put("database", database);
+								put("memory", inMemory);
+							}
+						});
 	}
 	
 	private String adjustSql(String sql) {
@@ -45,67 +51,10 @@ public class DerbyEmbeddedPersistService extends DbPersistService {
 	}
 
 	@Override
-	protected ConnectionPool createConnectionPool(String client, Map<String, Object> properties) {
-		return new DerbyEmbeddedConnectionPool(client, properties);
+	protected Database createDatabase(String client, Map<String, Object> properties) {
+		return new DerbyEmbeddedDatabase(client, properties);
 	}
 	
-	public void dropDatabase() {
-		if(inMemory()) {
-			super.dropDatabase();
-		} else {
-			logger.info("dropping all tables...");
-			
-			String sql = "select t.tablename, c.constraintname" + " from sys.sysconstraints c, sys.systables t"
-					+ " where c.type = 'F' and t.tableid = c.tableid";
-
-			List<Map<String, Object>> constraints = null;
-			try {
-				constraints = executeQuery(sql);
-			} catch(SQLException e) {
-				logger.info("database has not yet been created");
-				return;
-			}
-
-			for(Map<String, Object> map : constraints) {
-				sql = "alter table " + map.get("tablename") + " drop constraint " + map.get("constraintname");
-				logger.debug(sql);
-				try {
-					executeUpdate(sql);
-				} catch(Exception e) {
-					logger.error("could not alter table: " + sql, e);
-				}
-			}
-
-			try {
-				Connection connection = getConnection();
-				ResultSet rs = null;
-				try {
-					String appSchema = "ROOT";
-					rs = connection.getMetaData().getTables(null, appSchema, "%", new String[] { "TABLE" });
-					while(rs.next()) {
-						sql = "drop table " + appSchema + "." + rs.getString(3);
-						logger.debug(sql);
-						Statement stmt = connection.createStatement();
-						try {
-							stmt.executeUpdate(sql);
-						} finally {
-							stmt.close();
-						}
-					}
-				} finally {
-					if(rs != null) {
-						rs.close();
-					}
-					// connection.close(); no need - connection will be closed when
-					// the session is closed
-				}
-				logger.info("all tables dropped.");
-			} catch(SQLException e) {
-				// well, something went wrong...
-				logger.error("ERROR dropping database", e);
-			}
-		}
-	}
 	
 	@Override
 	public List<Map<String, Object>> executeQuery(String sql, Object... values) throws SQLException {
@@ -142,11 +91,6 @@ public class DerbyEmbeddedPersistService extends DbPersistService {
 				return "0.6.0";
 			}
 		};
-	}
-
-	@Override
-	public String getPersistServiceName() {
-		return getClass().getPackage().getName();
 	}
 
 }

@@ -13,7 +13,7 @@ package org.oobium.persist.db.mysql;
 import java.util.Map;
 
 import org.oobium.persist.ServiceInfo;
-import org.oobium.persist.db.ConnectionPool;
+import org.oobium.persist.db.Database;
 import org.oobium.persist.db.DbPersistService;
 
 public class MySqlPersistService extends DbPersistService {
@@ -22,13 +22,13 @@ public class MySqlPersistService extends DbPersistService {
 		super();
 	}
 	
-	public MySqlPersistService(String database) {
-		super(new MySqlConnectionManager(database));
+	public MySqlPersistService(String client, String url) {
+		super(client, url);
 	}
 	
 	@Override
-	protected ConnectionPool createConnectionPool(String client, Map<String, Object> properties) {
-		return new MySqlConnectionPool(client, properties);
+	protected Database createDatabase(String client, Map<String, Object> properties) {
+		return new MySqlDatabase(client, properties);
 	}
 
 	@Override
@@ -51,11 +51,6 @@ public class MySqlPersistService extends DbPersistService {
 				return "Persist service for mysql databases";
 			}
 		};
-	}
-
-	@Override
-	public String getPersistServiceName() {
-		return "mysql";
 	}
 
 }

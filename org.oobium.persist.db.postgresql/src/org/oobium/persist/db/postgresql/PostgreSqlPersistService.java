@@ -13,7 +13,7 @@ package org.oobium.persist.db.postgresql;
 import java.util.Map;
 
 import org.oobium.persist.ServiceInfo;
-import org.oobium.persist.db.ConnectionPool;
+import org.oobium.persist.db.Database;
 import org.oobium.persist.db.DbPersistService;
 
 public class PostgreSqlPersistService extends DbPersistService {
@@ -22,13 +22,13 @@ public class PostgreSqlPersistService extends DbPersistService {
 		super();
 	}
 	
-	public PostgreSqlPersistService(String database) {
-		super(new PostgreSqlConnectionManager(database));
+	public PostgreSqlPersistService(String client, String url) {
+		super(client, url);
 	}
 	
 	@Override
-	protected ConnectionPool createConnectionPool(String client, Map<String, Object> properties) {
-		return new PostgreSqlConnectionPool(client, properties);
+	protected Database createDatabase(String client, Map<String, Object> properties) {
+		return new PostgreSqlDatabase(client, properties);
 	}
 
 	@Override
@@ -51,11 +51,6 @@ public class PostgreSqlPersistService extends DbPersistService {
 				return "Persist service for postgres databases";
 			}
 		};
-	}
-
-	@Override
-	public String getPersistServiceName() {
-		return "postgres";
 	}
 
 }

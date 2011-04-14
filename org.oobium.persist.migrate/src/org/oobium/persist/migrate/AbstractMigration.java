@@ -211,8 +211,8 @@ public abstract class AbstractMigration implements Migration {
     	table.update();
     }
     
-    public void createDatabase(Map<String, ? extends Object> options) throws SQLException {
-    	getService().initializeDatabase(options);
+    public void createDatabase() throws SQLException {
+    	getService().createDatabase();
     }
 
     public void createForeignKey(String tableName, String column, String reference) throws SQLException {
@@ -284,10 +284,6 @@ public abstract class AbstractMigration implements Migration {
 		return Column(DECIMAL, name, options);
 	}
     
-    public void destroyAll() {
-		getService().dropAll();
-	}
-    
     public void destroyColumn(String tableName, String column) throws SQLException {
     	Table table = new Table(getService(), tableName, null);
     	table.add(new RemoveColumn(column));
@@ -302,10 +298,6 @@ public abstract class AbstractMigration implements Migration {
     	table.update();
 	}
 
-    public void destroyDatabase() {
-		getService().dropDatabase();
-	}
-    
     public void destroyForeignKey(String tableName, String column) throws SQLException {
     	Table table = new Table(getService(), tableName, null);
     	table.add(new RemoveForeignKey(column));
@@ -334,18 +326,8 @@ public abstract class AbstractMigration implements Migration {
 	@Override
 	public abstract void down() throws SQLException;
 	
-	/**
-	 * Synonym for {@link #destroyAll()}
-	 */
-	public void dropAll() {
-		destroyAll();
-	}
-	
-	/**
-	 * Synonym for {@link #destroyDatabase()}
-	 */
-	public void dropDatabase() {
-		destroyDatabase();
+	public void dropDatabase() throws SQLException {
+		getService().dropDatabase();
 	}
 	
 	/**

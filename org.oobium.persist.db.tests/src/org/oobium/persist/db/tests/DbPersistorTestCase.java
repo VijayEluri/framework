@@ -29,7 +29,6 @@ public class DbPersistorTestCase {
 
 	protected static final Logger logger = LogProvider.getLogger(DbPersistService.class);
 	
-	protected static final String schema = "dbtest";
 	protected static DbPersistService service;
 
 	@BeforeClass
@@ -39,7 +38,7 @@ public class DbPersistorTestCase {
 
 	@Before
 	public void setUp() {
-		service = new DerbyEmbeddedPersistService(schema, true);
+		service = new DerbyEmbeddedPersistService("testClient", "testDatabase", true);
 		Model.setLogger(logger);
 		Model.setPersistServiceProvider(new SimplePersistServiceProvider(service));
 	}

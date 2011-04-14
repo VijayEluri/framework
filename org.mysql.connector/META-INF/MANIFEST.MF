@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: MySQL JDBC Connector
 Bundle-SymbolicName: org.mysql.connector
 Bundle-Version: 5.1.15
-Bundle-Vendor: repackaged by oobium.org
+Bundle-Vendor: repackaged by Oobium.org
 Bundle-ClassPath: .
 Export-Package: com.mysql.jdbc,
  com.mysql.jdbc.exceptions,
@@ -17,4 +17,7 @@ Export-Package: com.mysql.jdbc,
  com.mysql.jdbc.profiler,
  com.mysql.jdbc.util,
  org.gjt.mm.mysql
+Import-Package: javax.naming,
+ javax.naming.spi,
+ javax.sql
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

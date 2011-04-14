@@ -11,7 +11,6 @@ import java.util.Map;
 
 import org.oobium.logging.Logger;
 import org.oobium.persist.migrate.db.DbMigrationService;
-import org.oobium.persist.migrate.defs.Column;
 import org.oobium.persist.migrate.defs.Table;
 import org.oobium.persist.migrate.defs.columns.ForeignKey;
 import org.oobium.persist.migrate.defs.columns.PrimaryKey;
@@ -42,21 +41,10 @@ public class PostgreSqlMigrationService extends DbMigrationService {
 		super();
 	}
 	
-	public PostgreSqlMigrationService(Logger logger) {
-		super(logger);
+	public PostgreSqlMigrationService(String client, Logger logger) {
+		super(client, logger);
 	}
 	
-	
-	@Override
-	public void dropAll() {
-		// TODO Auto-generated method stub
-	}
-
-	@Override
-	public void dropDatabase() {
-		// TODO Auto-generated method stub
-	}
-
 	@Override
 	protected String getCreateForeignKeyColumnSql(ForeignKey fk) {
 		StringBuilder sb = new StringBuilder();

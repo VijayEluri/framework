@@ -10,10 +10,11 @@ Import-Package: javax.sql,
  org.oobium.persist,
  org.oobium.persist.db,
  org.oobium.utils.coercion,
+ org.oobium.utils.json,
  org.osgi.framework;version="1.4.0"
+Require-Bundle: org.apache.derby;bundle-version="10.5.3"
 Export-Package: org.oobium.persist.db.derby.embedded
 Bundle-ActivationPolicy: lazy
 Bundle-Activator: org.oobium.persist.db.derby.embedded.DerbyEmbeddedPersistService
-Require-Bundle: org.apache.derby;bundle-version="10.5.3"
 Oobium-Service: org.oobium.persist
-Oobium-MigrationService: org.oobium.persist.db.migrate.derby.embedded
+Oobium-MigrationService: org.oobium.persist.migrate.db.derby.embedded

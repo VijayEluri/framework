@@ -19,7 +19,7 @@ public class TestPersistService implements PersistService {
 	}
 	
 	public static TestPersistService useDerby(Class<? extends Model> modelClass) {
-		DerbyEmbeddedPersistService service = new DerbyEmbeddedPersistService("ROOT", true);
+		DerbyEmbeddedPersistService service = new DerbyEmbeddedPersistService("testClient", "testDatabase", true);
 		return create(service);
 	}
 	

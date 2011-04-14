@@ -51,8 +51,8 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		super();
 	}
 	
-	public DbMigrationService(Logger logger) {
-		super(logger);
+	public DbMigrationService(String client, Logger logger) {
+		super(client, logger);
 	}
 
 	public void addColumn(Table table, AddColumn change) throws SQLException {
@@ -80,7 +80,7 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 			}
 		}
 	}
-
+	
 	public void addForeignKey(Table table, AddForeignKey change) throws SQLException {
 		long start = -1;
 		if(logger.isLoggingInfo()) {
@@ -118,6 +118,12 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		}
 	}
 
+	@Override
+	public void createDatabase() throws SQLException {
+		logger.info("Creating database...");
+		persistor.createDatabase(client);
+	}
+
 	protected void createIndex(Table table, Index index) throws SQLException {
 		long start = -1;
 		if(logger.isLoggingInfo()) {
@@ -143,7 +149,7 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 			}
 		}
 	}
-	
+
 	protected void createTable(Table table) throws SQLException {
 		long start = -1;
 		if(logger.isLoggingInfo()) {
@@ -194,6 +200,12 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 				// discard
 			}
 		}
+	}
+	
+	@Override
+	public void dropDatabase() throws SQLException {
+		logger.info("Dropping database...");
+		persistor.dropDatabase(client);
 	}
 
 	public List<Map<String, Object>> executeQuery(String sql, Object...values) throws SQLException {
@@ -398,8 +410,12 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 	}
 
 	@Override
-	public void setPersistService(PersistService persistor) {
-		this.persistor = (DbPersistService) persistor;
+	public void setPersistService(PersistService service) {
+		if(service instanceof DbPersistService) {
+			this.persistor = (DbPersistService) service;
+		} else {
+			throw new IllegalStateException("Migration cannot run without a DbPersistService: " + service);
+		}
 	}
 
 	@Override

@@ -27,7 +27,7 @@ import javax.sql.PooledConnection;
 
 import org.oobium.logging.Logger;
 
-public abstract class ConnectionPool {
+public class ConnectionPool {
 
 	protected final String client;
 	protected final Logger logger;
@@ -37,10 +37,10 @@ public abstract class ConnectionPool {
 	private final int timeout; // in seconds
 	private final ConnectionEventListener connectionListener;
 	
-	public ConnectionPool(String client, Map<String, Object> properties, Logger logger) {
+	public ConnectionPool(String client, Map<String, Object> properties, ConnectionPoolDataSource dataSource, Logger logger) {
 		this.client = client;
 		this.logger = logger;
-		ds = createDataSource(properties);
+		this.ds = dataSource;
 
 		int maxConnections = coerce(properties.get("maxConnections"), int.class);
 		if(maxConnections < 1) {
@@ -69,8 +69,6 @@ public abstract class ConnectionPool {
 		};
 	}
 	
-	protected abstract ConnectionPoolDataSource createDataSource(Map<String, Object> properties);
-
 	private synchronized void addConnection(PooledConnection connection) {
 		semaphore.release();
 		connections.push(connection);
@@ -151,23 +149,8 @@ public abstract class ConnectionPool {
 		}
 	}
 
-	public abstract String getDatabaseIdentifier();
-
 	protected ConnectionPoolDataSource getDataSource() {
 		return ds;
 	}
 	
-	@Override
-	public boolean equals(Object obj) {
-		if(obj != null && obj.getClass() == getClass()) {
-			return ((ConnectionPool) obj).getDatabaseIdentifier().equals(getDatabaseIdentifier());
-		}
-		return false;
-	}
-
-	@Override
-	public int hashCode() {
-		return getDatabaseIdentifier().hashCode();
-	}
-
 }

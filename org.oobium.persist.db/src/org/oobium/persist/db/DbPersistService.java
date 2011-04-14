@@ -28,7 +28,6 @@ import org.oobium.persist.ModelAdapter;
 import org.oobium.persist.PersistClient;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.db.internal.DbPersistor;
-import org.oobium.utils.json.JsonUtils;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -40,27 +39,70 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	private static final ThreadLocal<String> threadClient = new ThreadLocal<String>();
 	private static final ThreadLocal<Connection> threadConnection = new ThreadLocal<Connection>();
 	private static final ThreadLocal<Boolean> threadAutoCommit = new ThreadLocal<Boolean>();
-
 	private static final int CREATE = 0;
+
 	private static final int DESTROY = 1;
 	private static final int RETRIEVE = 2;
 	private static final int UPDATE = 3;
+	
+	private static Map<String, Object> parseUrl(String url) {
+		Map<String, Object> properties = new HashMap<String, Object>();
+		int ix = url.indexOf('@');
+		if(ix == -1) {
+			properties.put("username", "root");
+			properties.put("password", "");
+		} else {
+			String credentials = url.substring(0, ix);
+			url = url.substring(ix+1);
+			ix = credentials.indexOf(':');
+			if(ix == -1) {
+				properties.put("username", credentials);
+				properties.put("password", "");
+			} else {
+				properties.put("username", credentials.substring(0, ix));
+				properties.put("password", credentials.substring(ix+1));
+			}
+		}
+
+		ix = url.indexOf('/');
+		if(ix == -1) {
+			properties.put("host", null); // use default
+			properties.put("port", null); // use default
+			properties.put("database", url);
+		} else if(ix == 0) {
+			properties.put("host", null); // use default
+			properties.put("port", null); // use default
+			properties.put("database", url.substring(1));
+		} else {
+			String s = url.substring(0, ix);
+			properties.put("database", url.substring(ix+1));
+			ix = s.indexOf(':');
+			if(ix == -1) {
+				properties.put("host", s);
+				properties.put("port", null); // use default
+			} else {
+				properties.put("host", s.substring(0, ix));
+				properties.put("port", Integer.parseInt(s.substring(ix+1)));
+			}
+		}
+		return properties;
+	}
 
 	protected final Logger logger;
 	private BundleContext context;
 	private DbPersistor persistor;
-	private Map<String, ConnectionPool> connectionPools;
-	protected ConnectionManager connectionManager;
+	private Map<String, Database> databases;
 
 	private ServiceTracker appTracker;
 
-	private ReadWriteLock lock = new ReentrantReadWriteLock();
+	private final ReadWriteLock lock;
 
 
 	public DbPersistService() {
 		logger = LogProvider.getLogger(DbPersistService.class);
 		persistor = new DbPersistor();
-		connectionPools = new HashMap<String, ConnectionPool>();
+		databases = new HashMap<String, Database>();
+		lock = new ReentrantReadWriteLock();
 	}
 
 	/**
@@ -73,45 +115,20 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	 * @param client
 	 * @param timeout
 	 */
-	public DbPersistService(ConnectionManager connectionManager) {
-		logger = LogProvider.getLogger(DbPersistService.class);
-		openSession(connectionManager.getDatabase());
-		persistor = new DbPersistor();
-		this.connectionManager = connectionManager;
+	public DbPersistService(String client, Map<String, Object> properties) {
+		this();
+		addDatabase(client, properties);
+		openSession(client);
 	}
 	
-	protected void createDatabase() {
-		if(connectionManager != null) {
-			try {
-				connectionManager.createDatabase();
-			} catch(SQLException e) {
-				logger.error("ERROR creating database", e);
-			}
-		} else {
-			throw new UnsupportedOperationException();
-		}
-	}
-	
-	protected void dropDatabase() {
-		if(connectionManager != null) {
-			try {
-				connectionManager.dropDatabase();
-			} catch(SQLException e) {
-				logger.error("ERROR dropping database", e);
-			}
-		} else {
-			throw new UnsupportedOperationException();
-		}
-	}
-	
-	public boolean inMemory() {
-		return (connectionManager != null) && connectionManager.inMemory();
+	public DbPersistService(String client, String url) {
+		this(client, parseUrl(url));
 	}
 	
 	private void addDatabase(String client, Map<String, Object> properties) {
 		lock.readLock().lock();
 		try {
-			if(connectionPools.containsKey(client)) {
+			if(databases.containsKey(client)) {
 				return;
 			}
 		} finally {
@@ -120,17 +137,58 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		
 		lock.writeLock().lock();
 		try {
-			ConnectionPool cp = createConnectionPool(client, properties);
-			connectionPools.put(client, cp);
+			Database db = createDatabase(client, properties);
+			databases.put(client, db);
 			if(logger.isLoggingInfo()) {
-				logger.info("added ConnectionPool for " + client + " (" + cp.getDatabaseIdentifier() + ")");
+				logger.info("added Database for " + client + " (" + db.getDatabaseIdentifier() + ")");
 			}
 		} finally {
 			lock.writeLock().unlock();
 		}
 	}
 	
-	protected abstract ConnectionPool createConnectionPool(String client, Map<String, Object> properties);
+	private boolean autoCommit() {
+		Boolean ac = threadAutoCommit.get();
+		return (ac != null) && ac.booleanValue();
+	}
+	
+	@Override
+	public void closeSession() {
+		Connection connection = threadConnection.get();
+		if(connection != null) {
+			boolean closed;
+			try {
+				closed = connection.isClosed();
+			} catch(SQLException e) {
+				closed = true;
+			}
+			if(!closed) {
+				try {
+					if(!connection.getAutoCommit()) {
+						connection.rollback();
+					}
+				} catch(Exception e) {
+					// discard
+				}
+				try {
+					connection.close();
+				} catch(Exception e) {
+					logger.warn("could not close database connection", e);
+				}
+			}
+		}
+		threadConnection.set(null);
+		threadClient.set(null);
+		expireCache();
+	}
+	
+	@Override
+	public void commit() throws SQLException {
+		Connection connection = getConnection();
+		connection.commit();
+		connection.setAutoCommit(true);
+		setAutoCommit(true);
+	}
 	
 	@Override
 	public int count(Class<? extends Model> clazz, String where, Object... values) throws SQLException {
@@ -143,17 +201,29 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		handleCrud(CREATE, models);
 	}
 
+	public void createDatabase(String client) throws SQLException {
+		Database db = getDatabase(client);
+		db.createDatabase();
+	}
+	
+	protected abstract Database createDatabase(String client, Map<String, Object> properties);
+
 	@Override
 	public void destroy(Model...models) throws SQLException {
 		handleCrud(DESTROY, models);
 	}
-	
+
+	public void dropDatabase(String client) throws SQLException {
+		Database db = getDatabase(client);
+		db.dropDatabase();
+	}
+
 	@Override
 	public List<Map<String, Object>> executeQuery(String sql, Object...values) throws SQLException {
 		Connection connection = getConnection();
 		return persistor.executeQuery(connection, sql, values);
 	}
-
+	
 	@Override
 	public List<List<Object>> executeQueryLists(String sql, Object...values) throws SQLException {
 		Connection connection = getConnection();
@@ -194,100 +264,18 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		Connection connection = getConnection();
 		return persistor.findAll(connection, clazz, where, values);
 	}
-
-	private boolean autoCommit() {
-		Boolean ac = threadAutoCommit.get();
-		return (ac != null) && ac.booleanValue();
-	}
-
-	@Override
-	public void commit() throws SQLException {
-		Connection connection = getConnection();
-		connection.commit();
-		connection.setAutoCommit(true);
-		setAutoCommit(true);
-	}
-	
-	@Override
-	public void rollback() throws SQLException {
-		Connection connection = getConnection();
-		connection.rollback();
-		connection.setAutoCommit(true);
-		setAutoCommit(true);
-	}
-	
-	@Override
-	public void setAutoCommit(boolean autoCommit) throws SQLException {
-		if(autoCommit()) {
-			if(!autoCommit) {
-				threadAutoCommit.set(null);
-				getConnection().setAutoCommit(autoCommit);
-			}
-		} else {
-			if(autoCommit) {
-				threadAutoCommit.set(true);
-				getConnection().setAutoCommit(autoCommit);
-			}
-		}
-	}
-	
-	@Override
-	public void openSession(String name) {
-		threadClient.set(name);
-		threadAutoCommit.set(true);
-		expireCache();
-	}
-	
-	@Override
-	public void closeSession() {
-		Connection connection = threadConnection.get();
-		if(connection != null) {
-			boolean closed;
-			try {
-				closed = connection.isClosed();
-			} catch(SQLException e) {
-				closed = true;
-			}
-			if(!closed) {
-				try {
-					if(!connection.getAutoCommit()) {
-						connection.rollback();
-					}
-				} catch(Exception e) {
-					// discard
-				}
-				try {
-					connection.close();
-				} catch(Exception e) {
-					logger.warn("could not close database connection", e);
-				}
-			}
-		}
-		threadConnection.set(null);
-		threadClient.set(null);
-		expireCache();
-	}
 	
 	public Connection getConnection() throws SQLException {
 		lock.readLock().lock();
 		try {
 			Connection connection = threadConnection.get();
 			if(connection == null || connection.isClosed()) {
-				String clientName = threadClient.get();
-				if(clientName == null) {
-					throw new SQLException(clientName + " is not a registered PersistClient");
+				String client = threadClient.get();
+				if(client == null) {
+					throw new SQLException(client + " is not a registered PersistClient");
 				}
-				if(connectionPools != null) {
-					ConnectionPool cp = connectionPools.get(clientName);
-					if(cp == null) {
-						throw new SQLException("database for " + clientName + " has not been setup");
-					}
-					connection = cp.getConnection();
-				} else if(connectionManager != null) {
-					connection = connectionManager.getConnection();
-				} else {
-					throw new SQLException("no connection pool or manager has been setup");
-				}
+				Database db = getDatabase(client);
+				connection = db.getConnection();
 				threadConnection.set(connection);
 			}
 			return connection;
@@ -295,7 +283,27 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 			lock.readLock().unlock();
 		}
 	}
-
+	
+	private Database getDatabase(String client) throws SQLException {
+		if(databases != null) {
+			Database db = databases.get(client);
+			if(db == null) {
+				throw new SQLException("database for " + client + " has not been setup");
+			}
+			return db;
+		} else {
+			throw new SQLException("no connection pool has been setup");
+		}
+	}
+	
+	public String getMigrationServiceName() {
+		Object o = context.getBundle().getHeaders().get("Oobium-MigrationService");
+		if(o instanceof String) {
+			return (String) o;
+		}
+		return null;
+	}
+	
 	private void handleCrud(int task, Model[] models) throws SQLException {
 		if(models.length == 0) {
 			return;
@@ -346,20 +354,27 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	public boolean isSessionOpen() {
 		return threadClient.get() != null;
 	}
+
+	@Override
+	public void openSession(String name) {
+		threadClient.set(name);
+		threadAutoCommit.set(true);
+		expireCache();
+	}
 	
 	private void removeDatabase(String client) {
 		lock.writeLock().lock();
 		try {
-			ConnectionPool cp = connectionPools.remove(client);
+			Database cp = databases.remove(client);
 			if(cp != null) {
 				cp.dispose();
-				logger.log(Logger.INFO, "removed ConnectionPool for " + client);
+				logger.log(Logger.INFO, "removed Database for " + client);
 			}
 		} finally {
 			lock.writeLock().unlock();
 		}
 	}
-
+	
 	@Override
 	public void retrieve(Model...models) throws SQLException {
 		handleCrud(RETRIEVE, models);
@@ -378,28 +393,50 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		}
 	}
 
+	@Override
+	public void rollback() throws SQLException {
+		Connection connection = getConnection();
+		connection.rollback();
+		connection.setAutoCommit(true);
+		setAutoCommit(true);
+	}
+
+	@Override
+	public void setAutoCommit(boolean autoCommit) throws SQLException {
+		if(autoCommit()) {
+			if(!autoCommit) {
+				threadAutoCommit.set(null);
+				getConnection().setAutoCommit(autoCommit);
+			}
+		} else {
+			if(autoCommit) {
+				threadAutoCommit.set(true);
+				getConnection().setAutoCommit(autoCommit);
+			}
+		}
+	}
+
 	public void start(BundleContext context) throws Exception {
 		this.context = context;
-		logger.setTag(context.getBundle().getSymbolicName());
+		
+		final String name = context.getBundle().getSymbolicName();
+
+		logger.setTag(name);
 		logger.info("PersistService starting");
 		
 		appTracker = new ServiceTracker(context, PersistClient.class.getName(), new ServiceTrackerCustomizer() {
 			@Override
 			public Object addingService(ServiceReference reference) {
-				List<String> services = JsonUtils.toStringList((String) reference.getProperty(PersistService.SERVICE));
-				if(services != null) {
-					if(services.contains(getPersistServiceName())) {
-						String clientName = (String) reference.getProperty(PersistService.CLIENT);
-						if(clientName != null) {
-							Map<String, Object> properties = new HashMap<String, Object>();
-							for(String key : reference.getPropertyKeys()) {
-								if(!key.equals(PersistService.CLIENT) && !key.equals(PersistService.CLIENT)) {
-									properties.put(key, reference.getProperty(key));
-								}
-							}
-							addDatabase(clientName, properties);
-							return clientName;
+				String service = (String) reference.getProperty(PersistService.SERVICE);
+				if(name.equals(service)) {
+					String clientName = (String) reference.getProperty(PersistService.CLIENT);
+					if(clientName != null) {
+						Map<String, Object> properties = new HashMap<String, Object>();
+						for(String key : reference.getPropertyKeys()) {
+							properties.put(key, reference.getProperty(key));
 						}
+						addDatabase(clientName, properties);
+						return clientName;
 					}
 				}
 				return null;
@@ -418,21 +455,11 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		});
 		appTracker.open();
 
-		context.registerService(PersistService.class.getName(), this, Properties(PersistService.SERVICE, getPersistServiceName()));
+		context.registerService(PersistService.class.getName(), this, Properties(PersistService.SERVICE, name));
 
-		logger.info("PersistService started (" + getPersistServiceName() + ")");
-	}
-
-	public String getMigrationServiceName() {
-		Object o = context.getBundle().getHeaders().get("Oobium-MigrationService");
-		if(o instanceof String) {
-			return (String) o;
-		}
-		return null;
+		logger.info("PersistService started (" + name + ")");
 	}
 	
-	public abstract String getPersistServiceName();
-
 	public void stop(BundleContext context) throws Exception {
 		appTracker.close();
 		appTracker = null;

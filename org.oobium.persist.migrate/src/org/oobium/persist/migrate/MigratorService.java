@@ -72,6 +72,10 @@ public abstract class MigratorService extends AppService {
 		instance = this;
 	}
 	
+	public Config getConfig() {
+		return appConfig;
+	}
+	
 	@Override
 	public void addRoutes(Config config, Router router) {
 		if(!isActive()) { // TODO this doesn't need to be an application for remote use...
@@ -119,11 +123,6 @@ public abstract class MigratorService extends AppService {
 			}
 			return migrated;
 		} catch(SQLException e) {
-			try {
-				getMigrationService().initializeDatabase(null);
-			} catch(SQLException e2) {
-				// discard
-			}
 			return Collections.emptyList();
 		}
 	}
@@ -133,6 +132,7 @@ public abstract class MigratorService extends AppService {
 	public MigrationService getMigrationService() {
 		MigrationService service = (MigrationService) msTracker.getService();
 		if(service != null) {
+			service.setClient(getPersistClientName());
 			service.setPersistService(getPersistService());
 			return service;
 		}
@@ -155,6 +155,7 @@ public abstract class MigratorService extends AppService {
 		return appName + "_" + appVersion;
 	}
 	
+	@Override
 	public PersistService getPersistService() {
 		PersistService service = super.getPersistService();
 		if(service != null) {
@@ -172,7 +173,7 @@ public abstract class MigratorService extends AppService {
 	@Override
 	protected Config loadConfiguration() {
 		return new Config(Map(
-				e(Config.PERSIST, appConfig.get(Config.PERSIST, String.class)),
+				e(Config.PERSIST, appConfig.get(Config.PERSIST)),
 				e(Config.HOST, "localhost"),
 				e(Config.PORT, "5001")
 			));

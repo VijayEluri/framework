@@ -28,11 +28,10 @@ public interface MigrationService {
 	public abstract int executeUpdate(String sql, Object...values) throws SQLException;
 	
 	
-	public abstract void dropAll();
+	public abstract void createDatabase() throws SQLException;
 	
-	public abstract void dropDatabase();
+	public abstract void dropDatabase() throws SQLException;
 	
-	public abstract void initializeDatabase(Map<String, ? extends Object> options)  throws SQLException;
 	
 	public abstract Table find(String table);
 	
@@ -40,6 +39,9 @@ public interface MigrationService {
 	
 	public abstract int getCurrentRevision();
 
+	
+	public abstract void setClient(String client);
+	
 	public abstract void setPersistService(PersistService persistor);
 	
 }

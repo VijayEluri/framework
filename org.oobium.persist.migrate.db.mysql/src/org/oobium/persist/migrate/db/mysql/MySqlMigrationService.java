@@ -41,21 +41,10 @@ public class MySqlMigrationService extends DbMigrationService {
 		super();
 	}
 	
-	public MySqlMigrationService(Logger logger) {
-		super(logger);
+	public MySqlMigrationService(String client, Logger logger) {
+		super(client, logger);
 	}
 	
-	
-	@Override
-	public void dropAll() {
-		// TODO Auto-generated method stub
-	}
-
-	@Override
-	public void dropDatabase() {
-		// TODO Auto-generated method stub
-	}
-
 	@Override
 	protected String getCreateForeignKeyColumnSql(ForeignKey fk) {
 		StringBuilder sb = new StringBuilder();
