@@ -6,11 +6,15 @@ import static org.oobium.persist.Relation.RESTRICT;
 import static org.oobium.persist.Relation.SET_DEFAULT;
 import static org.oobium.persist.Relation.SET_NULL;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.oobium.logging.Logger;
 import org.oobium.persist.migrate.db.DbMigrationService;
+import org.oobium.persist.migrate.defs.Index;
 import org.oobium.persist.migrate.defs.Table;
 import org.oobium.persist.migrate.defs.columns.ForeignKey;
 import org.oobium.persist.migrate.defs.columns.PrimaryKey;
@@ -43,6 +47,50 @@ public class DerbyEmbeddedMigrationService extends DbMigrationService {
 	
 	public DerbyEmbeddedMigrationService(String client, Logger logger) {
 		super(client, logger);
+	}
+	
+	@Override
+	protected void createIndex(Table table, Index index) throws SQLException {
+		if(index.unique && index.columns.length == 1) {
+			super.createIndex(table, index.setUnique(false));
+			createUniqueTrigger(table, index.columns[0]);
+		} else {
+			super.createIndex(table, index);
+		}
+	}
+	
+	private void createUniqueTrigger(Table table, String column) throws SQLException {
+		long start = -1;
+		if(logger.isLoggingInfo()) {
+			logger.info("creating unique trigger on " + table.name + "("+ column + ")...");
+			start = System.currentTimeMillis();
+		}
+		
+		Connection connection = persistor.getConnection();
+		Statement stmt = connection.createStatement();
+		try {
+			for(String action : new String[] { "INSERT", "UPDATE" }) {
+				String sql =
+					"CREATE TRIGGER " + table.name + "___" + column + "___u_" + action.toLowerCase() + "_trigger" +
+					" NO CASCADE BEFORE " + action + " ON " + table.name +
+					" REFERENCING NEW ROW AS NEWROW" +
+					" FOR EACH ROW" +
+					" CALL APP.CHECK_UNIQUE('" + table.name + "', '" + column + "', NEWROW." + column + ")";
+				
+				logger.info(sql);
+				stmt.executeUpdate(sql);
+				if(logger.isLoggingInfo()) {
+					long total = System.currentTimeMillis() - start;
+					logger.info("created unique " + action.toLowerCase() + " trigger on " + table.name + "("+ column + ") in " + total + "ms");
+				}
+			}
+		} finally {
+			try {
+				stmt.close();
+			} catch(SQLException e) {
+				// discard
+			}
+		}
 	}
 	
 	@Override

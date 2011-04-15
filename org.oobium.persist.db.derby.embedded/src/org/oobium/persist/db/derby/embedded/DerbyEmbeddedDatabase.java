@@ -15,6 +15,7 @@ import javax.sql.ConnectionPoolDataSource;
 
 import org.apache.derby.jdbc.EmbeddedConnectionPoolDataSource;
 import org.oobium.persist.db.Database;
+import org.oobium.utils.FileUtils;
 
 public class DerbyEmbeddedDatabase extends Database {
 
@@ -58,7 +59,6 @@ public class DerbyEmbeddedDatabase extends Database {
 	@Override
 	protected ConnectionPoolDataSource createDataSource() {
 		EmbeddedConnectionPoolDataSource ds = new EmbeddedConnectionPoolDataSource();
-		ds.setCreateDatabase("create");
 		if(inMemory()) {
 			ds.setDatabaseName("memory:" + properties.get("database"));
 		} else {
@@ -102,7 +102,17 @@ public class DerbyEmbeddedDatabase extends Database {
     	Connection connection = DriverManager.getConnection(dbURL);
         Statement s = connection.createStatement();
         try {
-	        s.executeUpdate("SET SCHEMA APP");
+        	String sql = "SET SCHEMA APP";
+        	logger.debug(sql);
+	        s.executeUpdate(sql);
+        	sql = 
+	        	"CREATE PROCEDURE APP.CHECK_UNIQUE(tableName VARCHAR(128), columnName VARCHAR(128), id INTEGER) " +
+	        	"PARAMETER STYLE JAVA " +
+	        	"READS SQL DATA " +
+	        	"LANGUAGE JAVA " +
+	        	"EXTERNAL NAME '" + UniqueColumnTrigger.class.getCanonicalName() + ".checkUnique'";
+        	logger.debug(sql);
+	        s.executeUpdate(sql);
         } finally {
         	try {
         		s.close();
@@ -123,7 +133,7 @@ public class DerbyEmbeddedDatabase extends Database {
 
 			String dbURL = sb.toString();
 			if(logger.isLoggingDebug()) {
-				logger.debug("drop database connection: " + dbURL);
+				logger.debug("drop database: " + dbURL);
 			}
 
 			try {
@@ -134,8 +144,16 @@ public class DerbyEmbeddedDatabase extends Database {
 				}
 			}
 		} else {
-			File file = new File((String) properties.get("database"));
-			file.delete();
+			File db = new File(File.separator + properties.get("database"));
+			if(logger.isLoggingDebug()) {
+				logger.debug("drop database: " + db);
+			}
+			dispose();
+			if(db.exists()) {
+				FileUtils.delete(db);
+			} else {
+				throw new SQLException("database does not exist: " + db);
+			}
 		}
 	}
 

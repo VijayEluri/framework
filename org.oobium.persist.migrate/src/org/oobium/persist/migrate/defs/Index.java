@@ -25,6 +25,10 @@ public class Index {
 		this.columns = columns;
 	}
 	
+	public Index setUnique(boolean unique) {
+		return new Index(name, columns, unique);
+	}
+	
 	public Index withName(String name) {
 		return new Index(name, columns, unique);
 	}
