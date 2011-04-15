@@ -28,9 +28,9 @@ import org.oobium.persist.migrate.db.postgresql.PostgreSqlMigrationService;
 
 public class BaseDbTestCase {
 
-//	protected final int dbType = QueryUtils.DERBY;
+	protected final int dbType = QueryUtils.DERBY;
 //	protected final int dbType = QueryUtils.MYSQL;
-	protected final int dbType = QueryUtils.POSTGRESQL;
+//	protected final int dbType = QueryUtils.POSTGRESQL;
 
 	protected static final Logger logger = LogProvider.getLogger(DbPersistService.class);
 	protected static final String client = "testClient";
