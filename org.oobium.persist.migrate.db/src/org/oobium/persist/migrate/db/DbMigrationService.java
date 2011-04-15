@@ -56,61 +56,26 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 	}
 
 	public void addColumn(Table table, AddColumn change) throws SQLException {
-		long start = -1;
-		if(logger.isLoggingInfo()) {
-			logger.info("adding column " + change.column.name + " to table " + table.name + "...");
-			start = System.currentTimeMillis();
-		}
-		
-		Connection connection = persistor.getConnection();
-		Statement stmt = connection.createStatement();
-		try {
-			String sql = getAddColumnSql(table, change.column);
-			logger.info(sql);
-			stmt.executeUpdate(sql);
-			if(logger.isLoggingInfo()) {
-				long total = System.currentTimeMillis() - start;
-				logger.info("added column " + change.column.name + " to table " + table.name + " in " + total + "ms");
-			}
-		} finally {
-			try {
-				stmt.close();
-			} catch(SQLException e) {
-				// discard
-			}
-		}
+		exec(
+				getAddColumnSql(table, change.column),
+				"adding column " + change.column.name + " to table " + table.name,
+				"added column " + change.column.name + " to table " + table.name
+			);
 	}
 	
 	public void addForeignKey(Table table, AddForeignKey change) throws SQLException {
-		long start = -1;
-		if(logger.isLoggingInfo()) {
-			logger.info("creating foreign key (" + change.fk.column + " -> " + change.fk.reference + ") for table " + table.name + "...");
-			start = System.currentTimeMillis();
-		}
-		
-		Connection connection = persistor.getConnection();
-		Statement stmt = connection.createStatement();
-		try {
-			String sql = getCreateForeignKeySql(table, change.fk);
-			logger.info(sql);
-			stmt.executeUpdate(sql);
-			if(logger.isLoggingInfo()) {
-				long total = System.currentTimeMillis() - start;
-				logger.info("created foreign key (" + change.fk.column + " -> " + change.fk.reference + ") for table " + table.name + " in " + total + "ms");
-			}
-		} finally {
-			try {
-				stmt.close();
-			} catch(SQLException e) {
-				// discard
-			}
-		}
+		exec(
+				getCreateForeignKeySql(table, change.fk),
+				"creating foreign key (" + change.fk.column + " -> " + change.fk.reference + ") for table " + table.name,
+				"created foreign key (" + change.fk.column + " -> " + change.fk.reference + ") for table " + table.name
+			);
 	}
 
 	public void addIndex(Table table, AddIndex change) throws SQLException {
 		createIndex(table, change.index);
 	}
 
+	@Override
 	public void create(Table table) throws SQLException {
 		createTable(table);
 		for(Index index : table.getIndexes()) {
@@ -125,81 +90,28 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 	}
 
 	protected void createIndex(Table table, Index index) throws SQLException {
-		long start = -1;
-		if(logger.isLoggingInfo()) {
-			logger.info("creating index [" + join(index.columns, ',') + "] for table " + table.name + "...");
-			start = System.currentTimeMillis();
-		}
-		
-		Connection connection = persistor.getConnection();
-		Statement stmt = connection.createStatement();
-		try {
-			String sql = getCreateIndexSql(table, index);
-			logger.info(sql);
-			stmt.executeUpdate(sql);
-			if(logger.isLoggingInfo()) {
-				long total = System.currentTimeMillis() - start;
-				logger.info("created index [" + join(index.columns, ',') + "] for table " + table.name + " in " + total + "ms");
-			}
-		} finally {
-			try {
-				stmt.close();
-			} catch(SQLException e) {
-				// discard
-			}
-		}
+		exec(
+				getCreateIndexSql(table, index),
+				"creating index [" + join(index.columns, ',') + "] for table " + table.name,
+				"created index [" + join(index.columns, ',') + "] for table " + table.name
+			);
 	}
 
 	protected void createTable(Table table) throws SQLException {
-		long start = -1;
-		if(logger.isLoggingInfo()) {
-			logger.info("creating " + table.name + "...");
-			start = System.currentTimeMillis();
-		}
-		
-		Connection connection = persistor.getConnection();
-		Statement stmt = connection.createStatement();
-		try {
-			String sql = getCreateTableSql(table);
-			logger.info(sql);
-			stmt.executeUpdate(sql);
-			if(logger.isLoggingInfo()) {
-				long total = System.currentTimeMillis() - start;
-				logger.info("created " + table.name + " in " + total + "ms");
-			}
-		} finally {
-			try {
-				stmt.close();
-			} catch(SQLException e) {
-				// discard
-			}
-		}
+		exec(
+				getCreateTableSql(table),
+				"creating " + table.name,
+				"created " + table.name
+			);
 	}
 	
+	@Override
 	public void drop(Table table) throws SQLException {
-		long start = -1;
-		if(logger.isLoggingInfo()) {
-			logger.info("dropping " + table.name + "...");
-			start = System.currentTimeMillis();
-		}
-		
-		Connection connection = persistor.getConnection();
-		Statement stmt = connection.createStatement();
-		try {
-			String sql = "drop table " + table.name;
-			logger.info(sql);
-			stmt.executeUpdate(sql);
-			if(logger.isLoggingInfo()) {
-				long total = System.currentTimeMillis() - start;
-				logger.info("dropped " + table.name + " in " + total + "ms");
-			}
-		} finally {
-			try {
-				stmt.close();
-			} catch(SQLException e) {
-				// discard
-			}
-		}
+		exec(
+				"DROP TABLE " + table.name,
+				"dropping " + table.name,
+				"dropped " + table.name
+			);
 	}
 	
 	@Override
@@ -208,18 +120,43 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		persistor.dropDatabase(client);
 	}
 
+	protected void exec(String sql, String opener, String closer) throws SQLException {
+		// these are all long running operations compared to string concatenation, so don't worry about checking logging level
+		logger.info(opener + "...");
+		long start = System.currentTimeMillis();
+		
+		Connection connection = persistor.getConnection();
+		Statement stmt = connection.createStatement();
+		try {
+			logger.info(sql);
+			stmt.executeUpdate(sql);
+			long total = System.currentTimeMillis() - start;
+			logger.info(closer + " in " + total + "ms");
+		} finally {
+			try {
+				stmt.close();
+			} catch(SQLException e) {
+				// discard
+			}
+		}
+	}
+
+	@Override
 	public List<Map<String, Object>> executeQuery(String sql, Object...values) throws SQLException {
 		return persistor.executeQuery(sql, values);
 	}
 
+	@Override
 	public List<List<Object>> executeQueryLists(String sql, Object...values) throws SQLException {
 		return persistor.executeQueryLists(sql, values);
 	}
 
+	@Override
 	public Object executeQueryValue(String sql, Object...values) throws SQLException {
 		return persistor.executeQueryValue(sql, values);
 	}
-
+	
+	@Override
 	public int executeUpdate(String sql, Object...values) throws SQLException {
 		return persistor.executeUpdate(sql, values);
 	}
@@ -228,7 +165,7 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 	public Table find(String table) {
 		throw new UnsupportedOperationException("not yet implemented");
 	}
-	
+
 	@Override
 	public List<Table> findAll() {
 		throw new UnsupportedOperationException("not yet implemented");
@@ -269,7 +206,7 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 	}
 
 	protected abstract String getCreateForeignKeyColumnSql(ForeignKey fk);
-
+	
 	/**
 	 * Generate the SQL to create a foreign key constraint on an existing column.
 	 * @param table
@@ -298,7 +235,7 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		}
 		return sb.toString();
 	}
-	
+
 	protected String getCreateIndexSql(Table table, Index index) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("CREATE ");
@@ -316,7 +253,7 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		sb.append(')');
 		return sb.toString();
 	}
-
+	
 	protected abstract String getCreatePrimaryKeySql(PrimaryKey pk);
 	
 	protected abstract String getCreateTableOptionsSql(Table table);
@@ -359,54 +296,71 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		return sb.toString();
 	}
 	
+	public String getRemoveForeignKeySql(Table table, String name) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("ALTER TABLE ").append(getSqlSafe(table.name)).append(" DROP");
+		sb.append(" Foreign Key ").append(getSqlSafe(name));
+		return sb.toString();
+	}
+
+	protected String getRemoveIndexSql(Table table, String name) {
+		return "ALTER TABLE " + table.name + " DROP INDEX " + name;
+	}
+	
 	protected String getSqlForPrimitive(String type) {
 		return Column.BOOLEAN.equals(type) ? "false" : "0";
 	}
-
+	
 	protected abstract String getSqlSafe(String rawString);
-	
+
 	protected abstract String getSqlType(String migrationType);
-	
+
 	public void removeColumn(Table table, RemoveColumn change) throws SQLException {
-		long start = -1;
-		if(logger.isLoggingInfo()) {
-			logger.info("removing column " + change.column + " from table " + table.name + "...");
-			start = System.currentTimeMillis();
-		}
-		
-		Connection connection = persistor.getConnection();
-		Statement stmt = connection.createStatement();
-		try {
-			String sql = getRemoveColumnSql(table, change.column);
-			logger.info(sql);
-			stmt.executeUpdate(sql);
-			if(logger.isLoggingInfo()) {
-				long total = System.currentTimeMillis() - start;
-				logger.info("removed column " + change.column + " from table " + table.name + " in " + total + "ms");
-			}
-		} finally {
-			try {
-				stmt.close();
-			} catch(SQLException e) {
-				// discard
-			}
-		}
+		exec(
+				getRemoveColumnSql(table, change.column),
+				"removing column " + change.column + " from table " + table.name,
+				"removed column " + change.column + " from table " + table.name
+			);
 	}
-	
+
 	public void removeForeignKey(Table table, RemoveForeignKey change) throws SQLException {
-		throw new UnsupportedOperationException("not yet implemented");
+		exec(
+				getRemoveForeignKeySql(table, change.name),
+				"removing foreign key " + change.name + " from table " + table.name,
+				"removed foreign key " + change.name + " from table " + table.name
+			);
+	}
+
+	public void removeIndex(Table table, RemoveIndex change) throws SQLException {
+		exec(
+				getRemoveIndexSql(table, change.name),
+				"removing index " + change.name + " from table " + table.name,
+				"removed index " + change.name + " from table " + table.name
+			);
+	}
+
+	protected String getRenameColumnSql(Table table, String from, String to) {
+		return "ALTER TABLE " + table.name + " RENAME COLUMN " + from + " TO " + to;
 	}
 	
-	public void removeIndex(Table table, RemoveIndex change) throws SQLException {
-		throw new UnsupportedOperationException("not yet implemented");
+	protected String getRenameTableSql(Table table, String to) {
+		return "ALTER TABLE " + table.name + " RENAME TO " + to;
 	}
 	
 	public void renameColumn(Table table, Rename change) throws SQLException {
-		throw new UnsupportedOperationException("not yet implemented");
+		exec(
+				getRenameColumnSql(table, change.from, change.to),
+				"renaming column from " + change.from + " to " + change.to + " in table " + table.name,
+				"renamed column from " + change.from + " to " + change.to + " in table " + table.name
+			);
 	}
 	
 	public void renameTable(Table table, Rename change) throws SQLException {
-		throw new UnsupportedOperationException("not yet implemented");
+		exec(
+				getRenameTableSql(table, change.to),
+				"renaming table from " + table.name + " to " + change.to,
+				"renamed table from " + table.name + " to " + change.to
+			);
 	}
 
 	@Override

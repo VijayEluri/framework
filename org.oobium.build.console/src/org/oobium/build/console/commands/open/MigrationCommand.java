@@ -15,22 +15,27 @@ import java.io.File;
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.BuilderConsoleActivator;
 import org.oobium.build.workspace.Application;
+import org.oobium.build.workspace.Migrator;
+import org.oobium.build.workspace.Workspace;
 
-public class SchemaCommand extends BuilderCommand {
+public class MigrationCommand extends BuilderCommand {
 
 	@Override
 	public void configure() {
 		applicationRequired = true;
+		maxParams = 1;
 	}
 	
 	@Override
 	public void run() {
+		Workspace ws = getWorkspace();
 		Application app = getApplication();
-		File schema = app.getSchema();
-		if(schema.exists()) {
-			BuilderConsoleActivator.sendOpen(app.migrator, schema);
+		Migrator migrator = ws.getMigratorFor(app);
+		File migration = hasParam(0) ? migrator.getMigration(param(0)) : migrator.getInitialMigration();
+		if(migration.exists()) {
+			BuilderConsoleActivator.sendOpen(app.migrator, migration);
 		} else {
-			console.err.println("schema file (create.sql) does not exist");
+			console.err.println("migration file (" + migration.getName() + ") does not exist");
 		}
 	}
 

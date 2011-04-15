@@ -32,6 +32,7 @@ import org.oobium.build.util.PersistConfig;
 import org.oobium.build.util.PersistConfig.Service;
 import org.oobium.build.util.SourceFile;
 import org.oobium.build.workspace.Application;
+import org.oobium.build.workspace.Migrator;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.Workspace;
 import org.oobium.persist.Model;
@@ -252,10 +253,12 @@ public class ModelGenerator {
 			defs[i] = new ModelDefinition(models.get(i));
 		}
 		
-		File schema = app.getSchema();
 		String src = DbGenerator.generate(app.name, defs);
+
+		Migrator migrator = workspace.getMigratorFor(app);
+		File file = migrator.getInitialMigration();
 		
-		return writeFile(schema, src);
+		return writeFile(file, src);
 	}
 
 	private final Workspace workspace;

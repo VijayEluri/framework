@@ -25,7 +25,7 @@ public class SchemaCommand extends BuilderCommand {
 	@Override
 	public void run() {
 		Application app = getApplication();
-		app.createSchema(getWorkspace(), Mode.DEV);
+		app.createInitialMigration(getWorkspace(), Mode.DEV);
 		console.out.println("created <a href=\"open schema\">schema</a>");
 		BuilderConsoleActivator.sendRefresh(app.migrator, 100);
 	}

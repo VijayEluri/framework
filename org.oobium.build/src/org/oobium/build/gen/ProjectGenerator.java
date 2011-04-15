@@ -503,39 +503,6 @@ public class ProjectGenerator {
 		src = new SourceFile();
 		src.packageName = migration.getName().replace(File.separatorChar, '.') + ".migrations";
 		src.simpleName = "CreateDatabase";
-		src.superName = "AbstractCreateDatabase";
-		src.imports.add(SQLException.class.getCanonicalName());
-
-		sb = new StringBuilder();
-		sb.append("\t@Override\n");
-		sb.append("\tpublic void up() throws SQLException {\n");
-		sb.append('\n');
-		sb.append("\t\t// TODO set any custom options to be used in the super method\n");
-		sb.append('\n');
-		sb.append("\t\tsuper.up();\n");
-		sb.append('\n');
-		sb.append("\t\t// TODO manipulate the data now that the database has been created\n");
-		sb.append('\n');
-		sb.append("\t}");
-		src.methods.put("1", sb.toString());
-
-		sb = new StringBuilder();
-		sb.append("\t@Override\n");
-		sb.append("\tpublic void down() throws SQLException {\n");
-		sb.append('\n');
-		sb.append("\t\t// TODO add any custom routines before dropping the database\n");
-		sb.append('\n');
-		sb.append("\t\tdropDatabase();\n");
-		sb.append("\t}");
-		src.methods.put("2", sb.toString());
-		
-		writeFile(mainFolder(migration) + File.separator + "migrations", src.simpleName + ".java", src.toSource());
-
-		// Abstract Migration
-		src = new SourceFile();
-		src.isAbstract = true;
-		src.packageName = migration.getName().replace(File.separatorChar, '.') + ".migrations";
-		src.simpleName = "AbstractCreateDatabase";
 		src.superName = AbstractMigration.class.getSimpleName();
 		src.imports.add(AbstractMigration.class.getCanonicalName());
 		src.imports.add(SQLException.class.getCanonicalName());
@@ -543,19 +510,18 @@ public class ProjectGenerator {
 		sb = new StringBuilder();
 		sb.append("\t@Override\n");
 		sb.append("\tpublic void up() throws SQLException {\n");
-		sb.append("\t\t// place-holder\n");
+		sb.append("\t\t// TODO auto-generated method\n");
 		sb.append("\t}");
 		src.methods.put("1", sb.toString());
 
 		sb = new StringBuilder();
 		sb.append("\t@Override\n");
 		sb.append("\tpublic void down() throws SQLException {\n");
-		sb.append("\t\t// place-holder\n");
+		sb.append("\t\t// TODO auto-generated method\n");
 		sb.append("\t}");
 		src.methods.put("2", sb.toString());
-
-		writeFile(genFolder(migration) + File.separator + migration.getName().replace('.', File.separatorChar) + File.separator + "migrations", 
-				src.simpleName + ".java", src.toSource());
+		
+		writeFile(mainFolder(migration) + File.separator + "migrations", src.simpleName + ".java", src.toSource());
 	}
 
 	/**

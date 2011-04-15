@@ -48,9 +48,14 @@ public class Application extends Module {
 		addDependency(workspace, mode, configuration.getString(SERVER, mode), dependencies);
 	}
 	
-	public File createSchema(Workspace workspace, Mode mode) {
-		ModelGenerator.generateSchema(workspace, this, mode);
-		return getSchema();
+	/**
+	 * Create the initial migration where the database schema is created from the models.
+	 * @param workspace
+	 * @param mode
+	 * @return a File object pointing to the new migration source file
+	 */
+	public File createInitialMigration(Workspace workspace, Mode mode) {
+		return ModelGenerator.generateSchema(workspace, this, mode);
 	}
 
 	public Application getExportedBundle(Workspace workspace) {
@@ -78,11 +83,6 @@ public class Application extends Module {
 	
 	public int getPort(Mode mode) {
 		return loadConfiguration().getPort(mode);
-	}
-	
-	public File getSchema() {
-		return new File(migrator + File.separator + "generated" + File.separator + migrator.getName().replace('.', File.separatorChar) + File.separator + "migrations", 
-				"AbstractCreateDatabase.java");
 	}
 	
 	public String name() {

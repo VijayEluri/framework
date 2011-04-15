@@ -50,6 +50,11 @@ public class DerbyEmbeddedMigrationService extends DbMigrationService {
 	}
 	
 	@Override
+	protected String getRenameColumnSql(Table table, String from, String to) {
+		return "RENAME COLUMN " + table.name + "." + from + " TO " + to;
+	}
+	
+	@Override
 	protected void createIndex(Table table, Index index) throws SQLException {
 		if(index.unique && index.columns.length == 1) {
 			super.createIndex(table, index.setUnique(false));

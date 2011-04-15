@@ -100,22 +100,19 @@ public class DbGenerator {
 	private final String packageName;
 	private final String simpleName;
 	private ModelDefinition[] models;
-	private boolean isAbstract;
 
 	private String source;
 	
 	public DbGenerator(String moduleName, ModelDefinition[] models) {
 		this.packageName = moduleName.replace(File.separatorChar, '.') + ".migrator.migrations";
-		this.simpleName = "AbstractCreateDatabase";
+		this.simpleName = "CreateDatabase";
 		this.models = models;
-		this.isAbstract = true;
 	}
 
 	public DbGenerator(String packageName, String simpleName, ModelDefinition[] models) {
 		this.packageName = packageName;
 		this.simpleName = simpleName;
 		this.models = models;
-		this.isAbstract = false;
 	}
 	
 	private void appendOptions(SourceFile sf, StringBuilder sb, Options options) {
@@ -168,18 +165,11 @@ public class DbGenerator {
 			}
 		}
 
-		sf.isAbstract = isAbstract;
 		sf.packageName = packageName;
 		sf.simpleName = simpleName;
 		sf.superName = AbstractMigration.class.getSimpleName();
 		sf.imports.add(AbstractMigration.class.getCanonicalName());
-		sf.imports.add(Map.class.getCanonicalName());
-		sf.imports.add(HashMap.class.getCanonicalName());
 		sf.imports.add(SQLException.class.getCanonicalName());
-
-		sf.variables.put("tableOptions", "private Map<String, Map<String, Object>> tableOptions");
-		sf.constructors.put(0, "\tpublic " + simpleName + "() {\n\t\ttableOptions = new HashMap<String, Map<String,Object>>();\n\t}");
-		sf.methods.put("1", "\tprotected void setOptions(String table, Map<String, Object> options) {\n\t\ttableOptions.put(table, options);\n\t}");
 
 		StringBuilder sb = new StringBuilder();
 		sb.append("\t@Override\n\tpublic void up() throws SQLException {");
@@ -189,9 +179,9 @@ public class DbGenerator {
 			String var = varName(table.name);
 			if(table.hasForeignKey() || table.hasIndex() || joinedModels.contains(table)) {
 				sf.imports.add(Table.class.getCanonicalName());
-				sb.append("\t\tTable ").append(var).append(" = createTable(\"").append(table.name).append("\", tableOptions.get(\"").append(table.name).append("\")");
+				sb.append("\t\tTable ").append(var).append(" = createTable(\"").append(table.name).append("\"");
 			} else {
-				sb.append("\t\tcreateTable(\"").append(table.name).append("\", tableOptions.get(\"").append(table.name).append("\")");
+				sb.append("\t\tcreateTable(\"").append(table.name).append("\"");
 			}
 			if(table.columns.isEmpty()) {
 				sb.append(");\n");
@@ -265,44 +255,49 @@ public class DbGenerator {
 		sf.methods.put("2", sb.toString());
 
 		
-		if(!isAbstract) {
-			sb = new StringBuilder();
-			sb.append("\t@Override\n\tpublic void down() throws SQLException {\n");
+		sb = new StringBuilder();
+		sb.append("\t@Override\n\tpublic void down() throws SQLException {\n");
 
-			for(ModelTable table : tables.values()) {
-				if(table.hasForeignKey()) {
-					String var = varName(table.name);
-					sb.append("\t\tchangeTable(\"").append(table.name).append("\",");
-					if(table.foreignKeys.size() == 1) {
-						sb.append(" removeForeignKey(\"").append(table.foreignKeys.get(0).column).append("\"));\n");
-					} else {
-						for(int i = 0; i < table.foreignKeys.size(); i++) {
-							ForeignKey fk = table.foreignKeys.get(i);
-							if(i != 0) sb.append(',');
-							sb.append("\n\t\t\tremoveForeignKey(\"").append(fk.column).append("\")");
-						}
-						sb.append("\n\t\t);\n");
+		boolean first = true;
+		for(ModelTable table : tables.values()) {
+			if(table.hasForeignKey()) {
+				first = false;
+				sb.append("\t\tchangeTable(\"").append(table.name).append("\",");
+				if(table.foreignKeys.size() == 1) {
+					sb.append(" removeForeignKey(\"").append(table.foreignKeys.get(0).column).append("\"));\n");
+				} else {
+					for(int i = 0; i < table.foreignKeys.size(); i++) {
+						ForeignKey fk = table.foreignKeys.get(i);
+						if(i != 0) sb.append(',');
+						sb.append("\n\t\t\tremoveForeignKey(\"").append(fk.column).append("\")");
 					}
+					sb.append("\n\t\t);\n");
 				}
 			}
-			
-			if(!joins.isEmpty()) {
-				sb.append('\n');
-				for(JoinTable join : joins.values()) {
-					sb.append("\t\tdropJoinTable(\"");
-					sb.append(join.table1).append("\", \"").append(join.column1).append("\", \"");
-					sb.append(join.table2).append("\", \"").append(join.column2).append("\");\n");
-				}
-			}
-
-			sb.append('\n');
-			for(ModelTable table : tables.values()) {
-				sb.append("\t\tdropTable(\"").append(table.name).append("\");\n");
-			}
-
-			sb.append("\t}");
-			sf.methods.put("3", sb.toString());
 		}
+		
+		if(!joins.isEmpty()) {
+			if(first) {
+				first = false;
+			} else {
+				sb.append('\n');
+			}
+			for(JoinTable join : joins.values()) {
+				sb.append("\t\tdropJoinTable(\"");
+				sb.append(join.table1).append("\", \"").append(join.column1).append("\", \"");
+				sb.append(join.table2).append("\", \"").append(join.column2).append("\");\n");
+			}
+		}
+
+		if(!first) {
+			sb.append('\n');
+		}
+		for(ModelTable table : tables.values()) {
+			sb.append("\t\tdropTable(\"").append(table.name).append("\");\n");
+		}
+
+		sb.append("\t}");
+		sf.methods.put("3", sb.toString());
 		
 
 		source = sf.toSource();
@@ -327,10 +322,6 @@ public class DbGenerator {
 	
 	public String getSource() {
 		return source;
-	}
-	
-	public boolean isAbstract() {
-		return isAbstract;
 	}
 	
 }

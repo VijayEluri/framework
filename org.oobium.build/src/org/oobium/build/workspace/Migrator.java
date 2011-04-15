@@ -99,5 +99,13 @@ public class Migrator extends Bundle {
 			}
 		}
 	}
+	
+	public File getInitialMigration() {
+		return getMigration("CreateDatabase");
+	}
+	
+	public File getMigration(String name) {
+		return new File(migrations, name + ".java");
+	}
 
 }
