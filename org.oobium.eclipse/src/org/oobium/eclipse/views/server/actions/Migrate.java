@@ -15,7 +15,12 @@ public class Migrate extends Action {
 	
 	@Override
 	public void run() {
-		client("localhost", 5001).post("/migrate");
+		new Thread() {
+			@Override
+			public void run() {
+				client("localhost", 5001).post("/migrate");
+			}
+		}.start();
 	}
 	
 }
