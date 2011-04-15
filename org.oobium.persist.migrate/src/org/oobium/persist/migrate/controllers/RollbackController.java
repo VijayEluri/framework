@@ -9,7 +9,9 @@ public class RollbackController extends Controller {
 
 	public void handleRequest() throws SQLException {
 		MigratorService service = MigratorService.instance();
-		render(service.migrateRollback("all".equals(param("step")) ? -1 : param("step", 1)));
+		String response = service.migrateRollback("all".equals(param("step")) ? -1 : param("step", 1));
+		logger.info(response);
+		render(response);
 	};
 	
 }

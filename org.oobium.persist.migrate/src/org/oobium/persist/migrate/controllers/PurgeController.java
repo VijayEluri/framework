@@ -9,7 +9,15 @@ public class PurgeController extends Controller {
 
 	public void handleRequest() throws SQLException {
 		MigratorService service = MigratorService.instance();
-		render(service.migratePurge());
+		String response;
+		try {
+			response = service.migratePurge();
+			logger.info(response);
+		} catch(SQLException e) {
+			response = e.getLocalizedMessage();
+			logger.warn(response);
+		}
+		render(response);
 	};
 	
 }

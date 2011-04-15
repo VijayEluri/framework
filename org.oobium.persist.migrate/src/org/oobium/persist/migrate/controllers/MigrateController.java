@@ -8,12 +8,15 @@ import org.oobium.persist.migrate.MigratorService;
 public class MigrateController extends Controller {
 
 	public void handleRequest() throws SQLException {
+		String response;
 		MigratorService service = MigratorService.instance();
 		if(hasParam("dir")) {
-			render(service.migrate(param("name"), "up".equals(param("dir"))));
+			response = service.migrate(param("name"), "up".equals(param("dir")));
 		} else {
-			render(service.migrate(param("name")));
+			response = service.migrate(param("name"));
 		}
+		logger.info(response);
+		render(response);
 	};
 	
 }

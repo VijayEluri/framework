@@ -9,7 +9,9 @@ public class RedoController extends Controller {
 
 	public void handleRequest() throws SQLException {
 		MigratorService service = MigratorService.instance();
-		render(service.migrateRedo("all".equals(param("step")) ? -1 : param("step", 1)));
+		String response = service.migrateRedo("all".equals(param("step")) ? -1 : param("step", 1));
+		logger.info(response);
+		render(response);
 	};
 	
 }
