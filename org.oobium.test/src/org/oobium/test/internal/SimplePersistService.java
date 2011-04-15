@@ -167,17 +167,25 @@ public class SimplePersistService implements PersistService {
 	@Override
 	public ServiceInfo getInfo() {
 		return new ServiceInfo() {
-			public String getDescription() {
+			@Override
+			public String getName() {
 				return "Persist service for simple testing purposes";
 			}
-			public String getName() {
+			@Override
+			public String getSymbolicName() {
 				return "TestPersistor";
 			}
+			@Override
 			public String getProvider() {
 				return "Oobium.org";
 			}
+			@Override
 			public String getVersion() {
 				return "1.0.0";
+			}
+			@Override
+			public String getMigrationService() {
+				return null;
 			}
 		};
 	}

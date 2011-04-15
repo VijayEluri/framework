@@ -23,6 +23,19 @@ public class PostgreSqlDatabase extends Database {
 	@Override
 	protected Map<String, Object> initProperties(Map<String, Object> properties) {
 		Map<String, Object> props = new HashMap<String, Object>(properties);
+		Object o = props.get("database");
+		if(o instanceof String) {
+			// unquoted object names in PostgreSQL are folded to lower case
+			//  except when creating the ConnectionPoolDataSource
+			//  this means that mixed case database names (testDb) will be made lower case
+			//  for the #createDatabase and #dropDatabase methods, but will still be mixed
+			//  for regular connections - and errors will arrise from not finding the database
+			// force all names to lower case (unless they are quoted) to handle this
+			String database = (String) o;
+			if(database.length() < 2 || database.charAt(0) != '"' || database.charAt(database.length()-1) != '"') {
+				props.put("database", database.toLowerCase());
+			}
+		}
 		if(props.get("host") == null) {
 			props.put("host", "127.0.0.1");
 		}
@@ -86,6 +99,7 @@ public class PostgreSqlDatabase extends Database {
 	protected ConnectionPoolDataSource createDataSource() {
 		PGConnectionPoolDataSource ds = new PGConnectionPoolDataSource();
 		ds.setDatabaseName(coerce(properties.get("database"), String.class));
+		ds.setServerName(coerce(properties.get("host"), String.class));
 		ds.setPortNumber(coerce(properties.get("port"), int.class));
 		ds.setUser(coerce(properties.get("username"), String.class));
 		ds.setPassword(coerce(properties.get("password"), String.class));

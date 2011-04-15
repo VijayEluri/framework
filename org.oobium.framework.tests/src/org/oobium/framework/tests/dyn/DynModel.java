@@ -50,6 +50,16 @@ public class DynModel extends DynClass {
 		return this;
 	}
 	
+	@Override
+	public DynModel addImport(Class<?> clazz) {
+		return (DynModel) super.addImport(clazz);
+	}
+
+	@Override
+	public DynModel addImport(String fullName) {
+		return (DynModel) super.addImport(fullName);
+	}
+	
 	private void appendProperties(StringBuilder sb, String name, String type, String[] options) {
 		checkState();
 		sb.append("(name=\"").append(name).append("\",").append("type=").append(type);
@@ -65,7 +75,7 @@ public class DynModel extends DynClass {
 		return super.getDynamicClass().asSubclass(Model.class);
 	}
 	
-	public String getModelDescription() {
+	private String getModelDescription() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("@ModelDescription(");
 		boolean first = true;
@@ -156,21 +166,29 @@ public class DynModel extends DynClass {
 		return this;
 	}
 	
-	public String toSource() {
-		StringBuilder sb = new StringBuilder();
-		String packageName = packageName(getFullName());
-		if(packageName != null) {
-			sb.append("package ").append(packageName).append(";\n");
+	public String getSource() {
+		if(source == null) {
+			StringBuilder sb = new StringBuilder();
+			String packageName = packageName(getFullName());
+			if(packageName != null) {
+				sb.append("package ").append(packageName).append(";\n");
+			}
+			sb.append("import org.oobium.persist.*;\n");
+			if(imports != null) {
+				for(String imp : imports) {
+					sb.append("import ").append(imp).append(";\n");
+				}
+			}
+			sb.append(getModelDescription());
+			sb.append("\npublic class ").append(simpleName(getFullName())).append(" extends Model { }");
+			source = sb.toString();
 		}
-		sb.append("import org.oobium.persist.*;\n");
-		sb.append(getModelDescription());
-		sb.append("\npublic class ").append(simpleName(getFullName())).append(" extends Model { }");
-		return sb.toString();
+		return source;
 	}
 	
 	@Override
 	public String toString() {
-		return toSource();
+		return getSource();
 	}
 	
 }

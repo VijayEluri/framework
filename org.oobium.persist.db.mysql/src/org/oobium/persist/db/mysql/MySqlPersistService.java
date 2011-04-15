@@ -15,6 +15,7 @@ import java.util.Map;
 import org.oobium.persist.ServiceInfo;
 import org.oobium.persist.db.Database;
 import org.oobium.persist.db.DbPersistService;
+import org.oobium.persist.db.DbServiceInfo;
 
 public class MySqlPersistService extends DbPersistService {
 
@@ -33,24 +34,7 @@ public class MySqlPersistService extends DbPersistService {
 
 	@Override
 	public ServiceInfo getInfo() {
-		return new ServiceInfo() {
-			@Override
-			public String getName() {
-				return "MySQL Database Persist Service";
-			}
-			@Override
-			public String getProvider() {
-				return "oobium.org";
-			}
-			@Override
-			public String getVersion() {
-				return "0.6.0";
-			}
-			@Override
-			public String getDescription() {
-				return "Persist service for mysql databases";
-			}
-		};
+		return new DbServiceInfo(this);
 	}
 
 }

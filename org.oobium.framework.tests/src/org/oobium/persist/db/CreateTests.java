@@ -8,6 +8,7 @@ import org.junit.Test;
 import org.oobium.framework.tests.dyn.DynModel;
 import org.oobium.framework.tests.dyn.DynClasses;
 import org.oobium.persist.Model;
+import org.oobium.persist.Text;
 
 public class CreateTests extends BaseDbTestCase {
 
@@ -62,6 +63,21 @@ public class CreateTests extends BaseDbTestCase {
 		assertEquals(true, persistService.executeQueryValue("SELECT success from a_models where id=?", 1));
 		assertEquals(false, persistService.executeQueryValue("SELECT failure from a_models where id=?", 1));
 		assertEquals(false, persistService.executeQueryValue("SELECT huh from a_models where id=?", 1));
+	}
+	
+	@Test
+	public void testAttrText() throws Exception {
+		DynModel am = DynClasses.getModel(pkg, "AModel").addImport(Text.class).addAttr("attr", "Text.class");
+		
+		migrate(am);
+
+		Model a = am.newInstance();
+		a.set("attr", "hello");
+		a.create();
+		
+		assertFalse(a.getErrors().toString(), a.hasErrors());
+		
+		assertEquals("hello", persistService.executeQueryValue("SELECT attr from a_models where id=?", 1));
 	}
 	
 	@Test

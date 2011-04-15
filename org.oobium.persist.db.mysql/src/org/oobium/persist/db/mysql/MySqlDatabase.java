@@ -87,6 +87,7 @@ public class MySqlDatabase extends Database {
 	protected ConnectionPoolDataSource createDataSource() {
 		MysqlConnectionPoolDataSource ds = new MysqlConnectionPoolDataSource();
 		ds.setDatabaseName(coerce(properties.get("database"), String.class));
+		ds.setServerName(coerce(properties.get("host"), String.class));
 		ds.setPortNumber(coerce(properties.get("port"), int.class));
 		ds.setUser(coerce(properties.get("username"), String.class));
 		ds.setPassword(coerce(properties.get("password"), String.class));

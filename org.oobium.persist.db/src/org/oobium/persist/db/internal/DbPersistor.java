@@ -58,6 +58,7 @@ import org.oobium.persist.ModelAdapter;
 import org.oobium.persist.Relation;
 import org.oobium.persist.RequiredSet;
 import org.oobium.persist.db.DbPersistService;
+import org.oobium.utils.SqlUtils;
 import org.oobium.utils.StringUtils;
 
 public class DbPersistor {
@@ -871,7 +872,7 @@ public class DbPersistor {
 				rs = ps.executeQuery();
 			}
 			if(rs.next()) {
-				return rs.getObject(1);
+				return SqlUtils.getValue(rs, 1);
 			} else {
 				return null;
 			}

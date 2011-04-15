@@ -180,12 +180,13 @@ public abstract class AbstractMigration implements Migration {
     	throw new UnsupportedOperationException("not yet implemented");
     }
 
-	public void changeTable(String name, Change...changes) throws SQLException {
+	public Table changeTable(String name, Change...changes) throws SQLException {
 		Table table = new Table(getService(), name, null);
 		for(Change change : changes) {
 			table.add(change);
 		}
 		table.update();
+		return table;
 	}
     
 	public Column Column(String type, String name) {
@@ -211,10 +212,6 @@ public abstract class AbstractMigration implements Migration {
     	table.update();
     }
     
-    public void createDatabase() throws SQLException {
-    	getService().createDatabase();
-    }
-
     public void createForeignKey(String tableName, String column, String reference) throws SQLException {
     	Table table = new Table(getService(), tableName, null);
     	table.addForeignKey(column, reference);
@@ -227,6 +224,12 @@ public abstract class AbstractMigration implements Migration {
     	table.update();
 	}
 
+    public void dropJoinTable(String table1, String column1, String table2, String column2) throws SQLException {
+		String name = tableName(table1, column1, table2, column2);
+		Table table = new Table(getService(), name, null);
+		table.destroy();
+    }
+    
     public void createJoinTable(String table1, String column1, String table2, String column2) throws SQLException {
 		String name = tableName(table1, column1, table2, column2);
 //		String[] columns = columnNames(table1, column1, table2, column2);
@@ -325,10 +328,6 @@ public abstract class AbstractMigration implements Migration {
 	
 	@Override
 	public abstract void down() throws SQLException;
-	
-	public void dropDatabase() throws SQLException {
-		getService().dropDatabase();
-	}
 	
 	/**
 	 * Synonym for {@link #destroyTable(String)}

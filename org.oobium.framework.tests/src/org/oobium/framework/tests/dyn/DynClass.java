@@ -3,14 +3,18 @@ package org.oobium.framework.tests.dyn;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Set;
+import java.util.TreeSet;
 
 
 public class DynClass {
 
 	private final DynClasses dynClasses;
 	private final String fullName;
+	
+	protected Set<String> imports;
 
-	private String source;
+	protected String source;
 	private boolean compiled;
 
 	private Object instance;
@@ -21,6 +25,18 @@ public class DynClass {
 		this.source = source;
 	}
 
+	public DynClass addImport(Class<?> clazz) {
+		return addImport(clazz.getCanonicalName());
+	}
+
+	public DynClass addImport(String fullName) {
+		if(imports == null) {
+			imports = new TreeSet<String>();
+		}
+		imports.add(fullName);
+		return this;
+	}
+	
 	protected void checkState() {
 		if(compiled) {
 			throw new IllegalStateException(getClass().getSimpleName() + " has already been compiled");

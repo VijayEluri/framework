@@ -157,7 +157,7 @@ public class DbGenerator {
 					if(opposite == null || opposite.hasMany) {
 						ModelTable table1 = tables.get(model.getSimpleType());
 						ModelTable table2 = tables.get(relation.getSimpleType());
-						JoinTable joinTable = new JoinTable(varName(table1.name), columnName(relation.name), varName(table2.name), columnName(relation.opposite));
+						JoinTable joinTable = new JoinTable(table1.name, columnName(relation.name), table2.name, columnName(relation.opposite));
 						if(!joins.containsKey(joinTable.name)) {
 							joins.put(joinTable.name, joinTable);
 							joinedModels.add(table1);
@@ -181,10 +181,6 @@ public class DbGenerator {
 		sf.constructors.put(0, "\tpublic " + simpleName + "() {\n\t\ttableOptions = new HashMap<String, Map<String,Object>>();\n\t}");
 		sf.methods.put("1", "\tprotected void setOptions(String table, Map<String, Object> options) {\n\t\ttableOptions.put(table, options);\n\t}");
 
-		if(!isAbstract) {
-			sf.methods.put("3", "\t@Override\n\tpublic void down() throws SQLException {\n\t\tdropDatabase();\n\t}");
-		}
-		
 		StringBuilder sb = new StringBuilder();
 		sb.append("\t@Override\n\tpublic void up() throws SQLException {");
 		
@@ -267,7 +263,48 @@ public class DbGenerator {
 
 		sb.append("\t}");
 		sf.methods.put("2", sb.toString());
+
 		
+		if(!isAbstract) {
+			sb = new StringBuilder();
+			sb.append("\t@Override\n\tpublic void down() throws SQLException {\n");
+
+			for(ModelTable table : tables.values()) {
+				if(table.hasForeignKey()) {
+					String var = varName(table.name);
+					sb.append("\t\tchangeTable(\"").append(table.name).append("\",");
+					if(table.foreignKeys.size() == 1) {
+						sb.append(" removeForeignKey(\"").append(table.foreignKeys.get(0).column).append("\"));\n");
+					} else {
+						for(int i = 0; i < table.foreignKeys.size(); i++) {
+							ForeignKey fk = table.foreignKeys.get(i);
+							if(i != 0) sb.append(',');
+							sb.append("\n\t\t\tremoveForeignKey(\"").append(fk.column).append("\")");
+						}
+						sb.append("\n\t\t);\n");
+					}
+				}
+			}
+			
+			if(!joins.isEmpty()) {
+				sb.append('\n');
+				for(JoinTable join : joins.values()) {
+					sb.append("\t\tdropJoinTable(\"");
+					sb.append(join.table1).append("\", \"").append(join.column1).append("\", \"");
+					sb.append(join.table2).append("\", \"").append(join.column2).append("\");\n");
+				}
+			}
+
+			sb.append('\n');
+			for(ModelTable table : tables.values()) {
+				sb.append("\t\tdropTable(\"").append(table.name).append("\");\n");
+			}
+
+			sb.append("\t}");
+			sf.methods.put("3", sb.toString());
+		}
+		
+
 		source = sf.toSource();
 		
 		return this;

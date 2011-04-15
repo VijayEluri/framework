@@ -41,12 +41,12 @@ public class BaseDbTestCase {
 	protected void migrate(DynModel...models) throws Exception {
 		ModelDefinition[] defs = new ModelDefinition[models.length];
 		for(int i = 0; i < models.length; i++) {
-			defs[i] = new ModelDefinition(simpleName(models[i].getFullName()), models[i].getModelDescription(), DynClasses.getSiblings(models[i]));
+			defs[i] = new ModelDefinition(simpleName(models[i].getFullName()), models[i].getSource(), DynClasses.getSiblings(models[i]));
 		}
 		DbGenerator gen = new DbGenerator(pkg, "CreateDatabase", defs);
 		gen.generate();
-		Class<?> clazz = SimpleDynClass.getClass(gen.getFullName(), gen.getSource());
 		System.out.println(gen.getSource());
+		Class<?> clazz = SimpleDynClass.getClass(gen.getFullName(), gen.getSource());
 		AbstractMigration mig = (AbstractMigration) clazz.newInstance();
 		mig.setService(migrationService);
 		mig.up();
@@ -95,7 +95,6 @@ public class BaseDbTestCase {
 	public void tearDown() throws SQLException {
 		Model.setLogger(null);
 		Model.setPersistServiceProvider(null);
-		persistService.closeSession();
 		migrationService.dropDatabase();
 		persistService = null;
 	}

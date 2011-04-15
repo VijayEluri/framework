@@ -86,7 +86,7 @@ public class DynClasses {
 			String fullName = entry.getKey();
 			if(!compiled.contains(fullName)) {
 				compiled.add(fullName);
-				files.add(new CharSequenceJavaFileObject(fullName, entry.getValue().toSource()));
+				files.add(new CharSequenceJavaFileObject(fullName, entry.getValue().getSource()));
 			}
 		}
 		if(!files.isEmpty()) {

@@ -19,7 +19,7 @@ public class DbGeneratorTests {
 	private String up(String module, DynModel...models) {
 		ModelDefinition[] defs = new ModelDefinition[models.length];
 		for(int i = 0; i < models.length; i++) {
-			defs[i] = new ModelDefinition(simpleName(models[i].getFullName()), models[i].getModelDescription(), DynClasses.getSiblings(models[i]));
+			defs[i] = new ModelDefinition(simpleName(models[i].getFullName()), models[i].getSource(), DynClasses.getSiblings(models[i]));
 		}
 		String schema = DbGenerator.generate(module, defs);
 		int s1 = schema.indexOf("public void up() ");
@@ -58,6 +58,14 @@ public class DbGeneratorTests {
 					"\tString(\"attr\")\n" +
 					");",
 				up("com.test", DynClasses.getModel("AModel").addAttr("attr", "String.class")));
+	}
+	
+	@Test
+	public void testAttrText() throws Exception {
+		assertEquals("createTable(\"a_models\", tableOptions.get(\"a_models\"),\n" +
+					"\tText(\"attr\")\n" +
+					");",
+				up("com.test", DynClasses.getModel("AModel").addAttr("attr", "org.oobium.persist.Text.class")));
 	}
 	
 	@Test

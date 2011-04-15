@@ -15,7 +15,9 @@ import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -29,13 +31,14 @@ import org.oobium.logging.Logger;
 
 public class ConnectionPool {
 
-	protected final String client;
-	protected final Logger logger;
-	private final ConnectionPoolDataSource ds;
-	private final Stack<PooledConnection> connections;
-	private final Semaphore semaphore;
-	private final int timeout; // in seconds
-	private final ConnectionEventListener connectionListener;
+	protected String client;
+	protected Logger logger;
+	private ConnectionPoolDataSource ds;
+	private Set<PooledConnection> connections;
+	private Stack<PooledConnection> pool;
+	private Semaphore semaphore;
+	private int timeout; // in seconds
+	private ConnectionEventListener connectionListener;
 	
 	public ConnectionPool(String client, Map<String, Object> properties, ConnectionPoolDataSource dataSource, Logger logger) {
 		this.client = client;
@@ -47,10 +50,12 @@ public class ConnectionPool {
 			maxConnections = 10;
 		}
 
+		this.connections = new HashSet<PooledConnection>();
+		
 		int timeout = coerce(properties.get("timeout"), int.class);
 		this.timeout = (timeout < 1) ? 30 : timeout;
 		
-		connections = new Stack<PooledConnection>();
+		pool = new Stack<PooledConnection>();
 		semaphore = new Semaphore(maxConnections, true);
 		
 		connectionListener = new ConnectionEventListener() {
@@ -71,7 +76,7 @@ public class ConnectionPool {
 	
 	private synchronized void addConnection(PooledConnection connection) {
 		semaphore.release();
-		connections.push(connection);
+		pool.push(connection);
 	}
 
 	private void log(String message) {
@@ -85,6 +90,7 @@ public class ConnectionPool {
 	}
 	
 	private synchronized void disposeConnection(PooledConnection connection) {
+		connections.remove(connection);
 		semaphore.release();
 		try {
 			connection.close();
@@ -93,8 +99,11 @@ public class ConnectionPool {
 		}
 	}
 	
-	public synchronized void dispose() {
-		if(connections != null) { // allow multiple calls
+	/**
+	 * Closes all connections and clears the pool.
+	 */
+	public synchronized void close() {
+		if(client != null) { // in case is has been disposed
 			if(!connections.isEmpty()) {
 				for(PooledConnection connection : connections) {
 					try {
@@ -103,21 +112,55 @@ public class ConnectionPool {
 						log("could not close connection during dispose");
 					}
 				}
-				connections.clear();
 			}
+			semaphore.release(pool.size());
+			connections.clear();
+			pool.clear();
+		}
+	}
+
+	public boolean isDisposed() {
+		return client == null;
+	}
+	
+	/**
+	 * Closes all connections, clears the pool, and nulls out all fields.
+	 */
+	public synchronized void dispose() {
+		if(client != null) { // allow multiple calls
+			if(!connections.isEmpty()) {
+				for(PooledConnection connection : connections) {
+					try {
+						connection.close();
+					} catch(SQLException e) {
+						log("could not close connection during dispose");
+					}
+				}
+			}
+			connections.clear();
+			pool.clear();
+			
+			client = null;
+			logger = null;
+			ds = null;
+			connections = null;
+			pool = null;
+			semaphore = null;
+			connectionListener = null;
 		}
 	}
 
 	private synchronized Connection doGetConnection() throws SQLException {
-		if(connections == null) {
+		if(isDisposed()) {
 			throw new IllegalStateException("ConnectionPool is disposed");
 		}
 
 		PooledConnection pc;
-		if(connections.isEmpty()) {
+		if(pool.isEmpty()) {
 			pc = ds.getPooledConnection();
+			connections.add(pc);
 		} else {
-			pc = connections.pop();
+			pc = pool.pop();
 		}
 		pc.addConnectionEventListener(connectionListener);
 		Connection connection = pc.getConnection();
@@ -125,7 +168,7 @@ public class ConnectionPool {
 	}
 	
 	public Connection getConnection() throws SQLException {
-		if(connections == null) {
+		if(pool == null) {
 			throw new IllegalStateException("ConnectionPool is disposed");
 		}
 

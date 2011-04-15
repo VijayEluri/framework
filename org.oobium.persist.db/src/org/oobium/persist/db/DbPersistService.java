@@ -28,6 +28,7 @@ import org.oobium.persist.ModelAdapter;
 import org.oobium.persist.PersistClient;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.db.internal.DbPersistor;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -147,7 +148,7 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		}
 	}
 	
-	private boolean autoCommit() {
+	public boolean getAutoCommit() {
 		Boolean ac = threadAutoCommit.get();
 		return (ac != null) && ac.booleanValue();
 	}
@@ -184,10 +185,10 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	
 	@Override
 	public void commit() throws SQLException {
-		Connection connection = getConnection();
-		connection.commit();
-		connection.setAutoCommit(true);
-		setAutoCommit(true);
+		Connection connection = getConnection(false);
+		if(connection != null) {
+			connection.commit();
+		}
 	}
 	
 	@Override
@@ -215,6 +216,7 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 
 	public void dropDatabase(String client) throws SQLException {
 		Database db = getDatabase(client);
+		db.dispose();
 		db.dropDatabase();
 	}
 
@@ -266,16 +268,24 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	}
 	
 	public Connection getConnection() throws SQLException {
+		return getConnection(true);
+	}
+	
+	private Connection getConnection(boolean create) throws SQLException {
 		lock.readLock().lock();
 		try {
 			Connection connection = threadConnection.get();
-			if(connection == null || connection.isClosed()) {
+			if(connection != null && connection.isClosed()) {
+				connection = null;
+			}
+			if(connection == null && create) {
 				String client = threadClient.get();
 				if(client == null) {
 					throw new SQLException(client + " is not a registered PersistClient");
 				}
 				Database db = getDatabase(client);
 				connection = db.getConnection();
+				connection.setAutoCommit(getAutoCommit());
 				threadConnection.set(connection);
 			}
 			return connection;
@@ -326,7 +336,7 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 					persistor.update(connection, models);
 					break;
 				}
-				if(autoCommit()) {
+				if(getAutoCommit()) {
 					connection.commit();
 				}
 			} catch(Exception e) {
@@ -340,7 +350,7 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 				}
 			} finally {
 				try {
-					if(autoCommit()) {
+					if(getAutoCommit()) {
 						connection.setAutoCommit(true);
 					}
 				} catch(Exception e) {
@@ -395,27 +405,38 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 
 	@Override
 	public void rollback() throws SQLException {
-		Connection connection = getConnection();
-		connection.rollback();
-		connection.setAutoCommit(true);
-		setAutoCommit(true);
+		Connection connection = getConnection(false);
+		if(connection != null) {
+			connection.rollback();
+		}
 	}
 
 	@Override
 	public void setAutoCommit(boolean autoCommit) throws SQLException {
-		if(autoCommit()) {
+		boolean changed = false;
+		if(getAutoCommit()) {
 			if(!autoCommit) {
 				threadAutoCommit.set(null);
-				getConnection().setAutoCommit(autoCommit);
+				changed = true;
 			}
 		} else {
 			if(autoCommit) {
 				threadAutoCommit.set(true);
-				getConnection().setAutoCommit(autoCommit);
+				changed = true;
+			}
+		}
+		if(changed) {
+			Connection connection = getConnection(false);
+			if(connection != null) {
+				connection.setAutoCommit(autoCommit);
 			}
 		}
 	}
 
+	Bundle getBundle() {
+		return context.getBundle();
+	}
+	
 	public void start(BundleContext context) throws Exception {
 		this.context = context;
 		

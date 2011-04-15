@@ -358,7 +358,7 @@ public class SqlUtils {
 					if(!row.containsKey(key)) {
 						row.put(key, new HashMap<String, Object>());
 					}
-					row.get(key).put(var, get(type, rs, i+1));
+					row.get(key).put(var, getValue(type, rs, i+1));
 				}
 				maps.add(row);
 			}
@@ -369,12 +369,16 @@ public class SqlUtils {
 		return new ArrayList<Map<String,Map<String,Object>>>(0);
 	}
 	
-	private static Object get(int type, ResultSet resultSet, int columnIndex) throws SQLException {
+	private static Object getValue(int type, ResultSet resultSet, int columnIndex) throws SQLException {
 		switch(type) {
 		case Types.BLOB:		return resultSet.getBytes(columnIndex);
 		case Types.CLOB:		return resultSet.getString(columnIndex);
 		default:				return resultSet.getObject(columnIndex);
 		}
+	}
+
+	public static Object getValue(ResultSet resultSet, int columnIndex) throws SQLException {
+		return getValue(resultSet.getMetaData().getColumnType(columnIndex), resultSet, columnIndex);
 	}
 
 	public static int getSqlType(Class<?> clazz) {

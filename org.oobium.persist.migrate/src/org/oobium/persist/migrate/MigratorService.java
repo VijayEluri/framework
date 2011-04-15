@@ -33,6 +33,9 @@ import org.oobium.utils.Config;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
+import org.osgi.framework.Constants;
+import org.osgi.framework.Filter;
+import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.Version;
 import org.osgi.service.packageadmin.PackageAdmin;
@@ -93,21 +96,26 @@ public abstract class MigratorService extends AppService {
 		}
 	}
 
-	private Bundle getBundle(ServiceReference ref, String symbolicName) {
+	private Bundle getBundle(String symbolicName) {
+		ServiceReference ref = context.getServiceReference(PackageAdmin.class.getName());
+		if(ref == null) {
+			throw new IllegalStateException("Package Admin service is not present");
+		}
 		PackageAdmin admin = (PackageAdmin) getContext().getService(ref);
 		Bundle[] bundles = admin.getBundles(symbolicName, null);
 		if(bundles.length == 0) {
-			throw new IllegalStateException("bundle " + symbolicName + " is not present - cannot run migration");
+			throw new IllegalStateException("bundle " + symbolicName + " is not present");
 		} else if(bundles.length == 1) {
 			return bundles[0];
 		} else {
-			throw new IllegalStateException("no more than 2 bundles of " + symbolicName + " may be present to run a migration");
+			throw new IllegalStateException("no more than 2 bundles of " + symbolicName + " may be present");
 		}
 	}
 	
 	protected String getCurrentMigration() {
 		try {
-			return (String) getPersistService().executeQueryValue("select detail from system_attrs where name='migration.current'");
+			String sql = "SELECT detail FROM system_attrs WHERE name='migration.current'";
+			return (String) getPersistService().executeQueryValue(sql);
 		} catch(SQLException e) {
 			return null;
 		}
@@ -115,7 +123,7 @@ public abstract class MigratorService extends AppService {
 	
 	protected List<String> getMigrated() {
 		try {
-			String sql = "select detail from system_attrs where name='migrated'";
+			String sql = "SELECT detail FROM system_attrs WHERE name='migrated'";
 			List<List<Object>> lists = getPersistService().executeQueryLists(sql);
 			List<String> migrated = new ArrayList<String>();
 			for(int i = 1; i < lists.size(); i++) {
@@ -130,6 +138,22 @@ public abstract class MigratorService extends AppService {
 	public abstract List<? extends Migration> getMigrations();
 	
 	public MigrationService getMigrationService() {
+		if(msTracker == null) {
+			PersistService persistor = getPersistService();
+			String serviceName = persistor.getInfo().getMigrationService();
+
+			String str = "(&(" + Constants.OBJECTCLASS + "=" + MigrationService.class.getName() + ")" +
+							"(" + MigrationService.SERVICE + "=" + serviceName + "))";
+			Filter filter;
+			try {
+				filter = context.createFilter(str);
+			} catch(InvalidSyntaxException e) {
+				throw new IllegalArgumentException("invalid syntax for the filter: " + str, e);
+			}
+
+			msTracker = new ServiceTracker(getContext(), filter, null);
+			msTracker.open();
+		}
 		MigrationService service = (MigrationService) msTracker.getService();
 		if(service != null) {
 			service.setClient(getPersistClientName());
@@ -165,12 +189,6 @@ public abstract class MigratorService extends AppService {
 	}
 	
 	@Override
-	protected void initializeServiceTrackers(Config config) throws Exception {
-		msTracker = new ServiceTracker(getContext(), MigrationService.class.getName(), null);
-		msTracker.open();
-	}
-	
-	@Override
 	protected Config loadConfiguration() {
 		return new Config(Map(
 				e(Config.PERSIST, appConfig.get(Config.PERSIST)),
@@ -198,7 +216,15 @@ public abstract class MigratorService extends AppService {
 			}
 		} else {
 			MigrationService mservice = getMigrationService();
+			if(cix == -1) {
+				try {
+					mservice.createDatabase();
+				} catch(SQLException e) {
+					// discard
+				}
+			}
 			getPersistService().setAutoCommit(false);
+			String migratedName = null;
 			try {
 				if(cix < tix) { // migrate up
 					for(int i = cix + 1; i <= tix; i++) {
@@ -206,30 +232,29 @@ public abstract class MigratorService extends AppService {
 						if(!migrated.contains(name)) {
 							migrations.get(i).setService(mservice);
 							migrations.get(i).up();
+							getPersistService().commit();
 							setMigrated(name, true);
 						}
+						migratedName = name;
 					}
-					setCurrentMigration(names.get(tix));
 				} else { // migrate down
 					for(int i = cix; i >= tix; i--) {
 						String name = names.get(i);
 						if(migrated.contains(name)) {
 							migrations.get(i).setService(mservice);
 							migrations.get(i).down();
+							getPersistService().commit();
 							setMigrated(name, false);
 						}
+						migratedName = (i > 0) ? names.get(i-1) : null; 
 					}
-					setCurrentMigration((tix < 0) ? null : names.get(tix));
 				}
-				getPersistService().commit();
 				return "migrated successfully";
 			} catch(SQLException e1) {
-				try {
-					getPersistService().rollback();
-				} catch(SQLException e2) {
-					// discard
-				}
+				getPersistService().rollback();
 				throw e1;
+			} finally {
+				setCurrentMigration(migratedName);
 			}
 		}
 	}
@@ -269,6 +294,7 @@ public abstract class MigratorService extends AppService {
 		} else {
 			if(step == -1) step = names.size();
 			MigrationService mservice = getMigrationService();
+			String migratedName = null;
 			try {
 				getPersistService().setAutoCommit(false);
 				int ix = cix;
@@ -277,25 +303,25 @@ public abstract class MigratorService extends AppService {
 					if(migrated.contains(name)) {
 						migrations.get(ix).setService(mservice);
 						migrations.get(ix).down();
+						getPersistService().commit();
+						setMigrated(name, false);
 					}
+					migratedName = (ix > 0) ? names.get(ix-1) : null;
 				}
 				for(int i = ix + 1; i <= cix; i++) {
 					String name = names.get(i);
 					migrations.get(i).setService(mservice);
 					migrations.get(i).up();
-					if(!migrated.contains(name)) {
-						setMigrated(name, true);
-					}
+					getPersistService().commit();
+					setMigrated(name, true);
+					migratedName = name;
 				}
-				getPersistService().commit();
 				return "migrated successfully";
 			} catch(SQLException e1) {
-				try {
-					getPersistService().rollback();
-				} catch(SQLException e2) {
-					// discard
-				}
+				getPersistService().rollback();
 				throw e1;
+			} finally {
+				setCurrentMigration(migratedName);
 			}
 		}
 	}
@@ -315,6 +341,7 @@ public abstract class MigratorService extends AppService {
 		} else {
 			if(step == -1) step = names.size();
 			MigrationService mservice = getMigrationService();
+			String migratedName = null;
 			try {
 				getPersistService().setAutoCommit(false);
 				int ix = cix;
@@ -323,19 +350,17 @@ public abstract class MigratorService extends AppService {
 					if(migrated.contains(name)) {
 						migrations.get(ix).setService(mservice);
 						migrations.get(ix).down();
+						getPersistService().commit();
 						setMigrated(name, false);
 					}
+					migratedName = (ix > 0) ? names.get(ix-1) : null;
 				}
-				setCurrentMigration((ix == -1) ? null : names.get(ix));
-				getPersistService().commit();
 				return "migrated successfully";
 			} catch(SQLException e1) {
-				try {
-					getPersistService().rollback();
-				} catch(SQLException e2) {
-					// discard
-				}
+				getPersistService().rollback();
 				throw e1;
+			} finally {
+				setCurrentMigration(migratedName);
 			}
 		}
 	}
@@ -361,31 +386,45 @@ public abstract class MigratorService extends AppService {
 				ps.executeUpdate("DELETE FROM system_attrs WHERE name='migration.current'");
 			} catch(SQLException e) {
 				// last migration will remove the table
+				getPersistService().rollback();
 			}
 		} else {
+			String sql = "UPDATE system_attrs SET detail='" + current + "' where name='migration.current'";
 			try {
-				int r = ps.executeUpdate("UPDATE system_attrs SET detail='" + current + "' where name='migration.current'");
+				int r = ps.executeUpdate(sql);
 				if(r == 0) {
-					ps.executeUpdate("INSERT INTO system_attrs (name, detail, data) VALUES ('migration.current', '" + current + "', NULL)");
+					sql = "INSERT INTO system_attrs (name, detail, data) VALUES ('migration.current', '" + current + "', NULL)";
+					ps.executeUpdate(sql);
 				}
 			} catch(SQLException e) {
+				getPersistService().rollback();
 				createSystemAttrs();
+				sql = "INSERT INTO system_attrs (name, detail, data) VALUES ('migration.current', '" + current + "', NULL)";
+				ps.executeUpdate(sql);
 			}
+			getPersistService().commit();
 		}
 	}
 	
 	protected void setMigrated(String name, boolean migrated) throws SQLException {
 		if(migrated) {
+			String sql = "INSERT INTO system_attrs (name, detail, data) VALUES ('migrated', '" + name + "', NULL)";
 			try {
-				getPersistService().executeUpdate("INSERT INTO system_attrs (name, detail, data) VALUES ('migrated', '" + name + "', NULL)");
+				getPersistService().executeUpdate(sql);
 			} catch(SQLException e) {
+				getPersistService().rollback();
 				createSystemAttrs();
+				getPersistService().executeUpdate(sql);
 			}
+			getPersistService().commit();
 		} else {
 			try {
-				getPersistService().executeUpdate("DELETE FROM system_attrs WHERE name='migrated' AND detail='" + name + "'");
+				String sql = "DELETE FROM system_attrs WHERE name='migrated' AND detail='" + name + "'";
+				getPersistService().executeUpdate(sql);
+				getPersistService().commit();
 			} catch(SQLException e) {
 				// last migration will remove the table
+				getPersistService().rollback();
 			}
 		}
 	}
@@ -401,15 +440,10 @@ public abstract class MigratorService extends AppService {
 
 		name = migName + "_" + migVersion;
 		
-		Bundle appBundle;
-		ServiceReference ref = context.getServiceReference(PackageAdmin.class.getName());
-		if(ref == null) {
-			throw new IllegalStateException("Package Admin service must be present to run a migration");
-		} else {
-			String symbolicName = migBundle.getSymbolicName();
-			symbolicName = symbolicName.substring(0, symbolicName.lastIndexOf('.'));
-			appBundle = getBundle(ref, symbolicName);
-		}
+		String symbolicName = migBundle.getSymbolicName();
+		symbolicName = symbolicName.substring(0, symbolicName.lastIndexOf('.'));
+
+		Bundle appBundle = getBundle(symbolicName);
 
 		appConfig = loadConfiguration(appBundle);
 		appName = appBundle.getSymbolicName();

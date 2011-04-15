@@ -305,6 +305,9 @@ public class ModelDefinition {
 		if(ix != -1) {
 			// handle inner classes
 			name = getType(name.substring(0, ix)) + name.substring(ix);
+			if(name.startsWith("java.lang.")) {
+				name = name.substring(10);
+			}
 			return array ? (name + "[]") : name;
 		}
 		

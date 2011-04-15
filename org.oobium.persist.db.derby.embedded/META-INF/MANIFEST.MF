@@ -9,6 +9,7 @@ Import-Package: javax.sql,
  org.oobium.logging,
  org.oobium.persist,
  org.oobium.persist.db,
+ org.oobium.utils,
  org.oobium.utils.coercion,
  org.oobium.utils.json,
  org.osgi.framework;version="1.4.0"

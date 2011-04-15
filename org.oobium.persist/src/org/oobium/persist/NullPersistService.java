@@ -104,7 +104,7 @@ public class NullPersistService implements PersistService {
 	public ServiceInfo getInfo() {
 		return new ServiceInfo() {
 			@Override
-			public String getName() {
+			public String getSymbolicName() {
 				return getClass().getName();
 			}
 			@Override
@@ -116,8 +116,12 @@ public class NullPersistService implements PersistService {
 				return "0.6.0";
 			}
 			@Override
-			public String getDescription() {
+			public String getName() {
 				return msg;
+			}
+			@Override
+			public String getMigrationService() {
+				return null;
 			}
 		};
 	}

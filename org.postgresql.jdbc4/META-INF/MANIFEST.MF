@@ -28,4 +28,7 @@ Export-Package: org.postgresql,
  org.postgresql.translation,
  org.postgresql.util,
  org.postgresql.xa
+Import-Package: javax.naming,
+ javax.naming.spi,
+ javax.sql
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

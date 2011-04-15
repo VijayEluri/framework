@@ -187,7 +187,7 @@ public class MemoryPersistService implements PersistService {
 	public ServiceInfo getInfo() {
 		return new ServiceInfo() {
 			@Override
-			public String getName() {
+			public String getSymbolicName() {
 				return getClass().getName();
 			}
 			@Override
@@ -199,8 +199,12 @@ public class MemoryPersistService implements PersistService {
 				return "0.6.0";
 			}
 			@Override
-			public String getDescription() {
+			public String getName() {
 				return "Simple in-memory persist service";
+			}
+			@Override
+			public String getMigrationService() {
+				return null;
 			}
 		};
 	}
