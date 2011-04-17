@@ -27,7 +27,7 @@ public class MigratorCommand extends BuilderCommand {
 		if(migrator == null) {
 			console.err.println("active project does not have a Migrator in the workspace");
 		} else {
-			BuilderConsoleActivator.sendOpen(migrator, migrator.migrator);
+			BuilderConsoleActivator.sendOpen(migrator, migrator.activator);
 		}
 	}
 

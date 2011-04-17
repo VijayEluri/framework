@@ -25,11 +25,13 @@ public class MigratorCommand extends BuilderCommand {
 
 	@Override
 	public void run() {
+		boolean isNew = true;
 		Module module = getModule();
 		Migrator migrator = getWorkspace().getMigratorFor(module);
 		if(migrator != null) {
 			String confirm = flag('f') ? "Y" : ask("This will overwrite the existing migrator. Are you sure?[Y/N] ");
 			if("Y".equalsIgnoreCase(confirm)) {
+				isNew = false;
 				migrator.delete();
 			} else {
 				console.out.println("operation cancelled");
@@ -51,7 +53,11 @@ public class MigratorCommand extends BuilderCommand {
 			migrator = getWorkspace().createMigrator(module);
 			if(migrator != null) {
 				console.out.println("successfully created migrator: " + migrator.name);
-				BuilderConsoleActivator.sendImport(migrator);
+				if(isNew) {
+					BuilderConsoleActivator.sendImport(migrator);
+				} else {
+					BuilderConsoleActivator.sendRefresh(migrator, 100);
+				}
 			} else {
 				console.err.println("failed to create migrator for " + module.name);
 			}

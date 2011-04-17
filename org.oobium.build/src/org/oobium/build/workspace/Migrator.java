@@ -17,8 +17,10 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.jar.Manifest;
+import java.util.regex.Pattern;
 
 import org.oobium.utils.Config;
+import org.oobium.utils.FileUtils;
 import org.oobium.utils.Config.Mode;
 
 public class Migrator extends Bundle {
@@ -100,6 +102,62 @@ public class Migrator extends Bundle {
 		}
 	}
 	
+	public boolean addMigration(String migrationName) {
+		String oldsrc = FileUtils.readFile(activator).toString();
+		String newsrc = oldsrc;
+		
+		if(!Pattern.compile("migrations.add\\s*\\(\\s*" + migrationName + ".class\\s*\\)\\s*;").matcher(newsrc).find()) {
+			newsrc = oldsrc.replaceFirst("public\\s+void\\s+addMigrations\\s*\\(\\s*Migrations\\s+migrations\\s*\\)\\s*\\{\\s*",
+											"public void addMigrations(Migrations migrations) {\n" +
+											"\t\tmigrations.add(" + migrationName + ".class); // TODO auto-generated\n\n\t\t");
+		}
+		if(!Pattern.compile("import\\s+"+packageName(migrations)+"."+migrationName).matcher(newsrc).find()) {
+			newsrc = newsrc.replaceFirst("(package\\s+[\\w\\.]+;)", "$1\n\nimport "+packageName(migrations)+"."+migrationName+";");
+		}
+
+		if(!newsrc.equals(oldsrc)) {
+			FileUtils.writeFile(activator, newsrc);
+			return true;
+		}
+		return false;
+	}
+	
+	public File createMigration(String name) {
+		boolean sessions = "CreateSessions".equals(name);
+		File migration = getMigration(name);
+		if(migration.exists()) {
+			throw new IllegalStateException("file already exists: " + file);
+		}
+		StringBuilder sb = new StringBuilder();
+		sb.append("package " + packageName(migrations) + ";\n");
+		sb.append("\n");
+		sb.append("import java.sql.SQLException;\n");
+		sb.append("import org.oobium.persist.migrate.AbstractMigration;\n");
+		sb.append("\n");	
+		sb.append("public class ").append(name).append(" extends AbstractMigration {\n");
+		sb.append("\n");
+		sb.append("\t@Override\n");
+		sb.append("\tpublic void up() throws SQLException {\n");
+		if(sessions) {
+			sb.append("\t\tcreateSessions();\n");
+		} else {
+			sb.append("\t\t// TODO auto-generated method\n");
+		}
+		sb.append("\t}\n");
+		sb.append("\n");
+		sb.append("\t@Override\n");
+		sb.append("\tpublic void down() throws SQLException {\n");
+		if(sessions) {
+			sb.append("\t\tdropSessions();\n");
+		} else {
+			sb.append("\t\t// TODO auto-generated method\n");
+		}
+		sb.append("\t}\n");
+		sb.append("\n");
+		sb.append("}\n");
+		return FileUtils.writeFile(migrations, name + ".java", sb.toString());
+	}
+
 	public File getInitialMigration() {
 		return getMigration("CreateDatabase");
 	}

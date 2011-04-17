@@ -35,9 +35,9 @@ import org.oobium.app.server.routing.AppRouter;
 import org.oobium.app.server.routing.Router;
 import org.oobium.build.util.SourceFile;
 import org.oobium.build.workspace.Bundle;
-import org.oobium.build.workspace.Project.Type;
 import org.oobium.build.workspace.ExportedPackage;
 import org.oobium.build.workspace.Module;
+import org.oobium.build.workspace.Project.Type;
 import org.oobium.http.constants.Action;
 import org.oobium.mailer.Mailer;
 import org.oobium.persist.Attribute;
@@ -46,11 +46,10 @@ import org.oobium.persist.Observer;
 import org.oobium.persist.Relation;
 import org.oobium.persist.Text;
 import org.oobium.persist.migrate.AbstractMigration;
+import org.oobium.persist.migrate.Migrations;
 import org.oobium.persist.migrate.MigratorService;
-import org.oobium.persist.migrate.Migration;
 import org.oobium.utils.Config;
 import org.oobium.utils.StringUtils;
-import org.oobium.utils.literal;
 
 
 public class ProjectGenerator {
@@ -212,7 +211,6 @@ public class ProjectGenerator {
 		sb.append('\n');
 		if(!webservice) {
 			sb.append("cache:   \"org.oobium.cache.file\",\n");
-			sb.append("session: \"org.oobium.session.db\",\n");
 		}
 		sb.append("persist: \"org.oobium.persist.db.derby.embedded\",\n");
 		sb.append("server:  \"org.oobium.server\",\n");
@@ -482,17 +480,13 @@ public class ProjectGenerator {
 		src.simpleName = "Migrator";
 		src.superName = MigratorService.class.getSimpleName();
 		src.imports.add(MigratorService.class.getCanonicalName());
-		src.imports.add(List.class.getCanonicalName());
-		src.imports.add(Migration.class.getCanonicalName());
+		src.imports.add(Migrations.class.getCanonicalName());
 		src.imports.add(src.packageName + ".migrations.CreateDatabase");
-		src.staticImports.add(literal.class.getCanonicalName() + ".List");
 
 		StringBuilder sb = new StringBuilder();
 		sb.append("\t@Override\n");
-		sb.append("\tpublic List<? extends Migration> getMigrations() {\n");
-		sb.append("\t\treturn List(\n");
-		sb.append("\t\t\tnew CreateDatabase()\n");
-		sb.append("\t\t);\n");
+		sb.append("\tpublic void addMigrations(Migrations migrations) {\n");
+		sb.append("\t\tmigrations.add(CreateDatabase.class);\n");
 		sb.append("\t}");
 		src.methods.put("1", sb.toString());
 

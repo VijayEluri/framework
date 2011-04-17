@@ -232,7 +232,6 @@ public abstract class AbstractMigration implements Migration {
     
     public void createJoinTable(String table1, String column1, String table2, String column2) throws SQLException {
 		String name = tableName(table1, column1, table2, column2);
-//		String[] columns = columnNames(table1, column1, table2, column2);
 		String[] references = tableNames(table1, table2);
 
 		Table table = new Table(getService(), name, null);
@@ -246,6 +245,14 @@ public abstract class AbstractMigration implements Migration {
 
     public void createJoinTable(Table table1, String column1, Table table2, String column2) throws SQLException {
     	createJoinTable(table1.name, column1, table2.name, column2);
+    }
+    
+    public Table createSessions() throws SQLException {
+    	return createTable("sessions",
+	    			String("uuid"),
+	    			String("data"),
+	    			Timestamp("expiration")
+	    		);
     }
     
     public Table createTable(String name, Column...elements) throws SQLException {
@@ -328,6 +335,10 @@ public abstract class AbstractMigration implements Migration {
 	
 	@Override
 	public abstract void down() throws SQLException;
+	
+	public void dropSessions() throws SQLException {
+		dropTable("sessions");
+	}
 	
 	/**
 	 * Synonym for {@link #destroyTable(String)}

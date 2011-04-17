@@ -135,7 +135,12 @@ public abstract class MigratorService extends AppService {
 		}
 	}
 	
-	public abstract List<? extends Migration> getMigrations();
+	/**
+	 * Add all of your migrations here. They will be run in the
+	 * order that they are added.
+	 * @param migrations
+	 */
+	public abstract void addMigrations(Migrations migrations);
 	
 	public MigrationService getMigrationService() {
 		if(msTracker == null) {
@@ -163,14 +168,6 @@ public abstract class MigratorService extends AppService {
 		throw new IllegalStateException("MigrationService is not present - Migration cannot proceed");
 	}
 
-	private List<String> getNames(List<? extends Migration> migrations) {
-		List<String> names = new ArrayList<String>();
-		for(Migration migration : migrations) {
-			names.add(migration.getClass().getSimpleName());
-		}
-		return names;
-	}
-	
 	@Override
 	public String getPersistClientName() {
 //		if(isActive()) {
@@ -202,8 +199,9 @@ public abstract class MigratorService extends AppService {
 	}
 	
 	public synchronized String migrate(String to) throws SQLException {
-		List<? extends Migration> migrations = getMigrations();
-		List<String> names = getNames(migrations);
+		Migrations migrations = new Migrations();
+		addMigrations(migrations);
+		List<String> names = migrations.getNames();
 		List<String> migrated = getMigrated();
 		String current = getCurrentMigration();
 		int cix = names.indexOf(current);
@@ -250,9 +248,9 @@ public abstract class MigratorService extends AppService {
 					}
 				}
 				return "migrated successfully";
-			} catch(SQLException e1) {
+			} catch(Exception e) {
 				getPersistService().rollback();
-				throw e1;
+				throw (e instanceof SQLException) ? ((SQLException) e) : new SQLException(e);
 			} finally {
 				setCurrentMigration(migratedName);
 			}
@@ -260,20 +258,28 @@ public abstract class MigratorService extends AppService {
 	}
 	
 	public synchronized String migrate(String name, boolean up) throws SQLException {
-		for(Migration migration : getMigrations()) {
-			if(name.equals(migration.getClass().getSimpleName())) {
-				getPersistService().setAutoCommit(false);
-				migration.setService(getMigrationService());
-				if(up) {
-					migration.up();
-					getPersistService().commit();
-					return "ran " + name + ".up() successfully";
-				} else {
-					migration.down();
-					getPersistService().commit();
-					return "ran " + name + ".down() successfully";
+		Migrations migrations = new Migrations();
+		addMigrations(migrations);
+		try {
+			getPersistService().setAutoCommit(false);
+			for(int i = 0; i < migrations.size(); i++) {
+				Migration migration = migrations.get(i);
+				if(name.equals(migration.getClass().getSimpleName())) {
+					migration.setService(getMigrationService());
+					if(up) {
+						migration.up();
+						getPersistService().commit();
+						return "ran " + name + ".up() successfully";
+					} else {
+						migration.down();
+						getPersistService().commit();
+						return "ran " + name + ".down() successfully";
+					}
 				}
 			}
+		} catch(Exception e) {
+			getPersistService().rollback();
+			throw (e instanceof SQLException) ? ((SQLException) e) : new SQLException(e);
 		}
 		return "migration \"" + name + "\" does not exist";
 	}
@@ -284,8 +290,9 @@ public abstract class MigratorService extends AppService {
 	}
 	
 	public synchronized String migrateRedo(int step) throws SQLException {
-		List<? extends Migration> migrations = getMigrations();
-		List<String> names = getNames(migrations);
+		Migrations migrations = new Migrations();
+		addMigrations(migrations);
+		List<String> names = migrations.getNames();
 		List<String> migrated = getMigrated();
 		String current = getCurrentMigration();
 		int cix = names.indexOf(current);
@@ -317,9 +324,9 @@ public abstract class MigratorService extends AppService {
 					migratedName = name;
 				}
 				return "migrated successfully";
-			} catch(SQLException e1) {
+			} catch(Exception e) {
 				getPersistService().rollback();
-				throw e1;
+				throw (e instanceof SQLException) ? ((SQLException) e) : new SQLException(e);
 			} finally {
 				setCurrentMigration(migratedName);
 			}
@@ -331,8 +338,9 @@ public abstract class MigratorService extends AppService {
 	}
 	
 	public synchronized String migrateRollback(int step) throws SQLException {
-		List<? extends Migration> migrations = getMigrations();
-		List<String> names = getNames(migrations);
+		Migrations migrations = new Migrations();
+		addMigrations(migrations);
+		List<String> names = migrations.getNames();
 		List<String> migrated = getMigrated();
 		String current = getCurrentMigration();
 		int cix = names.indexOf(current);
@@ -356,9 +364,9 @@ public abstract class MigratorService extends AppService {
 					migratedName = (ix > 0) ? names.get(ix-1) : null;
 				}
 				return "migrated successfully";
-			} catch(SQLException e1) {
+			} catch(Exception e) {
 				getPersistService().rollback();
-				throw e1;
+				throw (e instanceof SQLException) ? ((SQLException) e) : new SQLException(e);
 			} finally {
 				setCurrentMigration(migratedName);
 			}
