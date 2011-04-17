@@ -25,6 +25,7 @@ import org.oobium.app.server.routing.RouteHandler;
 import org.oobium.app.server.routing.Router;
 import org.oobium.app.server.routing.handlers.ControllerHandler;
 import org.oobium.app.server.view.View;
+import org.oobium.app.sessions.Session;
 import org.oobium.app.workers.Worker;
 import org.oobium.app.workers.Workers;
 import org.oobium.cache.CacheService;
@@ -34,7 +35,6 @@ import org.oobium.http.HttpRequest500Handler;
 import org.oobium.http.HttpRequestHandler;
 import org.oobium.http.HttpResponse;
 import org.oobium.http.HttpSession;
-import org.oobium.http.HttpSessionService;
 import org.oobium.http.constants.StatusCode;
 import org.oobium.persist.Model;
 import org.oobium.persist.PersistClient;
@@ -53,7 +53,7 @@ import org.osgi.framework.ServiceRegistration;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
-public abstract class AppService extends ModuleService implements HttpRequestHandler, HttpRequest404Handler, HttpRequest500Handler, HttpSessionService, PersistClient {
+public abstract class AppService extends ModuleService implements HttpRequestHandler, HttpRequest404Handler, HttpRequest500Handler, PersistClient {
 
 	private static final ThreadLocal<AppService> appService = new ThreadLocal<AppService>();
 	
@@ -87,7 +87,6 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 	private PersistServices persistServices;
 
 	private ServiceTracker cacheTracker;
-	private ServiceTracker sessionTracker;
 	private ServiceTracker moduleTracker;
 
 	private ServiceRegistration request404HandlerRegistration;
@@ -192,7 +191,6 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 
 		// initialize trackers
 		initializeCacheTracker(config);
-		initializeSessionTracker(config);
 		initializePersistServices(config);
 		initializeModulesTracker(config);
 		
@@ -209,11 +207,6 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		if(persistServices != null) {
 			persistServices.close();
 			persistServices = null;
-		}
-		
-		if(sessionTracker != null) {
-			sessionTracker.close();
-			sessionTracker = null;
 		}
 		
 		if(moduleTracker != null) {
@@ -287,13 +280,15 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		return (AppRouter) router;
 	}
 
-	@Override
 	public HttpSession getSession(int id, String uuid, boolean create) {
-		HttpSessionService service = (sessionTracker != null) ? (HttpSessionService) sessionTracker.getService() : null;
-		if(service != null) {
-			return service.getSession(id, uuid, create);
+		HttpSession session = null;
+		if(id > 0 && uuid != null && !uuid.isEmpty()) {
+			session = Session.retrieve(id, uuid);
 		}
-		return null;
+		if(session == null && create) {
+			session = new Session();
+		}
+		return session;
 	}
 	
 	@Override
@@ -445,21 +440,6 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 			} else {
 				registerPersistServices(persist);
 			}
-		}
-	}
-	
-	protected final void initializeSessionTracker(Config config) throws Exception {
-		String session = config.getString(Config.SESSION);
-		if(!blank(session)) {
-			BundleContext context = getContext();
-			String str = "(&(" + Constants.OBJECTCLASS + "=" + HttpSessionService.class.getName() + ")" +
-							"(" + HttpSessionService.TYPE + "=" + session + "))";
-			Filter filter = context.createFilter(str);
-			sessionTracker = new ServiceTracker(context, filter, null);
-			sessionTracker.open();
-			logger.info("sessionTracker started {" + session + "}");
-		} else {
-			logger.info("sessionTracker not started");
 		}
 	}
 	

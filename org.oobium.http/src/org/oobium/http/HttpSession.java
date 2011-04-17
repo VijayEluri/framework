@@ -10,26 +10,26 @@
  ******************************************************************************/
 package org.oobium.http;
 
-import java.sql.Timestamp;
+import java.util.Date;
 
 public interface HttpSession {
 
 	public static final String SESSION_ID_KEY = "oobium_session_id";
 	public static final String SESSION_UUID_KEY = "oobium_session_uuid";
 
-	public abstract void clear();
+	public abstract void clearData();
 	public abstract boolean destroy();
-	public abstract String get(String key);
-	public abstract Timestamp getExpiration();
+	public abstract String getData(String key);
+	public abstract Date getExpiration();
 	public abstract String getUuid();
 	public abstract int getId();
 	public abstract boolean isDestroyed();
-	public abstract void put(String key, String value);
-	public abstract void put(String key, long value);
-	public abstract void put(String key, double value);
-	public abstract void put(String key, boolean value);
-	public abstract void remove(String key);
+	public abstract void putData(String key, String value);
+	public abstract void putData(String key, long value);
+	public abstract void putData(String key, double value);
+	public abstract void putData(String key, boolean value);
+	public abstract String removeData(String key);
 	public abstract boolean save();
-	public abstract void setExpiration(Timestamp expiration);
+	public abstract void setExpiration(Date expiration);
 	
 }

@@ -184,9 +184,9 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 	public boolean authenticate() {
 		resolveSession(true);
 		if(session != null) {
-			session.put(AUTHENTICATED_AT, System.currentTimeMillis());
-			session.remove(AUTHENTICATED_BY);
-			session.remove(AUTHENTICATED_BY_TYPE);
+			session.putData(AUTHENTICATED_AT, System.currentTimeMillis());
+			session.removeData(AUTHENTICATED_BY);
+			session.removeData(AUTHENTICATED_BY_TYPE);
 			return true;
 		}
 		return false;
@@ -196,9 +196,9 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		if(model != null) {
 			resolveSession(true);
 			if(session != null) {
-				session.put(AUTHENTICATED_AT, System.currentTimeMillis());
-				session.put(AUTHENTICATED_BY, model.getId());
-				session.put(AUTHENTICATED_BY_TYPE, model.getClass().getName());
+				session.putData(AUTHENTICATED_AT, System.currentTimeMillis());
+				session.putData(AUTHENTICATED_BY, model.getId());
+				session.putData(AUTHENTICATED_BY_TYPE, model.getClass().getName());
 				return true;
 			}
 		}
@@ -302,7 +302,7 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 		flash = null;
 		if(flashOut != null) flashOut.clear();
 		flashOut = null;
-		if(session != null) session.clear();
+		if(session != null) session.clearData();
 		session = null;
 		sessionResolved = false;
 		isRendered = false;
@@ -457,8 +457,8 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 	public <T extends Model> T getAuthenticated(Class<T> clazz) {
 		if(clazz != null) {
 			resolveSession(true);
-			if(clazz.getName() == session.get(AUTHENTICATED_BY_TYPE)) {
-				return coerce(session.get(AUTHENTICATED_BY), clazz);
+			if(clazz.getName() == session.getData(AUTHENTICATED_BY_TYPE)) {
+				return coerce(session.getData(AUTHENTICATED_BY), clazz);
 			}
 		}
 		return null;
@@ -667,7 +667,7 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 	@Override
 	public boolean isAuthenticated() {
 		resolveSession(true);
-		long start = coerce(session.get(AUTHENTICATED_AT), long.class);
+		long start = coerce(session.getData(AUTHENTICATED_AT), long.class);
 		return (System.currentTimeMillis() - start) < AUTHENTICATION_INTERVAL;
 	}
 	
@@ -675,8 +675,8 @@ public class Controller implements ICache, IFlash, IParams, IPathRouting, IUrlRo
 	public boolean isAuthenticated(Model model) {
 		if(model != null) {
 			resolveSession(true);
-			if(model.getId() == coerce(session.get(AUTHENTICATED_BY), int.class) &&
-					model.getClass().getName().equals(session.get(AUTHENTICATED_BY_TYPE))) {
+			if(model.getId() == coerce(session.getData(AUTHENTICATED_BY), int.class) &&
+					model.getClass().getName().equals(session.getData(AUTHENTICATED_BY_TYPE))) {
 				return isAuthenticated();
 			}
 		}

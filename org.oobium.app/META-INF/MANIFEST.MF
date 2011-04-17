@@ -12,6 +12,7 @@ Export-Package: org.oobium.app,
  org.oobium.app.server.routing,
  org.oobium.app.server.routing.handlers,
  org.oobium.app.server.view,
+ org.oobium.app.sessions,
  org.oobium.app.workers
 Import-Package: org.oobium.cache,
  org.oobium.http,
