@@ -73,13 +73,6 @@ and web connected clients in Java and OSGi.
          unpack="false"/>
 
    <plugin
-         id="org.oobium.session.db"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
          id="org.apache.derby"
          download-size="0"
          install-size="0"
@@ -137,20 +130,6 @@ and web connected clients in Java and OSGi.
 
    <plugin
          id="org.oobium.mailer"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="org.apache.derby.client"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="org.oobium.persist.db.derby"
          download-size="0"
          install-size="0"
          version="0.0.0"
@@ -263,6 +242,48 @@ and web connected clients in Java and OSGi.
 
    <plugin
          id="org.oobium.persist.http"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.mysql.connector"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.oobium.persist.db.mysql"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.oobium.persist.migrate.db.mysql"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.oobium.persist.db.postgresql"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.oobium.persist.migrate.db.postgresql"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.postgresql.jdbc4"
          download-size="0"
          install-size="0"
          version="0.0.0"
