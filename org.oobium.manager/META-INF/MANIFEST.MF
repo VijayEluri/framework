@@ -4,7 +4,6 @@ Bundle-Name: Oobium Manager Bundle
 Bundle-SymbolicName: org.oobium.manager;singleton:=true
 Bundle-Version: 0.6.0.qualifier
 Import-Package: org.oobium.app,
- org.oobium.app.model,
  org.oobium.app.persist,
  org.oobium.app.server.controller,
  org.oobium.app.server.routing,

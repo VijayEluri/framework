@@ -5,7 +5,6 @@ Bundle-SymbolicName: org.oobium.events
 Bundle-Version: 0.6.0.qualifier
 Export-Package: org.oobium.events.models
 Import-Package: org.oobium.app,
- org.oobium.app.model,
  org.oobium.app.server.controller,
  org.oobium.app.server.routing,
  org.oobium.app.server.view,

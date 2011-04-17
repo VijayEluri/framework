@@ -6,7 +6,6 @@ Bundle-Version: 0.6.0.qualifier
 Bundle-Vendor: oobium.org
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: org.oobium.app,
- org.oobium.app.model,
  org.oobium.app.persist,
  org.oobium.app.server.controller,
  org.oobium.app.server.response,
@@ -14,8 +13,7 @@ Export-Package: org.oobium.app,
  org.oobium.app.server.routing.handlers,
  org.oobium.app.server.view,
  org.oobium.app.workers
-Import-Package: org.oobium.app.model,
- org.oobium.cache,
+Import-Package: org.oobium.cache,
  org.oobium.http,
  org.oobium.http.constants,
  org.oobium.http.impl,
