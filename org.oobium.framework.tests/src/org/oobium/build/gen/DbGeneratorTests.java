@@ -30,12 +30,16 @@ public class DbGeneratorTests {
 		while(s1 < schema.length() && Character.isWhitespace(schema.charAt(s1))) {
 			s1++;
 		}
-		return schema.substring(s1, schema.length() - 6).replace("\n\t\t", "\n");
+		int s2 = schema.indexOf("public void down() ");
+		while(s2 > s1 && schema.charAt(s2) != '}') {
+			s2--;
+		}
+		return schema.substring(s1, s2 - 2).replace("\n\t\t", "\n");
 	}
 	
 	@Test
 	public void testAttrBoolean() throws Exception {
-		assertEquals("createTable(\"a_models\", tableOptions.get(\"a_models\"),\n" +
+		assertEquals("createTable(\"a_models\",\n" +
 					"\tBoolean(\"attr\")\n" +
 					");",
 				up("com.test", DynClasses.getModel("AModel").addAttr("attr", "Boolean.class")));
@@ -43,7 +47,7 @@ public class DbGeneratorTests {
 	
 	@Test
 	public void testAttrBoolean_Primitive() throws Exception {
-		assertEquals("createTable(\"a_models\", tableOptions.get(\"a_models\"),\n" +
+		assertEquals("createTable(\"a_models\",\n" +
 					"\tBoolean(\"attr\", Map(\n" +
 					"\t\te(\"required\", true), \n" +
 					"\t\te(\"primitive\", true)\n" +
@@ -54,7 +58,7 @@ public class DbGeneratorTests {
 	
 	@Test
 	public void testAttrString() throws Exception {
-		assertEquals("createTable(\"a_models\", tableOptions.get(\"a_models\"),\n" +
+		assertEquals("createTable(\"a_models\",\n" +
 					"\tString(\"attr\")\n" +
 					");",
 				up("com.test", DynClasses.getModel("AModel").addAttr("attr", "String.class")));
@@ -62,7 +66,7 @@ public class DbGeneratorTests {
 	
 	@Test
 	public void testAttrText() throws Exception {
-		assertEquals("createTable(\"a_models\", tableOptions.get(\"a_models\"),\n" +
+		assertEquals("createTable(\"a_models\",\n" +
 					"\tText(\"attr\")\n" +
 					");",
 				up("com.test", DynClasses.getModel("AModel").addAttr("attr", "org.oobium.persist.Text.class")));
@@ -70,12 +74,12 @@ public class DbGeneratorTests {
 	
 	@Test
 	public void testHasOneToNone() throws Exception {
-		assertEquals("Table aModels = createTable(\"a_models\", tableOptions.get(\"a_models\"),\n" +
+		assertEquals("Table aModels = createTable(\"a_models\",\n" +
 					"\tInteger(\"b_model\")\n" +
 					");\n" +
 					"aModels.addIndex(\"b_model\");\n" +
 					"\n" +
-					"Table bModels = createTable(\"b_models\", tableOptions.get(\"b_models\"),\n" +
+					"Table bModels = createTable(\"b_models\",\n" +
 					"\tInteger(\"a_model\")\n" +
 					");\n" +
 					"bModels.addIndex(\"a_model\");\n" +
@@ -92,13 +96,36 @@ public class DbGeneratorTests {
 	}
 	
 	@Test
+	public void testHasOneToNone_OnDeleteCascade() throws Exception {
+		assertEquals("Table aModels = createTable(\"a_models\",\n" +
+					"\tInteger(\"b_model\")\n" +
+					");\n" +
+					"aModels.addIndex(\"b_model\");\n" +
+					"\n" +
+					"Table bModels = createTable(\"b_models\",\n" +
+					"\tInteger(\"a_model\")\n" +
+					");\n" +
+					"bModels.addIndex(\"a_model\");\n" +
+					"\n" +
+					"aModels.addForeignKey(\"b_model\", \"b_models\", Map(\"onDelete\", CASCADE));\n" +
+					"aModels.update();\n" +
+					"\n" +
+					"bModels.addForeignKey(\"a_model\", \"a_models\");\n" +
+					"bModels.update();",
+				up("com.test",
+						DynClasses.getModel("AModel").addHasOne("bModel", "BModel.class", "onDelete=Relation.CASCADE"),
+						DynClasses.getModel("BModel").addHasOne("aModel", "AModel.class")
+				));
+	}
+	
+	@Test
 	public void testHasOneToOne() throws Exception {
-		assertEquals("Table aModels = createTable(\"a_models\", tableOptions.get(\"a_models\"),\n" +
+		assertEquals("Table aModels = createTable(\"a_models\",\n" +
 					"\tInteger(\"b_model\")\n" +
 					");\n" +
 					"aModels.addUniqueIndex(\"b_model\");\n" +
 					"\n" +
-					"createTable(\"b_models\", tableOptions.get(\"b_models\"));\n" +
+					"createTable(\"b_models\");\n" +
 					"\n" +
 					"aModels.addForeignKey(\"b_model\", \"b_models\");\n" +
 					"aModels.update();",
@@ -109,12 +136,12 @@ public class DbGeneratorTests {
 
 		DynClasses.reset();
 		
-		assertEquals("Table bModels = createTable(\"b_models\", tableOptions.get(\"b_models\"),\n" +
+		assertEquals("Table bModels = createTable(\"b_models\",\n" +
 					"\tInteger(\"c_model\")\n" +
 					");\n" +
 					"bModels.addUniqueIndex(\"c_model\");\n" +
 					"\n" +
-					"createTable(\"c_models\", tableOptions.get(\"c_models\"));\n" +
+					"createTable(\"c_models\");\n" +
 					"\n" +
 					"bModels.addForeignKey(\"c_model\", \"c_models\");\n" +
 					"bModels.update();",
@@ -126,12 +153,12 @@ public class DbGeneratorTests {
 	
 	@Test
 	public void testHasOneToMany() throws Exception {
-		assertEquals("Table aModels = createTable(\"a_models\", tableOptions.get(\"a_models\"),\n" +
+		assertEquals("Table aModels = createTable(\"a_models\",\n" +
 					"\tInteger(\"b_model\")\n" +
 					");\n" +
 					"aModels.addIndex(\"b_model\");\n" +
 					"\n" +
-					"createTable(\"b_models\", tableOptions.get(\"b_models\"));\n" +
+					"createTable(\"b_models\");\n" +
 					"\n" +
 					"aModels.addForeignKey(\"b_model\", \"b_models\");\n" +
 					"aModels.update();",
@@ -143,9 +170,9 @@ public class DbGeneratorTests {
 	
 	@Test
 	public void testHasManyToNone() throws Exception {
-		assertEquals("Table aModels = createTable(\"a_models\", tableOptions.get(\"a_models\"));\n" +
+		assertEquals("Table aModels = createTable(\"a_models\");\n" +
 					"\n" +
-					"Table bModels = createTable(\"b_models\", tableOptions.get(\"b_models\"),\n" +
+					"Table bModels = createTable(\"b_models\",\n" +
 					"\tInteger(\"a_model\")\n" + // this is BModel's hasOne
 					");\n" +
 					"bModels.addIndex(\"a_model\");\n" +
@@ -162,9 +189,9 @@ public class DbGeneratorTests {
 	
 	@Test
 	public void testHasManyToMany() throws Exception {
-		assertEquals("Table aModels = createTable(\"a_models\", tableOptions.get(\"a_models\"));\n" +
+		assertEquals("Table aModels = createTable(\"a_models\");\n" +
 					"\n" +
-					"Table bModels = createTable(\"b_models\", tableOptions.get(\"b_models\"));\n" +
+					"Table bModels = createTable(\"b_models\");\n" +
 					"\n" +
 					"createJoinTable(aModels, \"b_models\", bModels, \"a_models\");",
 				up("com.test",

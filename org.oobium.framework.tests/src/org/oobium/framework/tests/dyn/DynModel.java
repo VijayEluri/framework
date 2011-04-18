@@ -173,6 +173,7 @@ public class DynModel extends DynClass {
 			if(packageName != null) {
 				sb.append("package ").append(packageName).append(";\n");
 			}
+			sb.append("import org.oobium.persist.Relation;\n");
 			sb.append("import org.oobium.persist.*;\n");
 			if(imports != null) {
 				for(String imp : imports) {
