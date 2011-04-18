@@ -70,7 +70,7 @@ public class ModelRelation {
 		} catch(Exception e) {
 			String constant;
 			String type;
-			int ix = referential.indexOf('.');
+			int ix = referential.lastIndexOf('.');
 			if(ix == -1) {
 				constant = referential;
 				type = model.getType(constant);
