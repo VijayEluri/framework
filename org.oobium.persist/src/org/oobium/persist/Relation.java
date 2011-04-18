@@ -23,7 +23,7 @@ public @interface Relation {
 	public static final int UNDEFINED = -1;
 	
 	/**
-	 * Whenever rows in the master (referenced) table are deleted, the respective rows of the child (referencing)
+	 * Whenever rows in the parent (referenced) table are deleted, the respective rows of the child (referencing)
 	 * table with a matching foreign key column will get deleted as well. This is called a cascade delete.
 	 * <a href="http://en.wikipedia.org/wiki/Foreign_key#CASCADE">Wikipedia Entry</a>
 	 * @see Relation#onDelete()
@@ -128,8 +128,8 @@ public @interface Relation {
 	String name();
 	
 	/**
-	 * The referential action to take place when the model is destroyed. The name comes from the ON DELETE clause in an SQL
-	 * Foreign Key constraint and the meaning of the referential actions can be taken directly from SQL references.
+	 * The referential action to take place when the referenced model is destroyed. The name comes from the ON DELETE clause
+	 * in an SQL Foreign Key constraint and the meaning of the referential actions can be taken directly from SQL references.
 	 * <p><b>Valid only for has one relationships</b></p>
 	 * <dl>
 	 *   <dt>actions:</dt>
@@ -144,8 +144,8 @@ public @interface Relation {
 	int onDelete() default UNDEFINED;
 
 	/**
-	 * The referential action to take place when the model is destroyed. The name comes from the ON UPDATE clause in an SQL
-	 * Foreign Key constraint and the meaning of the referential actions can be taken directly from SQL references.
+	 * The referential action to take place when the referenced model is destroyed. The name comes from the ON UPDATE clause
+	 * in an SQL Foreign Key constraint and the meaning of the referential actions can be taken directly from SQL references.
 	 * <p><b>Valid only for has one relationships</b></p>
 	 * <dl>
 	 *   <dt>actions:</dt>
