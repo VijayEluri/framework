@@ -102,7 +102,7 @@ public class DerbyEmbeddedMigrationService extends DbMigrationService {
 	protected String getCreateForeignKeyColumnSql(ForeignKey fk) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getSqlSafe(fk.column)).append(' ').append(getSqlType(fk.type)).append(" CONSTRAINT ");
-		sb.append(fk.name).append(" REFERENCES ").append(getSqlSafe(fk.reference)).append(" (id)");
+		sb.append(fk.name).append(" REFERENCES ").append(getSqlSafe(fk.reference)).append("(id)");
 		switch(fk.options.get("onDelete", -1)) {
 		case CASCADE:		sb.append(" ON DELETE CASCADE");	break;
 		case NO_ACTION:		sb.append(" ON DELETE NO ACTION");	break;
