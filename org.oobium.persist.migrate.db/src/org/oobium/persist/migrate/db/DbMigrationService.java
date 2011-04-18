@@ -218,7 +218,7 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		sb.append("ALTER TABLE ").append(getSqlSafe(table.name)).append(" ADD");
 		sb.append(" CONSTRAINT ").append(getSqlSafe(fk.name));
 		sb.append(" Foreign Key (").append(getSqlSafe(fk.column)).append(")");
-		sb.append(" REFERENCES ").append(getSqlSafe(fk.reference)).append(" (id)");
+		sb.append(" REFERENCES ").append(getSqlSafe(fk.reference)).append("(id)");
 		switch(fk.options.get("onDelete", -1)) {
 		case CASCADE:		sb.append(" ON DELETE CASCADE");	break;
 		case NO_ACTION:		sb.append(" ON DELETE NO ACTION");	break;
@@ -266,7 +266,7 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		sb.append("CREATE TABLE ").append(getSqlSafe(table.name)).append('(');
 		if(table.hasPrimaryKey()) {
 			sb.append(getCreatePrimaryKeySql(table.getPrimaryKey()));
-			if(!columns.isEmpty() || options != null) sb.append(',');
+			if(!columns.isEmpty()) sb.append(',');
 		}
 		for(Iterator<Column> iter = columns.iterator(); iter.hasNext(); ) {
 			Column column = iter.next();
