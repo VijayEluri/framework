@@ -37,6 +37,7 @@ public class EspOutlinePage extends ContentOutlinePage {
 
 	private void createActions() {
 		sortAction = new SortAction(this);
+		sortAction.setChecked(true);
 	}
 	
 	public void createControl(Composite parent) {
@@ -45,7 +46,7 @@ public class EspOutlinePage extends ContentOutlinePage {
 		createActions();
 		
 		TreeViewer viewer = getTreeViewer();
-		viewer.setContentProvider(contentProvider = new EspContentProvider());
+		viewer.setContentProvider(contentProvider = new EspContentProvider(true));
 		viewer.setLabelProvider(new EspLabelProvider());
 		viewer.addSelectionChangedListener(this);
 

@@ -63,6 +63,10 @@ class EspContentProvider implements ITreeContentProvider, PropertyChangeListener
 	
 	private boolean sort;
 	
+	public EspContentProvider(boolean sort) {
+		this.sort = sort;
+	}
+	
 	public void dispose() {
 		if(document != null) {
 //			EspCore.get(document).removeListener(this);
