@@ -375,13 +375,13 @@ public class Workspace {
 		}
 	}
 	
-	public List<Application> getApplications(Application application) {
+	public List<Application> getApplications(Application application, Mode mode) {
 		List<Application> apps = new ArrayList<Application>();
 		
 		apps.add(application);
 		
 		Config config = Config.loadConfiguration(application.site);
-		Object o = config.get("apps");
+		Object o = config.get(Config.APPS, mode);
 		if(o instanceof String) {
 			Application app = getApplication((String) o);
 			if(app == null) {

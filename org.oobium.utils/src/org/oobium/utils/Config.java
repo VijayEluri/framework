@@ -72,6 +72,7 @@ public class Config {
 	public static final String HOST = "host";
 	public static final String PORT = "port";
 	
+	public static final String APPS = "apps";
 	public static final String CACHE = "cache";
 	public static final String MODULES = "modules";
 	public static final String PERSIST = "persist";

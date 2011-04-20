@@ -310,7 +310,7 @@ public class Exporter {
 			exportDir.mkdirs();
 		}
 
-		List<Application> applications = workspace.getApplications(application);
+		List<Application> applications = workspace.getApplications(application, mode);
 
 		if(includeMigrator || isMigrator) {
 			Migrator migrator = workspace.getMigratorFor(application);
