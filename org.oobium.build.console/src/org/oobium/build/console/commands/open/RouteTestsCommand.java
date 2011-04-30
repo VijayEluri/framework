@@ -13,7 +13,7 @@ package org.oobium.build.console.commands.open;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.events.BuildEvent;
 import org.oobium.build.events.BuildEvent.Type;
 import org.oobium.build.events.BuildListener;
@@ -43,7 +43,7 @@ public class RouteTestsCommand extends BuilderCommand {
 				}
 			});
 			File tests = gen.createRouteTests(module);
-			BuilderConsoleActivator.sendOpen(testSuite, tests);
+			Eclipse.openFile(testSuite.file, tests);
 		} else {
 			console.err.println("test suite does not exist");
 		}

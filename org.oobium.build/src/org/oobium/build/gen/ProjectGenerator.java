@@ -29,16 +29,16 @@ import java.util.Set;
 
 import org.oobium.app.AppService;
 import org.oobium.app.ModuleService;
-import org.oobium.app.server.controller.ActionCache;
-import org.oobium.app.server.controller.Controller;
-import org.oobium.app.server.routing.AppRouter;
-import org.oobium.app.server.routing.Router;
+import org.oobium.app.controllers.ActionCache;
+import org.oobium.app.controllers.Controller;
+import org.oobium.app.routing.AppRouter;
+import org.oobium.app.routing.Router;
 import org.oobium.build.util.SourceFile;
 import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.ExportedPackage;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.Project.Type;
-import org.oobium.http.constants.Action;
+import org.oobium.app.http.Action;
 import org.oobium.mailer.Mailer;
 import org.oobium.persist.Attribute;
 import org.oobium.persist.ModelDescription;
@@ -213,7 +213,6 @@ public class ProjectGenerator {
 			sb.append("cache:   \"org.oobium.cache.file\",\n");
 		}
 		sb.append("persist: \"org.oobium.persist.db.derby.embedded\",\n");
-		sb.append("server:  \"org.oobium.server\",\n");
 		sb.append('\n');
 		sb.append("dev: {\n");
 		sb.append("\thost: \"localhost\",\n");
@@ -404,12 +403,13 @@ public class ProjectGenerator {
 	
 			sb.append("Import-Package: org.osgi.framework;version=\"1.4.0\",\n");
 			sb.append(" org.oobium.app,\n");
-			sb.append(" org.oobium.app.server.controller,\n");
-			sb.append(" org.oobium.app.server.response,\n");
-			sb.append(" org.oobium.app.server.routing,\n");
+			sb.append(" org.oobium.app.controllers,\n");
+			sb.append(" org.oobium.app.request,\n");
+			sb.append(" org.oobium.app.response,\n");
+			sb.append(" org.oobium.app.routing,\n");
 			if(projectType != PTYPE_APP_WS && projectType != PTYPE_MOD_WS) {
 				sb.append(" org.oobium.app.workers,\n");
-				sb.append(" org.oobium.app.server.view,\n");
+				sb.append(" org.oobium.app.views,\n");
 			}
 			sb.append(" org.oobium.http,\n");
 			sb.append(" org.oobium.http.constants,\n");
@@ -543,7 +543,6 @@ public class ProjectGenerator {
 		sb.append("Require-Bundle: ").append(bundle.name).append(";bundle-version=\"").append(bundle.version).append("\"\n");
 		sb.append("Import-Package: org.osgi.framework;version=\"1.4.0\",\n");
 		sb.append(" org.oobium.app,\n");
-		sb.append(" org.oobium.http,\n");
 		sb.append(" org.oobium.logging,\n");
 		sb.append(" org.oobium.persist,\n");
 		sb.append(" org.oobium.persist.db,\n");

@@ -11,7 +11,7 @@
 package org.oobium.build.console.commands.open;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Bundle;
 
 public class ManifestCommand extends BuilderCommand {
@@ -25,8 +25,7 @@ public class ManifestCommand extends BuilderCommand {
 	public void run() {
 		Bundle bundle = getBundle();
 		if(bundle.manifest.exists()) {
-//			console.out.println("opening " + bundle.manifest);
-			BuilderConsoleActivator.sendOpen(bundle.file, bundle.manifest);
+			Eclipse.openFile(bundle.file, bundle.manifest);
 		} else {
 			console.err.println("model \"" + param(0) + "\" does not exist");
 		}

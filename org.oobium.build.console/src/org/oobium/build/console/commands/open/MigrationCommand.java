@@ -13,7 +13,7 @@ package org.oobium.build.console.commands.open;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Application;
 import org.oobium.build.workspace.Migrator;
 import org.oobium.build.workspace.Workspace;
@@ -33,7 +33,7 @@ public class MigrationCommand extends BuilderCommand {
 		Migrator migrator = ws.getMigratorFor(app);
 		File migration = hasParam(0) ? migrator.getMigration(param(0)) : migrator.getInitialMigration();
 		if(migration.exists()) {
-			BuilderConsoleActivator.sendOpen(app.migrator, migration);
+			Eclipse.openFile(app.migrator, migration);
 		} else {
 			console.err.println("migration file (" + migration.getName() + ") does not exist");
 		}

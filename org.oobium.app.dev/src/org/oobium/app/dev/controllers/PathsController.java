@@ -10,10 +10,8 @@
  ******************************************************************************/
 package org.oobium.app.dev.controllers;
 
-import static org.oobium.http.constants.RequestType.DELETE;
-import static org.oobium.http.constants.RequestType.GET;
-import static org.oobium.http.constants.RequestType.POST;
-import static org.oobium.http.constants.RequestType.PUT;
+import static org.jboss.netty.handler.codec.http.HttpMethod.*;
+import static org.oobium.app.http.MimeType.*;
 import static org.oobium.utils.StringUtils.when;
 import static org.oobium.utils.json.JsonUtils.toJson;
 
@@ -23,10 +21,10 @@ import java.util.List;
 
 import org.oobium.app.AppService;
 import org.oobium.app.ModuleService;
+import org.oobium.app.controllers.Controller;
 import org.oobium.app.dev.AppDevActivator;
-import org.oobium.app.server.controller.Controller;
-import org.oobium.app.server.routing.Router;
-import org.oobium.http.constants.ContentType;
+import org.oobium.app.http.MimeType;
+import org.oobium.app.routing.Router;
 
 public class PathsController extends Controller {
 
@@ -35,11 +33,8 @@ public class PathsController extends Controller {
 		for(String path : paths) {
 			int ix = path.lastIndexOf('.');
 			if(ix != -1) {
-				ContentType type = ContentType.getFromExtension(path.substring(ix + 1), ContentType.HTML);
-				switch(type) {
-				case CSS:
-				case HTML:
-				case JS:
+				MimeType type = MimeType.getFromExtension(path.substring(ix + 1), HTML);
+				if(type == CSS || type == HTML || type == JS) {
 					filtered.add(path);
 				}
 			} else {

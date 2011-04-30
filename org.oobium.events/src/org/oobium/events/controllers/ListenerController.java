@@ -15,7 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.oobium.events.models.Listener;
-import org.oobium.http.constants.Action;
+import org.oobium.app.http.Action;
 
 public class ListenerController extends ApplicationController {
 

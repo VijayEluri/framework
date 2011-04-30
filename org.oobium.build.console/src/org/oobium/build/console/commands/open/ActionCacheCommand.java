@@ -13,7 +13,7 @@ package org.oobium.build.console.commands.open;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 
 public class ActionCacheCommand extends BuilderCommand {
@@ -30,7 +30,7 @@ public class ActionCacheCommand extends BuilderCommand {
 		Module module = getModule();
 		File cache = module.getActionCache(param(0));
 		if(cache.exists()) {
-			BuilderConsoleActivator.sendOpen(module, cache);
+			Eclipse.openFile(module.file, cache);
 		} else {
 			console.err.println("action cache does not exist");
 		}

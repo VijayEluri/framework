@@ -10,19 +10,17 @@
  ******************************************************************************/
 package org.oobium.cache.file;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Properties;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.oobium.cache.CacheObject;
 import org.oobium.cache.CacheService;
 import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
@@ -80,23 +78,12 @@ public class FileCacheService implements BundleActivator, CacheService {
 	}
 
 	@Override
-	public String get(String key) {
+	public CacheObject get(String key) {
 		lock.readLock().lock();
 		try {
 			File file = new File("cache", OSKey(key));
 			if(file.exists()) {
-				try {
-					BufferedInputStream in = new BufferedInputStream(new FileInputStream(file));
-					StringBuilder sb = new StringBuilder();
-					int c;
-					while((c = in.read()) != -1) {
-						sb.append((char) c);
-					}
-					return sb.toString();
-				} catch(Exception e) {
-					logger.warn(e);
-					file.delete();
-				}
+				return new FileCacheObject(file);
 			}
 			return null;
 		} finally {
@@ -152,7 +139,7 @@ public class FileCacheService implements BundleActivator, CacheService {
 	}
 
 	@Override
-	public void set(String key, String value) {
+	public void set(String key, byte[] value) {
 		lock.writeLock().lock();
 		try {
 			File file = new File("cache", OSKey(key));
@@ -165,16 +152,21 @@ public class FileCacheService implements BundleActivator, CacheService {
 					return;
 				}
 			}
-			PrintWriter writer = null;
+			
+			FileOutputStream out = null;
 			try {
-				writer = new PrintWriter(file);
-				writer.write(value);
-				writer.flush();
-			} catch(FileNotFoundException e) {
+				out = new FileOutputStream(file);
+				out.write(value);
+				out.flush();
+			} catch(Exception e) {
 				logger.warn(e);
 			} finally {
-				if(writer != null) {
-					writer.close();
+				if(out != null) {
+					try {
+						out.close();
+					} catch(IOException e) {
+						// discard
+					}
 				}
 			}
 		} finally {

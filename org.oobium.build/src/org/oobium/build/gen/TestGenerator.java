@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import org.hamcrest.CoreMatchers;
+import org.jboss.netty.handler.codec.http.HttpMethod;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,9 +30,7 @@ import org.oobium.build.events.BuildEvent.Type;
 import org.oobium.build.util.SourceFile;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.TestSuite;
-import org.oobium.http.constants.Action;
-import org.oobium.http.constants.RequestType;
-import org.oobium.http.constants.StatusCode;
+import org.oobium.app.http.Action;
 import org.oobium.test.ControllerTester;
 import org.oobium.test.RouteTester;
 
@@ -99,7 +99,7 @@ public class TestGenerator {
 		sf.packageName = testSuite.packageName(testSuite.unit, folder);
 		sf.staticImports.add(Assert.class.getCanonicalName() + ".*");
 		sf.staticImports.add(CoreMatchers.class.getCanonicalName() + ".*");
-		sf.staticImports.add(StatusCode.class.getCanonicalName() + ".*");
+		sf.staticImports.add(HttpResponseStatus.class.getCanonicalName() + ".*");
 		sf.imports.add(module.packageName(module.controllers) + "." + controllerName);
 		sf.imports.add(Before.class.getCanonicalName());
 		sf.imports.add(Test.class.getCanonicalName());
@@ -115,7 +115,7 @@ public class TestGenerator {
 		);
 
 		if(handle.matcher(controllerSrc).find()) {
-			sf.staticImports.add(RequestType.class.getCanonicalName() + ".*");
+			sf.staticImports.add(HttpMethod.class.getCanonicalName() + ".*");
 			sf.methods.put("1_handleRequest",
 					"\t@Test\n" +
 					"\tpublic void handleRequest() throws Exception {\n" +

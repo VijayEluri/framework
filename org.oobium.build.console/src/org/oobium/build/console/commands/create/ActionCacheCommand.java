@@ -12,10 +12,10 @@ package org.oobium.build.console.commands.create;
 
  import java.io.File;
 
+import org.oobium.app.http.Action;
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
-import org.oobium.http.constants.Action;
 
 public class ActionCacheCommand extends BuilderCommand {
 
@@ -55,7 +55,7 @@ public class ActionCacheCommand extends BuilderCommand {
 				}
 				try {
 					File file = module.createActionCache(name, modelName, getActions());
-					BuilderConsoleActivator.sendRefresh(module, cache, 1000);
+					Eclipse.refresh(module.file, cache);
 					
 					name = file.getName();
 					name = name.substring(0, name.length()-5);

@@ -11,7 +11,7 @@
 package org.oobium.build.console.commands.open;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Bundle;
 
 public class ActivatorCommand extends BuilderCommand {
@@ -25,8 +25,7 @@ public class ActivatorCommand extends BuilderCommand {
 	public void run() {
 		Bundle bundle = getBundle();
 		if(bundle.activator.exists()) {
-//			console.out.println("opening " + bundle.activator);
-			BuilderConsoleActivator.sendOpen(bundle, bundle.activator);
+			Eclipse.openFile(bundle.file, bundle.activator);
 		} else {
 			console.err.println("application file does not exist");
 		}

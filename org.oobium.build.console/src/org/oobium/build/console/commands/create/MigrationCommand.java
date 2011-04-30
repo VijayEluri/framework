@@ -13,7 +13,7 @@ package org.oobium.build.console.commands.create;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Migrator;
 import org.oobium.build.workspace.Module;
 
@@ -41,7 +41,7 @@ public class MigrationCommand extends BuilderCommand {
 					migrator = getWorkspace().createMigrator(module);
 					if(migrator != null) {
 						console.out.println("successfully created migrator: " + migrator.name);
-						BuilderConsoleActivator.sendImport(migrator);
+						Eclipse.importProject(migrator.name, migrator.file);
 					} else {
 						console.err.println("failed to create migrator for " + module.name);
 						return;
@@ -73,7 +73,7 @@ public class MigrationCommand extends BuilderCommand {
 			console.out.println("updated <a href=\"open migrator\">migrator</a>");
 		}
 		
-		BuilderConsoleActivator.sendRefresh(migrator, 100);
+		Eclipse.refreshProject(migrator.name);
 	}
 
 }

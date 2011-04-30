@@ -11,7 +11,7 @@
 package org.oobium.build.console.commands.destroy;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 import org.oobium.utils.FileUtils;
 
@@ -61,7 +61,7 @@ public class ModelCommand extends BuilderCommand {
 			FileUtils.delete(module.getControllerFor(modelName));
 		}
 
-		BuilderConsoleActivator.sendRefresh(module, 1000);
+		Eclipse.refreshProject(module.name);
 	}
 	
 }

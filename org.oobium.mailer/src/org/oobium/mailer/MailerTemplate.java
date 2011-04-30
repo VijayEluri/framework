@@ -14,8 +14,8 @@ import static org.oobium.utils.StringUtils.camelCase;
 
 import java.lang.reflect.Constructor;
 
-import org.oobium.app.server.routing.IUrlRouting;
-import org.oobium.http.constants.Action;
+import org.oobium.app.routing.IUrlRouting;
+import org.oobium.app.http.Action;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 

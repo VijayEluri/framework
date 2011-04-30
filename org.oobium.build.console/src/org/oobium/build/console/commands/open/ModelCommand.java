@@ -13,7 +13,7 @@ package org.oobium.build.console.commands.open;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 
 public class ModelCommand extends BuilderCommand {
@@ -30,13 +30,7 @@ public class ModelCommand extends BuilderCommand {
 		Module module = getModule();
 		File model = module.getModel(param(0));
 		if(model != null && model.isFile()) {
-//			console.out.println("opening " + file);
-			BuilderConsoleActivator.sendOpen(module, model);
-//			if(response.isSuccess()) {
-//				console.out.println("response: " + response);
-//			} else {
-//				console.err.println("response: " + response);
-//			}
+			Eclipse.openFile(module.file, model);
 		} else {
 			console.err.println("model \"" + param(0) + "\" does not exist");
 		}

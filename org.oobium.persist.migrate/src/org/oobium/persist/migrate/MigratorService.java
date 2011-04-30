@@ -10,7 +10,7 @@
  ******************************************************************************/
 package org.oobium.persist.migrate;
 
-import static org.oobium.http.constants.RequestType.POST;
+import static org.jboss.netty.handler.codec.http.HttpMethod.POST;
 import static org.oobium.utils.literal.Map;
 import static org.oobium.utils.literal.e;
 
@@ -20,7 +20,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.oobium.app.AppService;
-import org.oobium.app.server.routing.Router;
+import org.oobium.app.routing.Router;
 import org.oobium.app.workers.Worker;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.migrate.controllers.MigrateController;
@@ -228,8 +228,9 @@ public abstract class MigratorService extends AppService {
 					for(int i = cix + 1; i <= tix; i++) {
 						String name = names.get(i);
 						if(!migrated.contains(name)) {
-							migrations.get(i).setService(mservice);
-							migrations.get(i).up();
+							Migration migration = migrations.get(i).newInstance();
+							migration.setService(mservice);
+							migration.up();
 							getPersistService().commit();
 							setMigrated(name, true);
 						}
@@ -239,8 +240,9 @@ public abstract class MigratorService extends AppService {
 					for(int i = cix; i >= tix; i--) {
 						String name = names.get(i);
 						if(migrated.contains(name)) {
-							migrations.get(i).setService(mservice);
-							migrations.get(i).down();
+							Migration migration = migrations.get(i).newInstance();
+							migration.setService(mservice);
+							migration.down();
 							getPersistService().commit();
 							setMigrated(name, false);
 						}
@@ -263,7 +265,7 @@ public abstract class MigratorService extends AppService {
 		try {
 			getPersistService().setAutoCommit(false);
 			for(int i = 0; i < migrations.size(); i++) {
-				Migration migration = migrations.get(i);
+				Migration migration = migrations.get(i).newInstance();
 				if(name.equals(migration.getClass().getSimpleName())) {
 					migration.setService(getMigrationService());
 					if(up) {
@@ -308,8 +310,9 @@ public abstract class MigratorService extends AppService {
 				for(int i = 0; i < step && ix >= 0; i++, ix--) {
 					String name = names.get(ix);
 					if(migrated.contains(name)) {
-						migrations.get(ix).setService(mservice);
-						migrations.get(ix).down();
+						Migration migration = migrations.get(i).newInstance();
+						migration.setService(mservice);
+						migration.down();
 						getPersistService().commit();
 						setMigrated(name, false);
 					}
@@ -317,8 +320,9 @@ public abstract class MigratorService extends AppService {
 				}
 				for(int i = ix + 1; i <= cix; i++) {
 					String name = names.get(i);
-					migrations.get(i).setService(mservice);
-					migrations.get(i).up();
+					Migration migration = migrations.get(i).newInstance();
+					migration.setService(mservice);
+					migration.up();
 					getPersistService().commit();
 					setMigrated(name, true);
 					migratedName = name;
@@ -356,8 +360,9 @@ public abstract class MigratorService extends AppService {
 				for(int i = 0; i < step && ix >= 0; i++, ix--) {
 					String name = names.get(ix);
 					if(migrated.contains(name)) {
-						migrations.get(ix).setService(mservice);
-						migrations.get(ix).down();
+						Migration migration = migrations.get(i).newInstance();
+						migration.setService(mservice);
+						migration.down();
 						getPersistService().commit();
 						setMigrated(name, false);
 					}

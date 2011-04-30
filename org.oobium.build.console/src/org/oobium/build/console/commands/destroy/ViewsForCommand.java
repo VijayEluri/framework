@@ -13,7 +13,7 @@ package org.oobium.build.console.commands.destroy;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 import org.oobium.utils.FileUtils;
 
@@ -43,7 +43,7 @@ public class ViewsForCommand extends BuilderCommand {
 
 		FileUtils.delete(module.getViewsFolder(param(0)));
 
-		BuilderConsoleActivator.sendRefresh(module, module.views, 100);
+		Eclipse.refresh(module.file, module.views);
 	}
 	
 }

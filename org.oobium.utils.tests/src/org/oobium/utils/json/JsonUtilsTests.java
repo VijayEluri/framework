@@ -121,6 +121,9 @@ public class JsonUtilsTests {
 		assertEquals(LinkedHashMap.class, toObject("{}", true).getClass());
 		
 		assertEquals(ArrayList.class, toObject("[]").getClass());
+
+		assertNotNull(toObject("\"/Date(" + System.currentTimeMillis() + ")/\""));
+		assertNotNull(toObject("\"/Base64(" + new String(Base64.encode("test".getBytes())) + ")/\""));
 	}
 	
 	@Test

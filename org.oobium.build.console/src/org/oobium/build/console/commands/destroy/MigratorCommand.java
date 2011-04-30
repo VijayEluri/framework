@@ -10,7 +10,7 @@
  ******************************************************************************/
 package org.oobium.build.console.commands.destroy;
 
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Migrator;
 
 
@@ -31,7 +31,7 @@ public class MigratorCommand extends BundleCommand {
 
 		remove(migration);
 		
-		BuilderConsoleActivator.sendRefresh(migration, 100);
+		Eclipse.refreshProject(migration.name);
 	}
 
 }

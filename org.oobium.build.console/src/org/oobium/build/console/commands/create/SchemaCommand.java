@@ -11,7 +11,7 @@
 package org.oobium.build.console.commands.create;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Application;
 import org.oobium.utils.Config.Mode;
 
@@ -27,7 +27,7 @@ public class SchemaCommand extends BuilderCommand {
 		Application app = getApplication();
 		app.createInitialMigration(getWorkspace(), Mode.DEV);
 		console.out.println("created <a href=\"open schema\">schema</a>");
-		BuilderConsoleActivator.sendRefresh(app.migrator, 100);
+		Eclipse.refreshProject(app.migratorName);
 	}
 
 }

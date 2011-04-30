@@ -13,7 +13,7 @@ package org.oobium.build.console.commands.open;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 import org.oobium.utils.StringUtils;
 
@@ -32,8 +32,7 @@ public class MailerCommand extends BuilderCommand {
 		String name = StringUtils.camelCase(param(0));
 		File mailer = module.getMailer(name);
 		if(mailer != null) {
-//			console.out.println("opening " + mailer);
-			BuilderConsoleActivator.sendOpen(module.file, mailer);
+			Eclipse.openFile(module.file, mailer);
 		} else {
 			console.err.println("model \"" + name + "\" does not exist");
 		}

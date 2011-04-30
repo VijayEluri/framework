@@ -12,8 +12,8 @@ package org.oobium.app.dev.controllers;
 
 import java.sql.SQLException;
 
+import org.oobium.app.controllers.Controller;
 import org.oobium.app.dev.AppDevActivator;
-import org.oobium.app.server.controller.Controller;
 import org.oobium.logging.LogProvider;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;

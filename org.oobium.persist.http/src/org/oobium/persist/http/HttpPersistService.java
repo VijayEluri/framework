@@ -1,11 +1,11 @@
 package org.oobium.persist.http;
 
-import static org.oobium.http.constants.Action.create;
-import static org.oobium.http.constants.Action.destroy;
-import static org.oobium.http.constants.Action.show;
-import static org.oobium.http.constants.Action.showAll;
-import static org.oobium.http.constants.Action.update;
-import static org.oobium.http.constants.ContentType.JSON;
+import static org.oobium.app.http.Action.create;
+import static org.oobium.app.http.Action.destroy;
+import static org.oobium.app.http.Action.show;
+import static org.oobium.app.http.Action.showAll;
+import static org.oobium.app.http.Action.update;
+import static org.oobium.app.http.MimeType.JSON;
 import static org.oobium.persist.http.Cache.expireCache;
 import static org.oobium.persist.http.Cache.getCache;
 import static org.oobium.persist.http.Cache.setCache;
@@ -30,11 +30,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.oobium.client.Client;
 import org.oobium.client.ClientResponse;
-import org.oobium.http.constants.Action;
-import org.oobium.http.constants.Header;
-import org.oobium.http.constants.RequestType;
+import org.oobium.app.http.Action;
 import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
@@ -45,7 +44,7 @@ import org.oobium.persist.ServiceInfo;
 public class HttpPersistService implements PersistService {
 
 	private class Request {
-		RequestType type;
+		HttpMethod method;
 		String url;
 		String path;
 	}
@@ -62,9 +61,9 @@ public class HttpPersistService implements PersistService {
 		this.logger = LogProvider.getLogger(HttpPersistService.class);
 	}
 	
-	private void add(String model, String action, RequestType type, String url, String path) {
+	private void add(String model, String action, HttpMethod type, String url, String path) {
 		Request request = new Request();
-		request.type = type;
+		request.method = type;
 		request.url = url;
 		request.path = path;
 		
@@ -106,14 +105,14 @@ public class HttpPersistService implements PersistService {
 		
 		try {
 			Client client = Client.client(request.url);
-			client.setAccepts(JSON);
+			client.setAccepts(JSON.acceptsType);
 
 			String path = path(request.path, model);
 			Map<String, String> params = getParams(model);
 			
-			ClientResponse response = client.request(request.type, path, params);
+			ClientResponse response = client.request(request.method, path, params);
 			if(response.isSuccess()) {
-				int id = coerce(response.getHeader(Header.ID.key()), int.class);
+				int id = coerce(response.getHeader("id"), int.class);
 				model.setId(id);
 				setCache(model);
 			} else if(response.exceptionThrown()) {
@@ -145,11 +144,11 @@ public class HttpPersistService implements PersistService {
 
 		try {
 			Client client = Client.client(request.url);
-			client.setAccepts(JSON);
+			client.setAccepts(JSON.acceptsType);
 			
 			String path = path(request.path, model);
 			
-			ClientResponse response = client.request(request.type, path);
+			ClientResponse response = client.request(request.method, path);
 			if(response.isSuccess()) {
 				if(cache != null && cache != model) {
 					cache.setId(0);
@@ -172,7 +171,7 @@ public class HttpPersistService implements PersistService {
 	
 	public String discover(String url) throws MalformedURLException {
 		Client client = new Client(url);
-		client.setAccepts(JSON);
+		client.setAccepts(JSON.acceptsType);
 
 		URL u = client.getUrl();
 		String path = u.getPath();
@@ -187,7 +186,7 @@ public class HttpPersistService implements PersistService {
 			}
 		}
 		
-		ClientResponse response = client.get(path, Map("type", "models"));
+		ClientResponse response = client.get(path, Map("method", "models"));
 		if(response.isSuccess()) {
 			Object r = toObject(response.getBody());
 			if(r instanceof Map<?,?>) {
@@ -260,7 +259,7 @@ public class HttpPersistService implements PersistService {
 		
 		try {
 			Client client = Client.client(request.url);
-			client.setAccepts(JSON);
+			client.setAccepts(JSON.acceptsType);
 
 			model = coerce(id, clazz);
 			String path = path(request.path, model);
@@ -278,7 +277,7 @@ public class HttpPersistService implements PersistService {
 				}
 			}
 			
-			ClientResponse response = client.request(request.type, path, params);
+			ClientResponse response = client.request(request.method, path, params);
 			if(response.isSuccess()) {
 				model.putAll(response.getBody());
 				setCache(model);
@@ -349,11 +348,11 @@ public class HttpPersistService implements PersistService {
 		
 		try {
 			Client client = Client.client(request.url);
-			client.setAccepts(JSON);
+			client.setAccepts(JSON.acceptsType);
 
 			String path = path(request.path, clazz);
 			
-			ClientResponse response = client.request(request.type, path, query);
+			ClientResponse response = client.request(request.method, path, query);
 			if(response.isSuccess()) {
 				List<Object> list = toList(response.getBody());
 				models = new ArrayList<T>();
@@ -421,7 +420,7 @@ public class HttpPersistService implements PersistService {
 	private String getDiscoveryLocation(Client client) {
 		ClientResponse response = client.get();
 		if(response.isSuccess()) {
-			return response.getHeader(Header.API_LOCATION.key());
+			return response.getHeader("API-Location");
 		}
 		return null;
 	}
@@ -529,9 +528,9 @@ public class HttpPersistService implements PersistService {
 		Object method = map.get("method");
 		Object path = map.get("path");
 		if(method instanceof String && path instanceof String) {
-			RequestType t = null;
+			HttpMethod t = null;
 			try {
-				t = RequestType.valueOf((String) method);
+				t = HttpMethod.valueOf((String) method);
 			} catch(IllegalArgumentException e) {
 				logger.debug("invalid request type: " + method);
 				return;
@@ -558,11 +557,11 @@ public class HttpPersistService implements PersistService {
 		
 		try {
 			Client client = Client.client(request.url);
-			client.setAccepts(JSON);
+			client.setAccepts(JSON.acceptsType);
 			
 			String path = path(request.path, model);
 			
-			ClientResponse response = client.request(request.type, path);
+			ClientResponse response = client.request(request.method, path);
 			if(response.isSuccess()) {
 				model.putAll(response.getBody());
 				Model cache = getCache(model.getClass(), model.getId());
@@ -600,11 +599,11 @@ public class HttpPersistService implements PersistService {
 		
 		try {
 			Client client = Client.client(request.url);
-			client.setAccepts(JSON);
+			client.setAccepts(JSON.acceptsType);
 			
 			String path = path(request.path, model, field);
 			
-			ClientResponse response = client.request(request.type, path);
+			ClientResponse response = client.request(request.method, path);
 			if(response.isSuccess()) {
 				ModelAdapter adapter = ModelAdapter.getAdapter(model);
 				Class<? extends Model> type = adapter.getHasManyMemberClass(field);
@@ -659,12 +658,12 @@ public class HttpPersistService implements PersistService {
 		
 		try {
 			Client client = Client.client(request.url);
-			client.setAccepts(JSON);
+			client.setAccepts(JSON.acceptsType);
 			
 			String path = path(request.path, model);
 			Map<String, String> params = getParams(model);
 			
-			ClientResponse response = client.request(request.type, path, params);
+			ClientResponse response = client.request(request.method, path, params);
 			if(response.isSuccess()) {
 				Model cache = getCache(model.getClass(), model.getId());
 				if(cache == null) {

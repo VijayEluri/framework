@@ -11,7 +11,7 @@
 package org.oobium.build.console.commands;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Bundle;
 
 public class CleanCommand extends BuilderCommand {
@@ -25,7 +25,7 @@ public class CleanCommand extends BuilderCommand {
 	public void run() {
 		Bundle bundle = getBundle();
 		bundle.clean();
-		BuilderConsoleActivator.sendRefresh(bundle, 1000);
+		Eclipse.refreshProject(bundle.name);
 	}
 	
 }

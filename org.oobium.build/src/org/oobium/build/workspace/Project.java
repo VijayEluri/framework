@@ -15,8 +15,10 @@ import static org.oobium.utils.FileUtils.findFiles;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -362,15 +364,38 @@ public class Project implements Comparable<Project> {
 		FileUtils.delete(file);
 	}
 
-	public File getBinFile(File srcFile) {
+	/**
+	 * Get all the binary files for the given source file.
+	 * Multiple bin files will be returned if, for instance,
+	 * the source is a Java file with inner classes or enums.
+	 */
+	public File[] getBinFiles(File srcFile) {
 		int len = src.getAbsolutePath().length();
 		String path = srcFile.getAbsolutePath();
+		return getBinFiles(path, len);
+	}
+	
+	protected File[] getBinFiles(String path, int len) {
 		if(path.endsWith(".java")) {
-			path = path.substring(len, path.length() - 4) + "class";
+			List<File> files = new ArrayList<File>();
+			File file = new File(bin, path.substring(len, path.length() - 4) + "class");
+			files.add(file);
+			File folder = file.getParentFile();
+			if(folder.isDirectory()) {
+				String name = file.getName();
+				final String base = name.substring(0, name.length() - 6) + "$";
+				files.addAll(Arrays.asList(folder.listFiles(new FilenameFilter() {
+					@Override
+					public boolean accept(File dir, String name) {
+						return name.startsWith(base) && name.endsWith(".class");
+					}
+				})));
+			}
+			return files.toArray(new File[files.size()]);
 		} else {
 			path = path.substring(len);
+			return new File[] { new File(bin, path) };
 		}
-		return new File(bin, path);
 	}
 
 	public Set<File> getBinFiles(File... srcFiles) {

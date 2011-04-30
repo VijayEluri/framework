@@ -13,7 +13,7 @@ package org.oobium.build.console.commands.open;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 
 public class LayoutCommand extends BuilderCommand {
@@ -30,8 +30,7 @@ public class LayoutCommand extends BuilderCommand {
 		}
 		File layout = module.getLayout();
 		if(layout.exists()) {
-//			console.out.println("opening " + layout);
-			BuilderConsoleActivator.sendOpen(module, layout);
+			Eclipse.openFile(module.file, layout);
 		} else {
 			console.err.println("layout does not exist");
 		}

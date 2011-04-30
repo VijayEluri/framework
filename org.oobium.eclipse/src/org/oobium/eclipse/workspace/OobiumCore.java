@@ -143,9 +143,11 @@ public class OobiumCore {
 				List<File> modified = module.generateModel(workspace, model);
 				if(module.isApplication()) {
 					File schema = ((Application) module).createInitialMigration(workspace, workspace.getMode());
-					IProject migrator = ResourcesPlugin.getWorkspace().getRoot().getProject(module.migratorName);
-					if(migrator.isOpen()) {
-						refresh(migrator, schema, monitor);
+					if(schema != null) { // there might not be a migrator project
+						IProject migrator = ResourcesPlugin.getWorkspace().getRoot().getProject(module.migratorName);
+						if(migrator.isOpen()) {
+							refresh(migrator, schema, monitor);
+						}
 					}
 				}
 				for(File mfile : modified) {

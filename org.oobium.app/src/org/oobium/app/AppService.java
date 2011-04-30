@@ -18,24 +18,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import org.oobium.app.handlers.HttpRequest404Handler;
+import org.oobium.app.handlers.HttpRequest500Handler;
+import org.oobium.app.handlers.HttpRequestHandler;
 import org.oobium.app.persist.PersistServices;
-import org.oobium.app.server.response.Response;
-import org.oobium.app.server.routing.AppRouter;
-import org.oobium.app.server.routing.RouteHandler;
-import org.oobium.app.server.routing.Router;
-import org.oobium.app.server.routing.handlers.ControllerHandler;
-import org.oobium.app.server.view.View;
+import org.oobium.app.request.Request;
+import org.oobium.app.response.Response;
+import org.oobium.app.routing.AppRouter;
+import org.oobium.app.routing.RouteHandler;
+import org.oobium.app.routing.Router;
+import org.oobium.app.routing.handlers.ControllerHandler;
+import org.oobium.app.server.HandlerTask;
 import org.oobium.app.sessions.Session;
+import org.oobium.app.views.View;
 import org.oobium.app.workers.Worker;
 import org.oobium.app.workers.Workers;
 import org.oobium.cache.CacheService;
-import org.oobium.http.HttpRequest;
-import org.oobium.http.HttpRequest404Handler;
-import org.oobium.http.HttpRequest500Handler;
-import org.oobium.http.HttpRequestHandler;
-import org.oobium.http.HttpResponse;
-import org.oobium.http.HttpSession;
-import org.oobium.http.constants.StatusCode;
+import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.persist.PersistClient;
 import org.oobium.persist.PersistService;
@@ -53,7 +53,7 @@ import org.osgi.framework.ServiceRegistration;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
-public abstract class AppService extends ModuleService implements HttpRequestHandler, HttpRequest404Handler, HttpRequest500Handler, PersistClient {
+public class AppService extends ModuleService implements HttpRequestHandler, HttpRequest404Handler, HttpRequest500Handler, PersistClient {
 
 	private static final ThreadLocal<AppService> appService = new ThreadLocal<AppService>();
 	
@@ -97,6 +97,14 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 
 	// TODO Workers should be in their own bundle and accessed as a service
 	private Map<AppService, Workers> workersMap;
+	
+	public AppService() {
+		super();
+	}
+	
+	public AppService(Logger logger) {
+		super(logger);
+	}
 	
 	private ModuleService addModule(ServiceReference reference, Config config) {
 		ModuleService module = (ModuleService) AppService.this.getContext().getService(reference);
@@ -152,7 +160,7 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		addRoutes(config, (AppRouter) router);
 	}
 	
-	final void appStart(BundleContext context) throws Exception {
+	final void startApp() throws Exception {
 		logger.info("configuring in " + Mode.getSystemMode().name() + " mode");
 		
 		Config config = loadConfiguration();
@@ -182,9 +190,11 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		setErrorViewClasses(config);
 
 		// register handlers
-		context.registerService(HttpRequestHandler.class.getName(), this, null);
-		request404HandlerRegistration = context.registerService(HttpRequest404Handler.class.getName(), this, Properties("port", getPort()));
-		request500HandlerRegistration = context.registerService(HttpRequest500Handler.class.getName(), this, Properties("port", getPort()));
+		if(context != null) {
+			context.registerService(HttpRequestHandler.class.getName(), this, null);
+			request404HandlerRegistration = context.registerService(HttpRequest404Handler.class.getName(), this, Properties("port", getPort()));
+			request500HandlerRegistration = context.registerService(HttpRequest500Handler.class.getName(), this, Properties("port", getPort()));
+		}
 		
 		// allow subclasses to register custom services
 		registerServices(config);
@@ -198,7 +208,7 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		initializeServiceTrackers(config);
 	}
 	
-	final void appStop(BundleContext context) throws Exception {
+	final void stopApp() throws Exception {
 		if(cacheTracker != null) {
 			cacheTracker.close();
 			cacheTracker = null;
@@ -280,94 +290,102 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		return (AppRouter) router;
 	}
 
-	public HttpSession getSession(int id, String uuid, boolean create) {
-		HttpSession session = null;
+	public Session getSession(int id, String uuid, boolean create) {
+		Session session = null;
 		if(id > 0 && uuid != null && !uuid.isEmpty()) {
 			session = Session.retrieve(id, uuid);
 		}
 		if(session == null && create) {
-			session = new Session();
+			session = new Session(30*60);
 		}
 		return session;
 	}
 	
 	@Override
-	public HttpResponse handle404(HttpRequest request) {
+	public Response handle404(Request request) {
 		if(getRouter().hasHost(request.getHost())) {
 			if(errorClass404 != null) {
 				try{
 					Response response = View.render(errorClass404, request);
-					response.setStatus(StatusCode.NOT_FOUND);
+					response.setStatus(HttpResponseStatus.NOT_FOUND);
 					return response;
 				} catch(Exception e) {
 					logger.error(e);
 				}
 			}
-			return Response.notFound(request.getType(), request.getContentTypes());
 		}
 		return null;
 	}
 
 	@Override
-	public HttpResponse handle500(HttpRequest request, Exception exception) {
+	public Response handle500(Request request, Exception exception) {
 		if(getRouter().hasHost(request.getHost())) {
 			if(errorClass500 != null) {
 				try{
 					Response response = View.render(errorClass500, request);
-					response.setStatus(StatusCode.SERVER_ERROR);
+					response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
 					return response;
 				} catch(Exception e) {
 					logger.error(e);
 				}
 			}
-			return Response.serverError(request.getType(), request.getContentTypes());
 		}
 		return null;
 	}
 	
 	@Override
-	public HttpResponse handleRequest(HttpRequest request) throws Exception {
+	public Object handleRequest(Request request) throws Exception {
 		if(logger.isLoggingDebug()) {
 			logger.debug("start handleRequest - " + getName() + ":" + request.getPath());
 		}
-		HttpResponse response = null;
 		AppRouter router = getRouter();
-		RouteHandler handler = router.getHandler(request);
+		final RouteHandler handler = router.getHandler(request);
 		if(handler != null) {
 			handler.setLogger(logger);
 			if(handler instanceof ControllerHandler) {
-				appService.set(this);
-				persistServices.openSession(getPersistClientName());
-				Model.setLogger(logger);
-				Model.setPersistServiceProvider(persistServices);
-				try {
-					response = handler.routeRequest(request);
-				} finally {
-					persistServices.closeSession();
-					Model.setPersistServiceProvider(null);
-					Model.setLogger(null);
-					appService.set(null);
-				}
+				return new HandlerTask(request) {
+					@Override
+					protected Response handleRequest(Request request) throws Exception {
+						appService.set(AppService.this);
+						persistServices.openSession(getPersistClientName());
+						Model.setLogger(logger);
+						Model.setPersistServiceProvider(persistServices);
+						try {
+							Response response = handler.routeRequest(request);
+							getRouter().applyHeaders(request, response);
+							return response;
+						} finally {
+							persistServices.closeSession();
+							Model.setPersistServiceProvider(null);
+							Model.setLogger(null);
+							appService.set(null);
+						}
+					}
+				};
 			} else {
-				response = handler.routeRequest(request);
+				Response response = handler.routeRequest(request);
+				router.applyHeaders(request, response);
+				return response;
 			}
-			router.applyHeaders(request, response);
 		}
 		logger.debug("end handleRequest");
-		return response;
+		return null;
 	}
 
 	protected final void initializeCacheTracker(Config config) throws Exception {
 		String cache = config.getString(Config.CACHE);
 		if(!blank(cache)) {
 			BundleContext context = getContext();
-
-			String str = "(&(" + Constants.OBJECTCLASS + "=" + CacheService.class.getName() + ")" +
-						"(" + CacheService.TYPE + "=" + cache + "))";
-			Filter filter = context.createFilter(str);
-			cacheTracker = new ServiceTracker(context, filter, null);
-			cacheTracker.open();
-			logger.info("cacheTracker started {" + cache + "}");
+			if(context == null) {
+				logger.info("no context - cacheTracker not started");
+			} else {
+				String str = "(&(" + Constants.OBJECTCLASS + "=" + CacheService.class.getName() + ")" +
+							"(" + CacheService.TYPE + "=" + cache + "))";
+				Filter filter = context.createFilter(str);
+				cacheTracker = new ServiceTracker(context, filter, null);
+				cacheTracker.open();
+				logger.info("cacheTracker started {" + cache + "}");
+			}
 		} else {
 			logger.info("cacheTracker not started");
 		}
@@ -377,27 +395,30 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 		List<String> modules = config.getModules();
 		if(!modules.isEmpty()) {
 			BundleContext context = getContext();
-
-			Filter filter = createModulesFilter(modules);
-			moduleTracker = new ServiceTracker(context, filter, new ServiceTrackerCustomizer() {
-				@Override
-				public Object addingService(ServiceReference reference) {
-					return addModule(reference, config);
-				}
-				@Override
-				public void modifiedService(ServiceReference reference, Object service) {
-					// do nothing
-				}
-				@Override
-				public void removedService(ServiceReference reference, Object service) {
-					if(service != null) {
-						removeModule(reference, (ModuleService) service, config);
+			if(context == null) {
+				logger.info("no context - moduleTracker not started");
+			} else {
+				Filter filter = createModulesFilter(modules);
+				moduleTracker = new ServiceTracker(context, filter, new ServiceTrackerCustomizer() {
+					@Override
+					public Object addingService(ServiceReference reference) {
+						return addModule(reference, config);
 					}
-					AppService.this.getContext().ungetService(reference);
-				}
-			});
-			moduleTracker.open();
-			logger.info("moduleTracker started {" + StringUtils.asString(modules) + "}");
+					@Override
+					public void modifiedService(ServiceReference reference, Object service) {
+						// do nothing
+					}
+					@Override
+					public void removedService(ServiceReference reference, Object service) {
+						if(service != null) {
+							removeModule(reference, (ModuleService) service, config);
+						}
+						AppService.this.getContext().ungetService(reference);
+					}
+				});
+				moduleTracker.open();
+				logger.info("moduleTracker started {" + StringUtils.asString(modules) + "}");
+			}
 		}
 	}
 
@@ -475,7 +496,12 @@ public abstract class AppService extends ModuleService implements HttpRequestHan
 	}
 	
 	private void setErrorViewClasses(Config config) {
-		Bundle bundle = getContext().getBundle();
+		BundleContext context = getContext();
+		if(context == null) {
+			return;
+		}
+		
+		Bundle bundle = context.getBundle();
 
 		String base;
 		int ix = name.lastIndexOf('_');

@@ -221,6 +221,11 @@ public class ModelGenerator {
 	}
 	
 	public static File generateSchema(Workspace workspace, Application app, Mode mode) {
+		Migrator migrator = workspace.getMigratorFor(app);
+		if(migrator == null) {
+			return null;
+		}
+		
 		PersistConfig config = new PersistConfig(app, mode);
 		
 		List<File> models = new ArrayList<File>();
@@ -255,7 +260,6 @@ public class ModelGenerator {
 		
 		String src = DbGenerator.generate(app.name, defs);
 
-		Migrator migrator = workspace.getMigratorFor(app);
 		File file = migrator.getInitialMigration();
 		
 		return writeFile(file, src);

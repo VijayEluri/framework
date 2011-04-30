@@ -13,7 +13,7 @@ package org.oobium.build.console.commands.open;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 
 public class ViewCommand extends BuilderCommand {
@@ -30,8 +30,7 @@ public class ViewCommand extends BuilderCommand {
 		Module module = getModule();
 		File view = module.getView(param(0));
 		if(view != null && view.isFile()) {
-//			console.out.println("opening " + file);
-			BuilderConsoleActivator.sendOpen(module, view);
+			Eclipse.openFile(module.file, view);
 		} else {
 			console.err.println("view does not exist");
 		}

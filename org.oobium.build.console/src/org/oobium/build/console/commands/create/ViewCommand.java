@@ -13,7 +13,7 @@ package org.oobium.build.console.commands.create;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 
 public class ViewCommand extends BuilderCommand {
@@ -42,7 +42,7 @@ public class ViewCommand extends BuilderCommand {
 		String vname = module.getViewName(view);
 		console.out.println("created view <a href=\"open view " + vname + "\">" + vname + "</a>");
 
-		BuilderConsoleActivator.sendRefresh(module.file, 500);
+		Eclipse.refreshProject(module.name);
 	}
 
 }

@@ -1,5 +1,10 @@
 package org.oobium.test;
 
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.ACCEPT;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.AUTHORIZATION;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.LOCATION;
+import static org.jboss.netty.handler.codec.http.HttpMethod.GET;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
@@ -9,9 +14,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.oobium.http.constants.Action.show;
-import static org.oobium.http.constants.Action.showAll;
-import static org.oobium.http.constants.Header.ACCEPT;
+import static org.oobium.app.http.Action.show;
+import static org.oobium.app.http.Action.showAll;
+import static org.oobium.app.http.MimeType.HTML;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.utils.literal.Map;
 
@@ -30,27 +35,26 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.handler.codec.http.Cookie;
+import org.jboss.netty.handler.codec.http.HttpMethod;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.oobium.app.AppService;
-import org.oobium.app.server.controller.Controller;
-import org.oobium.app.server.response.Response;
-import org.oobium.app.server.routing.AppRouter;
-import org.oobium.app.server.routing.Router;
-import org.oobium.app.server.view.View;
-import org.oobium.http.HttpCookie;
-import org.oobium.http.HttpRequest;
-import org.oobium.http.HttpSession;
-import org.oobium.http.constants.Action;
-import org.oobium.http.constants.ContentType;
-import org.oobium.http.constants.Header;
-import org.oobium.http.constants.RequestType;
-import org.oobium.http.constants.StatusCode;
-import org.oobium.http.impl.Cookie;
-import org.oobium.http.impl.Headers;
-import org.oobium.logging.Logger;
+import org.oobium.app.controllers.Controller;
+import org.oobium.app.http.Action;
+import org.oobium.app.http.MimeType;
+import org.oobium.app.request.Request;
+import org.oobium.app.response.Response;
+import org.oobium.app.routing.AppRouter;
+import org.oobium.app.routing.Router;
+import org.oobium.app.sessions.Session;
+import org.oobium.app.views.View;
 import org.oobium.logging.LogProvider;
+import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.utils.Base64;
 import org.oobium.utils.json.JsonUtils;
@@ -82,13 +86,10 @@ public class ControllerTester {
 	public final TestPersistService persistor;
 	private final AtomicInteger persistorSessionCount;
 	
-	public String host;
-	public int port;
-
 	public Controller controller;
-	private Headers headers;
-	private HttpSession session;
-	private Map<String, HttpCookie> cookies;
+	private Request request;
+	private Map<String, ?> params;
+	private Session session;
 	private boolean authorize;
 	
 	private Map<String, Object> flashOut;
@@ -109,28 +110,31 @@ public class ControllerTester {
 		
 		this.persistor = TestPersistService.useSimple();
 		this.persistorSessionCount = new AtomicInteger();
+
+		this.request = new Request(HttpVersion.HTTP_1_1, GET, "/", 5000);
+		this.request.setHandler(application);
 		
-		this.host = "testhost";
-		this.port = 0;
-		
-		accept(ContentType.HTML);
+		accept(HTML);
+	}
+	
+	public ControllerTester setRequest(Request request) {
+		this.request = request;
+		this.request.setHandler(application);
+		return this;
 	}
 
-	public ControllerTester accept(ContentType...types) {
+	public ControllerTester accept(MimeType...types) {
 		if(types.length > 0) {
-			set(Header.ACCEPT, types[0].getRequestProperty());
+			setHeader(ACCEPT, types[0].acceptsType);
 			for(int i = 1; i < types.length; i++) {
-				add(Header.ACCEPT, types[i].getRequestProperty());
+				addHeader(ACCEPT, types[i].acceptsType);
 			}
 		}
 		return this;
 	}
 	
-	public ControllerTester add(Header header, String value) {
-		if(headers == null) {
-			headers = new Headers();
-		}
-		headers.add(header, value);
+	public ControllerTester addHeader(String name, String value) {
+		request.addHeader(name, value);
 		return this;
 	}
 	
@@ -143,36 +147,13 @@ public class ControllerTester {
 		if(force) {
 			authorize("name", "password");
 		} else {
-			set(Header.AUTHORIZATION, null);
+			request.setHeader(AUTHORIZATION, null);
 		}
 		return this;
 	}
 	
 	public ControllerTester authorize(String name, String password) {
-		set(Header.AUTHORIZATION, "Basic " + Base64.encode(name + ":" + password));
-		return this;
-	}
-	
-	public ControllerTester clearCookie(String name) {
-		if(cookies != null) {
-			cookies.remove(name);
-			if(cookies.isEmpty()) {
-				cookies = null;
-			}
-		}
-		return this;
-	}
-	
-	public ControllerTester clearCookies() {
-		if(cookies != null) {
-			cookies.clear();
-			cookies = null;
-		}
-		return this;
-	}
-	
-	public ControllerTester clearHeaders() {
-		headers = null;
+		request.setHeader(AUTHORIZATION, "Basic " + Base64.encode(name + ":" + password));
 		return this;
 	}
 	
@@ -220,11 +201,11 @@ public class ControllerTester {
 	}
 
 	public ControllerTester execute(Action action) {
-		return execute(action, null, null);
-	}
-
-	public ControllerTester execute(Action action, HttpRequest request) {
 		try {
+			spy(request);
+			when(request.hasParameters()).thenReturn(params != null && !params.isEmpty());
+			when(request.getParameters()).thenReturn((params != null) ? convert(params) : null);
+			
 			persistor.openSession("test session " + persistorSessionCount.incrementAndGet());
 			Model.setPersistService(persistor);
 			controller = mockController();
@@ -242,46 +223,29 @@ public class ControllerTester {
 		return execute(action, Map("id", 1), null);
 	}
 	
-	public ControllerTester execute(Action action, Map<String, Object> params) {
+	public ControllerTester execute(Action action, Map<String, ?> params) {
 		return execute(action, params, null);
 	}
 	
-	public ControllerTester execute(Action action, Map<String, Object> params, Map<String, Object> flash) {
-		if(flash != null) {
-			setCookie(Controller.FLASH_KEY, JsonUtils.toJson(flash));
-		}
-		HttpRequest request = mockRequest(action.getRequestType(), params);
-		return execute(action, request);
+	public ControllerTester execute(Action action, Map<String, ?> params, Map<String, ?> flash) {
+		if(flash != null) setCookie(Controller.FLASH_KEY, JsonUtils.toJson(flash));
+		if(params != null) this.params = params;
+		return execute(action);
 	}
 	
-	public ControllerTester execute(Action action, Object...params) {
-		Map<String, Object> map = new LinkedHashMap<String, Object>();
-		for(int i = 0; i < params.length - 1; i++) {
-			String key = (params[i] != null) ? (String) params[i] : null;
-			Object val = (++i < params.length) ? params[i] : null;
-			map.put(key, val);
-		}
-		return execute(action, map, null);
+	public ControllerTester execute(HttpMethod method) {
+		return execute(method, null, null);
 	}
 	
-	public ControllerTester execute(HttpRequest request) {
-		return execute(null, request);
+	public ControllerTester execute(HttpMethod method, Map<String, ?> params) {
+		return execute(method, params, null);
 	}
 	
-	public ControllerTester execute(RequestType type) {
-		return execute(type, null, null);
-	}
-	
-	public ControllerTester execute(RequestType type, Map<String, ?> params) {
-		return execute(type, params, null);
-	}
-	
-	public ControllerTester execute(RequestType type, Map<String, ?> params, Map<String, ?> flash) {
-		if(flash != null) {
-			setCookie(Controller.FLASH_KEY, JsonUtils.toJson(flash));
-		}
-		HttpRequest request = mockRequest(type, params);
-		return execute(request);
+	public ControllerTester execute(HttpMethod method, Map<String, ?> params, Map<String, ?> flash) {
+		request.setMethod(method);
+		if(flash != null) setCookie(Controller.FLASH_KEY, JsonUtils.toJson(flash));
+		if(params != null) this.params = params;
+		return execute((Action) null);
 	}
 	
 	/**
@@ -319,10 +283,18 @@ public class ControllerTester {
 	}
 	
 	public String getContent() {
-		return controller.getResponse().getBody();
+		return new String(getRawContent().array());
+	}
+
+	public Map<String, Object> getJsonContent() {
+		return JsonUtils.toMap(getContent(), true);
 	}
 	
-	public ContentType getContentType() {
+	public ChannelBuffer getRawContent() {
+		return controller.getResponse().getContent();
+	}
+	
+	public MimeType getContentType() {
 		return controller.getResponse().getContentType();
 	}
 
@@ -332,7 +304,7 @@ public class ControllerTester {
 	
 	public String getError(String name) {
 		String errors = null;
-		if(controller.wantsHtml()) {
+		if(controller.wants() == HTML) {
 			errors = getError();
 		} else {
 			errors = getContent();
@@ -352,7 +324,7 @@ public class ControllerTester {
 	
 	public int getErrorCount() {
 		String errors = null;
-		if(controller.wantsHtml()) {
+		if(controller.wants() == HTML) {
 			errors = getError();
 		} else {
 			errors = getContent();
@@ -375,7 +347,7 @@ public class ControllerTester {
 	
 	public String[] getErrors() {
 		String errors = null;
-		if(controller.wantsHtml()) {
+		if(controller.wants() == HTML) {
 			errors = getError();
 		} else {
 			errors = getContent();
@@ -400,7 +372,7 @@ public class ControllerTester {
 	
 	public String[] getErrors(String name) {
 		String errors = null;
-		if(controller.wantsHtml()) {
+		if(controller.wants() == HTML) {
 			errors = getError();
 		} else {
 			errors = getContent();
@@ -450,7 +422,7 @@ public class ControllerTester {
 
 	
 	
-	public Headers getHeaders() {
+	public List<Entry<String, String>> getHeaders() {
 		return controller.getResponse().getHeaders();
 	}
 
@@ -463,7 +435,7 @@ public class ControllerTester {
 	}
 
 	public String getLocation() {
-		return controller.getResponse().getHeaders().get(Header.LOCATION);
+		return controller.getResponse().getHeader(LOCATION);
 	}
 	
 	/**
@@ -484,16 +456,16 @@ public class ControllerTester {
 		return getFlash(Controller.FLASH_NOTICE, String.class);
 	}
 
-	public HttpSession getSession() {
+	public Session getSession() {
 		return session;
 	}
 	
-	public StatusCode getStatus() {
+	public HttpResponseStatus getStatus() {
 		Response response = controller.getResponse();
 		if(response != null) {
 			return response.getStatus();
 		}
-		return StatusCode.NOT_FOUND;
+		return NOT_FOUND;
 	}
 	
 	public int getStatusCode() {
@@ -541,7 +513,7 @@ public class ControllerTester {
 	}
 
 	public boolean isSuccess() {
-		return getStatus().isSuccess();
+		return controller.getResponse().isSuccess();
 	}
 
 	private Controller mockController() throws Exception {
@@ -554,82 +526,6 @@ public class ControllerTester {
 		return controller;
 	}
 	
-	/**
-	 * Create a mocked Request object for the given request type and full path.
-	 * The returned mocked object can be used to stub out its method if necessary.
-	 */
-	private HttpRequest mockRequest(RequestType type, Map<String, ?> params) {
-		HttpRequest request = mock(HttpRequest.class);
-		
-		when(request.getHandler()).thenReturn(application);
-		when(request.getHost()).thenAnswer(new Answer<String>() {
-			@Override
-			public String answer(InvocationOnMock invocation) throws Throwable {
-				return host;
-			}
-		});
-		when(request.getPort()).thenAnswer(new Answer<Integer>() {
-			@Override
-			public Integer answer(InvocationOnMock invocation) throws Throwable {
-				return port;
-			}
-		});
-		when(request.getType()).thenReturn(type);
-		
-		if(headers != null) {
-			when(request.getHeader(any(Header.class))).thenAnswer(new Answer<String>() {
-				@Override
-				public String answer(InvocationOnMock invocation) throws Throwable {
-					return headers.get((Header) invocation.getArguments()[0]);
-				}
-			});
-			when(request.getHeaders()).thenReturn(headers.toArray());
-			if(headers.has(Header.ACCEPT)) {
-				when(request.getContentTypes()).thenAnswer(new Answer<ContentType[]>() {
-					@Override
-					public ContentType[] answer(InvocationOnMock invocation) throws Throwable {
-						String str = headers.get(ACCEPT);
-						if(str != null) {
-							return ContentType.getAll(str.split(",")[0].trim());
-						}
-						return new ContentType[0];
-					}
-				});
-			}
-		}
-//		when(request.getPath()).thenReturn(path);
-//		when(request.getFullPath()).thenReturn(fullPath);
-
-		if(params != null && !params.isEmpty()) {
-			final Map<String, Object> parameters = convert(params);
-			when(request.getParameter(anyString())).thenAnswer(new Answer<Object>() {
-				@Override
-				public Object answer(InvocationOnMock invocation) throws Throwable {
-					return parameters.get((String) invocation.getArguments()[0]);
-				}
-			});
-			when(request.getParameters()).thenReturn((Map<String, Object>) parameters);
-			when(request.hasParameters()).thenReturn(true);
-		}
-		
-		if(cookies != null && !cookies.isEmpty()) {
-			when(request.getCookie(anyString())).thenAnswer(new Answer<HttpCookie>() {
-				@Override
-				public HttpCookie answer(InvocationOnMock invocation) throws Throwable {
-					return cookies.get(invocation.getArguments()[0]);
-				}
-			});
-			when(request.hasCookie(anyString())).thenAnswer(new Answer<Boolean>() {
-				@Override
-				public Boolean answer(InvocationOnMock invocation) throws Throwable {
-					return cookies.containsKey(invocation.getArguments()[0]);
-				}
-			});
-		}
-		
-		return request;
-	}
-
 	@SuppressWarnings("unchecked")
 	private AppRouter mockRouter() {
 		AppRouter router = mock(AppRouter.class);
@@ -687,9 +583,9 @@ public class ControllerTester {
 		
 		when(service.getLogger()).thenReturn(logger);
 		when(service.getRouter()).thenReturn(router);
-		when(service.getSession(anyInt(), anyString(), anyBoolean())).thenAnswer(new Answer<HttpSession>() {
+		when(service.getSession(anyInt(), anyString(), anyBoolean())).thenAnswer(new Answer<Session>() {
 			@Override
-			public HttpSession answer(InvocationOnMock invocation) throws Throwable {
+			public Session answer(InvocationOnMock invocation) throws Throwable {
 				int id = (Integer) invocation.getArguments()[0];
 				String uuid = (String) invocation.getArguments()[1];
 				if(session != null) {
@@ -701,7 +597,7 @@ public class ControllerTester {
 				}
 				boolean create = (Boolean) invocation.getArguments()[2];
 				if(create) {
-					return new Session(id, uuid);
+					return new Session(30*60);
 				}
 				return null;
 			}
@@ -710,25 +606,18 @@ public class ControllerTester {
 		return service;
 	}
 
-	public ControllerTester set(Header header, String value) {
-		if(headers == null) {
-			headers = new Headers();
-		}
-		headers.set(header, value);
+	public ControllerTester setHeader(String name, String value) {
+		request.setHeader(name, value);
 		return this;
 	}
 	
-	public ControllerTester setCookie(String name, HttpCookie cookie) {
-		if(cookies == null) {
-			cookies = new LinkedHashMap<String, HttpCookie>();
-		}
-		cookies.put(name, cookie);
+	public ControllerTester setCookie(Cookie cookie) {
+		request.setCookie(cookie);
 		return this;
 	}
 	
 	public ControllerTester setCookie(String name, String value) {
-		Cookie cookie = Cookie.create(name, value);
-		return setCookie(name, cookie);
+		return setCookie(name, value);
 	}
 	
 	public ControllerTester setFlash(Map<String, ?> flash) {
@@ -739,7 +628,7 @@ public class ControllerTester {
 		return setFlash(Map(name, value));
 	}
 
-	public void setSession(HttpSession session) {
+	public void setSession(Session session) {
 		this.session = session;
 	}
 

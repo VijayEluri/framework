@@ -9,7 +9,7 @@ Require-Bundle: org.junit;bundle-version="4.7.0",
  org.mockito;bundle-version="1.8.0",
  org.oobium.build,
  org.oobium.app,
- org.oobium.http,
+ org.oobium.app.common,
  org.oobium.persist,
  org.oobium.utils
 Import-Package: org.osgi.framework;version="1.4.0",

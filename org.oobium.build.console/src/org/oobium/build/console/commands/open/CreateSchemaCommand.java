@@ -13,7 +13,7 @@ package org.oobium.build.console.commands.open;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Application;
 import org.oobium.build.workspace.Bundle;
 
@@ -39,7 +39,7 @@ public class CreateSchemaCommand extends BuilderCommand {
 		}
 
 		if(file != null && file.exists()) {
-			BuilderConsoleActivator.sendOpen(migration, file);
+			Eclipse.openFile(migration.file, file);
 		} else {
 			console.err.println("schema file does not exist");
 		}

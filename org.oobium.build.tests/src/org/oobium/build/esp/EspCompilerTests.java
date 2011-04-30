@@ -16,7 +16,7 @@ import org.junit.Test;
 import org.oobium.build.esp.EspCompiler;
 import org.oobium.build.esp.EspDom;
 import org.oobium.build.esp.ESourceFile;
-import org.oobium.http.constants.Action;
+import org.oobium.app.http.Action;
 
 public class EspCompilerTests {
 

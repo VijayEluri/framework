@@ -30,12 +30,12 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.oobium.app.server.controller.Controller;
+import org.oobium.app.controllers.Controller;
 import org.oobium.build.model.ModelDefinition;
 import org.oobium.build.util.SourceFile;
 import org.oobium.build.workspace.Module;
-import org.oobium.http.constants.Action;
-import org.oobium.http.constants.ContentType;
+import org.oobium.app.http.Action;
+import org.oobium.app.http.MimeType;
 
 public class ControllerGenerator {
 
@@ -112,15 +112,23 @@ public class ControllerGenerator {
 	}
 
 	private void addActionCreateImports(TreeSet<String> imports) {
-		// nothing to do...
+		if(withViews) {
+			imports.add("static " + MimeType.class.getCanonicalName() + ".*");
+		}
 	}
 
 	private void addActionDestroyImports(TreeSet<String> imports) {
 		addImports(imports);
+		if(withViews) {
+			imports.add("static " + MimeType.class.getCanonicalName() + ".*");
+		}
 	}
 	
 	private void addActionUpdateImports(TreeSet<String> imports) {
 		addImports(imports);
+		if(withViews) {
+			imports.add("static " + MimeType.class.getCanonicalName() + ".*");
+		}
 	}
 	
 	private void addImports(int i, TreeSet<String> imports) {
@@ -145,7 +153,7 @@ public class ControllerGenerator {
 		imports.add(List.class.getCanonicalName());
 		if(withViews) {
 			imports.add("static " + Action.class.getCanonicalName() + ".*");
-			imports.add("static " + ContentType.class.getCanonicalName() + ".*");
+			imports.add("static " + MimeType.class.getCanonicalName() + ".*");
 			imports.add(module.packageName(module.getViewsFolder(mType))+".ShowAll"+mTypePlural);
 		}
 	}
@@ -154,7 +162,7 @@ public class ControllerGenerator {
 		addImports(imports);
 		if(withViews) {
 			imports.add("static " + Action.class.getCanonicalName() + ".*");
-			imports.add("static " + ContentType.class.getCanonicalName() + ".*");
+			imports.add("static " + MimeType.class.getCanonicalName() + ".*");
 			imports.add(module.packageName(module.getViewsFolder(mType))+".ShowEdit"+mType);
 		}
 	}
@@ -163,7 +171,7 @@ public class ControllerGenerator {
 		addImports(imports);
 		if(withViews) {
 			imports.add("static " + Action.class.getCanonicalName() + ".*");
-			imports.add("static " + ContentType.class.getCanonicalName() + ".*");
+			imports.add("static " + MimeType.class.getCanonicalName() + ".*");
 			imports.add(module.packageName(module.getViewsFolder(mType))+".ShowNew"+mType);
 		}
 	}
@@ -172,7 +180,7 @@ public class ControllerGenerator {
 		addImports(imports);
 		if(withViews) {
 			imports.add("static " + Action.class.getCanonicalName() + ".*");
-			imports.add("static " + ContentType.class.getCanonicalName() + ".*");
+			imports.add("static " + MimeType.class.getCanonicalName() + ".*");
 			imports.add(module.packageName(module.getViewsFolder(mType))+".Show"+mType);
 		}
 	}

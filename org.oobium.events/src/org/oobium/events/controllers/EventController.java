@@ -14,7 +14,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 import org.oobium.events.models.Event;
-import org.oobium.http.constants.Action;
+import org.oobium.app.http.Action;
 
 public class EventController extends ApplicationController {
 

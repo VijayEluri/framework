@@ -29,6 +29,10 @@ public class DateUtils {
 		httpDate_ASCTIME.setTimeZone(tz);
 	}
 
+	public static String httpDate() {
+		return httpDate(new Date());
+	}
+	
 	public static String httpDate(Date date) {
 		return httpDate_1123.format(date);
 	}

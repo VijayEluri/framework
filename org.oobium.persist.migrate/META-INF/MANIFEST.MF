@@ -3,11 +3,12 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Migrate Plug-in
 Bundle-SymbolicName: org.oobium.persist.migrate
 Bundle-Version: 0.6.0.qualifier
-Import-Package: org.oobium.app,
- org.oobium.app.server.controller,
- org.oobium.app.server.routing,
+Import-Package: org.jboss.netty.handler.codec.http,
+ org.oobium.app,
+ org.oobium.app.controllers,
+ org.oobium.app.http,
+ org.oobium.app.routing,
  org.oobium.app.workers,
- org.oobium.http.constants,
  org.oobium.logging,
  org.oobium.persist,
  org.oobium.utils,

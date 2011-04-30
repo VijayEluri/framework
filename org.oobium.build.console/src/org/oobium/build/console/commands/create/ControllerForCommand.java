@@ -13,7 +13,7 @@ package org.oobium.build.console.commands.create;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 
 public class ControllerForCommand extends BuilderCommand {
@@ -72,7 +72,7 @@ public class ControllerForCommand extends BuilderCommand {
 				console.out.println("created controller <a href=\"open controller " + cname + "\">" + cname + "</a>");
 			}
 		}
-		BuilderConsoleActivator.sendRefresh(module, 100);
+		Eclipse.refreshProject(module.name);
 	}
 
 }

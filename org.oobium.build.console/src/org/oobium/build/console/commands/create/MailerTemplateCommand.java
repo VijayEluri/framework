@@ -15,7 +15,7 @@ import static org.oobium.utils.StringUtils.camelCase;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 
 public class MailerTemplateCommand extends BuilderCommand {
@@ -43,8 +43,8 @@ public class MailerTemplateCommand extends BuilderCommand {
 		String templateName = param("name");
 		File template = module.createMailerTemplate(mailerName, templateName);
 		
-		BuilderConsoleActivator.sendRefresh(module, mailer, 100);
-		BuilderConsoleActivator.sendRefresh(module, template, 100);
+		Eclipse.refresh(module.file, mailer);
+		Eclipse.refresh(module.file, template);
 	}
 	
 }

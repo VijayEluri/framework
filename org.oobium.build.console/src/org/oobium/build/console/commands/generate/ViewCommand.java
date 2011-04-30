@@ -13,7 +13,7 @@ package org.oobium.build.console.commands.generate;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 
 public class ViewCommand extends BuilderCommand {
@@ -32,7 +32,7 @@ public class ViewCommand extends BuilderCommand {
 		File view = module.getView(param(0));
 		if(view.isFile()) {
 			File genView = module.generateView(view);
-			BuilderConsoleActivator.sendRefresh(module, genView, 1000);
+			Eclipse.refresh(module.file, genView);
 		} else {
 			console.err.println("view does not exist: " + param(0));
 		}

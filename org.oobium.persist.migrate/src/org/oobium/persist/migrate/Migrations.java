@@ -19,8 +19,8 @@ public class Migrations {
 		return migrationClasses.contains(migrationClass);
 	}
 
-	Migration get(int index) throws InstantiationException, IllegalAccessException {
-		return migrationClasses.get(index).newInstance();
+	Class<? extends Migration> get(int index) {
+		return migrationClasses.get(index);
 	}
 
 	List<String> getNames() {

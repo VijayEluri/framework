@@ -21,7 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.oobium.app.server.controller.Controller;
+import org.oobium.app.controllers.Controller;
 import org.oobium.events.models.Event;
 import org.oobium.manager.ManagerService;
 import org.oobium.manager.controllers.workers.InstallWorker;

@@ -16,7 +16,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.oobium.http.HttpSession;
 import org.oobium.persist.Attribute;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelDescription;
@@ -28,7 +27,10 @@ import org.oobium.persist.ModelDescription;
 		@Attribute(name="expiration", type=Date.class)
 	}
 )
-public class Session extends Model implements HttpSession {
+public class Session extends Model {
+
+	public static final String SESSION_ID_KEY = "oobium_session_id";
+	public static final String SESSION_UUID_KEY = "oobium_session_uuid";
 
     public static Session retrieve(int id, String uuid) {
 		if(id > 0 && uuid != null) {
@@ -41,8 +43,11 @@ public class Session extends Model implements HttpSession {
 		return null;
 	}
 
-	public Session() {
-		this(-1, UUID.randomUUID().toString(), new HashMap<String, String>(), new Date(System.currentTimeMillis() + 30*60*1000));
+    /**
+     * @param expiresIn seconds
+     */
+	public Session(int expiresIn) {
+		this(-1, UUID.randomUUID().toString(), new HashMap<String, String>(), new Date(System.currentTimeMillis() + expiresIn*1000));
 	}
 	
 	private Session(int id, String uuid, Map<String, String> dataMap, Date expiration) {
@@ -61,7 +66,6 @@ public class Session extends Model implements HttpSession {
 		return (Map<String, String>) get("data");
 	}
 	
-    @Override
 	public void clearData() {
     	Map<String, String> data = getData();
     	if(data != null) {
@@ -69,7 +73,6 @@ public class Session extends Model implements HttpSession {
     	}
 	}
 
-	@Override
 	public String getData(String key) {
     	Map<String, String> data = getData();
     	if(data != null) {
@@ -78,39 +81,32 @@ public class Session extends Model implements HttpSession {
     	return null;
 	}
 
-	@Override
 	public Date getExpiration() {
 		Date expiration = (Date) get("expiration");
 		return (Date) expiration.clone();
 	}
 
-	@Override
 	public String getUuid() {
 		return (String) get("uuid");
 	}
 	
-	@Override
 	public boolean isDestroyed() {
 		Date expiration = (Date) get("expiration");
 		return expiration == null || expiration.before(new Date());
 	}
 	
-	@Override
 	public void putData(String key, boolean value) {
 		putData(key, String.valueOf(value));
 	}
 	
-	@Override
 	public void putData(String key, double value) {
 		putData(key, String.valueOf(value));
 	}
 
-	@Override
 	public void putData(String key, long value) {
 		putData(key, String.valueOf(value));
 	}
 	
-	@Override
 	public void putData(String key, String value) {
     	Map<String, String> data = getData();
     	if(data == null) {
@@ -120,7 +116,6 @@ public class Session extends Model implements HttpSession {
 		data.put(key, value);
 	}
 	
-	@Override
 	public String removeData(String key) {
     	Map<String, String> data = getData();
     	if(data != null) {
@@ -129,7 +124,6 @@ public class Session extends Model implements HttpSession {
     	return null;
 	}
 
-	@Override
 	public void setExpiration(Date expiration) {
 		put("expiration", (Date) expiration.clone());
 	}

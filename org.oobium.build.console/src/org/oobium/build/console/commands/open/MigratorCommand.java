@@ -11,7 +11,7 @@
 package org.oobium.build.console.commands.open;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Migrator;
 
 public class MigratorCommand extends BuilderCommand {
@@ -27,7 +27,7 @@ public class MigratorCommand extends BuilderCommand {
 		if(migrator == null) {
 			console.err.println("active project does not have a Migrator in the workspace");
 		} else {
-			BuilderConsoleActivator.sendOpen(migrator, migrator.activator);
+			Eclipse.openFile(migrator.file, migrator.activator);
 		}
 	}
 

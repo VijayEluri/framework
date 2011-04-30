@@ -4,13 +4,14 @@ Bundle-Name: Events Module Bundle
 Bundle-SymbolicName: org.oobium.events
 Bundle-Version: 0.6.0.qualifier
 Export-Package: org.oobium.events.models
-Import-Package: org.oobium.app,
- org.oobium.app.server.controller,
- org.oobium.app.server.routing,
- org.oobium.app.server.view,
+Import-Package: org.jboss.netty.handler.codec.http,
+ org.oobium.app,
+ org.oobium.app.controllers,
+ org.oobium.app.http,
+ org.oobium.app.request,
+ org.oobium.app.routing,
+ org.oobium.app.views,
  org.oobium.client,
- org.oobium.http,
- org.oobium.http.constants,
  org.oobium.logging,
  org.oobium.persist,
  org.oobium.utils,

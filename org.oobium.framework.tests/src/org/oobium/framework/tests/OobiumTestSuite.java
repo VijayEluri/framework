@@ -3,7 +3,7 @@ package org.oobium.framework.tests;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
-import org.oobium.app.server.persist.PersistServicesTests;
+import org.oobium.app.persist.PersistServicesTests;
 import org.oobium.build.esp.CssDomTests;
 import org.oobium.build.esp.EjsCompilerTests;
 import org.oobium.build.esp.EspCompilerPositionTests;
@@ -23,9 +23,6 @@ import org.oobium.persist.db.PaginatorTests;
 import org.oobium.persist.db.internal.DbCacheTests;
 import org.oobium.persist.db.internal.DbPersistorUpdateTests;
 import org.oobium.persist.db.internal.QueryBuilderTests;
-import org.oobium.server.LoadTests;
-import org.oobium.server.NioDataTests;
-import org.oobium.server.ServerTests;
 import org.oobium.utils.CharStreamUtilsTests;
 import org.oobium.utils.FileUtilsTests;
 import org.oobium.utils.SqlUtilsTests;
@@ -60,10 +57,6 @@ import org.oobium.utils.json.JsonUtilsTests;
 	ModelTests.class,
 	PersistServicesTests.class,
 	ValidatorTests.class,
-	// org.oobium.server.tests
-	LoadTests.class,
-	NioDataTests.class,
-	ServerTests.class,
 	// org.oobium.utils.tests
 	TypeCoercerTests.class,
 	JsonUtilsTests.class,

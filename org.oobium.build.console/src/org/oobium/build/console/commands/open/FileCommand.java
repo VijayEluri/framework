@@ -15,7 +15,7 @@ import java.io.File;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.FileDialog;
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 
 public class FileCommand extends BuilderCommand {
 
@@ -50,14 +50,14 @@ public class FileCommand extends BuilderCommand {
 			if(!file.isAbsolute()) {
 				file = new File(getPwd(), path);
 			}
-			BuilderConsoleActivator.sendOpen(file);
+			Eclipse.open(file);
 		} else {
 			File project = new File(path.substring(0, ix));
 			if(!project.isAbsolute()) {
 				project = new File(getPwd(), path.substring(0, ix));
 			}
 			File file = new File(project, path.substring(ix+1));
-			BuilderConsoleActivator.sendOpen(project, file);
+			Eclipse.openFile(project, file);
 		}
 	}
 

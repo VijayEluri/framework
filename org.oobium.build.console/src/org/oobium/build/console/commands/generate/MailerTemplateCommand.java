@@ -13,7 +13,7 @@ package org.oobium.build.console.commands.generate;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 
 public class MailerTemplateCommand extends BuilderCommand {
@@ -32,7 +32,7 @@ public class MailerTemplateCommand extends BuilderCommand {
 		File template = module.getMailerTemplate(param(0));
 		if(template.isFile()) {
 			File genTemplate = module.generateMailerTemplate(template);
-			BuilderConsoleActivator.sendRefresh(module, genTemplate, 1000);
+			Eclipse.refresh(module.file, genTemplate);
 		} else {
 			console.err.println("mailer template does not exist: " + param(0));
 		}

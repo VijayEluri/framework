@@ -11,7 +11,7 @@
 package org.oobium.build.console.commands.refresh;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 
 
 public class ProjectCommand extends BuilderCommand {
@@ -25,7 +25,7 @@ public class ProjectCommand extends BuilderCommand {
 	
 	@Override
 	public void run() {
-		BuilderConsoleActivator.sendRefresh(getBundle().file, 0);
+		Eclipse.refreshProject(getBundle().name);
 	}
 
 }

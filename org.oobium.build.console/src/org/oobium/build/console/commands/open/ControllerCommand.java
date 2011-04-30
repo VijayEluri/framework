@@ -13,7 +13,7 @@ package org.oobium.build.console.commands.open;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 
 public class ControllerCommand extends BuilderCommand {
@@ -30,8 +30,7 @@ public class ControllerCommand extends BuilderCommand {
 		Module module = getModule();
 		File controller = module.getController(param(0));
 		if(controller.exists()) {
-//			console.out.println("opening " + file);
-			BuilderConsoleActivator.sendOpen(module, controller);
+			Eclipse.openFile(module.file, controller);
 		} else {
 			console.err.println("controller does not exist");
 		}

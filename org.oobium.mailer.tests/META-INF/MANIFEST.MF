@@ -8,8 +8,8 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Require-Bundle: org.oobium.mailer,
  org.junit;bundle-version="4.7.0",
  org.oobium.app,
+ org.oobium.app.common,
  org.oobium.persist,
  com.sun.mail;bundle-version="1.4.2",
- org.oobium.utils,
- org.oobium.http;bundle-version="0.6.0"
+ org.oobium.utils
 Export-Package: org.oobium.mailer

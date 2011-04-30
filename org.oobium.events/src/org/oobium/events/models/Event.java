@@ -13,7 +13,7 @@ package org.oobium.events.models;
 import static org.oobium.utils.StringUtils.blank;
 
 import org.oobium.app.AppService;
-import org.oobium.app.server.routing.AppRouter;
+import org.oobium.app.routing.AppRouter;
 import org.oobium.persist.Attribute;
 import org.oobium.persist.ModelDescription;
 import org.oobium.persist.Validate;

@@ -78,7 +78,6 @@ public class Config {
 	public static final String PERSIST = "persist";
 	public static final String RUNTIME = "runtime";
 	public static final String SESSION = "session";
-	public static final String SERVER = "server";
 	public static final String MAIL_SEND = "mail.send";
 	public static final String MAIL_RETRIEVE = "mail.retrieve";
 	

@@ -29,6 +29,7 @@ public class ClientExporter {
 
 	private Project target;
 	private Mode mode;
+	private boolean full;
 	private boolean clean;
 	private boolean includeSource;
 	
@@ -42,6 +43,10 @@ public class ClientExporter {
 		this.mode = Mode.PROD;
 	}
 
+	public void setFull(boolean fullExport) {
+		this.full = fullExport;
+	}
+	
 	public void setTarget(Project project) {
 		this.target = project;
 	}
@@ -98,11 +103,12 @@ public class ClientExporter {
 
 			// export core oobium jar
 			File oobiumJar = new File(targetDir, "org.oobium.android.jar");
-			if(oobiumJar.exists()) {
-				oobiumJar = null;
-			} else {
+//			if(oobiumJar.exists()) {
+//				oobiumJar = null;
+//			} else {
+				addFiles("org.jboss.netty", "org.jboss.netty.handler.codec.http", files);
 				addFiles("org.oobium.client", files);
-				addFiles("org.oobium.http", "org.oobium.http.constants", files);
+				addFiles("org.oobium.app.common", "org.oobium.app.http", files);
 				addFile("org.oobium.logging", "org.oobium.logging.Logger", files);
 				addFile("org.oobium.logging", "org.oobium.logging.LogProvider", files);
 				addAndroidLogger(files);
@@ -111,7 +117,7 @@ public class ClientExporter {
 				addFiles("org.oobium.utils", files);
 	
 				oobiumJar = createJar(oobiumJar, files);
-			}
+//			}
 			
 			files = new HashMap<String, File>();
 
@@ -122,18 +128,26 @@ public class ClientExporter {
 			bundles.add(module);
 			
 			int len = module.bin.getAbsolutePath().length() + 1;
-			for(File model : module.findModels()) {
-				File genModel = module.getGenModel(model);
-				File modelClass = module.getBinFile(model);
-				File genModelClass = module.getBinFile(genModel);
-				files.put(relativePath(modelClass, len), modelClass);
-				files.put(relativePath(genModelClass, len), genModelClass);
-				if(includeSource) {
-					files.put(relativeSrcPath(model, modelClass, len), model);
-					files.put(relativeSrcPath(genModel, genModelClass, len), genModel);
+			if(full) {
+				addFiles(module.name, files);
+			} else {
+				for(File model : module.findModels()) {
+					File genModel = module.getGenModel(model);
+					File[] modelClasses = module.getBinFiles(model);
+					File[] genModelClasses = module.getBinFiles(genModel);
+					for(File modelClass : modelClasses) {
+						files.put(relativePath(modelClass, len), modelClass);
+					}
+					for(File genModelClass : genModelClasses) {
+						files.put(relativePath(genModelClass, len), genModelClass);
+					}
+					if(includeSource) {
+						files.put(relativeSrcPath(model, modelClasses[0], len), model);
+						files.put(relativeSrcPath(genModel, genModelClasses[0], len), genModel);
+					}
 				}
 			}
-	
+			
 			String name = module.name + ".android.jar";
 			logger.info("creating client jar: " + name);
 			File applicationJar = createJar(targetDir, name, files);
@@ -187,10 +201,12 @@ public class ClientExporter {
 		} else {
 			int len = bundle.bin.getAbsolutePath().length() + 1;
 			File srcFile = new File(bundle.src, className.replace('.', File.separatorChar) + ".java");
-			File binFile = bundle.getBinFile(srcFile);
-			files.put(relativePath(binFile, len), binFile);
+			File[] binFiles = bundle.getBinFiles(srcFile);
+			for(File binFile : binFiles) {
+				files.put(relativePath(binFile, len), binFile);
+			}
 			if(includeSource) {
-				files.put(relativeSrcPath(srcFile, binFile, len), srcFile);
+				files.put(relativeSrcPath(srcFile, binFiles[0], len), srcFile);
 			}
 		}
 	}
@@ -205,10 +221,22 @@ public class ClientExporter {
 			if(pkg.isDirectory()) {
 				int len = bundle.bin.getAbsolutePath().length() + 1;
 				for(File srcFile : pkg.listFiles()) {
-					File binFile = bundle.getBinFile(srcFile);
-					files.put(relativePath(binFile, len), binFile);
+					File[] binFiles = bundle.getBinFiles(srcFile);
+					for(File binFile : binFiles) {
+						files.put(relativePath(binFile, len), binFile);
+					}
 					if(includeSource) {
-						files.put(relativeSrcPath(srcFile, binFile, len), srcFile);
+						files.put(relativeSrcPath(srcFile, binFiles[0], len), srcFile);
+					}
+				}
+			} else {
+				pkg = new File(bundle.file, packageName.replace('.', File.separatorChar));
+				if(pkg.isDirectory()) {
+					int len = bundle.file.getAbsolutePath().length() + 1;
+					for(File binFile : pkg.listFiles()) {
+						if(binFile.isFile()) {
+							files.put(relativePath(binFile, len), binFile);
+						}
 					}
 				}
 			}

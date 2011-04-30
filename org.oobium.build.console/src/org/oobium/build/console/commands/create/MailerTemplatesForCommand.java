@@ -16,7 +16,7 @@ import java.io.File;
 import java.util.List;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 
 public class MailerTemplatesForCommand extends BuilderCommand {
@@ -53,7 +53,7 @@ public class MailerTemplatesForCommand extends BuilderCommand {
 			}
 		}
 		
-		BuilderConsoleActivator.sendRefresh(module, mailer.getParentFile(), 100);
+		Eclipse.refresh(module.file, mailer.getParentFile());
 	}
 	
 }

@@ -11,7 +11,7 @@
 package org.oobium.events.models;
 
 import static org.oobium.client.Client.client;
-import static org.oobium.http.constants.Action.create;
+import static org.oobium.app.http.Action.create;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.literal.*;
 

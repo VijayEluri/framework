@@ -10,11 +10,7 @@
  ******************************************************************************/
 package org.oobium.client;
 
-import static org.oobium.http.constants.ContentType.HTML;
-import static org.oobium.http.constants.ContentType.JS;
-import static org.oobium.http.constants.ContentType.JSON;
-import static org.oobium.http.constants.StatusCode.NOT_FOUND;
-import static org.oobium.http.constants.StatusCode.OK;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -26,48 +22,47 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.oobium.http.constants.ContentType;
-import org.oobium.http.constants.Header;
-import org.oobium.http.constants.StatusCode;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 
 public class ClientResponse {
 
 	public static ClientResponse ok() {
-		return ok("system", null);
+		return ok("system");
 	}
 	
-	public static ClientResponse ok(String server, ContentType type) {
-		return create(OK, server, type);
+	public static ClientResponse ok(String server) {
+		return create(OK, server, false);
 	}
 	
-	public static ClientResponse create(StatusCode status) {
-		return create(status, "system", HTML);
+	public static ClientResponse create(HttpResponseStatus status) {
+		return create(status, "system", false);
 	}
 	
-	private static ClientResponse create(StatusCode status, String server, ContentType type) {
+	public static ClientResponse create(HttpResponseStatus status, boolean isJS) {
+		return create(status, "system", isJS);
+	}
+	
+	private static ClientResponse create(HttpResponseStatus status, String server, boolean isJS) {
 		ClientResponse response = new ClientResponse();
 		response.status = status;
 		response.headers = new LinkedHashMap<String, List<String>>();
-		response.headers.put(null, Collections.singletonList(status.getStatusHeader()));
-		response.headers.put(Header.SERVER.key(), Collections.singletonList(server));
-		if(JS == type || JSON == type) {
-			response.type = type;
-			response.content = ("[\"[" + status.getCode() + "] " + status.getDescription() + "\"]").getBytes();
+		response.headers.put(null, Collections.singletonList("HTTP/1.1 " + status.getCode() + " - " + status.getReasonPhrase()));
+		response.headers.put("Server", Collections.singletonList(server));
+		if(isJS) {
+			response.content = ("[\"[" + status.getCode() + "] " + status.getReasonPhrase() + "\"]").getBytes();
 			return response;
 		} else { // default to HTML
-			response.type = type;
-			response.content = (status.getCode() + "\n" + status.getDescription()).getBytes();
+			response.content = (status.getCode() + "\n" + status.getReasonPhrase()).getBytes();
 			return response;
 		}
 	}
 
 	public static ClientResponse notFound() {
-		return create(NOT_FOUND, "system", null);
+		return create(NOT_FOUND);
 	}
 	
 	
-	private StatusCode status;
-	private ContentType type;
+	private HttpResponseStatus status;
 	private Map<String, List<String>> headers;
 	private byte[] content;
 
@@ -90,8 +85,7 @@ public class ClientResponse {
 			}
 		}
 		try {
-			status = StatusCode.get(conn.getResponseCode());
-			type = ContentType.get(conn.getContentType());
+			status = HttpResponseStatus.valueOf(conn.getResponseCode());
 			headers = new LinkedHashMap<String, List<String>>();
 			for(Entry<String, List<String>> entry : conn.getHeaderFields().entrySet()) {
 				String key = entry.getKey();
@@ -173,20 +167,17 @@ public class ClientResponse {
 		return (headers != null) ? headers.get(key) : null;
 	}
 
-	public StatusCode getStatus() {
+	public HttpResponseStatus getStatus() {
 		return status;
 	}
 
-	public ContentType getType() {
-		return type;
-	}
-	
 	public boolean hasBody() {
 		return content != null && content.length > 0;
 	}
 
 	public boolean isSuccess() {
-		return exception == null && getStatus().isSuccess();
+		int code = getStatus().getCode();
+		return exception == null && code >= 200 && code < 300;
 	}
 
 	@Override

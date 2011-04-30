@@ -13,7 +13,7 @@ package org.oobium.build.console.commands.open;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 
 public class ObserverCommand extends BuilderCommand {
@@ -30,7 +30,7 @@ public class ObserverCommand extends BuilderCommand {
 		Module module = getModule();
 		File observer = module.getObserver(param(0));
 		if(observer.exists()) {
-			BuilderConsoleActivator.sendOpen(module, observer);
+			Eclipse.openFile(module.file, observer);
 		} else {
 			console.err.println("observer does not exist");
 		}

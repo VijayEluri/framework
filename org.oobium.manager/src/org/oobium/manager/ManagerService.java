@@ -10,15 +10,15 @@
  ******************************************************************************/
 package org.oobium.manager;
 
-import static org.oobium.http.constants.Action.destroy;
-import static org.oobium.http.constants.Action.show;
-import static org.oobium.http.constants.Action.showAll;
-import static org.oobium.http.constants.Action.update;
-import static org.oobium.http.constants.RequestType.POST;
+import static org.jboss.netty.handler.codec.http.HttpMethod.POST;
+import static org.oobium.app.http.Action.destroy;
+import static org.oobium.app.http.Action.show;
+import static org.oobium.app.http.Action.showAll;
+import static org.oobium.app.http.Action.update;
 
 import org.oobium.app.AppService;
 import org.oobium.app.persist.MemoryPersistService;
-import org.oobium.app.server.routing.Router;
+import org.oobium.app.routing.Router;
 import org.oobium.manager.controllers.BundleController;
 import org.oobium.manager.models.Bundle;
 import org.oobium.utils.Config;

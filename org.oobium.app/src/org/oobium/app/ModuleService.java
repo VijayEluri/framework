@@ -21,9 +21,9 @@ import java.util.Properties;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import org.oobium.app.server.controller.ActionCache;
-import org.oobium.app.server.controller.Controller;
-import org.oobium.app.server.routing.Router;
+import org.oobium.app.controllers.ActionCache;
+import org.oobium.app.controllers.Controller;
+import org.oobium.app.routing.Router;
 import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
@@ -38,7 +38,7 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.framework.Version;
 import org.osgi.service.packageadmin.PackageAdmin;
 
-public abstract class ModuleService implements AssetProvider, BundleActivator {
+public abstract class ModuleService implements BundleActivator {
 
 	private static final Map<Class<? extends ModuleService>, ModuleService> activatorsByClass = new HashMap<Class<? extends ModuleService>, ModuleService>();
 	private static final Map<String, ModuleService> activatorsByName = new HashMap<String, ModuleService>();
@@ -72,7 +72,11 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 	protected Router router;
 
 	public ModuleService() {
-		logger = LogProvider.getLogger(getClass());
+		this.logger = LogProvider.getLogger(getClass());
+	}
+
+	public ModuleService(Logger logger) {
+		this.logger = logger;
 	}
 
 	/**
@@ -86,7 +90,6 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 		// subclasses to override if necessary
 	}
 
-	@Override
 	public List<String> getAssetList() {
 		return JsonUtils.toStringList(StringUtils.getResourceAsString(getClass(), "assets.js"));
 	}
@@ -163,7 +166,6 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 	/**
 	 * The full name of this module (symbolicName + "_" + version)
 	 */
-	@Override
 	public String getName() {
 		return name;
 	}
@@ -349,7 +351,7 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 		logger.info(toString() + " starting...");
 		
 		if(this instanceof AppService) {
-			((AppService) this).appStart(context);
+			((AppService) this).startApp();
 		} else {
 			setup();
 		}
@@ -377,7 +379,7 @@ public abstract class ModuleService implements AssetProvider, BundleActivator {
 
 		teardown();
 		if(this instanceof AppService) {
-			((AppService) this).appStop(context);
+			((AppService) this).stopApp();
 		}
 
 		logger.info(toString() + " stopped");

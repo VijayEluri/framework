@@ -13,7 +13,7 @@ package org.oobium.build.console.commands.refresh;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 
 public class ViewsCommand extends BuilderCommand {
@@ -27,12 +27,12 @@ public class ViewsCommand extends BuilderCommand {
 	
 	@Override
 	public void run() {
-		Module project = getModule();
-		File pkg = project.views;
+		Module module = getModule();
+		File pkg = module.views;
 		if(pkg == null) {
 			console.err.println("view " + param(0) + "does not exist");
 		} else {
-			BuilderConsoleActivator.sendRefresh(project.file, pkg, 0);
+			Eclipse.refresh(module.file, pkg);
 		}
 	}
 

@@ -1,21 +1,25 @@
 package org.oobium.test;
 
+import static org.jboss.netty.handler.codec.http.HttpMethod.GET;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.oobium.http.constants.Action.show;
-import static org.oobium.http.constants.Action.showAll;
-import static org.oobium.http.constants.Header.ACCEPT;
-import static org.oobium.http.constants.RequestType.GET;
+import static org.oobium.app.http.Action.show;
+import static org.oobium.app.http.Action.showAll;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.handler.codec.http.HttpMethod;
+import org.jboss.netty.handler.codec.http.HttpVersion;
+import org.jboss.netty.handler.codec.http.QueryStringEncoder;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Attribute;
 import org.jsoup.nodes.Document;
@@ -24,18 +28,13 @@ import org.jsoup.select.Elements;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.oobium.app.AppService;
-import org.oobium.app.server.controller.Controller;
-import org.oobium.app.server.routing.AppRouter;
-import org.oobium.app.server.routing.Router;
-import org.oobium.app.server.view.View;
-import org.oobium.http.HttpCookie;
-import org.oobium.http.HttpRequest;
-import org.oobium.http.HttpSession;
-import org.oobium.http.constants.Action;
-import org.oobium.http.constants.ContentType;
-import org.oobium.http.constants.Header;
-import org.oobium.http.constants.RequestType;
-import org.oobium.http.impl.Headers;
+import org.oobium.app.controllers.Controller;
+import org.oobium.app.http.Action;
+import org.oobium.app.request.Request;
+import org.oobium.app.routing.AppRouter;
+import org.oobium.app.routing.Router;
+import org.oobium.app.sessions.Session;
+import org.oobium.app.views.View;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 
@@ -57,19 +56,19 @@ public class ViewTester {
 		return new ViewTester(view).render(params, partial);
 	}
 	
-	public static ViewTester render(View view, RequestType type) {
+	public static ViewTester render(View view, HttpMethod type) {
 		return new ViewTester(view).render(type);
 	}
 	
-	public static ViewTester render(View view, RequestType type, boolean partial) {
+	public static ViewTester render(View view, HttpMethod type, boolean partial) {
 		return new ViewTester(view).render(type, partial);
 	}
 
-	public static ViewTester render(View view, RequestType type, Map<String, ?> params) {
+	public static ViewTester render(View view, HttpMethod type, Map<String, ?> params) {
 		return new ViewTester(view).render(type, params);
 	}
 	
-	public static ViewTester render(View view, RequestType type, Map<String, ?> params, boolean partial) {
+	public static ViewTester render(View view, HttpMethod type, Map<String, ?> params, boolean partial) {
 		return new ViewTester(view).render(type, params, partial);
 	}
 
@@ -80,13 +79,9 @@ public class ViewTester {
 	public final TestPersistService persistor;
 	private final AtomicInteger persistorSessionCount;
 	
-	public String host;
-	public int port;
-
 	public Controller controller;
-	private Headers headers;
-	private HttpSession session;
-	private Map<String, HttpCookie> cookies;
+	private Request request;
+	private Session session;
 
 	public Document document;
 	
@@ -101,11 +96,13 @@ public class ViewTester {
 		this.persistor = TestPersistService.useSimple();
 		this.persistorSessionCount = new AtomicInteger();
 		
-		this.host = "testhost";
-		this.port = 0;
+		this.request = new Request(HttpVersion.HTTP_1_1, GET, "/", 5000);
+		this.request.setHandler(application);
 	}
 
 	private String baseUri() {
+		String host = request.getHost();
+		int port = request.getPort();
 		StringBuilder sb = new StringBuilder(host);
 		if(port != 80) {
 			sb.append(':').append(port);
@@ -114,7 +111,8 @@ public class ViewTester {
 	}
 	
 	public String getContent() {
-		return controller.getResponse().getBody();
+		ChannelBuffer buff = controller.getResponse().getContent();
+		return new String(buff.array());
 	}
 	
 	/**
@@ -161,82 +159,6 @@ public class ViewTester {
 		return new HashMap<String, String>(0);
 	}
 	
-	/**
-	 * Create a mocked Request object for the given request type and full path.
-	 * The returned mocked object can be used to stub out its method if necessary.
-	 */
-	@SuppressWarnings("unchecked")
-	private HttpRequest mockRequest(RequestType type, final Map<String, ?> params) {
-		HttpRequest request = mock(HttpRequest.class);
-		
-		when(request.getHandler()).thenReturn(application);
-		when(request.getHost()).thenAnswer(new Answer<String>() {
-			@Override
-			public String answer(InvocationOnMock invocation) throws Throwable {
-				return host;
-			}
-		});
-		when(request.getPort()).thenAnswer(new Answer<Integer>() {
-			@Override
-			public Integer answer(InvocationOnMock invocation) throws Throwable {
-				return port;
-			}
-		});
-		when(request.getType()).thenReturn(type);
-		
-		if(headers != null) {
-			when(request.getHeader(any(Header.class))).thenAnswer(new Answer<String>() {
-				@Override
-				public String answer(InvocationOnMock invocation) throws Throwable {
-					return headers.get((Header) invocation.getArguments()[0]);
-				}
-			});
-			when(request.getHeaders()).thenReturn(headers.toArray());
-			if(headers.has(Header.ACCEPT)) {
-				when(request.getContentTypes()).thenAnswer(new Answer<ContentType[]>() {
-					@Override
-					public ContentType[] answer(InvocationOnMock invocation) throws Throwable {
-						String str = headers.get(ACCEPT);
-						if(str != null) {
-							return ContentType.getAll(str.split(",")[0].trim());
-						}
-						return new ContentType[0];
-					}
-				});
-			}
-		}
-//		when(request.getPath()).thenReturn(path);
-//		when(request.getFullPath()).thenReturn(fullPath);
-
-		if(params != null && !params.isEmpty()) {
-			when(request.getParameter(anyString())).thenAnswer(new Answer<Object>() {
-				@Override
-				public Object answer(InvocationOnMock invocation) throws Throwable {
-					return params.get((String) invocation.getArguments()[0]);
-				}
-			});
-			when(request.getParameters()).thenReturn((Map<String, Object>) params);
-			when(request.hasParameters()).thenReturn(true);
-		}
-		
-		if(cookies != null && !cookies.isEmpty()) {
-			when(request.getCookie(anyString())).thenAnswer(new Answer<HttpCookie>() {
-				@Override
-				public HttpCookie answer(InvocationOnMock invocation) throws Throwable {
-					return cookies.get(invocation.getArguments()[0]);
-				}
-			});
-			when(request.hasCookie(anyString())).thenAnswer(new Answer<Boolean>() {
-				@Override
-				public Boolean answer(InvocationOnMock invocation) throws Throwable {
-					return cookies.containsKey(invocation.getArguments()[0]);
-				}
-			});
-		}
-		
-		return request;
-	}
-
 	@SuppressWarnings("unchecked")
 	private AppRouter mockRouter() {
 		AppRouter router = mock(AppRouter.class);
@@ -295,9 +217,9 @@ public class ViewTester {
 		
 		when(service.getLogger()).thenReturn(logger);
 		when(service.getRouter()).thenReturn(router);
-		when(service.getSession(anyInt(), anyString(), anyBoolean())).thenAnswer(new Answer<HttpSession>() {
+		when(service.getSession(anyInt(), anyString(), anyBoolean())).thenAnswer(new Answer<Session>() {
 			@Override
-			public HttpSession answer(InvocationOnMock invocation) throws Throwable {
+			public Session answer(InvocationOnMock invocation) throws Throwable {
 				int id = (Integer) invocation.getArguments()[0];
 				String uuid = (String) invocation.getArguments()[1];
 				if(session != null) {
@@ -309,7 +231,7 @@ public class ViewTester {
 				}
 				boolean create = (Boolean) invocation.getArguments()[2];
 				if(create) {
-					return new Session(id, uuid);
+					return new Session(30*60);
 				}
 				return null;
 			}
@@ -319,23 +241,55 @@ public class ViewTester {
 	}
 	
 	public ViewTester render() {
-		return render(mockRequest(GET, null), null);
+		return render(request.getMethod(), null, false);
 	}
 
 	public ViewTester render(boolean partial) {
-		return render(mockRequest(GET, null), partial);
+		return render(request.getMethod(), null, partial);
 	}
 
-	private ViewTester render(HttpRequest request, Boolean partial) {
+	public ViewTester render(Map<String, ?> params) {
+		return render(request.getMethod(), params, false);
+	}
+	
+	public ViewTester render(Map<String, ?> params, boolean partial) {
+		return render(request.getMethod(), params, partial);
+	}
+	
+	public ViewTester render(HttpMethod type) {
+		return render(type, null, false);
+	}
+	
+	public ViewTester render(HttpMethod type, boolean partial) {
+		return render(type, null, partial);
+	}
+	
+	public ViewTester render(HttpMethod type, Map<String, ?> params) {
+		return render(type, params, false);
+	}
+
+	private void setParams(Map<String, ?> params) {
+		String uri = request.getUri();
+		int ix = uri.indexOf('?');
+		if(ix != -1) {
+			uri = uri.substring(0, ix);
+		}
+		QueryStringEncoder enc = new QueryStringEncoder(uri);
+		for(Entry<String, ?> entry : params.entrySet()) {
+			enc.addParam(entry.getKey(), String.valueOf(entry.getValue()));
+		}
+		request.setUri(enc.toString());
+	}
+	
+	public ViewTester render(HttpMethod method, Map<String, ?> params, boolean partial) {
 		try {
+			if(method != null) request.setMethod(method);
+			if(params != null) setParams(params);
 			persistor.openSession("test session " + persistorSessionCount.incrementAndGet());
 			Model.setPersistService(persistor);
 			controller = new Controller();
 			controller.initialize(router, request, null);
-			if(partial == null) {
-				partial = controller.isXhr();
-			}
-			controller.render(view, partial);
+			controller.render(view, partial || controller.isXhr());
 			if(partial) {
 				document = Jsoup.parseBodyFragment(getContent(), baseUri());
 			} else {
@@ -347,30 +301,6 @@ public class ViewTester {
 			throw new RuntimeException(e.getMessage(), e);
 		}
 		return this;
-	}
-	
-	public ViewTester render(Map<String, ?> params) {
-		return render(mockRequest(GET, params), null);
-	}
-	
-	public ViewTester render(Map<String, ?> params, boolean partial) {
-		return render(mockRequest(GET, params), partial);
-	}
-	
-	public ViewTester render(RequestType type) {
-		return render(mockRequest(type, null), null);
-	}
-	
-	public ViewTester render(RequestType type, boolean partial) {
-		return render(mockRequest(type, null), partial);
-	}
-	
-	public ViewTester render(RequestType type, Map<String, ?> params) {
-		return render(mockRequest(type, params), null);
-	}
-
-	public ViewTester render(RequestType type, Map<String, ?> params, boolean partial) {
-		return render(mockRequest(type, params), partial);
 	}
 	
 	/**

@@ -18,12 +18,12 @@ public interface CacheService {
 	
 	public abstract void expire(String key);
 	
-	public abstract String get(String key);
+	public abstract CacheObject get(String key);
 	
 	public abstract String[] getKeys();
 	
 	public abstract String[] getKeys(String regex);
 	
-	public abstract void set(String key, String value);
+	public abstract void set(String key, byte[] value);
 	
 }

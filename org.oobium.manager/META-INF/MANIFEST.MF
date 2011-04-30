@@ -3,15 +3,15 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Oobium Manager Bundle
 Bundle-SymbolicName: org.oobium.manager;singleton:=true
 Bundle-Version: 0.6.0.qualifier
-Import-Package: org.oobium.app,
+Import-Package: org.jboss.netty.handler.codec.http,
+ org.oobium.app,
+ org.oobium.app.controllers,
+ org.oobium.app.http,
  org.oobium.app.persist,
- org.oobium.app.server.controller,
- org.oobium.app.server.routing,
- org.oobium.app.server.view,
+ org.oobium.app.routing,
+ org.oobium.app.views,
  org.oobium.app.workers,
  org.oobium.events.models,
- org.oobium.http,
- org.oobium.http.constants,
  org.oobium.logging,
  org.oobium.persist,
  org.oobium.utils,

@@ -4,10 +4,10 @@ import java.io.File;
 import java.util.List;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.events.BuildEvent;
-import org.oobium.build.events.BuildListener;
 import org.oobium.build.events.BuildEvent.Type;
+import org.oobium.build.events.BuildListener;
 import org.oobium.build.gen.TestGenerator;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.TestSuite;
@@ -60,7 +60,7 @@ public class TestsCommand extends BuilderCommand {
 			console.out.println("created test case <a href=\"open file " + sb.toString() + "\">" + name + "</a>");
 		}
 
-		BuilderConsoleActivator.sendRefresh(testSuite, 100);
+		Eclipse.refreshProject(testSuite.name);
 	}
 	
 }

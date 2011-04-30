@@ -11,7 +11,7 @@
 package org.oobium.build.console.commands.generate;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 
 public class ModuleCommand extends BuilderCommand {
@@ -37,7 +37,7 @@ public class ModuleCommand extends BuilderCommand {
 			console.out.println("compiled " + module.name + " in " + (System.currentTimeMillis() - start) + "ms");
 		}
 		
-		BuilderConsoleActivator.sendRefresh(module, 1000);
+		Eclipse.refreshProject(module.name);
 	}
 	
 }

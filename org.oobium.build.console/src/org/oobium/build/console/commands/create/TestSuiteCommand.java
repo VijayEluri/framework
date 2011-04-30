@@ -11,7 +11,7 @@
 package org.oobium.build.console.commands.create;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.TestSuite;
 import org.oobium.utils.FileUtils;
@@ -51,7 +51,7 @@ public class TestSuiteCommand extends BuilderCommand {
 			tests = getWorkspace().createTestSuite(module);
 			if(tests != null) {
 				console.out.println("successfully created tests " + tests.name);
-				BuilderConsoleActivator.sendImport(tests);
+				Eclipse.importProject(tests.name, tests.file);
 			} else {
 				console.err.println("failed to create tests for " + module.name);
 			}

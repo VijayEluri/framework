@@ -13,7 +13,7 @@ package org.oobium.build.console.commands.generate;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 
 public class AssetListCommand extends BuilderCommand {
@@ -29,7 +29,7 @@ public class AssetListCommand extends BuilderCommand {
 		
 		File assetList = module.generateAssetList();
 		
-		BuilderConsoleActivator.sendRefresh(module, assetList, 100);
+		Eclipse.refresh(module.file, assetList);
 	}
 	
 }

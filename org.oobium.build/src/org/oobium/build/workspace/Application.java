@@ -10,15 +10,10 @@
  ******************************************************************************/
 package org.oobium.build.workspace;
 
-import static org.oobium.utils.Config.SERVER;
-
 import java.io.File;
-import java.util.List;
-import java.util.Map;
 import java.util.jar.Manifest;
 
 import org.oobium.build.gen.ModelGenerator;
-import org.oobium.utils.Config;
 import org.oobium.utils.Config.Mode;
 
 public class Application extends Module {
@@ -33,21 +28,6 @@ public class Application extends Module {
 		this.site = new File(main, "site.js");
 	}
 
-	public Bundle getServer(Workspace workspace, Mode mode) {
-		Config configuration = loadConfiguration();
-		String fullName = configuration.getString(SERVER, mode);
-		return workspace.getBundle(fullName);
-	}
-	
-	@Override
-	protected void addDependencies(Workspace workspace, Mode mode, Map<Bundle, List<Bundle>> dependencies) {
-		super.addDependencies(workspace, mode, dependencies);
-		
-		Config configuration = loadConfiguration();
-		
-		addDependency(workspace, mode, configuration.getString(SERVER, mode), dependencies);
-	}
-	
 	/**
 	 * Create the initial migration where the database schema is created from the models.
 	 * @param workspace

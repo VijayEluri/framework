@@ -13,7 +13,7 @@ package org.oobium.build.console.commands.generate;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 
 public class StyleCommand extends BuilderCommand {
@@ -32,7 +32,7 @@ public class StyleCommand extends BuilderCommand {
 		File style = module.getStyleSheet(param(0));
 		if(style.isFile()) {
 			File genStyle = module.generateStyleSheet(style);
-			BuilderConsoleActivator.sendRefresh(module, genStyle, 1000);
+			Eclipse.refresh(module.file, genStyle);
 		} else {
 			console.err.println("style sheet does not exist: " + param(0));
 		}

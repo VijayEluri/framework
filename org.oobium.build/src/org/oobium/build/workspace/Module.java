@@ -41,8 +41,8 @@ import java.util.regex.Pattern;
 import javax.mail.internet.InternetAddress;
 
 import org.oobium.app.MutableAppConfig;
-import org.oobium.app.server.controller.Controller;
-import org.oobium.app.server.view.View;
+import org.oobium.app.controllers.Controller;
+import org.oobium.app.views.View;
 import org.oobium.build.esp.ESourceFile;
 import org.oobium.build.gen.ControllerGenerator;
 import org.oobium.build.gen.EFileGenerator;
@@ -52,7 +52,7 @@ import org.oobium.build.gen.ModelGenerator;
 import org.oobium.build.gen.ProjectGenerator;
 import org.oobium.build.gen.ViewGenerator;
 import org.oobium.build.util.ProjectUtils;
-import org.oobium.http.constants.Action;
+import org.oobium.app.http.Action;
 import org.oobium.mailer.Mailer;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelDescription;
@@ -936,7 +936,7 @@ public class Module extends Bundle {
 		return new File(caches, adjust(name) + ".java");
 	}
 	
-	public File getBinFile(File srcFile) {
+	public File[] getBinFiles(File srcFile) {
 		String path = srcFile.getAbsolutePath();
 		String srcPath = src.getAbsolutePath();
 		int len;
@@ -945,12 +945,7 @@ public class Module extends Bundle {
 		} else {
 			len = generated.getAbsolutePath().length();
 		}
-		if(path.endsWith(".java")) {
-			path = path.substring(len, path.length() - 4) + "class";
-		} else {
-			path = path.substring(len);
-		}
-		return new File(bin, path);
+		return getBinFiles(path, len);
 	}
 
 	public Set<File> getBinFiles(List<File> srcFiles) {

@@ -13,7 +13,7 @@ package org.oobium.build.console.commands.generate;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 
 public class ScriptCommand extends BuilderCommand {
@@ -32,7 +32,7 @@ public class ScriptCommand extends BuilderCommand {
 		File script = module.getScriptFile(param(0));
 		if(script.isFile()) {
 			File genScript = module.generateScriptFile(script);
-			BuilderConsoleActivator.sendRefresh(module, genScript, 100);
+			Eclipse.refresh(module.file, genScript);
 		} else {
 			console.err.println("script file does not exist: " + param(0));
 		}

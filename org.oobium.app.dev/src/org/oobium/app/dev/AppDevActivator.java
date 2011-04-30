@@ -10,30 +10,29 @@
  ******************************************************************************/
 package org.oobium.app.dev;
 
-import static org.oobium.http.constants.Action.show;
-import static org.oobium.http.constants.Action.showAll;
-import static org.oobium.http.constants.RequestType.DELETE;
-import static org.oobium.http.constants.RequestType.GET;
-import static org.oobium.http.constants.RequestType.POST;
+import static org.jboss.netty.handler.codec.http.HttpMethod.DELETE;
+import static org.jboss.netty.handler.codec.http.HttpMethod.GET;
+import static org.jboss.netty.handler.codec.http.HttpMethod.POST;
+import static org.oobium.app.http.Action.show;
+import static org.oobium.app.http.Action.showAll;
 
 import java.io.BufferedReader;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.oobium.app.ModuleService;
 import org.oobium.app.dev.controllers.NotifyController;
 import org.oobium.app.dev.controllers.PathsController;
 import org.oobium.app.dev.controllers.PersistServicesController;
 import org.oobium.app.dev.controllers.ShutdownController;
 import org.oobium.app.dev.views.application.Error500;
-import org.oobium.app.server.response.Response;
-import org.oobium.app.server.routing.Router;
-import org.oobium.app.server.view.View;
-import org.oobium.http.HttpRequest;
-import org.oobium.http.HttpRequest500Handler;
-import org.oobium.http.HttpResponse;
-import org.oobium.http.constants.StatusCode;
+import org.oobium.app.handlers.HttpRequest500Handler;
+import org.oobium.app.request.Request;
+import org.oobium.app.response.Response;
+import org.oobium.app.routing.Router;
+import org.oobium.app.views.View;
 import org.oobium.utils.Config;
 
 public class AppDevActivator extends ModuleService implements HttpRequest500Handler {
@@ -54,7 +53,7 @@ public class AppDevActivator extends ModuleService implements HttpRequest500Hand
 	}
 
 	@Override
-	public HttpResponse handle500(HttpRequest request, Exception exception) {
+	public Response handle500(Request request, Exception exception) {
 		try {
 			try {
 				StringWriter sw = new StringWriter();
@@ -78,7 +77,7 @@ public class AppDevActivator extends ModuleService implements HttpRequest500Hand
 				String trace = sb.toString().replaceAll("at (([\\.\\w\\$]+)\\.\\w+)\\(([\\.\\w]+:(\\d+))\\)",
 						"at $1(<a href=\"/#\" onclick=\"\\$.post('" + ID + "', {type:'$2', line:$4});return false;\">$3</a>)");
 				Response response = View.render(new Error500(exception, trace), request);
-				response.setStatus(StatusCode.SERVER_ERROR);
+				response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
 				return response;
 			} catch(Exception e) {
 				logger.warn(e);
@@ -88,7 +87,7 @@ public class AppDevActivator extends ModuleService implements HttpRequest500Hand
 			logger.warn(e);
 			// fall through
 		}
-		return Response.serverError(request.getType());
+		return null;
 	}
 
 }

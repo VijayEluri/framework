@@ -11,7 +11,7 @@
 package org.oobium.build.console.commands.remove;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 
 public class ModuleCommand extends BuilderCommand {
@@ -29,7 +29,7 @@ public class ModuleCommand extends BuilderCommand {
 		Module moduleToRemove = getWorkspace().getModule(param(0));
 		if(moduleToRemove != null) {
 			module.removeModule(moduleToRemove);
-			BuilderConsoleActivator.sendRefresh(module, 100);
+			Eclipse.refreshProject(module.name);
 		} else {
 			console.err.println("module " + param(0) + " does not exist");
 		}

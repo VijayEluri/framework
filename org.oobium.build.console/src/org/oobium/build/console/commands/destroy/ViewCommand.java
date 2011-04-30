@@ -13,7 +13,7 @@ package org.oobium.build.console.commands.destroy;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 
 public class ViewCommand extends BuilderCommand {
@@ -39,7 +39,7 @@ public class ViewCommand extends BuilderCommand {
 		
 		module.destroyView(param(0));
 
-		BuilderConsoleActivator.sendRefresh(module, module.views, 1000);
+		Eclipse.refresh(module.file, module.views);
 	}
 	
 }

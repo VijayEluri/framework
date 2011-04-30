@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.oobium.mailer;
 
+import static org.oobium.app.http.MimeType.*;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.underscored;
 import static org.oobium.utils.json.JsonUtils.toStringMap;
@@ -39,10 +40,10 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
 import org.oobium.app.AppService;
-import org.oobium.app.server.routing.AppRouter;
-import org.oobium.app.server.routing.IUrlRouting;
-import org.oobium.http.constants.Action;
-import org.oobium.http.constants.ContentType;
+import org.oobium.app.routing.AppRouter;
+import org.oobium.app.routing.IUrlRouting;
+import org.oobium.app.http.Action;
+import org.oobium.app.http.MimeType;
 import org.oobium.logging.Logger;
 import org.oobium.logging.LogProvider;
 import org.oobium.persist.Model;
@@ -72,9 +73,9 @@ public abstract class AbstractMailer implements IUrlRouting {
 //	protected String charset;
 	
 	/**
-	 * The content type for the email. This defaults to â€œtext/plainâ€� but the filename may specify it
+	 * The content type for the email. This defaults to "text/plain" but the filename may specify it
 	 */
-	protected ContentType contentType;
+	protected MimeType mimeType;
 
 	/**
 	 * The from address of the email
@@ -219,7 +220,7 @@ public abstract class AbstractMailer implements IUrlRouting {
 		// sets the initial values to those of the annotation.  setup method will override if necessary
 		Mailer ann = getClass().getAnnotation(Mailer.class);
 		if(ann == null) {
-			this.contentType = ContentType.PLAIN;
+			this.mimeType = PLAIN;
 		} else {
 			if(!blank(ann.to())) {
 				try {
@@ -285,9 +286,9 @@ public abstract class AbstractMailer implements IUrlRouting {
 					render(ann.body());
 				}
 				if(!blank(ann.contentType())) {
-					this.contentType = ContentType.parse(ann.contentType());
+					this.mimeType = MimeType.valueOf(ann.contentType());
 				} else {
-					this.contentType = ContentType.PLAIN;
+					this.mimeType = PLAIN;
 				}
 			}
 		}
@@ -317,7 +318,7 @@ public abstract class AbstractMailer implements IUrlRouting {
 			logger.debug("start render of template " + template.getClass().getCanonicalName());
 		}
 		rendering();
-		this.contentType = ContentType.HTML;
+		this.mimeType = HTML;
 		template.setMailer(this);
 		try {
 			StringBuilder sb = new StringBuilder();
@@ -481,7 +482,7 @@ public abstract class AbstractMailer implements IUrlRouting {
 			}
 
 			message.setSubject(subject);
-			message.setContent(body, contentType.getMediaType());
+			message.setContent(body, mimeType.acceptsType);
 
 			try {
 				transport.connect(host, user, pass);

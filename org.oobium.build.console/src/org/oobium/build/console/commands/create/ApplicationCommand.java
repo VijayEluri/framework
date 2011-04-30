@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.gen.TestGenerator;
 import org.oobium.build.workspace.Migrator;
 import org.oobium.build.workspace.Module;
@@ -135,7 +135,7 @@ public class ApplicationCommand extends BuilderCommand {
 			}
 
 			for(File file : importList) {
-				BuilderConsoleActivator.sendImport(file);
+				Eclipse.importProject(file.getName(), file);
 			}
 		} else {
 			console.err.println("failed creating " + project.getName());

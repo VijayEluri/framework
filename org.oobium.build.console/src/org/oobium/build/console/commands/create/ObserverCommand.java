@@ -13,7 +13,7 @@ package org.oobium.build.console.commands.create;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 
 public class ObserverCommand extends BuilderCommand {
@@ -71,7 +71,7 @@ public class ObserverCommand extends BuilderCommand {
 			name = name.substring(0, name.length()-5);
 			console.out.println("created observer <a href=\"open observer " + name + "\">" + name + "</a>");
 			
-			BuilderConsoleActivator.sendRefresh(module.file, 1000);
+			Eclipse.refreshProject(module.name);
 		}
 	}
 	

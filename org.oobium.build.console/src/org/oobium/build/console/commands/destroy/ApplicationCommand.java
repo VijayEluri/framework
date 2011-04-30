@@ -10,7 +10,7 @@
  ******************************************************************************/
 package org.oobium.build.console.commands.destroy;
 
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Application;
 
 
@@ -41,7 +41,7 @@ public class ApplicationCommand extends BundleCommand {
 
 		remove(application);
 		
-		BuilderConsoleActivator.sendRefresh(application, 100);
+		Eclipse.refreshProject(application.name);
 	}
 
 }

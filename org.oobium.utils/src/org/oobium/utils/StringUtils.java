@@ -813,36 +813,6 @@ public class StringUtils {
 		return lkmap;
 	}
 	
-	// TODO where should the mapParams method go?
-	@SuppressWarnings("unchecked")
-	public static Map<String, Object> mapParams(Map<String, Object> params) {
-		if(params == null) {
-			return null;
-		}
-		
-		Map<String, Object> map = new HashMap<String, Object>();
-		
-		for(String param : params.keySet()) {
-			map.put(param, params.get(param));
-			String[] parts = splitParam(param);
-			if(parts.length > 1) {
-				Map<String, Object> m = map;
-				for(int i = 0; i < parts.length; i++) {
-					if(i == parts.length-1) {
-						m.put(parts[i], params.get(param));
-					} else {
-						if(!m.containsKey(parts[i])) {
-							m.put(parts[i], new HashMap<String, Object>());
-						}
-						m = (Map<String, Object>) m.get(parts[i]);
-					}
-				}
-			}
-		}
-		
-		return map;
-	}
-
 	public static String modelName(String tableName) {
 		return camelCase(singular(tableName));
 	}
@@ -1109,10 +1079,6 @@ public class StringUtils {
 			return plural.substring(0, plural.length() - 1);
 		}
 		return plural;
-	}
-
-	public static String[] splitParam(String param) {
-		return param.split("\\]\\[|\\[|\\]");
 	}
 
 	public static String tableName(Class<?> clazz) {

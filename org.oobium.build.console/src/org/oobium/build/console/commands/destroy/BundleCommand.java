@@ -16,7 +16,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Module;
 import org.oobium.console.Suggestion;
@@ -48,14 +48,14 @@ public class BundleCommand extends BuilderCommand {
 
 		remove(bundle);
 		
-		BuilderConsoleActivator.sendRefresh(bundle, 100);
+		Eclipse.refreshProject(bundle.name);
 	}
 	
 	protected void remove(Bundle bundle) {
 		String confirm = flag('f') ? "Y" : ask("Permanently remove \"" + bundle + "\"  from the file system? [Y/N] ");
 		if("Y".equalsIgnoreCase(confirm)) {
 			bundle.delete();
-			BuilderConsoleActivator.sendRemove(bundle.file);
+			Eclipse.removeProject(bundle.name);
 			console.out.println(bundle + " successfully removed from the file system");
 			if(getClass() != BundleCommand.class && bundle.isModule()) {
 				Module module = (Module) bundle;
@@ -64,7 +64,7 @@ public class BundleCommand extends BuilderCommand {
 					confirm = flag('f') ? "Y" : ask("Also remove the associated migration (" + bundle + ")? [Y/N] ");
 					if("Y".equalsIgnoreCase(confirm)) {
 						bundle.delete();
-						BuilderConsoleActivator.sendRemove(bundle.file);
+						Eclipse.removeProject(bundle.name);
 						console.out.println(bundle + " successfully removed from the file system");
 					} else {
 						console.out.println(bundle + " skipped");
@@ -75,7 +75,7 @@ public class BundleCommand extends BuilderCommand {
 					confirm = flag('f') ? "Y" : ask("Also remove the associated test suite (" + bundle + ")? [Y/N] ");
 					if("Y".equalsIgnoreCase(confirm)) {
 						bundle.delete();
-						BuilderConsoleActivator.sendRemove(bundle.file);
+						Eclipse.removeProject(bundle.name);
 						console.out.println(bundle + " successfully removed from the file system");
 					} else {
 						console.out.println(bundle + " skipped");

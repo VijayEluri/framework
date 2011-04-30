@@ -13,7 +13,7 @@ package org.oobium.build.console.commands.refresh;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 
 public class ModelCommand extends BuilderCommand {
@@ -27,12 +27,12 @@ public class ModelCommand extends BuilderCommand {
 	
 	@Override
 	public void run() {
-		Module project = getModule();
-		File model = project.getModel(param(0));
+		Module module = getModule();
+		File model = module.getModel(param(0));
 		if(model == null) {
 			console.err.println("model " + param(0) + "does not exist");
 		} else {
-			BuilderConsoleActivator.sendRefresh(project, model, 0);
+			Eclipse.refresh(module.file, model);
 		}
 	}
 

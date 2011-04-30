@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.gen.TestGenerator;
 import org.oobium.build.runner.RunnerService;
 import org.oobium.build.workspace.Module;
@@ -140,7 +140,7 @@ public class ModelCommand extends BuilderCommand {
 						name = name.substring(0, name.length() - 5);
 						console.out.println("created test case <a href=\"open file " + test + "\">" + name + "</a>");
 					}
-					BuilderConsoleActivator.sendRefresh(testSuite, 500);
+					Eclipse.refreshProject(testSuite.name);
 				}
 			}
 			
@@ -153,7 +153,7 @@ public class ModelCommand extends BuilderCommand {
 			
 			waitFor.addAll(module.generate(getWorkspace()));
 
-			BuilderConsoleActivator.sendRefresh(module, 100);
+			Eclipse.refreshProject(module.name);
 		} finally {
 			if(!waitFor.isEmpty()) {
 				RunnerService.waitFor(module, module.getBinFiles(waitFor));

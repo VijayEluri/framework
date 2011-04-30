@@ -13,7 +13,7 @@ package org.oobium.build.console.commands;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 
 public class ImportCommand extends BuilderCommand {
 
@@ -29,7 +29,7 @@ public class ImportCommand extends BuilderCommand {
 		if(!project.isAbsolute()) {
 			project = new File(getPwd(), param(0));
 		}
-		BuilderConsoleActivator.sendImport(project);
+		Eclipse.importProject(project.getName(), project);
 	}
 	
 }

@@ -14,7 +14,7 @@ import java.io.File;
 import java.util.List;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 
 public class MailerCommand extends BuilderCommand {
@@ -35,7 +35,7 @@ public class MailerCommand extends BuilderCommand {
 			List<File> modified = module.generateMailer(mailer);
 			if(!modified.isEmpty()) {
 				for(File file : modified) {
-					BuilderConsoleActivator.sendRefresh(module, file, 1000);
+					Eclipse.refresh(module.file, file);
 				}
 			}
 		} else {

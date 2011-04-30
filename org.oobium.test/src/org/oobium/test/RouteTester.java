@@ -1,5 +1,7 @@
 package org.oobium.test;
 
+import static org.jboss.netty.handler.codec.http.HttpMethod.*;
+
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -7,19 +9,19 @@ import static org.mockito.Mockito.when;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.oobium.app.AppService;
 import org.oobium.app.ModuleService;
-import org.oobium.app.server.controller.Controller;
-import org.oobium.app.server.routing.AppRouter;
-import org.oobium.app.server.routing.IPathRouting;
-import org.oobium.app.server.routing.IUrlRouting;
-import org.oobium.app.server.routing.RouteHandler;
-import org.oobium.app.server.routing.Router;
-import org.oobium.http.HttpRequest;
-import org.oobium.http.constants.Action;
-import org.oobium.http.constants.RequestType;
+import org.oobium.app.controllers.Controller;
+import org.oobium.app.routing.AppRouter;
+import org.oobium.app.routing.IPathRouting;
+import org.oobium.app.routing.IUrlRouting;
+import org.oobium.app.routing.RouteHandler;
+import org.oobium.app.routing.Router;
+import org.oobium.app.request.Request;
+import org.oobium.app.http.Action;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.utils.Config;
@@ -67,7 +69,7 @@ public class RouteTester implements IPathRouting, IUrlRouting {
 	}
 	
 	public boolean hasHome() {
-		return getRoute(RequestType.GET, "/") != null;
+		return getRoute(GET, "/") != null;
 	}
 
 	private Bundle getBundle(String module) {
@@ -136,14 +138,14 @@ public class RouteTester implements IPathRouting, IUrlRouting {
 		return null;
 	}
 
-	public String getRoute(RequestType requestType, String path) {
+	public String getRoute(HttpMethod method, String path) {
 		try {
 			init();
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
 		
-		HttpRequest request = mockRequest(requestType, path);
+		Request request = mockRequest(method, path);
 		RouteHandler handler = router.getHandler(request);
 		if(handler != null) {
 			return handler.toString();
@@ -229,17 +231,17 @@ public class RouteTester implements IPathRouting, IUrlRouting {
 	 * Create a mocked Request object for the given request type and full path.
 	 * The returned mocked object can be used to stub out its method if necessary.
 	 */
-	public HttpRequest mockRequest(RequestType type, String fullPath) {
+	public Request mockRequest(HttpMethod method, String fullPath) {
 		String[] sa = fullPath.split("\\?");
 		String path = sa[0];
 		boolean hasParams = sa.length == 2;
 		
-		HttpRequest request = mock(HttpRequest.class);
+		Request request = mock(Request.class);
 		when(request.getPort()).thenReturn(router.getPort());
 		when(request.getHost()).thenReturn(router.getHosts()[0]);
-		when(request.getType()).thenReturn(type);
+		when(request.getMethod()).thenReturn(method);
 		when(request.getPath()).thenReturn(path);
-		when(request.getFullPath()).thenReturn(fullPath);
+		when(request.getUri()).thenReturn(fullPath);
 		when(request.hasParameters()).thenReturn(hasParams);
 		
 		return request;

@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.gen.ProjectGenerator;
 import org.oobium.build.workspace.Application;
 
@@ -151,7 +152,7 @@ public class ClientCommand extends BuilderCommand {
 		sb.setCharAt(app.file.getAbsolutePath().length(), '#');
 		console.out.println("created client <a href=\"open file " + sb.toString() + "\">models.js</a>");
 
-		BuilderConsoleActivator.sendRefresh(app, scripts, 100);
+		Eclipse.refresh(app.file, scripts);
 	}
 
 	@Override

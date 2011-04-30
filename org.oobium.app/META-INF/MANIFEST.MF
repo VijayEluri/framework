@@ -1,23 +1,33 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Oobium Application Plug-in
-Bundle-SymbolicName: org.oobium.app
+Bundle-SymbolicName: org.oobium.app;singleton:=true
 Bundle-Version: 0.6.0.qualifier
 Bundle-Vendor: oobium.org
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: org.oobium.app,
+ org.oobium.app.controllers,
+ org.oobium.app.handlers,
  org.oobium.app.persist,
- org.oobium.app.server.controller,
- org.oobium.app.server.response,
- org.oobium.app.server.routing,
- org.oobium.app.server.routing.handlers,
- org.oobium.app.server.view,
+ org.oobium.app.request,
+ org.oobium.app.response,
+ org.oobium.app.routing,
+ org.oobium.app.routing.handlers,
+ org.oobium.app.server,
  org.oobium.app.sessions,
+ org.oobium.app.views,
  org.oobium.app.workers
-Import-Package: org.oobium.cache,
- org.oobium.http,
- org.oobium.http.constants,
- org.oobium.http.impl,
+Import-Package: org.jboss.netty.bootstrap,
+ org.jboss.netty.buffer,
+ org.jboss.netty.channel,
+ org.jboss.netty.channel.group,
+ org.jboss.netty.channel.socket.nio,
+ org.jboss.netty.handler.codec.http,
+ org.jboss.netty.handler.codec.http.websocket,
+ org.jboss.netty.handler.execution,
+ org.jboss.netty.util,
+ org.oobium.app.http,
+ org.oobium.cache,
  org.oobium.logging,
  org.oobium.persist,
  org.oobium.utils,
@@ -27,3 +37,6 @@ Import-Package: org.oobium.cache,
  org.osgi.service.packageadmin;version="1.2.0",
  org.osgi.util.tracker;version="1.3.3"
 Bundle-ActivationPolicy: lazy
+Require-Bundle: org.jboss.netty;bundle-version="3.2.4"
+Bundle-Activator: org.oobium.app.AppServer
+Oobium-Service: org.oobium.httpserver

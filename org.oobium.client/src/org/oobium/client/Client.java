@@ -10,11 +10,7 @@
  ******************************************************************************/
 package org.oobium.client;
 
-import static org.oobium.http.constants.RequestType.DELETE;
-import static org.oobium.http.constants.RequestType.GET;
-import static org.oobium.http.constants.RequestType.HEAD;
-import static org.oobium.http.constants.RequestType.POST;
-import static org.oobium.http.constants.RequestType.PUT;
+import static org.jboss.netty.handler.codec.http.HttpMethod.*;
 import static org.oobium.utils.StringUtils.attrEncode;
 import static org.oobium.utils.StringUtils.attrsEncode;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
@@ -35,9 +31,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.oobium.http.constants.ContentType;
-import org.oobium.http.constants.Header;
-import org.oobium.http.constants.RequestType;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.oobium.utils.StringUtils;
 
 public class Client {
@@ -55,7 +50,7 @@ public class Client {
 	}
 	
 	
-	private RequestType type;
+	private HttpMethod method;
 	private final URL url;
 	private final String protocol;
 	private final String host;
@@ -89,15 +84,11 @@ public class Client {
 		this.url = null;
 	}
 	
-	public void addHeader(Header header, String value) {
-		addHeader(header.key(), value);
-	}
-
-	public void addHeader(String key, String value) {
-		List<String> list = headers.get(key);
+	public void addHeader(String name, String value) {
+		List<String> list = headers.get(name);
 		if(list == null) {
 			list = new ArrayList<String>();
-			headers.put(key, list);
+			headers.put(name, list);
 		}
 		list.add(value);
 	}
@@ -181,10 +172,10 @@ public class Client {
 	private URL getURL(Map<String, String> parameters) throws MalformedURLException {
 		String path = this.path;
 		if(parameters != null && !parameters.isEmpty()) {
-			switch(type) {
-			case GET:
-			case HEAD:
-			case DELETE:
+			switch(method.getName().charAt(0)) {
+			case 'G': // GET
+			case 'H': // HEAD
+			case 'D': // DELETE
 				path = path + ((path.indexOf('?') == -1) ? "?" : "&") + StringUtils.attrsEncode(parameters);
 				break;
 			}
@@ -244,25 +235,25 @@ public class Client {
 		return request(PUT, path, parameters);
 	}
 	
-	public ClientResponse request(RequestType type) {
+	public ClientResponse request(HttpMethod type) {
 		return request(type, getPath(), null);
 	}
 	
-	public ClientResponse request(RequestType type, Map<String, ?> parameters) {
+	public ClientResponse request(HttpMethod type, Map<String, ?> parameters) {
 		return request(type, getPath(), parameters);
 	}
 
-	public ClientResponse request(RequestType type, String path) {
+	public ClientResponse request(HttpMethod type, String path) {
 		return request(type, path, parameters);
 	}
 
-	public ClientResponse request(RequestType type, String path, Map<String, ?> parameters) {
+	public ClientResponse request(HttpMethod type, String path, Map<String, ?> parameters) {
 		if(path == null) {
 			path = "/";
 		} else if(!path.startsWith("/")) {
 			path = "/" + path;
 		}
-		this.type = type;
+		this.method = type;
 		this.path = path;
 		this.parameters = parameters;
 		
@@ -310,9 +301,9 @@ public class Client {
 			
 			URL url = getURL(params);
 	        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-	        conn.setRequestMethod(type.name());
+	        conn.setRequestMethod(method.getName());
 	        setHeaders(conn);
-	        if(type == POST || type == PUT) {
+	        if(method == POST || method == PUT) {
 	        	conn.setDoOutput(true);
 	        	if(parts == null) {
 			        OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream());
@@ -322,7 +313,7 @@ public class Client {
 	        	} else {
 	        		String boundary = this.boundary;
 	        		if(boundary == null) {
-		        		List<String> ctypes = headers.get(Header.CONTENT_TYPE.key());
+		        		List<String> ctypes = headers.get(HttpHeaders.Names.CONTENT_TYPE);
 		        		if(ctypes != null && !ctypes.isEmpty()) {
 		        			for(String ctype : ctypes) {
 		        				String[] sa = ctype.split("\\s*;\\s*");
@@ -343,7 +334,7 @@ public class Client {
 		        			boundary = "---------------------------OobiumBoundary";
 		        		}
 	        		}
-	        		conn.setRequestProperty(Header.CONTENT_TYPE.key(), "multipart/form-data; boundary=" + boundary);
+	        		conn.setRequestProperty(HttpHeaders.Names.CONTENT_TYPE, "multipart/form-data; boundary=" + boundary);
 	                DataOutputStream out = new DataOutputStream(conn.getOutputStream());
 	                out.writeBytes("--" + boundary + "\r\n");
 	                for(Entry<String, String> entry : params.entrySet()) {
@@ -362,15 +353,9 @@ public class Client {
 		}
 	}
 
-	public void setAccepts(ContentType...types) {
-		for(ContentType type : types) {
-			addHeader(Header.ACCEPT, type.getRequestProperty());
-		}
-	}
-
 	public void setAccepts(String...types) {
 		for(String type : types) {
-			addHeader(Header.ACCEPT, type);
+			addHeader(HttpHeaders.Names.ACCEPT, type);
 		}
 	}
 
@@ -378,25 +363,22 @@ public class Client {
 		this.boundary = boundary;
 	}
 
-	public void setHeaders(String...headers) {
-		for(String header : headers) {
-			String[] sa = header.split("\\s*:\\s*", 2);
-			if(sa.length == 2) {
-				addHeader(sa[0], sa[1]);
-			}
-		}
+	public void setHeader(String name, String value) {
+		List<String> list = new ArrayList<String>();
+		list.add(value);
+		headers.put(name, list);
 	}
 	
 	private void setHeaders(URLConnection connection) {
 		if(headers == null) {
-    		connection.addRequestProperty(Header.USER_AGENT.key(), "Oobium Client");
-    		connection.addRequestProperty(Header.HOST.key(), connection.getURL().getHost());
+    		connection.addRequestProperty(HttpHeaders.Names.USER_AGENT, "Oobium Client");
+    		connection.addRequestProperty(HttpHeaders.Names.HOST, connection.getURL().getHost());
 		} else {
-	    	if(!headers.containsKey(Header.USER_AGENT.key())) {
-	    		connection.addRequestProperty(Header.USER_AGENT.key(), "Oobium Client");
+	    	if(!headers.containsKey(HttpHeaders.Names.USER_AGENT)) {
+	    		connection.addRequestProperty(HttpHeaders.Names.USER_AGENT, "Oobium Client");
 	    	}
-	    	if(!headers.containsKey(Header.HOST.key())) {
-	    		connection.addRequestProperty(Header.HOST.key(), connection.getURL().getHost());
+	    	if(!headers.containsKey(HttpHeaders.Names.HOST)) {
+	    		connection.addRequestProperty(HttpHeaders.Names.HOST, connection.getURL().getHost());
 	    	}
 			for(Entry<String, List<String>> entry : headers.entrySet()) {
 				for(String value : entry.getValue()) {
@@ -420,13 +402,13 @@ public class Client {
 	
 	private void writePart(DataOutputStream out, String name, MessagePart part, String boundary) throws Exception {
 		StringBuilder sb = new StringBuilder();
-		sb.append(Header.CONTENT_DISPOSITION.key()).append(": form-data; name=\"").append(name).append('"');
+		sb.append("Content-Disposition").append(": form-data; name=\"").append(name).append('"');
 		for(Entry<String, String> entry : part.getParameters().entrySet()) {
 			sb.append(';').append(attrEncode(entry.getKey(), entry.getValue())).append('"');
 		}
 		sb.append("\r\n");
 		if(part.hasContentType()) {
-			sb.append(Header.CONTENT_TYPE.key()).append(": ").append(part.getContentType()).append("\r\n");
+			sb.append(HttpHeaders.Names.CONTENT_TYPE).append(": ").append(part.getContentType()).append("\r\n");
 		}
 		sb.append("\r\n");
 		out.writeBytes(sb.toString());

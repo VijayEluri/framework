@@ -11,7 +11,7 @@
 package org.oobium.build.console.commands.open;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 
 public class ConfigurationCommand extends BuilderCommand {
@@ -25,7 +25,7 @@ public class ConfigurationCommand extends BuilderCommand {
 	public void run() {
 		Module module = getModule();
 		if(module.config.exists()) {
-			BuilderConsoleActivator.sendOpen(module, module.config);
+			Eclipse.openFile(module.file, module.config);
 		} else {
 			console.err.println("configuration file does not exist");
 		}

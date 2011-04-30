@@ -10,10 +10,10 @@
  ******************************************************************************/
 package org.oobium.events;
 
-import static org.oobium.http.constants.Action.showAll;
+import static org.oobium.app.http.Action.showAll;
 
 import org.oobium.app.ModuleService;
-import org.oobium.app.server.routing.Router;
+import org.oobium.app.routing.Router;
 import org.oobium.events.models.Event;
 import org.oobium.events.models.Listener;
 import org.oobium.utils.Config;

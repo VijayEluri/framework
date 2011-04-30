@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -346,19 +345,6 @@ public class Exporter {
 		}
 		workspace.setRuntimeBundle(OsgiRuntime.Felix, bundles);
 
-		// remove servers if necessary
-		if(isMigrator) {
-			Set<Bundle> servers = new HashSet<Bundle>();
-			for(Bundle bundle : bundles) {
-				if(bundle.isApplication()) {
-					servers.add(((Application) bundle).getServer(workspace, mode));
-				}
-			}
-			for(Bundle server : servers) {
-				bundles.remove(server);
-			}
-		}
-		
 		for(Bundle bundle : start) {
 			if(!bundles.contains(bundle)) {
 				throw new IllegalStateException("bundle is in the start list, but is not being exported: " + bundle);

@@ -13,7 +13,7 @@ package org.oobium.build.console.commands.create;
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.gen.TestGenerator;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.TestSuite;
@@ -60,12 +60,12 @@ public class ControllerCommand extends BuilderCommand {
 			String testName = test.getName();
 			testName = testName.substring(0, testName.length() - 5);
 			console.out.println("created test case <a href=\"open file " + test + "\">" + testName + "</a>");
-			BuilderConsoleActivator.sendRefresh(testSuite, 500);
+			Eclipse.refreshProject(testSuite.name);
 		}
 		
-		BuilderConsoleActivator.sendRefresh(module, controller, 100);
+		Eclipse.refresh(module.file, controller);
 		if(manifestMod != module.manifest.lastModified()) {
-			BuilderConsoleActivator.sendRefresh(module, module.manifest, 100);
+			Eclipse.refresh(module.file, module.manifest);
 		}
 	}
 
