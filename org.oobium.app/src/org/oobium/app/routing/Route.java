@@ -31,6 +31,7 @@ public abstract class Route {
 	public static final int AUTHORIZATION = 3;
 	public static final int DYNAMIC_ASSET = 4;
 	public static final int REDIRECT = 5;
+	public static final int WEBSOCKET = 6;
 	
 	
 	protected final int type;
@@ -163,7 +164,7 @@ public abstract class Route {
 		}
 		
 		for(int i = 0; i < regex.length(); i++) {
-			if(regex.charAt(i) == '?' || regex.charAt(i) == '=') {
+			if(regex.charAt(i) == '?' || regex.charAt(i) == '=' || regex.charAt(i) == '&') {
 				regex.insert(i++, '\\');
 			} else if(regex.charAt(i) == '(') {
 				while(regex.charAt(i) != ')') {

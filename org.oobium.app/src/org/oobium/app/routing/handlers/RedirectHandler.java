@@ -17,9 +17,9 @@ import static org.oobium.utils.DateUtils.httpDate;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.oobium.app.request.Request;
 import org.oobium.app.response.Response;
-import org.oobium.app.response.StaticResponse;
 import org.oobium.app.routing.RouteHandler;
 import org.oobium.app.routing.Router;
 
@@ -39,8 +39,6 @@ public class RedirectHandler extends RouteHandler {
 
 	private static final String lastModified = httpDate(System.currentTimeMillis());
 	
-	private static final String length = Long.toString(content.readableBytes());
-
 	
 	public final String to;
 	
@@ -51,7 +49,10 @@ public class RedirectHandler extends RouteHandler {
 
 	@Override
 	public Response routeRequest(Request request) throws Exception {
-		Response response = new StaticResponse(FOUND, HTML, content, length, lastModified);
+		Response response = new Response(HttpVersion.HTTP_1_1, FOUND);
+		response.setContentType(HTML);
+		response.setContent(content);
+		response.addHeader(HttpHeaders.Names.LAST_MODIFIED, lastModified);
 		response.addHeader(HttpHeaders.Names.LOCATION, to);
 		return response;
 	}

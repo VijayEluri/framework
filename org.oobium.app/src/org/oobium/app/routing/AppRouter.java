@@ -41,11 +41,13 @@ import org.oobium.app.routing.handlers.ControllerHandler;
 import org.oobium.app.routing.handlers.DynamicAssetHandler;
 import org.oobium.app.routing.handlers.RedirectHandler;
 import org.oobium.app.routing.handlers.ViewHandler;
+import org.oobium.app.routing.handlers.WebsocketHandler;
 import org.oobium.app.routing.routes.StaticRoute;
 import org.oobium.app.routing.routes.ControllerRoute;
 import org.oobium.app.routing.routes.DynamicAssetRoute;
 import org.oobium.app.routing.routes.RedirectRoute;
 import org.oobium.app.routing.routes.ViewRoute;
+import org.oobium.app.routing.routes.WebsocketRoute;
 import org.oobium.app.http.Action;
 import org.oobium.persist.Model;
 
@@ -176,6 +178,9 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 					case Route.VIEW:
 						ViewRoute vr = (ViewRoute) fixedRoute;
 						return new ViewHandler(router, vr.viewClass, vr.params);
+					case Route.WEBSOCKET:
+						WebsocketRoute wr = (WebsocketRoute) fixedRoute;
+						return new WebsocketHandler(router, wr.controllerClass, wr.params);
 					default:
 						throw new IllegalStateException();
 					}

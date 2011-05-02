@@ -18,6 +18,7 @@ import java.util.List;
 
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.WebsocketController;
 import org.oobium.app.views.View;
 import org.oobium.app.http.Action;
 import org.oobium.persist.Model;
@@ -195,6 +196,14 @@ public class NamedRoute {
 			path = name + path;
 		}
 		Route route = router.addRoute(name, path, clazz);
+		return new Routed(router, route);
+	}
+	
+	public Routed asWebsocket(String path, Class<? extends WebsocketController> controller) {
+		if(path.charAt(0) == '?') {
+			path = name + path;
+		}
+		Route route = router.addWebsocketRoute(name, path, controller);
 		return new Routed(router, route);
 	}
 	

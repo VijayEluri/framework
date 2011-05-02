@@ -10,6 +10,10 @@
  ******************************************************************************/
 package org.oobium.app.routing;
 
+import static org.jboss.netty.handler.codec.http.HttpMethod.DELETE;
+import static org.jboss.netty.handler.codec.http.HttpMethod.GET;
+import static org.jboss.netty.handler.codec.http.HttpMethod.POST;
+import static org.jboss.netty.handler.codec.http.HttpMethod.PUT;
 import static org.oobium.app.http.Action.create;
 import static org.oobium.app.http.Action.destroy;
 import static org.oobium.app.http.Action.show;
@@ -17,10 +21,6 @@ import static org.oobium.app.http.Action.showAll;
 import static org.oobium.app.http.Action.showEdit;
 import static org.oobium.app.http.Action.showNew;
 import static org.oobium.app.http.Action.update;
-import static org.jboss.netty.handler.codec.http.HttpMethod.DELETE;
-import static org.jboss.netty.handler.codec.http.HttpMethod.GET;
-import static org.jboss.netty.handler.codec.http.HttpMethod.POST;
-import static org.jboss.netty.handler.codec.http.HttpMethod.PUT;
 import static org.oobium.utils.CharStreamUtils.closer;
 import static org.oobium.utils.CharStreamUtils.find;
 import static org.oobium.utils.CharStreamUtils.findAny;
@@ -28,9 +28,7 @@ import static org.oobium.utils.CharStreamUtils.isEqual;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.camelCase;
 import static org.oobium.utils.StringUtils.controllerCanonicalName;
-import static org.oobium.utils.StringUtils.getResourceAsString;
 import static org.oobium.utils.StringUtils.underscored;
-import static org.oobium.utils.json.JsonUtils.toStringList;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -38,6 +36,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -46,21 +45,24 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.oobium.app.ModuleService;
 import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.WebsocketController;
+import org.oobium.app.http.Action;
+import org.oobium.app.http.MimeType;
 import org.oobium.app.request.Request;
-import org.oobium.app.routing.routes.StaticRoute;
 import org.oobium.app.routing.routes.ControllerRoute;
 import org.oobium.app.routing.routes.DynamicAssetRoute;
 import org.oobium.app.routing.routes.HasManyRoute;
 import org.oobium.app.routing.routes.RedirectRoute;
+import org.oobium.app.routing.routes.StaticRoute;
 import org.oobium.app.routing.routes.ViewRoute;
+import org.oobium.app.routing.routes.WebsocketRoute;
+import org.oobium.app.server.Websocket;
 import org.oobium.app.views.DynamicAsset;
 import org.oobium.app.views.View;
-import org.oobium.app.http.Action;
-import org.oobium.app.http.MimeType;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
-import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.utils.Base64;
@@ -106,6 +108,8 @@ public class Router {
 	protected Map<HttpMethod, Map<String, Route>> fixedRoutes;
 	protected Map<String, Class<?>> namedClasses;
 	protected Map<String, String> hasMany;
+	
+	protected Map<String, Websocket> websockets;
 
 	protected Map<HttpMethod, Map<String, Realm>> authentications;
 	protected Map<String, Realm> realms;
@@ -127,7 +131,7 @@ public class Router {
 		checkName(name);
 		return new NamedRoute(this, name);
 	}
-
+	
 	public Routed addAsset(Class<? extends DynamicAsset> clazz) {
 		checkClass(clazz);
 		String name = getAssetName(clazz);
@@ -170,10 +174,6 @@ public class Router {
 		return new Routed(this);
 	}
 
-	public void addBasicAuthentication(String path, String realm) {
-		addBasicAuthentication(GET, path, realm);
-	}
-	
 	public void addBasicAuthentication(HttpMethod method, String path, String realm) {
 		if(realms == null) {
 			realms = new HashMap<String, Realm>();
@@ -193,14 +193,11 @@ public class Router {
 		}
 		auth.put(path, r);
 	}
-
-	/**
-	 * An alias for {@link #addBasicAuthorization(String, String, String)}
-	 */
-	public void addRealm(String realm, String username, String password) {
-		addBasicAuthorization(realm, username, password);
-	}
 	
+	public void addBasicAuthentication(String path, String realm) {
+		addBasicAuthentication(GET, path, realm);
+	}
+
 	public void addBasicAuthorization(String realm, String username, String password) {
 		if(realms == null) {
 			realms = new HashMap<String, Realm>();
@@ -227,6 +224,13 @@ public class Router {
 		namedClasses.put(name, clazz);
 	}
 	
+	/**
+	 * An alias for {@link #addBasicAuthorization(String, String, String)}
+	 */
+	public void addRealm(String realm, String username, String password) {
+		addBasicAuthorization(realm, username, password);
+	}
+
 	public void addRedirect(String from, String to) {
 		from = checkRule(from);
 		to = checkRule(to);
@@ -246,33 +250,6 @@ public class Router {
 	public Routed addResource(Class<? extends Model> clazz, Action action) {
 		return addResource(null, clazz, action);
 	}
-
-	private String getResourceRule(String path, Action action) {
-		if(path == null || path.length() == 0) {
-			switch(action) {
-			case create:	return "/{models}";
-			case update:	return "/{models}/{id}";
-			case destroy:	return "/{models}/{id}";
-			case show:		return "/{models}/{id}";
-			case showAll:	return "/{models}";
-			case showEdit:	return "/{models}/{id}/edit";
-			case showNew:	return "/{models}/new";
-			default:		throw new IllegalArgumentException("unknown action: " + action);
-			}
-		} else if(path.charAt(0) == '?') {
-			switch(action) {
-			case create:	return "/{models}" + path;
-			case update:	return "/{models}/{id}" + path;
-			case destroy:	return "/{models}/{id}" + path;
-			case show:		return "/{models}/{id}" + path;
-			case showAll:	return "/{models}" + path;
-			case showEdit:	return "/{models}/{id}/edit" + path;
-			case showNew:	return "/{models}/new" + path;
-			default:		throw new IllegalArgumentException("unknown action: " + action);
-			}
-		}
-		return path;
-	}
 	
 	/**
 	 * Add a single resource route to this router for the given model class and action.
@@ -288,7 +265,7 @@ public class Router {
 		Route route = addRoute(getKey(clazz, action), rule, clazz, action);
 		return new Routed(this, route);
 	}
-	
+
 	/**
 	 * <p>Add all resource routes for the given model.</p>
 	 * <table>
@@ -311,7 +288,7 @@ public class Router {
 	public Routes addResources(Class<? extends Model> clazz) {
 		return addResources(clazz, new Action[0]);
 	}
-
+	
 	/**
 	 * <p>Add resource routes for the given model and the given array of specific actions.</p>
 	 * @param clazz the model class for which to add resource routes
@@ -345,7 +322,7 @@ public class Router {
 	public Routes addResources(String path, Class<? extends Model> clazz) {
 		return addResources(path, clazz, new Action[0]);
 	}
-	
+
 	/**
 	 * Add resource routes for the given model and the given array of specific actions.
 	 * Unlike {@link #addResources(Class, Action...)}, this method allows for overriding the conventional path.
@@ -383,7 +360,18 @@ public class Router {
 		}
 		return new Routes(this, routed, clazz, path);
 	}
-
+	
+	/**
+	 * Add a route to be handled by the given controller's handleRequest method.
+	 * @param method the type of the request this route will handle
+	 * @param path the path that this request will handle (may contain variables and constants)
+	 * @param clazz the controller class that will handle the routed request
+	 * @return a Routed object
+	 */
+	public Routed addRoute(HttpMethod method, String path, Class<? extends Controller> clazz) {
+		return add(getName(method, path)).asRoute(method, path, clazz);
+	}
+	
 	/**
 	 * Add a route to be handled by the given controller's handleRequest method in response to a
 	 * GET request for the given path. The given path may contain variables and constants.
@@ -394,7 +382,7 @@ public class Router {
 	public Routed addRoute(String path, Class<? extends Controller> clazz) {
 		return add(getName(GET, path)).asRoute(GET, path, clazz);
 	}
-	
+
 	/**
 	 * Add a route to be handled by the given controller in response to a
 	 * request for the given path. The request type and controller method are determined by the
@@ -455,35 +443,7 @@ public class Router {
 		addRoute(key, route);
 		return route;
 	}
-	
-	Route addRoute(String key, String rule, Class<? extends View> clazz) {
-		rule = checkRule(rule);
-		Route route = new ViewRoute(GET, rule, clazz);
-		addRoute(key, route);
-		return route;
-	}
 
-	ControllerRoute addRoute(String key, String rule, Class<?> clazz, Action action) {
-		rule = checkRule(rule);
-		HttpMethod type;
-		switch(action) {
-		case create:	type = POST;	break;
-		case update:	type = PUT;		break;
-		case destroy:	type = DELETE;	break;
-		case show:		type = GET;		break;
-		case showAll:	type = GET;		break;
-		case showEdit:	type = GET;		break;
-		case showNew:	type = GET;		break;
-		default:
-			throw new IllegalArgumentException("unknown action: " + action);
-		}
-		Class<? extends Model> modelClass = Model.class.isAssignableFrom(clazz) ? clazz.asSubclass(Model.class) : null;
-		Class<? extends Controller> controllerClass = getControllerClass(clazz);
-		ControllerRoute route = new ControllerRoute(type, rule, modelClass, controllerClass, action);
-		addRoute(key, route);
-		return route;
-	}
-	
 	ControllerRoute addRoute(String key, String rule, Class<? extends Model> parentClass, String hasManyField, Class<? extends Model> clazz, Action action) {
 		rule = checkRule(rule);
 		HttpMethod type;
@@ -505,17 +465,34 @@ public class Router {
 		return route;
 	}
 	
-	/**
-	 * Add a route to be handled by the given controller's handleRequest method.
-	 * @param method the type of the request this route will handle
-	 * @param path the path that this request will handle (may contain variables and constants)
-	 * @param clazz the controller class that will handle the routed request
-	 * @return a Routed object
-	 */
-	public Routed addRoute(HttpMethod method, String path, Class<? extends Controller> clazz) {
-		return add(getName(method, path)).asRoute(method, path, clazz);
+	Route addRoute(String key, String rule, Class<? extends View> clazz) {
+		rule = checkRule(rule);
+		Route route = new ViewRoute(GET, rule, clazz);
+		addRoute(key, route);
+		return route;
 	}
-
+	
+	ControllerRoute addRoute(String key, String rule, Class<?> clazz, Action action) {
+		rule = checkRule(rule);
+		HttpMethod type;
+		switch(action) {
+		case create:	type = POST;	break;
+		case update:	type = PUT;		break;
+		case destroy:	type = DELETE;	break;
+		case show:		type = GET;		break;
+		case showAll:	type = GET;		break;
+		case showEdit:	type = GET;		break;
+		case showNew:	type = GET;		break;
+		default:
+			throw new IllegalArgumentException("unknown action: " + action);
+		}
+		Class<? extends Model> modelClass = Model.class.isAssignableFrom(clazz) ? clazz.asSubclass(Model.class) : null;
+		Class<? extends Controller> controllerClass = getControllerClass(clazz);
+		ControllerRoute route = new ControllerRoute(type, rule, modelClass, controllerClass, action);
+		addRoute(key, route);
+		return route;
+	}
+	
 	/**
 	 * Add a view route for the given view class. The new route will render the view in response to
 	 * a GET request with a path of <code>varName(clazz)</code>.<br>
@@ -536,7 +513,18 @@ public class Router {
 	public Routed addView(String path, Class<? extends View> clazz) {
 		return add(getName(show, path)).asView(path, clazz);
 	}
+	
+	public Routed addWebsocket(String path, Class<? extends WebsocketController> controller) {
+		return add(getName(path)).asWebsocket(path, controller);
+	}
 
+	Route addWebsocketRoute(String key, String path, Class<? extends WebsocketController> controller) {
+		path = checkRule(path);
+		Route route = new WebsocketRoute(path, controller);
+		addRoute(key, route);
+		return route;
+	}
+	
 	private String checkRule(String rule) {
 		logger.debug(rule);
 		if(rule.charAt(0) != '/') {
@@ -584,7 +572,7 @@ public class Router {
 			published = null;
 		}
 	}
-	
+
 	/**
 	 * Get an existing named route.
 	 * @param name the name of the named route
@@ -623,63 +611,13 @@ public class Router {
 	String getKey(Class<? extends Model> parent, String field, Action action) {
 		return parent.getName() + ":" + field + ":" + action;
 	}
-
+	
 	String getKey(Class<?> clazz, Action action) {
 		if(Model.class.isAssignableFrom(clazz)) {
 			return controllerCanonicalName(clazz.getName()) + ":" + action;
 		} else {
 			return clazz.getName() + ":" + action;
 		}
-	}
-
-	private String getName(Action action, String path) {
-		return action.name() + getName(path);
-	}
-
-	private String getName(String path) {
-		String name = (path.charAt(0) == '/') ? path.substring(1) : path;
-		name = name.replaceAll("\\{([^\\}^\\:^\\=]+)[\\:\\=]?[^\\}]*\\}", "$1").replace('/', '_');
-		name = camelCase(name).replace('?', '_');
-		return name;
-	}
-
-	private String getName(HttpMethod type, String path) {
-		return type.getName().toLowerCase() + getName(path);
-	}
-	
-	public List<String> getPaths() {
-		List<String> paths = new ArrayList<String>();
-		if(fixedRoutes != null) {
-			for(Map<String, Route> map : fixedRoutes.values()) {
-				paths.addAll(map.keySet());
-			}
-		}
-		if(patternRoutes != null) {
-			for(Route route : patternRoutes) {
-				paths.add(route.rule);
-			}
-		}
-		Collections.sort(paths);
-		return paths;
-	}
-	
-	public List<String> getPaths(HttpMethod type) {
-		List<String> paths = new ArrayList<String>();
-		if(fixedRoutes != null) {
-			Map<String, Route> map = fixedRoutes.get(type);
-			if(map != null) {
-				paths.addAll(map.keySet());
-			}
-		}
-		if(patternRoutes != null) {
-			for(Route route : patternRoutes) {
-				if(route.httpMethod == type) {
-					paths.add(route.rule);
-				}
-			}
-		}
-		Collections.sort(paths);
-		return paths;
 	}
 	
 	/**
@@ -689,7 +627,7 @@ public class Router {
 	public Map<String, Map<String, Map<String, String>>> getModelRouteMap() {
 		return getModelRouteMap(getRoutes());
 	}
-
+	
 	/**
 	 * Get a Map of all model routes that are routed by the provided Collection of routes.
 	 * @param routes the routes to check for models
@@ -750,6 +688,83 @@ public class Router {
 		return results;
 	}
 
+	private String getName(Action action, String path) {
+		return action.name() + getName(path);
+	}
+	
+	private String getName(HttpMethod type, String path) {
+		return type.getName().toLowerCase() + getName(path);
+	}
+
+	private String getName(String path) {
+		String name = (path.charAt(0) == '/') ? path.substring(1) : path;
+		name = name.replaceAll("\\{([^\\}^\\:^\\=]+)[\\:\\=]?[^\\}]*\\}", "$1").replace('/', '_');
+		name = camelCase(name).replace('?', '_');
+		return name;
+	}
+
+	public List<String> getPaths() {
+		List<String> paths = new ArrayList<String>();
+		if(fixedRoutes != null) {
+			for(Map<String, Route> map : fixedRoutes.values()) {
+				paths.addAll(map.keySet());
+			}
+		}
+		if(patternRoutes != null) {
+			for(Route route : patternRoutes) {
+				paths.add(route.rule);
+			}
+		}
+		Collections.sort(paths);
+		return paths;
+	}
+
+	public List<String> getPaths(HttpMethod type) {
+		List<String> paths = new ArrayList<String>();
+		if(fixedRoutes != null) {
+			Map<String, Route> map = fixedRoutes.get(type);
+			if(map != null) {
+				paths.addAll(map.keySet());
+			}
+		}
+		if(patternRoutes != null) {
+			for(Route route : patternRoutes) {
+				if(route.httpMethod == type) {
+					paths.add(route.rule);
+				}
+			}
+		}
+		Collections.sort(paths);
+		return paths;
+	}
+
+	private String getResourceRule(String path, Action action) {
+		if(path == null || path.length() == 0) {
+			switch(action) {
+			case create:	return "/{models}";
+			case update:	return "/{models}/{id}";
+			case destroy:	return "/{models}/{id}";
+			case show:		return "/{models}/{id}";
+			case showAll:	return "/{models}";
+			case showEdit:	return "/{models}/{id}/edit";
+			case showNew:	return "/{models}/new";
+			default:		throw new IllegalArgumentException("unknown action: " + action);
+			}
+		} else if(path.charAt(0) == '?') {
+			switch(action) {
+			case create:	return "/{models}" + path;
+			case update:	return "/{models}/{id}" + path;
+			case destroy:	return "/{models}/{id}" + path;
+			case show:		return "/{models}/{id}" + path;
+			case showAll:	return "/{models}" + path;
+			case showEdit:	return "/{models}/{id}/edit" + path;
+			case showNew:	return "/{models}/new" + path;
+			default:		throw new IllegalArgumentException("unknown action: " + action);
+			}
+		}
+		return path;
+	}
+	
 	public List<Route> getRoutes() {
 		List<Route> routes = new ArrayList<Route>();
 		if(fixedRoutes != null) {
@@ -768,7 +783,7 @@ public class Router {
 		}
 		return routes;
 	}
-
+	
 	public List<Route> getRoutes(HttpMethod type) {
 		List<Route> routes = new ArrayList<Route>();
 		if(fixedRoutes != null) {
@@ -796,7 +811,24 @@ public class Router {
 	public ModuleService getService() {
 		return service;
 	}
-	
+
+	/**
+	 * Get the WebSocket registered under the given name.
+	 * @param name the name of the WebSocket
+	 * @return the WebSocket, or null if none is registered with the given name
+	 */
+	public Websocket getWebsocket(String name) {
+		return (websockets != null) ? websockets.get(name) : null;
+	}
+
+	/**
+	 * Get a Set of the names of all registered WebSocket clients.
+	 * @return a Set of Strings; never null
+	 */
+	public Set<String> getWebsockets() {
+		return (websockets != null) ? websockets.keySet() : new HashSet<String>(0);
+	}
+
 	public boolean isAuthorized(Request request, Realm realm) {
 		String header = request.getHeader(HttpHeaders.Names.AUTHORIZATION);
 		if(header != null && header.startsWith("Basic ")) {
@@ -824,7 +856,7 @@ public class Router {
 		}
 		return false;
 	}
-
+	
 	private String[] parseRules(String path, Class<? extends Model> clazz) {
 		char[] ca = path.toCharArray();
 
@@ -901,6 +933,13 @@ public class Router {
 		published.add(route);
 	}
 
+	public void registerWebsocket(Websocket socket) {
+		if(websockets == null) {
+			websockets = new HashMap<String, Websocket>();
+		}
+		websockets.put(socket.getName(), socket);
+	}
+	
 	/**
 	 * Remove a named route and all routes that had been added to it.
 	 * @param name the named route to remove
@@ -921,13 +960,13 @@ public class Router {
 			}
 		}
 	}
-	
+
 	public void removeAsset(Class<? extends DynamicAsset> clazz) {
 		String name = getAssetName(clazz);
 		Route route = new DynamicAssetRoute(GET, name, clazz);
 		removeRoute(name, route);
 	}
-
+	
 	public void removeAssetRoutes() {
 		List<String> paths = service.getAssetList();
 		if(!blank(paths)) {
@@ -997,7 +1036,7 @@ public class Router {
 			}
 		}
 	}
-	
+
 	private void removeFromHasMany(String parentKey) {
 		if(hasMany != null) {
 			String key = hasMany.remove(parentKey);
@@ -1039,16 +1078,16 @@ public class Router {
 		}
 		return false;
 	}
-
+	
 	public void removeRedirect(String from) {
 		from = checkRule(from);
 		removeRoute(from);
 	}
-	
+
 	public void removeResource(Class<? extends Model> clazz, Action action) {
 		removeResource(null, clazz, action);
 	}
-
+	
 	public void removeResource(String path, Class<? extends Model> clazz, Action action) {
 		String rule = getResourceRule(path, action);
 		removeRoute(getKey(clazz, action), rule, clazz, action);
@@ -1057,7 +1096,7 @@ public class Router {
 	public void removeResources(Class<? extends Model> clazz) {
 		removeResources(clazz, new Action[0]);
 	}
-	
+
 	public void removeResources(Class<? extends Model> clazz, Action...actions) {
 		if(actions.length == 0) {
 			actions = Action.values();
@@ -1066,11 +1105,11 @@ public class Router {
 			removeResource(clazz, action);
 		}
 	}
-
+	
 	public void removeResources(String path, Class<? extends Model> clazz) {
 		removeResources(path, clazz, new Action[0]);
 	}
-	
+
 	public void removeResources(String path, Class<? extends Model> clazz, Action...actions) {
 		String[] parsedRules = parseRules(path, clazz);
 		
@@ -1091,6 +1130,10 @@ public class Router {
 				throw new IllegalArgumentException("unknown action: " + action);
 			}
 		}
+	}
+	
+	public void removeRoute(HttpMethod method, String path) {
+		remove(getName(method, path));
 	}
 
 	private void removeRoute(Route route) {
@@ -1165,10 +1208,6 @@ public class Router {
 		return route;
 	}
 	
-	public void removeRoute(HttpMethod method, String path) {
-		remove(getName(method, path));
-	}
-	
 	public void removeView(Class<? extends View> clazz) {
 		remove("show" + clazz.getSimpleName());
 	}
@@ -1198,7 +1237,7 @@ public class Router {
 		Route route = addRoute(HOME, path, clazz);
 		return new Routed(this, route);
 	}
-
+	
 	/**
 	 * Set the home path ("/") of this router to call the given action of the give
 	 * model or controller class.
@@ -1223,6 +1262,12 @@ public class Router {
 			return new Routed(this, route);
 		} else {
 			throw new IllegalArgumentException("invalid type: " + clazz.getSimpleName() + " (valid types are Model and Controller)");
+		}
+	}
+
+	public void unregisterWebsocket(Websocket socket) {
+		if(websockets != null) {
+			websockets.remove(socket.getName());
 		}
 	}
 

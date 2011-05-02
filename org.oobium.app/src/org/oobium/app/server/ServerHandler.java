@@ -1,14 +1,21 @@
 package org.oobium.app.server;
 
-import static org.oobium.utils.DateUtils.*;
-import static org.jboss.netty.handler.codec.http.HttpMethod.*;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.*;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.isKeepAlive;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.TRANSFER_ENCODING;
+import static org.jboss.netty.handler.codec.http.HttpMethod.DELETE;
+import static org.jboss.netty.handler.codec.http.HttpMethod.GET;
+import static org.jboss.netty.handler.codec.http.HttpMethod.HEAD;
+import static org.jboss.netty.handler.codec.http.HttpMethod.POST;
+import static org.jboss.netty.handler.codec.http.HttpMethod.PUT;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.NOT_MODIFIED;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+import static org.oobium.utils.DateUtils.httpDate;
 import static org.oobium.utils.StringUtils.blank;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,21 +30,22 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
-import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
-import org.jboss.netty.handler.codec.http.HttpHeaders.Values;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
-import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
+import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameDecoder;
+import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameEncoder;
 import org.jboss.netty.handler.stream.ChunkedFile;
 import org.jboss.netty.handler.stream.ChunkedStream;
 import org.jboss.netty.util.CharsetUtil;
 import org.oobium.app.request.Request;
 import org.oobium.app.response.StaticResponse;
+import org.oobium.app.response.WebsocketUpgrade;
 import org.oobium.app.server.netty4.Attribute;
 import org.oobium.logging.Logger;
 import org.oobium.utils.Config.Mode;
@@ -53,7 +61,7 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 		this.handlers = httpRequestHandlers;
 		this.executors = executors;
 	}
-	
+
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
 		logger.warn(e.getCause().getLocalizedMessage());
@@ -124,6 +132,9 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 		if(response == null) {
 			writeResponse(ctx, request, null);
 		}
+		else if(response instanceof WebsocketUpgrade) {
+			upgradeToWebsockets(ctx, (WebsocketUpgrade) response);
+		}
 		else if(response instanceof HttpResponse) {
 			writeResponse(ctx, request, (HttpResponse) response);
 		}
@@ -142,7 +153,7 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 			throw new IllegalStateException("response: " + response);
 		}
 	}
-
+	
 	private boolean isNotModified(HttpRequest request, HttpResponse response) {
 		if(Mode.isNotDEV() && request.getMethod() == GET && response.getStatus() == OK) {
 			String lastModified = response.getHeader(HttpHeaders.Names.LAST_MODIFIED);
@@ -170,28 +181,23 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 		return false;
 	}
 	
-	private boolean isWebsocketHandshake(Request request) {
-		return Values.UPGRADE.equalsIgnoreCase(request.getHeader(CONNECTION)) && 
-					Values.WEBSOCKET.equalsIgnoreCase(request.getHeader(Names.UPGRADE));
-	}
-	
 	@Override
 	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-		Object o = e.getMessage();
-		if(o instanceof Request) {
-			Request request = (Request) o;
-			if(isWebsocketHandshake(request)) {
-//				handleWebsocketHandshake();
-				logger.warn("websockets not yet implemented");
-			} else {
-				handleHttpRequest(ctx, (Request) o);
-			}
-		} else if(o instanceof WebSocketFrame) {
-//			handleWebSocketFrame(ctx, (WebSocketFrame) o);
-			logger.warn("websockets not yet implemented");
-		}
+		handleHttpRequest(ctx, (Request) e.getMessage());
 	}
 	
+	private void upgradeToWebsockets(ChannelHandlerContext ctx, WebsocketUpgrade upgrade) {
+		Channel channel = ctx.getChannel();
+		ChannelPipeline pipeline = channel.getPipeline();
+		pipeline.remove("aggregator");
+		pipeline.replace("decoder", "wsdecoder", new WebSocketFrameDecoder());
+		
+		channel.write(upgrade);
+		
+		pipeline.replace("encoder", "wsencoder", new WebSocketFrameEncoder());
+		pipeline.replace("handler", "wshandler", new WebsocketServerHandler(logger, ctx, upgrade.router, upgrade.controllerClass, upgrade.params));
+	}
+
 	private ChannelFuture writePayload(Channel channel, StaticResponse response) {
 		Object payload = response.getPayload();
 
@@ -199,6 +205,10 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 			return channel.write(payload);
 		}
 		
+		if(payload instanceof String) {
+			return channel.write(ChannelBuffers.copiedBuffer((String) payload, CharsetUtil.UTF_8));
+		}
+
 		if(payload instanceof File) {
 			// TODO better file server: http://docs.jboss.org/netty/3.2/xref/org/jboss/netty/example/http/file/HttpStaticFileServerHandler.html
 			try {
@@ -214,8 +224,6 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 			} catch(Exception e) {
 				throw new RuntimeException(e);
 			}
-		} else if(payload instanceof String) {
-			payload = new ByteArrayInputStream(((String) payload).getBytes());
 		}
 		
 		if(payload instanceof InputStream) {

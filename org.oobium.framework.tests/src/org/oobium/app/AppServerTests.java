@@ -20,11 +20,16 @@ import java.net.URL;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.handler.codec.http.websocket.DefaultWebSocketFrame;
+import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.WebsocketController;
 import org.oobium.app.handlers.HttpRequestHandler;
 import org.oobium.app.http.MimeType;
 import org.oobium.app.request.Request;
@@ -32,6 +37,7 @@ import org.oobium.app.response.Response;
 import org.oobium.app.response.StaticResponse;
 import org.oobium.app.routing.AppRouter;
 import org.oobium.app.server.HandlerTask;
+import org.oobium.app.server.Websocket;
 import org.oobium.app.views.View;
 import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
@@ -149,7 +155,7 @@ public class AppServerTests {
 			);
 		}
 	}
-	
+
 	@Test
 	public void testAppService() throws Exception {
 		File folder = new File(System.getProperty("user.dir"));
@@ -168,6 +174,130 @@ public class AppServerTests {
 			public void addRoutes(org.oobium.utils.Config config, AppRouter router) {
 				router.setHome(TestView.class);
 				router.addRoute("/controller", TestController.class);
+			};
+			@Override
+			protected Config loadConfiguration() {
+				Map<String, Object> map = new HashMap<String, Object>();
+				map.put("host", "localhost");
+				map.put("port", 5000);
+				return new Config(map);
+			}
+		};
+		service.startApp();
+
+		AppServer server = new AppServer(logger);
+		server.addHandler(service);
+		
+		while(true) {
+			Thread.sleep(100);
+		}
+	}
+
+	private static String webSocketLocation = "ws://localhost:5000/websockets";
+
+	public static class WebsocketsView extends View {
+		@Override
+		protected void doRenderBody(StringBuilder sb) throws Exception {
+			sb.append(
+					"<body>\n" +
+					"<script type=\"text/javascript\">\n" +
+					"var lowercase;\n" +
+					"var uppercase;\n" +
+					"if (window.WebSocket) {\n" +
+					"  lowercase = new WebSocket(\"ws://localhost:5000/lowercase\");\n" +
+					"  lowercase.onmessage = function(event) { alert(event.data); };\n" +
+					"  lowercase.onopen = function(event) { alert(\"LowerCase Web Socket opened!\"); };\n" +
+					"  lowercase.onclose = function(event) { alert(\"LowerCase Web Socket closed.\"); };\n" +
+					"  uppercase = new WebSocket(\"ws://localhost:5000/uppercase\");\n" +
+					"  uppercase.onmessage = function(event) { alert(event.data); };\n" +
+					"  uppercase.onopen = function(event) { alert(\"UpperCase Web Socket opened!\"); };\n" +
+					"  uppercase.onclose = function(event) { alert(\"UpperCase Web Socket closed.\"); };\n" +
+					"} else {\n" +
+					"  alert(\"Your browser does not support Web Socket.\");\n" +
+					"}\n" +
+					"\n" +
+					"function send(socket, message) {\n" +
+					"  if (!window.WebSocket) { return; }\n" +
+					"  if (socket.readyState == WebSocket.OPEN) {\n" +
+					"    socket.send(message);\n" +
+					"  } else {\n" +
+					"    alert(\"The socket is not open.\");\n" +
+					"  }\n" +
+					"}\n" +
+					"</script>\n" +
+					"<form onsubmit=\"return false;\">\n" +
+					"<input type=\"text\" name=\"message\" value=\"Hello, World!\"/>" +
+					"<input type=\"button\" value=\"Send LowerCase Data\" onclick=\"send(lowercase, this.form.message.value)\" />\n" +
+					"<input type=\"button\" value=\"Register LowerCase\" onclick=\"send(lowercase, 'register:{name:lowercase}')\" />\n" +
+					"<input type=\"button\" value=\"Send UpperCase Data\" onclick=\"send(uppercase, this.form.message.value)\" />\n" +
+					"</form>\n" +
+					"</body>"
+			);
+		}
+	}
+
+	public static class LowerCaseController extends WebsocketController {
+		@Override
+		public String register(Map<String, String> properties) {
+			return properties.get("name");
+		}
+		@Override
+		public void handleFrame(WebSocketFrame frame) {
+			write(new DefaultWebSocketFrame(frame.getTextData().toLowerCase()));
+		}
+	}
+	
+	public static class UpperCaseController extends WebsocketController {
+		@Override
+		public void handleFrame(WebSocketFrame frame) {
+			write(new DefaultWebSocketFrame(frame.getTextData().toUpperCase()));
+		}
+	}
+	
+	public static class ShowAllWebsocketsController extends Controller {
+		@Override
+		public void handleRequest() throws SQLException {
+			Set<String> sockets = getRouter().getWebsockets();
+			if(sockets.isEmpty()) {
+				render("no sockets");
+			} else {
+				StringBuilder sb = new StringBuilder();
+				sb.append("<ul>");
+				for(String name : sockets) {
+					sb.append("<li>").append(name).append("</li>");
+				}
+				sb.append("</ul>");
+				render(sb.toString());
+			}
+		}
+	}
+	
+	public static class WriteToLowerCaseController extends Controller {
+		@Override
+		public void handleRequest() throws SQLException {
+			Websocket socket = getRouter().getWebsocket("lowercase");
+			if(socket == null) {
+				render("no socket");
+			} else {
+				String text = param("text", "hello!");
+				socket.write(new DefaultWebSocketFrame(text));
+				render("<div>wrote '" + text + "' to lowercase</div>");
+			}
+		}
+	}
+	
+	@Test
+	public void testWebsockets() throws Exception {
+		Logger logger = LogProvider.getLogger();
+		logger.setConsoleLevel(Logger.DEBUG);
+		
+		AppService service = new AppService(logger) {
+			public void addRoutes(org.oobium.utils.Config config, AppRouter router) {
+				router.setHome(WebsocketsView.class);
+				router.addWebsocket("/lowercase", LowerCaseController.class);
+				router.addWebsocket("/uppercase", UpperCaseController.class);
+				router.addRoute("/show_sockets", ShowAllWebsocketsController.class);
+				router.addRoute("/write?{text:.*}", WriteToLowerCaseController.class);
 			};
 			@Override
 			protected Config loadConfiguration() {

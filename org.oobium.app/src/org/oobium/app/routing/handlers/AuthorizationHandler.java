@@ -17,11 +17,9 @@ import static org.oobium.utils.DateUtils.httpDate;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
-import org.jboss.netty.handler.codec.http.HttpResponseStatus;
-import org.oobium.app.http.MimeType;
+import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.oobium.app.request.Request;
 import org.oobium.app.response.Response;
-import org.oobium.app.response.StaticResponse;
 import org.oobium.app.routing.RouteHandler;
 import org.oobium.app.routing.Router;
 
@@ -41,8 +39,6 @@ public class AuthorizationHandler extends RouteHandler {
 
 	private static final String lastModified = httpDate(System.currentTimeMillis());
 	
-	private static final String length = Long.toString(content.readableBytes());
-
 	
 	private final String realm;
 	
@@ -53,7 +49,10 @@ public class AuthorizationHandler extends RouteHandler {
 
 	@Override
 	public Response routeRequest(Request request) throws Exception {
-		Response response = new StaticResponse(UNAUTHORIZED, HTML, content, length, lastModified);
+		Response response = new Response(HttpVersion.HTTP_1_1, UNAUTHORIZED);
+		response.setContentType(HTML);
+		response.setContent(content);
+		response.addHeader(HttpHeaders.Names.LAST_MODIFIED, lastModified);
 		response.addHeader(HttpHeaders.Names.WWW_AUTHENTICATE, String.format("Basic realm=\"%1$s\"", realm));
 		return response;
 	}
