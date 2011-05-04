@@ -20,12 +20,12 @@ public class JavaSourcePart extends EspPart {
 		while(s1 < end) {
 			switch(ca[s1]) {
 			case '"':
-				if(ca[s1-1] != '/') {
+				if(ca[s1-1] != '\\' || ca[s1-2] == '\\') {
 					return s1 + 1;
 				}
 				break;
 			case '$':
-				if(ca[s1-1] != '/') {
+				if(ca[s1-1] != '\\' || ca[s1-2] == '\\') {
 					EspPart part = new JavaSourceStringPart(this, s1, end);
 					s1 = part.getEnd() - 1;
 				}
