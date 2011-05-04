@@ -6,6 +6,7 @@ import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.workspace.Application;
 import org.oobium.utils.Config;
+import org.oobium.utils.Config.Mode;
 
 public class RemoteCommand extends BuilderCommand {
 
@@ -27,11 +28,11 @@ public class RemoteCommand extends BuilderCommand {
 		}
 	}
 	
-	protected RemoteConfig getRemoteConfig(Application app) {
+	protected RemoteConfig getRemoteConfig(Application app, Mode mode) {
 		RemoteConfig remoteConfig = new RemoteConfig();
 		
 		if(app.site != null && app.site.isFile()) {
-			Config config = Config.loadConfiguration(app.site);
+			Config config = Config.loadConfiguration(app.site, mode);
 			remoteConfig.host = config.getString("host");
 			remoteConfig.dir = config.getString("path");
 			remoteConfig.username = config.getString("username");

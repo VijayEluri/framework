@@ -44,7 +44,8 @@ public class DeployCommand extends RemoteCommand {
 	}
 
 	private void deploy(Workspace ws, Application app, final File exportDir) throws OobiumException, IOException {
-		RemoteConfig config = getRemoteConfig(app);
+		Mode mode = hasParam("mode") ? Mode.parse(param("mode")) : Mode.PROD;
+		RemoteConfig config = getRemoteConfig(app, mode);
 		if(config == null) {
 			return;
 		}

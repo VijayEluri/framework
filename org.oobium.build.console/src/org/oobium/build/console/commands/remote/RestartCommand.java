@@ -18,6 +18,7 @@ import org.oobium.build.exceptions.OobiumException;
 import org.oobium.build.util.SSH;
 import org.oobium.build.workspace.Application;
 import org.oobium.console.ConsolePrintStream;
+import org.oobium.utils.Config.Mode;
 
 public class RestartCommand extends RemoteCommand {
 
@@ -27,7 +28,11 @@ public class RestartCommand extends RemoteCommand {
 	}
 
 	private void restart(Application app) throws OobiumException, IOException {
-		RemoteConfig config = getRemoteConfig(app);
+		Mode mode = hasParam("mode") ? Mode.parse(param("mode")) : Mode.PROD;
+		RemoteConfig config = getRemoteConfig(app, mode);
+		if(config == null) {
+			return;
+		}
 		
 		SSH ssh = new SSH(config.host, config.username, config.password);
 		ssh.setOut(new ConsolePrintStream(console.out));

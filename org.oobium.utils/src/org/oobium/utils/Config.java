@@ -104,21 +104,25 @@ public class Config {
 	}
 	
 	public static Config loadConfiguration(File file) {
+		return loadConfiguration(file, null);
+	}
+	
+	public static Config loadConfiguration(File file, Mode mode) {
 		if(file != null && file.exists()) {
 			String fileName = file.getName();
 			try {
 				if(fileName.endsWith(".jar")) {
 					Map<String, Object> map = toMap(FileUtils.readJarEntry(file, "configuration.js"));
-					return new Config(map);
+					return new Config(map, mode);
 				} else {
 					Map<String, Object> map = toMap(FileUtils.readFile(file).toString());
-					return new Config(map);
+					return new Config(map, mode);
 				}
 			} catch(Exception e) {
 				LogProvider.getLogger(Config.class).error("There was an error loading the configuration.", e);
 			}
 		}
-		return new Config(new HashMap<String, Object>(0));
+		return new Config(new HashMap<String, Object>(0), mode);
 	}
 	
 	public static Config loadConfiguration(String configuration) {
