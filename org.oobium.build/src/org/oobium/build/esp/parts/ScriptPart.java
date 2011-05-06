@@ -11,6 +11,23 @@ public class ScriptPart extends EspPart {
 		parse();
 	}
 
+	protected int commentCheck(EspPart parent, char[] ca, int ix) {
+		if(ix >= 0) {
+			if(ix < ca.length-1) {
+				if(ca[ix] == '"' || ca[ix] == '\'') {
+					ix = closer(ca, ix, end, true, true);
+					if(ix == -1) {
+						ix = end;
+					}
+				} else if(ca[ix] == '/' && (ca[ix+1] == '*' || ca[ix+1] == '/')) {
+					CommentPart comment = new CommentPart(parent, ix);
+					ix = comment.getEnd();
+				}
+			}
+		}
+		return ix;
+	}
+
 	private int findJavaEnd(int start, int end) {
 		for(int i = start; i < end; i++) {
 			switch(ca[i]) {
@@ -33,6 +50,7 @@ public class ScriptPart extends EspPart {
 		int i = start;
 		switch(ca[i]) {
 		case '"':
+		case '\'':
 			i = closer(ca, i, end, true, true);
 			if(i == -1) {
 				i = end;
@@ -57,6 +75,13 @@ public class ScriptPart extends EspPart {
 					int s2 = findJavaEnd(s, end);
 					new ScriptJavaPart(this, s-1, s2);
 					s = s2 + 1;
+				}
+				break;
+			case '"':
+			case '\'':
+				s = closer(ca, s, end, true, true);
+				if(s == -1) {
+					s = end;
 				}
 				break;
 			case '*':

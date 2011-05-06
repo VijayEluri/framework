@@ -32,52 +32,14 @@ public class EspPart implements CharSequence {
 		}
 
 	
-	public static int commentCheck(EspPart parent, int ix) {
-		return commentCheck(parent, parent.ca, ix);
-	}
-	
-	private static int commentCheck(EspPart parent, char[] ca, int ix) {
-		if(ix >= 0) {
-			if(ix < ca.length-1 && ca[ix] == '/' && (ca[ix+1] == '*' || ca[ix+1] == '/')) {
-				CommentPart comment = new CommentPart(parent, ix);
-				ix = comment.getEnd();
-			}
-		}
-		return ix;
-	}
-	
-	public static int commentCloser_Bak(char[] ca, int ix) {
-		if(ix < ca.length-1 && ca[ix] == '/') {
-			if(ca[ix+1] == '*') { // multi line comment
-				ix += 2;
-				while(ix < ca.length) {
-					if(ca[ix] == '/' && ca[ix-1] == '*') {
-						break;
-					}
-					ix++;
-				}
-			} else if(ca[ix+1] == '/') { // single line comment
-				ix += 2;
-				while(ix < ca.length) {
-					if(ca[ix] == '\n') {
-						break;
-					}
-					ix++;
-				}
-			}
-		}
-		return ix;
-	}
-	
-	
 	protected EspDom dom;
 	protected EspPart parent;
 	protected char[] ca;
+	
 	protected Type type;
 	protected int start;
 	protected int end;
 	protected List<EspPart> parts;
-	
 	public EspPart(EspPart parent, int start) {
 		if(parent != null) this.dom = parent.dom;
 		this.parent = parent;
@@ -90,11 +52,9 @@ public class EspPart implements CharSequence {
 			parent.addPart(this);
 		}
 	}
-	
 	public EspPart(EspPart parent, Type type, int start, int end) {
 		this(parent, type, start, end, false);
 	}
-	
 	public EspPart(EspPart parent, Type type, int start, int end, boolean literal) {
 		if(parent != null) this.dom = parent.dom;
 		this.parent = parent;
@@ -122,6 +82,43 @@ public class EspPart implements CharSequence {
 	@Override
 	public char charAt(int index) {
 		return ca[index];
+	}
+	
+	protected int commentCheck(EspPart parent, char[] ca, int ix) {
+		if(ix >= 0) {
+			if(ix < ca.length-1 && ca[ix] == '/' && (ca[ix+1] == '*' || ca[ix+1] == '/')) {
+				CommentPart comment = new CommentPart(parent, ix);
+				ix = comment.getEnd();
+			}
+		}
+		return ix;
+	}
+	
+	public int commentCheck(EspPart parent, int ix) {
+		return commentCheck(parent, parent.ca, ix);
+	}
+	
+	public int commentCloser_Bak(char[] ca, int ix) {
+		if(ix < ca.length-1 && ca[ix] == '/') {
+			if(ca[ix+1] == '*') { // multi line comment
+				ix += 2;
+				while(ix < ca.length) {
+					if(ca[ix] == '/' && ca[ix-1] == '*') {
+						break;
+					}
+					ix++;
+				}
+			} else if(ca[ix+1] == '/') { // single line comment
+				ix += 2;
+				while(ix < ca.length) {
+					if(ca[ix] == '\n') {
+						break;
+					}
+					ix++;
+				}
+			}
+		}
+		return ix;
 	}
 	
 	public EspDom getDom() {
@@ -205,13 +202,13 @@ public class EspPart implements CharSequence {
 		return (element != null) && element.isA(type);
 	}
 
+	public boolean isNext(int start, char...test) {
+		return CharStreamUtils.isNext(ca, start, test);
+	}
+
 	@Override
 	public int length() {
 		return getLength();
-	}
-
-	public boolean isNext(int start, char...test) {
-		return CharStreamUtils.isNext(ca, start, test);
 	}
 	
 	@Override

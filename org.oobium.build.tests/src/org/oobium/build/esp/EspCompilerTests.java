@@ -177,6 +177,9 @@ public class EspCompilerTests {
 		// including an EJS file
 		assertEquals("__sb__.append(\"<script>\");\nMyScripts myScripts$0 = new MyScripts();\nmyScripts$0.render(__sb__);\n__sb__.append(\"</script>\");",
 				html("script<MyScripts>"));
+
+		assertEquals("__sb__.append(\"<script>function() { $.getJSON('http://localhost'); }</script>\");", html("script function() { $.getJSON('http://localhost'); }"));
+		assertEquals("__sb__.append(\"<script>function() { $.getJSON(\\\"http://localhost\\\"); }</script>\");", html("script function() { $.getJSON(\"http://localhost\"); }"));
 	}
 	
 	@Test
@@ -463,6 +466,7 @@ public class EspCompilerTests {
 				html("img(src:\"/software/cdatetime.png\", width:\"200\", height:\"200\")"));
 		assertEquals("__sb__.append(\"<img height=\\\"\").append(h(h)).append(\"\\\" width=\\\"\").append(h(h/2)).append(\"\\\" src=\\\"/software/cdatetime.png\\\"></img>\");",
 				html("img(src:\"/software/cdatetime.png\", width:h/2, height:h)"));
+		assertEquals("__sb__.append(\"<img src=\\\"/\").append(h(image)).append(\".png\\\"></img>\");", html("img(src:\"/${image}.png\")"));
 	}
 	
 	@Test
