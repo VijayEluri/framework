@@ -9,34 +9,18 @@ import java.util.Set;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
-import org.oobium.app.server.WebsocketServerHandler;
+import org.oobium.app.request.Request;
 import org.oobium.logging.Logger;
-import org.oobium.utils.json.JsonUtils;
 
 public abstract class WebsocketController implements IParams {
 
 	protected Logger logger;
-	private WebsocketServerHandler handler;
+	protected Request request;
 	private ChannelHandlerContext ctx;
 	private Map<String, Object> params;
 	
 	protected ChannelFuture close() {
 		return ctx.getChannel().close();
-	}
-	
-	public void frameReceived(WebSocketFrame frame) {
-		if(frame.isText()) {
-			String text = frame.getTextData();
-			if(text.length() > 12 && text.startsWith("register:{") && text.charAt(text.length()-1) == '}') {
-				Map<String, String> properties = JsonUtils.toStringMap(text.substring(9));
-				String name = register(properties);
-				if(name != null && name.length() > 0) {
-					handler.register(name);
-				}
-				return;
-			}
-		}
-		handleFrame(frame);
 	}
 	
 	@Override
@@ -57,23 +41,49 @@ public abstract class WebsocketController implements IParams {
 	public Set<String> getParams() {
 		return (params != null) ? params.keySet() : new HashSet<String>(0);
 	}
+
+	public void handleConnect() {
+		// subclasses to implement
+	}
 	
-	public abstract void handleFrame(WebSocketFrame frame);
+	public void handleDisconnect() {
+		// subclasses to implement
+	}
+	
+	public void handleError(Throwable cause) {
+		// subclasses to implement
+	}
+	
+	public void handleMessage(WebSocketFrame frame) {
+		// subclasses to implement
+	}
+	
+	/**
+	 * Register this WebSocket with the system so that it may be accessed and written
+	 * to from other controllers and processes.
+	 * <p>Note: name must be at least 3 characters.</p>
+	 * <p>Default implementation returns null; subclasses to override.</p>
+	 * @param properties a Map of the registration properties sent by the client
+	 * @return a String that is the name of newly registered client; null if this client is not to be registered
+	 */
+	public String handleRegistration(Map<String, String> properties) {
+		return null;
+	}
 	
 	@Override
 	public boolean hasParam(String name) {
 		return params != null && params.containsKey(name);
-	}
+	};
 	
 	@Override
 	public boolean hasParams() {
 		return params != null && !params.isEmpty();
-	};
+	}
 	
-	public final void init(Logger logger, WebsocketServerHandler handler, ChannelHandlerContext ctx, Map<String, Object> params) {
+	public final void init(Logger logger, ChannelHandlerContext ctx, Request request, Map<String, Object> params) {
 		this.logger = logger;
-		this.handler = handler;
 		this.ctx = ctx;
+		this.request = request;
 		this.params = params;
 	}
 	
@@ -94,18 +104,6 @@ public abstract class WebsocketController implements IParams {
 	@Override
 	public Set<String> params() {
 		return getParams();
-	}
-	
-	/**
-	 * Register this WebSocket with the system so that it may be accessed and written
-	 * to from other controllers and processes.
-	 * <p>Note: name must be at least 3 characters.</p>
-	 * <p>Default implementation returns null; subclasses to override.</p>
-	 * @param properties a Map of the registration properties sent by the client
-	 * @return a String that is the name of newly registered client; null if this client is not to be registered
-	 */
-	public String register(Map<String, String> properties) {
-		return null;
 	};
 	
 	protected ChannelFuture write(WebSocketFrame frame) {

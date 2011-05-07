@@ -9,45 +9,79 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.oobium.app.controllers.WebsocketController;
+import org.oobium.app.request.Request;
 import org.oobium.app.routing.Router;
 import org.oobium.logging.Logger;
+import org.oobium.utils.json.JsonUtils;
 
 public class WebsocketServerHandler extends SimpleChannelUpstreamHandler {
 
 	final Logger logger;
-	final ChannelHandlerContext ctx;
 	private final Router router;
+	final ChannelHandlerContext ctx;
+	final Request request;
 	private final Class<? extends WebsocketController> controllerClass;
 	final Map<String, Object> params;
 	
 	private Websocket websocket;
 	
-	public WebsocketServerHandler(Logger logger, ChannelHandlerContext ctx, Router router, Class<? extends WebsocketController> controllerClass, Map<String, Object> params) {
+	public WebsocketServerHandler(Logger logger, Router router, ChannelHandlerContext ctx, Request request, Class<? extends WebsocketController> controllerClass, Map<String, Object> params) {
 		this.logger = logger;
-		this.ctx = ctx;
 		this.router = router;
+		this.ctx = ctx;
+		this.request = request;
 		this.controllerClass = controllerClass;
 		this.params = params;
-	}
-	
-	@Override
-	public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-		if(websocket != null) {
-			router.unregisterWebsocket(websocket);
+
+		WebsocketController controller = getController(ctx, request);
+		if(controller != null)  {
+			try {
+				controller.handleConnect();
+			} catch(Exception e) {
+				if(logger.isLoggingDebug()) logger.warn(e);
+				else logger.warn(e.getLocalizedMessage());
+				ctx.getChannel().close();
+			}
 		}
-		super.channelClosed(ctx, e);
 	}
 
 	@Override
-	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
-		logger.warn(e.getCause().getLocalizedMessage());
-		e.getChannel().close();
+	public void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent event) throws Exception {
+		WebsocketController controller = getController(ctx, request);
+		if(controller != null)  {
+			try {
+				controller.handleDisconnect();
+			} catch(Exception e) {
+				if(logger.isLoggingDebug()) logger.warn(e);
+				else logger.warn(e.getLocalizedMessage());
+			}
+		}
+		if(websocket != null) {
+			router.unregisterWebsocket(websocket);
+		}
+		super.channelDisconnected(ctx, event);
 	}
 	
-	private WebsocketController getController(ChannelHandlerContext ctx) {
+	@Override
+	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent event) throws Exception {
+		Throwable t = event.getCause();
+		WebsocketController controller = getController(ctx, request);
+		if(controller != null)  {
+			try {
+				controller.handleError(t);
+			} catch(Exception e) {
+				if(logger.isLoggingDebug()) logger.warn(e);
+				else logger.warn(e.getLocalizedMessage());
+			}
+		}
+		logger.warn(t.getLocalizedMessage());
+		event.getChannel().close();
+	}
+	
+	private WebsocketController getController(ChannelHandlerContext ctx, Request request) {
 		try {
 			WebsocketController controller = controllerClass.newInstance();
-			controller.init(logger, this, ctx, params);
+			controller.init(logger, ctx, request, params);
 			return controller;
 		} catch(Exception e) {
 			if(logger.isLoggingDebug()) {
@@ -65,15 +99,27 @@ public class WebsocketServerHandler extends SimpleChannelUpstreamHandler {
 
 	@Override
 	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-		WebsocketController controller = getController(ctx);
+		WebsocketController controller = getController(ctx, request);
 		if(controller == null)  {
 			ctx.getChannel().close();
 		} else {
-			controller.frameReceived((WebSocketFrame) e.getMessage());
+			WebSocketFrame frame = (WebSocketFrame) e.getMessage();
+			if(frame.isText()) {
+				String text = frame.getTextData();
+				if(text.length() > 12 && text.startsWith("register:{") && text.charAt(text.length()-1) == '}') {
+					Map<String, String> properties = JsonUtils.toStringMap(text.substring(9));
+					String name = controller.handleRegistration(properties);
+					if(name != null && name.length() > 0) {
+						register(name);
+					}
+					return;
+				}
+			}
+			controller.handleMessage(frame);
 		}
 	}
 	
-	public void register(String name) {
+	private void register(String name) {
 		if(this.websocket != null) {
 			router.unregisterWebsocket(websocket);
 		}

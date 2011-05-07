@@ -13,7 +13,7 @@ package org.oobium.app.controllers;
 import org.oobium.app.http.Action;
 import org.oobium.app.http.MimeType;
 
-public interface IHelpers {
+public interface IHttp {
 
 	public abstract Action getAction();
 	public abstract String getActionName();

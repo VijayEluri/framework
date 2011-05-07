@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.oobium.app.controllers;
 
+import static org.oobium.app.http.MimeType.*;
 import static org.oobium.app.sessions.Session.SESSION_ID_KEY;
 import static org.oobium.app.sessions.Session.SESSION_UUID_KEY;
 import static org.oobium.app.http.Action.showEdit;
@@ -67,7 +68,7 @@ import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.utils.Base64;
 
-public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, ISessions, IHelpers {
+public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, ISessions, IHttp {
 
 	private static final String AUTHENTICATED_AT = "authenticatedAt";
 	private static final String AUTHENTICATED_BY = "authenticatedBy";
@@ -544,62 +545,6 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 		return logger;
 	}
 	
-	private void initParams() {
-		Map<String, Object> requestParams = request.getParameters();
-		if(requestParams != null) {
-			Map<String, Object> params = new HashMap<String, Object>(requestParams);
-			if(routeParams != null) {
-				// routeParams overwrite requestParams
-				params.putAll(routeParams);
-			}
-			this.params = mapParams(params);
-		} else if(routeParams != null) {
-			this.params = mapParams(routeParams);
-		}
-	}
-	
-	@SuppressWarnings("unchecked")
-	private Object resolve(String name, Map<String, Object> map) {
-		
-		// TODO make this even lazier by implementing a TypeCoercer...
-		
-		Object o = map.get(name);
-		if(o instanceof Map) {
-			Map<String, Object> m = (Map<String, Object>) o;
-			for(Object k : m.keySet()) {
-				resolve((String) k, m);
-			}
-		} else if(o instanceof HttpData) {
-			HttpData data = (HttpData) o;
-			try {
-				switch(data.getHttpDataType()) {
-				case Attribute:
-					o = ((Attribute) data).getValue();
-					break;
-				case FileUpload:
-					FileUpload up = (FileUpload) data;
-					o = up.get();
-					if(!params.containsKey("transfer-encoding")) {
- 						params.put("transfer-encoding", up.getContentTransferEncoding());
-					}
-					if(!params.containsKey("content-type")) {
-						params.put("content-type", up.getContentType());
-					}
-					if(!params.containsKey("filename")) {
-						params.put("filename", up.getFilename());
-					}
-					break;
-				}
-			} catch(IOException e) {
-				logger.warn(e.getLocalizedMessage());
-			}
-			map.put(name, o);
-			params.put(data.getName(), o);
-			data.delete();
-		}
-		return o;
-	}
-	
 	@Override
 	public Object getParam(String name) {
 		if(params == null) {
@@ -641,7 +586,7 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 	public Session getSession() {
 		return getSession(true);
 	}
-
+	
 	public Session getSession(boolean create) {
 		resolveSession(create);
 		return session;
@@ -655,7 +600,7 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 	public void handleRequest() throws SQLException {
 		// to be implemented by subclasses if needed
 	}
-	
+
 	@Override
 	public boolean hasFlash(String name) {
 		if(flash != null) {
@@ -663,7 +608,7 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 		}
 		return false;
 	}
-
+	
 	@Override
 	public boolean hasFlashError() {
 		return hasFlash(FLASH_ERROR);
@@ -678,7 +623,7 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 	public boolean hasFlashWarning() {
 		return hasFlash(FLASH_WARNING);
 	}
-
+	
 	@Override
 	public boolean hasParam(String name) {
 		if(params == null) {
@@ -694,13 +639,13 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 		}
 		return !params.isEmpty();
 	}
-	
+
 	@Override
 	public boolean hasSession() {
 		resolveSession(false);
 		return session != null;
 	}
-	
+
 	public void initialize(Router router, Request request, Map<String, Object> routeParams) {
 		this.router = router;
 		this.request = request;
@@ -718,18 +663,32 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 		sessionResolved = false;
 	}
 	
+	private void initParams() {
+		Map<String, Object> requestParams = request.getParameters();
+		if(requestParams != null) {
+			Map<String, Object> params = new HashMap<String, Object>(requestParams);
+			if(routeParams != null) {
+				// routeParams overwrite requestParams
+				params.putAll(routeParams);
+			}
+			this.params = mapParams(params);
+		} else if(routeParams != null) {
+			this.params = mapParams(routeParams);
+		}
+	}
+	
 	@Override
 	public boolean isAction(Action action) {
 		return getAction() == action;
 	}
-
+	
 	@Override
 	public boolean isAuthenticated() {
 		resolveSession(true);
 		long start = coerce(session.getData(AUTHENTICATED_AT), long.class);
 		return (System.currentTimeMillis() - start) < AUTHENTICATION_INTERVAL;
 	}
-	
+
 	@Override
 	public boolean isAuthenticated(Model model) {
 		if(model != null) {
@@ -784,7 +743,7 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 	public Set<String> params() {
 		return getParams();
 	}
-
+	
 	public Map<String, Object> params(String...names) {
 		Map<String, Object> params = new HashMap<String, Object>();
 		for(String name : names) {
@@ -794,7 +753,7 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 		}
 		return params;
 	}
-	
+
 	@Override
 	public String pathTo(Class<? extends Model> modelClass) {
 		return appRouter.pathTo(router, modelClass);
@@ -814,12 +773,12 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 	public String pathTo(Model model, Action action) {
 		return appRouter.pathTo(router, model, action);
 	}
-
+	
 	@Override
 	public String pathTo(Model parent, String field) {
 		return appRouter.pathTo(router, parent, field);
 	}
-	
+
 	@Override
 	public String pathTo(Model parent, String field, Action action) {
 		return appRouter.pathTo(router, parent, field, action);
@@ -834,12 +793,12 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 	public String pathTo(String routeName, Model model) {
 		return appRouter.pathTo(router, routeName, model);
 	}
-
+	
 	@Override
 	public String pathTo(String routeName, Object... params) {
 		return appRouter.pathTo(router, routeName, params);
 	}
-	
+
 	public void redirectTo(Class<? extends Model> clazz, Action action) {
 		redirectTo(pathTo(clazz, action));
 	}
@@ -861,7 +820,7 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 		}
 		redirectTo(pathTo(model, action));
 	}
-
+	
 	public void redirectTo(Model parent, String field, Action action) {
 		if(action == showEdit || action == showNew) {
 			Object fieldValue = parent.get(field);
@@ -880,13 +839,28 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 		response = new Response(HttpResponseStatus.FOUND);
 		response.addHeader(HttpHeaders.Names.LOCATION, path);
 	}
-	
+
 	public void redirectToHome() {
 		redirectTo("/");
 	}
 	
 	public void render(Collection<? extends Model> models) {
-		render(wants(), models);
+		render(JSON, models);
+	}
+	
+	public void render(HttpResponseStatus status) {
+		render(status, wants(), status.getReasonPhrase());
+	}
+	
+	public void render(HttpResponseStatus status, MimeType contentType, String body) {
+		rendering();
+		response = new Response(status);
+		response.setContentType(contentType);
+		response.setContent(body);
+	}
+
+	public void render(HttpResponseStatus status, String body) {
+		render(status, wants(), body);
 	}
 	
 	public void render(MimeType type, byte[] data) {
@@ -895,7 +869,7 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 		response.setContentType(type);
 		response.setContent(ChannelBuffers.wrappedBuffer(data));
 	}
-
+	
 	private void render(MimeType type, CacheObject cache) {
 		rendering();
 		response = new StaticResponse(type, cache.payload(), cache.contentLength(), cache.lastModified());
@@ -903,6 +877,13 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 	
 	public void render(MimeType type, Collection<? extends Model> models) {
 		render(type, toJson(models));
+	}
+	
+	private void render(MimeType type, DynamicAsset asset) {
+		rendering();
+		response = new Response();
+		response.setContentType(type);
+		response.setContent(asset.getContent());
 	}
 	
 	public void render(MimeType type, String body) {
@@ -916,15 +897,8 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 		}
 	}
 	
-	public void render(DynamicAsset asset) {
-		rendering();
-		response = new Response();
-		response.setContentType(wants());
-		response.setContent(asset.getContent());
-	}
-	
 	public void render(Model model) {
-		render(wants(), model.toJson());
+		render(JSON, model.toJson());
 	}
 	
 	/**
@@ -936,22 +910,7 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 	}
 	
 	public void render(ScriptFile sf) {
-		render((DynamicAsset) sf);
-	}
-	
-	public void render(HttpResponseStatus status) {
-		render(status, wants(), status.getReasonPhrase());
-	}
-	
-	public void render(HttpResponseStatus status, String body) {
-		render(status, wants(), body);
-	}
-	
-	public void render(HttpResponseStatus status, MimeType contentType, String body) {
-		rendering();
-		response = new Response(status);
-		response.setContentType(contentType);
-		response.setContent(body);
+		render(JS, sf);
 	}
 	
 	public void render(String body) {
@@ -1002,11 +961,11 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 			render(sb);
 		}
 	}
-
-	public void render(StyleSheet ss) {
-		render((DynamicAsset) ss);
-	}
 	
+	public void render(StyleSheet ss) {
+		render(CSS, ss);
+	}
+
 	public void render(View view) {
 		render(view, isXhr());
 	}
@@ -1041,11 +1000,11 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 	public void renderCreated(int id) {
 		renderCreated((long) id);
 	}
-
+	
 	public void renderCreated(long id) {
 		renderCreated(id, null);
 	}
-	
+
 	public void renderCreated(long id, String path) {
 		rendering();
 		response = new Response(HttpResponseStatus.CREATED);
@@ -1058,7 +1017,7 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 			response.setContent("null");
 		}
 	}
-
+	
 	public void renderCreated(Model model) {
 		renderCreated((long) model.getId(), pathTo(model));
 	}
@@ -1080,7 +1039,7 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 			renderErrors(new String[0]);
 		}
 	}
-	
+
 	public void renderErrors(Model...models) {
 		rendering();
 		response = new Response(HttpResponseStatus.CONFLICT);
@@ -1108,14 +1067,14 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 		response.setContentType(MimeType.JSON);
 		response.setContent(toJson(errors));
 	}
-
+	
 	private void rendering() {
 		if(isRendered) {
 			throw new UnsupportedOperationException("cannot render more than once");
 		}
 		isRendered = true;
 	}
-	
+
 	public void renderJson(Collection<? extends Model> models, String include) {
 		if(blank(models)) {
 			render(MimeType.JSON, "[]");
@@ -1128,15 +1087,15 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 	public void renderJson(Object object) {
 		render(MimeType.JSON, format(toJson(object)));
 	}
-
+	
 	public void renderOK() {
 		render(HttpResponseStatus.OK, wantsJS() ? "[]" : HttpResponseStatus.OK.getReasonPhrase());
 	}
-	
+
 	public void renderPage(String text) {
 		renderPage("", text);
 	}
-
+	
 	public void renderPage(String title, String text) {
 		render(MimeType.PLAIN,
 				"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" " +
@@ -1150,6 +1109,48 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 			   	"</body>\n" +
 				"</html>"
 		);
+	}
+
+	@SuppressWarnings("unchecked")
+	private Object resolve(String name, Map<String, Object> map) {
+		
+		// TODO make this even lazier by implementing a TypeCoercer...
+		
+		Object o = map.get(name);
+		if(o instanceof Map) {
+			Map<String, Object> m = (Map<String, Object>) o;
+			for(Object k : m.keySet()) {
+				resolve((String) k, m);
+			}
+		} else if(o instanceof HttpData) {
+			HttpData data = (HttpData) o;
+			try {
+				switch(data.getHttpDataType()) {
+				case Attribute:
+					o = ((Attribute) data).getValue();
+					break;
+				case FileUpload:
+					FileUpload up = (FileUpload) data;
+					o = up.get();
+					if(!params.containsKey("transfer-encoding")) {
+ 						params.put("transfer-encoding", up.getContentTransferEncoding());
+					}
+					if(!params.containsKey("content-type")) {
+						params.put("content-type", up.getContentType());
+					}
+					if(!params.containsKey("filename")) {
+						params.put("filename", up.getFilename());
+					}
+					break;
+				}
+			} catch(IOException e) {
+				logger.warn(e.getLocalizedMessage());
+			}
+			map.put(name, o);
+			params.put(data.getName(), o);
+			data.delete();
+		}
+		return o;
 	}
 
 	private void resolveSession(boolean create) {

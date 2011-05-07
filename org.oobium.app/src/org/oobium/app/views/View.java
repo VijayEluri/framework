@@ -23,7 +23,7 @@ import java.util.Set;
 
 import org.oobium.app.controllers.Controller;
 import org.oobium.app.controllers.IFlash;
-import org.oobium.app.controllers.IHelpers;
+import org.oobium.app.controllers.IHttp;
 import org.oobium.app.controllers.IParams;
 import org.oobium.app.controllers.ISessions;
 import org.oobium.app.http.Action;
@@ -38,7 +38,7 @@ import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.utils.json.JsonUtils;
 
-public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessions, IHelpers {
+public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessions, IHttp {
 
 	/**
 	 * Render a view of the given class for the given request. Since this method does not take a 
@@ -94,7 +94,6 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 	protected Logger logger;
 	protected Controller controller;
 	protected Request request;
-	protected Response response;
 
 	private View child;
 	
@@ -579,12 +578,10 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 			controller = null;
 			logger = null;
 			request = null;
-			response = null;
 		} else {
 			controller = renderer.controller;
 			logger = controller.getLogger();
 			request = controller.getRequest();
-			response = controller.getResponse();
 		}
 	}
 	

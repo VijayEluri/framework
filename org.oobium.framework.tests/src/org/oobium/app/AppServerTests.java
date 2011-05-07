@@ -43,6 +43,7 @@ import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
 import org.oobium.utils.Config;
 import org.oobium.utils.FileUtils;
+import org.oobium.utils.json.JsonUtils;
 
 public class AppServerTests {
 
@@ -238,18 +239,18 @@ public class AppServerTests {
 
 	public static class LowerCaseController extends WebsocketController {
 		@Override
-		public String register(Map<String, String> properties) {
+		public String handleRegistration(Map<String, String> properties) {
 			return properties.get("name");
 		}
 		@Override
-		public void handleFrame(WebSocketFrame frame) {
+		public void handleMessage(WebSocketFrame frame) {
 			write(new DefaultWebSocketFrame(frame.getTextData().toLowerCase()));
 		}
 	}
 	
 	public static class UpperCaseController extends WebsocketController {
 		@Override
-		public void handleFrame(WebSocketFrame frame) {
+		public void handleMessage(WebSocketFrame frame) {
 			write(new DefaultWebSocketFrame(frame.getTextData().toUpperCase()));
 		}
 	}
@@ -275,7 +276,7 @@ public class AppServerTests {
 	public static class WriteToLowerCaseController extends Controller {
 		@Override
 		public void handleRequest() throws SQLException {
-			Websocket socket = getRouter().getWebsocket("lowercase");
+			Websocket socket = getRouter().getWebsocket("android1");
 			if(socket == null) {
 				render("no socket");
 			} else {
@@ -301,10 +302,10 @@ public class AppServerTests {
 			};
 			@Override
 			protected Config loadConfiguration() {
-				Map<String, Object> map = new HashMap<String, Object>();
-				map.put("host", "localhost");
-				map.put("port", 5000);
-				return new Config(map);
+				String json =
+					"host: ['localhost','192.168.2.7'],\n" +
+					"port: 5000";
+				return new Config(JsonUtils.toMap(json));
 			}
 		};
 		service.startApp();

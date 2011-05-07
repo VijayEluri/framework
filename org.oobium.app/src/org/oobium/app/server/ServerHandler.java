@@ -133,7 +133,7 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 			writeResponse(ctx, request, null);
 		}
 		else if(response instanceof WebsocketUpgrade) {
-			upgradeToWebsockets(ctx, (WebsocketUpgrade) response);
+			upgradeToWebsockets(ctx, request, (WebsocketUpgrade) response);
 		}
 		else if(response instanceof HttpResponse) {
 			writeResponse(ctx, request, (HttpResponse) response);
@@ -186,7 +186,7 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 		handleHttpRequest(ctx, (Request) e.getMessage());
 	}
 	
-	private void upgradeToWebsockets(ChannelHandlerContext ctx, WebsocketUpgrade upgrade) {
+	private void upgradeToWebsockets(ChannelHandlerContext ctx, Request request, WebsocketUpgrade upgrade) {
 		Channel channel = ctx.getChannel();
 		ChannelPipeline pipeline = channel.getPipeline();
 		pipeline.remove("aggregator");
@@ -195,7 +195,7 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 		channel.write(upgrade);
 		
 		pipeline.replace("encoder", "wsencoder", new WebSocketFrameEncoder());
-		pipeline.replace("handler", "wshandler", new WebsocketServerHandler(logger, ctx, upgrade.router, upgrade.controllerClass, upgrade.params));
+		pipeline.replace("handler", "wshandler", new WebsocketServerHandler(logger, upgrade.router, ctx, request, upgrade.controllerClass, upgrade.params));
 	}
 
 	private ChannelFuture writePayload(Channel channel, StaticResponse response) {
