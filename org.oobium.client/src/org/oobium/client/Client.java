@@ -343,6 +343,7 @@ public class Client {
 	                for(Entry<String, MessagePart> entry : parts.entrySet()) {
 	                	writePart(out, entry.getKey(), entry.getValue(), boundary);
 	                }
+	                out.writeBytes("--");
 	                out.flush();
 	                out.close();
 	        	}
@@ -397,7 +398,7 @@ public class Client {
 	private void writeParam(DataOutputStream out, String name, String value, String boundary) throws Exception {
         out.writeBytes("content-disposition: form-data; name=\"" + name + "\"\r\n\r\n");
         out.writeBytes(value);
-        out.writeBytes("\r\n" + "--" + boundary + "\r\n");
+        out.writeBytes("\r\n--" + boundary + "\r\n");
     }
 	
 	private void writePart(DataOutputStream out, String name, MessagePart part, String boundary) throws Exception {
@@ -419,7 +420,7 @@ public class Client {
 			out.write(bytes, 0, read);
 		}
 		in.close();
-		out.writeBytes("\r\n" + "--" + boundary + "\r\n");
+		out.writeBytes("\r\n--" + boundary + "\r\n");
     }
 
 }
