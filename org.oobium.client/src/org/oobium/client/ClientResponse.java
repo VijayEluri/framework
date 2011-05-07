@@ -176,8 +176,12 @@ public class ClientResponse {
 	}
 
 	public boolean isSuccess() {
-		int code = getStatus().getCode();
-		return exception == null && code >= 200 && code < 300;
+		HttpResponseStatus status = getStatus();
+		if(status != null) {
+			int code = status.getCode();
+			return exception == null && code >= 200 && code < 300;
+		}
+		return false;
 	}
 
 	@Override
