@@ -38,20 +38,6 @@ and web connected clients in Java and OSGi.
          unpack="false"/>
 
    <plugin
-         id="org.oobium.http"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="org.oobium.http.impl"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
          id="org.oobium.persist"
          download-size="0"
          install-size="0"
@@ -60,13 +46,6 @@ and web connected clients in Java and OSGi.
 
    <plugin
          id="org.oobium.persist.db"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="org.oobium.server"
          download-size="0"
          install-size="0"
          version="0.0.0"
@@ -116,13 +95,6 @@ and web connected clients in Java and OSGi.
 
    <plugin
          id="org.oobium.cache"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="org.oobium.eclipse.connector"
          download-size="0"
          install-size="0"
          version="0.0.0"
@@ -284,6 +256,13 @@ and web connected clients in Java and OSGi.
 
    <plugin
          id="org.postgresql.jdbc4"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.oobium.app.common"
          download-size="0"
          install-size="0"
          version="0.0.0"
