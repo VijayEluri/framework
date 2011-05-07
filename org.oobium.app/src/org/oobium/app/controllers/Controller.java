@@ -906,7 +906,24 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 	 * @param object
 	 */
 	public void render(Object object) {
-		render(String.valueOf(object));
+		if(object instanceof ScriptFile) {
+			render((ScriptFile) object);
+		}
+		else if(object instanceof StyleSheet) {
+			render((StyleSheet) object);
+		}
+		else if(object instanceof Model) {
+			render((Model) object);
+		}
+		else if(object instanceof View) {
+			render((View) object);
+		}
+		else if(object instanceof HttpResponseStatus) {
+			render((HttpResponseStatus) object);
+		}
+		else {
+			render(String.valueOf(object));
+		}
 	}
 	
 	public void render(ScriptFile sf) {
