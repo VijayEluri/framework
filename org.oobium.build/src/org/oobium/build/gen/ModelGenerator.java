@@ -56,7 +56,10 @@ public class ModelGenerator {
 		GEN_APP_WS 		= GEN_MODELS | GEN_CONTROLLERS,
 		GEN_ALL 		= GEN_MODELS | GEN_VIEWS | GEN_CONTROLLERS | GEN_SCHEMA | GEN_TESTS;
 
-	
+	/**
+	 * Append the given javadoc (after replacing all variables with the supplied vars array) to
+	 * the given StringBuilder.
+	 */
 	private static void appendDoc(StringBuilder sb, String javadoc, String...vars) {
 		StringBuilder doc = new StringBuilder(javadoc.length() + StringUtils.count(vars) + 5);
 		doc.append(javadoc);
