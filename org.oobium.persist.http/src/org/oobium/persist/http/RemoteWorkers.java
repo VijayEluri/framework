@@ -23,10 +23,6 @@ public class RemoteWorkers {
 
 	private static final RemoteWorkers instance = new RemoteWorkers();
 
-	public static void setDiscoveryUrl(String url) {
-		instance.service.setDiscoveryUrl(url);
-	}
-	
 	public static void shutdown() {
 		if(instance.executor != null) {
 			instance.executor.shutdown();
