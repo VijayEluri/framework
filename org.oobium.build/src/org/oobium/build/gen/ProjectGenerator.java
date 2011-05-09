@@ -402,6 +402,7 @@ public class ProjectGenerator {
 			sb.append('\n');
 	
 			sb.append("Import-Package: org.osgi.framework;version=\"1.4.0\",\n");
+			sb.append(" org.jboss.netty.handler.codec.http,\n");
 			sb.append(" org.oobium.app,\n");
 			sb.append(" org.oobium.app.controllers,\n");
 			sb.append(" org.oobium.app.request,\n");
@@ -411,8 +412,7 @@ public class ProjectGenerator {
 				sb.append(" org.oobium.app.workers,\n");
 				sb.append(" org.oobium.app.views,\n");
 			}
-			sb.append(" org.oobium.http,\n");
-			sb.append(" org.oobium.http.constants,\n");
+			sb.append(" org.oobium.app.http,\n");
 			sb.append(" org.oobium.logging,\n");
 			sb.append(" org.oobium.persist,\n");
 			if(projectType == PTYPE_TEST) {
