@@ -261,15 +261,17 @@ public class Module extends Bundle {
 	}
 
 	public boolean addDiscoveryRoute(String path, boolean home) {
-		String src = FileUtils.readFile(activator).toString();
-		
-		if(!Pattern.compile("router.setDiscovery\\s*\\([^\\)]*\\)\\s*;").matcher(src).find()) {
-			src = src.replaceFirst("public\\s+void\\s+addRoutes\\s*\\(\\s*Config\\s+config\\s*,\\s*(App)?Router\\s+router\\s*\\)\\s*\\{\\s*",
-											"public void addRoutes(Config config, $1Router router) {\n" +
-											"\t\t// auto-generated\n" +
-											"\t\trouter.setDiscovery(\"" + path + "\"" + (home ? ", true" : "" ) + ");\n\n\t\t");
-			FileUtils.writeFile(activator, src);
-			return true;
+		if(activator != null && activator.isFile()) {
+			String src = FileUtils.readFile(activator).toString();
+			
+			if(!Pattern.compile("router.setDiscovery\\s*\\([^\\)]*\\)\\s*;").matcher(src).find()) {
+				src = src.replaceFirst("public\\s+void\\s+addRoutes\\s*\\(\\s*Config\\s+config\\s*,\\s*(App)?Router\\s+router\\s*\\)\\s*\\{\\s*",
+												"public void addRoutes(Config config, $1Router router) {\n" +
+												"\t\t// auto-generated\n" +
+												"\t\trouter.setDiscovery(\"" + path + "\"" + (home ? ", true" : "" ) + ");\n\n\t\t");
+				FileUtils.writeFile(activator, src);
+				return true;
+			}
 		}
 		return false;
 	}
@@ -1191,6 +1193,12 @@ public class Module extends Bundle {
 		String name = model.getAbsolutePath();
 		name = name.substring(models.getAbsolutePath().length() + 1, name.length() - 5);
 		return name;
+	}
+	
+	public String[] getModules() {
+		Config config = loadConfiguration();
+		List<String> modules = config.getModules();
+		return modules.toArray(new String[modules.size()]);
 	}
 
 	public File getObserver(String name) {
