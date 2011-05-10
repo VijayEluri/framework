@@ -33,8 +33,9 @@ public class ControllerCommand extends BuilderCommand {
 		Workspace ws = getWorkspace();
 		Module module = getModule();
 		File controller = module.getController(param(0));
+		String name = module.getControllerName(controller);
 		if(controller.exists()) {
-			String confirm = ask(param(0) + " already exists. Overwrite?[Y/N] ");
+			String confirm = ask(name + " already exists. Overwrite?[Y/N] ");
 			if(!confirm.equalsIgnoreCase("Y")) {
 				console.out.println("operation cancelled");
 				return;
@@ -44,7 +45,6 @@ public class ControllerCommand extends BuilderCommand {
 		long manifestMod = module.manifest.lastModified();
 		
 		module.createController(controller);
-		String name = module.getControllerName(controller);
 		console.out.println("created controller <a href=\"open controller " + name + "\">" + name + "</a>");
 
 		TestSuite testSuite = ws.getTestSuiteFor(module);
@@ -63,7 +63,7 @@ public class ControllerCommand extends BuilderCommand {
 			Eclipse.refreshProject(testSuite.name);
 		}
 		
-		Eclipse.refresh(module.file, controller);
+		Eclipse.refresh(module.file, module.controllers);
 		if(manifestMod != module.manifest.lastModified()) {
 			Eclipse.refresh(module.file, module.manifest);
 		}
