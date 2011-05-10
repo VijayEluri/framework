@@ -241,7 +241,7 @@ public class Eclipse {
 				file.refreshLocal(IResource.DEPTH_ONE, new NullProgressMonitor());
 			} else {
 				IFolder folder = project.getFolder(fileName);
-				if(file.exists()) {
+				if(folder.exists()) {
 					folder.refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
 				} else {
 					logger.warn("the file \"" + fileName + "\" does not exist in project \"" + projectName);
