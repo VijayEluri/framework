@@ -413,6 +413,7 @@ public class ProjectGenerator {
 				sb.append(" org.oobium.app.views,\n");
 			}
 			sb.append(" org.oobium.app.http,\n");
+			sb.append(" org.oobium.cache,\n");
 			sb.append(" org.oobium.logging,\n");
 			sb.append(" org.oobium.persist,\n");
 			if(projectType == PTYPE_TEST) {
