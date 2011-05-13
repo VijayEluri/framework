@@ -65,7 +65,7 @@ public class EspPart implements CharSequence {
 			this.ca = parent.ca;
 			if(!literal) {
 				for(int i = start; i < end; i++) {
-					i = commentCheck(this, ca, i);
+					i = commentCheck(parent, ca, i);
 				}
 			}
 			parent.addPart(this);

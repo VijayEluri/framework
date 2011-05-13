@@ -178,8 +178,10 @@ public class EspCompilerTests {
 		assertEquals("__sb__.append(\"<script>\");\nMyScripts myScripts$0 = new MyScripts();\nmyScripts$0.render(__sb__);\n__sb__.append(\"</script>\");",
 				html("script<MyScripts>"));
 
+		// with comments
 		assertEquals("__sb__.append(\"<script>function() { $.getJSON('http://localhost'); }</script>\");", html("script function() { $.getJSON('http://localhost'); }"));
 		assertEquals("__sb__.append(\"<script>function() { $.getJSON(\\\"http://localhost\\\"); }</script>\");", html("script function() { $.getJSON(\"http://localhost\"); }"));
+		assertEquals("__sb__.append(\"<script>\\tif(true) {// comment\\n\\t}</script>\");", html("script\n\tif(true) {// comment\n\t}"));
 	}
 	
 	@Test

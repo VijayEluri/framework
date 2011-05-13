@@ -74,8 +74,8 @@ public class EspCompiler {
 		appendEscaped(sb, text, 0, text.length());
 	}
 	
-	private static void appendEscaped(StringBuilder sb, String text, int s0, int s1) {
-		for(int j = s0; j < s1; j++) {
+	private static void appendEscaped(StringBuilder sb, String text, int start, int end) {
+		for(int j = start; j < end; j++) {
 			char c = text.charAt(j);
 			switch(c) {
 			case '"':	if(j == 0 || text.charAt(j-1) != '\\') { sb.append("\\\""); } break;
@@ -1596,7 +1596,25 @@ public class EspCompiler {
 									}
 								}
 							} else {
-								build(parts.get(j), sb);
+								EspPart part = parts.get(j);
+								int s1 = part.getStart() - line.getStart();
+								int s2 = s1 + part.getLength();
+								if(j == 0) {
+									if(s1 > 0) {
+										appendEscaped(sb, text, 0, s1);
+									}
+								} else {
+									int s0 = parts.get(j-1).getEnd();
+									if(s0 < s1) {
+										appendEscaped(sb, text, s0, s1);
+									}
+								}
+								appendEscaped(sb, text, s1, s2);
+								if(j == parts.size() - 1) {
+									if(s2 < text.length()) {
+										appendEscaped(sb, text, s2, text.length());
+									}
+								}
 							}
 						}
 					} else {
