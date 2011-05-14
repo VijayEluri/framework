@@ -10,11 +10,13 @@
  ******************************************************************************/
 package org.oobium.app.controllers;
 
-import static org.oobium.app.http.MimeType.*;
-import static org.oobium.app.sessions.Session.SESSION_ID_KEY;
-import static org.oobium.app.sessions.Session.SESSION_UUID_KEY;
 import static org.oobium.app.http.Action.showEdit;
 import static org.oobium.app.http.Action.showNew;
+import static org.oobium.app.http.MimeType.CSS;
+import static org.oobium.app.http.MimeType.JS;
+import static org.oobium.app.http.MimeType.JSON;
+import static org.oobium.app.sessions.Session.SESSION_ID_KEY;
+import static org.oobium.app.sessions.Session.SESSION_UUID_KEY;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.varName;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
@@ -42,9 +44,11 @@ import org.jboss.netty.handler.codec.http.Cookie;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.oobium.app.AppService;
+import org.oobium.app.http.Action;
+import org.oobium.app.http.MimeType;
 import org.oobium.app.request.Request;
-import org.oobium.app.response.StaticResponse;
 import org.oobium.app.response.Response;
+import org.oobium.app.response.StaticResponse;
 import org.oobium.app.routing.AppRouter;
 import org.oobium.app.routing.IPathRouting;
 import org.oobium.app.routing.IUrlRouting;
@@ -62,8 +66,6 @@ import org.oobium.app.views.View;
 import org.oobium.app.views.ViewRenderer;
 import org.oobium.cache.CacheObject;
 import org.oobium.cache.CacheService;
-import org.oobium.app.http.Action;
-import org.oobium.app.http.MimeType;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.utils.Base64;
@@ -1103,6 +1105,25 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 	
 	public void renderJson(Object object) {
 		render(MimeType.JSON, format(toJson(object)));
+	}
+
+	/**
+	 * Render the given object as JSON data in a manner appropriate for the standard
+	 * JQuery JSONP implementation.
+	 * <p>Note: the request <b>must</b> contain a 'callback' parameter.
+	 * See http://api.jquery.com/jQuery.ajax/ for more details.</p>
+	 * @param object the object to be rendered as JSON data
+	 */
+	public void renderJsonP(Object object) {
+		String callbackName = param("callback", String.class); // standard JQuery jsonp implementation
+		if(callbackName == null) {
+			logger.warn("error in renderJsonP: no 'callback' parameter in request");
+			render(JS, "alert('error in renderJsonP: no callback parameter in request')");
+		} else {
+			String json = format(toJson(object));
+			String callback = callbackName + "(" + json + ");";
+			render(MimeType.JS, callback);
+		}
 	}
 	
 	public void renderOK() {
