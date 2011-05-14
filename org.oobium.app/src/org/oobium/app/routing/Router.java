@@ -698,7 +698,7 @@ public class Router {
 
 	private String getName(String path) {
 		String name = (path.charAt(0) == '/') ? path.substring(1) : path;
-		name = name.replaceAll("\\{([^\\}^\\:^\\=]+)[\\:\\=]?[^\\}]*\\}", "$1").replace('/', '_');
+		name = name.replaceAll("\\{([^\\}^\\:^\\=]+)[\\:\\=]?[^\\}]*\\}", "$1").replace('/', '_').replace('.', '_');
 		name = camelCase(name).replace('?', '_');
 		return name;
 	}
