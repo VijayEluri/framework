@@ -65,6 +65,14 @@ public class Request extends DefaultHttpRequest {
 	public List<MimeType> getAcceptedTypes() {
 		if(accepts == null) {
 			accepts = new ArrayList<MimeType>();
+			String path = getPath();
+			int ix = path.indexOf('.');
+			if(ix != -1) {
+				MimeType type = MimeType.getFromExtension(path.substring(ix+1));
+				if(type != null) {
+					accepts.add(type);
+				}
+			}
 			for(String header : getHeaders(HttpHeaders.Names.ACCEPT)) {
 				accepts.addAll(MimeType.getAll(header));
 			}
