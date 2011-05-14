@@ -1,6 +1,6 @@
 Query(int id, String query = null)
 
-script(defaults)
+script(jquery-1.4.2.dev.min)
 
 div(style:"margin-top: 15px")
 	form(action: {pathTo("persist_service", id)}, method: get)
