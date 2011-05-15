@@ -14,7 +14,11 @@ import static org.oobium.build.esp.Constants.CSS_PROPERTIES;
 import static org.oobium.build.esp.Constants.HTML_TAGS;
 import static org.oobium.build.esp.Constants.JAVA_KEYWORDS;
 import static org.oobium.build.esp.Constants.JS_KEYWORDS;
-import static org.oobium.build.esp.EspPart.Type.*;
+import static org.oobium.build.esp.EspPart.Type.CommentPart;
+import static org.oobium.build.esp.EspPart.Type.ImportPart;
+import static org.oobium.build.esp.EspPart.Type.JavaPart;
+import static org.oobium.build.esp.EspPart.Type.ScriptElement;
+import static org.oobium.build.esp.EspPart.Type.TagPart;
 
 import java.util.Arrays;
 
@@ -26,7 +30,6 @@ import org.oobium.build.esp.EspDom;
 import org.oobium.build.esp.EspElement;
 import org.oobium.build.esp.EspPart;
 import org.oobium.build.esp.EspPart.Type;
-import org.oobium.build.esp.parts.StylePropertyPart;
 import org.oobium.eclipse.esp.EspPlugin;
 
 public class EspStyleRanges {
@@ -341,11 +344,7 @@ public class EspStyleRanges {
 			}
 			break;
 		case StylePropertyValuePart:
-			if(((StylePropertyPart) part.getParent()).isValueJava()) {
-				return evaluateJava(offset, element, part);
-			} else {
-				return part.getEnd();
-			}
+			return part.getEnd();
 		}
 
 		return offset + 1;
