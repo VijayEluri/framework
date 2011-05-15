@@ -202,7 +202,7 @@ public class ControllerTester {
 
 	public ControllerTester execute(Action action) {
 		try {
-			spy(request);
+			request = spy(request);
 			when(request.hasParameters()).thenReturn(params != null && !params.isEmpty());
 			when(request.getParameters()).thenReturn((params != null) ? convert(params) : null);
 			
