@@ -11,6 +11,7 @@
 package org.oobium.build.esp.elements;
 
 import static org.oobium.utils.CharStreamUtils.findEOL;
+import static org.oobium.utils.CharStreamUtils.forward;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,26 +64,31 @@ public class ScriptElement extends MarkupElement {
 			s1 = commentCheck(this, s1);
 		}
 		
-		if(eoe > s1) {
-			addLine(s1, eoe);
-		}
-		
-		s1 = eoe;
-		while(s1 < ca.length) {
-			int level = 0;
-			while((s1+1+level) < ca.length && ca[s1+1+level] == '\t') {
-				level++;
+		s1 = forward(ca, s1);
+		if(s1 == -1) {
+			end = ca.length;
+		} else {
+			if(eoe > s1) {
+				addLine(s1, eoe);
 			}
-			if(this.level < level) {
-				int eol = findEOL(ca, s1+1);
-				addLine(s1+1, eol);
-				s1 = eol;
-			} else {
-				break;
+			
+			s1 = eoe;
+			while(s1 < ca.length) {
+				int level = 0;
+				while((s1+1+level) < ca.length && ca[s1+1+level] == '\t') {
+					level++;
+				}
+				if(this.level < level) {
+					int eol = findEOL(ca, s1+1);
+					addLine(s1+1, eol);
+					s1 = eol;
+				} else {
+					break;
+				}
 			}
+	
+			end = (s1 < ca.length) ? s1 : ca.length;
 		}
-
-		end = (s1 < ca.length) ? s1 : ca.length;
 	}
 	
 }

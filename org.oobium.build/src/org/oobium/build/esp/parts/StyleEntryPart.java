@@ -10,7 +10,7 @@
  ******************************************************************************/
 package org.oobium.build.esp.parts;
 
-import static org.oobium.utils.CharStreamUtils.*;
+import static org.oobium.build.esp.parts.EmbeddedJavaPart.skipEmbeddedJava;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,23 +33,43 @@ public class StyleEntryPart extends EspPart {
 		properties.add(new StylePropertyPart(this, start, end));
 	}
 	
-	protected void parse() {
-		int s1 = find(ca, '{', start, end) + 1;
-		if(s1 == 0) {
-			s1 = start + 1;
+	public boolean isSimple() {
+		return !hasParts();
+	}
+
+	private int findStart() {
+		int s = start + 1;
+		while(s < end) {
+			if(ca[s] == '{') {
+				return s;
+			}
+			s = skipEmbeddedJava(ca, s, end);
+			s++;
 		}
+		return start + 1;
+	}
+	
+	public List<StylePropertyPart> getProperties() {
+		return properties;
+	}
+	
+	protected void parse() {
+		int s1 = findStart();
 		int s2 = s1;
 		while(s2 < end - 1) {
-			if(ca[s2] == '}') {
-				break;
-			}
-			if(ca[s2] == ';') {
-				if(s2 > s1) {
-					addProperty(s1, s2);
+			s2 = skipEmbeddedJava(ca, s2, end);
+			if(s2 < end) {
+				if(ca[s2] == '}') {
+					break;
 				}
-				s1 = s2 = s2 + 1;
-			} else {
-				s2++;
+				if(ca[s2] == ';') {
+					if(s2 > s1) {
+						addProperty(s1, s2);
+					}
+					s1 = s2 = s2 + 1;
+				} else {
+					s2++;
+				}
 			}
 		}
 		if(s2 > s1) {

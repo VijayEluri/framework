@@ -6,23 +6,20 @@ import org.oobium.build.esp.EspPart;
 
 public class ScriptJavaPart extends EspPart {
 
-	public final char assignmentChar;
 	private EspPart source;
 	
-	public ScriptJavaPart(EspPart parent, int start, int end) {
-		super(parent, Type.JavaPart, start, end);
+	public ScriptJavaPart(EspPart parent, int start) {
+		super(parent, start);
+		type = Type.JavaPart;
+		end = closer(ca, start+1);
+		if(end == -1) {
+			end = ca.length;
+		}
 		int srcStart = forward(ca, start+2, end);
-		if(srcStart == -1) {
-			assignmentChar = '=';
-		} else {
+		if(srcStart != -1) {
 			int srcEnd = reverse(ca, end-1) + 1;
 			if(srcEnd > srcStart) {
 				source = new EspPart(this, Type.JavaSourcePart, srcStart, srcEnd);
-			}
-			if(end < ca.length && ca[end] == ';') {
-				assignmentChar = '=';
-			} else {
-				assignmentChar = ':';
 			}
 		}
 	}

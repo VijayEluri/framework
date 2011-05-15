@@ -10,16 +10,48 @@
  ******************************************************************************/
 package org.oobium.build.esp.elements;
 
-import static org.oobium.utils.CharStreamUtils.findEOL;
+import static org.oobium.utils.CharStreamUtils.closer;
 
 import org.oobium.build.esp.EspPart;
 
 public class StyleElement extends MarkupElement {
 
+	/**
+	 * Find the end of this element. May actually span multiple lines if there is a multi-line comment.
+	 */
+	public static int findEOE(char[] ca, int offset) {
+		for(int i = offset; i < ca.length; i++) {
+			switch(ca[i]) {
+			case '\n':
+				return i;
+			case '*':
+				if(ca[i-1] == '/') {
+					i += 2;
+					for( ; i < ca.length; i++) {
+						if(ca[i] == '/' && ca[i-1] == '*') {
+							break;
+						}
+					}
+				}
+				break;
+			case '{':
+				if(ca[i-1] == '$') {
+					i = closer(ca, i, ca.length, true);
+					if(i == -1) {
+						i = ca.length;
+					}
+				}
+				break;
+			}
+		}
+		return ca.length;
+	}
+
+	
 	public StyleElement(EspPart parent, int start) {
 		super(parent, start);
 	}
-
+	
 	protected int createChild(int start) {
 		int s = commentCheck(this, start);
 		if(s != start) {
@@ -39,14 +71,14 @@ public class StyleElement extends MarkupElement {
 		}
 		return ca.length;
 	}
-	
+
 	protected void parse() {
 		if(!dom.isEsp()) {
 			level = -1;
 		}
 
 		int s1 = dom.isStyle() ? start : (start + 5);
-		int eol = findEOL(ca, s1);
+		int eol = findEOE(ca, s1);
 
 		type = Type.StyleElement;
 		style = JAVA_TYPE | ARGS | ENTRIES | CHILDREN | CLOSING_TAG;

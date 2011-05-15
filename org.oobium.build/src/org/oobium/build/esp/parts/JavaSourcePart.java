@@ -1,5 +1,7 @@
 package org.oobium.build.esp.parts;
 
+import static org.oobium.build.esp.parts.EmbeddedJavaPart.embeddedJavaCheck;
+
 import org.oobium.build.esp.EspPart;
 
 public class JavaSourcePart extends EspPart {
@@ -16,24 +18,17 @@ public class JavaSourcePart extends EspPart {
 	}
 
 	private int parseString(int start) {
-		int s1 = start;
-		while(s1 < end) {
-			switch(ca[s1]) {
-			case '"':
-				if(ca[s1-1] != '\\' || ca[s1-2] == '\\') {
-					return s1 + 1;
+		int s = start;
+		for( ; s < end; s++) {
+			if(ca[s] == '"') {
+				if(ca[s-1] != '\\' || ca[s-2] == '\\') {
+					return s + 1;
 				}
-				break;
-			case '$':
-				if(ca[s1-1] != '\\' || ca[s1-2] == '\\') {
-					EspPart part = new JavaSourceStringPart(this, s1, end);
-					s1 = part.getEnd() - 1;
-				}
-				break;
+			} else {
+				s = embeddedJavaCheck(this, ca, s, end);
 			}
-			s1++;
 		}
-		return s1;
+		return s;
 	}
 	
 	private void parse() {

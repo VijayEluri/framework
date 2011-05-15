@@ -18,8 +18,7 @@ import org.oobium.build.esp.EspPart;
 public class StylePropertyPart extends EspPart {
 
 	private EspPart name;
-	private EspPart value;
-	private boolean isValueJava;
+	private StylePropertyValuePart value;
 	
 	public StylePropertyPart(EspPart parent, int start, int end) {
 		super(parent, Type.StylePropertyPart, start, end);
@@ -35,14 +34,10 @@ public class StylePropertyPart extends EspPart {
 		return name;
 	}
 	
-	public EspPart getValue() {
+	public StylePropertyValuePart getValue() {
 		return value;
 	}
 
-	public boolean isValueJava() {
-		return isValueJava;
-	}
-	
 	public boolean hasName() {
 		return name != null;
 	}
@@ -58,26 +53,23 @@ public class StylePropertyPart extends EspPart {
 			s1 = forward(ca, s1, end);
 			if(s1 != -1) {
 				for(int s = s1; s < end; s++) {
-					switch(ca[s]) {
-					case ':':
-						int s2 = reverse(ca, s-1) + 1;
-						if(s2 > s1) {
-							name = new EspPart(this, Type.StylePropertyNamePart, s1, s2);
-						}
-						if(s < end-1 && ca[s+1] == '=') {
-							isValueJava = true;
-							s++;
-						}
-						s1 = forward(ca, s+1, end);
-						if(s1 != -1) {
-							s2 = reverse(ca, end-1) + 1;
-							if(s2 > s1) {
-								value = new EspPart(this, Type.StylePropertyValuePart, s1, s2);
-							}
-						}
-						return;
-					}
 					s = commentCheck(this, s);
+					if(s < end) {
+						if(ca[s] == ':') {
+							int s2 = reverse(ca, s-1) + 1;
+							if(s2 > s1) {
+								name = new EspPart(this, Type.StylePropertyNamePart, s1, s2);
+							}
+							s1 = forward(ca, s+1, end);
+							if(s1 != -1) {
+								s2 = reverse(ca, end-1) + 1;
+								if(s2 > s1) {
+									value = new StylePropertyValuePart(this, s1, s2);
+								}
+							}
+							return;
+						}
+					}
 				}
 				
 				// no ':' found

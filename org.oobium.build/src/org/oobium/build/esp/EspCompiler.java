@@ -12,11 +12,10 @@ package org.oobium.build.esp;
 
 import static org.oobium.build.esp.EspPart.Type.ConstructorElement;
 import static org.oobium.build.esp.EspPart.Type.DOM;
-import static org.oobium.build.esp.EspPart.Type.MarkupElement;
 import static org.oobium.build.esp.EspPart.Type.ImportElement;
 import static org.oobium.build.esp.EspPart.Type.InnerTextElement;
 import static org.oobium.build.esp.EspPart.Type.JavaElement;
-import static org.oobium.build.esp.EspPart.Type.StyleEntryPart;
+import static org.oobium.build.esp.EspPart.Type.MarkupElement;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.className;
 import static org.oobium.utils.StringUtils.getterName;
@@ -36,28 +35,29 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.oobium.app.controllers.Controller;
+import org.oobium.app.http.Action;
 import org.oobium.app.views.ScriptFile;
 import org.oobium.app.views.StyleSheet;
 import org.oobium.app.views.View;
 import org.oobium.build.esp.ESourceFile.EspLocation;
 import org.oobium.build.esp.ESourceFile.JavaSource;
 import org.oobium.build.esp.elements.ConstructorElement;
-import org.oobium.build.esp.elements.MarkupElement;
 import org.oobium.build.esp.elements.ImportElement;
 import org.oobium.build.esp.elements.InnerTextElement;
 import org.oobium.build.esp.elements.JavaElement;
+import org.oobium.build.esp.elements.MarkupElement;
 import org.oobium.build.esp.elements.ScriptElement;
 import org.oobium.build.esp.elements.StyleChildElement;
 import org.oobium.build.esp.elements.StyleElement;
 import org.oobium.build.esp.parts.ConstructorArg;
+import org.oobium.build.esp.parts.EmbeddedJavaPart;
 import org.oobium.build.esp.parts.EntryPart;
 import org.oobium.build.esp.parts.JavaPart;
 import org.oobium.build.esp.parts.JavaSourcePart;
-import org.oobium.build.esp.parts.JavaSourceStringPart;
-import org.oobium.build.esp.parts.ScriptJavaPart;
 import org.oobium.build.esp.parts.ScriptPart;
+import org.oobium.build.esp.parts.StyleEntryPart;
 import org.oobium.build.esp.parts.StylePropertyPart;
-import org.oobium.app.http.Action;
+import org.oobium.build.esp.parts.StylePropertyValuePart;
 import org.oobium.mailer.MailerTemplate;
 import org.oobium.persist.Model;
 import org.oobium.utils.ArrayUtils;
@@ -344,85 +344,127 @@ public class EspCompiler {
 		}
 	}
 
-	private void build(EspPart part, StringBuilder sb) {
-		build(part, sb, false);
-	}
-	
-	/**
-	 * @param forceLastIsJava if true, then will behave as if lastIsJava(sb) returns true
-	 */
-	private void build(EspPart part, StringBuilder sb, boolean forceLastIsJava) {
-		if(part == null) {
+	private void build(JavaSourcePart jpart, StringBuilder sb, boolean forceLastIsJava) {
+		if(jpart == null) {
 			return; // occurs when part is supposed to be the value of an entry part, but it has not been created yet: "key:"
 		}
-		String text = part.getText();
-		if(part.isA(StyleEntryPart)) {
-			appendEscaped(sb, text);
-		} else if(part instanceof JavaSourcePart) {
-			JavaSourcePart jpart = (JavaSourcePart) part;
-			if(jpart.isSimple()) {
-				if(forceLastIsJava || lastIsJava(sb)) {
-					bodyLocations.add(new EspLocation(sb.length(), part));
-					sb.append(text);
-				} else {
-					bodyLocations.add(new EspLocation(sb.length(), part));
-					appendEscaped(sb, text);
-				}
+		String text = jpart.getText();
+		if(jpart.isSimple()) {
+			if(forceLastIsJava || lastIsJava(sb)) {
+				bodyLocations.add(new EspLocation(sb.length(), jpart));
+				sb.append(text);
 			} else {
-				if(jpart.hasParts()) {
-					List<EspPart> parts = part.getParts();
-					for(int i = 0; i < parts.size(); i++) {
-						EspPart sub = parts.get(i);
-						if(sub instanceof JavaSourceStringPart) {
-							JavaSourceStringPart jsspart = (JavaSourceStringPart) sub;
-							int s1 = jsspart.getStart() - part.getStart();
-							int s2 = s1 + jsspart.getLength();
-							if(i == 0) {
-								if(s1 > 0) {
-									appendEscaped(sb, text, 0, s1);
-								}
-							} else {
-								int s0 = parts.get(i-1).getEnd() - part.getStart();
-								if(s0 < s1) {
-									appendEscaped(sb, text, s0, s1);
-								}
-							}
-							sb.append("\").append(h(");
-							EspPart spart = jsspart.getSourcePart();
-							if(spart != null) {
-								bodyLocations.add(new EspLocation(sb.length(), spart));
-							}
-							sb.append(jsspart.getSource());
-							sb.append(")).append(\"");
-							if(i == parts.size() - 1) {
-								if(s2 < text.length()) {
-									appendEscaped(sb, text, s2, text.length());
-								}
+				bodyLocations.add(new EspLocation(sb.length(), jpart));
+				appendEscaped(sb, text);
+			}
+		} else {
+			if(jpart.hasParts()) {
+				List<EspPart> parts = jpart.getParts();
+				for(int i = 0; i < parts.size(); i++) {
+					EspPart sub = parts.get(i);
+					if(sub instanceof EmbeddedJavaPart) {
+						EmbeddedJavaPart jsspart = (EmbeddedJavaPart) sub;
+						int s1 = jsspart.getStart() - jpart.getStart();
+						int s2 = s1 + jsspart.getLength();
+						if(i == 0) {
+							if(s1 > 0) {
+								appendEscaped(sb, text, 0, s1);
 							}
 						} else {
-							build(sub, sb);
+							int s0 = parts.get(i-1).getEnd() - jpart.getStart();
+							if(s0 < s1) {
+								appendEscaped(sb, text, s0, s1);
+							}
+						}
+						sb.append("\").append(h(");
+						EspPart spart = jsspart.getSourcePart();
+						if(spart != null) {
+							bodyLocations.add(new EspLocation(sb.length(), spart));
+						}
+						sb.append(jsspart.getSource());
+						sb.append(")).append(\"");
+						if(i == parts.size() - 1) {
+							if(s2 < text.length()) {
+								appendEscaped(sb, text, s2, text.length());
+							}
+						}
+					} else {
+						build(sub, sb);
+					}
+				}
+			} else {
+				if(forceLastIsJava || lastIsJava(sb)) {
+					bodyLocations.add(new EspLocation(sb.length(), jpart));
+					sb.append(text);
+				} else {
+					sb.append("\").append(h(");
+					bodyLocations.add(new EspLocation(sb.length(), jpart));
+					sb.append(text);
+					sb.append(")).append(\"");
+				}
+			}
+		}
+	}
+	
+	private void build(ScriptPart jpart, StringBuilder sb) {
+		if(jpart == null) {
+			return; // occurs when part is supposed to be the value of an entry part, but it has not been created yet: "key:"
+		}
+		String text = jpart.getText();
+		if(jpart.isSimple()) {
+			appendEscaped(sb, text);
+		} else {
+			List<EspPart> parts = jpart.getParts();
+			for(int i = 0; i < parts.size(); i++) {
+				EspPart sub = parts.get(i);
+				if(sub instanceof EmbeddedJavaPart) {
+					EmbeddedJavaPart embedded = (EmbeddedJavaPart) sub;
+					int s1 = embedded.getStart() - jpart.getStart();
+					int s2 = s1 + embedded.getLength();
+					if(i == 0) {
+						if(s1 > 0) {
+							appendEscaped(sb, text, 0, s1);
+						}
+					} else {
+						int s0 = parts.get(i-1).getEnd() - jpart.getStart();
+						if(s0 < s1) {
+							appendEscaped(sb, text, s0, s1);
+						}
+					}
+					sb.append("\").append(h(");
+					EspPart spart = embedded.getSourcePart();
+					if(spart != null) {
+						bodyLocations.add(new EspLocation(sb.length(), spart));
+					}
+					sb.append(embedded.getSource());
+					sb.append(")).append(\"");
+					if(i == parts.size() - 1) {
+						if(s2 < text.length()) {
+							appendEscaped(sb, text, s2, text.length());
 						}
 					}
 				} else {
-					if(forceLastIsJava || lastIsJava(sb)) {
-						bodyLocations.add(new EspLocation(sb.length(), part));
-						sb.append(text);
-					} else {
-						sb.append("\").append(h(");
-						bodyLocations.add(new EspLocation(sb.length(), part));
-						sb.append(text);
-						sb.append(")).append(\"");
-					}
+					build(sub, sb);
 				}
 			}
-		} else if(part.hasParts()) {
+		}
+	}
+	
+	private void build(StylePropertyValuePart part, StringBuilder sb) {
+		if(part == null) {
+			return;
+		}
+		String text = part.getText();
+		if(part.isSimple()) {
+			appendEscaped(sb, text);
+		} else {
 			List<EspPart> parts = part.getParts();
 			for(int i = 0; i < parts.size(); i++) {
 				EspPart sub = parts.get(i);
-				if(sub instanceof JavaPart) {
-					JavaPart jpart = (JavaPart) sub;
-					int s1 = jpart.getStart() - part.getStart();
-					int s2 = s1 + jpart.getLength();
+				if(sub instanceof EmbeddedJavaPart) {
+					EmbeddedJavaPart embedded = (EmbeddedJavaPart) sub;
+					int s1 = embedded.getStart() - part.getStart();
+					int s2 = s1 + embedded.getLength();
 					if(i == 0) {
 						if(s1 > 0) {
 							appendEscaped(sb, text, 0, s1);
@@ -433,26 +475,13 @@ public class EspCompiler {
 							appendEscaped(sb, text, s0, s1);
 						}
 					}
-					sb.append("\").append(");
-					if(jpart.isEscaped()) {
-						sb.append(jpart.getEscapeChar()).append('(');
+					sb.append("\").append(h(");
+					EspPart spart = embedded.getSourcePart();
+					if(spart != null) {
+						bodyLocations.add(new EspLocation(sb.length(), spart));
 					}
-					if(sb == body) {
-						EspPart spart = jpart.getSourcePart();
-						if(spart != null) {
-							bodyLocations.add(new EspLocation(sb.length(), spart));
-						}
-					} else if(sb == title) {
-						EspPart spart = jpart.getSourcePart();
-						if(spart != null) {
-							titleLocations.add(new EspLocation(sb.length(), spart));
-						}
-					}
-					sb.append(jpart.getSource());
-					if(jpart.isEscaped()) {
-						sb.append(')');
-					}
-					sb.append(").append(\"");
+					sb.append(embedded.getSource());
+					sb.append(")).append(\"");
 					if(i == parts.size() - 1) {
 						if(s2 < text.length()) {
 							appendEscaped(sb, text, s2, text.length());
@@ -462,8 +491,115 @@ public class EspCompiler {
 					build(sub, sb);
 				}
 			}
-		} else {
-			appendEscaped(sb, text);
+		}
+	}
+	
+	private void build(EspPart part, StringBuilder sb) {
+		build(part, sb, false);
+	}
+	
+	private void build(StyleEntryPart part, StringBuilder sb) {
+		List<StylePropertyPart> properties = part.getProperties();
+		for(int i = 0; i < properties.size(); i++) {
+			StylePropertyPart property = properties.get(i);
+			if(property.hasName() && property.hasValue()) {
+				if(i != 0) sb.append(';');
+				sb.append(property.getName().getText());
+				sb.append(':');
+				build(property.getValue(), sb);
+			}
+		}
+	}
+	
+	/**
+	 * @param forceLastIsJava if true, then will behave as if lastIsJava(sb) returns true
+	 */
+	private void build(EspPart part, StringBuilder sb, boolean forceLastIsJava) {
+		if(part instanceof JavaSourcePart) {
+			build((JavaSourcePart) part, sb, forceLastIsJava);
+		}
+		else if(part instanceof ScriptPart) {
+			build((ScriptPart) part, sb);
+		}
+		else if(part instanceof StyleEntryPart) {
+			build((StyleEntryPart) part, sb);
+		}
+		else if(part instanceof StylePropertyValuePart) {
+			build((StylePropertyValuePart) part, sb);
+		}
+		else {
+			if(part == null) {
+				return; // occurs when part is supposed to be the value of an entry part, but it has not been created yet: "key:"
+			}
+			else if(part.hasParts()) {
+				String text = part.getText();
+				List<EspPart> parts = part.getParts();
+				for(int i = 0; i < parts.size(); i++) {
+					EspPart sub = parts.get(i);
+					if(sub instanceof JavaPart) {
+						JavaPart jpart = (JavaPart) sub;
+						int s1 = jpart.getStart() - part.getStart();
+						int s2 = s1 + jpart.getLength();
+						if(i == 0) {
+							if(s1 > 0) {
+								appendEscaped(sb, text, 0, s1);
+							}
+						} else {
+							int s0 = parts.get(i-1).getEnd() - part.getStart();
+							if(s0 < s1) {
+								appendEscaped(sb, text, s0, s1);
+							}
+						}
+						sb.append("\").append(");
+						if(jpart.isEscaped()) {
+							sb.append(jpart.getEscapeChar()).append('(');
+						}
+						if(sb == body) {
+							EspPart spart = jpart.getSourcePart();
+							if(spart != null) {
+								bodyLocations.add(new EspLocation(sb.length(), spart));
+							}
+						} else if(sb == title) {
+							EspPart spart = jpart.getSourcePart();
+							if(spart != null) {
+								titleLocations.add(new EspLocation(sb.length(), spart));
+							}
+						}
+						sb.append(jpart.getSource());
+						if(jpart.isEscaped()) {
+							sb.append(')');
+						}
+						sb.append(").append(\"");
+						if(i == parts.size() - 1) {
+							if(s2 < text.length()) {
+								appendEscaped(sb, text, s2, text.length());
+							}
+						}
+					} else {
+						int s1 = sub.getStart() - part.getStart();
+						int s2 = s1 + sub.getLength();
+						if(i == 0) {
+							if(s1 > 0) {
+								appendEscaped(sb, text, 0, s1);
+							}
+						} else {
+							int s0 = parts.get(i-1).getEnd() - part.getStart();
+							if(s0 < s1) {
+								appendEscaped(sb, text, s0, s1);
+							}
+						}
+						appendEscaped(sb, text, s1, s2);
+						if(i == parts.size() - 1) {
+							if(s2 < text.length()) {
+								appendEscaped(sb, text, s2, text.length());
+							}
+						}
+					}
+				}
+			}
+			else {
+				appendEscaped(sb, part.getText());
+			}
 		}
 	}
 
@@ -1483,7 +1619,7 @@ public class EspCompiler {
 			buildAttrs(input, "type", "onkeypress");
 		}
 		if(input.hasEntryValue("onkeypress")) {
-			ScriptPart part = (ScriptPart) input.getEntry("onkeypress").getValue();
+			JavaSourcePart part = (JavaSourcePart) input.getEntry("onkeypress").getValue();
 			if(part.isSimple()) {
 				String text = part.getText();
 				body.append(" onkeypress=\\\"").append(text.substring(1, text.length()-1));
@@ -1560,66 +1696,7 @@ public class EspCompiler {
 				for(int i = 0; i < lines.size(); i++) {
 					ScriptPart line = lines.get(i);
 					if(i != 0) sb.append("\\n");
-					if(line.hasParts()) {
-						String text = line.getText();
-						List<EspPart> parts = line.getParts();
-						for(int j = 0; j < parts.size(); j++) {
-							if(parts.get(j) instanceof ScriptJavaPart) {
-								ScriptJavaPart sjpart = (ScriptJavaPart) parts.get(j);
-								EspPart spart = sjpart.getSourcePart();
-								if(spart != null) {
-									int s1 = sjpart.getStart() - line.getStart();
-									int s2 = s1 + sjpart.getLength();
-									if(j == 0) {
-										if(s1 > 0) {
-											appendEscaped(sb, text, 0, s1);
-										}
-									} else {
-										int s0 = parts.get(j-1).getEnd();
-										if(s0 < s1) {
-											appendEscaped(sb, text, s0, s1);
-										}
-									}
-									sb.append(sjpart.assignmentChar);
-									sb.append("\").append(");
-									if(sb == body) {
-										bodyLocations.add(new EspLocation(sb.length(), spart));
-									} else if(sb == title) {
-										titleLocations.add(new EspLocation(sb.length(), spart));
-									}
-									sb.append(spart.getText());
-									sb.append(").append(\"");
-									if(j == parts.size() - 1) {
-										if(s2 < text.length()) {
-											appendEscaped(sb, text, s2, text.length());
-										}
-									}
-								}
-							} else {
-								EspPart part = parts.get(j);
-								int s1 = part.getStart() - line.getStart();
-								int s2 = s1 + part.getLength();
-								if(j == 0) {
-									if(s1 > 0) {
-										appendEscaped(sb, text, 0, s1);
-									}
-								} else {
-									int s0 = parts.get(j-1).getEnd();
-									if(s0 < s1) {
-										appendEscaped(sb, text, s0, s1);
-									}
-								}
-								appendEscaped(sb, text, s1, s2);
-								if(j == parts.size() - 1) {
-									if(s2 < text.length()) {
-										appendEscaped(sb, text, s2, text.length());
-									}
-								}
-							}
-						}
-					} else {
-						appendEscaped(sb, trim(line.getText()));
-					}
+					build(line, sb);
 				}
 				if(!dom.isEjs()) {
 					sb.append("</script>");
@@ -1828,8 +1905,7 @@ public class EspCompiler {
 						}
 						sb.append('{');
 						boolean firstProperty = true;
-						List<StylePropertyPart> properties = child.getProperties();
-						for(StylePropertyPart property : properties) {
+						for(StylePropertyPart property : child.getProperties()) {
 							if(property.hasName() && property.hasValue()) {
 								if(firstProperty) {
 									firstProperty = false;
@@ -1839,12 +1915,8 @@ public class EspCompiler {
 								sb.append(property.getName().getText());
 								EspPart value = property.getValue();
 								if(value != null) {
-									if(property.isValueJava()) {
-										sb.append(":\").append(").append(value.getText()).append(").append(\"");
-									} else {
-										sb.append(':');
-										appendEscaped(sb, value.getText());
-									}
+									sb.append(':');
+									build(value, sb);
 								}
 							}
 						}
@@ -2580,23 +2652,6 @@ public class EspCompiler {
 			}
 		}
 		return val;
-	}
-	
-	/**
-	 * removes only spaces, leave other whitespace characters
-	 */
-	private String trim(String s) {
-		char[] ca = s.toCharArray();
-		for(int i1 = 0; i1 >= 0 && i1 < ca.length; i1++) {
-			if(ca[i1] != ' ') {
-				for(int i2 = ca.length-1; i2 >= i1; i2--) {
-					if(ca[i2] != ' ') {
-						return (i1 > 0 || i2 < ca.length-1) ? s.substring(i1, i2+1) : s;
-					}
-				}
-			}
-		}
-		return "";
 	}
 
 }

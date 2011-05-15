@@ -50,7 +50,7 @@ public class EntryPart extends EspPart {
 				if("style".equals(keyText)) {
 					value = new StyleEntryPart(this, s1, s2);
 				} else if(DOM_EVENTS.contains(keyText)) {
-					value = new ScriptPart(this, s1, s2);
+					value = new ScriptEntryPart(this, s1, s2);
 				}
 			}
 			if(value == null) { // default

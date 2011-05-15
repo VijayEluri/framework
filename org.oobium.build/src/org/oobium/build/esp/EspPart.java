@@ -10,6 +10,8 @@
  ******************************************************************************/
 package org.oobium.build.esp;
 
+import static org.oobium.utils.CharStreamUtils.closer;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,7 +31,7 @@ public class EspPart implements CharSequence {
 		ScriptElement, ScriptPart,
 		StyleElement, StyleChildElement, StyleSelectorPart, StylePropertyPart, StylePropertyNamePart, StylePropertyValuePart,
 		CommentPart
-		}
+	}
 
 	
 	protected EspDom dom;
@@ -40,6 +42,7 @@ public class EspPart implements CharSequence {
 	protected int start;
 	protected int end;
 	protected List<EspPart> parts;
+	
 	public EspPart(EspPart parent, int start) {
 		if(parent != null) this.dom = parent.dom;
 		this.parent = parent;
@@ -52,9 +55,11 @@ public class EspPart implements CharSequence {
 			parent.addPart(this);
 		}
 	}
+	
 	public EspPart(EspPart parent, Type type, int start, int end) {
 		this(parent, type, start, end, false);
 	}
+	
 	public EspPart(EspPart parent, Type type, int start, int end, boolean literal) {
 		if(parent != null) this.dom = parent.dom;
 		this.parent = parent;
@@ -85,8 +90,13 @@ public class EspPart implements CharSequence {
 	}
 	
 	protected int commentCheck(EspPart parent, char[] ca, int ix) {
-		if(ix >= 0) {
-			if(ix < ca.length-1 && ca[ix] == '/' && (ca[ix+1] == '*' || ca[ix+1] == '/')) {
+		if(ix >= 0 && ix < end) {
+			if(ca[ix] == '"') {
+				ix = closer(ca, ix, end, true, true);
+				if(ix == -1) {
+					ix = end;
+				}
+			} else if(ca[ix] == '/' && (ca[ix+1] == '*' || ca[ix+1] == '/')) {
 				CommentPart comment = new CommentPart(parent, ix);
 				ix = comment.getEnd();
 			}

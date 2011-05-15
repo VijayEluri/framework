@@ -182,6 +182,14 @@ public class EspCompilerTests {
 		assertEquals("__sb__.append(\"<script>function() { $.getJSON('http://localhost'); }</script>\");", html("script function() { $.getJSON('http://localhost'); }"));
 		assertEquals("__sb__.append(\"<script>function() { $.getJSON(\\\"http://localhost\\\"); }</script>\");", html("script function() { $.getJSON(\"http://localhost\"); }"));
 		assertEquals("__sb__.append(\"<script>\\tif(true) {// comment\\n\\t}</script>\");", html("script\n\tif(true) {// comment\n\t}"));
+		
+		// with Java
+		assertEquals("__sb__.append(\"<script>alert(\").append(h(var)).append(\");</script>\");", html("script alert($var);"));
+		assertEquals("__sb__.append(\"<script>alert(\").append(h(var)).append(\");</script>\");", html("script alert(${var});"));
+
+		// in DOM event with Java
+		assertEquals("__sb__.append(\"<div onclick=\\\"alert(\").append(h(var)).append(\");\\\"></div>\");", html("div(onclick:\"alert($var);\""));
+		assertEquals("__sb__.append(\"<div onclick=\\\"alert(\").append(h(var)).append(\");\\\"></div>\");", html("div(onclick:\"alert(${var});\""));
 	}
 	
 	@Test
@@ -194,17 +202,27 @@ public class EspCompilerTests {
 		assertEquals("__sb__.append(\"<div><style>.myClass{color:red}</style></div>\");", html("div\n\tstyle .myClass { color: red; }"));
 		assertEquals("__sb__.append(\"<div><style>.myClass{color:red}</style></div>\");", html("div\n\tstyle\n\t\t.myClass { color: red; }"));
 
+		// multiline (does require properties to be indented... is this ok?)
+		assertEquals("__sb__.append(\"<div><style>.myClass{color:red}</style></div>\");", html("div\n\tstyle\n\t\t.myClass {\n\t\t\tcolor: red;\n\t\t}"));
+		
 		// with java
-		assertEquals("__sb__.append(\"<div><style>.myClass{width:\").append(height * 2 + \"px\").append(\"}</style></div>\");", html("div\n\tstyle\n\t\t.myClass { width:= height * 2 + \"px\"; }"));
+		assertEquals("__sb__.append(\"<div><style>.myClass{width:\").append(h(height * 2)).append(\"px}</style></div>\");",
+				html("div\n\tstyle\n\t\t.myClass { width: ${height * 2}px; }"));
 
-		// with comments
+		// with standard comment
 		assertEquals("__sb__.append(\"<style>.myClass{color:red}</style>\");", html("style .myClass { /* color:blue; */ color: red; }"));
+		assertEquals("__sb__.append(\"<style>.myClass{color:red}</style>\");", html("style .myClass { /*\ncolor:blue;\n*/ color: red; }"));
 
 		// after java line
 		assertEquals("if(true)\n\t__sb__.append(\"<style>td{border:0}</style>\");", html("-if(true)\n\tstyle td { border: 0 }"));
 
 		// including an ESS file
 		assertEquals("__sb__.append(\"<style>\");\nMyStyles myStyles$0 = new MyStyles();\nmyStyles$0.render(__sb__);\n__sb__.append(\"</style>\");", html("style<MyStyles>"));
+
+		// in DOM with Java
+		assertEquals("__sb__.append(\"<div style=\\\"color:\").append(h(var)).append(\"\\\"></div>\");", html("div(style:\"color: $var\""));
+		assertEquals("__sb__.append(\"<div style=\\\"color:\").append(h(var)).append(\"\\\"></div>\");", html("div(style:\"color: ${var}\""));
+		assertEquals("__sb__.append(\"<div style=\\\"color:\").append(h(blue * 2)).append(\"\\\"></div>\");", html("div(style:\"color: ${blue * 2}\""));
 	}
 
 	@Test
@@ -415,6 +433,8 @@ public class EspCompilerTests {
 		assertEquals("__sb__.append(\"<div id=\\\"\").append(h(id)).append(\"\\\"></div>\");", html("div#{h id}"));
 		assertEquals("__sb__.append(\"<div id=\\\"\").append(j(id)).append(\"\\\"></div>\");", html("div#{j id}"));
 		assertEquals("__sb__.append(\"<div id=\\\"\").append(id).append(\"\\\"></div>\");", html("div#{r id}"));
+
+		assertEquals("__sb__.append(\"<div>\").append(h(\"te//st\")).append(\"</div>\");", html("div {\"te//st\"}"));
 	}
 
 	@Test

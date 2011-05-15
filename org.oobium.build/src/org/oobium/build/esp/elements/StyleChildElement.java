@@ -10,13 +10,18 @@
  ******************************************************************************/
 package org.oobium.build.esp.elements;
 
-import static org.oobium.utils.CharStreamUtils.*;
+import static org.oobium.build.esp.elements.StyleElement.findEOE;
+import static org.oobium.utils.CharStreamUtils.closer;
+import static org.oobium.utils.CharStreamUtils.forward;
+import static org.oobium.utils.CharStreamUtils.isWhitespace;
+import static org.oobium.utils.CharStreamUtils.reverse;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.oobium.build.esp.EspElement;
 import org.oobium.build.esp.EspPart;
+import org.oobium.build.esp.parts.CommentPart;
 import org.oobium.build.esp.parts.StylePropertyPart;
 
 public class StyleChildElement extends EspElement {
@@ -34,8 +39,21 @@ public class StyleChildElement extends EspElement {
 		int s1 = start;
 		int s2 = start;
 		// static CSS files don't use levels
-		int eol = dom.isStatic() ? ca.length : findEOL(ca, start);
+		int eol = dom.isStatic() ? ca.length : findEOE(ca, start);
 		while(s2 < eol) {
+			if(ca[s2] == '{') {
+				if(ca[s2-1] == '$') {
+					s2 = closer(ca, s2, ca.length, true);
+					if(s2 == -1) {
+						s2 = ca.length;
+					} else {
+						s2++;
+					}
+					continue;
+				} else {
+					// some kind of error... just fall through for now
+				}
+			}
 			if(ca[s2] == '}') {
 				if(s2 > s1) {
 					addProperty(s1, s2);
@@ -80,6 +98,23 @@ public class StyleChildElement extends EspElement {
 		}
 	}
 	
+	protected int commentCheck(EspPart parent, char[] ca, int ix) {
+		if(ix >= 0) {
+			if(ix < ca.length) {
+				if(ca[ix] == '"') {
+					ix = closer(ca, ix, ca.length, true, true);
+					if(ix == -1) {
+						ix = ca.length;
+					}
+				} else if(ca[ix] == '/' && (ca[ix+1] == '*' || ca[ix+1] == '/')) {
+					CommentPart comment = new CommentPart(parent, ix);
+					ix = comment.getEnd();
+				}
+			}
+		}
+		return ix;
+	}
+	
 	public EspElement getElement() {
 		return (EspElement) parent;
 	}
@@ -102,7 +137,7 @@ public class StyleChildElement extends EspElement {
 	
 	private void parse() {
 		int s1 = start;
-		int eol = findEOL(ca, s1);
+		int eol = findEOE(ca, s1);
 		
 		int s2 = s1;
 		while(s2 < eol) {
@@ -131,10 +166,17 @@ public class StyleChildElement extends EspElement {
 		
 		if(s1 != -1) {
 			if(ca[s1] == '{') {
-				s1 = addProperties(s1+1);
-				if(ca[s1-1] == '}') { // element has been completed
-					end = s1;
-					return;
+				if(ca[s2-1] == '$') {
+					s2 = closer(ca, s2, ca.length, true);
+					if(s2 == -1) {
+						s2 = ca.length;
+					}
+				} else {
+					s1 = addProperties(s1+1);
+					if(ca[s1-1] == '}') { // element has been completed
+						end = s1;
+						return;
+					}
 				}
 			} else if(s2 > s1) {
 				addSelectorGroup(s1, s2);
@@ -151,7 +193,7 @@ public class StyleChildElement extends EspElement {
 				}
 				s1 = addProperties(s1+1);
 				if(ca[s1-1] == '}') { // element has been completed, ignore the rest of line
-					end = findEOL(ca, s1);
+					end = findEOE(ca, s1);
 					return;
 				}
 			}
@@ -164,7 +206,7 @@ public class StyleChildElement extends EspElement {
 				if(this.level < level) {
 					s1 = addProperties(s1+1+level);
 					if(ca[s1-1] == '}') { // element has been completed, ignore the rest of line
-						end = findEOL(ca, s1);
+						end = findEOE(ca, s1);
 						return;
 					}
 				} else {
