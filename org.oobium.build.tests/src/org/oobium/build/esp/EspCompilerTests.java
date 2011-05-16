@@ -450,6 +450,14 @@ public class EspCompilerTests {
 		assertEquals("if(true) {\n\t__sb__.append(\"<div>hello</div>\");\n} else {\n\t__sb__.append(\"<div>goodbye</div>\");\n}", html("- if(true) {\n\t\tdiv hello\n- } else {\n\t\tdiv goodbye\n- }"));
 		assertEquals("__sb__.append(\"<div>\");\nif(true) {\n\t__sb__.append(\"<div>hello</div>\");\n} else {\n\t__sb__.append(\"<div>goodbye</div>\");\n}\n__sb__.append(\"<span></span></div>\");",
 				html("div\n\t- if(true) {\n\t\t\tdiv hello\n\t- } else {\n\t\t\tdiv goodbye\n\t- }\n\tspan"));
+
+		// Java embedded in Strings
+		assertEquals("String text = \"say \" + var1 + \"!\";", html("- String text = \"say $var1!\";"));
+		// TODO (would be nice to get rid of the extra added empty string at the end...)
+		assertEquals("String text = \"the \" + fox + \" jumped over the \" + dog + \"\";", html("- String text = \"the $fox jumped over the $dog\";"));
+		// TODO (would be nice to get rid of the extra added empty string at the beginning and the end...)
+		assertEquals("String text = \"\" + fox + \" jumped over the \" + dog + \"\";", html("- String text = \"$fox jumped over the $dog\";"));
+		assertEquals("String text = \"asd\" + fgh + \"jkl\";", html("- String text = \"asd${fgh}jkl\";"));
 	}
 	
 	@Test

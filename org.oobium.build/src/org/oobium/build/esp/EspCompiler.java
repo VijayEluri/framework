@@ -344,6 +344,102 @@ public class EspCompiler {
 		}
 	}
 
+	private void build(EspPart part, StringBuilder sb) {
+		build(part, sb, false);
+	}
+	
+	/**
+	 * @param forceLastIsJava if true, then will behave as if lastIsJava(sb) returns true
+	 */
+	private void build(EspPart part, StringBuilder sb, boolean forceLastIsJava) {
+		if(part instanceof JavaSourcePart) {
+			build((JavaSourcePart) part, sb, forceLastIsJava);
+		}
+		else if(part instanceof ScriptPart) {
+			build((ScriptPart) part, sb);
+		}
+		else if(part instanceof StyleEntryPart) {
+			build((StyleEntryPart) part, sb);
+		}
+		else if(part instanceof StylePropertyValuePart) {
+			build((StylePropertyValuePart) part, sb);
+		}
+		else {
+			if(part == null) {
+				return; // occurs when part is supposed to be the value of an entry part, but it has not been created yet: "key:"
+			}
+			else if(part.hasParts()) {
+				String text = part.getText();
+				List<EspPart> parts = part.getParts();
+				for(int i = 0; i < parts.size(); i++) {
+					EspPart sub = parts.get(i);
+					if(sub instanceof JavaPart) {
+						JavaPart jpart = (JavaPart) sub;
+						int s1 = jpart.getStart() - part.getStart();
+						int s2 = s1 + jpart.getLength();
+						if(i == 0) {
+							if(s1 > 0) {
+								appendEscaped(sb, text, 0, s1);
+							}
+						} else {
+							int s0 = parts.get(i-1).getEnd() - part.getStart();
+							if(s0 < s1) {
+								appendEscaped(sb, text, s0, s1);
+							}
+						}
+						sb.append("\").append(");
+						if(jpart.isEscaped()) {
+							sb.append(jpart.getEscapeChar()).append('(');
+						}
+						if(sb == body) {
+							EspPart spart = jpart.getSourcePart();
+							if(spart != null) {
+								bodyLocations.add(new EspLocation(sb.length(), spart));
+							}
+						} else if(sb == title) {
+							EspPart spart = jpart.getSourcePart();
+							if(spart != null) {
+								titleLocations.add(new EspLocation(sb.length(), spart));
+							}
+						}
+						sb.append(jpart.getSource());
+						if(jpart.isEscaped()) {
+							sb.append(')');
+						}
+						sb.append(").append(\"");
+						if(i == parts.size() - 1) {
+							if(s2 < text.length()) {
+								appendEscaped(sb, text, s2, text.length());
+							}
+						}
+					} else {
+						int s1 = sub.getStart() - part.getStart();
+						int s2 = s1 + sub.getLength();
+						if(i == 0) {
+							if(s1 > 0) {
+								appendEscaped(sb, text, 0, s1);
+							}
+						} else {
+							int s0 = parts.get(i-1).getEnd() - part.getStart();
+							if(s0 < s1) {
+								appendEscaped(sb, text, s0, s1);
+							}
+						}
+						appendEscaped(sb, text, s1, s2);
+						if(i == parts.size() - 1) {
+							if(s2 < text.length()) {
+								appendEscaped(sb, text, s2, text.length());
+							}
+						}
+					}
+				}
+			}
+			else {
+				appendEscaped(sb, part.getText());
+			}
+		}
+	}
+	
 	private void build(JavaSourcePart jpart, StringBuilder sb, boolean forceLastIsJava) {
 		if(jpart == null) {
 			return; // occurs when part is supposed to be the value of an entry part, but it has not been created yet: "key:"
@@ -450,6 +546,19 @@ public class EspCompiler {
 		}
 	}
 	
+	private void build(StyleEntryPart part, StringBuilder sb) {
+		List<StylePropertyPart> properties = part.getProperties();
+		for(int i = 0; i < properties.size(); i++) {
+			StylePropertyPart property = properties.get(i);
+			if(property.hasName() && property.hasValue()) {
+				if(i != 0) sb.append(';');
+				sb.append(property.getName().getText());
+				sb.append(':');
+				build(property.getValue(), sb);
+			}
+		}
+	}
+	
 	private void build(StylePropertyValuePart part, StringBuilder sb) {
 		if(part == null) {
 			return;
@@ -494,115 +603,6 @@ public class EspCompiler {
 		}
 	}
 	
-	private void build(EspPart part, StringBuilder sb) {
-		build(part, sb, false);
-	}
-	
-	private void build(StyleEntryPart part, StringBuilder sb) {
-		List<StylePropertyPart> properties = part.getProperties();
-		for(int i = 0; i < properties.size(); i++) {
-			StylePropertyPart property = properties.get(i);
-			if(property.hasName() && property.hasValue()) {
-				if(i != 0) sb.append(';');
-				sb.append(property.getName().getText());
-				sb.append(':');
-				build(property.getValue(), sb);
-			}
-		}
-	}
-	
-	/**
-	 * @param forceLastIsJava if true, then will behave as if lastIsJava(sb) returns true
-	 */
-	private void build(EspPart part, StringBuilder sb, boolean forceLastIsJava) {
-		if(part instanceof JavaSourcePart) {
-			build((JavaSourcePart) part, sb, forceLastIsJava);
-		}
-		else if(part instanceof ScriptPart) {
-			build((ScriptPart) part, sb);
-		}
-		else if(part instanceof StyleEntryPart) {
-			build((StyleEntryPart) part, sb);
-		}
-		else if(part instanceof StylePropertyValuePart) {
-			build((StylePropertyValuePart) part, sb);
-		}
-		else {
-			if(part == null) {
-				return; // occurs when part is supposed to be the value of an entry part, but it has not been created yet: "key:"
-			}
-			else if(part.hasParts()) {
-				String text = part.getText();
-				List<EspPart> parts = part.getParts();
-				for(int i = 0; i < parts.size(); i++) {
-					EspPart sub = parts.get(i);
-					if(sub instanceof JavaPart) {
-						JavaPart jpart = (JavaPart) sub;
-						int s1 = jpart.getStart() - part.getStart();
-						int s2 = s1 + jpart.getLength();
-						if(i == 0) {
-							if(s1 > 0) {
-								appendEscaped(sb, text, 0, s1);
-							}
-						} else {
-							int s0 = parts.get(i-1).getEnd() - part.getStart();
-							if(s0 < s1) {
-								appendEscaped(sb, text, s0, s1);
-							}
-						}
-						sb.append("\").append(");
-						if(jpart.isEscaped()) {
-							sb.append(jpart.getEscapeChar()).append('(');
-						}
-						if(sb == body) {
-							EspPart spart = jpart.getSourcePart();
-							if(spart != null) {
-								bodyLocations.add(new EspLocation(sb.length(), spart));
-							}
-						} else if(sb == title) {
-							EspPart spart = jpart.getSourcePart();
-							if(spart != null) {
-								titleLocations.add(new EspLocation(sb.length(), spart));
-							}
-						}
-						sb.append(jpart.getSource());
-						if(jpart.isEscaped()) {
-							sb.append(')');
-						}
-						sb.append(").append(\"");
-						if(i == parts.size() - 1) {
-							if(s2 < text.length()) {
-								appendEscaped(sb, text, s2, text.length());
-							}
-						}
-					} else {
-						int s1 = sub.getStart() - part.getStart();
-						int s2 = s1 + sub.getLength();
-						if(i == 0) {
-							if(s1 > 0) {
-								appendEscaped(sb, text, 0, s1);
-							}
-						} else {
-							int s0 = parts.get(i-1).getEnd() - part.getStart();
-							if(s0 < s1) {
-								appendEscaped(sb, text, s0, s1);
-							}
-						}
-						appendEscaped(sb, text, s1, s2);
-						if(i == parts.size() - 1) {
-							if(s2 < text.length()) {
-								appendEscaped(sb, text, s2, text.length());
-							}
-						}
-					}
-				}
-			}
-			else {
-				appendEscaped(sb, part.getText());
-			}
-		}
-	}
-
 	private void buildAttrs(MarkupElement element, String...skip) {
 		Set<String> skipSet = Set(skip);
 		if(element.hasEntries()) {
@@ -648,7 +648,7 @@ public class EspCompiler {
 			body.append(" style=\\\"display:none\\\"");
 		}
 	}
-	
+
 	private void buildCheck(MarkupElement check) {
 		if(check.hasArgs()) {
 			List<JavaSourcePart> fields = check.getArgs();
@@ -805,7 +805,7 @@ public class EspCompiler {
 		sb.append("\t}");
 		esf.addConstructor(new JavaSource(sb.toString(), locations));
 	}
-
+	
 	private void buildDateInputs(MarkupElement date) {
 		body.append("<span");
 		buildFormField(date, false);
@@ -842,7 +842,7 @@ public class EspCompiler {
 		body.append(sbName).append(".append(\"</span>");
 		lastIsJava(body, false);
 	}
-	
+
 	private void buildElement(EspElement element) {
 		switch(element.getType()) {
 		case MarkupElement:
@@ -951,7 +951,7 @@ public class EspCompiler {
 		prepForMarkup(sb);
 		sb.append("<script src='/\").append(path$").append(pos).append(").append(\".js'></script>");
 	}
-
+	
 	private void buildExternalEss(StringBuilder sb, String type, StyleElement element) {
 		prepForJava(sb);
 		int pos = element.getStart();
@@ -959,7 +959,7 @@ public class EspCompiler {
 		prepForMarkup(sb);
 		sb.append("<link rel='stylesheet' type='text/css' href='/\").append(path$").append(pos).append(").append(\".css' />");
 	}
-	
+
 	private void buildFields(MarkupElement fields) {
 		List<JavaSourcePart> args = fields.getArgs();
 		if(args != null && args.size() == 1) {
@@ -1171,7 +1171,7 @@ public class EspCompiler {
 			buildAttrs(input, "type");
 		}
 	}
-
+	
 	private void buildHtml(MarkupElement element) {
 		String tag = element.getTag();
 		if("view".equals(tag)) {
@@ -1271,7 +1271,7 @@ public class EspCompiler {
 			lastBodyIsJava = false;
 		}
 	}
-	
+
 	private void buildId(MarkupElement element) {
 		if(element.hasId()) {
 			body.append(" id=\\\"");
@@ -1295,7 +1295,7 @@ public class EspCompiler {
 			build(image.getInnerText(), body);
 		}
 	}
-
+	
 	private void buildImport(ImportElement element) {
 		if(element.hasImport()) {
 			if(element.isStatic()) {
@@ -1331,7 +1331,7 @@ public class EspCompiler {
 		prepForMarkup(sb);
 		sb.append("</script>");
 	}
-	
+
 	private void buildInlineEss(StringBuilder sb, String type, StyleElement element) {
 		prepForMarkup(sb);
 		sb.append("<style>");
@@ -1356,13 +1356,14 @@ public class EspCompiler {
 		buildFormField(input, true);
 		body.append(" />");
 	}
-
+	
 	private void buildJava(JavaElement element, boolean isStart) {
-		EspPart source = element.getSourcePart();
+		JavaSourcePart source = element.getSourcePart();
 		if(source != null) {
 			prepForJava(body);
 			bodyLocations.add(new EspLocation(body.length(), element.getSourcePart()));
-			body.append(source.getText()).append("\n");
+			buildJavaLine(source, body);
+			body.append("\n");
 			lastBodyIsJava = true;
 		}
 
@@ -1381,6 +1382,59 @@ public class EspCompiler {
 		if(!lastBodyIsJava) {
 			body.append("\");\n");
 			lastBodyIsJava = true;
+		}
+	}
+
+	/**
+	 * called _only_ from {@link #buildJava(org.oobium.build.esp.elements.JavaElement, boolean)}
+	 */
+	private void buildJavaLine(JavaSourcePart jpart, StringBuilder sb) {
+		if(jpart == null) {
+			return; // occurs when part is supposed to be the value of an entry part, but it has not been created yet: "key:"
+		}
+		String text = jpart.getText();
+		if(jpart.isSimple()) {
+			bodyLocations.add(new EspLocation(sb.length(), jpart));
+			sb.append(text);
+		} else {
+			if(jpart.hasParts()) {
+				List<EspPart> parts = jpart.getParts();
+				for(int i = 0; i < parts.size(); i++) {
+					EspPart sub = parts.get(i);
+					if(sub instanceof EmbeddedJavaPart) {
+						EmbeddedJavaPart jsspart = (EmbeddedJavaPart) sub;
+						int s1 = jsspart.getStart() - jpart.getStart();
+						int s2 = s1 + jsspart.getLength();
+						if(i == 0) {
+							if(s1 > 0) {
+								sb.append(text.substring(0, s1));
+							}
+						} else {
+							int s0 = parts.get(i-1).getEnd() - jpart.getStart();
+							if(s0 < s1) {
+								sb.append(text.substring(s0, s1));
+							}
+						}
+						sb.append("\" + ");
+						EspPart spart = jsspart.getSourcePart();
+						if(spart != null) {
+							bodyLocations.add(new EspLocation(sb.length(), spart));
+						}
+						sb.append(jsspart.getSource());
+						sb.append(" + \"");
+						if(i == parts.size() - 1) {
+							if(s2 < text.length()) {
+								sb.append(text.substring(s2, text.length()));
+							}
+						}
+					} else {
+						build(sub, sb);
+					}
+				}
+			} else {
+				bodyLocations.add(new EspLocation(sb.length(), jpart));
+				sb.append(text);
+			}
 		}
 	}
 	

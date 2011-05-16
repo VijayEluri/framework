@@ -120,7 +120,7 @@ public class JavaElement extends EspElement {
 		return (source != null) ? source.getText() : "";
 	}
 	
-	public EspPart getSourcePart() {
+	public JavaSourcePart getSourcePart() {
 		return source;
 	}
 	
