@@ -422,11 +422,12 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 	
 	/**
 	 * Create a {@link Filter} object for the parameter with the given name.<br>
-	 * If the parameter with the given name is not a map (there is no parameter with 
-	 * the given name, or there are no parameters)
-	 * this method returns an empty {@link Filter} whose methods can still be called,
-	 * but will not perform any function.
-	 * @param param the name of the parameter to be filtered
+	 * If the parameter with the given name is not a map (or there is no parameter with 
+	 * the given name) then this method returns an empty {@link Filter} whose methods
+	 * can still be called, but will not perform any function.
+	 * <p>Use the returned {@link Filter} object to remove (filter out) any unwanted
+	 * parameters that may be sent from an untrusted source, such as a web form.
+	 * @param param the name of the parameter to create the {@link Filter} object on
 	 * @return a {@link Filter}; never null
 	 */
 	public Filter filter(String param) {

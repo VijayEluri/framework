@@ -26,7 +26,11 @@ public class Filter {
 			this.map = null;
 		}
 	}
-	
+
+	/**
+	 * Clear the underlying map, removing all fields.
+	 * @return this {@link Filter} object
+	 */
 	public Filter clear() {
 		if(map != null) {
 			map.clear();
@@ -34,6 +38,11 @@ public class Filter {
 		return this;
 	}
 
+	/**
+	 * Remove the given fields from the map.
+	 * @param fields the fields to remove from the map
+	 * @return this {@link Filter} object
+	 */
 	public Filter remove(String...fields) {
 		if(map != null) {
 			for(String field : fields) {
@@ -43,6 +52,12 @@ public class Filter {
 		return this;
 	}
 
+	/**
+	 * Select the given fields to pass through the filter and, therefore
+	 * remain in the map.
+	 * @param fields the fields to keep in the map
+	 * @return this {@link Filter} object
+	 */
 	public Filter select(String...fields) {
 		if(map != null) {
 			List<String> list = Arrays.asList(fields);
