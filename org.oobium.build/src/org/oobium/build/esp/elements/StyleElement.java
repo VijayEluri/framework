@@ -10,7 +10,7 @@
  ******************************************************************************/
 package org.oobium.build.esp.elements;
 
-import static org.oobium.utils.CharStreamUtils.closer;
+import static org.oobium.build.esp.parts.EmbeddedJavaPart.*;
 
 import org.oobium.build.esp.EspPart;
 
@@ -19,8 +19,9 @@ public class StyleElement extends MarkupElement {
 	/**
 	 * Find the end of this element. May actually span multiple lines if there is a multi-line comment.
 	 */
-	public static int findEOE(char[] ca, int offset) {
+	public static int findEOL(char[] ca, int offset) {
 		for(int i = offset; i < ca.length; i++) {
+			i = skipEmbeddedJava(ca, i, ca.length);
 			switch(ca[i]) {
 			case '\n':
 				return i;
@@ -31,14 +32,6 @@ public class StyleElement extends MarkupElement {
 						if(ca[i] == '/' && ca[i-1] == '*') {
 							break;
 						}
-					}
-				}
-				break;
-			case '{':
-				if(ca[i-1] == '$') {
-					i = closer(ca, i, ca.length, true);
-					if(i == -1) {
-						i = ca.length;
 					}
 				}
 				break;
@@ -78,7 +71,7 @@ public class StyleElement extends MarkupElement {
 		}
 
 		int s1 = dom.isStyle() ? start : (start + 5);
-		int eol = findEOE(ca, s1);
+		int eol = findEOL(ca, s1);
 
 		type = Type.StyleElement;
 		style = JAVA_TYPE | ARGS | ENTRIES | CHILDREN | CLOSING_TAG;

@@ -208,6 +208,8 @@ public class EspCompilerTests {
 		// with java
 		assertEquals("__sb__.append(\"<div><style>.myClass{width:\").append(h(height * 2)).append(\"px}</style></div>\");",
 				html("div\n\tstyle\n\t\t.myClass { width: ${height * 2}px; }"));
+		assertEquals("String pageWidth = \"860px\";\n__sb__.append(\"<div><style>.myClass{width:\").append(h(pageWidth)).append(\";color:red}</style></div>\");",
+				html("- String pageWidth = \"860px\";\ndiv\n\tstyle\n\t\t.myClass\n\t\t\twidth: ${pageWidth}\n\t\t\tcolor: red"));
 
 		// with standard comment
 		assertEquals("__sb__.append(\"<style>.myClass{color:red}</style>\");", html("style .myClass { /* color:blue; */ color: red; }"));

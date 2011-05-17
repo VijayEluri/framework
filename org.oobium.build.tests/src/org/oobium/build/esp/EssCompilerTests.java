@@ -90,11 +90,11 @@ public class EssCompilerTests {
 	@Test
 	public void testJava() throws Exception {
 		String ess;
-		ess = ".myClass { width:= (width * 2) + \"px\" }";
-		assertEquals("__sb__.append(\".myClass{width:\").append((width * 2) + \"px\").append(\"}\");", css(ess));
+		ess = ".myClass { width: ${width * 2}px }";
+		assertEquals("__sb__.append(\".myClass{width:\").append(h(width * 2)).append(\"px}\");", css(ess));
 
-		ess = "-int width = 10;\n\n.myClass { width:= (width * 2) + \"px\" }";
-		assertEquals("int width = 10;\n__sb__.append(\".myClass{width:\").append((width * 2) + \"px\").append(\"}\");", css(ess));
+		ess = "-int width = 10;\n\n.myClass { width: ${width * 2}px }";
+		assertEquals("int width = 10;\n__sb__.append(\".myClass{width:\").append(h(width * 2)).append(\"px}\");", css(ess));
 	}
 
 	@Test

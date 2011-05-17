@@ -2118,6 +2118,7 @@ public class EspCompiler {
 		bodyLocations = new ArrayList<EspLocation>();
 
 		esf.setPackage(pkg);
+		esf.addStaticImport(StringUtils.class.getCanonicalName() + ".*");
 		esf.addImport(ScriptFile.class.getCanonicalName());
 		esf.setSimpleName(dom.getName());
 		esf.setSuperName(ScriptFile.class.getSimpleName());
@@ -2314,6 +2315,7 @@ public class EspCompiler {
 		bodyLocations = new ArrayList<EspLocation>();
 
 		esf.setPackage(pkg);
+		esf.addStaticImport(StringUtils.class.getCanonicalName() + ".*");
 		esf.addImport(StyleSheet.class.getCanonicalName());
 		esf.setSimpleName(dom.getName());
 		esf.setSuperName(StyleSheet.class.getSimpleName());

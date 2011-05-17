@@ -10,7 +10,8 @@
  ******************************************************************************/
 package org.oobium.build.esp.elements;
 
-import static org.oobium.build.esp.elements.StyleElement.findEOE;
+import static org.oobium.build.esp.parts.EmbeddedJavaPart.*;
+import static org.oobium.build.esp.elements.StyleElement.findEOL;
 import static org.oobium.utils.CharStreamUtils.closer;
 import static org.oobium.utils.CharStreamUtils.forward;
 import static org.oobium.utils.CharStreamUtils.isWhitespace;
@@ -39,39 +40,29 @@ public class StyleChildElement extends EspElement {
 		int s1 = start;
 		int s2 = start;
 		// static CSS files don't use levels
-		int eol = dom.isStatic() ? ca.length : findEOE(ca, start);
+		int eol = dom.isStatic() ? ca.length : findEOL(ca, start);
 		while(s2 < eol) {
-			if(ca[s2] == '{') {
-				if(ca[s2-1] == '$') {
-					s2 = closer(ca, s2, ca.length, true);
-					if(s2 == -1) {
-						s2 = ca.length;
-					} else {
-						s2++;
+			s2 = skipEmbeddedJava(ca, s2, eol);
+			if(s2 < eol) {
+				if(ca[s2] == '}') {
+					if(s2 > s1) {
+						addProperty(s1, s2);
 					}
-					continue;
+					return s2 + 1;
+				}
+				if(ca[s2] == ';') {
+					if(s2 > s1) {
+						addProperty(s1, s2);
+					}
+					s1 = s2 = s2 + 1;
 				} else {
-					// some kind of error... just fall through for now
-				}
-			}
-			if(ca[s2] == '}') {
-				if(s2 > s1) {
-					addProperty(s1, s2);
-				}
-				return s2 + 1;
-			}
-			if(ca[s2] == ';') {
-				if(s2 > s1) {
-					addProperty(s1, s2);
-				}
-				s1 = s2 = s2 + 1;
-			} else {
-				int s = commentCheck(this, s2);
-				if(s >= eol) {
-					addProperty(s1, s2);
-					return s;
-				} else {
-					s2 = s + 1;
+					int s = commentCheck(this, s2);
+					if(s >= eol) {
+						addProperty(s1, s2);
+						return s;
+					} else {
+						s2 = s + 1;
+					}
 				}
 			}
 		}
@@ -137,7 +128,7 @@ public class StyleChildElement extends EspElement {
 	
 	private void parse() {
 		int s1 = start;
-		int eol = findEOE(ca, s1);
+		int eol = findEOL(ca, s1);
 		
 		int s2 = s1;
 		while(s2 < eol) {
@@ -193,7 +184,7 @@ public class StyleChildElement extends EspElement {
 				}
 				s1 = addProperties(s1+1);
 				if(ca[s1-1] == '}') { // element has been completed, ignore the rest of line
-					end = findEOE(ca, s1);
+					end = findEOL(ca, s1);
 					return;
 				}
 			}
@@ -205,10 +196,6 @@ public class StyleChildElement extends EspElement {
 				}
 				if(this.level < level) {
 					s1 = addProperties(s1+1+level);
-					if(ca[s1-1] == '}') { // element has been completed, ignore the rest of line
-						end = findEOE(ca, s1);
-						return;
-					}
 				} else {
 					break;
 				}
