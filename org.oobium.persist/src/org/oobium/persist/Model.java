@@ -1449,6 +1449,9 @@ public abstract class Model implements JsonModel {
 	@Override
 	public String toJson() {
 		Map<String, Object> map = getSerializationMap();
+		if(hasErrors()) {
+			map.put("errors", getErrorsList());
+		}
 		String json = JsonUtils.toJson(map);
 		if(logger.isLoggingTrace()) {
 			logger.trace(this + ".toJson() -> \n  " + json);

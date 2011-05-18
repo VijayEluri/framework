@@ -1068,15 +1068,19 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 			response.setContent("[]");
 		} else if(models.length == 1) {
 			if(models[0] != null) {
-				response.setContent(toJson(models[0].getErrors()));
+				Map<String, Object> errors = new HashMap<String, Object>();
+				errors.put("errors", models[0].getErrorsList());
+				response.setContent(toJson(errors));
 			}
 		} else {
-			List<String> errors = new ArrayList<String>();
+			List<String> list = new ArrayList<String>();
 			for(Model model : models) {
 				if(model != null) {
-					errors.addAll(model.getErrorsList());
+					list.addAll(model.getErrorsList());
 				}
 			}
+			Map<String, Object> errors = new HashMap<String, Object>();
+			errors.put("errors", list);
 			response.setContent(toJson(errors));
 		}
 	}
@@ -1085,7 +1089,13 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 		rendering();
 		response = new Response(HttpResponseStatus.CONFLICT);
 		response.setContentType(MimeType.JSON);
-		response.setContent(toJson(errors));
+		if(errors.length == 0) {
+			response.setContent("[]");
+		} else {
+			Map<String, Object> map = new HashMap<String, Object>();
+			map.put("errors", errors);
+			response.setContent(toJson(errors));
+		}
 	}
 	
 	private void rendering() {

@@ -144,7 +144,15 @@ public class MimeType {
 	public final String[] extensions;
 	public final boolean binary;
 	
+	/**
+	 * The type plus subtype: type + "/" + subtype. This is what the request header "Accept" contains.
+	 */
 	public final String acceptsType;
+	
+	/**
+	 * The acceptsType plus the charset, if one exists: acceptsType + ";" + charset.
+	 * This is what the response header "Content-Type" contains.
+	 */
 	public final String contentType;
 
 	public MimeType(String type, String subtype) {

@@ -81,7 +81,7 @@ public class HttpApiService {
 			}
 		}
 		
-		ClientResponse response = client.get(path, Map("method", "models"));
+		ClientResponse response = client.get(path, Map("type", "models"));
 		if(response.isSuccess()) {
 			Object r = toObject(response.getBody());
 			if(r instanceof Map<?,?>) {

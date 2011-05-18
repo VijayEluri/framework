@@ -1,8 +1,12 @@
 package org.oobium.persist;
 
-import static org.junit.Assert.*;
-import static org.oobium.utils.literal.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.oobium.utils.StringUtils.asString;
+import static org.oobium.utils.literal.List;
+import static org.oobium.utils.literal.Map;
+import static org.oobium.utils.literal.e;
 
 import org.junit.Test;
 
@@ -80,7 +84,21 @@ public class ValidatorTests {
 		assertTrue(test.canSave());
 	}
 
-		
+//	@Test
+//	public void testIsIn_Primitive() throws Exception {
+//		DynModel am = DynClasses.getModel("AModel").addAttr("type", "int.class").addValidation("type", "isIn=\"0,1,2\"");
+//		
+//		Model a = am.newInstance();
+//		assertTrue(a.canSave());
+//
+//		a.set("type", "4");
+//		assertFalse(a.canSave());
+//
+//		a.set("type", "joe");
+//		assertTrue(a.canSave());
+//	}
+
+	
 	@ModelDescription(validations={ @Validate(field="name", isNotIn="bob, joe, bert") })
 	public static class TestIsNotIn extends Model { }
 	

@@ -4,6 +4,8 @@ import java.io.InputStream;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.oobium.app.http.MimeType;
+
 public class MessagePart {
 	
 	private final InputStream stream;
@@ -20,9 +22,8 @@ public class MessagePart {
 			this.contentType = null;
 		} else {
 			if(typeOrExt.indexOf('/') == -1) {
-				throw new UnsupportedOperationException("multipart mimetypes: not yet implemented");
-//				ContentType type = ContentType.getFromExtension(typeOrExt, ContentType.MULTIPART);
-//				this.contentType = type.getMediaType();
+				MimeType type = MimeType.getFromExtension(typeOrExt, MimeType.MULTIPART);
+				this.contentType = type.acceptsType;
 			} else {
 				this.contentType = typeOrExt;
 			}

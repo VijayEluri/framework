@@ -1,9 +1,11 @@
 package org.oobium.persist.http;
 
+import static org.oobium.utils.StringUtils.*;
 import static org.oobium.app.http.Action.create;
 import static org.oobium.app.http.MimeType.JSON;
 import static org.oobium.persist.http.PathBuilder.path;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
+import static org.oobium.utils.json.JsonUtils.*;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -12,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.oobium.client.Client;
 import org.oobium.client.ClientResponse;
 import org.oobium.persist.Model;
@@ -87,8 +90,21 @@ public class ModelForm {
 				if(response.isSuccess()) {
 					int id = coerce(response.getHeader("id"), int.class);
 					setId(id);
-				}else if(response.exceptionThrown()) {
-					addError(response.getException().getLocalizedMessage());
+				}else {
+					if(response.exceptionThrown()) {
+						addError(response.getException().getLocalizedMessage());
+					} else {
+						Map<String, Object> map = toMap(response.getBody(), true);
+						Object o = map.get("errors");
+						if(o instanceof List) {
+							for(Object error : (List<?>) o) {
+								addError(String.valueOf(error));
+							}
+						} else {
+							HttpResponseStatus status = response.getStatus();
+							addError("error: " + status.getCode() + " " + status.getReasonPhrase());
+						}
+					}
 				}
 			} catch(MalformedURLException e) {
 				addError("malformed URL should have been caught earlier!");
@@ -98,18 +114,18 @@ public class ModelForm {
 	}
 	
 	private String fieldName(String[] sa) {
-		if(sa.length == 1) {
-			return sa[0];
-		}
 		StringBuilder sb = new StringBuilder();
-		for(int i = 0; i < sa.length; i++) {
-			sb.append(sa[i]);
-			if(i == sa.length-1) {
-				sb.append(']');
-			} else if(i != 0) {
-				sb.append("][");
+		sb.append(varName(modelClass)).append('[');
+		if(sa.length == 1) {
+			sb.append(sa[0]);
+		}
+		else {
+			for(int i = 0; i < sa.length; i++) {
+				if(i != 0) sb.append("][");
+				sb.append(sa[i]);
 			}
 		}
+		sb.append(']');
 		return sb.toString();
 	}
 	

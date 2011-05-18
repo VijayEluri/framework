@@ -5,6 +5,7 @@ Bundle-SymbolicName: org.oobium.client
 Bundle-Version: 0.6.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: org.jboss.netty.handler.codec.http,
+ org.oobium.app.http,
  org.oobium.logging,
  org.oobium.utils,
  org.oobium.utils.coercion

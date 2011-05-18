@@ -1,5 +1,7 @@
 package org.oobium.persist;
 
+import org.oobium.utils.json.JsonUtils;
+
 public @interface Validate {
 
 	public static final int CREATE 	= 1 << 0;
@@ -19,6 +21,9 @@ public @interface Validate {
 
 	/**
 	 * Validate that the value of the given field is in the provided list.
+	 * <p>Note that the value of this method will be converted to a List<Object>
+	 * using the {@link JsonUtils#toList(String)} method.</p>
+	 * @see #isNotIn()
 	 */
 	String isIn() default "";
 
@@ -29,6 +34,9 @@ public @interface Validate {
 
 	/**
 	 * Validate that the value of the given field is NOT in the provided list.
+	 * <p>Note that the value of this method will be converted to a List<Object>
+	 * using the {@link JsonUtils#toList(String)} method.</p>
+	 * @see #isIn()
 	 */
 	String isNotIn() default "";
 
