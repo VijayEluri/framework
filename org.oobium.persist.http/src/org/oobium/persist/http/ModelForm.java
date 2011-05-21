@@ -1,15 +1,15 @@
 package org.oobium.persist.http;
 
-import static org.oobium.utils.StringUtils.*;
 import static org.oobium.app.http.Action.create;
 import static org.oobium.app.http.MimeType.JSON;
 import static org.oobium.persist.http.PathBuilder.path;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
-import static org.oobium.utils.json.JsonUtils.*;
+import static org.oobium.utils.json.JsonUtils.toMap;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -20,47 +20,49 @@ import org.oobium.client.ClientResponse;
 import org.oobium.persist.Model;
 import org.oobium.persist.http.HttpApiService.Request;
 
-public class ModelForm {
+public class ModelForm extends ModelFields {
 
-	public class Field {
-		private final ModelForm resource;
-		private final String name;
-		private Field(ModelForm resource, String name) {
-			this.resource = resource;
-			this.name = name;
-			as(null);
-		}
-		public void as(Object value) {
-			resource.fields.put(name, value);
-		}
-	}
-	
 	private final HttpApiService api;
-	private final Class<? extends Model> modelClass;
-	private final Map<String, Object> fields;
 
 	private int id;
+	private Map<String, Object> parameters;
+	private List<ModelFields> subFields;
 	private List<String> errors;
 	
 	public ModelForm(Class<? extends Model> modelClass) {
+		super(null, modelClass);
+		this.form = this;
 		this.api = HttpApiService.getInstance();
-		this.modelClass = modelClass;
-		this.fields = new HashMap<String, Object>();
 	}
 	
-	public ModelForm(Model model) {
-		this(model.getClass());
+	public Map<String, Object> getParameters() {
+		if(parameters == null) {
+			return new HashMap<String, Object>(0);
+		}
+		return new LinkedHashMap<String, Object>(parameters);
 	}
 	
-	public Field add(String...fields) {
-		return new Field(this, fieldName(fields));
+	void put(String name, Object value) {
+		if(parameters == null) {
+			parameters = new LinkedHashMap<String, Object>();
+		}
+		parameters.put(name, value);
 	}
-
+	
 	private void addError(String error) {
 		if(errors == null) {
 			errors = new ArrayList<String>();
 		}
 		errors.add(error);
+	}
+
+	public ModelFields addFieldsFor(Class<? extends Model> modelClass) {
+		if(subFields == null) {
+			subFields = new ArrayList<ModelFields>();
+		}
+		ModelFields subForm = new ModelFields(this, modelClass);
+		subFields.add(subForm);
+		return subForm;
 	}
 	
 	private void clearErrors() {
@@ -81,7 +83,7 @@ public class ModelForm {
 				Client client = Client.client(request.url);
 				client.setAccepts(JSON.acceptsType);
 	
-				for(Entry<String, Object> entry : fields.entrySet()) {
+				for(Entry<String, Object> entry : parameters.entrySet()) {
 					client.addParameter(entry.getKey(), entry.getValue());
 				}
 				
@@ -113,22 +115,6 @@ public class ModelForm {
 		return !hasErrors();
 	}
 	
-	private String fieldName(String[] sa) {
-		StringBuilder sb = new StringBuilder();
-		sb.append(varName(modelClass)).append('[');
-		if(sa.length == 1) {
-			sb.append(sa[0]);
-		}
-		else {
-			for(int i = 0; i < sa.length; i++) {
-				if(i != 0) sb.append("][");
-				sb.append(sa[i]);
-			}
-		}
-		sb.append(']');
-		return sb.toString();
-	}
-	
 	public List<String> getErrors() {
 		return errors;
 	}
@@ -136,11 +122,11 @@ public class ModelForm {
 	public int getId() {
 		return id;
 	}
-
+	
 	public boolean hasErrors() {
 		return errors != null;
 	}
-	
+
 	public boolean isNew() {
 		return id <= 0;
 	}

@@ -1,6 +1,9 @@
 package org.oobium.persist.http;
 
+import java.util.Arrays;
 import java.util.List;
+
+import org.oobium.persist.Model;
 
 public class RemoteException extends Exception {
 
@@ -8,12 +11,20 @@ public class RemoteException extends Exception {
 	
 	private List<String> errors;
 	
+	public RemoteException(List<String> errors) {
+		this.errors = errors;
+	}
+
+	public RemoteException(Model model) {
+		this.errors = model.getErrorsList();
+	}
+	
 	public RemoteException(String message) {
 		super(message);
 	}
 	
-	public RemoteException(List<String> errors) {
-		this.errors = errors;
+	public RemoteException(String...errors) {
+		this.errors = Arrays.asList(errors);
 	}
 	
 	public List<String> getErrors() {
