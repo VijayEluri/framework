@@ -29,8 +29,6 @@ public class ClientCommand extends BuilderCommand {
 		Workspace workspace = getWorkspace();
 		Module module = getModule();
 		
-		boolean full = !module.hasModels() || ("Y".equalsIgnoreCase(ask("export the full project? [Y/N] ")));
-		
 		AndroidApp target = null;
 		if(hasParam("target")) {
 			Project project = workspace.getProject(param("target"));
@@ -72,6 +70,8 @@ public class ClientCommand extends BuilderCommand {
 			}
 		}
 		try {
+			boolean full = !module.hasModels() || ("Y".equalsIgnoreCase(ask("export the full project? [Y/N] ")));
+
 			ClientExporter exporter = new ClientExporter(workspace, module);
 			exporter.setFull(full);
 			exporter.includeSource(true);
