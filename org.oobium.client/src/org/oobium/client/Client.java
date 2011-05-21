@@ -394,10 +394,10 @@ public class Client {
 		if(url != null) return url.toString();
 		return protocol + "://" + host + ":" + port;
 	}
- 	    
+
 	private void writeParam(DataOutputStream out, String name, String value, String boundary) throws Exception {
         out.writeBytes("content-disposition: form-data; name=\"" + name + "\"\r\n\r\n");
-        out.writeBytes(value);
+        out.writeBytes((value == null) ? "null" : value);
         out.writeBytes("\r\n--" + boundary + "\r\n");
     }
 	
