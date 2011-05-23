@@ -34,7 +34,14 @@ public class ModelForm extends ModelFields {
 		this.form = this;
 		this.api = HttpApiService.getInstance();
 	}
-	
+
+	public ModelForm(Model model) {
+		this(model.getClass());
+		for(Entry<String, Object> entry : model.getAll().entrySet()) {
+			addField(entry.getKey()).as(entry.getValue());
+		}
+	}
+
 	public Map<String, Object> getParameters() {
 		if(parameters == null) {
 			return new HashMap<String, Object>(0);
@@ -64,7 +71,15 @@ public class ModelForm extends ModelFields {
 		subFields.add(subForm);
 		return subForm;
 	}
-	
+
+	public ModelFields addFieldsFor(Model model) {
+		ModelFields subForm = addFieldsFor(model.getClass());
+		for(Entry<String, Object> entry : model.getAll().entrySet()) {
+			subForm.addField(entry.getKey()).as(entry.getValue());
+		}
+		return subForm;
+	}
+
 	private void clearErrors() {
 		if(errors != null) {
 			errors.clear();
