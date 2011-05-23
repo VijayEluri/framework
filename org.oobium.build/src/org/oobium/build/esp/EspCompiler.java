@@ -548,13 +548,15 @@ public class EspCompiler {
 	
 	private void build(StyleEntryPart part, StringBuilder sb) {
 		List<StylePropertyPart> properties = part.getProperties();
-		for(int i = 0; i < properties.size(); i++) {
-			StylePropertyPart property = properties.get(i);
-			if(property.hasName() && property.hasValue()) {
-				if(i != 0) sb.append(';');
-				sb.append(property.getName().getText());
-				sb.append(':');
-				build(property.getValue(), sb);
+		if(properties != null) {
+			for(int i = 0; i < properties.size(); i++) {
+				StylePropertyPart property = properties.get(i);
+				if(property.hasName() && property.hasValue()) {
+					if(i != 0) sb.append(';');
+					sb.append(property.getName().getText());
+					sb.append(':');
+					build(property.getValue(), sb);
+				}
 			}
 		}
 	}
