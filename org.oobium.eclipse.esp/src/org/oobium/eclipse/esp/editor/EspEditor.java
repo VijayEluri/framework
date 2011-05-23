@@ -298,7 +298,12 @@ public class EspEditor extends TextEditor {
 		
 		if(input != null) {
 			document = getDocumentProvider().getDocument(input);
-			EspCore.get(document).setName(getName());
+			String name = getEditorInput().getName();
+			int ix = name.indexOf(' '); // covers Subclipse names
+			if(ix != -1) {
+				name = name.substring(0, ix);
+			}
+			EspCore.get(document).setName(name);
 		} else {
 			document = null;
 		}
@@ -374,21 +379,14 @@ public class EspEditor extends TextEditor {
 	
 	public IMarker[] getMarkers(int offset) {
 		IFile file = getEResource();
-		if(!file.exists() || !OobiumCore.isEFile(file)) {
-			return null;
-		}
-
-		try {
-			return file.findMarkers(IMarker.MARKER, true, IResource.DEPTH_ZERO);
-		} catch(CoreException e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
-	
-	private String getName() {
-		IResource resource = getEResource();
-		return resource.getName();
+		if(file != null && file.exists() && OobiumCore.isEFile(file)) {
+			try {
+				return file.findMarkers(IMarker.MARKER, true, IResource.DEPTH_ZERO);
+			} catch(CoreException e) {
+				e.printStackTrace();
+			}
+		}		
+		return null;
 	}
 	
 	@Override
@@ -419,7 +417,7 @@ public class EspEditor extends TextEditor {
 	 */
 	private void updateMarkers() {
 		IFile file = getEResource();
-		if(!file.exists() || !OobiumCore.isEFile(file)) {
+		if(file == null || !file.exists() || !OobiumCore.isEFile(file)) {
 			return;
 		}
 		

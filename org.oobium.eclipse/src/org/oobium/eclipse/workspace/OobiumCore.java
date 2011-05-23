@@ -78,7 +78,7 @@ public class OobiumCore {
 	}
 
 	public static boolean isEFile(IResource resource) {
-		return isEFile(resource.getFileExtension());
+		return resource != null && isEFile(resource.getFileExtension());
 	}
 	
 	public static boolean isEFile(String ext) {
