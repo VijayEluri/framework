@@ -1448,17 +1448,21 @@ public abstract class Model implements JsonModel {
 	
 	@Override
 	public String toJson() {
-		Map<String, Object> map = getSerializationMap();
-		if(hasErrors()) {
-			map.put("errors", getErrorsList());
-		}
-		String json = JsonUtils.toJson(map);
+		String json = JsonIncludesBuilder.buildJson(this);
 		if(logger.isLoggingTrace()) {
 			logger.trace(this + ".toJson() -> \n  " + json);
 		}
 		return json;
 	}
-	
+
+	public String toJson(String include, Object...values) {
+		String json = JsonIncludesBuilder.buildJson(this, include, values);
+		if(logger.isLoggingTrace()) {
+			logger.trace(this + ".toJson() -> \n  " + json);
+		}
+		return json;
+	}
+
 	@Override
 	public String toString() {
 		return asSimpleString();

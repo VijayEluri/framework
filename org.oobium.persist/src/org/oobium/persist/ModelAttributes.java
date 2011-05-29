@@ -57,6 +57,11 @@ public class ModelAttributes {
 		}
 		
 		@Override
+		public boolean json() {
+			return true;
+		};
+		
+		@Override
 		public String init() {
 			return "";
 		}
@@ -112,6 +117,11 @@ public class ModelAttributes {
 		public String name() {
 			return "createdOn";
 		}
+		
+		@Override
+		public boolean json() {
+			return true;
+		};
 		
 		@Override
 		public String init() {
@@ -171,6 +181,11 @@ public class ModelAttributes {
 		}
 		
 		@Override
+		public boolean json() {
+			return true;
+		};
+		
+		@Override
 		public String init() {
 			return "";
 		}
@@ -226,6 +241,11 @@ public class ModelAttributes {
 		public String name() {
 			return "updatedOn";
 		}
+		
+		@Override
+		public boolean json() {
+			return true;
+		};
 		
 		@Override
 		public String init() {

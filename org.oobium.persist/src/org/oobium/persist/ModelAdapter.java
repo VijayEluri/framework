@@ -421,6 +421,13 @@ public class ModelAdapter {
 		}
 		return false;
 	}
+
+	public boolean isJson(String field) {
+		if(attribute.containsKey(field)) {
+			return attribute.get(field).json();
+		}
+		return true;
+	}
 	
 	public boolean isManyToMany(String field) {
 		Relation relation = hasMany.get(field);

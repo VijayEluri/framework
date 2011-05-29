@@ -32,6 +32,16 @@ public @interface Attribute {
 	String init() default "";
 	
 	/**
+	 * Set whether or not this field will be included (if set) in the output from the
+	 * {@link Model#toJson()} and {@link Model#toJson(String, Object...)} methods.
+	 * <p>Default is true.</p>
+	 * @return boolean set to true if this field should be included in the output JSON when set;
+	 * set false otherwise (helpful for sensitive fields such as passwords). Can be overridden by
+	 * explicitly including the field using {@link Model#toJson(String, Object...)}
+	 */
+	boolean json() default true;
+	
+	/**
 	 * The name of the field in the Java class.
 	 * @return the name of this attribute
 	 */
