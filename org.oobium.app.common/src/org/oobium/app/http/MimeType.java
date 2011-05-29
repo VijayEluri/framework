@@ -35,6 +35,7 @@ public class MimeType {
 		TAR_GZ,
 		XML,
 		VIDEO,
+		VIDEO_3GP,
 		VIDEO_AVI,
 		VIDEO_MP4,
 		VIDEO_MPEG,
@@ -78,6 +79,7 @@ public class MimeType {
 	public static final MimeType TAR_GZ = new MimeType("application", "x-gzip", "tar.gz,tgz,gz", true);
 	public static final MimeType XML = new MimeType("text", "xml");
 	public static final MimeType VIDEO = new MimeType("video", "*", true);
+	public static final MimeType VIDEO_3GP = new MimeType("video", "3gpp", "3gp", true);
 	public static final MimeType VIDEO_AVI = new MimeType("video", "avi", true);
 	public static final MimeType VIDEO_MP4 = new MimeType("video", "mp4", true);
 	public static final MimeType VIDEO_MPEG = new MimeType("video", "mpeg", "mp2,mpa,mpe,mpeg,mpg,mpv2", true);
