@@ -254,7 +254,7 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 				payload = new ChunkedStream((InputStream) payload);
 			} else {
 				try {
-					payload = new ChunkedStreamRange((InputStream) payload, range);
+					payload = new ChunkedPartialStream((InputStream) payload, range);
 				} catch(Exception e) {
 					throw new RuntimeException(e);
 				}
