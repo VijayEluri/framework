@@ -31,7 +31,7 @@ import org.jboss.netty.handler.stream.ChunkedInput;
  * @author <a href="http://gleamynode.net/">Trustin Lee</a>
  * @version $Rev: 2236 $, $Date: 2010-04-12 19:22:51 +0900 (Mon, 12 Apr 2010) $
  */
-public class ChunkedStreamRange implements ChunkedInput {
+public class ChunkedPartialStream implements ChunkedInput {
 
     static final int DEFAULT_CHUNK_SIZE = 8192;
 
@@ -43,7 +43,7 @@ public class ChunkedStreamRange implements ChunkedInput {
     /**
      * Creates a new instance that fetches data from the specified stream.
      */
-    public ChunkedStreamRange(InputStream in, int[] range) throws IOException {
+    public ChunkedPartialStream(InputStream in, int[] range) throws IOException {
         this(in, range, DEFAULT_CHUNK_SIZE);
     }
 
@@ -53,7 +53,7 @@ public class ChunkedStreamRange implements ChunkedInput {
      * @param chunkSize the number of bytes to fetch on each
      *                  {@link #nextChunk()} call
      */
-    public ChunkedStreamRange(InputStream in, int[] range, int chunkSize) throws IOException {
+    public ChunkedPartialStream(InputStream in, int[] range, int chunkSize) throws IOException {
         if (in == null) {
             throw new NullPointerException("in");
         }
