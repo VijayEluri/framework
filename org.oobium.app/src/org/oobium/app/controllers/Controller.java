@@ -24,6 +24,7 @@ import static org.oobium.utils.json.JsonUtils.format;
 import static org.oobium.utils.json.JsonUtils.toJson;
 import static org.oobium.utils.json.JsonUtils.toMap;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -851,6 +852,11 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 		render(JSON, models);
 	}
 	
+	public void render(File file) {
+		rendering();
+		response = new StaticResponse(file);
+	}
+
 	public void render(HttpResponseStatus status) {
 		render(status, wants(), status.getReasonPhrase());
 	}
