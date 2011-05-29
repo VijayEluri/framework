@@ -26,6 +26,10 @@ public class ServerPipelineFactory implements ChannelPipelineFactory {
 	public ChannelPipeline getPipeline() throws Exception {
 		ChannelPipeline pipeline = Channels.pipeline();
 		
+		if(handlers.hasChannelHandlers()) {
+			pipeline.addLast("gateway", new OobiumChannelHandler(pipeline, handlers));
+		}
+		
 		pipeline.addLast("decoder", new OobiumHttpRequestDecoder());
 		pipeline.addLast("aggregator", new HttpChunkAggregator(1*1024*1024));
 		pipeline.addLast("encoder", new HttpResponseEncoder());
@@ -35,30 +39,5 @@ public class ServerPipelineFactory implements ChannelPipelineFactory {
 		
 		return pipeline;
 	}
-
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	
 }

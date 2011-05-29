@@ -10,6 +10,7 @@ import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.ChannelGroupFuture;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import org.oobium.app.handlers.Gateway;
 import org.oobium.app.handlers.HttpRequestHandler;
 import org.oobium.app.server.RequestHandlerTrackers;
 import org.oobium.app.server.RequestHandlers;
@@ -81,6 +82,8 @@ public class AppServer implements BundleActivator {
         server.setOption("child.tcpNoDelay", true);
         server.setOption("child.keepAlive", true);
 
+        // TODO accept options from the application's config file
+        
 		addShutdownHook();
 		
 		return server;
@@ -120,8 +123,15 @@ public class AppServer implements BundleActivator {
 		}
 	}
 	
-	public Object addHandler(HttpRequestHandler handler) {
-		int port = handler.getPort();
+	public HttpRequestHandler addHandler(HttpRequestHandler handler) {
+		return (HttpRequestHandler) addHandler(handler, handler.getPort());
+	}
+	
+	public Gateway addHandler(Gateway handler) {
+		return (Gateway) addHandler(handler, handler.getPort());
+	}
+	
+	public Object addHandler(Object handler, int port) {
 		handlers.addHandler(handler, port);
 		int count = handlers.size(port);
 		if(count == 1) {
