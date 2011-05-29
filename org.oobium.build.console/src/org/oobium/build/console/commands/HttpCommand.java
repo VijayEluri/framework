@@ -21,6 +21,7 @@ import java.util.Map;
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.commands.http.DeleteCommand;
 import org.oobium.build.console.commands.http.GetCommand;
+import org.oobium.build.console.commands.http.HeadCommand;
 import org.oobium.build.console.commands.http.PostCommand;
 import org.oobium.build.console.commands.http.PutCommand;
 import org.oobium.client.ClientResponse;
@@ -32,6 +33,7 @@ public class HttpCommand extends BuilderCommand {
 	@Override
 	public void configure() {
 		add(new GetCommand());
+		add(new HeadCommand());
 		add(new PostCommand());
 		add(new PutCommand());
 		add(new DeleteCommand());
