@@ -121,7 +121,9 @@ public class Console extends Composite {
 			}
 			
 			canvas.setBounds(area.x, area.y, newSize.x, newSize.y);
-			canvas.moveAbove(null);
+			if(!"cocoa".equals(SWT.getPlatform())) {
+				canvas.moveAbove(null);
+			}
 		}
 	}
 
@@ -258,6 +260,7 @@ public class Console extends Composite {
 		Listener listener = new Listener() {
 			@Override
 			public void handleEvent(Event event) {
+				System.out.println("event: " + event.type);
 				switch(event.type) {
 				case SWT.Dispose:	dispose();				break;
 				case SWT.FocusIn:	handleFocusIn(event);	break;
@@ -1086,7 +1089,7 @@ public class Console extends Composite {
 				}
 			} else {
 				if(!contentAssistRequest(e) && !performFunction(e) && printable(e)) {
-					resetLineSelection();
+					//resetLineSelection();
 					commandHandleKey(e.character);
 					scrollCommandToView();
 				}
