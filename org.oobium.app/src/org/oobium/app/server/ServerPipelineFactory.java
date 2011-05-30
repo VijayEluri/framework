@@ -27,7 +27,7 @@ public class ServerPipelineFactory implements ChannelPipelineFactory {
 		ChannelPipeline pipeline = Channels.pipeline();
 		
 		if(handlers.hasChannelHandlers()) {
-			pipeline.addLast("gateway", new OobiumChannelHandler(pipeline, handlers));
+			pipeline.addLast("gateway", new ServerGatewayHandler(pipeline, handlers));
 		}
 		
 		pipeline.addLast("decoder", new OobiumHttpRequestDecoder());
