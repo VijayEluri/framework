@@ -260,7 +260,7 @@ public class Console extends Composite {
 		Listener listener = new Listener() {
 			@Override
 			public void handleEvent(Event event) {
-				System.out.println("event: " + event.type);
+				//System.out.println("event: " + event.type);
 				switch(event.type) {
 				case SWT.Dispose:	dispose();				break;
 				case SWT.FocusIn:	handleFocusIn(event);	break;
