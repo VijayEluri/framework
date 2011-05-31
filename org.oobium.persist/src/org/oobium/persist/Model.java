@@ -23,7 +23,6 @@ import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -31,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeMap;
 
 import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
@@ -172,6 +170,19 @@ public abstract class Model implements JsonModel {
 		persistServiceProvider.set(services);
 	}
 	
+	public static String toJson(Collection<? extends Model> models, String include, Object...values) {
+		String json = ModelJsonBuilder.buildJson(models, include, values);
+		Logger logger = logService.get();
+		if(logger == null) {
+			logger = LogProvider.getLogger(Model.class);
+		}
+		if(logger.isLoggingTrace()) {
+			logger.trace("Model#toJson(" + StringUtils.asString(models) + ", " + include + ((values.length == 0) ? "" : (", " + StringUtils.asString(values))) + ") -> \n  " + json);
+		}
+		return json;
+	}
+	
+
 	private PersistService persistor;
 	protected Logger logger;
 	
@@ -696,73 +707,6 @@ public abstract class Model implements JsonModel {
 		return persistor;
 	}
 	
-	private Map<String, Object> getSerializationMap() {
-		Map<String, Object> map = new TreeMap<String, Object>();
-		map.put("id", getId());
-//		TODO toJson: include canonical class name?
-		ModelAdapter adapter = ModelAdapter.getAdapter(getClass());
-		for(String field : adapter.getFields()) {
-			if(isSet(field)) {
-				if(adapter.hasAttribute(field)) {
-					map.put(field, get(field));
-				} else if(adapter.hasOne(field)) {
-					Model model = (Model) get(field);
-					if(model != null) {
-						ModelAdapter fadapter = ModelAdapter.getAdapter(model.getClass());
-						Map<String, Object> fmap = new TreeMap<String, Object>();
-						fmap.put("id", model.getId());
-						for(String ffield : fadapter.getFields()) {
-							if(model.isSet(ffield)) {
-								if(fadapter.hasAttribute(ffield)) {
-									fmap.put(ffield, model.get(ffield));
-								} else if(fadapter.hasOne(ffield)) {
-									Model m = (Model) model.get(ffield);
-									fmap.put(ffield, (m != null) ? m.getId() : null);
-								} else if(fadapter.hasMany(ffield)) {
-									Collection<?> collection = (Collection<?>) model.get(ffield);
-									List<Object> list = new ArrayList<Object>();
-									for(Object o : collection) {
-										list.add(Collections.singletonMap("id", ((Model) o).getId()));
-									}
-									fmap.put(ffield, list);
-								}
-							}
-						}
-						map.put(field, fmap);
-					}
-				} else if(adapter.hasMany(field)) {
-					Collection<?> collection = (Collection<?>) get(field);
-					List<Object> list = new ArrayList<Object>();
-					for(Object o : collection) {
-						Model model = (Model) o;
-						ModelAdapter fadapter = ModelAdapter.getAdapter(model.getClass());
-						Map<String, Object> fmap = new TreeMap<String, Object>();
-						fmap.put("id", model.getId());
-						for(String ffield : fadapter.getFields()) {
-							if(model.isSet(ffield)) {
-								if(fadapter.hasAttribute(ffield)) {
-									fmap.put(ffield, model.get(ffield));
-								} else if(fadapter.hasOne(ffield)) {
-									fmap.put(ffield, ((Model) model.get(ffield)).getId());
-								} else if(fadapter.hasMany(ffield)) {
-									Collection<?> fcollection = (Collection<?>) get(ffield);
-									List<Object> flist = new ArrayList<Object>();
-									for(Object fo : fcollection) {
-										flist.add(Collections.singletonMap("id", ((Model) fo).getId()));
-									}
-									fmap.put(ffield, list);
-								}
-							}
-						}
-						list.add(fmap);
-					}
-					map.put(field, list);
-				}
-			}
-		}
-		return map;
-	}
-
 	/**
 	 * Find out if this model's persisted object contains the field.
 	 * True if the field is an attribute or hasOne relationship.
@@ -1448,7 +1392,7 @@ public abstract class Model implements JsonModel {
 	
 	@Override
 	public String toJson() {
-		String json = JsonIncludesBuilder.buildJson(this);
+		String json = ModelJsonBuilder.buildJson(this);
 		if(logger.isLoggingTrace()) {
 			logger.trace(this + ".toJson() -> \n  " + json);
 		}
@@ -1456,7 +1400,7 @@ public abstract class Model implements JsonModel {
 	}
 
 	public String toJson(String include, Object...values) {
-		String json = JsonIncludesBuilder.buildJson(this, include, values);
+		String json = ModelJsonBuilder.buildJson(this, include, values);
 		if(logger.isLoggingTrace()) {
 			logger.trace(this + ".toJson() -> \n  " + json);
 		}

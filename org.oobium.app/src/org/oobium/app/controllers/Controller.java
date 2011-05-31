@@ -907,7 +907,11 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 	}
 	
 	public void render(Model model) {
-		render(JSON, model.toJson());
+		render(JSON, (model == null) ? "null" : model.toJson());
+	}
+	
+	public void render(Model model, String include, Object...values) {
+		render(JSON, (model == null) ? "null" : model.toJson(include, values));
 	}
 	
 	/**
@@ -1111,11 +1115,11 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 		isRendered = true;
 	}
 
-	public void renderJson(Collection<? extends Model> models, String include) {
+	public void renderJson(Collection<? extends Model> models, String include, Object...values) {
 		if(blank(models)) {
 			render(MimeType.JSON, "[]");
 		} else {
-			String json = JsonBuilder.buildJson(models, include);
+			String json = Model.toJson(models, include, values);
 			render(MimeType.JSON, json);
 		}
 	}
