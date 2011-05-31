@@ -109,7 +109,8 @@ public class Router {
 	protected Map<String, Class<?>> namedClasses;
 	protected Map<String, String> hasMany;
 	
-	protected Map<String, Websocket> websockets;
+	protected Map<String, Set<Websocket>> websocketsByGroup;
+	protected Map<String, Websocket> websocketsById;
 
 	protected Map<HttpMethod, Map<String, Realm>> authentications;
 	protected Map<String, Realm> realms;
@@ -514,13 +515,13 @@ public class Router {
 		return add(getName(show, path)).asView(path, clazz);
 	}
 	
-	public Routed addWebsocket(String path, Class<? extends WebsocketController> controller) {
+	public RoutedWebsocket addWebsocket(String path, Class<? extends WebsocketController> controller) {
 		return add(getName(path)).asWebsocket(path, controller);
 	}
 
-	Route addWebsocketRoute(String key, String path, Class<? extends WebsocketController> controller) {
+	WebsocketRoute addWebsocketRoute(String key, String path, Class<? extends WebsocketController> controller) {
 		path = checkRule(path);
-		Route route = new WebsocketRoute(path, controller);
+		WebsocketRoute route = new WebsocketRoute(path, controller, controller.getClass().getName());
 		addRoute(key, route);
 		return route;
 	}
@@ -813,22 +814,41 @@ public class Router {
 	}
 
 	/**
-	 * Get the WebSocket registered under the given name.
-	 * @param name the name of the WebSocket
+	 * Get the WebSocket registered under the given id.
+	 * @param name the id of the WebSocket; can be null
 	 * @return the WebSocket, or null if none is registered with the given name
 	 */
-	public Websocket getWebsocket(String name) {
-		return (websockets != null) ? websockets.get(name) : null;
+	public Websocket getWebsocket(String id) {
+		return (websocketsById != null) ? websocketsById.get(id) : null;
 	}
 
+	public Set<String> getWebsocketGroups() {
+		return (websocketsByGroup != null) ? websocketsByGroup.keySet() : new HashSet<String>(0);
+	}
+	
+	public Set<String> getWebsocketIds() {
+		return (websocketsById != null) ? websocketsById.keySet() : new HashSet<String>(0);
+	}
+
+	public Set<Websocket> getWebsockets(Class<? extends WebsocketController> controllerClass) {
+		return getWebsockets(controllerClass.getName());
+	}
+	
 	/**
-	 * Get a Set of the names of all registered WebSocket clients.
-	 * @return a Set of Strings; never null
+	 * Get the List of WebSockets registered under the given group name.
+	 * @param group the name of the group; can be null
+	 * @return List of WebSockets, or an empty Set if none are registered under the given group name; never null.
 	 */
-	public Set<String> getWebsockets() {
-		return (websockets != null) ? websockets.keySet() : new HashSet<String>(0);
+	public Set<Websocket> getWebsockets(String group) {
+		if(websocketsByGroup != null) {
+			Set<Websocket> sockets = websocketsByGroup.get(group);
+			if(sockets != null) {
+				return sockets;
+			}
+		}
+		return new HashSet<Websocket>(0);
 	}
-
+	
 	public boolean isAuthorized(Request request, Realm realm) {
 		String header = request.getHeader(HttpHeaders.Names.AUTHORIZATION);
 		if(header != null && header.startsWith("Basic ")) {
@@ -934,10 +954,26 @@ public class Router {
 	}
 
 	public void registerWebsocket(Websocket socket) {
-		if(websockets == null) {
-			websockets = new HashMap<String, Websocket>();
+		String id = socket.getId();
+		if(id != null && id.length() > 0) {
+			if(websocketsById == null) {
+				websocketsById = new HashMap<String, Websocket>();
+			}
+			websocketsById.put(id, socket);
 		}
-		websockets.put(socket.getName(), socket);
+
+		String group = socket.getGroup();
+		if(group != null && group.length() > 0) {
+			if(websocketsByGroup == null) {
+				websocketsByGroup = new HashMap<String, Set<Websocket>>();
+			}
+			Set<Websocket> sockets = websocketsByGroup.get(group);
+			if(sockets == null) {
+				sockets = new HashSet<Websocket>();
+				websocketsByGroup.put(group, sockets);
+			}
+			sockets.add(socket);
+		}
 	}
 	
 	/**
@@ -1266,8 +1302,32 @@ public class Router {
 	}
 
 	public void unregisterWebsocket(Websocket socket) {
-		if(websockets != null) {
-			websockets.remove(socket.getName());
+		String id = socket.getId();
+		if(id != null && id.length() > 0) {
+			if(websocketsById != null) {
+				if(websocketsById.remove(id) != null) {
+					if(websocketsById.isEmpty()) {
+						websocketsById = null;
+					}
+				}
+			}
+		}
+
+		String group = socket.getGroup();
+		if(group != null && group.length() > 0) {
+			if(websocketsByGroup != null) {
+				Set<Websocket> sockets = websocketsByGroup.get(group);
+				if(sockets != null) {
+					if(sockets.remove(socket)) {
+						if(sockets.isEmpty()) {
+							websocketsByGroup.remove(group);
+							if(websocketsByGroup.isEmpty()) {
+								websocketsByGroup = null;
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 

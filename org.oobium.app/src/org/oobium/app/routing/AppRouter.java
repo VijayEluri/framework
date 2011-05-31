@@ -180,7 +180,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 						return new ViewHandler(router, vr.viewClass, vr.params);
 					case Route.WEBSOCKET:
 						WebsocketRoute wr = (WebsocketRoute) fixedRoute;
-						return new WebsocketHandler(router, wr.controllerClass, wr.params);
+						return new WebsocketHandler(router, wr.controllerClass, wr.group, wr.params);
 					default:
 						throw new IllegalStateException();
 					}

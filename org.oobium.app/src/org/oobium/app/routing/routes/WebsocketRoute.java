@@ -11,11 +11,13 @@ public class WebsocketRoute extends Route {
 
 	public final Class<? extends WebsocketController> controllerClass;
 	public final String[][] params;
+	public String group;
 	
-	public WebsocketRoute(String rule, Class<? extends WebsocketController> controllerClass) {
+	public WebsocketRoute(String rule, Class<? extends WebsocketController> controllerClass, String group) {
 		super(Route.WEBSOCKET, HttpMethod.GET, rule);
 
 		this.controllerClass = controllerClass;
+		this.group = group;
 		
 		List<String[]> params = new ArrayList<String[]>();
 		parseRules(rule, null, params);

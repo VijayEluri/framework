@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.http.websocket.DefaultWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.junit.Test;
@@ -56,6 +55,8 @@ public class AppServerTests {
 		final File js = FileUtils.writeFile(folder, "application.js", "// nothing to see here");
 		final URL jquery = getClass().getResource("/scripts/jquery_1.4.4.js");
 		final URL logo = getClass().getResource("/images/logo.png");
+		final URL video = getClass().getResource("/test.3gp");
+		final URL video2 = getClass().getResource("/test_sm.3gp");
 		
 		HttpRequestHandler handler = mock(HttpRequestHandler.class);
 		when(handler.getPort()).thenReturn(5000);
@@ -94,6 +95,10 @@ public class AppServerTests {
 					return new StaticResponse(MimeType.TAR_GZ, jquery.openStream(), 78601, 0);
 				} else if("/logo.png".equals(path)) {
 					return new StaticResponse(MimeType.TAR_GZ, logo.openStream(), 6513, 0);
+				} else if("/test.3gp".equals(path)) {
+					return new StaticResponse(MimeType.VIDEO_3GP, video.openStream(), 576525, 0);
+				} else if("/test_sm.3gp".equals(path)) {
+					return new StaticResponse(MimeType.VIDEO_3GP, video2.openStream(), 87320, 0);
 				} else {
 					System.out.println("requested path: " + path);
 					return null;
@@ -159,15 +164,6 @@ public class AppServerTests {
 
 	@Test
 	public void testAppService() throws Exception {
-		File folder = new File(System.getProperty("user.dir"));
-		folder.mkdirs();
-		
-		final File css = FileUtils.writeFile(folder, "application.css", "/* nothing to see here */");
-		final File js = FileUtils.writeFile(folder, "application.js", "// nothing to see here");
-		final URL jquery = getClass().getResource("/scripts/jquery_1.4.4.js");
-		final URL logo = getClass().getResource("/images/logo.png");
-		
-		
 		Logger logger = LogProvider.getLogger();
 		logger.setConsoleLevel(Logger.DEBUG);
 		
@@ -193,8 +189,6 @@ public class AppServerTests {
 			Thread.sleep(100);
 		}
 	}
-
-	private static String webSocketLocation = "ws://localhost:5000/websockets";
 
 	public static class WebsocketsView extends View {
 		@Override
@@ -229,7 +223,7 @@ public class AppServerTests {
 					"<form onsubmit=\"return false;\">\n" +
 					"<input type=\"text\" name=\"message\" value=\"Hello, World!\"/>" +
 					"<input type=\"button\" value=\"Send LowerCase Data\" onclick=\"send(lowercase, this.form.message.value)\" />\n" +
-					"<input type=\"button\" value=\"Register LowerCase\" onclick=\"send(lowercase, 'register:{name:lowercase}')\" />\n" +
+					"<input type=\"button\" value=\"Register LowerCase\" onclick=\"send(lowercase, 'registration:{name:lowercase}')\" />\n" +
 					"<input type=\"button\" value=\"Send UpperCase Data\" onclick=\"send(uppercase, this.form.message.value)\" />\n" +
 					"</form>\n" +
 					"</body>"
@@ -239,8 +233,8 @@ public class AppServerTests {
 
 	public static class LowerCaseController extends WebsocketController {
 		@Override
-		public String handleRegistration(Map<String, String> properties) {
-			return properties.get("name");
+		public void handleRegistration(Websocket socket, Map<String, String> properties) {
+			socket.setId(properties.get("name"));
 		}
 		@Override
 		public void handleMessage(WebSocketFrame frame) {
@@ -258,14 +252,14 @@ public class AppServerTests {
 	public static class ShowAllWebsocketsController extends Controller {
 		@Override
 		public void handleRequest() throws SQLException {
-			Set<String> sockets = getRouter().getWebsockets();
+			Set<Websocket> sockets = getRouter().getWebsockets("lcws");
 			if(sockets.isEmpty()) {
 				render("no sockets");
 			} else {
 				StringBuilder sb = new StringBuilder();
 				sb.append("<ul>");
-				for(String name : sockets) {
-					sb.append("<li>").append(name).append("</li>");
+				for(Websocket socket : sockets) {
+					sb.append("<li>").append(socket.getId()).append("</li>");
 				}
 				sb.append("</ul>");
 				render(sb.toString());
@@ -295,8 +289,8 @@ public class AppServerTests {
 		AppService service = new AppService(logger) {
 			public void addRoutes(org.oobium.utils.Config config, AppRouter router) {
 				router.setHome(WebsocketsView.class);
-				router.addWebsocket("/lowercase", LowerCaseController.class);
-				router.addWebsocket("/uppercase", UpperCaseController.class);
+				router.addWebsocket("/lowercase", LowerCaseController.class).inGroup("lcws");
+				router.addWebsocket("/uppercase", UpperCaseController.class).inGroup("ucws");
 				router.addRoute("/show_sockets", ShowAllWebsocketsController.class);
 				router.addRoute("/write?{text:.*}", WriteToLowerCaseController.class);
 			};

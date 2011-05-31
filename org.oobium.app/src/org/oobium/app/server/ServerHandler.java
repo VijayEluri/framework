@@ -202,7 +202,7 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 		channel.write(upgrade);
 		
 		pipeline.replace("encoder", "wsencoder", new WebSocketFrameEncoder());
-		pipeline.replace("handler", "wshandler", new WebsocketServerHandler(logger, upgrade.router, ctx, request, upgrade.controllerClass, upgrade.params));
+		pipeline.replace("handler", "wshandler", new WebsocketServerHandler(logger, ctx, request, upgrade));
 	}
 
 	private ChannelFuture writePayload(Channel channel, StaticResponse response) {

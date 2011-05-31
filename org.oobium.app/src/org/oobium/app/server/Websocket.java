@@ -8,23 +8,46 @@ import java.util.Set;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.oobium.app.controllers.IParams;
+import org.oobium.app.routing.Router;
 
 public class Websocket implements IParams {
 
 	private final WebsocketServerHandler handler;
-	private final String name;
+	String id;
+	String group;
 	
-	public Websocket(WebsocketServerHandler handler, String name) {
+	Websocket(WebsocketServerHandler handler, String group) {
 		this.handler = handler;
-		this.name = name;
+		this.group = group;
 	}
 
 	public ChannelFuture close() {
 		return handler.ctx.getChannel().close();
 	}
 
-	public String getName() {
-		return name;
+	/**
+	 * Set the unique ID of this Websocket object. Setting the ID to a non-null value
+	 * will register it with the {@link Router}, thereby making it accessible to the
+	 * controllers, and any other objects that have access to the {@link Router}.
+	 * <p>There can only be one Websocket object with a given ID at any time. If there
+	 * was already one registered with the given ID then it will be replaced with this
+	 * call (but not disconnected).</p>
+	 * @param id a String to register the Websocket
+	 */
+	public void setId(String id) {
+		handler.register(id, group);
+	}
+	
+	public void setGroup(String group) {
+		handler.register(id, group);
+	}
+	
+	public String getId() {
+		return id;
+	}
+	
+	public String getGroup() {
+		return group;
 	}
 	
 	@Override

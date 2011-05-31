@@ -26,10 +26,12 @@ import org.oobium.app.routing.Router;
 public class WebsocketHandler extends RouteHandler {
 
 	private final Class<? extends WebsocketController> controllerClass;
+	private final String group;
 	
-	public WebsocketHandler(Router router, Class<? extends WebsocketController> controllerClass, String[][] params) {
+	public WebsocketHandler(Router router, Class<? extends WebsocketController> controllerClass, String group, String[][] params) {
 		super(router, params);
 		this.controllerClass = controllerClass;
+		this.group = group;
 	}
 
 	private String getWebsocketLocation(Request request) {
@@ -37,7 +39,7 @@ public class WebsocketHandler extends RouteHandler {
 	}
 	
 	private Response handleWebsocketHandshake(Request request) throws Exception {
-		WebsocketUpgrade response = new WebsocketUpgrade(router, controllerClass, getParamMap());
+		WebsocketUpgrade response = new WebsocketUpgrade(router, controllerClass, group, getParamMap());
 		
 		if(isProtocol06(request)) {
 			logger.warn("websockets protocol 6 is not yet implemented");

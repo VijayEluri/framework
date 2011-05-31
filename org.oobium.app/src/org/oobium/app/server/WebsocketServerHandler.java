@@ -10,6 +10,7 @@ import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.oobium.app.controllers.WebsocketController;
 import org.oobium.app.request.Request;
+import org.oobium.app.response.WebsocketUpgrade;
 import org.oobium.app.routing.Router;
 import org.oobium.logging.Logger;
 import org.oobium.utils.json.JsonUtils;
@@ -25,13 +26,16 @@ public class WebsocketServerHandler extends SimpleChannelUpstreamHandler {
 	
 	private Websocket websocket;
 	
-	public WebsocketServerHandler(Logger logger, Router router, ChannelHandlerContext ctx, Request request, Class<? extends WebsocketController> controllerClass, Map<String, Object> params) {
+	public WebsocketServerHandler(Logger logger, ChannelHandlerContext ctx, Request request, WebsocketUpgrade upgrade) {
 		this.logger = logger;
-		this.router = router;
+		this.router = upgrade.router;
 		this.ctx = ctx;
 		this.request = request;
-		this.controllerClass = controllerClass;
-		this.params = params;
+		this.controllerClass = upgrade.controllerClass;
+		this.params = upgrade.params;
+
+		websocket = new Websocket(this, upgrade.group);
+		router.registerWebsocket(websocket);
 
 		WebsocketController controller = getController(ctx, request);
 		if(controller != null)  {
@@ -106,12 +110,9 @@ public class WebsocketServerHandler extends SimpleChannelUpstreamHandler {
 			WebSocketFrame frame = (WebSocketFrame) e.getMessage();
 			if(frame.isText()) {
 				String text = frame.getTextData();
-				if(text.length() > 12 && text.startsWith("register:{") && text.charAt(text.length()-1) == '}') {
-					Map<String, String> properties = JsonUtils.toStringMap(text.substring(9));
-					String name = controller.handleRegistration(properties);
-					if(name != null && name.length() > 0) {
-						register(name);
-					}
+				if(text.length() > 12 && text.startsWith("registration:{") && text.charAt(text.length()-1) == '}') {
+					Map<String, String> properties = JsonUtils.toStringMap(text.substring(13));
+					controller.handleRegistration(websocket, properties);
 					return;
 				}
 			}
@@ -119,11 +120,10 @@ public class WebsocketServerHandler extends SimpleChannelUpstreamHandler {
 		}
 	}
 	
-	private void register(String name) {
-		if(this.websocket != null) {
-			router.unregisterWebsocket(websocket);
-		}
-		this.websocket = new Websocket(this, name);
+	void register(String id, String group) {
+		router.unregisterWebsocket(websocket);
+		websocket.id = id;
+		websocket.group = group;
 		router.registerWebsocket(websocket);
 	}
 	
