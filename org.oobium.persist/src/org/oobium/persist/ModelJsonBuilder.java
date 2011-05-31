@@ -26,25 +26,25 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
-class JsonIncludesBuilder {
+class ModelJsonBuilder {
 
 	public static final String INCLUDE = "include:";
 	public static final Pattern valuePattern = Pattern.compile("#\\{(\\d+)\\}");
 
 	static String buildJson(Collection<? extends Model> models, String include, Object...values) {
 		Model[] ma = models.toArray(new Model[models.size()]);
-		JsonIncludesBuilder builder = new JsonIncludesBuilder();
+		ModelJsonBuilder builder = new ModelJsonBuilder();
 		builder.setInclude(include, values);
 		return builder.build(ma);
 	}
 	
 	static String buildJson(Model model) {
-		JsonIncludesBuilder builder = new JsonIncludesBuilder();
+		ModelJsonBuilder builder = new ModelJsonBuilder();
 		return builder.build(model);
 	}
 	
 	static String buildJson(Model model, String include, Object...values) {
-		JsonIncludesBuilder builder = new JsonIncludesBuilder();
+		ModelJsonBuilder builder = new ModelJsonBuilder();
 		builder.setInclude(include, values);
 		return builder.build(model);
 	}
@@ -52,7 +52,7 @@ class JsonIncludesBuilder {
 
 	List<Object> includes;
 
-	private JsonIncludesBuilder() {
+	private ModelJsonBuilder() {
 		// private constructor
 	}
 
@@ -172,18 +172,6 @@ class JsonIncludesBuilder {
 			}
 		}
 		return false;
-	}
-
-	private Object adjustValue(Object o) {
-		if(o instanceof Model) {
-			Model m = (Model) o;
-			if(m.isNew()) {
-				o = null;
-			} else {
-				o = m.getId();
-			}
-		}
-		return o;
 	}
 
 	private void build(List<Object> list, Iterable<?> value, Object include) {
