@@ -678,6 +678,8 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 			this.params = mapParams(params);
 		} else if(routeParams != null) {
 			this.params = mapParams(routeParams);
+		} else {
+			this.params = new HashMap<String, Object>(0);
 		}
 	}
 	
