@@ -10,6 +10,8 @@
  ******************************************************************************/
 package org.oobium.build.console.commands.destroy;
 
+import java.io.File;
+
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
@@ -32,33 +34,43 @@ public class ModelCommand extends BuilderCommand {
 		}
 		
 		Module module = getModule();
-		String modelName = param(0);
+		File model = module.getModel(param(0));
+		String modelName = module.getModelName(model);
 		
 		if(flag('m')) {
-			String confirm = flag('f') ? "y" : ask("Permanently delete the Model from the file system?[Y/N] ");
-			if(!"Y".equalsIgnoreCase(confirm)) {
-				console.out.println("operation cancelled");
-				return;
+			if(model.exists()) {
+				String confirm = flag('f') ? "y" : ask("Permanently delete the " + modelName + " model from the file system?[Y/N] ");
+				if(!"Y".equalsIgnoreCase(confirm)) {
+					console.out.println("operation cancelled");
+					return;
+				}
+				module.destroyModel(modelName);
 			}
-			module.destroyModel(modelName);
 		}
 		
 		if(flag('v')) {
-			String confirm = flag('f') ? "y" : ask("Permanently delete the Views folder, and all contents, from the file system?[Y/N] ");
-			if(!"Y".equalsIgnoreCase(confirm)) {
-				console.out.println("operation cancelled");
-				return;
+			File viewsFolder = module.getViewsFolder(modelName);
+			if(viewsFolder.exists()) {
+				String confirm = flag('f') ? "y" : ask("Permanently delete the " + modelName + " views folder, and all contents, from the file system?[Y/N] ");
+				if(!"Y".equalsIgnoreCase(confirm)) {
+					console.out.println("operation cancelled");
+					return;
+				}
+				FileUtils.delete(viewsFolder);
 			}
-			FileUtils.delete(module.getViewsFolder(modelName));
 		}
 
 		if(flag('c')) {
-			String confirm = flag('f') ? "y" : ask("Permanently delete the Controller from the file system?[Y/N] ");
-			if(!"Y".equalsIgnoreCase(confirm)) {
-				console.out.println("operation cancelled");
-				return;
+			File controller = module.getControllerFor(modelName);
+			if(controller.exists()) {
+				String controllerName = module.getControllerName(controller);
+				String confirm = flag('f') ? "y" : ask("Permanently delete the " + controllerName + " from the file system?[Y/N] ");
+				if(!"Y".equalsIgnoreCase(confirm)) {
+					console.out.println("operation cancelled");
+					return;
+				}
+				FileUtils.delete(controller);
 			}
-			FileUtils.delete(module.getControllerFor(modelName));
 		}
 
 		Eclipse.refreshProject(module.name);
