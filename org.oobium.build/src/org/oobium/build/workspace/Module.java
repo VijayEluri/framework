@@ -42,6 +42,7 @@ import javax.mail.internet.InternetAddress;
 
 import org.oobium.app.MutableAppConfig;
 import org.oobium.app.controllers.Controller;
+import org.oobium.app.http.Action;
 import org.oobium.app.views.View;
 import org.oobium.build.esp.ESourceFile;
 import org.oobium.build.gen.ControllerGenerator;
@@ -52,7 +53,6 @@ import org.oobium.build.gen.ModelGenerator;
 import org.oobium.build.gen.ProjectGenerator;
 import org.oobium.build.gen.ViewGenerator;
 import org.oobium.build.util.ProjectUtils;
-import org.oobium.app.http.Action;
 import org.oobium.mailer.Mailer;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelDescription;
@@ -606,6 +606,9 @@ public class Module extends Bundle {
 	public File[] destroyModel(String name) {
 		List<File> files = new ArrayList<File>();
 		File model = getModel(name);
+		if(removeFromActivator(model)) {
+			files.add(activator);
+		}
 		if(model.delete()) {
 			files.add(model);
 			if(!hasModels()) {
@@ -616,7 +619,24 @@ public class Module extends Bundle {
 				}
 			}
 		}
+		File genModel = getGenModel(model);
+		if(genModel.delete()) {
+			files.add(genModel);
+		}
 		return files.toArray(new File[files.size()]);
+	}
+	
+	private boolean removeFromActivator(File file) {
+		String modelName = getModelName(file);
+		String className = packageName(file) + "." + modelName;
+		String srcOld = readFile(activator).toString();
+		String srcNew = srcOld.replaceFirst("import\\s+" + className + "\\s*;\\s*", "");
+		if(!srcOld.equals(srcNew)) {
+			srcNew = srcNew.replaceAll("(// auto-generated)?\\s*router\\.addResources\\(" + modelName + ".class\\);\\s*", "");
+			writeFile(activator, srcNew);
+			return true;
+		}
+		return false;
 	}
 	
 	public File[] destroyView(String name) {
