@@ -55,8 +55,6 @@ public class AppServerTests {
 		final File js = FileUtils.writeFile(folder, "application.js", "// nothing to see here");
 		final URL jquery = getClass().getResource("/scripts/jquery_1.4.4.js");
 		final URL logo = getClass().getResource("/images/logo.png");
-		final URL video = getClass().getResource("/test.3gp");
-		final URL video2 = getClass().getResource("/test_sm.3gp");
 		
 		HttpRequestHandler handler = mock(HttpRequestHandler.class);
 		when(handler.getPort()).thenReturn(5000);
@@ -95,10 +93,6 @@ public class AppServerTests {
 					return new StaticResponse(MimeType.TAR_GZ, jquery.openStream(), 78601, 0);
 				} else if("/logo.png".equals(path)) {
 					return new StaticResponse(MimeType.TAR_GZ, logo.openStream(), 6513, 0);
-				} else if("/test.3gp".equals(path)) {
-					return new StaticResponse(MimeType.VIDEO_3GP, video.openStream(), 576525, 0);
-				} else if("/test_sm.3gp".equals(path)) {
-					return new StaticResponse(MimeType.VIDEO_3GP, video2.openStream(), 87320, 0);
 				} else {
 					System.out.println("requested path: " + path);
 					return null;
