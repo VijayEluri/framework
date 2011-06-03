@@ -107,6 +107,56 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 		return response;
 	}
 
+	private int[] getRange(Request request, HttpResponse response) {
+		String header = request.getHeader(Names.RANGE);
+		if(header != null) {
+			String[] sa = header.split("\\s*=\\s*", 2);
+			if(sa.length == 2) {
+				sa = sa[1].split("\\s*,\\s*");
+				if(sa.length == 1) {
+					if(sa[0].length() == 0) {
+						logger.warn("empty range");
+					} else {
+						int clen;
+						header = response.getHeader(CONTENT_LENGTH);
+						if(header == null) {
+							ChannelBuffer content = response.getContent();
+							clen = (content != null) ? content.readableBytes() : 0;
+						} else {
+							clen = Integer.parseInt(header);
+						}
+						
+						if(sa[0].charAt(0) == '-') {
+							// bytes=-500
+							int len = Integer.parseInt(sa[0].substring(1));
+							return new int[] { (len > clen) ? 0 : (len-clen), clen };
+						}
+						else if(sa[0].charAt(sa[0].length()-1) == '-') {
+							// bytes=500-
+							int start = Integer.parseInt(sa[0].substring(0, sa[0].length()-1));
+							return new int[] { (start > clen) ? -1 : start, clen };
+						}
+						else {
+							// bytes=500-1000
+							sa = sa[0].split("\\s*-\\s*", 2);
+							int start = Integer.parseInt(sa[0]);
+							if(start < clen) {
+								int end = Integer.parseInt(sa[1]);
+								if(start < end) {
+									return new int[] { start, end };
+								}
+							}
+							return new int[] { -1, -1 };
+						}
+					}
+				} else {
+					logger.warn("multiple ranges not yet supported");
+				}
+			}
+		}
+		return null;
+	}
+	
 	private void handleHttpRequest(final ChannelHandlerContext ctx, final Request request) {
 		if(logger.isLoggingDebug()) {
 			logger.debug(request.toString());
@@ -192,19 +242,20 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
 		handleHttpRequest(ctx, (Request) e.getMessage());
 	}
-	
+
 	private void upgradeToWebsockets(ChannelHandlerContext ctx, Request request, WebsocketUpgrade upgrade) {
 		Channel channel = ctx.getChannel();
 		ChannelPipeline pipeline = channel.getPipeline();
 		pipeline.remove("aggregator");
 		pipeline.replace("decoder", "wsdecoder", new WebSocketFrameDecoder());
 		
-		channel.write(upgrade);
+		ChannelFuture future = writeResponse(channel, upgrade);
+		future.addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
 		
 		pipeline.replace("encoder", "wsencoder", new WebSocketFrameEncoder());
 		pipeline.replace("handler", "wshandler", new WebsocketServerHandler(logger, ctx, request, upgrade));
 	}
-
+	
 	private ChannelFuture writePayload(Channel channel, StaticResponse response) {
 		return writePayload(channel, response, null);
 	}
@@ -265,6 +316,13 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 		throw new UnsupportedOperationException("unsupported payload type: " + payload);
 	}
 	
+	private ChannelFuture writeResponse(Channel channel, HttpResponse response) {
+		if(logger.isLoggingDebug()) {
+			logger.debug(response.toString());
+		}
+		return channel.write(response);
+	}
+
 	private void writeResponse(ChannelHandlerContext ctx, Request request, HttpResponse response) {
 		if(response == null) {
 			response = get404Response(request);
@@ -275,13 +333,13 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 			response.setStatus(NOT_MODIFIED);
 			response.setContent(null);
 			response.setHeader(CONTENT_LENGTH, 0);
-			future = channel.write(response);
+			future = writeResponse(channel, response);
 		}
 		else {
 			if(request.getMethod() == HEAD) {
 				response.setContent(null);
 				response.setHeader(CONTENT_LENGTH, 0);
-				future = channel.write(response);
+				future = writeResponse(channel, response);
 			}
 			else {
 				int[] range = getRange(request, response);
@@ -290,7 +348,7 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 						ChannelBuffer content = response.getContent();
 						response.setHeader(CONTENT_LENGTH, (content != null) ? content.readableBytes() : 0);
 					}
-					future = channel.write(response);
+					future = writeResponse(channel, response);
 					if(response instanceof StaticResponse) {
 						future = writePayload(channel, (StaticResponse) response);
 					}
@@ -298,7 +356,7 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 					if(range[0] == -1) { // invalid range
 						response = new DefaultHttpResponse(HTTP_1_1, REQUESTED_RANGE_NOT_SATISFIABLE);
 						response.setContent(ChannelBuffers.copiedBuffer(REQUESTED_RANGE_NOT_SATISFIABLE.getReasonPhrase(), CharsetUtil.UTF_8));
-						future = channel.write(response);
+						future = writeResponse(channel, response);
 					} else {
 						response.setStatus(PARTIAL_CONTENT);
 						response.setHeader(CONTENT_LENGTH, range[1]-range[0]);
@@ -306,7 +364,7 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 						if(content != null && content.readableBytes() > 0) {
 							content.setIndex(range[0], range[1]);
 						}
-						future = channel.write(response);
+						future = writeResponse(channel, response);
 						if(response instanceof StaticResponse) {
 							future = writePayload(channel, (StaticResponse) response, range);
 						}
@@ -321,56 +379,6 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 		future.addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
 		
 		request.dispose(); // release any temporary files in the parameters
-	}
-
-	private int[] getRange(Request request, HttpResponse response) {
-		String header = request.getHeader(Names.RANGE);
-		if(header != null) {
-			String[] sa = header.split("\\s*=\\s*", 2);
-			if(sa.length == 2) {
-				sa = sa[1].split("\\s*,\\s*");
-				if(sa.length == 1) {
-					if(sa[0].length() == 0) {
-						logger.warn("empty range");
-					} else {
-						int clen;
-						header = response.getHeader(CONTENT_LENGTH);
-						if(header == null) {
-							ChannelBuffer content = response.getContent();
-							clen = (content != null) ? content.readableBytes() : 0;
-						} else {
-							clen = Integer.parseInt(header);
-						}
-						
-						if(sa[0].charAt(0) == '-') {
-							// bytes=-500
-							int len = Integer.parseInt(sa[0].substring(1));
-							return new int[] { (len > clen) ? 0 : (len-clen), clen };
-						}
-						else if(sa[0].charAt(sa[0].length()-1) == '-') {
-							// bytes=500-
-							int start = Integer.parseInt(sa[0].substring(0, sa[0].length()-1));
-							return new int[] { (start > clen) ? -1 : start, clen };
-						}
-						else {
-							// bytes=500-1000
-							sa = sa[0].split("\\s*-\\s*", 2);
-							int start = Integer.parseInt(sa[0]);
-							if(start < clen) {
-								int end = Integer.parseInt(sa[1]);
-								if(start < end) {
-									return new int[] { start, end };
-								}
-							}
-							return new int[] { -1, -1 };
-						}
-					}
-				} else {
-					logger.warn("multiple ranges not yet supported");
-				}
-			}
-		}
-		return null;
 	}
 	
 }
