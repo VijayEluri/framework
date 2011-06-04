@@ -31,6 +31,7 @@ import org.oobium.app.AppService;
 import org.oobium.app.ModuleService;
 import org.oobium.app.controllers.ActionCache;
 import org.oobium.app.controllers.Controller;
+import org.oobium.app.http.Action;
 import org.oobium.app.routing.AppRouter;
 import org.oobium.app.routing.Router;
 import org.oobium.build.util.SourceFile;
@@ -38,7 +39,6 @@ import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.ExportedPackage;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.Project.Type;
-import org.oobium.app.http.Action;
 import org.oobium.mailer.Mailer;
 import org.oobium.persist.Attribute;
 import org.oobium.persist.ModelDescription;
@@ -47,7 +47,7 @@ import org.oobium.persist.Relation;
 import org.oobium.persist.Text;
 import org.oobium.persist.migrate.AbstractMigration;
 import org.oobium.persist.migrate.Migrations;
-import org.oobium.persist.migrate.MigratorService;
+import org.oobium.persist.migrate.db.DbMigratorService;
 import org.oobium.utils.Config;
 import org.oobium.utils.StringUtils;
 
@@ -479,8 +479,8 @@ public class ProjectGenerator {
 		src = new SourceFile();
 		src.packageName = migration.getName().replace(File.separatorChar, '.');
 		src.simpleName = "Migrator";
-		src.superName = MigratorService.class.getSimpleName();
-		src.imports.add(MigratorService.class.getCanonicalName());
+		src.superName = DbMigratorService.class.getSimpleName();
+		src.imports.add(DbMigratorService.class.getCanonicalName());
 		src.imports.add(Migrations.class.getCanonicalName());
 		src.imports.add(src.packageName + ".migrations.CreateDatabase");
 

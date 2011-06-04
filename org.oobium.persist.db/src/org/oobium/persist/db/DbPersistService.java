@@ -183,7 +183,6 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		expireCache();
 	}
 	
-	@Override
 	public void commit() throws SQLException {
 		Connection connection = getConnection(false);
 		if(connection != null) {
@@ -403,7 +402,6 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		}
 	}
 
-	@Override
 	public void rollback() throws SQLException {
 		Connection connection = getConnection(false);
 		if(connection != null) {
@@ -411,7 +409,6 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		}
 	}
 
-	@Override
 	public void setAutoCommit(boolean autoCommit) throws SQLException {
 		boolean changed = false;
 		if(getAutoCommit()) {

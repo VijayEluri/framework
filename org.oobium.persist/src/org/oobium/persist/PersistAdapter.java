@@ -25,11 +25,6 @@ public abstract class PersistAdapter implements PersistService {
 	}
 
 	@Override
-	public void commit() throws SQLException {
-		// subclasses to override if necessary
-	}
-
-	@Override
 	public int count(Class<? extends Model> clazz, String where, Object... values) throws SQLException {
 		// subclasses to override if necessary
 		return 0;
@@ -114,16 +109,6 @@ public abstract class PersistAdapter implements PersistService {
 		// subclasses to override if necessary
 	}
 	
-	@Override
-	public void rollback() throws SQLException {
-		// subclasses to override if necessary
-	}
-
-	@Override
-	public void setAutoCommit(boolean autoCommit) throws SQLException {
-		// subclasses to override if necessary
-	}
-
 	@Override
 	public void update(Model... models) throws SQLException {
 		// subclasses to override if necessary

@@ -41,13 +41,6 @@ public interface PersistService {
 	public abstract boolean isSessionOpen();
 
 	
-	public abstract void commit() throws SQLException;
-	
-	public abstract void rollback() throws SQLException;
-	
-	public abstract void setAutoCommit(boolean autoCommit) throws SQLException;
-
-	
     public abstract void create(Model...models) throws SQLException;
 
     public abstract void retrieve(Model...models) throws SQLException;

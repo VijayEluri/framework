@@ -41,11 +41,6 @@ public class TestPersistService implements PersistService {
 	}
 
 	@Override
-	public void commit() throws SQLException {
-		service.commit();
-	}
-
-	@Override
 	public int count(Class<? extends Model> clazz, String where, Object... values) throws SQLException {
 		return service.count(clazz, where, values);
 	}
@@ -125,16 +120,6 @@ public class TestPersistService implements PersistService {
 		service.retrieve(model, hasMany);
 	}
 	
-	@Override
-	public void rollback() throws SQLException {
-		service.rollback();
-	}
-
-	@Override
-	public void setAutoCommit(boolean autoCommit) throws SQLException {
-		service.setAutoCommit(autoCommit);
-	}
-
 	@Override
 	public void update(Model... models) throws SQLException {
 		service.update(models);

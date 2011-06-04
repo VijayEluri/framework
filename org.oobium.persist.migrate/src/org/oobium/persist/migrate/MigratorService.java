@@ -198,6 +198,10 @@ public abstract class MigratorService extends AppService {
 		return migrate(null);
 	}
 	
+	protected abstract void setAutoCommit(boolean autoCommit) throws SQLException;
+	protected abstract void commit() throws SQLException;
+	protected abstract void rollback() throws SQLException;
+	
 	public synchronized String migrate(String to) throws SQLException {
 		Migrations migrations = new Migrations();
 		addMigrations(migrations);
@@ -221,7 +225,7 @@ public abstract class MigratorService extends AppService {
 					// discard
 				}
 			}
-			getPersistService().setAutoCommit(false);
+			setAutoCommit(false);
 			String migratedName = null;
 			try {
 				if(cix < tix) { // migrate up
@@ -231,7 +235,7 @@ public abstract class MigratorService extends AppService {
 							Migration migration = migrations.get(i).newInstance();
 							migration.setService(mservice);
 							migration.up();
-							getPersistService().commit();
+							commit();
 							setMigrated(name, true);
 						}
 						migratedName = name;
@@ -243,7 +247,7 @@ public abstract class MigratorService extends AppService {
 							Migration migration = migrations.get(i).newInstance();
 							migration.setService(mservice);
 							migration.down();
-							getPersistService().commit();
+							commit();
 							setMigrated(name, false);
 						}
 						migratedName = (i > 0) ? names.get(i-1) : null; 
@@ -251,7 +255,7 @@ public abstract class MigratorService extends AppService {
 				}
 				return "migrated successfully";
 			} catch(Exception e) {
-				getPersistService().rollback();
+				rollback();
 				throw (e instanceof SQLException) ? ((SQLException) e) : new SQLException(e);
 			} finally {
 				setCurrentMigration(migratedName);
@@ -263,24 +267,24 @@ public abstract class MigratorService extends AppService {
 		Migrations migrations = new Migrations();
 		addMigrations(migrations);
 		try {
-			getPersistService().setAutoCommit(false);
+			setAutoCommit(false);
 			for(int i = 0; i < migrations.size(); i++) {
 				Migration migration = migrations.get(i).newInstance();
 				if(name.equals(migration.getClass().getSimpleName())) {
 					migration.setService(getMigrationService());
 					if(up) {
 						migration.up();
-						getPersistService().commit();
+						commit();
 						return "ran " + name + ".up() successfully";
 					} else {
 						migration.down();
-						getPersistService().commit();
+						commit();
 						return "ran " + name + ".down() successfully";
 					}
 				}
 			}
 		} catch(Exception e) {
-			getPersistService().rollback();
+			rollback();
 			throw (e instanceof SQLException) ? ((SQLException) e) : new SQLException(e);
 		}
 		return "migration \"" + name + "\" does not exist";
@@ -305,7 +309,7 @@ public abstract class MigratorService extends AppService {
 			MigrationService mservice = getMigrationService();
 			String migratedName = null;
 			try {
-				getPersistService().setAutoCommit(false);
+				setAutoCommit(false);
 				int ix = cix;
 				for(int i = 0; i < step && ix >= 0; i++, ix--) {
 					String name = names.get(ix);
@@ -313,7 +317,7 @@ public abstract class MigratorService extends AppService {
 						Migration migration = migrations.get(i).newInstance();
 						migration.setService(mservice);
 						migration.down();
-						getPersistService().commit();
+						commit();
 						setMigrated(name, false);
 					}
 					migratedName = (ix > 0) ? names.get(ix-1) : null;
@@ -323,13 +327,13 @@ public abstract class MigratorService extends AppService {
 					Migration migration = migrations.get(i).newInstance();
 					migration.setService(mservice);
 					migration.up();
-					getPersistService().commit();
+					commit();
 					setMigrated(name, true);
 					migratedName = name;
 				}
 				return "migrated successfully";
 			} catch(Exception e) {
-				getPersistService().rollback();
+				rollback();
 				throw (e instanceof SQLException) ? ((SQLException) e) : new SQLException(e);
 			} finally {
 				setCurrentMigration(migratedName);
@@ -355,7 +359,7 @@ public abstract class MigratorService extends AppService {
 			MigrationService mservice = getMigrationService();
 			String migratedName = null;
 			try {
-				getPersistService().setAutoCommit(false);
+				setAutoCommit(false);
 				int ix = cix;
 				for(int i = 0; i < step && ix >= 0; i++, ix--) {
 					String name = names.get(ix);
@@ -363,14 +367,14 @@ public abstract class MigratorService extends AppService {
 						Migration migration = migrations.get(i).newInstance();
 						migration.setService(mservice);
 						migration.down();
-						getPersistService().commit();
+						commit();
 						setMigrated(name, false);
 					}
 					migratedName = (ix > 0) ? names.get(ix-1) : null;
 				}
 				return "migrated successfully";
 			} catch(Exception e) {
-				getPersistService().rollback();
+				rollback();
 				throw (e instanceof SQLException) ? ((SQLException) e) : new SQLException(e);
 			} finally {
 				setCurrentMigration(migratedName);
@@ -399,7 +403,7 @@ public abstract class MigratorService extends AppService {
 				ps.executeUpdate("DELETE FROM system_attrs WHERE name='migration.current'");
 			} catch(SQLException e) {
 				// last migration will remove the table
-				getPersistService().rollback();
+				rollback();
 			}
 		} else {
 			String sql = "UPDATE system_attrs SET detail='" + current + "' where name='migration.current'";
@@ -410,12 +414,12 @@ public abstract class MigratorService extends AppService {
 					ps.executeUpdate(sql);
 				}
 			} catch(SQLException e) {
-				getPersistService().rollback();
+				rollback();
 				createSystemAttrs();
 				sql = "INSERT INTO system_attrs (name, detail, data) VALUES ('migration.current', '" + current + "', NULL)";
 				ps.executeUpdate(sql);
 			}
-			getPersistService().commit();
+			commit();
 		}
 	}
 	
@@ -425,19 +429,19 @@ public abstract class MigratorService extends AppService {
 			try {
 				getPersistService().executeUpdate(sql);
 			} catch(SQLException e) {
-				getPersistService().rollback();
+				rollback();
 				createSystemAttrs();
 				getPersistService().executeUpdate(sql);
 			}
-			getPersistService().commit();
+			commit();
 		} else {
 			try {
 				String sql = "DELETE FROM system_attrs WHERE name='migrated' AND detail='" + name + "'";
 				getPersistService().executeUpdate(sql);
-				getPersistService().commit();
+				commit();
 			} catch(SQLException e) {
 				// last migration will remove the table
-				getPersistService().rollback();
+				rollback();
 			}
 		}
 	}

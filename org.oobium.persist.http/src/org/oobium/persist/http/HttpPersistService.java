@@ -48,11 +48,6 @@ public class HttpPersistService implements PersistService {
 	}
 	
 	@Override
-	public void commit() throws SQLException {
-		throw new UnsupportedOperationException();
-	}
-	
-	@Override
 	public int count(Class<? extends Model> clazz, String where, Object... values) throws SQLException {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException("not yet implemented");
@@ -463,16 +458,6 @@ public class HttpPersistService implements PersistService {
 		}
 	}
 	
-	@Override
-	public void rollback() throws SQLException {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void setAutoCommit(boolean autoCommit) throws SQLException {
-		throw new UnsupportedOperationException();
-	}
-
 	private void update(Model model) throws SQLException {
 		if(model == null) {
 			throw new SQLException("cannot update null model");

@@ -33,11 +33,6 @@ public class SimplePersistService implements PersistService {
 	}
 
 	@Override
-	public void commit() throws SQLException {
-		// nothing to do
-	}
-
-	@Override
 	public int count(Class<? extends Model> clazz, String where, Object... values) throws SQLException {
 		if(where == null) {
 			Map<Integer, Map<String, Object>> models = db.get(clazz);
@@ -221,16 +216,6 @@ public class SimplePersistService implements PersistService {
 	@Override
 	public void retrieve(Model model, String hasMany) throws SQLException {
 		throw new UnsupportedOperationException("not yet implemented");
-	}
-
-	@Override
-	public void rollback() throws SQLException {
-		// nothing to do
-	}
-
-	@Override
-	public void setAutoCommit(boolean autoCommit) throws SQLException {
-		// nothing to do
 	}
 
 	private void update(Model model) throws SQLException {

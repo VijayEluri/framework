@@ -41,11 +41,6 @@ public class NullPersistService implements PersistService {
 	}
 	
 	@Override
-	public void commit() throws SQLException {
-		throw new SQLException(msg);
-	}
-
-	@Override
 	public int count(Class<? extends Model> clazz, String where, Object... values) throws SQLException {
 		throw new SQLException(msg);
 	}
@@ -151,16 +146,6 @@ public class NullPersistService implements PersistService {
 		throw new SQLException(msg);
 	}
 	
-	@Override
-	public void rollback() throws SQLException {
-		throw new SQLException(msg);
-	}
-
-	@Override
-	public void setAutoCommit(boolean autoCommit) throws SQLException {
-		throw new SQLException(msg);
-	}
-
 	@Override
 	public void update(Model...models) throws SQLException {
 		throw new SQLException(msg);
