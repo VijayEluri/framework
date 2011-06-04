@@ -107,12 +107,12 @@ public class Websocket implements IParams {
 			return getClass().getSimpleName();
 		}
 		if(id != null) {
-			return getClass().getSimpleName() + "(id:" + id + ")";
+			return getClass().getSimpleName() + "{id:'" + id + "'}";
 		}
 		if(group != null) {
-			return getClass().getSimpleName() + "(group:" + group + ")";
+			return getClass().getSimpleName() + "{group:'" + group + "'}";
 		}
-		return getClass().getSimpleName() + "(id:" + id + ",group:" + group + ")";
+		return getClass().getSimpleName() + "{id:'" + id + "',group:'" + group + "'}";
 	}
 	
 	public ChannelFuture write(int type, byte[] binaryData) {
