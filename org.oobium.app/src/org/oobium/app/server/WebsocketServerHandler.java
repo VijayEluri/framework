@@ -111,7 +111,7 @@ public class WebsocketServerHandler extends SimpleChannelUpstreamHandler {
 			WebSocketFrame frame = (WebSocketFrame) e.getMessage();
 			if(frame.isText()) {
 				String text = frame.getTextData();
-				if(text.length() > 12 && text.startsWith("registration:{") && text.charAt(text.length()-1) == '}') {
+				if(text.length() > 15 && text.startsWith("registration:{") && text.charAt(text.length()-1) == '}') {
 					Map<String, String> properties = JsonUtils.toStringMap(text.substring(13));
 					controller.handleRegistration(properties);
 					return;
