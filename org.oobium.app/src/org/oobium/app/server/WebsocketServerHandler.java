@@ -2,6 +2,7 @@ package org.oobium.app.server;
 
 import java.util.Map;
 
+import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
@@ -19,17 +20,17 @@ public class WebsocketServerHandler extends SimpleChannelUpstreamHandler {
 
 	final Logger logger;
 	private final Router router;
-	final ChannelHandlerContext ctx;
+	final Channel channel;
 	final Request request;
 	private final Class<? extends WebsocketController> controllerClass;
 	final Map<String, Object> params;
 	
 	private Websocket websocket;
 	
-	public WebsocketServerHandler(Logger logger, ChannelHandlerContext ctx, Request request, WebsocketUpgrade upgrade) {
+	public WebsocketServerHandler(Logger logger, Channel channel, Request request, WebsocketUpgrade upgrade) {
 		this.logger = logger;
 		this.router = upgrade.router;
-		this.ctx = ctx;
+		this.channel = channel;
 		this.request = request;
 		this.controllerClass = upgrade.controllerClass;
 		this.params = upgrade.params;
@@ -37,21 +38,21 @@ public class WebsocketServerHandler extends SimpleChannelUpstreamHandler {
 		websocket = new Websocket(this, upgrade.group);
 		router.registerWebsocket(websocket);
 
-		WebsocketController controller = getController(ctx, request);
+		WebsocketController controller = getController(request);
 		if(controller != null)  {
 			try {
 				controller.handleConnect();
 			} catch(Exception e) {
 				if(logger.isLoggingDebug()) logger.warn(e);
 				else logger.warn(e.getLocalizedMessage());
-				ctx.getChannel().close();
+				channel.close();
 			}
 		}
 	}
 
 	@Override
 	public void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent event) throws Exception {
-		WebsocketController controller = getController(ctx, request);
+		WebsocketController controller = getController(request);
 		if(controller != null)  {
 			try {
 				controller.handleDisconnect();
@@ -69,7 +70,7 @@ public class WebsocketServerHandler extends SimpleChannelUpstreamHandler {
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent event) throws Exception {
 		Throwable t = event.getCause();
-		WebsocketController controller = getController(ctx, request);
+		WebsocketController controller = getController(request);
 		if(controller != null)  {
 			try {
 				controller.handleError(t);
@@ -82,10 +83,10 @@ public class WebsocketServerHandler extends SimpleChannelUpstreamHandler {
 		event.getChannel().close();
 	}
 	
-	private WebsocketController getController(ChannelHandlerContext ctx, Request request) {
+	private WebsocketController getController(Request request) {
 		try {
 			WebsocketController controller = controllerClass.newInstance();
-			controller.init(logger, ctx, request, params);
+			controller.init(logger, request, websocket);
 			return controller;
 		} catch(Exception e) {
 			if(logger.isLoggingDebug()) {
@@ -103,7 +104,7 @@ public class WebsocketServerHandler extends SimpleChannelUpstreamHandler {
 
 	@Override
 	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-		WebsocketController controller = getController(ctx, request);
+		WebsocketController controller = getController(request);
 		if(controller == null)  {
 			ctx.getChannel().close();
 		} else {
@@ -112,7 +113,7 @@ public class WebsocketServerHandler extends SimpleChannelUpstreamHandler {
 				String text = frame.getTextData();
 				if(text.length() > 12 && text.startsWith("registration:{") && text.charAt(text.length()-1) == '}') {
 					Map<String, String> properties = JsonUtils.toStringMap(text.substring(13));
-					controller.handleRegistration(websocket, properties);
+					controller.handleRegistration(properties);
 					return;
 				}
 			}

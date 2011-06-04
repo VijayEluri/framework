@@ -5,7 +5,10 @@ import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.handler.codec.http.websocket.DefaultWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.oobium.app.controllers.IParams;
 import org.oobium.app.routing.Router;
@@ -21,8 +24,8 @@ public class Websocket implements IParams {
 		this.group = group;
 	}
 
-	public ChannelFuture close() {
-		return handler.ctx.getChannel().close();
+	public ChannelFuture disconnect() {
+		return handler.channel.close();
 	}
 
 	/**
@@ -98,8 +101,35 @@ public class Websocket implements IParams {
 		return getParams();
 	};
 	
+	@Override
+	public String toString() {
+		if(id == null && group == null) {
+			return getClass().getSimpleName();
+		}
+		if(id != null) {
+			return getClass().getSimpleName() + "(id:" + id + ")";
+		}
+		if(group != null) {
+			return getClass().getSimpleName() + "(group:" + group + ")";
+		}
+		return getClass().getSimpleName() + "(id:" + id + ",group:" + group + ")";
+	}
+	
+	public ChannelFuture write(int type, byte[] binaryData) {
+		ChannelBuffer buffer = ChannelBuffers.wrappedBuffer(binaryData);
+		return write(new DefaultWebSocketFrame(type, buffer));
+	}
+	
+	public ChannelFuture write(int type, ChannelBuffer binaryData) {
+		return write(new DefaultWebSocketFrame(type, binaryData));
+	}
+	
+	public ChannelFuture write(String textData) {
+		return write(new DefaultWebSocketFrame(textData));
+	}
+	
 	public ChannelFuture write(WebSocketFrame frame) {
-		return handler.ctx.getChannel().write(frame);
+		return handler.channel.write(frame);
 	}
 	
 }
