@@ -15,8 +15,6 @@ import static org.oobium.utils.literal.Map;
 import static org.oobium.utils.literal.e;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.oobium.app.AppService;
@@ -112,28 +110,9 @@ public abstract class MigratorService extends AppService {
 		}
 	}
 	
-	protected String getCurrentMigration() {
-		try {
-			String sql = "SELECT detail FROM system_attrs WHERE name='migration.current'";
-			return (String) getPersistService().executeQueryValue(sql);
-		} catch(SQLException e) {
-			return null;
-		}
-	}
+	protected abstract String getCurrentMigration();
 	
-	protected List<String> getMigrated() {
-		try {
-			String sql = "SELECT detail FROM system_attrs WHERE name='migrated'";
-			List<List<Object>> lists = getPersistService().executeQueryLists(sql);
-			List<String> migrated = new ArrayList<String>();
-			for(int i = 1; i < lists.size(); i++) {
-				migrated.add((String) lists.get(i).get(0));
-			}
-			return migrated;
-		} catch(SQLException e) {
-			return Collections.emptyList();
-		}
-	}
+	protected abstract List<String> getMigrated();
 	
 	/**
 	 * Add all of your migrations here. They will be run in the
@@ -396,55 +375,9 @@ public abstract class MigratorService extends AppService {
 		}
 	}
 	
-	protected void setCurrentMigration(String current) throws SQLException {
-		PersistService ps = getPersistService();
-		if(current == null) {
-			try {
-				ps.executeUpdate("DELETE FROM system_attrs WHERE name='migration.current'");
-			} catch(SQLException e) {
-				// last migration will remove the table
-				rollback();
-			}
-		} else {
-			String sql = "UPDATE system_attrs SET detail='" + current + "' where name='migration.current'";
-			try {
-				int r = ps.executeUpdate(sql);
-				if(r == 0) {
-					sql = "INSERT INTO system_attrs (name, detail, data) VALUES ('migration.current', '" + current + "', NULL)";
-					ps.executeUpdate(sql);
-				}
-			} catch(SQLException e) {
-				rollback();
-				createSystemAttrs();
-				sql = "INSERT INTO system_attrs (name, detail, data) VALUES ('migration.current', '" + current + "', NULL)";
-				ps.executeUpdate(sql);
-			}
-			commit();
-		}
-	}
+	protected abstract void setCurrentMigration(String current) throws SQLException;
 	
-	protected void setMigrated(String name, boolean migrated) throws SQLException {
-		if(migrated) {
-			String sql = "INSERT INTO system_attrs (name, detail, data) VALUES ('migrated', '" + name + "', NULL)";
-			try {
-				getPersistService().executeUpdate(sql);
-			} catch(SQLException e) {
-				rollback();
-				createSystemAttrs();
-				getPersistService().executeUpdate(sql);
-			}
-			commit();
-		} else {
-			try {
-				String sql = "DELETE FROM system_attrs WHERE name='migrated' AND detail='" + name + "'";
-				getPersistService().executeUpdate(sql);
-				commit();
-			} catch(SQLException e) {
-				// last migration will remove the table
-				rollback();
-			}
-		}
-	}
+	protected abstract void setMigrated(String name, boolean migrated) throws SQLException;
 	
 	@Override
 	protected void setName(BundleContext context) throws Exception {

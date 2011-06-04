@@ -219,25 +219,21 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		db.dropDatabase();
 	}
 
-	@Override
 	public List<Map<String, Object>> executeQuery(String sql, Object...values) throws SQLException {
 		Connection connection = getConnection();
 		return persistor.executeQuery(connection, sql, values);
 	}
 	
-	@Override
 	public List<List<Object>> executeQueryLists(String sql, Object...values) throws SQLException {
 		Connection connection = getConnection();
 		return persistor.executeQueryLists(connection, sql, values);
 	}
 
-	@Override
 	public Object executeQueryValue(String sql, Object...values) throws SQLException {
 		Connection connection = getConnection();
 		return persistor.executeQueryValue(connection, sql, values);
 	}
 
-	@Override
 	public int executeUpdate(String sql, Object... values) throws SQLException {
 		Connection connection = getConnection();
 		return persistor.executeUpdate(connection, sql, values);

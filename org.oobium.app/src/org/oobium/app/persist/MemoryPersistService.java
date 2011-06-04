@@ -76,26 +76,6 @@ public class MemoryPersistService implements PersistService {
 	}
 
 	@Override
-	public List<Map<String, Object>> executeQuery(String sql, Object... values) throws SQLException {
-		throw new SQLException(msg);
-	}
-
-	@Override
-	public List<List<Object>> executeQueryLists(String sql, Object... values) throws SQLException {
-		throw new SQLException(msg);
-	}
-
-	@Override
-	public Object executeQueryValue(String sql, Object... values) throws SQLException {
-		throw new SQLException(msg);
-	}
-
-	@Override
-	public int executeUpdate(String sql, Object... values) throws SQLException {
-		throw new SQLException(msg);
-	}
-
-	@Override
 	public <T extends Model> T find(Class<T> clazz, int id) throws SQLException {
 		Map<String, Object> map = models.get(id);
 		if(map != null && map.get("class") == clazz) {

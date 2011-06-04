@@ -12,7 +12,6 @@ package org.oobium.persist;
 
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 
 
 public interface PersistService {
@@ -64,12 +63,12 @@ public interface PersistService {
 	public abstract <T extends Model> List<T> findAll(Class<T> clazz, String where, Object...values) throws SQLException;
 	
 	
-	public abstract List<Map<String, Object>> executeQuery(String sql, Object...values) throws SQLException;
-
-	public abstract List<List<Object>> executeQueryLists(String sql, Object...values) throws SQLException;
-
-	public abstract Object executeQueryValue(String sql, Object...values) throws SQLException;
-
-	public abstract int executeUpdate(String sql, Object...values) throws SQLException;
+//	public abstract List<Map<String, Object>> executeQuery(String sql, Object...values) throws SQLException;
+//
+//	public abstract List<List<Object>> executeQueryLists(String sql, Object...values) throws SQLException;
+//
+//	public abstract Object executeQueryValue(String sql, Object...values) throws SQLException;
+//
+//	public abstract int executeUpdate(String sql, Object...values) throws SQLException;
 
 }

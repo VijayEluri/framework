@@ -97,26 +97,6 @@ public class SimplePersistService implements PersistService {
 	}
 
 	@Override
-	public List<Map<String, Object>> executeQuery(String sql, Object... values) throws SQLException {
-		throw new UnsupportedOperationException("Stub this method to use: when(persistor.executeQuery(anyString(), anyVararg()).thenReturn(...))");
-	}
-
-	@Override
-	public List<List<Object>> executeQueryLists(String sql, Object... values) throws SQLException {
-		throw new UnsupportedOperationException("Stub this method to use: when(persistor.executeQueryLists(anyString(), anyVararg()).thenReturn(...))");
-	}
-
-	@Override
-	public Object executeQueryValue(String sql, Object... values) throws SQLException {
-		throw new UnsupportedOperationException("Stub this method to use: when(persistor.executeQueryValue(anyString(), anyVararg()).thenReturn(...))");
-	}
-	
-	@Override
-	public int executeUpdate(String sql, Object... values) throws SQLException {
-		throw new UnsupportedOperationException("Stub this method to use: when(persistor.executeUpdate(anyString(), anyVararg()).thenReturn(...))");
-	}
-	
-	@Override
 	public <T extends Model> T find(Class<T> clazz, int id) throws SQLException {
 		return get(clazz, id);
 	}

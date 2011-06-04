@@ -2,7 +2,6 @@ package org.oobium.test;
 
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 
 import org.oobium.persist.Model;
 import org.oobium.persist.PersistService;
@@ -55,26 +54,6 @@ public class TestPersistService implements PersistService {
 		service.destroy(models);
 	}
 
-	@Override
-	public List<Map<String, Object>> executeQuery(String sql, Object... values) throws SQLException {
-		return service.executeQuery(sql, values);
-	}
-
-	@Override
-	public List<List<Object>> executeQueryLists(String sql, Object... values) throws SQLException {
-		return service.executeQueryLists(sql, values);
-	}
-
-	@Override
-	public Object executeQueryValue(String sql, Object... values) throws SQLException {
-		return service.executeQueryValue(sql, values);
-	}
-	
-	@Override
-	public int executeUpdate(String sql, Object... values) throws SQLException {
-		return service.executeUpdate(sql, values);
-	}
-	
 	@Override
 	public <T extends Model> T find(Class<T> clazz, int id) throws SQLException {
 		return service.find(clazz, id);

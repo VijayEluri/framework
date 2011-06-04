@@ -53,14 +53,6 @@ public abstract class Model implements JsonModel {
 		return getPersistService(clazz).count(clazz, where, values);
 	}
 	
-	public static List<Map<String, Object>> executeQuery(Class<? extends Model> clazz, String sql, Object...values) throws SQLException {
-		return getPersistService(clazz).executeQuery(sql, values);
-	}
-
-	public static int executeUpdate(Class<? extends Model> clazz, String sql, Object...values) throws SQLException {
-		return getPersistService(clazz).executeUpdate(sql, values);
-	}
-	
 	public static <T extends Model> T find(Class<T> clazz, int id) throws SQLException {
 		return getPersistService(clazz).find(clazz, id);
 	}

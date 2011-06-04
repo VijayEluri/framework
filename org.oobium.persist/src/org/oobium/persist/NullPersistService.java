@@ -12,7 +12,6 @@ package org.oobium.persist;
 
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 
 
 public class NullPersistService implements PersistService {
@@ -52,26 +51,6 @@ public class NullPersistService implements PersistService {
 
 	@Override
 	public void destroy(Model...models) throws SQLException {
-		throw new SQLException(msg);
-	}
-
-	@Override
-	public List<Map<String, Object>> executeQuery(String sql, Object... values) throws SQLException {
-		throw new SQLException(msg);
-	}
-
-	@Override
-	public List<List<Object>> executeQueryLists(String sql, Object... values) throws SQLException {
-		throw new SQLException(msg);
-	}
-
-	@Override
-	public Object executeQueryValue(String sql, Object... values) throws SQLException {
-		throw new SQLException(msg);
-	}
-
-	@Override
-	public int executeUpdate(String sql, Object... values) throws SQLException {
 		throw new SQLException(msg);
 	}
 

@@ -40,18 +40,18 @@ public class PersistServicesController extends Controller {
 			PersistService service = services.get(ix);
 			if(hasParam("q")) {
 				String query = param("q");
-				try {
-					if(SqlUtils.isUpdate(query)) {
-						int results = service.executeUpdate(query);
-						render(new ShowUpdateResults(id, query, results));
-					} else {
-						List<Map<String, Object>> results = service.executeQuery(query);
-						render(new ShowQueryResults(id, query, results));
-					}
-				} catch(SQLException e) {
-					setFlashError(e.getMessage());
-					render(new ShowQueryResults(id, query));
-				}
+//				try {
+//					if(SqlUtils.isUpdate(query)) {
+//						int results = service.executeUpdate(query);
+//						render(new ShowUpdateResults(id, query, results));
+//					} else {
+//						List<Map<String, Object>> results = service.executeQuery(query);
+//						render(new ShowQueryResults(id, query, results));
+//					}
+//				} catch(SQLException e) {
+//					setFlashError(e.getMessage());
+//					render(new ShowQueryResults(id, query));
+//				}
 			} else {
 				render(new ShowPersistService(id, service));
 			}

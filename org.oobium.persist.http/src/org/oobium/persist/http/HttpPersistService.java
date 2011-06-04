@@ -129,30 +129,6 @@ public class HttpPersistService implements PersistService {
 		}
 	}
 	
-	@Override
-	public List<Map<String, Object>> executeQuery(String sql, Object... values) throws SQLException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("not yet implemented");
-	}
-
-	@Override
-	public List<List<Object>> executeQueryLists(String sql, Object... values) throws SQLException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("not yet implemented");
-	}
-	
-	@Override
-	public Object executeQueryValue(String sql, Object... values) throws SQLException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("not yet implemented");
-	}
-
-	@Override
-	public int executeUpdate(String sql, Object... values) throws SQLException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("not yet implemented");
-	}
-
 	private String fieldKey(String model, String field) {
 		StringBuilder sb = new StringBuilder(model.length() + field.length() + 5);
 		return sb.append(model).append('[').append(field).append(']').toString();

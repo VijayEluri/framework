@@ -12,7 +12,6 @@ package org.oobium.persist;
 
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 
 public abstract class PersistAdapter implements PersistService {
 
@@ -38,30 +37,6 @@ public abstract class PersistAdapter implements PersistService {
 	@Override
 	public void destroy(Model... models) throws SQLException {
 		// subclasses to override if necessary
-	}
-
-	@Override
-	public List<Map<String, Object>> executeQuery(String sql, Object... values) throws SQLException {
-		// subclasses to override if necessary
-		return null;
-	}
-
-	@Override
-	public List<List<Object>> executeQueryLists(String sql, Object... values) throws SQLException {
-		// subclasses to override if necessary
-		return null;
-	}
-
-	@Override
-	public Object executeQueryValue(String sql, Object... values) throws SQLException {
-		// subclasses to override if necessary
-		return null;
-	}
-
-	@Override
-	public int executeUpdate(String sql, Object... values) throws SQLException {
-		// subclasses to override if necessary
-		return 0;
 	}
 
 	@Override
