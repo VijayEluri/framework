@@ -14,7 +14,6 @@ import static org.oobium.build.util.ProjectUtils.getSrcAnnotations;
 import static org.oobium.utils.FileUtils.readFile;
 import static org.oobium.utils.FileUtils.writeFile;
 import static org.oobium.utils.StringUtils.plural;
-import static org.oobium.utils.StringUtils.varName;
 
 import java.io.File;
 import java.io.IOException;
@@ -121,32 +120,10 @@ public class ModelGenerator {
 	}
 	
 	private static String createStaticMethods(String type) {
-		String var = varName(type);
 		StringBuilder sb = new StringBuilder();
 		appendDoc(sb, "Get the PersistService appropriate for the ? class.", type);
 		sb.append("\tpublic static PersistService getPersistService() {\n");
 		sb.append("\t\treturn Model.getPersistService(").append(type).append(".class);\n");
-		sb.append("\t}\n");
-		sb.append("\n");
-		appendDoc(sb, "Create a new instance of ? and set its id to the given value", type);
-		sb.append("\tpublic static ").append(type).append(" newInstance(int id) {\n");
-		sb.append("\t\t").append(type).append(' ').append(var).append(" = new ").append(type).append("();\n");
-		sb.append("\t\t").append(var).append(".setId(id);\n");
-		sb.append("\t\treturn ").append(var).append(";\n");
-		sb.append("\t}\n");
-		sb.append("\n");
-		appendDoc(sb, "Create a new instance of ? and initialize it with the given fields", type);
-		sb.append("\tpublic static ").append(type).append(" newInstance(Map<String, Object> fields) {\n");
-		sb.append("\t\t").append(type).append(' ').append(var).append(" = new ").append(type).append("();\n");
-		sb.append("\t\t").append(var).append(".setAll(fields);\n");
-		sb.append("\t\treturn ").append(var).append(";\n");
-		sb.append("\t}\n");
-		sb.append("\n");
-		appendDoc(sb, "Create a new instance of ? and initialize it with the given json data", type);
-		sb.append("\tpublic static ").append(type).append(" newInstance(String json) {\n");
-		sb.append("\t\t").append(type).append(' ').append(var).append(" = new ").append(type).append("();\n");
-		sb.append("\t\t").append(var).append(".setAll(json);\n");
-		sb.append("\t\treturn ").append(var).append(";\n");
 		sb.append("\t}\n");
 		sb.append("\n");
 		appendDoc(sb, "Get the count of all instances of ?", type);
