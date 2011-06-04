@@ -227,19 +227,19 @@ public class AppServerTests {
 
 	public static class LowerCaseController extends WebsocketController {
 		@Override
-		public void handleRegistration(Websocket socket, Map<String, String> properties) {
-			socket.setId(properties.get("name"));
+		public void handleRegistration(Map<String, String> properties) {
+			websocket.setId(properties.get("name"));
 		}
 		@Override
 		public void handleMessage(WebSocketFrame frame) {
-			write(new DefaultWebSocketFrame(frame.getTextData().toLowerCase()));
+			websocket.write(new DefaultWebSocketFrame(frame.getTextData().toLowerCase()));
 		}
 	}
 	
 	public static class UpperCaseController extends WebsocketController {
 		@Override
 		public void handleMessage(WebSocketFrame frame) {
-			write(new DefaultWebSocketFrame(frame.getTextData().toUpperCase()));
+			websocket.write(new DefaultWebSocketFrame(frame.getTextData().toUpperCase()));
 		}
 	}
 	

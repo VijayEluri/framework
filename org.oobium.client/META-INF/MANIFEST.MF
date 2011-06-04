@@ -4,10 +4,18 @@ Bundle-Name: Oobium Client Plug-in
 Bundle-SymbolicName: org.oobium.client
 Bundle-Version: 0.6.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Import-Package: org.jboss.netty.handler.codec.http,
+Import-Package: org.jboss.netty.bootstrap,
+ org.jboss.netty.buffer,
+ org.jboss.netty.channel,
+ org.jboss.netty.channel.group,
+ org.jboss.netty.channel.socket.nio,
+ org.jboss.netty.handler.codec.http,
+ org.jboss.netty.handler.codec.http.websocket,
  org.oobium.app.http,
  org.oobium.logging,
  org.oobium.utils,
- org.oobium.utils.coercion
-Export-Package: org.oobium.client
+ org.oobium.utils.coercion,
+ org.oobium.utils.json
+Export-Package: org.oobium.client,
+ org.oobium.client.websockets
 Bundle-Vendor: oobium.org
