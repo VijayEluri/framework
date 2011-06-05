@@ -590,6 +590,10 @@ public class Project implements Comparable<Project> {
 		}
 		return buildFiles;
 	}
+	
+	public Type getType() {
+		return type;
+	}
 
 	public boolean hasNature(String nature) {
 		return getNatures().contains(nature);
