@@ -131,7 +131,7 @@ public class Observer<T extends Model> {
 				observer.logger = logger;
 				switch(method) {
 				case AFTER_CREATE:				observer.afterCreate(model);			break;
-				case AFTER_DESTROY:				observer.afterDestroy(model);			break;
+				case AFTER_DESTROY:				observer.afterDestroy(model.destroyed);	break;
 				case AFTER_SAVE:				observer.afterSave(model);				break;
 				case AFTER_UPDATE:				observer.afterUpdate(model);			break;
 				case AFTER_VALIDATE_CREATE:		observer.afterValidateCreate(model);	break;
@@ -223,7 +223,7 @@ public class Observer<T extends Model> {
 		// subclasses to implement if necessary
 	}
 
-	protected void afterDestroy(T model) {
+	protected void afterDestroy(int id) {
 		// subclasses to implement if necessary
 	}
 
