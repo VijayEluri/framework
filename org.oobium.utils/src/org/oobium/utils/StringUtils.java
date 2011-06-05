@@ -259,36 +259,6 @@ public class StringUtils {
 		}
 	}
 
-	public static String joinColumn(String table1, String column1, String table2, String column2) {
-		String name1 = columnName(table1, column1);
-		String name2 = columnName(table2, column2);
-		if(name1.compareTo(name2) <= 0) {
-			return "b";
-		} else {
-			return "a";
-		}
-	}
-
-	public static String[] joinColumns(String table1, String column1, String table2, String column2) {
-		String name1 = columnName(table1, column1);
-		String name2 = columnName(table2, column2);
-		if(name1.compareTo(name2) <= 0) {
-			return new String[] { "a", "b" };
-		} else {
-			return new String[] { "b", "a" };
-		}
-	}
-
-	public static String joinTable(String table1, String column1, String table2, String column2) {
-		String name1 = columnName(table1, column1);
-		String name2 = columnName(table2, column2);
-		if(name1.compareTo(name2) <= 0) {
-			return tableName(name1, name2);
-		} else {
-			return tableName(name2, name1);
-		}
-	}
-
 	/**
 	 * convert the given string to one that is appropriate for use as a Java
 	 * Constant: MyModel -> MY_MODEL myModel -> MY_MODEL
@@ -308,7 +278,7 @@ public class StringUtils {
 		}
 		return sb.toString();
 	}
-	
+
 	public static boolean contains(Iterable<String> iterable, String string) {
 		for(String s : iterable) {
 			if(s.equals(string)) {
@@ -317,7 +287,7 @@ public class StringUtils {
 		}
 		return false;
 	}
-	
+
 	public static boolean contains(String[] array, String string) {
 		for(String s : array) {
 			if(s.equals(string)) {
@@ -326,7 +296,7 @@ public class StringUtils {
 		}
 		return false;
 	}
-	
+
 	public static String controllerCanonicalName(String canonicalModelName) {
 		return controllersPackageName(canonicalModelName) + "." + simpleName(canonicalModelName) + "Controller";
 	}
@@ -364,6 +334,10 @@ public class StringUtils {
 			i += string.length() + joinBuffer;
 		}
 		return i;
+	}
+	
+	public static String dashed(String string) {
+		return separated(string, '-');
 	}
 	
 	public static String dateTimeTags(String prefix, DateFormat df, Date selection) {
@@ -435,7 +409,7 @@ public class StringUtils {
 	public static String f(Object object) {
 		return formEscape(object);
 	}
-
+	
 	public static String field(String method) {
 		if(method.equals("get") || method.equals("set") || method.equals("has")) {
 			return null;
@@ -448,14 +422,14 @@ public class StringUtils {
 		}
 		return Character.toLowerCase(method.charAt(0)) + method.substring(1);
 	}
-
+	
 	public static String format(Date date, String pattern) {
 		if(date == null) {
 			return "";
 		}
 		return new SimpleDateFormat(pattern).format(date);
 	}
-	
+
 	/**
 	 * If the given object is a JsonModel, then return its id, otherwise HTML escape the object.
 	 * @param object
@@ -470,7 +444,7 @@ public class StringUtils {
 		}
 		return htmlEscape(object);
 	}
-	
+
 	public static int getCalendarField(char c) {
 		switch(c) {
 		case 'y': return Calendar.YEAR;
@@ -488,7 +462,7 @@ public class StringUtils {
 		default:  return -1;
 		}
 	}
-
+	
 	public static String getPattern(DateFormat df) {
 		return ((SimpleDateFormat) df).toPattern();
 	}
@@ -524,11 +498,11 @@ public class StringUtils {
 		}
 		return components.toArray(new String[components.size()]);
 	}
-	
+
 	public static String getResourceAsString(Class<?> clazz, String name) {
 		return getString(clazz.getResourceAsStream(name));
 	}
-
+	
 	public static String getString(InputStream in) {
 		if(in != null) {
 			try {
@@ -548,7 +522,7 @@ public class StringUtils {
 	public static String getterName(String variable) {
 		return getterName(variable, false);
 	}
-	
+
 	public static String getterName(String variable, boolean bool) {
 		if(bool) {
 			return "is" + camelCase(variable);
@@ -560,7 +534,7 @@ public class StringUtils {
 	public static String h(Object obj) {
 		return htmlEscape(obj);
 	}
-
+	
 	public static String hasserName(String variable) {
 		return "has" + camelCase(variable);
 	}
@@ -571,14 +545,6 @@ public class StringUtils {
 		} else {
 			return obj.toString().replaceAll("&", "&amp;").replaceAll(">", "&gt;").replaceAll("<", "&lt;").replaceAll("\"", "&quot;");
 		}
-	}
-	
-	public static String n(Object obj) {
-		return nullEscape(obj);
-	}
-	
-	public static String nullEscape(Object obj) {
-		return (obj == null) ? "" : obj.toString();
 	}
 
 	/**
@@ -658,7 +624,7 @@ public class StringUtils {
 	public static String join(Character separator, Object...segments) {
 		return ((segments.length > 0) ? join(segments, separator) : "");
 	}
-
+	
 	// TODO all join methods should calculate the length to avoid array resizing
 	public static String join(CharSequence sequence, char separator) {
 		StringBuilder sb = new StringBuilder();
@@ -671,7 +637,7 @@ public class StringUtils {
 			return "";
 		}
 	}
-	
+
 	public static String join(int[] segments, String separator) {
 		StringBuilder sb = new StringBuilder();
 		for(Object segment : segments) {
@@ -713,7 +679,7 @@ public class StringUtils {
 			return "";
 		}
 	}
-	
+
 	public static String join(Object[] segments, char separator) {
 		String[] sa = new String[segments.length];
 		for(int i = 0; i < sa.length; i++) {
@@ -723,7 +689,7 @@ public class StringUtils {
 		}
 		return join(sa, separator);
 	}
-
+	
 	public static String join(Object[] segments, String separator) {
 		StringBuilder sb = new StringBuilder();
 		for(Object segment : segments) {
@@ -737,11 +703,11 @@ public class StringUtils {
 			return "";
 		}
 	}
-
+	
 	public static String join(String starter, int[] segments, String closer, String separator) {
 		return ((segments.length > 0) ? (starter + join(segments, separator) + closer) : "");
 	}
-
+	
 	public static String join(String starter, Iterable<? extends Object> segments, String closer, String separator) {
 		Iterator<? extends Object> iter = segments.iterator();
 		if(iter.hasNext()) {
@@ -759,7 +725,7 @@ public class StringUtils {
 		}
 		return "";
 	}
-
+	
 	public static String join(String separator, Object...segments) {
 		return ((segments.length > 0) ? join(segments, separator) : "");
 	}
@@ -767,7 +733,7 @@ public class StringUtils {
 	public static String join(String starter, Object[] segments, String closer, String separator) {
 		return ((segments.length > 0) ? (starter + join(segments, ", ") + closer) : "");
 	}
-	
+
 	public static String join(String[] segments, char separator) {
 		int len = segments.length;
 		for(String segment : segments) {
@@ -784,6 +750,36 @@ public class StringUtils {
 		sb.deleteCharAt(sb.length()-1);
 		return sb.toString();
 	}
+
+	public static String joinColumn(String table1, String column1, String table2, String column2) {
+		String name1 = columnName(table1, column1);
+		String name2 = columnName(table2, column2);
+		if(name1.compareTo(name2) <= 0) {
+			return "b";
+		} else {
+			return "a";
+		}
+	}
+
+	public static String[] joinColumns(String table1, String column1, String table2, String column2) {
+		String name1 = columnName(table1, column1);
+		String name2 = columnName(table2, column2);
+		if(name1.compareTo(name2) <= 0) {
+			return new String[] { "a", "b" };
+		} else {
+			return new String[] { "b", "a" };
+		}
+	}
+
+	public static String joinTable(String table1, String column1, String table2, String column2) {
+		String name1 = columnName(table1, column1);
+		String name2 = columnName(table2, column2);
+		if(name1.compareTo(name2) <= 0) {
+			return tableName(name1, name2);
+		} else {
+			return tableName(name2, name1);
+		}
+	}
 	
 	public static String jsonEscape(Object obj) {
 		if(obj == null) {
@@ -792,7 +788,7 @@ public class StringUtils {
 			return obj.toString().replaceAll("&", "\u0026").replaceAll(">", "\u003E").replaceAll("<", "\u003C");
 		}
 	}
-
+	
 	public static Map<String, Object> lowerKeys(Map<?, ?> map) {
 		Map<String, Object> lkmap;
 		if(map instanceof TreeMap<?, ?>) {
@@ -812,15 +808,23 @@ public class StringUtils {
 		}
 		return lkmap;
 	}
-	
+
 	public static String modelName(String tableName) {
 		return camelCase(singular(tableName));
 	}
-
+	
 	public static String modelsName(Class<?> clazz) {
 		return plural(clazz.getSimpleName());
 	}
 
+	public static String n(Object obj) {
+		return nullEscape(obj);
+	}
+
+	public static String nullEscape(Object obj) {
+		return (obj == null) ? "" : obj.toString();
+	}
+	
 	public static String optionTag(String text, Object value, Object selection) {
 		StringBuilder sb = new StringBuilder();
 		optionTag(sb, text, value, selection);
@@ -899,7 +903,7 @@ public class StringUtils {
 		optionTags(sb, options, selection);
 		return sb.toString();
 	}
-	
+
 	private static void optionTags(StringBuilder sb, Object[] options, Object selection) {
 		for(Object option : options) {
 			String text = String.valueOf(option);
@@ -912,7 +916,7 @@ public class StringUtils {
 			sb.append('>').append(h(text)).append("</options>");
 		}
 	}
-
+	
 	public static String packageName(String type) {
 		int ix = type.lastIndexOf('.');
 		if(ix == -1) {
@@ -936,7 +940,7 @@ public class StringUtils {
 	public static String path(String...segments) {
 		return join(segments, '/');
 	}
-	
+
 	/**
 	 * (###) ###-####
 	 * @param str
@@ -983,7 +987,7 @@ public class StringUtils {
 		}
 		return singular + "s";
 	}
-
+	
 	/**
 	 * Pluralize the singular word, unless count == 1, and concatenate it to the count.
 	 * <dl>
@@ -1055,7 +1059,34 @@ public class StringUtils {
 		}
 		return sb.toString();
 	}
-	
+
+	public static String separated(String string, char separator) {
+		if(string == null || string.length() == 0) {
+			return "null";
+		}
+		
+		String s = string.trim().replaceAll("[\\s]+", Character.toString(separator));
+		StringBuilder sb = new StringBuilder();
+		char[] ca = s.toCharArray();
+		for(int i = 0; i < ca.length; i++) {
+			if(Character.isUpperCase(ca[i])) {
+				if(i != 0 && Character.isLetterOrDigit(ca[i-1])) {
+					if(Character.isUpperCase(ca[i-1])) {
+						if(i < ca.length-1 && Character.isLetter(ca[i+1]) && !Character.isUpperCase(ca[i+1])) {
+							sb.append(separator);
+						}
+					} else {
+						sb.append(separator);
+					}
+				}
+				sb.append(Character.toLowerCase(ca[i]));
+			} else {
+				sb.append(ca[i]);
+			}
+		}
+		return sb.toString();
+	}
+
 	public static String setterName(String variable) {
 		return "set" + camelCase(variable);
 	}
@@ -1067,7 +1098,7 @@ public class StringUtils {
 		}
 		return type.substring(ix+1);
 	}
-
+	
 	public static String singular(String plural) {
 		if(plural.equalsIgnoreCase("people")) {
 			return plural.charAt(0) + "erson";
@@ -1080,7 +1111,7 @@ public class StringUtils {
 		}
 		return plural;
 	}
-
+	
 	public static String tableName(Class<?> clazz) {
 		return tableName(clazz.getSimpleName());
 	}
@@ -1092,7 +1123,7 @@ public class StringUtils {
 	public static String tableName(Object model) {
 		return tableName(model.getClass().getSimpleName());
 	}
-	
+
 	public static String tableName(String singular) {
 		return underscored(plural(singular));
 	}
@@ -1110,7 +1141,11 @@ public class StringUtils {
 		String c2 = table2 + "__" + column2;
 		return tableName(c1, c2);
 	}
-	
+
+//	public static String[] tableNames(Object model) {
+//		return classTableNames(model.getClass());
+//	}
+
 	public static String[] tableNames(Class<?>[] classes) {
 		String[] tables = new String[classes.length];
 		for(int i = 0; i < classes.length; i++) {
@@ -1126,11 +1161,7 @@ public class StringUtils {
 			return new String[] { table2, table1 };
 		}
 	}
-
-//	public static String[] tableNames(Object model) {
-//		return classTableNames(model.getClass());
-//	}
-
+	
 	public static String titleize(String string) {
 		if(string == null) {
 			return "Null";
@@ -1163,40 +1194,16 @@ public class StringUtils {
 		}
 		return sb.toString();
 	}
-
+	
 	/**
-	 * from Camelcase to underscored: MyModel -> my_model.
+	 * Convert from CamelCase to underscored: MyModel -> my_model.
 	 * null values are returned as a String -> "null".
-	 * all returned characters are lower case.
+	 * All returned characters are lower case.
 	 * @param string
 	 * @return
 	 */
 	public static String underscored(String string) {
-		if(string == null || string.length() == 0) {
-			return "null";
-		}
-		
-		char sep = '_';
-		String s = string.trim().replaceAll("[\\s]+", Character.toString(sep));
-		StringBuilder sb = new StringBuilder();
-		char[] ca = s.toCharArray();
-		for(int i = 0; i < ca.length; i++) {
-			if(Character.isUpperCase(ca[i])) {
-				if(i != 0 && Character.isLetterOrDigit(ca[i-1])) {
-					if(Character.isUpperCase(ca[i-1])) {
-						if(i < ca.length-1 && Character.isLetter(ca[i+1]) && !Character.isUpperCase(ca[i+1])) {
-							sb.append(sep);
-						}
-					} else {
-						sb.append(sep);
-					}
-				}
-				sb.append(Character.toLowerCase(ca[i]));
-			} else {
-				sb.append(ca[i]);
-			}
-		}
-		return sb.toString();
+		return separated(string, '_');
 	}
 	
 	public static String varName(Class<?> clazz) {
