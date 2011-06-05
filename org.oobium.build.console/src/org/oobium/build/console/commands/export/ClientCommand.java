@@ -29,17 +29,11 @@ public class ClientCommand extends BuilderCommand {
 		Workspace workspace = getWorkspace();
 		Module module = getModule();
 		
-		AndroidApp target = null;
+		Project target = null;
 		if(hasParam("target")) {
-			Project project = workspace.getProject(param("target"));
-			if(project == null) {
+			target = workspace.getProject(param("target"));
+			if(target == null) {
 				console.err.println(param("target") + " does not exist in the workspace");
-				return;
-			}
-			if(project.isAndroid()) {
-				target = (AndroidApp) project;
-			} else {
-				console.err.println(param("target") + " is not an Android Application");
 				return;
 			}
 		}
@@ -89,10 +83,11 @@ public class ClientCommand extends BuilderCommand {
 				}
 			}
 
-			if(target != null) {
+			if(target instanceof AndroidApp) {
 				String s = ask("create scaffolding? [Y/N] ");
 				if("Y".equalsIgnoreCase(s)) {
-					ScaffoldingGenerator gen = new ScaffoldingGenerator(module, target);
+					AndroidApp android = (AndroidApp) target;
+					ScaffoldingGenerator gen = new ScaffoldingGenerator(module, android);
 					gen.setListener(new GeneratorListener() {
 						@Override
 						public void handleEvent(GeneratorEvent event) {
@@ -106,7 +101,7 @@ public class ClientCommand extends BuilderCommand {
 						console.out.println("  exported <a href=\"open file " + path + "\">" + file.getName() + "</a>");
 					}
 
-					File[] ma = target.getMainActivities();
+					File[] ma = android.getMainActivities();
 					if(ma.length == 1) {
 						String name = ma[0].getName();
 						name = name.substring(0, name.length()-5);
@@ -124,9 +119,10 @@ public class ClientCommand extends BuilderCommand {
 						}
 					}
 				}
-
-				console.out.println("export complete\n *** models to be accessed by the Android client must be publised first ***");
+			}
 			
+			if(target != null) {
+				console.out.println("export complete\n *** models to be accessed by the client must be publised first ***");
 				Eclipse.refreshProject(target.name);
 			}
 		} catch(IOException e) {
