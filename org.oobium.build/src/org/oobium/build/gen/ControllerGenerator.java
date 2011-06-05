@@ -277,7 +277,7 @@ public class ControllerGenerator {
 		sb.append(regen ? "@Regen\n\t" : "\t");
 		sb.append("@Override // DELETE/URL/[models]/id\n");
 		sb.append("\tpublic void destroy() throws SQLException {\n");
-		sb.append("\t\t").append(mType).append(" ").append(varName).append(" = ").append(mType).append(".newInstance(getId());\n");
+		sb.append("\t\t").append(mType).append(" ").append(varName).append(" = new ").append(mType).append("().setId(getId());\n");
 		sb.append("\t\tif(").append(varName).append(".destroy()) {\n");
 		if(!withViews) {
 			sb.append("\t\t\trenderDestroyed(").append(varName).append(");\n");
