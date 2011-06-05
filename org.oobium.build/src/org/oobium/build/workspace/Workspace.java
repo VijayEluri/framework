@@ -911,7 +911,7 @@ public class Workspace {
 	}
 	
 	/**
-	 * Get all projects in this workspace. Includes values from both the projects
+	 * Get all projects of the given type in this workspace. Includes values from both the projects
 	 * and bundles Maps; does not includes projects from the parentWorkspace.
 	 * @param type the type of projects to return
 	 * @return an array of all projects of the given type, or an empty array if none are found in the workspace; never null
