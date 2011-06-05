@@ -12,7 +12,9 @@ public class RoutedWebsocket extends Routed {
 	}
 
 	public Routed inGroup(String group) {
-		((WebsocketRoute) route).group = group;
+		WebsocketRoute wr = (WebsocketRoute) route;
+		wr.group = group;
+		router.updateModelNotificationPath(wr);
 		return this;
 	}
 	

@@ -25,7 +25,7 @@ import org.oobium.persist.Model;
 
 public class HttpApiService {
 
-	public static class Request {
+	public static class Route {
 		HttpMethod method;
 		String url;
 		String path;
@@ -40,7 +40,8 @@ public class HttpApiService {
 	}
 	
 	private String discoveryUrl;
-	private Map<String, Request> requests;
+	private String notificationUrl;
+	private Map<String, Route> routes;
 
 	private final Logger logger;
 
@@ -49,21 +50,31 @@ public class HttpApiService {
 	}
 	
 	private void add(String model, String action, HttpMethod type, String url, String path) {
-		Request request = new Request();
+		Route request = new Route();
 		request.method = type;
 		request.url = url;
 		request.path = path;
 		
-		if(requests == null) {
-			requests = new HashMap<String, Request>();
+		if(routes == null) {
+			routes = new HashMap<String, Route>();
 		}
-		requests.put(key(model, action), request);
+		routes.put(key(model, action), request);
 		
 		if(logger.isLoggingDebug()) {
 			logger.debug("added request: " + key(model, action) + " -> " + type + " " + url);
 		}
 	}
 	
+	private void discover() {
+		for(String url : getDiscoveryUrl()) {
+			try {
+				discover(url);
+			} catch(MalformedURLException e) {
+				logger.error("bad URL: " + url);
+			}
+		}
+	}
+
 	public String discover(String url) throws MalformedURLException {
 		Client client = new Client(url);
 		client.setAccepts(JSON.acceptsType);
@@ -102,15 +113,17 @@ public class HttpApiService {
 		}
 		return null;
 	}
-
+	
 	private String getDiscoveryLocation(Client client) {
 		ClientResponse response = client.get();
 		if(response.isSuccess()) {
+			notificationUrl = client.getUrl() + response.getHeader("API-WS-Location");
+			notificationUrl = "ws" + notificationUrl.substring(4);
 			return response.getHeader("API-Location");
 		}
 		return null;
 	}
-	
+
 	/**
 	 * Get the discovery URLs from the following locations:
 	 * <ul>
@@ -139,36 +152,37 @@ public class HttpApiService {
 		}
 		return urls.toArray(new String[urls.size()]);
 	}
-
-	public Request getRequest(Class<?> clazz, Action action) {
-		return getRequest(clazz, action.name());
+	
+	public String getModelNotificationUrl() {
+		if(notificationUrl == null) {
+			discover();
+		}
+		return notificationUrl;
+	}
+	
+	public Route getRoute(Class<?> clazz, Action action) {
+		return getRoute(clazz, action.name());
 	}
 
-	private Request getRequest(Class<?> clazz, String action) {
-		if(requests == null) {
-			for(String url : getDiscoveryUrl()) {
-				try {
-					discover(url);
-				} catch(MalformedURLException e) {
-					logger.error("bad URL: " + url);
-				}
-			}
-			if(requests != null) {
-				return requests.get(key(clazz, action));
+	private Route getRoute(Class<?> clazz, String action) {
+		if(routes == null) {
+			discover();
+			if(routes != null) {
+				return routes.get(key(clazz, action));
 			} else {
 				return null;
 			}
 		} else {
-			return requests.get(key(clazz, action));
+			return routes.get(key(clazz, action));
 		}
 	}
 
-	public Request getRequest(Model model, Action action) {
-		return getRequest(model.getClass(), action);
+	public Route getRoute(Model model, Action action) {
+		return getRoute(model.getClass(), action);
 	}
 	
-	public Request getRequest(Model model, Action action, String hasMany) {
-		return getRequest(model.getClass(), action.name() + ":" + hasMany);
+	public Route getRoute(Model model, Action action, String hasMany) {
+		return getRoute(model.getClass(), action.name() + ":" + hasMany);
 	}
 
 	private String getUrl(URL base) {

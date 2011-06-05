@@ -17,6 +17,8 @@ import static org.oobium.utils.json.JsonUtils.toList;
 import static org.oobium.utils.json.JsonUtils.toObject;
 import static org.oobium.utils.literal.Map;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -26,20 +28,152 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.oobium.client.Client;
 import org.oobium.client.ClientResponse;
+import org.oobium.client.websockets.Websocket;
+import org.oobium.client.websockets.WebsocketListener;
+import org.oobium.client.websockets.Websockets;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.ServiceInfo;
-import org.oobium.persist.http.HttpApiService.Request;
+import org.oobium.persist.http.HttpApiService.Route;
 
 public class HttpPersistService implements PersistService {
 
 	private final HttpApiService api;
+	private Map<String, List<ModelListener<?>>> listeners;
+	private WebsocketListener socketListener;
 
 	public HttpPersistService() {
 		this.api = HttpApiService.getInstance();
+	}
+
+	public HttpPersistService(String discoveryUrl) {
+		this();
+		setDiscoveryUrl(discoveryUrl);
+	}
+
+	private Model getModel(String text) {
+		String[] sa = text.split(":", 2);
+		if(sa.length == 2) {
+			try {
+				Class<?> clazz = Class.forName(sa[0]);
+				int id = Integer.parseInt(sa[1]);
+				return (Model) coerce(id, clazz);
+			} catch(Exception e) {
+				// TODO log error
+			}
+		}
+		return null;
+	}
+	
+	private void addSocketListener() {
+		String url = api.getModelNotificationUrl();
+		if(url == null) {
+			throw new RuntimeException("no published model notification route found");
+		}
+		socketListener = new WebsocketListener() {
+			@Override
+			public void onMessage(Websocket websocket, WebSocketFrame frame) {
+				if(frame.isText()) {
+					String text = frame.getTextData();
+					if(text.startsWith("CREATED ")) {
+						Model model = getModel(text.substring(8));
+						if(model != null) {
+							notifyCreate(model);
+						}
+						return;
+					}
+					if(text.startsWith("UPDATED ")) {
+						Model model = getModel(text.substring(8));
+						if(model != null) {
+							notifyUpdate(model);
+						}
+						return;
+					}
+					if(text.startsWith("DESTROYED ")) {
+						Model model = getModel(text.substring(10));
+						if(model != null) {
+							notifyDestroy(model);
+						}
+						return;
+					}
+				}
+			}
+			@Override
+			public void onError(Websocket websocket, Throwable t) {
+				// TODO log
+			}
+			@Override
+			public void onDisconnect(Websocket websocket) {
+				// TODO log
+			}
+			@Override
+			public void onConnect(Websocket websocket) {
+				// TODO log
+			}
+		};
+		Websockets.connect(url, socketListener);
+	}
+	
+	private void addListener(Class<?> clazz, ModelListener<?> listener) {
+		String name = clazz.getName();
+		if(listeners == null) {
+			listeners = new HashMap<String, List<ModelListener<?>>>();
+			addSocketListener();
+		}
+		List<ModelListener<?>> list = listeners.get(name);
+		if(list == null) {
+			list = new ArrayList<ModelListener<?>>();
+			listeners.put(name, list);
+			list.add(listener);
+		}
+		else if(!list.contains(listener)){
+			list.add(listener);
+		}
+	}
+	
+	public <T extends Model> void addListener(ModelListener<T> listener) {
+		Type type = listener.getClass().getGenericSuperclass();
+		if(type instanceof ParameterizedType) {
+			ParameterizedType pt = (ParameterizedType) type;
+			Class<?> clazz = (Class<?>) pt.getActualTypeArguments()[0];
+			addListener(clazz, listener);
+		} else {
+			throw new IllegalArgumentException(listener.getClass().getSimpleName() + " must be parameterized");
+		}
+	}
+	
+	private void notifyCreate(Model model) {
+		for(ModelListener<?> listener : getListeners(model)) {
+			listener.notifyCreate(model);
+		}
+	}
+	
+	private void notifyUpdate(Model model) {
+		for(ModelListener<?> listener : getListeners(model)) {
+			listener.notifyUpdate(model);
+		}
+	}
+	
+	private void notifyDestroy(Model model) {
+		for(ModelListener<?> listener : getListeners(model)) {
+			listener.notifyDestroy(model);
+		}
+	}
+	
+	@SuppressWarnings("rawtypes")
+	private ModelListener[] getListeners(Model model) {
+		if(listeners != null && model != null) {
+			String name = model.getClass().getName();
+			List<ModelListener<?>> list = listeners.get(name);
+			if(list != null) {
+				return list.toArray(new ModelListener[list.size()]);
+			}
+		}
+		return new ModelListener[0];
 	}
 	
 	@Override
@@ -58,7 +192,7 @@ public class HttpPersistService implements PersistService {
 			throw new SQLException("cannot create null model");
 		}
 		
-		Request request = api.getRequest(model, create);
+		Route request = api.getRoute(model, create);
 		if(request == null) {
 			throw new SQLException("no published route found for " + model.getClass() + ": create");
 		}
@@ -95,7 +229,7 @@ public class HttpPersistService implements PersistService {
 			throw new SQLException("cannot destroy null model");
 		}
 		
-		Request request = api.getRequest(model, destroy);
+		Route request = api.getRoute(model, destroy);
 		if(request == null) {
 			throw new SQLException("no published route found for " + model.getClass() + ": destroy");
 		}
@@ -149,7 +283,7 @@ public class HttpPersistService implements PersistService {
 			return model;
 		}
 		
-		Request request = api.getRequest(clazz, show);
+		Route request = api.getRoute(clazz, show);
 		if(request == null) {
 			throw new SQLException("no published route found for " + clazz + ": show");
 		}
@@ -238,7 +372,7 @@ public class HttpPersistService implements PersistService {
 			return models;
 		}
 
-		Request request = api.getRequest(clazz, showAll);
+		Route request = api.getRoute(clazz, showAll);
 		if(request == null) {
 			throw new SQLException("no published route found for " + clazz + ": showAll");
 		}
@@ -352,7 +486,7 @@ public class HttpPersistService implements PersistService {
 			throw new SQLException("cannot retrieve null model");
 		}
 		
-		Request request = api.getRequest(model, show);
+		Route request = api.getRoute(model, show);
 		if(request == null) {
 			throw new SQLException("no published route found for " + model.getClass() + ": show");
 		}
@@ -394,7 +528,7 @@ public class HttpPersistService implements PersistService {
 			throw new SQLException("cannot retrieve null model:" + field);
 		}
 		
-		Request request = api.getRequest(model, showAll, field);
+		Route request = api.getRoute(model, showAll, field);
 		if(request == null) {
 			throw new SQLException("no published route found for " + model.getClass() + ": showAll:" + field);
 		}
@@ -433,13 +567,17 @@ public class HttpPersistService implements PersistService {
 			throw new IllegalStateException("malformed URL should have been caught earlier!");
 		}
 	}
+
+	public void setDiscoveryUrl(String url) {
+		api.setDiscoveryUrl(url);
+	}
 	
 	private void update(Model model) throws SQLException {
 		if(model == null) {
 			throw new SQLException("cannot update null model");
 		}
 		
-		Request request = api.getRequest(model, update);
+		Route request = api.getRoute(model, update);
 		if(request == null) {
 			throw new SQLException("no published route found for " + model.getClass() + ": update");
 		}

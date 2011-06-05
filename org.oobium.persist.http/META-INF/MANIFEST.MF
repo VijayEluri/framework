@@ -6,8 +6,10 @@ Bundle-Version: 0.6.0.qualifier
 Bundle-Vendor: oobium.org
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: org.jboss.netty.handler.codec.http,
+ org.jboss.netty.handler.codec.http.websocket,
  org.oobium.app.http,
  org.oobium.client,
+ org.oobium.client.websockets,
  org.oobium.logging,
  org.oobium.persist,
  org.oobium.utils,

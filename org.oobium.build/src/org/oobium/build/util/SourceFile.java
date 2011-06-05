@@ -144,7 +144,8 @@ public class SourceFile {
 	public TreeMap<Integer, String> constructors = new TreeMap<Integer, String>();
 	public TreeMap<String, String> methods = new TreeMap<String, String>();
 	public TreeMap<String, PropertyDescriptor> properties = new TreeMap<String, PropertyDescriptor>();
-	public boolean propertiesPrefix;
+	public String propertiesEnum;
+	public String propertiesArray;
 
 	public String rawSource;
 
@@ -219,8 +220,8 @@ public class SourceFile {
 		sb.append(" {\n");
 		if(!properties.isEmpty()) {
 			sb.append('\n');
-			if(propertiesPrefix) {
-				sb.append("\tpublic enum Field {");
+			if(propertiesEnum != null && propertiesEnum.length() > 0) {
+				sb.append("\tpublic enum ").append(propertiesEnum).append(" {");
 				for(Iterator<PropertyDescriptor> i = properties.values().iterator(); i.hasNext();) {
 					sb.append("\n\t\t");
 					sb.append(i.next().enumProp());
@@ -234,6 +235,20 @@ public class SourceFile {
 			} else {
 				for(PropertyDescriptor prop : properties.values()) {
 					sb.append("\tpublic static final String ").append(prop.enumProp()).append(" = \"").append(prop.variable()).append("\";\n");
+				}
+				if(propertiesArray != null && propertiesArray.length() > 0) {
+					sb.append("\n");
+					sb.append("\tpublic static final String[] ").append(propertiesArray).append(" = {");
+					for(Iterator<PropertyDescriptor> i = properties.values().iterator(); i.hasNext();) {
+						sb.append("\n\t\t");
+						sb.append(i.next().enumProp());
+						if(i.hasNext()) {
+							sb.append(',');
+						} else {
+							sb.append("\n\t");
+						}
+					}
+					sb.append("};\n");
 				}
 			}
 		}

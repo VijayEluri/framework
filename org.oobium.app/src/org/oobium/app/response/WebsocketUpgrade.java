@@ -13,6 +13,10 @@ import org.oobium.app.routing.Router;
 
 public class WebsocketUpgrade extends Response {
 
+	private static class NoopWebsocketController extends WebsocketController {
+		// nothing to do
+	}
+	
 	public final Router router;
 	public final Class<? extends WebsocketController> controllerClass;
 	public final String group;
@@ -24,9 +28,15 @@ public class WebsocketUpgrade extends Response {
 		addHeader(CONNECTION, Values.UPGRADE);
 
 		this.router = router;
-		this.controllerClass = controllerClass;
 		this.group = group;
 		this.params = params;
+
+		if(controllerClass == null) {
+			this.controllerClass = NoopWebsocketController.class;
+		} else {
+			this.controllerClass = controllerClass;
+		}
+		
 	}
 
 }

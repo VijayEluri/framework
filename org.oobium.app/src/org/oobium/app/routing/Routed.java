@@ -19,8 +19,8 @@ import org.oobium.app.routing.routes.ControllerRoute;
 
 public class Routed {
 
-	private final Router router;
-	private final Route[] routes;
+	protected final Router router;
+	protected final Route[] routes;
 	
 	Routed(Router router, Route...routes) {
 		this.router = router;

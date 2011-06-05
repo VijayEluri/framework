@@ -18,7 +18,7 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.oobium.client.Client;
 import org.oobium.client.ClientResponse;
 import org.oobium.persist.Model;
-import org.oobium.persist.http.HttpApiService.Request;
+import org.oobium.persist.http.HttpApiService.Route;
 
 public class ModelForm extends ModelFields {
 
@@ -90,7 +90,7 @@ public class ModelForm extends ModelFields {
 	public boolean create() {
 		clearErrors();
 		
-		Request request = api.getRequest(modelClass, create);
+		Route request = api.getRoute(modelClass, create);
 		if(request == null) {
 			addError("no published route found for " + modelClass + ": create");
 		} else {

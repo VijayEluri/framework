@@ -60,6 +60,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 	private final String[] hosts;
 	private List<Router> moduleRouters;
 	private String discoveryHeader;
+	
 
 	public AppRouter(AppService service, String host, int port) {
 		super(service);
@@ -81,9 +82,29 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 	}
 
 	public void applyHeaders(Request request, Response response) {
-		if(discoveryHeader != null && request.isHome()) {
-			((Response) response).setApiLocation(discoveryHeader);
+		if(request.isHome()) {
+			if(discoveryHeader != null) {
+				response.setApiLocation(discoveryHeader);
+			}
+			String path = getModelNotificationsPath();
+			if(path != null) {
+				response.setHeader("API-WS-Location", path);
+			}
 		}
+	}
+	
+	private String getModelNotificationsPath() {
+		if(modelNotificationPath != null) {
+			return modelNotificationPath;
+		}
+		if(moduleRouters != null) {
+			for(Router router : moduleRouters) {
+				if(router.modelNotificationPath != null) {
+					return router.modelNotificationPath;
+				}
+			}
+		}
+		return null;
 	}
 	
 	private String asUrl(String path) {

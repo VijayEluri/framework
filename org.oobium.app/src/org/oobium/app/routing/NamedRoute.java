@@ -10,8 +10,9 @@
  ******************************************************************************/
 package org.oobium.app.routing;
 
-import static org.oobium.app.routing.Router.checkClass;
 import static org.jboss.netty.handler.codec.http.HttpMethod.GET;
+import static org.oobium.app.routing.Router.MODEL_NOTIFY_GROUP;
+import static org.oobium.app.routing.Router.checkClass;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,9 +20,9 @@ import java.util.List;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.oobium.app.controllers.Controller;
 import org.oobium.app.controllers.WebsocketController;
+import org.oobium.app.http.Action;
 import org.oobium.app.routing.routes.WebsocketRoute;
 import org.oobium.app.views.View;
-import org.oobium.app.http.Action;
 import org.oobium.persist.Model;
 
 public class NamedRoute {
@@ -204,8 +205,28 @@ public class NamedRoute {
 		if(path.charAt(0) == '?') {
 			path = name + path;
 		}
-		WebsocketRoute route = router.addWebsocketRoute(name, path, controller);
+		WebsocketRoute route = router.addWebsocketRoute(name, path, controller, controller.getClass().getName());
 		return new RoutedWebsocket(router, route);
+	}
+	
+	public RoutedWebsocket asNotifier(String path) {
+		if(path.charAt(0) == '?') {
+			path = name + path;
+		}
+		WebsocketRoute route = router.addWebsocketRoute(name, path, null, name);
+		return new RoutedWebsocket(router, route);
+	}
+	
+	public Routed asModelNotifier() {
+		return asModelNotifier("/model_notifications");
+	}
+	
+	public Routed asModelNotifier(String path) {
+		if(path.charAt(0) == '?') {
+			path = name + path;
+		}
+		WebsocketRoute route = router.addWebsocketRoute(name, path, null, MODEL_NOTIFY_GROUP);
+		return new Routed(router, route);
 	}
 	
 }

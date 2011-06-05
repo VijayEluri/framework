@@ -11,7 +11,9 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.handler.codec.http.websocket.DefaultWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.oobium.app.controllers.IParams;
+import org.oobium.app.http.Action;
 import org.oobium.app.routing.Router;
+import org.oobium.persist.Model;
 
 public class Websocket implements IParams {
 
@@ -130,6 +132,16 @@ public class Websocket implements IParams {
 	
 	public ChannelFuture write(WebSocketFrame frame) {
 		return handler.channel.write(frame);
+	}
+	
+	public ChannelFuture writeNotification(Model model, Action action) {
+		String data = model.getClass().getName() + ":" + model.getId();
+		switch(action) {
+		case create:	return write("CREATED " + data);
+		case update:	return write("UPDATED " + data);
+		case destroy:	return write("DESTROYED " + data);
+		default:		throw new IllegalArgumentException("invalid action: " + action + "; only create, update, and destroy are allowed");
+		}
 	}
 	
 }

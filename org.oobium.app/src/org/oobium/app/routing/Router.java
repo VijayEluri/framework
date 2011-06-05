@@ -69,6 +69,8 @@ import org.oobium.utils.Base64;
 
 public class Router {
 
+	public static final String MODEL_NOTIFY_GROUP = "model-notifications";
+	
 	public static final String UNKNOWN_PATH = "/#";
 	public static final String HOME = "Home";
 
@@ -115,6 +117,7 @@ public class Router {
 	protected Map<HttpMethod, Map<String, Realm>> authentications;
 	protected Map<String, Realm> realms;
 	
+	String modelNotificationPath;
 	Set<Route> published;
 	
 	public Router(ModuleService service) {
@@ -502,7 +505,7 @@ public class Router {
 	 * @return a Routed object
 	 */
 	public Routed addView(Class<? extends View> clazz) {
-		return add("show" + clazz.getSimpleName()).asView(clazz);
+		return add(underscored(clazz.getSimpleName())).asView(clazz);
 	}
 	
 	/**
@@ -519,11 +522,30 @@ public class Router {
 		return add(getName(path)).asWebsocket(path, controller);
 	}
 
-	WebsocketRoute addWebsocketRoute(String key, String path, Class<? extends WebsocketController> controller) {
+	public RoutedWebsocket addNotifier(String path) {
+		return add(getName(path)).asNotifier(path);
+	}
+
+	public Routed addModelNotifier() {
+		return add("model_notifications").asModelNotifier();
+	}
+
+	public Routed addModelNotifier(String path) {
+		return add(getName(path)).asModelNotifier(path);
+	}
+
+	WebsocketRoute addWebsocketRoute(String key, String path, Class<? extends WebsocketController> controller, String group) {
 		path = checkRule(path);
-		WebsocketRoute route = new WebsocketRoute(path, controller, controller.getClass().getName());
+		WebsocketRoute route = new WebsocketRoute(path, controller, group);
 		addRoute(key, route);
+		updateModelNotificationPath(route);
 		return route;
+	}
+	
+	void updateModelNotificationPath(WebsocketRoute route) {
+		if(MODEL_NOTIFY_GROUP.equals(route.group)) {
+			modelNotificationPath = route.path;
+		}
 	}
 	
 	private String checkRule(String rule) {
@@ -835,9 +857,9 @@ public class Router {
 	}
 	
 	/**
-	 * Get the List of WebSockets registered under the given group name.
+	 * Get the Set of WebSockets registered under the given group name.
 	 * @param group the name of the group; can be null
-	 * @return List of WebSockets, or an empty Set if none are registered under the given group name; never null.
+	 * @return Set of WebSocket objects, or an empty Set if none are registered under the given group name; never null.
 	 */
 	public Set<Websocket> getWebsockets(String group) {
 		if(websocketsByGroup != null) {
@@ -847,6 +869,10 @@ public class Router {
 			}
 		}
 		return new HashSet<Websocket>(0);
+	}
+
+	public Set<Websocket> getModelNotifiers() {
+		return getWebsockets(MODEL_NOTIFY_GROUP);
 	}
 	
 	public boolean isAuthorized(Request request, Realm realm) {
