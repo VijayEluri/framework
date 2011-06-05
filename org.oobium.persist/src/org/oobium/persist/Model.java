@@ -44,6 +44,8 @@ public abstract class Model implements JsonModel {
 	private static final ThreadLocal<Logger> logService = new ThreadLocal<Logger>();
 	private static final ThreadLocal<PersistServiceProvider> persistServiceProvider = new ThreadLocal<PersistServiceProvider>();
 	
+	private static PersistServiceProvider globalPersistServiceProvider;
+	
 	
 	public static int count(Class<? extends Model> clazz) throws SQLException {
 		return getPersistService(clazz).count(clazz, null);
@@ -138,16 +140,28 @@ public abstract class Model implements JsonModel {
 	public static PersistServiceProvider getPersistServiceProvider() {
 		PersistServiceProvider provider = persistServiceProvider.get();
 		if(provider == null) {
-			provider = new SimplePersistServiceProvider();
-			persistServiceProvider.set(provider);
+			provider = globalPersistServiceProvider;
+			if(provider == null) {
+				provider = globalPersistServiceProvider = new SimplePersistServiceProvider();
+			}
 		}
-		return persistServiceProvider.get();
+		return provider;
 	}
 	
 	protected static boolean notEquals(Object o1, Object o2) {
 		return (o1 != null && !o1.equals(o2)) || o2 != null; 
 	}
 	
+	public static PersistServiceProvider setGlobalPersistService(PersistService service) {
+		PersistServiceProvider services = new SimplePersistServiceProvider(service);
+		setGlobalPersistServiceProvider(services);
+		return services;
+	}
+
+	public static void setGlobalPersistServiceProvider(PersistServiceProvider services) {
+		globalPersistServiceProvider = services;
+	}
+
 	public static void setLogger(Logger service) {
 		logService.set(service);
 	}
@@ -157,7 +171,7 @@ public abstract class Model implements JsonModel {
 		setPersistServiceProvider(services);
 		return services;
 	}
-
+	
 	public static void setPersistServiceProvider(PersistServiceProvider services) {
 		persistServiceProvider.set(services);
 	}
@@ -181,6 +195,12 @@ public abstract class Model implements JsonModel {
 	private int id;
 	private Map<String, Object> fields;
 	private Map<String, ArrayList<String>> errors;
+	
+	/**
+	 * The value of this model's id before it was destroyed.
+	 * For use only by {@link Observer#afterDestroy(int)}.
+	 */
+	int destroyed;
 
 	public Model() {
 		logger = getLogger();
@@ -363,6 +383,7 @@ public abstract class Model implements JsonModel {
 							destroyDependents(true);
 							getPersistor().destroy(this);
 							destroyDependents(false);
+							destroyed = id;
 							id = 0;
 							fields.clear();
 							Observer.runAfterDestroy(this);
