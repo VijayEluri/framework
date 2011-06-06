@@ -1,5 +1,6 @@
 package org.oobium.app.server;
 
+import static org.oobium.utils.StringUtils.join;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 
 import java.util.HashSet;
@@ -138,7 +139,7 @@ public class Websocket implements IParams {
 		String data = model.getClass().getName() + ":" + model.getId();
 		switch(action) {
 		case create:	return write("CREATED " + data);
-		case update:	return write("UPDATED " + data);
+		case update:	return write("UPDATED " + data + "-" + join(model.getAll().keySet(), ','));
 		case destroy:	return write("DESTROYED " + data);
 		default:		throw new IllegalArgumentException("invalid action: " + action + "; only create, update, and destroy are allowed");
 		}

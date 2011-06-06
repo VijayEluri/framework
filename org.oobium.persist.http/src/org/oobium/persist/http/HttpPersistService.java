@@ -80,6 +80,7 @@ public class HttpPersistService implements PersistService {
 				if(frame.isText()) {
 					String text = frame.getTextData();
 					if(text.startsWith("CREATED ")) {
+						// CREATED com.test.ws.models.MyModel:15
 						Model model = getModel(text.substring(8));
 						if(model != null) {
 							notifyCreate(model);
@@ -87,13 +88,23 @@ public class HttpPersistService implements PersistService {
 						return;
 					}
 					if(text.startsWith("UPDATED ")) {
-						Model model = getModel(text.substring(8));
-						if(model != null) {
-							notifyUpdate(model);
+						// UPDATED com.test.ws.models.MyModel:15-field1,field2
+						int ix = text.indexOf('-', 8);
+						if(ix == -1) {
+							Model model = getModel(text.substring(8));
+							if(model != null) {
+								notifyUpdate(model, new String[0]);
+							}
+						} else {
+							Model model = getModel(text.substring(8, ix));
+							if(model != null) {
+								notifyUpdate(model, text.substring(ix+1).split(","));
+							}
 						}
 						return;
 					}
 					if(text.startsWith("DESTROYED ")) {
+						// DESTROYED com.test.ws.models.MyModel:15
 						Model model = getModel(text.substring(10));
 						if(model != null) {
 							notifyDestroy(model);
@@ -152,9 +163,9 @@ public class HttpPersistService implements PersistService {
 		}
 	}
 	
-	private void notifyUpdate(Model model) {
+	private void notifyUpdate(Model model, String[] fields) {
 		for(ModelListener<?> listener : getListeners(model)) {
-			listener.notifyUpdate(model);
+			listener.notifyUpdate(model, fields);
 		}
 	}
 	

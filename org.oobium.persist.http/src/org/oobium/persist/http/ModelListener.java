@@ -10,8 +10,8 @@ public abstract class ModelListener<T extends Model> {
 	}
 	
 	@SuppressWarnings("unchecked")
-	void notifyUpdate(Model model) {
-		onUpdate((T) model);
+	void notifyUpdate(Model model, String[] fields) {
+		onUpdate((T) model, fields);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -21,7 +21,7 @@ public abstract class ModelListener<T extends Model> {
 	
 	public abstract void onCreate(T model);
 	
-	public abstract void onUpdate(T model);
+	public abstract void onUpdate(T model, String[] fields);
 	
 	public abstract void onDestroy(T model);
 	
