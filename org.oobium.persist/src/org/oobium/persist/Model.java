@@ -508,20 +508,25 @@ public abstract class Model implements JsonModel {
 	}
 	
 	/**
-	 * Get a data field from the model object.  If the model is not new then 
-	 * the field will be resolved if it is not already resolved.
+	 * Get a data field from the model object.
+	 * <p>If the field is a model field (it is specified in the @{@link ModelDescription} class annotation),
+	 * then this method will return the data in the Type specified, performing any coercion as necessary.
+	 * <p>If the model is not new then the field will be resolved if it is not already resolved.
 	 * @param field the name of the field to be returned
 	 * @return the value of the field
 	 * @see #get(String, boolean)
+	 * @see #peek(String)
 	 */
 	public Object get(String field) {
 		return get(field, true);
 	}
-	
+
 	/**
-	 * Get a data field from the model object.  If load is true, and 
-	 * the model is not new, then the field will be resolved if it 
-	 * is not already resolved.
+	 * Get a data field from the model object.
+	 * <p>If the field is a model field (it is specified in the @{@link ModelDescription} class annotation),
+	 * then this method will return the data in the Type specified, performing any coercion as necessary.
+	 * <p>If load is true, and the model is not new, then the field will be resolved if it 
+	 * is not already resolved.</p>
 	 * @param field the name of the field to be returned
 	 * @param load true to make sure the field is resolved, false otherwise
 	 * @return the value of the field
@@ -891,6 +896,23 @@ public abstract class Model implements JsonModel {
 		return validation.message();
 	}
 	
+	/**
+	 * Get a data field directly from the model object's fields map.
+	 * Unlike the {@link #get(String)} method, {@link #peek(String)}
+	 * does <b>NOT</b> coerce the returned value of model fields, and it
+	 * does <b>NOT</b> resolve the model regardless of its current state.
+	 * @param field the name of the field to be returned
+	 * @return the raw value of the field, as stored in the internal fields map; null if the value is null or
+	 * the field is not set (model will not be resolved)
+	 */
+	public Object peek(String field) {
+		return fields.get(field);
+	}
+	
+	public <T> T peek(String field, Class<T> type) {
+		return coerce(fields.get(field), type);
+	}
+
     /**
 	 * Put the given field, and its given value, directly into this model's underlying
 	 * data map.  The model will not be resolved if it isn't already.  If the field
