@@ -40,6 +40,7 @@ public class Observer<T extends Model> {
 	@SuppressWarnings("unchecked")
 	private static void addObserverToMap(Observer<?> observer, Class<?> clazz) {
 		Class<? extends Model> modelClass = (Class<? extends Model>) clazz;
+		observer.modelClass = modelClass;
 		if(!observerMap.containsKey(modelClass)) {
 			observerMap.put(modelClass, new ArrayList<Observer<?>>());
 		}
@@ -218,6 +219,7 @@ public class Observer<T extends Model> {
 	
 	
 	protected Logger logger;
+	protected Class<? extends Model> modelClass;
 
 	protected void afterCreate(T model) {
 		// subclasses to implement if necessary
