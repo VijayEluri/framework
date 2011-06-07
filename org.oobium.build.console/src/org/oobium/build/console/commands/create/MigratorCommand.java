@@ -11,7 +11,6 @@
 package org.oobium.build.console.commands.create;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.BuilderConsoleActivator;
 import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Migrator;
 import org.oobium.build.workspace.Module;
