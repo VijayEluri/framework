@@ -47,12 +47,21 @@ public class HttpPersistService implements PersistService {
 	private WebsocketListener socketListener;
 
 	public HttpPersistService() {
-		this.api = HttpApiService.getInstance();
+		this(null, false);
 	}
 
 	public HttpPersistService(String discoveryUrl) {
-		this();
-		setDiscoveryUrl(discoveryUrl);
+		this(discoveryUrl, false);
+	}
+
+	public HttpPersistService(String discoveryUrl, boolean global) {
+		this.api = HttpApiService.getInstance();
+		if(discoveryUrl != null) {
+			setDiscoveryUrl(discoveryUrl);
+		}
+		if(global) {
+			Model.setGlobalPersistService(this);
+		}
 	}
 
 	private Model getModel(String text) {
@@ -105,9 +114,14 @@ public class HttpPersistService implements PersistService {
 					}
 					if(text.startsWith("DESTROYED ")) {
 						// DESTROYED com.test.ws.models.MyModel:15
-						Model model = getModel(text.substring(10));
-						if(model != null) {
-							notifyDestroy(model);
+						String[] sa = text.substring(10).split(":", 2);
+						if(sa.length == 2) {
+							try {
+								int id = Integer.parseInt(sa[1]);
+								notifyDestroy(sa[0], id);
+							} catch(Exception e) {
+								// TODO log error
+							}
 						}
 						return;
 					}
@@ -169,17 +183,21 @@ public class HttpPersistService implements PersistService {
 		}
 	}
 	
-	private void notifyDestroy(Model model) {
-		for(ModelListener<?> listener : getListeners(model)) {
-			listener.notifyDestroy(model);
+	private void notifyDestroy(String className, int id) {
+		for(ModelListener<?> listener : getListeners(className)) {
+			listener.onDestroy(id);
 		}
 	}
 	
 	@SuppressWarnings("rawtypes")
 	private ModelListener[] getListeners(Model model) {
-		if(listeners != null && model != null) {
-			String name = model.getClass().getName();
-			List<ModelListener<?>> list = listeners.get(name);
+		return getListeners((model == null) ? null : model.getClass().getName());
+	}
+	
+	@SuppressWarnings("rawtypes")
+	private ModelListener[] getListeners(String modelClass) {
+		if(listeners != null) {
+			List<ModelListener<?>> list = listeners.get(modelClass);
 			if(list != null) {
 				return list.toArray(new ModelListener[list.size()]);
 			}

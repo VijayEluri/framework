@@ -32,8 +32,10 @@ import org.oobium.app.ModuleService;
 import org.oobium.app.controllers.ActionCache;
 import org.oobium.app.controllers.Controller;
 import org.oobium.app.http.Action;
+import org.oobium.app.persist.ModelNotifier;
 import org.oobium.app.routing.AppRouter;
 import org.oobium.app.routing.Router;
+import org.oobium.app.server.Websocket;
 import org.oobium.build.util.SourceFile;
 import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.ExportedPackage;
@@ -758,6 +760,28 @@ public class ProjectGenerator {
 		writeFile(mainFolder(project), "configuration.js", sb.toString());
 	}
 	
+	public static File createNotifier(Module module, String modelPackage, String modelName) {
+		SourceFile src = new SourceFile();
+
+		String name = modelName + "Notifier";
+		src.packageName = module.packageName(module.observers);
+		src.simpleName = name;
+		src.superName = ModelNotifier.class.getSimpleName() + "<" + modelName + ">";
+		src.imports.add(modelPackage + "." + modelName);
+		src.imports.add(ModelNotifier.class.getCanonicalName());
+		src.imports.add(Websocket.class.getCanonicalName());
+		src.imports.add(Action.class.getCanonicalName());
+
+		src.methods.put("select",
+			"\t@Override\n" +
+			"\tprotected boolean select(Websocket socket, Action action) {\n" +
+			"\t\t// TODO Auto-generated method stub\n" +
+			"\t\treturn true;\n" +
+			"\t}");
+
+		return writeFile(module.observers, name + ".java", src.toSource());
+	}
+	
 	public static File createObserver(Module module, String modelPackage, String modelName) {
 		SourceFile src = new SourceFile();
 
@@ -772,7 +796,6 @@ public class ProjectGenerator {
 			"\t@Override\n" +
 			"\tprotected void afterCreate(Post model) {\n" +
 			"\t\t// TODO Auto-generated method stub\n" +
-			"\t\tsuper.afterCreate(model);\n" +
 			"\t}");
 
 		return writeFile(module.observers, name + ".java", src.toSource());

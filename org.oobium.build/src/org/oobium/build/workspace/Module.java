@@ -43,6 +43,8 @@ import javax.mail.internet.InternetAddress;
 import org.oobium.app.MutableAppConfig;
 import org.oobium.app.controllers.Controller;
 import org.oobium.app.http.Action;
+import org.oobium.app.persist.ModelNotifier;
+import org.oobium.app.server.Websocket;
 import org.oobium.app.views.View;
 import org.oobium.build.esp.ESourceFile;
 import org.oobium.build.gen.ControllerGenerator;
@@ -483,6 +485,13 @@ public class Module extends Bundle {
 	
 	public File createObserver(String modelPackage, String modelName) {
 		return ProjectGenerator.createObserver(this, modelPackage, adjust(modelName));
+	}
+
+	public File createNotifier(String modelPackage, String modelName) {
+		addImportPackage(Action.class.getPackage().getName());
+		addImportPackage(ModelNotifier.class.getPackage().getName());
+		addImportPackage(Websocket.class.getPackage().getName());
+		return ProjectGenerator.createNotifier(this, modelPackage, adjust(modelName));
 	}
 
 	public File createView(String name, String content) {
@@ -1210,6 +1219,10 @@ public class Module extends Bundle {
 	
 	public File getObserver(String name) {
 		return new File(observers, adjust(name, "Observer") + ".java");
+	}
+
+	public File getNotifier(String name) {
+		return new File(observers, adjust(name, "Notifier") + ".java");
 	}
 
 	/**

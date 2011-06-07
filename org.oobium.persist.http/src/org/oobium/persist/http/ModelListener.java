@@ -14,15 +14,10 @@ public abstract class ModelListener<T extends Model> {
 		onUpdate((T) model, fields);
 	}
 	
-	@SuppressWarnings("unchecked")
-	void notifyDestroy(Model model) {
-		onDestroy((T) model);
-	}
-	
 	public abstract void onCreate(T model);
 	
 	public abstract void onUpdate(T model, String[] fields);
 	
-	public abstract void onDestroy(T model);
+	public abstract void onDestroy(int id);
 	
 }

@@ -23,6 +23,7 @@ import org.oobium.build.console.commands.create.MailerTemplatesForCommand;
 import org.oobium.build.console.commands.create.MigrationCommand;
 import org.oobium.build.console.commands.create.MigratorCommand;
 import org.oobium.build.console.commands.create.ModelCommand;
+import org.oobium.build.console.commands.create.NotifierCommand;
 import org.oobium.build.console.commands.create.ModuleCommand;
 import org.oobium.build.console.commands.create.ObserverCommand;
 import org.oobium.build.console.commands.create.SchemaCommand;
@@ -51,6 +52,7 @@ public class CreateCommand extends BuilderCommand {
 		add(new MigratorCommand());
 		add(new ModelCommand());
 		add(new ModuleCommand());
+		add(new NotifierCommand());
 		add(new ObserverCommand());
 		add(new SchemaCommand());
 		add(new SessionsCommand());
