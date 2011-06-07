@@ -156,15 +156,6 @@ public abstract class MigratorService extends AppService {
 	}
 	
 	@Override
-	public PersistService getPersistService() {
-		PersistService service = super.getPersistService();
-		if(service != null) {
-			return service;
-		}
-		throw new IllegalStateException("Migration cannot run without a PersistService: " + appConfig.get(Config.PERSIST));
-	}
-	
-	@Override
 	protected Config loadConfiguration() {
 		return new Config(Map(
 				e(Config.PERSIST, appConfig.get(Config.PERSIST)),

@@ -18,6 +18,7 @@ import org.oobium.build.console.commands.migrate.RedoCommand;
 import org.oobium.build.console.commands.migrate.RollbackCommand;
 import org.oobium.build.console.commands.migrate.ToCommand;
 import org.oobium.build.runner.RunnerService;
+import org.oobium.client.Client;
 import org.oobium.client.ClientResponse;
 
 public class MigrateCommand extends BuilderCommand {
@@ -54,8 +55,13 @@ public class MigrateCommand extends BuilderCommand {
 			RunnerService.pauseUpdaters();
 
 			console.out.println("running migrator...");
+
+			Client client = client("localhost", 5001);
+			if(hasParam("log")) {
+				client.addParameter("log", param("log"));
+			}
 			
-			ClientResponse response = client("localhost", 5001).post(getPath());
+			ClientResponse response = client.post(getPath());
 			if(response.isSuccess()) {
 				console.out.println(response.getBody());
 			} else {

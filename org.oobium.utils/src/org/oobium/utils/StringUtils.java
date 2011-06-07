@@ -638,6 +638,10 @@ public class StringUtils {
 		}
 	}
 
+	public static String join(int[] segments, char separator) {
+		return join(segments, String.valueOf(separator));
+	}
+	
 	public static String join(int[] segments, String separator) {
 		StringBuilder sb = new StringBuilder();
 		for(Object segment : segments) {
@@ -935,6 +939,21 @@ public class StringUtils {
 	 */
 	public static String packageSegment(String string) {
 		return underscored(string).toLowerCase();
+	}
+	
+	public static String pad(String string, int length) {
+		if(string == null || length <= 0) {
+			return "";
+		}
+		if(length < string.length()) {
+			return string.substring(0, length);
+		}
+		StringBuilder sb = new StringBuilder(length);
+		sb.append(string);
+		for(int i = 0; sb.length() < length; i++) {
+			sb.append(' ');
+		}
+		return sb.toString();
 	}
 	
 	public static String path(String...segments) {

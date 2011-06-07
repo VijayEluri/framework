@@ -13,6 +13,8 @@ package org.oobium.persist.db;
 import static org.oobium.persist.db.internal.DbCache.expireCache;
 import static org.oobium.utils.literal.Properties;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -28,6 +30,7 @@ import org.oobium.persist.ModelAdapter;
 import org.oobium.persist.PersistClient;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.db.internal.DbPersistor;
+import org.oobium.persist.db.internal.LoggingConnection;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
@@ -181,6 +184,7 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		threadConnection.set(null);
 		threadClient.set(null);
 		expireCache();
+		closeLogWriter();
 	}
 	
 	public void commit() throws SQLException {
@@ -265,6 +269,46 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	public Connection getConnection() throws SQLException {
 		return getConnection(true);
 	}
+
+	private static String logPath;
+	private static FileWriter logWriter;
+
+	private void closeLogWriter() {
+		if(logWriter != null) {
+			try {
+				logWriter.flush();
+				logWriter.close();
+			} catch(IOException e) {
+				logger.warn(e + ": " + e.getMessage());
+			}
+			logWriter = null;
+			logPath = null;
+		}
+	}
+
+	private void createLogWriter(String path) throws SQLException {
+		if(logWriter != null && !path.equals(logPath)) {
+			closeLogWriter();
+		}
+		if(logWriter == null) {
+			try {
+				logWriter = new FileWriter(path);
+			} catch(IOException e) {
+				throw new SQLException("could not create log writer: " + e.getMessage());
+			}
+		}
+		logPath = path;
+	}
+	
+	private Connection checkLoggingConnection(Connection connection) throws SQLException {
+		String path = System.getProperty("org.oobium.persist.db.logging");
+		if(path == null) {
+			closeLogWriter();
+			return connection;
+		}
+		createLogWriter(path);
+		return new LoggingConnection(connection, logWriter);
+	}
 	
 	private Connection getConnection(boolean create) throws SQLException {
 		lock.readLock().lock();
@@ -281,6 +325,7 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 				Database db = getDatabase(client);
 				connection = db.getConnection();
 				connection.setAutoCommit(getAutoCommit());
+				connection = checkLoggingConnection(connection);
 				threadConnection.set(connection);
 			}
 			return connection;
