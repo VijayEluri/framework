@@ -259,6 +259,9 @@ public class ClientExporter {
 	
 	private void addFiles(String bundleName, Map<String, File> files) throws IOException {
 		Bundle bundle = workspace.getBundle(bundleName);
+		if(bundle == null) {
+			throw new NullPointerException(bundleName + " not in workspace");
+		}
 		if(bundle.isJar) {
 			files.putAll(extract(bundle.file, new File(tmpDir, bundle.name)));
 		} else {
@@ -268,6 +271,9 @@ public class ClientExporter {
 
 	private void addFile(String bundleName, String className, Map<String, File> files) throws IOException {
 		Bundle bundle = workspace.getBundle(bundleName);
+		if(bundle == null) {
+			throw new NullPointerException(bundleName + " not in workspace");
+		}
 		if(bundle.isJar) {
 			String entryName = className.replace('.', '/') + ".class";
 			String dstName = bundle.file.getName();
@@ -293,6 +299,9 @@ public class ClientExporter {
 	
 	private void addFiles(String bundleName, String packageName, Map<String, File> files) throws IOException {
 		Bundle bundle = workspace.getBundle(bundleName);
+		if(bundle == null) {
+			throw new NullPointerException(bundleName + " not in workspace");
+		}
 		if(bundle.isJar) {
 			String regex = packageName.replace('.', '/') + "/.+";
 			files.putAll(extract(bundle.file, new File(tmpDir, bundle.name), regex));
