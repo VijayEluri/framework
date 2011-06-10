@@ -34,9 +34,12 @@ import org.oobium.build.workspace.Application;
 import org.oobium.build.workspace.Migrator;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.Workspace;
+import org.oobium.persist.Attribute;
 import org.oobium.persist.Model;
+import org.oobium.persist.ModelDescription;
 import org.oobium.persist.Paginator;
 import org.oobium.persist.PersistService;
+import org.oobium.persist.Relation;
 import org.oobium.utils.Config.Mode;
 import org.oobium.utils.StringUtils;
 import org.oobium.utils.json.JsonModel;
@@ -266,6 +269,18 @@ public class ModelGenerator {
 	private String generate(String classAnnotations, ModelDefinition model) {
 		SourceFile src = new SourceFile();
 
+		src.classAnnotations.put(0, model.description);
+		src.imports.add(ModelDescription.class.getCanonicalName());
+		if(model.hasAttributes()) {
+			src.imports.add(Attribute.class.getCanonicalName());
+		}
+		if(model.hasRelations()) {
+			src.imports.add(Relation.class.getCanonicalName());
+		}
+		for(String di : model.descriptionImports) {
+			src.imports.add(di);
+		}
+		
 		src.simpleName = model.getSimpleType() + "Model";
 		src.packageName = model.getPackageName();
 		src.superName = Model.class.getSimpleName();

@@ -205,17 +205,15 @@ public class ClientExporter {
 		} else {
 			for(File model : module.findModels()) {
 				File genModel = module.getGenModel(model);
-				File[] modelClasses = module.getBinFiles(model);
 				File[] genModelClasses = module.getBinFiles(genModel);
-				for(File modelClass : modelClasses) {
-					applicationFiles.put(relativePath(modelClass, len), modelClass);
-				}
 				for(File genModelClass : genModelClasses) {
 					applicationFiles.put(relativePath(genModelClass, len), genModelClass);
 				}
 				if(includeSource) {
-					applicationFiles.put(relativeSrcPath(model, modelClasses[0], len), model);
 					applicationFiles.put(relativeSrcPath(genModel, genModelClasses[0], len), genModel);
+				}
+				if(target != null) {
+					createClientModel(model);
 				}
 			}
 		}
@@ -230,6 +228,24 @@ public class ClientExporter {
 		}
 		
 		return new File[] { nettyJar, oobiumJar, applicationJar };
+	}
+	
+	private void createClientModel(File model) {
+		if(target != null) {
+			String pkg = module.packageName(model);
+			String name = module.getModelName(model);
+			String sname = name + "Model";
+
+			String src = 
+				"package " + pkg + ";\n" +
+				"\n" +
+				"public class " + name + " extends " + sname + " {\n" +
+				"\n" +
+				"}";
+
+			String path = model.getAbsolutePath().substring(module.src.getAbsolutePath().length());
+			writeFile(target.src, path, src);
+		}
 	}
 	
 	private void addAndroidLogger(Map<String, File> files) {

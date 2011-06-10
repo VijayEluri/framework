@@ -201,8 +201,10 @@ public class ModelDefinition {
 		return in;
 	}
 
-	public final File file; // TODO this file object will no work when we need to deal with jars...
+	public final File file; // TODO this file object will not work when we need to deal with jars...
 	private final String source;
+	public final String description;
+	public final List<String> descriptionImports;
 
 	public final String packageName;
 	public final String type;
@@ -235,10 +237,30 @@ public class ModelDefinition {
 		this.relations = new LinkedHashMap<String, ModelRelation>();
 		this.indexes = new ArrayList<String>();
 
-		parse();
+		description = parse();
+		descriptionImports = getDescriptionImports();
 		
 		this.datestamps = attributes.containsKey("datestamps");
 		this.timestamps = attributes.containsKey("timestamps");
+	}
+	
+	private List<String> getDescriptionImports() {
+		List<String> di = new ArrayList<String>();
+		for(ModelAttribute attr : attributes.values()) {
+			Pattern p = Pattern.compile("import\\s+" + attr.type + "\\s*;");
+			Matcher m = p.matcher(source);
+			if(m.find()) {
+				di.add(attr.type);
+			}
+		}
+		for(ModelRelation r : relations.values()) {
+			Pattern p = Pattern.compile("import\\s+" + r.type + "\\s*;");
+			Matcher m = p.matcher(source);
+			if(m.find()) {
+				di.add(r.type);
+			}
+		}
+		return di;
 	}
 
 	public String getCanonicalName() {
@@ -353,15 +375,17 @@ public class ModelDefinition {
 		return relations != null && !relations.isEmpty();
 	}
 	
-	private void parse() {
+	private String parse() {
+		String md = null;
 		char[] ca = source.toCharArray();
 		
-		int s1 = findAll(ca, 0, MODEL_DESCRIPTION);
-		if(s1 != -1) {
-			s1 = find(ca, '(', s1);
+		int s0 = findAll(ca, 0, MODEL_DESCRIPTION);
+		if(s0 != -1) {
+			int s1 = find(ca, '(', s0);
 			if(s1 != -1) {
 				int s2 = closer(ca, s1);
 				if(s2 != -1) {
+					md = source.substring(s0, s2+1);
 					parseDescription(ca, s1+1, s2);
 					s1 = findAll(ca, 0, INDEXES);
 					if(s1 != -1) {
@@ -376,6 +400,8 @@ public class ModelDefinition {
 				}
 			}
 		}
+		
+		return md;
 	}
 	
 	private void parseAttrs(String attrs) {
