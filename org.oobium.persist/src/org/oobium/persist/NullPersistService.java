@@ -97,6 +97,10 @@ public class NullPersistService implements PersistService {
 			public String getMigrationService() {
 				return null;
 			}
+			@Override
+			public boolean isRemote() {
+				return false;
+			}
 		};
 	}
 	

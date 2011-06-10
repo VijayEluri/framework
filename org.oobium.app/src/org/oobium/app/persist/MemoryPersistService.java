@@ -181,6 +181,10 @@ public class MemoryPersistService implements PersistService {
 			public String getMigrationService() {
 				return null;
 			}
+			@Override
+			public boolean isRemote() {
+				return false;
+			}
 		};
 	}
 	

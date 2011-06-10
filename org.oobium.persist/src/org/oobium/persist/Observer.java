@@ -27,7 +27,7 @@ public class Observer<T extends Model> {
 
 	private static final Map<Class<?>, List<Observer<? extends Model>>> observerMap = new HashMap<Class<?>, List<Observer<? extends Model>>>();
 
-	public synchronized static void addObserver(Class<? extends Observer<?>> observerClass) {
+	synchronized static void addObserver(Class<? extends Observer<?>> observerClass) {
 		try {
 			Observer<?> observer = observerClass.newInstance();
 			addObserver(observer);
@@ -37,32 +37,29 @@ public class Observer<T extends Model> {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	private static void addObserverToMap(Observer<?> observer, Class<?> clazz) {
-		Class<? extends Model> modelClass = (Class<? extends Model>) clazz;
-		observer.modelClass = modelClass;
-		if(!observerMap.containsKey(modelClass)) {
-			observerMap.put(modelClass, new ArrayList<Observer<?>>());
+	/**
+	 * @param observer
+	 * @return true if the observer was added to the list of observers for its modelClass; false if it
+	 * already exists in the list of observers.
+	 */
+	protected synchronized static boolean addObserver(Observer<? extends Model> observer) {
+		List<Observer<? extends Model>> observers = observerMap.get(observer.modelClass);
+		if(observers == null) {
+			observers = new ArrayList<Observer<? extends Model>>();
+			observerMap.put(observer.modelClass, observers);
 		}
-		observerMap.get(modelClass).add(observer);
-		
-		if(slogger.isLoggingInfo()) {
-			slogger.info("added observer (" + observer.getClass().getSimpleName() + ", " + modelClass.getSimpleName() + ")");
+
+		if(!observers.contains(observer)) {
+			observers.add(observer);
+			if(slogger.isLoggingInfo()) {
+				slogger.info("added observer (" + observer.getClass().getSimpleName() + ", " + observer.modelClass.getSimpleName() + ")");
+			}
+			return true;
 		}
+		return false;
 	}
 	
-	protected synchronized static void addObserver(Observer<? extends Model> observer) {
-		Type type = observer.getClass().getGenericSuperclass();
-		if(type instanceof ParameterizedType) {
-			ParameterizedType pt = (ParameterizedType) type;
-			Class<?> clazz = (Class<?>) pt.getActualTypeArguments()[0];
-			addObserverToMap(observer, clazz);
-		} else {
-			throw new IllegalArgumentException("Observer class must be parameterized");
-		}
-	}
-
-	public synchronized static void removeObservers(Class<?> clazz) {
+	synchronized static void removeObservers(Class<?> clazz) {
 		if(Model.class.isAssignableFrom(clazz)) {
 			List<Observer<?>> removed = observerMap.remove(clazz);
 			if(slogger.isLoggingInfo() && removed != null) {
@@ -89,15 +86,15 @@ public class Observer<T extends Model> {
 		}
 	}
 	
-	protected synchronized static <T extends Model> void removeObserver(Observer<T> observer, Class<T> modelClass) {
-		List<Observer<?>> observers = observerMap.get(modelClass);
+	protected synchronized static <T extends Model> void removeObserver(Observer<T> observer) {
+		List<Observer<?>> observers = observerMap.get(observer.modelClass);
 		if(observers != null) {
 			observers.remove(observer);
 			if(observers.isEmpty()) {
-				observerMap.remove(modelClass);
+				observerMap.remove(observer.modelClass);
 			}
 			if(slogger.isLoggingInfo()) {
-				slogger.info("removed observer (" + observer.getClass().getSimpleName() + ", " + modelClass.getSimpleName() + ")");
+				slogger.info("removed observer (" + observer.getClass().getSimpleName() + ", " + observer.modelClass.getSimpleName() + ")");
 			}
 		}
 	}
@@ -219,7 +216,11 @@ public class Observer<T extends Model> {
 	
 	
 	protected Logger logger;
-	protected Class<? extends Model> modelClass;
+	protected final Class<? extends Model> modelClass;
+
+	public Observer() {
+		modelClass = findModelClass();
+	}
 
 	protected void afterCreate(T model) {
 		// subclasses to implement if necessary
@@ -308,6 +309,21 @@ public class Observer<T extends Model> {
 
 	protected void beforeValidateUpdate(T model) {
 		// subclasses to implement if necessary
+	}
+
+	@SuppressWarnings("unchecked")
+	private Class<? extends Model> findModelClass() {
+		Type type = getClass().getGenericSuperclass();
+		if(type instanceof ParameterizedType) {
+			ParameterizedType pt = (ParameterizedType) type;
+			return (Class<? extends Model>) pt.getActualTypeArguments()[0];
+		} else {
+			throw new IllegalArgumentException("Observer class must be parameterized");
+		}
+	}
+	
+	public Class<? extends Model> getModelClass() {
+		return modelClass;
 	}
 
 }

@@ -34,5 +34,10 @@ public class DbServiceInfo implements ServiceInfo {
 	public String getVersion() {
 		return service.getBundle().getVersion().toString();
 	}
+	
+	@Override
+	public boolean isRemote() {
+		return false;
+	}
 
 }

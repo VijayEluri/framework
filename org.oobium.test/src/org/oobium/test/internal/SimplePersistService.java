@@ -162,6 +162,10 @@ public class SimplePersistService implements PersistService {
 			public String getMigrationService() {
 				return null;
 			}
+			@Override
+			public boolean isRemote() {
+				return false;
+			}
 		};
 	}
 

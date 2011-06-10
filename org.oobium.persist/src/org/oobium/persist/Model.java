@@ -45,7 +45,14 @@ public abstract class Model implements JsonModel {
 	private static final ThreadLocal<PersistServiceProvider> persistServiceProvider = new ThreadLocal<PersistServiceProvider>();
 	
 	private static PersistServiceProvider globalPersistServiceProvider;
+
+	public static void addObserver(Class<? extends Observer<?>> observerClass) {
+		Observer.addObserver(observerClass);
+	}
 	
+	public static void addObserver(Observer<?> observer) {
+		Observer.addObserver(observer);
+	}
 	
 	public static int count(Class<? extends Model> clazz) throws SQLException {
 		return getPersistService(clazz).count(clazz, null);
@@ -152,6 +159,10 @@ public abstract class Model implements JsonModel {
 		return (o1 != null && !o1.equals(o2)) || o2 != null; 
 	}
 	
+	public static void removeObservers(Class<?> clazz) {
+		Observer.removeObservers(clazz);
+	}
+
 	public static PersistServiceProvider setGlobalPersistService(PersistService service) {
 		PersistServiceProvider services = new SimplePersistServiceProvider(service);
 		setGlobalPersistServiceProvider(services);
@@ -380,13 +391,16 @@ public abstract class Model implements JsonModel {
 					Observer.runBeforeDestroy(this);
 					if(!hasErrors()) {
 						try {
+							PersistService service = getPersistor();
 							destroyDependents(true);
-							getPersistor().destroy(this);
+							service.destroy(this);
 							destroyDependents(false);
 							destroyed = id;
 							id = 0;
 							fields.clear();
-							Observer.runAfterDestroy(this);
+							if(!service.getInfo().isRemote()) {
+								Observer.runAfterDestroy(this);
+							}
 						} catch(SQLException e) {
 							logger.warn("failed to destroy " + asSimpleString(), e);
 							addError(e.getLocalizedMessage());
@@ -464,9 +478,12 @@ public abstract class Model implements JsonModel {
 	
 		if(!hasErrors()) {
 			try {
-				getPersistor().create(this);
+				PersistService service = getPersistor();
+				service.create(this);
 				saved = true;
-				Observer.runAfterCreate(this);
+				if(!service.getInfo().isRemote()) {
+					Observer.runAfterCreate(this);
+				}
 			} catch(SQLException e) {
 				logger.warn("failed to save " + asSimpleString(), e);
 				addError(e.getLocalizedMessage());
@@ -482,9 +499,12 @@ public abstract class Model implements JsonModel {
 			
 			if(!hasErrors()) {
 				try {
-					getPersistor().update(this);
+					PersistService service = getPersistor();
+					service.update(this);
 					saved = true;
-					Observer.runAfterUpdate(this);
+					if(!service.getInfo().isRemote()) {
+						Observer.runAfterUpdate(this);
+					}
 				} catch(SQLException e) {
 					logger.warn("failed to save " + asSimpleString(), e);
 					addError(e.getLocalizedMessage());

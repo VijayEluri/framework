@@ -36,14 +36,15 @@ import org.oobium.client.websockets.WebsocketListener;
 import org.oobium.client.websockets.Websockets;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
+import org.oobium.persist.Observer;
 import org.oobium.persist.PersistService;
+import org.oobium.persist.RemotePersistService;
 import org.oobium.persist.ServiceInfo;
 import org.oobium.persist.http.HttpApiService.Route;
 
-public class HttpPersistService implements PersistService {
+public class HttpPersistService extends RemotePersistService implements PersistService {
 
 	private final HttpApiService api;
-	private Map<String, List<ModelListener<?>>> listeners;
 	private WebsocketListener socketListener;
 
 	public HttpPersistService() {
@@ -78,7 +79,7 @@ public class HttpPersistService implements PersistService {
 		return null;
 	}
 	
-	private void addSocketListener() {
+	public void addSocketListener() {
 		String url = api.getModelNotificationUrl();
 		if(url == null) {
 			throw new RuntimeException("no published model notification route found");
@@ -141,68 +142,6 @@ public class HttpPersistService implements PersistService {
 			}
 		};
 		Websockets.connect(url, socketListener);
-	}
-	
-	private void addListener(Class<?> clazz, ModelListener<?> listener) {
-		String name = clazz.getName();
-		if(listeners == null) {
-			listeners = new HashMap<String, List<ModelListener<?>>>();
-			addSocketListener();
-		}
-		List<ModelListener<?>> list = listeners.get(name);
-		if(list == null) {
-			list = new ArrayList<ModelListener<?>>();
-			listeners.put(name, list);
-			list.add(listener);
-		}
-		else if(!list.contains(listener)){
-			list.add(listener);
-		}
-	}
-	
-	public <T extends Model> void addListener(ModelListener<T> listener) {
-		Type type = listener.getClass().getGenericSuperclass();
-		if(type instanceof ParameterizedType) {
-			ParameterizedType pt = (ParameterizedType) type;
-			Class<?> clazz = (Class<?>) pt.getActualTypeArguments()[0];
-			addListener(clazz, listener);
-		} else {
-			throw new IllegalArgumentException(listener.getClass().getSimpleName() + " must be parameterized");
-		}
-	}
-	
-	private void notifyCreate(Model model) {
-		for(ModelListener<?> listener : getListeners(model)) {
-			listener.notifyCreate(model);
-		}
-	}
-	
-	private void notifyUpdate(Model model, String[] fields) {
-		for(ModelListener<?> listener : getListeners(model)) {
-			listener.notifyUpdate(model, fields);
-		}
-	}
-	
-	private void notifyDestroy(String className, int id) {
-		for(ModelListener<?> listener : getListeners(className)) {
-			listener.onDestroy(id);
-		}
-	}
-	
-	@SuppressWarnings("rawtypes")
-	private ModelListener[] getListeners(Model model) {
-		return getListeners((model == null) ? null : model.getClass().getName());
-	}
-	
-	@SuppressWarnings("rawtypes")
-	private ModelListener[] getListeners(String modelClass) {
-		if(listeners != null) {
-			List<ModelListener<?>> list = listeners.get(modelClass);
-			if(list != null) {
-				return list.toArray(new ModelListener[list.size()]);
-			}
-		}
-		return new ModelListener[0];
 	}
 	
 	@Override
@@ -479,8 +418,32 @@ public class HttpPersistService implements PersistService {
 	
 	@Override
 	public ServiceInfo getInfo() {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("not yet implemented");
+		return new ServiceInfo() {
+			@Override
+			public String getSymbolicName() {
+				return getClass().getName();
+			}
+			@Override
+			public String getProvider() {
+				return "oobium.org";
+			}
+			@Override
+			public String getVersion() {
+				return "0.6.0";
+			}
+			@Override
+			public String getName() {
+				return getClass().getSimpleName();
+			}
+			@Override
+			public String getMigrationService() {
+				return null;
+			}
+			@Override
+			public boolean isRemote() {
+				return true;
+			}
+		};
 	}
 	
 	private Map<String, String> getParams(Model model) {

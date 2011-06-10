@@ -284,7 +284,7 @@ public abstract class ModuleService implements BundleActivator {
 		String pkg = pkg(config.getPathToObservers(pkgPath()));
 		for(Class<?> clazz : loadClassesInPackage(pkg)) {
 			if(Observer.class.isAssignableFrom(clazz)) {
-				Observer.addObserver((Class<? extends Observer<?>>) clazz);
+				Model.addObserver((Class<? extends Observer<?>>) clazz);
 			}
 		}
 	}
@@ -417,7 +417,7 @@ public abstract class ModuleService implements BundleActivator {
 		String pkg = pkg(config.getPathToModels(pkgPath()));
 		List<Class<?>> classes = loadClassesInPackage(pkg);
 		for(Class<?> clazz : classes) {
-			Observer.removeObservers(clazz);
+			Model.removeObservers(clazz);
 		}
 	}
 
@@ -427,7 +427,7 @@ public abstract class ModuleService implements BundleActivator {
 		String pkg = pkg(config.getPathToObservers(pkgPath()));
 		List<Class<?>> classes = loadClassesInPackage(pkg);
 		for(Class<?> clazz : classes) {
-			Observer.removeObservers(clazz);
+			Model.removeObservers(clazz);
 		}
 	}
 
