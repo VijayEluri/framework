@@ -12,7 +12,7 @@ import org.junit.Test;
 
 public class ValidatorTests {
 
-	@ModelDescription(validations={ @Validate(field="name", isBlank=true) })
+	@Validations({ @Validate(field="name", isBlank=true) })
 	public static class TestIsBlank extends Model { }
 	
 	@Test
@@ -29,7 +29,7 @@ public class ValidatorTests {
 	}
 
 	
-	@ModelDescription(validations={ @Validate(field="name", isNotBlank=true) })
+	@Validations({ @Validate(field="name", isNotBlank=true) })
 	public static class TestIsNotBlank extends Model { }
 	
 	@Test
@@ -46,7 +46,7 @@ public class ValidatorTests {
 	}
 	
 
-	@ModelDescription(validations={ @Validate(field="name, content", isNotBlank=true) })
+	@Validations({ @Validate(field="name, content", isNotBlank=true) })
 	public static class TestIsNotBlank_MultiField extends Model { }
 	
 	@Test
@@ -68,7 +68,7 @@ public class ValidatorTests {
 	}
 	
 
-	@ModelDescription(validations={ @Validate(field="name", isIn="bob, joe, bert") })
+	@Validations({ @Validate(field="name", isIn="bob, joe, bert") })
 	public static class TestIsIn extends Model { }
 	
 	@Test
@@ -99,7 +99,7 @@ public class ValidatorTests {
 //	}
 
 	
-	@ModelDescription(validations={ @Validate(field="name", isNotIn="bob, joe, bert") })
+	@Validations({ @Validate(field="name", isNotIn="bob, joe, bert") })
 	public static class TestIsNotIn extends Model { }
 	
 	@Test
@@ -116,7 +116,7 @@ public class ValidatorTests {
 	}
 
 	
-	@ModelDescription(validations={ @Validate(field="name", isNotNull=true) })
+	@Validations({ @Validate(field="name", isNotNull=true) })
 	public static class TestIsNotNull extends Model { }
 	
 	@Test
@@ -133,7 +133,7 @@ public class ValidatorTests {
 	}
 
 	
-	@ModelDescription(validations={ @Validate(field="name", isNull=true) })
+	@Validations({ @Validate(field="name", isNull=true) })
 	public static class TestIsNull extends Model { }
 	
 	@Test
@@ -150,7 +150,7 @@ public class ValidatorTests {
 	}
 
 	
-	@ModelDescription(validations={ @Validate(field="name", lengthIs=3) })
+	@Validations({ @Validate(field="name", lengthIs=3) })
 	public static class TestLengthIs extends Model { }
 	
 	@Test
@@ -182,7 +182,7 @@ public class ValidatorTests {
 	}
 
 	
-	@ModelDescription(validations = { @Validate(field = "name", matches = "\\w+") })
+	@Validations({ @Validate(field = "name", matches = "\\w+") })
 	public static class TestMatches extends Model { public String toString() { return "test"; } }
 	
 	@Test
@@ -208,7 +208,7 @@ public class ValidatorTests {
 	}
 
 	
-	@ModelDescription(validations={ @Validate(field="name", maxLength=3) })
+	@Validations({ @Validate(field="name", maxLength=3) })
 	public static class TestMaxLength extends Model { }
 	
 	@Test
@@ -240,7 +240,7 @@ public class ValidatorTests {
 	}
 
 		
-	@ModelDescription(validations={ @Validate(field="name", minLength=3) })
+	@Validations({ @Validate(field="name", minLength=3) })
 	public static class TestMinLength extends Model { }
 	
 	@Test
@@ -275,7 +275,7 @@ public class ValidatorTests {
 	}
 
 
-	@ModelDescription(validations={ @Validate(field="content", minLength=3, tokenizer="\\W+") })
+	@Validations({ @Validate(field="content", minLength=3, tokenizer="\\W+") })
 	public static class TestMinLength_WithTokenizer extends Model { }
 	
 	@Test
@@ -292,7 +292,7 @@ public class ValidatorTests {
 	}
 
 
-	@ModelDescription(validations={ @Validate(field="name", minLength=4, unless="isSpecial") })
+	@Validations({ @Validate(field="name", minLength=4, unless="isSpecial") })
 	public static class TestUnless extends Model {
 		@SuppressWarnings("unused")
 		private boolean isSpecial() {
@@ -320,9 +320,8 @@ public class ValidatorTests {
 	}
 
 	
-	@ModelDescription(
-			attrs={ @Attribute(name="name", type=String.class) },
-			validations={ @Validate(field="name", minLength=4, unless="isSpecial") })
+	@ModelDescription(attrs={ @Attribute(name="name", type=String.class) })
+	@Validations({ @Validate(field="name", minLength=4, unless="isSpecial") })
 	public static class TestUnless_WithAttr extends Model {
 		@SuppressWarnings("unused")
 		private boolean isSpecial(String name) {
@@ -350,7 +349,7 @@ public class ValidatorTests {
 	}
 
 	
-	@ModelDescription(validations={ @Validate(field="name", matches="\\d+", unlessBlank=true) })
+	@Validations({ @Validate(field="name", matches="\\d+", unlessBlank=true) })
 	public static class TestUnlessBlank extends Model { }
 	
 	@Test
@@ -370,7 +369,7 @@ public class ValidatorTests {
 	}
 
 
-	@ModelDescription(validations={ @Validate(field="name", matches="\\d+", unlessNull=true) })
+	@Validations({ @Validate(field="name", matches="\\d+", unlessNull=true) })
 	public static class TestUnlessNull extends Model { }
 	
 	@Test
@@ -390,7 +389,7 @@ public class ValidatorTests {
 	}
 
 
-	@ModelDescription(validations={ @Validate(field="name", minLength=4, when="isSonOfBob") })
+	@Validations({ @Validate(field="name", minLength=4, when="isSonOfBob") })
 	public static class TestWhen extends Model {
 		@SuppressWarnings("unused")
 		private boolean isSonOfBob() {
@@ -418,7 +417,7 @@ public class ValidatorTests {
 	}
 
 	
-	@ModelDescription(validations={ @Validate(with=TestValidator.class) })
+	@Validations({ @Validate(with=TestValidator.class) })
 	public static class TestWith extends Model { }
 	public static class TestValidator implements Validator<TestWith> { 
 		public void validate(TestWith model) { 
@@ -442,7 +441,7 @@ public class ValidatorTests {
 	}
 
 	
-	@ModelDescription(validations={ @Validate(withMethod="isBob") })
+	@Validations({ @Validate(withMethod="isBob") })
 	public static class TestWithMethod extends Model {
 		public void isBob() { 
 			if(!"bob".equals(get("name"))) {

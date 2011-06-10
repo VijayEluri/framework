@@ -29,6 +29,7 @@ import org.oobium.persist.Indexes;
 import org.oobium.persist.ModelDescription;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.Validate;
+import org.oobium.persist.Validations;
 
 @ModelDescription(
 	attrs = {
@@ -40,12 +41,12 @@ import org.oobium.persist.Validate;
 		@Attribute(name="remoteId", type=int.class),	// if this is a local listener: the id of the remote listener, if it has been created
 		@Attribute(name="oneShot", type=boolean.class)	// if true, automatically delete this listener after the first event has occurred
 	},
-	validations = {
-		@Validate(field="host,service,eventName,callback", isNotBlank=true)
-	},
 	timestamps = true,
 	allowUpdate = false
 )
+@Validations({
+	@Validate(field="host,service,eventName,callback", isNotBlank=true)
+})
 @Indexes("{Unique-host,service,eventName,callback}")
 public class Listener extends ListenerModel {
 

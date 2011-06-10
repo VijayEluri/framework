@@ -23,7 +23,7 @@ import org.oobium.persist.Relation;
 		@Attribute(name="gName", type=String.class)
 	},
 	hasOne = {
-		@Relation(name="hModel", type=HModel.class, opposite="gModels", required=true)
+		@Relation(name="hModel", type=HModel.class, opposite="gModels")
 	}
 )
 public class GModel extends Model {

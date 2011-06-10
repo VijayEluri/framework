@@ -17,6 +17,7 @@ import org.oobium.app.routing.AppRouter;
 import org.oobium.persist.Attribute;
 import org.oobium.persist.ModelDescription;
 import org.oobium.persist.Validate;
+import org.oobium.persist.Validations;
 
 @ModelDescription(
 	attrs = {
@@ -25,13 +26,13 @@ import org.oobium.persist.Validate;
 		@Attribute(name="eventName", type=String.class),// the name of the event
 		@Attribute(name="data", type=String.class)		// any data required to describe the event
 	},
-	validations = {
-		@Validate(field="host,service,eventName,data", isNotBlank=true)
-	},
 	timestamps = true,
 	allowDelete = false,
 	allowUpdate = false
 )
+@Validations({
+	@Validate(field="host,service,eventName,data", isNotBlank=true)
+})
 public class Event extends EventModel {
 	
 	public static Event create(AppService app, String eventName) {
