@@ -38,7 +38,6 @@ public class QueryUtils {
 	private static final Logger logger = LogProvider.getLogger(DbPersistService.class);
 	
 	public static final String ID = columnName(ModelDescription.ID);
-	public static final String SUPER_ID = columnName(ModelDescription.SUPER_ID);
 	public static final String CREATED_AT = columnName(ModelDescription.CREATED_AT);
 	public static final String UPDATED_AT = columnName(ModelDescription.UPDATED_AT);
 	public static final String CREATED_ON = columnName(ModelDescription.CREATED_ON);
@@ -174,7 +173,7 @@ public class QueryUtils {
 		Map<String, Object> fields = model.getAll();
 		for(Entry<String, Object> entry : data.entrySet()) {
 			String field = entry.getKey();
-			if(!ModelDescription.ID.equals(field) && !ModelDescription.SUPER_ID.equals(field)) {
+			if(!ModelDescription.ID.equals(field)) {
 //				TODO verify that data in the cache or db should over-write data in the object
 //				if(fields.containsKey(field)) {
 //					if(logger.isLoggingTrace()) {

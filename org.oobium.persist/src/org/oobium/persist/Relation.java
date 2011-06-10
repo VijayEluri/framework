@@ -170,14 +170,6 @@ public @interface Relation {
 	
 	boolean readOnly() default false;
 	
-	/**
-	 * Sets whether or not this field is required and not allowed to be null.
-	 * <p>Only valid for hasOne relations.</p>
-	 * <p>Default is false.</p>
-	 * @return true if this field is required, false otherwise
-	 */
-	boolean required() default false;
-	
 	String through() default "";
 	
 	/**

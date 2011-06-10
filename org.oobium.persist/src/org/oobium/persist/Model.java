@@ -835,11 +835,29 @@ public abstract class Model implements JsonModel {
 	 * @see ModelAdapter#isRequired(String)
 	 */
 	public final boolean isRequired(String field) {
-		return getAdapter(getClass()).isRequired(field);
+		return isRequired(getClass(), field);
 	}
 
+	private static boolean isRequired(Class<?> clazz, String field) {
+		if(clazz != null && field != null) {
+			Validations validations = clazz.getAnnotation(Validations.class);
+			if(validations != null) {
+				for(Validate validate : validations.value()) {
+					String[] fields = validate.field().split("\\s*,\\s*");
+					for(String f : fields) {
+						if(f.equals(field)) {
+							return validate.isNotBlank() || validate.isNotNull();
+						}
+					}
+				}
+			}
+		}
+		return false;
+	}
+	
 	/**
-	 * Find out if the nested field is marked as required by its model's {@link ModelDescription}.
+	 * Find out if the nested model field is considered to be required (has a validation to prevent it from
+	 * being null or blank).
 	 * <p>For example - if a Post model has one Owner model and the Owner model has a name field, you
 	 * could use this method on a post to find out if the owner's name field is required: 
 	 * post.isRequired("owner", "name");</p>
@@ -854,12 +872,13 @@ public abstract class Model implements JsonModel {
 		if(fields.length == 0) {
 			return false;
 		}
-		ModelAdapter adapter = getAdapter(getClass());
 		if(fields.length == 1) {
-			return adapter.isRequired(fields[0]);
+			return isRequired(fields[0]);
 		}
+		ModelAdapter adapter = getAdapter(getClass());
+		Class<?> clazz = null;
 		for(int i = 0; i < fields.length - 1; i++) {
-			Class<?> clazz = adapter.getClass(fields[i]);
+			clazz = adapter.getClass(fields[i]);
 			if(Model.class.isAssignableFrom(clazz)) {
 				adapter = getAdapter(clazz.asSubclass(Model.class));
 			} else {
@@ -867,7 +886,7 @@ public abstract class Model implements JsonModel {
 				return false;
 			}
 		}
-		return adapter.isRequired(fields[fields.length-1]);
+		return isRequired(clazz, fields[fields.length-1]);
 	}
 	
 	@Override
@@ -1198,20 +1217,10 @@ public abstract class Model implements JsonModel {
 	}
 	
 	private void runValidations(int on) {
-		ModelDescription description = getClass().getAnnotation(ModelDescription.class);
-		if(description != null) {
+		Validations validations = getClass().getAnnotation(Validations.class);
+		if(validations != null) {
 			boolean onUpdate = (on == Validate.UPDATE);
-			if((on & (Validate.CREATE | Validate.UPDATE)) != 0) {
-				for(Relation relation : description.hasOne()) {
-					String field = relation.name();
-					if(!onUpdate || isSet(field)) {
-						if(relation.required() && get(relation.name()) == null) {
-							addError(field, "cannot be null");
-						}
-					}
-				}
-			}
-			for(Validate validate : description.validations()) {
+			for(Validate validate : validations.value()) {
 				if((validate.on() & on) != 0) {
 					runValidation(validate, onUpdate);
 				}

@@ -502,27 +502,28 @@ public class ModelAdapter {
 	}
 	
 	public boolean isOppositeRequired(String field) {
-		Relation relation = hasMany.get(field);
-		if(relation == null) {
-			relation = hasOne.get(field);
-		}
-		if(relation != null) {
-			String opposite = relation.opposite();
-			if(opposite != null) {
-				ModelDescription md = relation.type().getAnnotation(ModelDescription.class);
-				if(md != null) {
-					for(Relation r : md.hasOne()) {
-						if(r.name().equals(opposite)) {
-							if(r.type().isAssignableFrom(this.clazz) && r.opposite().equals(field)) {
-								return r.required();
-							} else {
-								return false;
-							}
-						}
-					}
-				}
-			}
-		}
+//		TODO the required property has been removed - clean this up
+//		Relation relation = hasMany.get(field);
+//		if(relation == null) {
+//			relation = hasOne.get(field);
+//		}
+//		if(relation != null) {
+//			String opposite = relation.opposite();
+//			if(opposite != null) {
+//				ModelDescription md = relation.type().getAnnotation(ModelDescription.class);
+//				if(md != null) {
+//					for(Relation r : md.hasOne()) {
+//						if(r.name().equals(opposite)) {
+//							if(r.type().isAssignableFrom(this.clazz) && r.opposite().equals(field)) {
+//								return r.required();
+//							} else {
+//								return false;
+//							}
+//						}
+//					}
+//				}
+//			}
+//		}
 		return false;
 	}
 
@@ -539,25 +540,6 @@ public class ModelAdapter {
 		return ModelDescription.ID.equals(field);
 	}
 
-	public boolean isRequired(String field) {
-		if(attribute.containsKey(field)) {
-			ModelDescription description = clazz.getAnnotation(ModelDescription.class);
-			for(Validate validate : description.validations()) {
-				String[] fields = validate.field().split("\\s*,\\s*");
-				for(String f : fields) {
-					if(f.equals(field)) {
-						return validate.isNotBlank() || validate.isNotNull();
-					}
-				}
-			}
-			return false;
-		}
-		if(hasOne.containsKey(field)) {
-			return hasOne.get(field).required();
-		}
-		return field.equals("createdAt") || field.equals("createdOn") || field.equals("updatedAt") || field.equals("updatedOn");
-	}
-	
 	private boolean isThisOpposite(Map<String, Relation> map, String field, boolean toOne) {
 		Relation relation = map.get(field);
 		if(relation != null) {

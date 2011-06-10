@@ -15,25 +15,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
-public @interface ModelDescription {
+public @interface Validations {
 
-	public static final String ID = "id";
-
-	public static final String CREATED_AT = "createdAt";
-	public static final String UPDATED_AT = "updatedAt";
-	public static final String CREATED_ON = "createdOn";
-	public static final String UPDATED_ON = "updatedOn";
+	Validate[] value();
 	
-	Attribute[] attrs() default {};
-	Relation[] hasMany() default {};
-	Relation[] hasOne() default {};
-	
-	boolean datestamps() default false;
-	boolean timestamps() default false;
-	
-	boolean allowDelete() default true;
-	boolean allowUpdate() default true;
-
 }
