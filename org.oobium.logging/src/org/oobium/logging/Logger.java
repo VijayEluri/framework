@@ -76,19 +76,38 @@ public interface Logger {
 
 	public abstract void debug(String message);
 
+	/**
+	 * Message can contain anchors, denoted by an opening brace immediately followed by a closing brace - {},
+	 * which will be replaced by the String representation of the corresponding value in the given values.
+	 * See <a href="http://www.slf4j.org/faq.html#logging_performance">SLF4J FAQ</a> for more information.
+	 * @param message
+	 * @param values
+	 */
+	public abstract void debug(String message, Object...values);
+
 	public abstract void debug(String message, Throwable exception);
+
+	public abstract void debug(String message, Throwable exception, Object...values);
 
 	public abstract void debug(Throwable exception);
 
 	public abstract void error(String message);
 
+	public abstract void error(String message, Object...values);
+
 	public abstract void error(String message, Throwable exception);
+
+	public abstract void error(String message, Throwable exception, Object...values);
 
 	public abstract void error(Throwable exception);
 
 	public abstract void info(String message);
 
+	public abstract void info(String message, Object...values);
+
 	public abstract void info(String message, Throwable exception);
+
+	public abstract void info(String message, Throwable exception, Object...values);
 
 	public abstract void info(Throwable exception);
 
@@ -112,7 +131,11 @@ public interface Logger {
 
 	public abstract void log(int level, String message);
 
+	public abstract void log(int level, String message, Object...values);
+	
 	public abstract void log(int level, String message, Throwable exception);
+	
+	public abstract void log(int level, String message, Throwable exception, Object...values);
 
 	public abstract void log(int level, Throwable exception);
 
@@ -126,13 +149,21 @@ public interface Logger {
 
 	public abstract void trace(String message);
 
+	public abstract void trace(String message, Object...values);
+
 	public abstract void trace(String message, Throwable exception);
+
+	public abstract void trace(String message, Throwable exception, Object...values);
 
 	public abstract void trace(Throwable exception);
 
 	public abstract void warn(String message);
 
+	public abstract void warn(String message, Object...values);
+
 	public abstract void warn(String message, Throwable exception);
+
+	public abstract void warn(String message, Throwable exception, Object...values);
 
 	public abstract void warn(Throwable exception);
 
