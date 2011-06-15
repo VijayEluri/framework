@@ -586,12 +586,41 @@ public class Bundle extends Project {
 		}
 	}
 
+	/**
+	 * Create a Jar file for this bundle.
+	 * @param jar a File object pointing to the Jar file. If the file does not exist, it will be created.
+	 * If the file is a directory, then a new file will be created in the directory with the name: this.name + "_" + version + ".jar"
+	 * @param version
+	 * @throws IOException
+	 */
 	public void createJar(File jar, Version version) throws IOException {
 		Map<String, File> files = getBuildFiles();
 
 		Manifest manifest = manifest(file);
 		manifest.getMainAttributes().putValue("Bundle-Version", version.toString());
 
+		if(jar.isDirectory()) {
+			jar = new File(jar, name + "_" + version + ".jar");
+		}
+		FileUtils.createJar(jar, files, manifest);
+	}
+
+	/**
+	 * Create a Jar file for this bundle containing only the source files of the bundle.
+	 * @param jar a File object pointing to the Jar file. If the file does not exist, it will be created.
+	 * If the file is a directory, then a new file will be created in the directory with the name: this.name + ".source_" + version + ".jar"
+	 * @param version
+	 * @throws IOException
+	 */
+	public void createSourceJar(File jar, Version version) throws IOException {
+		Map<String, File> files = getSourceBuildFiles();
+
+		Manifest manifest = manifest(file);
+		manifest.getMainAttributes().putValue("Bundle-Version", version.toString());
+
+		if(jar.isDirectory()) {
+			jar = new File(jar, name + ".source_" + version + ".jar");
+		}
 		FileUtils.createJar(jar, files, manifest);
 	}
 

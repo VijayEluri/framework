@@ -487,7 +487,7 @@ public class Workspace {
 	
 	/**
 	 * Get the first bundle that matches the given full name (the name and version range).
-	 * If the fullName does not include a version range, than a version range of [*, *] is used.
+	 * If the fullName does not include a version range, then a version range of [*, *] is used.
 	 * @param fullName
 	 * @return the matching {@link Bundle} object
 	 */
@@ -534,7 +534,9 @@ public class Workspace {
 	}
 	
 	/**
-	 * Get the bundle that matches the given name and exact version.
+	 * Get the bundle that matches the given name and exact version, unless
+	 * the given version is "0.0.0", in which case this method will only match on
+	 * the given name.
 	 * @param name the name of the bundle
 	 * @param version the exact version of the bundle
 	 * @return the matching {@link Bundle} object if found; null otherwise (also returns null
@@ -547,13 +549,22 @@ public class Workspace {
 
 		lock.readLock().lock();
 		try {
-			for(Bundle bundle : bundles.values()) {
-				if(bundle.name.equals(name) && bundle.version.equals(version)) {
-					return bundle;
+			if(version.equals("0.0.0")) {
+				for(Bundle bundle : bundles.values()) {
+					if(bundle.name.equals(name)) {
+						return bundle;
+					}
+				}
+			}
+			else {
+				for(Bundle bundle : bundles.values()) {
+					if(bundle.name.equals(name) && bundle.version.equals(version)) {
+						return bundle;
+					}
 				}
 			}
 			if(parentWorkspace != null) {
-				return parentWorkspace.getBundle(name);
+				return parentWorkspace.getBundle(name, version);
 			}
 			return null;
 		} finally {
