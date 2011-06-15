@@ -693,22 +693,6 @@ public class Workspace {
 		}
 	}
 	
-	public ClientBundle getClientBundle(File file) {
-		Bundle bundle = getBundle(file);
-		if(bundle instanceof ClientBundle) {
-			return (ClientBundle) bundle;
-		}
-		if(parentWorkspace != null) {
-			return parentWorkspace.getClientBundle(file);
-		}
-		return null;
-	}
-	
-	public ClientBundle getClientBundleFor(Module module) {
-		File client = new File(module.file.getAbsolutePath() + ".client");
-		return getClientBundle(client);
-	}
-	
 	public Object getData() {
 		return data;
 	}
