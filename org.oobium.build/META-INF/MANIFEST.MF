@@ -16,13 +16,15 @@ Require-Bundle: org.oobium.app,
  com.jcraft.jsch;bundle-version="0.1.41"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: org.oobium.build,
+ org.oobium.build.clients,
+ org.oobium.build.clients.android,
+ org.oobium.build.clients.blazeds,
  org.oobium.build.esp,
  org.oobium.build.esp.elements,
  org.oobium.build.esp.parts,
  org.oobium.build.events,
  org.oobium.build.exceptions,
  org.oobium.build.gen,
- org.oobium.build.gen.android,
  org.oobium.build.model,
  org.oobium.build.util,
  org.oobium.build.workspace

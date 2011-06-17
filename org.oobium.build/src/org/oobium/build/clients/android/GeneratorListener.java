@@ -1,4 +1,4 @@
-package org.oobium.build.gen.android;
+package org.oobium.build.clients.android;
 
 public interface GeneratorListener {
 

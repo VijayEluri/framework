@@ -10,37 +10,31 @@
  ******************************************************************************/
 package org.oobium.build.console.commands.create;
 
-import static org.oobium.utils.FileUtils.writeFile;
-
 import java.io.File;
 
-import org.oobium.build.clients.JQueryClientGenerator;
+import org.oobium.build.clients.blazeds.FlexProjectGenerator;
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.Eclipse;
-import org.oobium.build.workspace.Application;
+import org.oobium.build.workspace.Module;
 
-public class ClientCommand extends BuilderCommand {
+public class BlazeClientCommand extends BuilderCommand {
 
 	@Override
 	public void configure() {
-		applicationRequired = true;
+		moduleRequired = true;
 	}
 
 	@Override
 	public void run() {
-		Application app = getApplication();
-	
-		JQueryClientGenerator generator = new JQueryClientGenerator(app);
-		String source = generator.generate();
-
-		File scripts = new File(app.assets, "scripts");
-		File file = writeFile(scripts, "models.js", source);
+		Module module = getModule();
 		
-		StringBuilder sb = new StringBuilder(file.getAbsolutePath());
-		sb.setCharAt(app.file.getAbsolutePath().length(), '#');
-		console.out.println("created client <a href=\"open file " + sb.toString() + "\">models.js</a>");
+		FlexProjectGenerator gen = new FlexProjectGenerator(module);
+		gen.setForce(true);
+		File project = gen.create();
+		
+		console.out.println("created blaze client <a href=\"open file " + project + "\">" + project.getName() + "</a>");
 
-		Eclipse.refresh(app.file, scripts);
+		Eclipse.importProject(project);
 	}
 
 }

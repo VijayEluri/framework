@@ -87,6 +87,10 @@ public class Eclipse {
 		}
 	}
 	
+	public static void importProject(File project) {
+		importProject(project.getName(), project);
+	}
+	
 	public static void importProject(String name, File location) {
 		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
 		IProject project = root.getProject(name);

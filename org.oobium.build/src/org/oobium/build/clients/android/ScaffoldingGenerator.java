@@ -1,4 +1,4 @@
-package org.oobium.build.gen.android;
+package org.oobium.build.clients.android;
 
 import static org.oobium.utils.CharStreamUtils.closer;
 import static org.oobium.utils.CharStreamUtils.find;
@@ -29,7 +29,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.oobium.build.gen.android.GeneratorEvent.Type;
+import org.oobium.build.clients.android.GeneratorEvent.Type;
 import org.oobium.build.gen.model.PropertyDescriptor;
 import org.oobium.build.model.ModelDefinition;
 import org.oobium.build.workspace.AndroidApp;

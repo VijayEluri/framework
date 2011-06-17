@@ -5,13 +5,13 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import org.oobium.build.clients.JavaClientExporter;
+import org.oobium.build.clients.android.GeneratorEvent;
+import org.oobium.build.clients.android.GeneratorListener;
+import org.oobium.build.clients.android.ScaffoldingGenerator;
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.Eclipse;
-import org.oobium.build.gen.android.GeneratorEvent;
-import org.oobium.build.gen.android.GeneratorListener;
-import org.oobium.build.gen.android.ScaffoldingGenerator;
 import org.oobium.build.workspace.AndroidApp;
-import org.oobium.build.workspace.ClientExporter;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.Project;
 import org.oobium.build.workspace.Project.Type;
@@ -66,7 +66,7 @@ public class ClientCommand extends BuilderCommand {
 		try {
 			boolean full = !module.hasModels() || ("Y".equalsIgnoreCase(ask("export the full [P]roject, or just its [M]odels? [P/M] ")));
 
-			ClientExporter exporter = new ClientExporter(workspace, module);
+			JavaClientExporter exporter = new JavaClientExporter(workspace, module);
 			exporter.setFull(full);
 			exporter.includeSource(true);
 			exporter.setTarget(target);

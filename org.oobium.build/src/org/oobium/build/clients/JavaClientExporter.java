@@ -1,4 +1,4 @@
-package org.oobium.build.workspace;
+package org.oobium.build.clients;
 
 import static org.oobium.utils.FileUtils.copyJarEntry;
 import static org.oobium.utils.FileUtils.createJar;
@@ -14,12 +14,17 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.oobium.build.BuildBundle;
+import org.oobium.build.workspace.AndroidApp;
+import org.oobium.build.workspace.Bundle;
+import org.oobium.build.workspace.Module;
+import org.oobium.build.workspace.Project;
+import org.oobium.build.workspace.Workspace;
 import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
 import org.oobium.utils.Config.Mode;
 import org.oobium.utils.FileUtils;
 
-public class ClientExporter {
+public class JavaClientExporter {
 
 	private final Logger logger;
 	private final Workspace workspace;
@@ -33,7 +38,7 @@ public class ClientExporter {
 	private boolean clean;
 	private boolean includeSource;
 	
-	public ClientExporter(Workspace workspace, Module module) {
+	public JavaClientExporter(Workspace workspace, Module module) {
 		this.logger = LogProvider.getLogger(BuildBundle.class);
 		this.workspace = workspace;
 		this.module = module;
