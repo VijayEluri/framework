@@ -9,6 +9,7 @@ public class MimeType {
 	
 	public enum Name {
 		ALL,
+		APPLICATION_SDP,
 		AUDIO,
 		AUDIO_MPEG,
 		AUDIO_WAV,
@@ -53,6 +54,7 @@ public class MimeType {
 	}
 
 	public static final MimeType ALL = new MimeType("*", "*");
+	public static final MimeType APPLICATION_SDP = new MimeType("application", "sdp");
 	public static final MimeType AUDIO = new MimeType("audio", "*", true);
 	public static final MimeType AUDIO_MPEG = new MimeType("audio", "mpeg", "mp3", true);
 	public static final MimeType AUDIO_WAV = new MimeType("audio", "wav", true);
