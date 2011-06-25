@@ -111,7 +111,7 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 		String header = request.getHeader(Names.RANGE);
 		if(header != null) {
 			String[] sa = header.split("\\s*=\\s*", 2);
-			if(sa.length == 2) {
+			if(sa.length == 2 && Names.RANGE.equalsIgnoreCase(sa[0])) {
 				sa = sa[1].split("\\s*,\\s*");
 				if(sa.length == 1) {
 					if(sa[0].length() == 0) {
