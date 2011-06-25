@@ -12,10 +12,11 @@ package org.oobium.build.console.commands.create;
 
 import java.io.File;
 
-import org.oobium.build.clients.blazeds.FlexProjectGenerator;
+import org.oobium.build.clients.blazeds.BlazeProjectGenerator;
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
+import org.oobium.build.workspace.Workspace;
 
 public class BlazeClientCommand extends BuilderCommand {
 
@@ -26,15 +27,25 @@ public class BlazeClientCommand extends BuilderCommand {
 
 	@Override
 	public void run() {
+		Workspace workspace = getWorkspace();
 		Module module = getModule();
 		
-		FlexProjectGenerator gen = new FlexProjectGenerator(module);
-		gen.setForce(true);
-		File project = gen.create();
-		
-		console.out.println("created blaze client <a href=\"open file " + project + "\">" + project.getName() + "</a>");
+		try {
+			BlazeProjectGenerator blaze = new BlazeProjectGenerator(workspace, module);
+			blaze.setExportFlex(true);
+			blaze.setForce(true);
+			blaze.create();
+			
+			File blazeProject = blaze.getProject();
+			console.out.println("created blaze client project <a href=\"open file " + blazeProject + "\">" + blazeProject.getName() + "</a>");
 
-		Eclipse.importProject(project);
+			File flexProject = blaze.getFlexProject();
+			console.out.println("created blaze flex client project <a href=\"open file " + flexProject + "\">" + flexProject.getName() + "</a>");
+			
+			Eclipse.importProjects(blazeProject, flexProject);
+		} catch(Exception e) {
+			console.err.print(e);
+		}
 	}
 
 }

@@ -13,6 +13,7 @@ public class ActionScriptFile {
 	public TreeSet<String> interfaces = new TreeSet<String>();
 	public TreeSet<String> imports = new TreeSet<String>();
 	public LinkedHashSet<String> classMetaTags = new LinkedHashSet<String>();
+	public TreeMap<String, String> staticVariables = new TreeMap<String, String>();
 	public TreeMap<String, String> staticMethods = new TreeMap<String, String>();
 	public TreeMap<String, String> variables = new TreeMap<String, String>();
 	public TreeMap<Integer, String> constructors = new TreeMap<Integer, String>();
@@ -68,9 +69,31 @@ public class ActionScriptFile {
 			}
 		}
 		sb.append(" {\n");
+		if(!staticVariables.isEmpty()) {
+			sb.append('\n');
+			for(String var : staticVariables.values()) {
+				sb.append("\t\t");
+				if(var.startsWith("public ") || var.startsWith("protected ") || var.startsWith("private ")) {
+					sb.append(var);
+				} else {
+					if(var.startsWith("static ")) {
+						sb.append("private ").append(var);
+					} else {
+						sb.append("private static ").append(var);
+					}
+				}
+				if(!var.endsWith(";")) {
+					sb.append(';');
+				}
+				sb.append('\n');
+			}
+		}
 		for(String method : staticMethods.values()) {
-			sb.append("\n\t");
-			sb.append(method).append('\n');
+			sb.append("\n\t\t");
+			sb.append(method.replace("\n", "\n\t\t")).append('\n');
+		}
+		if(!staticVariables.isEmpty() || !staticMethods.isEmpty()) {
+			sb.append('\n');
 		}
 		if(!variables.isEmpty()) {
 			sb.append('\n');

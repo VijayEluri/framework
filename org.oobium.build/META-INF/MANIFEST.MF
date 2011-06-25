@@ -25,6 +25,7 @@ Export-Package: org.oobium.build,
  org.oobium.build.events,
  org.oobium.build.exceptions,
  org.oobium.build.gen,
+ org.oobium.build.gen.model,
  org.oobium.build.model,
  org.oobium.build.util,
  org.oobium.build.workspace

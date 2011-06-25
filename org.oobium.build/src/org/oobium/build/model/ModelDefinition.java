@@ -244,6 +244,10 @@ public class ModelDefinition {
 		this.timestamps = attributes.containsKey("timestamps");
 	}
 	
+	public File getFile() {
+		return file;
+	}
+	
 	private List<String> getDescriptionImports() {
 		List<String> di = new ArrayList<String>();
 		for(ModelAttribute attr : attributes.values()) {
