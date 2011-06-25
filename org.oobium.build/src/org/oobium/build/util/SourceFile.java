@@ -302,8 +302,8 @@ public class SourceFile {
 			sb.append(constructor).append('\n');
 		}
 		for(String method : methods.values()) {
-			sb.append('\n');
-			sb.append(method).append('\n');
+			sb.append("\n\t");
+			sb.append(method.replace("\n", "\n\t")).append('\n');
 		}
 		sb.append("\n}");
 

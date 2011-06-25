@@ -172,16 +172,16 @@ public class DbGenerator {
 		sf.imports.add(SQLException.class.getCanonicalName());
 
 		StringBuilder sb = new StringBuilder();
-		sb.append("\t@Override\n\tpublic void up() throws SQLException {");
+		sb.append("@Override\n\tpublic void up() throws SQLException {");
 		
 		for(ModelTable table : tables.values()) {
 			sb.append('\n');
 			String var = varName(table.name);
 			if(table.hasForeignKey() || table.hasIndex() || joinedModels.contains(table)) {
 				sf.imports.add(Table.class.getCanonicalName());
-				sb.append("\t\tTable ").append(var).append(" = createTable(\"").append(table.name).append("\"");
+				sb.append("\tTable ").append(var).append(" = createTable(\"").append(table.name).append("\"");
 			} else {
-				sb.append("\t\tcreateTable(\"").append(table.name).append("\"");
+				sb.append("\tcreateTable(\"").append(table.name).append("\"");
 			}
 			if(table.columns.isEmpty()) {
 				sb.append(");\n");
@@ -190,11 +190,11 @@ public class DbGenerator {
 				for(Iterator<Column> iter = table.columns.iterator(); iter.hasNext(); ) {
 					Column column = iter.next();
 					if(DATESTAMPS.equals(column.name)) {
-						sb.append("\t\t\tDatestamps(");
+						sb.append("\t\tDatestamps(");
 					} else if(TIMESTAMPS.equals(column.name)) {
 						sb.append("\t\t\tTimestamps(");
 					} else {
-						sb.append("\t\t\t").append(getMethod(column.type)).append("(\"").append(column.name).append("\"");
+						sb.append("\t\t").append(getMethod(column.type)).append("(\"").append(column.name).append("\"");
 						if(column.options.hasAny()) {
 							appendOptions(sf, sb, column.options);
 						}
@@ -205,14 +205,14 @@ public class DbGenerator {
 						sb.append(")\n");
 					}
 				}
-				sb.append("\t\t);\n");
+				sb.append("\t);\n");
 			}
 			if(table.hasIndex()) {
 				for(Index index : table.indexes) {
 					if(index.unique) {
-						sb.append("\t\t").append(var).append(".addUniqueIndex(");
+						sb.append("\t").append(var).append(".addUniqueIndex(");
 					} else {
-						sb.append("\t\t").append(var).append(".addIndex(");
+						sb.append("\t").append(var).append(".addIndex(");
 					}
 					for(int i = 0; i < index.columns.length; i++) {
 						if(i != 0) sb.append(", ");
@@ -221,7 +221,7 @@ public class DbGenerator {
 					sb.append(");\n");
 				}
 				if(!table.hasForeignKey()) {
-					sb.append("\t\t").append(var).append(".update();\n");
+					sb.append("\t").append(var).append(".update();\n");
 				}
 			}
 		}
@@ -229,7 +229,7 @@ public class DbGenerator {
 		if(!joins.isEmpty()) {
 			sb.append('\n');
 			for(JoinTable join : joins.values()) {
-				sb.append("\t\tcreateJoinTable(");
+				sb.append("\tcreateJoinTable(");
 				sb.append(join.tableVar1).append(", \"").append(join.column1).append("\", ");
 				sb.append(join.tableVar2).append(", \"").append(join.column2).append("\");\n");
 			}
@@ -240,38 +240,38 @@ public class DbGenerator {
 				String var = varName(table.name);
 				for(int i = 0; i < table.foreignKeys.size(); i++) {
 					ForeignKey fk = table.foreignKeys.get(i);
-					sb.append("\n\t\t").append(var).append(".addForeignKey(\"");
+					sb.append("\n\t").append(var).append(".addForeignKey(\"");
 					sb.append(fk.column).append("\", \"").append(fk.reference).append('"');
 					if(fk.options.hasAny()) {
 						appendOptions(sf, sb, fk.options);
 					}
 					sb.append(");");
 				}
-				sb.append("\n\t\t").append(var).append(".update();\n");
+				sb.append("\n\t").append(var).append(".update();\n");
 			}
 		}
 
-		sb.append("\t}");
+		sb.append("}");
 		sf.methods.put("2", sb.toString());
 
 		
 		sb = new StringBuilder();
-		sb.append("\t@Override\n\tpublic void down() throws SQLException {\n");
+		sb.append("@Override\n\tpublic void down() throws SQLException {\n");
 
 		boolean first = true;
 		for(ModelTable table : tables.values()) {
 			if(table.hasForeignKey()) {
 				first = false;
-				sb.append("\t\tchangeTable(\"").append(table.name).append("\",");
+				sb.append("\tchangeTable(\"").append(table.name).append("\",");
 				if(table.foreignKeys.size() == 1) {
 					sb.append(" removeForeignKey(\"").append(table.foreignKeys.get(0).column).append("\"));\n");
 				} else {
 					for(int i = 0; i < table.foreignKeys.size(); i++) {
 						ForeignKey fk = table.foreignKeys.get(i);
 						if(i != 0) sb.append(',');
-						sb.append("\n\t\t\tremoveForeignKey(\"").append(fk.column).append("\")");
+						sb.append("\n\t\tremoveForeignKey(\"").append(fk.column).append("\")");
 					}
-					sb.append("\n\t\t);\n");
+					sb.append("\n\t);\n");
 				}
 			}
 		}
@@ -283,7 +283,7 @@ public class DbGenerator {
 				sb.append('\n');
 			}
 			for(JoinTable join : joins.values()) {
-				sb.append("\t\tdropJoinTable(\"");
+				sb.append("\tdropJoinTable(\"");
 				sb.append(join.table1).append("\", \"").append(join.column1).append("\", \"");
 				sb.append(join.table2).append("\", \"").append(join.column2).append("\");\n");
 			}
@@ -293,10 +293,10 @@ public class DbGenerator {
 			sb.append('\n');
 		}
 		for(ModelTable table : tables.values()) {
-			sb.append("\t\tdropTable(\"").append(table.name).append("\");\n");
+			sb.append("\tdropTable(\"").append(table.name).append("\");\n");
 		}
 
-		sb.append("\t}");
+		sb.append("}");
 		sf.methods.put("3", sb.toString());
 		
 

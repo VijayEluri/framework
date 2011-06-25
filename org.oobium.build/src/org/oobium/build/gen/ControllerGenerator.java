@@ -211,52 +211,52 @@ public class ControllerGenerator {
 	private String genCreate() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("@Override // POST/URL/[models]\n");
-		sb.append("\tpublic void create() throws SQLException {\n");
-		sb.append("\t\t").append(mType).append(" ").append(varName).append(" = ").append("param(\"").append(varName).append("\", new ").append(mType).append("());\n");
-		sb.append("\t\tif(").append(varName).append(".create()) {\n");
+		sb.append("public void create() throws SQLException {\n");
+		sb.append("\t").append(mType).append(" ").append(varName).append(" = ").append("param(\"").append(varName).append("\", new ").append(mType).append("());\n");
+		sb.append("\tif(").append(varName).append(".create()) {\n");
 		if(!withViews) {
-			sb.append("\t\t\trenderCreated(").append(varName).append(");\n");
+			sb.append("\t\trenderCreated(").append(varName).append(");\n");
 		} else {
-			sb.append("\t\t\tswitch(wants(JS, JSON, HTML)) {\n");
-			sb.append("\t\t\t\tcase JS:\n");
-			sb.append("\t\t\t\tcase JSON: renderCreated(").append(varName).append("); break;\n");
-			sb.append("\t\t\t\tcase HTML: redirectTo(").append(varName).append(", show, \"").append(titleize(mType)).append(" was successfully created.\"); break;\n");
-			sb.append("\t\t\t}\n");
+			sb.append("\t\tswitch(wants(JS, JSON, HTML)) {\n");
+			sb.append("\t\t\tcase JS:\n");
+			sb.append("\t\t\tcase JSON: renderCreated(").append(varName).append("); break;\n");
+			sb.append("\t\t\tcase HTML: redirectTo(").append(varName).append(", show, \"").append(titleize(mType)).append(" was successfully created.\"); break;\n");
+			sb.append("\t\t}\n");
 		}
-		sb.append("\t\t} else {\n");
+		sb.append("\t} else {\n");
 		if(!withViews) {
-			sb.append("\t\t\trenderErrors(").append(varName).append(");\n");
+			sb.append("\t\trenderErrors(").append(varName).append(");\n");
 		} else {
-			sb.append("\t\t\tswitch(wants(JS, JSON, HTML)) {\n");
-			sb.append("\t\t\t\tcase JS:\n");
-			sb.append("\t\t\t\tcase JSON: renderErrors(").append(varName).append("); break;\n");
-			sb.append("\t\t\t\tcase HTML: render(new ShowNew").append(mType).append('(').append(varName).append(")); break;\n");
-			sb.append("\t\t\t}\n");
+			sb.append("\t\tswitch(wants(JS, JSON, HTML)) {\n");
+			sb.append("\t\t\tcase JS:\n");
+			sb.append("\t\t\tcase JSON: renderErrors(").append(varName).append("); break;\n");
+			sb.append("\t\t\tcase HTML: render(new ShowNew").append(mType).append('(').append(varName).append(")); break;\n");
+			sb.append("\t\t}\n");
 		}
-		sb.append("\t\t}\n");
-		sb.append("\t}");
+		sb.append("\t}\n");
+		sb.append("}");
 		return sb.toString();
 	}
 	
 	private String genDestroy() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("@Override // DELETE/URL/[models]/id\n");
-		sb.append("\tpublic void destroy() throws SQLException {\n");
-		sb.append("\t\t").append(mType).append(" ").append(varName).append(" = new ").append(mType).append("().setId(getId());\n");
-		sb.append("\t\tif(").append(varName).append(".destroy()) {\n");
+		sb.append("public void destroy() throws SQLException {\n");
+		sb.append("\t").append(mType).append(" ").append(varName).append(" = new ").append(mType).append("().setId(getId());\n");
+		sb.append("\tif(").append(varName).append(".destroy()) {\n");
 		if(!withViews) {
-			sb.append("\t\t\trenderDestroyed(").append(varName).append(");\n");
+			sb.append("\t\trenderDestroyed(").append(varName).append(");\n");
 		} else {
-			sb.append("\t\t\tswitch(wants(JS, JSON, HTML)) {\n");
-			sb.append("\t\t\t\tcase JS:\n");
-			sb.append("\t\t\t\tcase JSON: renderDestroyed(").append(varName).append(");     break;\n");
-			sb.append("\t\t\t\tcase HTML: redirectTo(").append(varName).append(", showAll); break;\n");
-			sb.append("\t\t\t}\n");
+			sb.append("\t\tswitch(wants(JS, JSON, HTML)) {\n");
+			sb.append("\t\t\tcase JS:\n");
+			sb.append("\t\t\tcase JSON: renderDestroyed(").append(varName).append(");     break;\n");
+			sb.append("\t\t\tcase HTML: redirectTo(").append(varName).append(", showAll); break;\n");
+			sb.append("\t\t}\n");
 		}
-		sb.append("\t\t} else {\n");
-		sb.append("\t\t\trenderErrors(").append(varName).append(");\n");
-		sb.append("\t\t}\n");
-		sb.append("\t}");
+		sb.append("\t} else {\n");
+		sb.append("\t\trenderErrors(").append(varName).append(");\n");
+		sb.append("\t}\n");
+		sb.append("}");
 
 		return sb.toString();
 	}
@@ -264,91 +264,91 @@ public class ControllerGenerator {
 	private String genShow() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("@Override // GET/URL/[models]/id\n");
-		sb.append("\tpublic void show() throws SQLException {\n");
-		sb.append("\t\t").append(mType).append(" ").append(varName).append(" = ").append(mType).append(".find(getId());\n");
-		sb.append("\t\tif(").append(varName).append(" != null) {\n");
+		sb.append("public void show() throws SQLException {\n");
+		sb.append("\t").append(mType).append(" ").append(varName).append(" = ").append(mType).append(".find(getId());\n");
+		sb.append("\tif(").append(varName).append(" != null) {\n");
 		if(!withViews) {
-			sb.append("\t\t\trender(").append(varName).append(");\n");
+			sb.append("\t\trender(").append(varName).append(");\n");
 		} else {
-			sb.append("\t\t\tswitch(wants(JS, JSON, HTML)) {\n");
-			sb.append("\t\t\t\tcase JS:\n");
-			sb.append("\t\t\t\tcase JSON: render(").append(varName).append(");           ").append(repeat(' ', mType.length())).append("break;\n");
-			sb.append("\t\t\t\tcase HTML: render(new Show").append(mType).append("(").append(varName).append(")); break;\n");
-			sb.append("\t\t\t}\n");
+			sb.append("\t\tswitch(wants(JS, JSON, HTML)) {\n");
+			sb.append("\t\t\tcase JS:\n");
+			sb.append("\t\t\tcase JSON: render(").append(varName).append(");           ").append(repeat(' ', mType.length())).append("break;\n");
+			sb.append("\t\t\tcase HTML: render(new Show").append(mType).append("(").append(varName).append(")); break;\n");
+			sb.append("\t\t}\n");
 		}
-		sb.append("\t\t}\n");
-		sb.append("\t}");
+		sb.append("\t}\n");
+		sb.append("}");
 		return sb.toString();
 	}
 
 	private String genShowAll() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("@Override // GET/URL/[models]\n");
-		sb.append("\tpublic void showAll() throws SQLException {\n");
-		sb.append("\t\tList<").append(mType).append("> ").append(varNamePlural).append(" = ").append(mType).append(".findAll();\n");
+		sb.append("public void showAll() throws SQLException {\n");
+		sb.append("\tList<").append(mType).append("> ").append(varNamePlural).append(" = ").append(mType).append(".findAll();\n");
 		sb.append('\n');
 		if(!withViews) {
-			sb.append("\t\trender(").append(varNamePlural).append(");\n");
+			sb.append("\trender(").append(varNamePlural).append(");\n");
 		} else {
-			sb.append("\t\tswitch(wants(JS, JSON, HTML)) {\n");
-			sb.append("\t\t\tcase JS:\n");
-			sb.append("\t\t\tcase JSON: render(").append(varNamePlural).append("); break;\n");;
-			sb.append("\t\t\tcase HTML: render(new ShowAll").append(mTypePlural).append("(").append(varNamePlural).append(")); break;\n");
-			sb.append("\t\t}\n");
+			sb.append("\tswitch(wants(JS, JSON, HTML)) {\n");
+			sb.append("\t\tcase JS:\n");
+			sb.append("\t\tcase JSON: render(").append(varNamePlural).append("); break;\n");;
+			sb.append("\t\tcase HTML: render(new ShowAll").append(mTypePlural).append("(").append(varNamePlural).append(")); break;\n");
+			sb.append("\t}\n");
 		}
-		sb.append("\t}");
+		sb.append("}");
 		return sb.toString();
 	}
 
 	private String genShowEdit() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("@Override // GET/URL/[models]/id/edit\n");
-		sb.append("\tpublic void showEdit() throws SQLException {\n");
-		sb.append("\t\t").append(mType).append(" ").append(varName).append(" = ").append(mType).append(".find(getId());\n");
-		sb.append("\t\tif(").append(varName).append(" != null) {\n");
-		sb.append("\t\t\trender(new ShowEdit").append(mType).append("(").append(varName).append("));\n");
-		sb.append("\t\t}\n");
-		sb.append("\t}");
+		sb.append("public void showEdit() throws SQLException {\n");
+		sb.append("\t").append(mType).append(" ").append(varName).append(" = ").append(mType).append(".find(getId());\n");
+		sb.append("\tif(").append(varName).append(" != null) {\n");
+		sb.append("\t\trender(new ShowEdit").append(mType).append("(").append(varName).append("));\n");
+		sb.append("\t}\n");
+		sb.append("}");
 		return sb.toString();
 	}
 	
 	private String genShowNew() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("@Override // GET/URL/[models]/new\n");
-		sb.append("\tpublic void showNew() throws SQLException {\n");
-		sb.append("\t\t").append(mType).append(" ").append(varName).append(" = new ").append(mType).append("();\n");
-		sb.append("\t\trender(new ShowNew").append(mType).append('(').append(varName).append("));\n");
-		sb.append("\t}");
+		sb.append("public void showNew() throws SQLException {\n");
+		sb.append("\t").append(mType).append(" ").append(varName).append(" = new ").append(mType).append("();\n");
+		sb.append("\trender(new ShowNew").append(mType).append('(').append(varName).append("));\n");
+		sb.append("}");
 		return sb.toString();
 	}
 	
 	private String genUpdate() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("@Override // PUT/URL/[models]/id\n");
-		sb.append("\tpublic void update() throws SQLException {\n");
-		sb.append("\t\t").append(mType).append(" ").append(varName).append(" = ").append("param(\"").append(varName).append("\", new ").append(mType).append("()).setId(getId());\n");
-		sb.append("\t\tif(").append(varName).append(".update()) {\n");
+		sb.append("public void update() throws SQLException {\n");
+		sb.append("\t").append(mType).append(" ").append(varName).append(" = ").append("param(\"").append(varName).append("\", new ").append(mType).append("()).setId(getId());\n");
+		sb.append("\tif(").append(varName).append(".update()) {\n");
 		if(!withViews) {
-			sb.append("\t\t\trenderCreated(").append(varName).append(");\n");
+			sb.append("\t\trenderCreated(").append(varName).append(");\n");
 		} else {
-			sb.append("\t\t\tswitch(wants(JS, JSON, HTML)) {\n");
-			sb.append("\t\t\t\tcase JS:\n");
-			sb.append("\t\t\t\tcase JSON: renderOK(); break;\n");
-			sb.append("\t\t\t\tcase HTML: redirectTo(").append(varName).append(", show, \"").append(titleize(mType)).append(" was successfully updated.\"); break;\n");
-			sb.append("\t\t\t}\n");
+			sb.append("\t\tswitch(wants(JS, JSON, HTML)) {\n");
+			sb.append("\t\t\tcase JS:\n");
+			sb.append("\t\t\tcase JSON: renderOK(); break;\n");
+			sb.append("\t\t\tcase HTML: redirectTo(").append(varName).append(", show, \"").append(titleize(mType)).append(" was successfully updated.\"); break;\n");
+			sb.append("\t\t}\n");
 		}
-		sb.append("\t\t} else {\n");
+		sb.append("\t} else {\n");
 		if(!withViews) {
-			sb.append("\t\t\trenderErrors(").append(varName).append(");\n");
+			sb.append("\t\trenderErrors(").append(varName).append(");\n");
 		} else {
-			sb.append("\t\t\tswitch(wants(JS, JSON, HTML)) {\n");
-			sb.append("\t\t\t\tcase JS:\n");
-			sb.append("\t\t\t\tcase JSON: renderErrors(").append(varName).append("); break;\n");
-			sb.append("\t\t\t\tcase HTML: render(new ShowEdit").append(mType).append('(').append(varName).append(")); break;\n");
-			sb.append("\t\t\t}\n");
+			sb.append("\t\tswitch(wants(JS, JSON, HTML)) {\n");
+			sb.append("\t\t\tcase JS:\n");
+			sb.append("\t\t\tcase JSON: renderErrors(").append(varName).append("); break;\n");
+			sb.append("\t\t\tcase HTML: render(new ShowEdit").append(mType).append('(').append(varName).append(")); break;\n");
+			sb.append("\t\t}\n");
 		}
-		sb.append("\t\t}\n");
-		sb.append("\t}");
+		sb.append("\t}\n");
+		sb.append("}");
 		return sb.toString();
 	}
 	
