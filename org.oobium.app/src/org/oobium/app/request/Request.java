@@ -2,12 +2,14 @@ package org.oobium.app.request;
 
 import static org.jboss.netty.handler.codec.http.HttpMethod.*;
 
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.jboss.netty.channel.Channel;
 import org.jboss.netty.handler.codec.http.Cookie;
 import org.jboss.netty.handler.codec.http.CookieDecoder;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
@@ -28,12 +30,23 @@ public class Request extends DefaultHttpRequest {
 
 	private String host;
 	private int port;
+	private String remoteAddress;
+	private int remotePort;
 	private QueryStringDecoder queryDecoder;
 	private List<MimeType> accepts;
 	private Map<String, Cookie> cookies;
 	private Map<String, Object> parameters;
 
 	private HttpRequestHandler handler;
+	
+	public Request(HttpVersion httpVersion, HttpMethod method, String uri, Channel channel) {
+		super(httpVersion, method, uri);
+		InetSocketAddress remote = (InetSocketAddress) channel.getRemoteAddress();
+		remoteAddress = remote.getAddress().getHostAddress();
+		remotePort = remote.getPort();
+		InetSocketAddress local = (InetSocketAddress) channel.getLocalAddress();
+		port = local.getPort();
+	}
 	
 	public Request(HttpVersion httpVersion, HttpMethod method, String uri, int port) {
 		super(httpVersion, method, uri);
@@ -164,6 +177,14 @@ public class Request extends DefaultHttpRequest {
 
 	public int getPort() {
 		return port;
+	}
+	
+	public String getRemoteAddress() {
+		return remoteAddress;
+	}
+	
+	public int getRemotePort() {
+		return remotePort;
 	}
 	
 	public boolean hasParameters() {

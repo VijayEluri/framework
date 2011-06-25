@@ -1,7 +1,5 @@
 package org.oobium.app.server;
 
-import java.net.InetSocketAddress;
-
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -13,7 +11,7 @@ import org.oobium.app.request.Request;
 
 public class OobiumHttpRequestDecoder extends HttpMessageDecoder {
 
-	private int port;
+	private Channel channel;
 	
 	@Override
 	protected HttpMessage createMessage(String[] initialLine) throws Exception {
@@ -21,12 +19,12 @@ public class OobiumHttpRequestDecoder extends HttpMessageDecoder {
 		HttpMethod method = HttpMethod.valueOf(initialLine[0]);
 		String uri = initialLine[1];
 		
-		return new Request(version, method, uri, port);
+		return new Request(version, method, uri, channel);
 	}
 
 	@Override
 	protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer, State state) throws Exception {
-		port = ((InetSocketAddress) ctx.getChannel().getLocalAddress()).getPort();
+		this.channel = channel;
 		return super.decode(ctx, channel, buffer, state);
 	}
 	
