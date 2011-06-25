@@ -26,6 +26,14 @@ public class StaticResponse extends Response {
 		this(MimeType.getFromExtension(file.getName()), file, file.length(), file.lastModified());
 	}
 	
+	public StaticResponse(MimeType type, String payload) {
+		this(OK, type, payload, Integer.toString(payload.length()), "0");
+	}
+	
+	public StaticResponse(MimeType type, String payload, long lastModified) {
+		this(OK, type, payload, Integer.toString(payload.length()), Long.toString(lastModified));
+	}
+	
 	public StaticResponse(MimeType type, Object payload, long length, long lastModified) {
 		this(OK, type, payload, Long.toString(length), Long.toString(lastModified));
 	}

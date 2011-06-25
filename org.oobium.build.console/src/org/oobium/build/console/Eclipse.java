@@ -110,6 +110,12 @@ public class Eclipse {
 		}
 	}
 
+	public static void importProjects(File...projects) {
+		for(File project : projects) {
+			importProject(project.getName(), project);
+		}
+	}
+	
 	public static void openFile(File project, File file) {
 		String projectName = project.getName();
 		String fileName = file.getAbsolutePath().substring(project.getAbsolutePath().length());
