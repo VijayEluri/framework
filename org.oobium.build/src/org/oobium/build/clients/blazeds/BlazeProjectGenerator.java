@@ -92,7 +92,7 @@ public class BlazeProjectGenerator {
 		writeFile(project, ".project",
 				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
 				"<projectDescription>\n" +
-				"\t<name>com.test.java</name>\n" +
+				"\t<name>" + project.getName() + "</name>\n" +
 				"\t<comment></comment>\n" +
 				"\t<projects>\n" +
 				"\t</projects>\n" +

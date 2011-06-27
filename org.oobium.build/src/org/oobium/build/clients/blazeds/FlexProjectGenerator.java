@@ -39,6 +39,8 @@ public class FlexProjectGenerator {
 			throw new UnsupportedOperationException(project.getName() + " already exists");
 		}
 		
+		createProjectFile();
+
 		createFolder(project, "bin");
 		File src = createFolder(project, "src");
 
@@ -135,6 +137,29 @@ public class FlexProjectGenerator {
 		writeFile(srcFolder, as.getFilePath(), as.toSource());
 	}
 
+	private void createProjectFile() {
+		writeFile(project, ".project",
+				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+				"<projectDescription>\n" +
+				"\t<name>" + project.getName() + "</name>\n" +
+				"\t<comment></comment>\n" +
+				"\t<projects>\n" +
+				"\t</projects>\n" +
+				"\t<buildSpec>\n" +
+				"\t\t<buildCommand>\n" +
+				"\t\t\t<name>org.eclipse.jdt.core.javabuilder</name>\n" +
+				"\t\t\t<arguments>\n" +
+				"\t\t\t</arguments>\n" +
+				"\t\t</buildCommand>\n" +
+				"\t</buildSpec>\n" +
+				"\t<natures>\n" +
+				"\t\t<nature>com.adobe.flexbuilder.project.flexnature</nature>\n" +
+				"\t\t<nature>com.adobe.flexbuilder.project.actionscriptnature</nature>\n" +
+				"\t</natures>\n" +
+				"</projectDescription>\n"
+			);
+	}
+	
 	public void setForce(boolean force) {
 		this.force = force;
 	}
