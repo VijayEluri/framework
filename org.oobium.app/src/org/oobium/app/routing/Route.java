@@ -25,13 +25,14 @@ import org.jboss.netty.handler.codec.http.HttpMethod;
 
 public abstract class Route {
 
-	public static final int CONTROLLER = 0;
+	public static final int HTTP_CONTROLLER = 0;
 	public static final int VIEW = 1;
 	public static final int ASSET = 2;
 	public static final int AUTHORIZATION = 3;
 	public static final int DYNAMIC_ASSET = 4;
 	public static final int REDIRECT = 5;
 	public static final int WEBSOCKET = 6;
+	public static final int RTSP_CONTROLLER = 7;
 	
 	
 	protected final int type;

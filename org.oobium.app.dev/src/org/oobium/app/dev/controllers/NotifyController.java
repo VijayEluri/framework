@@ -13,13 +13,13 @@ package org.oobium.app.dev.controllers;
 import java.sql.SQLException;
 
 import org.oobium.app.AppService;
-import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.HttpController;
 import org.oobium.app.dev.AppDevActivator;
 import org.oobium.events.models.Event;
 import org.oobium.manager.ManagerService;
 import org.oobium.utils.json.JsonUtils;
 
-public class NotifyController extends Controller {
+public class NotifyController extends HttpController {
 
 	@Override
 	public void handleRequest() throws SQLException {

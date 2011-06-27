@@ -41,7 +41,7 @@ import java.util.regex.Pattern;
 import javax.mail.internet.InternetAddress;
 
 import org.oobium.app.MutableAppConfig;
-import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.HttpController;
 import org.oobium.app.http.Action;
 import org.oobium.app.persist.ModelNotifier;
 import org.oobium.app.server.Websocket;
@@ -388,7 +388,7 @@ public class Module extends Bundle {
 	
 	public File createController(String name) {
 		File controller = ControllerGenerator.createController(this, adjust(name, "Controller"));
-		addImportPackage(Controller.class.getPackage().getName());
+		addImportPackage(HttpController.class.getPackage().getName());
 		addExportPackage(packageName(controller));
 		return controller;
 	}
@@ -414,7 +414,7 @@ public class Module extends Bundle {
 			changed.addAll(Arrays.asList(ModelGenerator.generate(workspace, this, model, f)));
 
 			if((flags & CONTROLLER) != 0) {
-				if(addImportPackage(Controller.class.getPackage().getName())) {
+				if(addImportPackage(HttpController.class.getPackage().getName())) {
 					changed.add(manifest);
 				}
 				if(addExportPackage(packageName(controllers))) {
@@ -579,7 +579,7 @@ public class Module extends Bundle {
 				files.add(file);
 			}
 			if(!hasControllers()) {
-				if(removeImportPackage(Controller.class.getPackage().getName())) {
+				if(removeImportPackage(HttpController.class.getPackage().getName())) {
 					files.add(manifest);
 				}
 			}

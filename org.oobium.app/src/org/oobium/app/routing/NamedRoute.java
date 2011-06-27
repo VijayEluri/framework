@@ -18,7 +18,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jboss.netty.handler.codec.http.HttpMethod;
-import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.HttpController;
+import org.oobium.app.controllers.RtspController;
 import org.oobium.app.controllers.WebsocketController;
 import org.oobium.app.http.Action;
 import org.oobium.app.routing.routes.WebsocketRoute;
@@ -33,6 +34,26 @@ public class NamedRoute {
 	NamedRoute(Router router, String name) {
 		this.router = router;
 		this.name = name;
+	}
+	
+	public Routed asModelNotifier() {
+		return asModelNotifier("/model_notifications");
+	}
+	
+	public Routed asModelNotifier(String path) {
+		if(path.charAt(0) == '?') {
+			path = name + path;
+		}
+		WebsocketRoute route = router.addWebsocketRoute(name, path, null, MODEL_NOTIFY_GROUP);
+		return new Routed(router, route);
+	}
+	
+	public RoutedWebsocket asNotifier(String path) {
+		if(path.charAt(0) == '?') {
+			path = name + path;
+		}
+		WebsocketRoute route = router.addWebsocketRoute(name, path, null, name);
+		return new RoutedWebsocket(router, route);
 	}
 	
 	/**
@@ -76,7 +97,7 @@ public class NamedRoute {
 			}
 			route = router.addRoute(name, path, clazz, action);
 			router.addNamedClass(name, clazz);
-		} else if(Controller.class.isAssignableFrom(clazz)) {
+		} else if(HttpController.class.isAssignableFrom(clazz)) {
 			if(path.charAt(0) == '?') {
 				path = name + path;
 			}
@@ -94,7 +115,7 @@ public class NamedRoute {
 	 * @param clazz the controller class that will handle the routed request
 	 * @return a Routed object
 	 */
-	public Routed asRoute(Class<? extends Controller> clazz) {
+	public Routed asRoute(Class<? extends HttpController> clazz) {
 		return asRoute(GET, name, clazz);
 	}
 	
@@ -107,33 +128,8 @@ public class NamedRoute {
 	 * @return a Routed object
 	 * @see Action
 	 */
-	public Routed asRoute(Class<? extends Controller> clazz, Action action) {
+	public Routed asRoute(Class<? extends HttpController> clazz, Action action) {
 		return asRoute(name, clazz, action);
-	}
-	
-	/**
-	 * Add a route to be handled by the given controller's handleRequest method. The request type
-	 * to be handled is GET.
-	 * @param path the path that this request will handle (may contain variables and constants)
-	 * @param clazz the controller class that will handle the routed request
-	 * @return a Routed object
-	 */
-	public Routed asRoute(String path, Class<? extends Controller> clazz) {
-		return asRoute(GET, path, clazz);
-	}
-	
-	/**
-	 * Add a route to be handled by the given controller. The type of
-	 * request handled, and the controller method called to handle it, are determined by the given action.
-	 * @param path the path that this request will handle (may contain variables and constants)
-	 * @param clazz the controller class that will handle the routed request
-	 * @return a Routed object
-	 * @see Action
-	 */
-	public Routed asRoute(String path, Class<? extends Controller> clazz, Action action) {
-		checkClass(clazz);
-		Route route = router.addRoute(name, path, clazz, action);
-		return new Routed(router, route);
 	}
 	
 	/**
@@ -143,7 +139,7 @@ public class NamedRoute {
 	 * @param clazz the controller class that will handle the routed request
 	 * @return a Routed object
 	 */
-	public Routed asRoute(HttpMethod method, Class<? extends Controller> clazz) {
+	public Routed asRoute(HttpMethod method, Class<? extends HttpController> clazz) {
 		return asRoute(method, name, clazz);
 	}
 	
@@ -154,7 +150,7 @@ public class NamedRoute {
 	 * @param clazz the controller class that will handle the routed request
 	 * @return a Routed object
 	 */
-	public Routed asRoute(HttpMethod method, String path, Class<? extends Controller> clazz) {
+	public Routed asRoute(HttpMethod method, String path, Class<? extends HttpController> clazz) {
 		checkClass(clazz);
 		if(path.charAt(path.length() - 1) == '*') {
 			if(path.length() == 1 || path.charAt(path.length() - 2) == '/') {
@@ -171,6 +167,46 @@ public class NamedRoute {
 			Route route = router.addRoute(name, path, clazz, method);
 			return new Routed(router, route);
 		}
+	}
+	
+	/**
+	 * Add a route to be handled by the given controller's handleRequest method. The request type
+	 * to be handled is GET.
+	 * @param path the path that this request will handle (may contain variables and constants)
+	 * @param clazz the controller class that will handle the routed request
+	 * @return a Routed object
+	 */
+	public Routed asRoute(String path, Class<? extends HttpController> clazz) {
+		return asRoute(GET, path, clazz);
+	}
+
+	/**
+	 * Add a route to be handled by the given controller. The type of
+	 * request handled, and the controller method called to handle it, are determined by the given action.
+	 * @param path the path that this request will handle (may contain variables and constants)
+	 * @param clazz the controller class that will handle the routed request
+	 * @return a Routed object
+	 * @see Action
+	 */
+	public Routed asRoute(String path, Class<? extends HttpController> clazz, Action action) {
+		checkClass(clazz);
+		Route route = router.addRoute(name, path, clazz, action);
+		return new Routed(router, route);
+	}
+	
+	public Routed asRtsp(Class<? extends RtspController> clazz) {
+		checkClass(clazz);
+		Route route = router.addRtsp(name, name, clazz);
+		return new Routed(router, route);
+	}
+	
+	public Routed asRtsp(String path, Class<? extends RtspController> clazz) {
+		checkClass(clazz);
+		if(path.charAt(0) == '?') {
+			path = name + path;
+		}
+		Route route = router.addRtsp(name, path, clazz);
+		return new Routed(router, route);
 	}
 	
 	/**
@@ -207,26 +243,6 @@ public class NamedRoute {
 		}
 		WebsocketRoute route = router.addWebsocketRoute(name, path, controller, controller.getClass().getName());
 		return new RoutedWebsocket(router, route);
-	}
-	
-	public RoutedWebsocket asNotifier(String path) {
-		if(path.charAt(0) == '?') {
-			path = name + path;
-		}
-		WebsocketRoute route = router.addWebsocketRoute(name, path, null, name);
-		return new RoutedWebsocket(router, route);
-	}
-	
-	public Routed asModelNotifier() {
-		return asModelNotifier("/model_notifications");
-	}
-	
-	public Routed asModelNotifier(String path) {
-		if(path.charAt(0) == '?') {
-			path = name + path;
-		}
-		WebsocketRoute route = router.addWebsocketRoute(name, path, null, MODEL_NOTIFY_GROUP);
-		return new Routed(router, route);
 	}
 	
 }

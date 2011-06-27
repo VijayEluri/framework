@@ -10,26 +10,26 @@
  ******************************************************************************/
 package org.oobium.app.routing.handlers;
 
-import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.HttpController;
 import org.oobium.app.http.Action;
 import org.oobium.app.request.Request;
 import org.oobium.app.response.Response;
 import org.oobium.app.routing.RouteHandler;
 import org.oobium.app.routing.Router;
 
-public class ControllerHandler extends RouteHandler {
+public class HttpHandler extends RouteHandler {
 
-	public final Class<? extends Controller> controllerClass;
+	public final Class<? extends HttpController> controllerClass;
 	public final Action action;
 	
-	public ControllerHandler(Router router, Class<? extends Controller> controllerClass, Action action, String[][] params) {
+	public HttpHandler(Router router, Class<? extends HttpController> controllerClass, Action action, String[][] params) {
 		super(router, params);
 		this.controllerClass = controllerClass;
 		this.action = action;
 	}
 
 	public Response routeRequest(Request request) throws Exception {
-		Controller controller = controllerClass.newInstance();
+		HttpController controller = controllerClass.newInstance();
 		try {
 			controller.initialize(router, request, getParamMap());
 			controller.execute(action);

@@ -10,9 +10,9 @@
  ******************************************************************************/
 package org.oobium.app.routing;
 
+import static org.jboss.netty.handler.codec.http.HttpMethod.GET;
 import static org.oobium.app.http.Action.show;
 import static org.oobium.app.http.Action.showAll;
-import static org.jboss.netty.handler.codec.http.HttpMethod.GET;
 import static org.oobium.persist.ModelAdapter.getAdapter;
 import static org.oobium.utils.CharStreamUtils.closer;
 import static org.oobium.utils.CharStreamUtils.find;
@@ -33,22 +33,24 @@ import java.util.regex.Pattern;
 
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.oobium.app.AppService;
+import org.oobium.app.http.Action;
 import org.oobium.app.request.Request;
 import org.oobium.app.response.Response;
 import org.oobium.app.routing.handlers.AssetHandler;
 import org.oobium.app.routing.handlers.AuthorizationHandler;
-import org.oobium.app.routing.handlers.ControllerHandler;
 import org.oobium.app.routing.handlers.DynamicAssetHandler;
+import org.oobium.app.routing.handlers.HttpHandler;
 import org.oobium.app.routing.handlers.RedirectHandler;
+import org.oobium.app.routing.handlers.RtspHandler;
 import org.oobium.app.routing.handlers.ViewHandler;
 import org.oobium.app.routing.handlers.WebsocketHandler;
-import org.oobium.app.routing.routes.StaticRoute;
-import org.oobium.app.routing.routes.ControllerRoute;
 import org.oobium.app.routing.routes.DynamicAssetRoute;
+import org.oobium.app.routing.routes.HttpRoute;
 import org.oobium.app.routing.routes.RedirectRoute;
+import org.oobium.app.routing.routes.RtspRoute;
+import org.oobium.app.routing.routes.StaticRoute;
 import org.oobium.app.routing.routes.ViewRoute;
 import org.oobium.app.routing.routes.WebsocketRoute;
-import org.oobium.app.http.Action;
 import org.oobium.persist.Model;
 
 public class AppRouter extends Router implements IPathRouting, IUrlRouting {
@@ -140,7 +142,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		return null;
 	}
 	
-	private RouteHandler checkAuthorization(Request request, Router router, ControllerRoute route) {
+	private RouteHandler checkAuthorization(Request request, Router router, HttpRoute route) {
 		if(route.realm != null) {
 			Realm realm = router.realms.get(route.realm);
 			if(realm != null) {
@@ -187,15 +189,18 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 						return new AssetHandler(router, ar.assetPath, ar.contentType, ar.length, ar.lastModified);
 					case Route.AUTHORIZATION:
 						throw new UnsupportedOperationException();
-					case Route.CONTROLLER:
-						ControllerRoute cr = (ControllerRoute) fixedRoute;
-						return new ControllerHandler(router, cr.controllerClass, cr.action, cr.params);
+					case Route.HTTP_CONTROLLER:
+						HttpRoute cr = (HttpRoute) fixedRoute;
+						return new HttpHandler(router, cr.controllerClass, cr.action, cr.params);
 					case Route.DYNAMIC_ASSET:
 						DynamicAssetRoute dar = (DynamicAssetRoute) fixedRoute;
 						return new DynamicAssetHandler(router, dar.assetClass, dar.params);
 					case Route.REDIRECT:
 						RedirectRoute rr = (RedirectRoute) fixedRoute;
 						return new RedirectHandler(router, rr.to);
+					case Route.RTSP_CONTROLLER:
+						RtspRoute rc = (RtspRoute) fixedRoute;
+						return new RtspHandler(router, rc.controllerClass, rc.params);
 					case Route.VIEW:
 						ViewRoute vr = (ViewRoute) fixedRoute;
 						return new ViewHandler(router, vr.viewClass, vr.params);
@@ -402,10 +407,10 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 						case Route.ASSET:
 						case Route.AUTHORIZATION:
 							throw new UnsupportedOperationException();
-						case Route.CONTROLLER:
-							ControllerRoute cr = (ControllerRoute) route;
+						case Route.HTTP_CONTROLLER:
+							HttpRoute cr = (HttpRoute) route;
 							RouteHandler unauth = checkAuthorization(request, router, cr);
-							return (unauth != null) ? unauth : new ControllerHandler(router, cr.controllerClass, cr.action, getParams(cr, matcher));
+							return (unauth != null) ? unauth : new HttpHandler(router, cr.controllerClass, cr.action, getParams(cr, matcher));
 						case Route.REDIRECT:
 							RedirectRoute rr = (RedirectRoute) route;
 							return new RedirectHandler(router, rr.to);

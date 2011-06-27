@@ -21,7 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.HttpController;
 import org.oobium.events.models.Event;
 import org.oobium.manager.ManagerService;
 import org.oobium.manager.controllers.workers.InstallWorker;
@@ -36,7 +36,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.packageadmin.PackageAdmin;
 
-public class BundleController extends Controller {
+public class BundleController extends HttpController {
 
 	public static void createEvent(String eventName, String[] names, long[] ids, String error) {
 		Map<String, Object> map = new HashMap<String, Object>();

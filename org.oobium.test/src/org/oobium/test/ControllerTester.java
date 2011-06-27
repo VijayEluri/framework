@@ -44,7 +44,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.oobium.app.AppService;
-import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.HttpController;
 import org.oobium.app.http.Action;
 import org.oobium.app.http.MimeType;
 import org.oobium.app.request.Request;
@@ -79,14 +79,14 @@ public class ControllerTester {
 	}
 
 
-	public final Class<? extends Controller> controllerClass;
+	public final Class<? extends HttpController> controllerClass;
 	public final Logger logger;
 	public final AppService application;
 	public final AppRouter router;
 	public final TestPersistService persistor;
 	private final AtomicInteger persistorSessionCount;
 	
-	public Controller controller;
+	public HttpController controller;
 	private Request request;
 	private Map<String, ?> params;
 	private Session session;
@@ -98,7 +98,7 @@ public class ControllerTester {
 	 * @param controllerClass the class of Controller to be tested
 	 * @throws IllegalArgumentException if the given class is abstract, private, or does not have a no-args constructor
 	 */
-	public ControllerTester(Class<? extends Controller> controllerClass) {
+	public ControllerTester(Class<? extends HttpController> controllerClass) {
 		check(controllerClass);
 		this.controllerClass = controllerClass;
 		this.router = mockRouter();
@@ -228,7 +228,7 @@ public class ControllerTester {
 	}
 	
 	public ControllerTester execute(Action action, Map<String, ?> params, Map<String, ?> flash) {
-		if(flash != null) setCookie(Controller.FLASH_KEY, JsonUtils.toJson(flash));
+		if(flash != null) setCookie(HttpController.FLASH_KEY, JsonUtils.toJson(flash));
 		if(params != null) this.params = params;
 		return execute(action);
 	}
@@ -243,7 +243,7 @@ public class ControllerTester {
 	
 	public ControllerTester execute(HttpMethod method, Map<String, ?> params, Map<String, ?> flash) {
 		request.setMethod(method);
-		if(flash != null) setCookie(Controller.FLASH_KEY, JsonUtils.toJson(flash));
+		if(flash != null) setCookie(HttpController.FLASH_KEY, JsonUtils.toJson(flash));
 		if(params != null) this.params = params;
 		return execute((Action) null);
 	}
@@ -299,7 +299,7 @@ public class ControllerTester {
 	}
 
 	public String getError() {
-		return getFlash(Controller.FLASH_ERROR, String.class);
+		return getFlash(HttpController.FLASH_ERROR, String.class);
 	}
 	
 	public String getError(String name) {
@@ -399,7 +399,7 @@ public class ControllerTester {
 	public Map<?,?> getFlash() {
 		if(flashOut == null) {
 			try {
-				Field field = Controller.class.getDeclaredField("flashOut");
+				Field field = HttpController.class.getDeclaredField("flashOut");
 				field.setAccessible(true);
 				flashOut = (Map<String, Object>) field.get(controller);
 				if(flashOut == null) {
@@ -453,7 +453,7 @@ public class ControllerTester {
 	}
 	
 	public String getNotice() {
-		return getFlash(Controller.FLASH_NOTICE, String.class);
+		return getFlash(HttpController.FLASH_NOTICE, String.class);
 	}
 
 	public Session getSession() {
@@ -487,19 +487,19 @@ public class ControllerTester {
 	}
 	
 	public String getWarning() {
-		return getFlash(Controller.FLASH_WARNING, String.class);
+		return getFlash(HttpController.FLASH_WARNING, String.class);
 	}
 	
 	public boolean hasError() {
-		return getFlash(Controller.FLASH_ERROR) != null;
+		return getFlash(HttpController.FLASH_ERROR) != null;
 	}
 	
 	public boolean hasNotice() {
-		return getFlash(Controller.FLASH_NOTICE) != null;
+		return getFlash(HttpController.FLASH_NOTICE) != null;
 	}
 	
 	public boolean hasWarning() {
-		return getFlash(Controller.FLASH_WARNING) != null;
+		return getFlash(HttpController.FLASH_WARNING) != null;
 	}
 	
 	public boolean isPartial() {
@@ -516,8 +516,8 @@ public class ControllerTester {
 		return controller.getResponse().isSuccess();
 	}
 
-	private Controller mockController() throws Exception {
-		Controller controller = spy(controllerClass.newInstance());
+	private HttpController mockController() throws Exception {
+		HttpController controller = spy(controllerClass.newInstance());
 
 		if(authorize) {
 			doReturn(true).when(controller).authorize(anyString(), anyString());
@@ -621,7 +621,7 @@ public class ControllerTester {
 	}
 	
 	public ControllerTester setFlash(Map<String, ?> flash) {
-		return setCookie(Controller.FLASH_KEY, JsonUtils.toJson(flash));
+		return setCookie(HttpController.FLASH_KEY, JsonUtils.toJson(flash));
 	}
 	
 	public ControllerTester setFlash(String name, Object value) {

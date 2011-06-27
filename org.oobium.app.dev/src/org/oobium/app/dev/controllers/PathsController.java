@@ -21,12 +21,12 @@ import java.util.List;
 
 import org.oobium.app.AppService;
 import org.oobium.app.ModuleService;
-import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.HttpController;
 import org.oobium.app.dev.AppDevActivator;
 import org.oobium.app.http.MimeType;
 import org.oobium.app.routing.Router;
 
-public class PathsController extends Controller {
+public class PathsController extends HttpController {
 
 	private List<String> filter(List<String> paths) {
 		List<String> filtered = new ArrayList<String>();

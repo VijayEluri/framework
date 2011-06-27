@@ -15,7 +15,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import org.oobium.app.routing.routes.ControllerRoute;
+import org.oobium.app.routing.routes.HttpRoute;
 
 public class Routed {
 
@@ -47,8 +47,8 @@ public class Routed {
 		for(Route route : routes) {
 			if(route.isFixed()) {
 				router.addBasicAuthentication(route.path, realm);
-			} else if(route instanceof ControllerRoute) {
-				((ControllerRoute) route).realm = realm;
+			} else if(route instanceof HttpRoute) {
+				((HttpRoute) route).realm = realm;
 			} else {
 				throw new UnsupportedOperationException("cannot set Realm on pattern route of type: " + route.getClass().getName());
 			}

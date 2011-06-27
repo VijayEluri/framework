@@ -14,7 +14,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.oobium.app.AppService;
 import org.oobium.app.ModuleService;
-import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.HttpController;
 import org.oobium.app.routing.AppRouter;
 import org.oobium.app.routing.IPathRouting;
 import org.oobium.app.routing.IUrlRouting;
@@ -100,9 +100,9 @@ public class RouteTester implements IPathRouting, IUrlRouting {
 		return null;
 	}
 	
-	private Class<? extends Controller> getControllerClass(Class<?> modelClass) {
+	private Class<? extends HttpController> getControllerClass(Class<?> modelClass) {
 		String controllerName = modelClass.getSimpleName() + "Controller";
-		Class<? extends Controller> controllerClass = getControllerClass(config, controllerName, bundles.get(name));
+		Class<? extends HttpController> controllerClass = getControllerClass(config, controllerName, bundles.get(name));
 		if(controllerClass != null) {
 			return controllerClass;
 		}
@@ -118,7 +118,7 @@ public class RouteTester implements IPathRouting, IUrlRouting {
 		return null;
 	}
 
-	private Class<? extends Controller> getControllerClass(Config config, String controllerName, Bundle bundle) {
+	private Class<? extends HttpController> getControllerClass(Config config, String controllerName, Bundle bundle) {
 		String base;
 		int ix = name.lastIndexOf('_');
 		if(ix == -1) {
@@ -129,8 +129,8 @@ public class RouteTester implements IPathRouting, IUrlRouting {
 		String name = config.getPathToControllers(base).replace('/', '.') + "." + controllerName;
 		try {
 			Class<?> clazz = bundle.loadClass(name);
-			if(Controller.class.isAssignableFrom(clazz)) {
-				return clazz.asSubclass(Controller.class);
+			if(HttpController.class.isAssignableFrom(clazz)) {
+				return clazz.asSubclass(HttpController.class);
 			}
 		} catch(ClassNotFoundException e) {
 			// discard
@@ -158,9 +158,9 @@ public class RouteTester implements IPathRouting, IUrlRouting {
 		Logger logger = mock(Logger.class);
 		AppService service = mock(AppService.class);
 		when(service.getLogger()).thenReturn(logger);
-		when(service.getControllerClass(any(Class.class))).thenAnswer(new Answer<Class<? extends Controller>>() {
+		when(service.getControllerClass(any(Class.class))).thenAnswer(new Answer<Class<? extends HttpController>>() {
 			@Override
-			public Class<? extends Controller> answer(InvocationOnMock invocation) throws Throwable {
+			public Class<? extends HttpController> answer(InvocationOnMock invocation) throws Throwable {
 				return getControllerClass((Class<?>) invocation.getArguments()[0]);
 			}
 		});

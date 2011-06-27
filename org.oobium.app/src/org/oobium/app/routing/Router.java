@@ -48,15 +48,17 @@ import java.util.TreeMap;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.oobium.app.ModuleService;
-import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.HttpController;
+import org.oobium.app.controllers.RtspController;
 import org.oobium.app.controllers.WebsocketController;
 import org.oobium.app.http.Action;
 import org.oobium.app.http.MimeType;
 import org.oobium.app.request.Request;
-import org.oobium.app.routing.routes.ControllerRoute;
+import org.oobium.app.routing.routes.HttpRoute;
 import org.oobium.app.routing.routes.DynamicAssetRoute;
 import org.oobium.app.routing.routes.HasManyRoute;
 import org.oobium.app.routing.routes.RedirectRoute;
+import org.oobium.app.routing.routes.RtspRoute;
 import org.oobium.app.routing.routes.StaticRoute;
 import org.oobium.app.routing.routes.ViewRoute;
 import org.oobium.app.routing.routes.WebsocketRoute;
@@ -372,7 +374,7 @@ public class Router {
 	 * @param clazz the controller class that will handle the routed request
 	 * @return a Routed object
 	 */
-	public Routed addRoute(HttpMethod method, String path, Class<? extends Controller> clazz) {
+	public Routed addRoute(HttpMethod method, String path, Class<? extends HttpController> clazz) {
 		return add(getName(method, path)).asRoute(method, path, clazz);
 	}
 	
@@ -383,7 +385,7 @@ public class Router {
 	 * @param clazz the controller class that will handle the routed request
 	 * @return a Routed object
 	 */
-	public Routed addRoute(String path, Class<? extends Controller> clazz) {
+	public Routed addRoute(String path, Class<? extends HttpController> clazz) {
 		return add(getName(GET, path)).asRoute(GET, path, clazz);
 	}
 
@@ -397,7 +399,7 @@ public class Router {
 	 * @return a Routed object
 	 * @see Action
 	 */
-	public Routed addRoute(String path, Class<? extends Controller> clazz, Action action) {
+	public Routed addRoute(String path, Class<? extends HttpController> clazz, Action action) {
 		return add(getName(action, path)).asRoute(path, clazz, action);
 	}
 	
@@ -441,14 +443,14 @@ public class Router {
 		}
 	}
 	
-	Route addRoute(String key, String rule, Class<? extends Controller> clazz, HttpMethod method) {
+	Route addRoute(String key, String rule, Class<? extends HttpController> clazz, HttpMethod method) {
 		rule = checkRule(rule);
-		Route route = new ControllerRoute(method, rule, null, clazz, null);
+		Route route = new HttpRoute(method, rule, null, clazz, null);
 		addRoute(key, route);
 		return route;
 	}
 
-	ControllerRoute addRoute(String key, String rule, Class<? extends Model> parentClass, String hasManyField, Class<? extends Model> clazz, Action action) {
+	HttpRoute addRoute(String key, String rule, Class<? extends Model> parentClass, String hasManyField, Class<? extends Model> clazz, Action action) {
 		rule = checkRule(rule);
 		HttpMethod type;
 		switch(action) {
@@ -463,8 +465,15 @@ public class Router {
 			throw new IllegalArgumentException("unknown action: " + action);
 		}
 		Class<? extends Model> modelClass = Model.class.isAssignableFrom(clazz) ? clazz.asSubclass(Model.class) : null;
-		Class<? extends Controller> controllerClass = getControllerClass(clazz);
+		Class<? extends HttpController> controllerClass = getControllerClass(clazz);
 		HasManyRoute route = new HasManyRoute(type, rule, parentClass, hasManyField, modelClass, controllerClass, action);
+		addRoute(key, route);
+		return route;
+	}
+	
+	Route addRtsp(String key, String rule, Class<? extends RtspController> clazz) {
+		rule = checkRule(rule);
+		Route route = new RtspRoute(rule, clazz);
 		addRoute(key, route);
 		return route;
 	}
@@ -476,7 +485,7 @@ public class Router {
 		return route;
 	}
 	
-	ControllerRoute addRoute(String key, String rule, Class<?> clazz, Action action) {
+	HttpRoute addRoute(String key, String rule, Class<?> clazz, Action action) {
 		rule = checkRule(rule);
 		HttpMethod type;
 		switch(action) {
@@ -491,10 +500,18 @@ public class Router {
 			throw new IllegalArgumentException("unknown action: " + action);
 		}
 		Class<? extends Model> modelClass = Model.class.isAssignableFrom(clazz) ? clazz.asSubclass(Model.class) : null;
-		Class<? extends Controller> controllerClass = getControllerClass(clazz);
-		ControllerRoute route = new ControllerRoute(type, rule, modelClass, controllerClass, action);
+		Class<? extends HttpController> controllerClass = getControllerClass(clazz);
+		HttpRoute route = new HttpRoute(type, rule, modelClass, controllerClass, action);
 		addRoute(key, route);
 		return route;
+	}
+	
+	public Routed addRtsp(Class<? extends RtspController> clazz) {
+		return add(underscored(clazz.getSimpleName())).asRtsp(clazz);
+	}
+	
+	public Routed addRtsp(String path, Class<? extends RtspController> clazz) {
+		return add(underscored(clazz.getSimpleName())).asRtsp(path, clazz);
 	}
 	
 	/**
@@ -615,12 +632,12 @@ public class Router {
 		return name;
 	}
 
-	private Class<? extends Controller> getControllerClass(Class<?> clazz) {
-		Class<? extends Controller> controllerClass = null;
+	private Class<? extends HttpController> getControllerClass(Class<?> clazz) {
+		Class<? extends HttpController> controllerClass = null;
 		if(Model.class.isAssignableFrom(clazz)) {
 			controllerClass = service.getControllerClass(clazz.asSubclass(Model.class));
-		} else if(Controller.class.isAssignableFrom(clazz)) {
-			controllerClass = clazz.asSubclass(Controller.class);
+		} else if(HttpController.class.isAssignableFrom(clazz)) {
+			controllerClass = clazz.asSubclass(HttpController.class);
 		}
 
 		if(controllerClass != null) {
@@ -683,8 +700,8 @@ public class Router {
 					}
 					model.put(a.name() + ":" + f, map);
 				}
-			} else if(route instanceof ControllerRoute) {
-				ControllerRoute cr = (ControllerRoute) route;
+			} else if(route instanceof HttpRoute) {
+				HttpRoute cr = (HttpRoute) route;
 				Class<?> c = cr.modelClass;
 				Action a = cr.action;
 				if(c != null && a != null) {
@@ -1247,7 +1264,7 @@ public class Router {
 		}
 	}
 
-	ControllerRoute removeRoute(String key, String path, Class<?> clazz, Action action) {
+	HttpRoute removeRoute(String key, String path, Class<?> clazz, Action action) {
 		if(!path.startsWith("/")) {
 			path = "/" + path;
 		}
@@ -1264,8 +1281,8 @@ public class Router {
 			throw new IllegalArgumentException("unknown action: " + action);
 		}
 		Class<? extends Model> modelClass = Model.class.isAssignableFrom(clazz) ? clazz.asSubclass(Model.class) : null;
-		Class<? extends Controller> controllerClass = getControllerClass(clazz);
-		ControllerRoute route = new ControllerRoute(type, path, modelClass, controllerClass, action);
+		Class<? extends HttpController> controllerClass = getControllerClass(clazz);
+		HttpRoute route = new HttpRoute(type, path, modelClass, controllerClass, action);
 		removeRoute(key, route);
 		return route;
 	}
@@ -1318,7 +1335,7 @@ public class Router {
 	 * @return a Routed object
 	 */
 	public Routed setHome(Class<?> clazz, Action action, String parameters) {
-		if(Model.class.isAssignableFrom(clazz) || Controller.class.isAssignableFrom(clazz)) {
+		if(Model.class.isAssignableFrom(clazz) || HttpController.class.isAssignableFrom(clazz)) {
 			String path = (parameters == null) ? "/" : ("/?" + parameters);
 			Route route = addRoute(HOME, path, clazz, action);
 			return new Routed(this, route);

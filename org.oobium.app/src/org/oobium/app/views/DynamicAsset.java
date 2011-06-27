@@ -12,7 +12,7 @@ package org.oobium.app.views;
 
 import java.util.Map;
 
-import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.HttpController;
 import org.oobium.app.request.Request;
 import org.oobium.app.response.Response;
 import org.oobium.app.routing.Router;
@@ -30,7 +30,7 @@ public class DynamicAsset {
 	}
 	
 	public static Response render(Router router, DynamicAsset asset, Request request, Map<String, Object> params) throws Exception {
-		Controller controller = new Controller();
+		HttpController controller = new HttpController();
 		controller.initialize(router, request, params);
 		controller.render(asset);
 		return controller.getResponse();

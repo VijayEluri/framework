@@ -21,11 +21,11 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jboss.netty.handler.codec.http.HttpMethod;
-import org.oobium.app.controllers.Controller;
-import org.oobium.app.routing.routes.ControllerRoute;
+import org.oobium.app.controllers.HttpController;
+import org.oobium.app.routing.routes.HttpRoute;
 import org.oobium.app.http.Action;
 
-public class DiscoveryController extends Controller {
+public class DiscoveryController extends HttpController {
 
 	private Map<String, String> build(Route route) {
 		Map<String, String> map = new HashMap<String, String>();
@@ -36,8 +36,8 @@ public class DiscoveryController extends Controller {
 		} else {
 			map.put("path", route.rule);
 		}
-		if(route instanceof ControllerRoute) {
-			ControllerRoute cr = (ControllerRoute) route;
+		if(route instanceof HttpRoute) {
+			HttpRoute cr = (HttpRoute) route;
 			Class<?> c = cr.modelClass;
 			if(c != null) {
 				map.put("model", c.getName());

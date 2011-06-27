@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.HttpController;
 import org.oobium.app.http.Action;
 import org.oobium.app.views.ScriptFile;
 import org.oobium.app.views.StyleSheet;
@@ -2259,7 +2259,7 @@ public class EspCompiler {
 		esf.addStaticImport(Utils.class.getCanonicalName() + ".*");
 		esf.addImport(Action.class.getCanonicalName());
 		esf.addImport(View.class.getCanonicalName());
-		esf.addImport(Controller.class.getCanonicalName());
+		esf.addImport(HttpController.class.getCanonicalName());
 		esf.addClassAnnotation("@SuppressWarnings(\"unused\")");
 		esf.setSimpleName(dom.getName());
 		esf.setSuperName(View.class.getSimpleName());

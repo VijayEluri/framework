@@ -10,8 +10,8 @@
  ******************************************************************************/
 package org.oobium.app.controllers;
 
-import static org.oobium.app.controllers.Controller.createActionCacheKey;
-import static org.oobium.app.controllers.Controller.createCacheKey;
+import static org.oobium.app.controllers.HttpController.createActionCacheKey;
+import static org.oobium.app.controllers.HttpController.createCacheKey;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -101,8 +101,8 @@ public class ActionCache<T extends Model> extends Observer<T> {
 		return caches;
 	}
 	
-	public static boolean isCaching(Controller controller, Action action) {
-		Class<? extends Controller> controllerClass = controller.getClass();
+	public static boolean isCaching(HttpController controller, Action action) {
+		Class<? extends HttpController> controllerClass = controller.getClass();
 		return actionMap.containsKey(controllerClass) && actionMap.get(controllerClass).contains(action);
 	}
 
@@ -129,7 +129,7 @@ public class ActionCache<T extends Model> extends Observer<T> {
 	}
 	
 	
-	private Class<? extends Controller> controllerClass;
+	private Class<? extends HttpController> controllerClass;
 	private AppService handler;
 
 	public void expire() {

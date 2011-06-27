@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.HttpController;
 
 public class ViewRenderer {
 
@@ -17,7 +17,7 @@ public class ViewRenderer {
 		Position(String name, int pos) { this.name = name; this.pos = pos; }
 	}
 	
-	Controller controller;
+	HttpController controller;
 	private View view;
 	private View layout;
 	private boolean partial;
@@ -30,7 +30,7 @@ public class ViewRenderer {
 	private Map<String, String> contentMap;
 
 
-	public ViewRenderer(Controller controller, View view) {
+	public ViewRenderer(HttpController controller, View view) {
 		this.controller = controller;
 		this.view = view;
 	}

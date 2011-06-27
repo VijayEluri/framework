@@ -71,7 +71,7 @@ import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.utils.Base64;
 
-public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, ISessions, IHttp {
+public class HttpController implements IFlash, IParams, IPathRouting, IUrlRouting, ISessions, IHttp {
 
 	private static final String AUTHENTICATED_AT = "authenticatedAt";
 	private static final String AUTHENTICATED_BY = "authenticatedBy";
@@ -83,11 +83,11 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 	public static final String FLASH_NOTICE = "notice";
 	public static final String FLASH_WARNING = "warning";
 	
-	static String createActionCacheKey(Class<? extends Controller> controller, Action action) {
+	static String createActionCacheKey(Class<? extends HttpController> controller, Action action) {
 		return controller.getSimpleName() + "/" + action.name();
 	}
 	
-	static String createActionCacheKey(Class<? extends Controller> controller, Action action, MimeType type) {
+	static String createActionCacheKey(Class<? extends HttpController> controller, Action action, MimeType type) {
 		return controller.getSimpleName() + "/" + action.name() + "." + type.extension();
 	}
 	
@@ -147,7 +147,7 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 	private boolean sessionResolved;
 	private boolean isRendered;
 	
-	public Controller() {
+	public HttpController() {
 		// no args constructor
 	}
 	
@@ -278,7 +278,7 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 	private void callFilters(boolean before) {
 		List<Class<?>> classes = new ArrayList<Class<?>>();
 		Class<?> clazz = getClass();
-		while(clazz != Controller.class) {
+		while(clazz != HttpController.class) {
 			classes.add(clazz);
 			clazz = clazz.getSuperclass();
 		}
@@ -443,13 +443,15 @@ public class Controller implements IFlash, IParams, IPathRouting, IUrlRouting, I
 		return getFlash(name);
 	}
 	
-	public <T> T flash(String name, java.lang.Class<T> type) {
+	@Override
+	public <T> T flash(String name, Class<T> type) {
 		if(flash != null) {
 			return coerce(flash.get(name), type);
 		}
 		return null;
 	}
 
+	@Override
 	public <T> T flash(String name, T defaultValue) {
 		if(flash != null) {
 			return coerce(flash.get(name), defaultValue);

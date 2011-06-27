@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.HttpController;
 import org.oobium.app.controllers.IFlash;
 import org.oobium.app.controllers.IHttp;
 import org.oobium.app.controllers.IParams;
@@ -82,7 +82,7 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 	 * @throws Exception this will run user generated content - be prepared for anything.
 	 */
 	public static Response render(Router router, View view, Request request, Map<String, Object> params) throws Exception {
-		Controller controller = new Controller();
+		HttpController controller = new HttpController();
 		controller.initialize(router, request, params);
 		controller.render(view);
 		return controller.getResponse();
@@ -92,7 +92,7 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 	private ViewRenderer renderer;
 
 	protected Logger logger;
-	protected Controller controller;
+	protected HttpController controller;
 	protected Request request;
 
 	private View child;

@@ -12,13 +12,13 @@ package org.oobium.app.dev.controllers;
 
 import java.sql.SQLException;
 
-import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.HttpController;
 import org.oobium.app.dev.AppDevActivator;
 import org.oobium.logging.LogProvider;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 
-public class ShutdownController extends Controller {
+public class ShutdownController extends HttpController {
 
 	@Override
 	public void handleRequest() throws SQLException {

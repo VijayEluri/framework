@@ -28,7 +28,7 @@ import org.oobium.app.response.Response;
 import org.oobium.app.routing.AppRouter;
 import org.oobium.app.routing.RouteHandler;
 import org.oobium.app.routing.Router;
-import org.oobium.app.routing.handlers.ControllerHandler;
+import org.oobium.app.routing.handlers.HttpHandler;
 import org.oobium.app.server.HandlerTask;
 import org.oobium.app.sessions.Session;
 import org.oobium.app.views.View;
@@ -160,7 +160,7 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		addRoutes(config, (AppRouter) router);
 	}
 	
-	final void startApp() throws Exception {
+	public final void startApp() throws Exception {
 		logger.info("configuring in " + Mode.getSystemMode().name() + " mode");
 		
 		Config config = loadConfiguration();
@@ -208,7 +208,7 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		initializeServiceTrackers(config);
 	}
 	
-	final void stopApp() throws Exception {
+	public final void stopApp() throws Exception {
 		if(cacheTracker != null) {
 			cacheTracker.close();
 			cacheTracker = null;
@@ -342,7 +342,7 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		final RouteHandler handler = router.getHandler(request);
 		if(handler != null) {
 			handler.setLogger(logger);
-			if(handler instanceof ControllerHandler) {
+			if(handler instanceof HttpHandler) {
 				return new HandlerTask(request) {
 					@Override
 					protected Response handleRequest(Request request) throws Exception {

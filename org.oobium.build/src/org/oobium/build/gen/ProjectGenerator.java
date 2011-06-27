@@ -30,7 +30,7 @@ import java.util.Set;
 import org.oobium.app.AppService;
 import org.oobium.app.ModuleService;
 import org.oobium.app.controllers.ActionCache;
-import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.HttpController;
 import org.oobium.app.http.Action;
 import org.oobium.app.persist.ModelNotifier;
 import org.oobium.app.routing.AppRouter;
@@ -245,8 +245,8 @@ public class ProjectGenerator {
 
 		src.packageName = project.getName() + ".controllers";
 		src.simpleName = "ApplicationController";
-		src.superName = Controller.class.getSimpleName();
-		src.imports.add(Controller.class.getCanonicalName());
+		src.superName = HttpController.class.getSimpleName();
+		src.imports.add(HttpController.class.getCanonicalName());
 
 		writeFile(controllersFolder(project), "ApplicationController.java", src.toSource());
 	}

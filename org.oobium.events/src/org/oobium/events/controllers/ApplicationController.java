@@ -10,8 +10,8 @@
  ******************************************************************************/
 package org.oobium.events.controllers;
 
-import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.HttpController;
 
-public class ApplicationController extends Controller {
+public class ApplicationController extends HttpController {
 
 }

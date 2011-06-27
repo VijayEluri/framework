@@ -27,7 +27,7 @@ import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.HttpController;
 import org.oobium.app.controllers.WebsocketController;
 import org.oobium.app.handlers.HttpRequestHandler;
 import org.oobium.app.http.MimeType;
@@ -111,7 +111,7 @@ public class AppServerTests {
 		}
 	}
 	
-	public static class TestController extends Controller {
+	public static class TestController extends HttpController {
 		@Override
 		public void handleRequest() throws SQLException {
 			render(MimeType.HTML,
@@ -243,7 +243,7 @@ public class AppServerTests {
 		}
 	}
 	
-	public static class ShowAllWebsocketsController extends Controller {
+	public static class ShowAllWebsocketsController extends HttpController {
 		@Override
 		public void handleRequest() throws SQLException {
 			Set<Websocket> sockets = getRouter().getWebsockets("lcws");
@@ -261,7 +261,7 @@ public class AppServerTests {
 		}
 	}
 	
-	public static class WriteToLowerCaseController extends Controller {
+	public static class WriteToLowerCaseController extends HttpController {
 		@Override
 		public void handleRequest() throws SQLException {
 			Websocket socket = getRouter().getWebsocket("android1");

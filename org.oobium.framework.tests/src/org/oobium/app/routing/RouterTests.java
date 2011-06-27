@@ -44,14 +44,14 @@ import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.oobium.app.AppService;
-import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.HttpController;
 import org.oobium.app.request.Request;
 import org.oobium.app.routing.AppRouter;
 import org.oobium.app.routing.Route;
 import org.oobium.app.routing.RouteHandler;
 import org.oobium.app.routing.handlers.AssetHandler;
 import org.oobium.app.routing.handlers.AuthorizationHandler;
-import org.oobium.app.routing.handlers.ControllerHandler;
+import org.oobium.app.routing.handlers.HttpHandler;
 import org.oobium.app.routing.handlers.DynamicAssetHandler;
 import org.oobium.app.routing.handlers.RedirectHandler;
 import org.oobium.app.routing.handlers.ViewHandler;
@@ -73,13 +73,13 @@ public class RouterTests {
 	public static class Account extends Model {
 		public Account() { set("type", "checking"); set("name", "personal"); }
 	}
-	public static class AccountController extends Controller { }
+	public static class AccountController extends HttpController { }
 
 	@ModelDescription(hasOne={@Relation(name="cAccount",type=Account.class,opposite="categories")})
 	public static class Category extends Model {
 		public Category() { set("cAccount", "0"); }
 	}
-	public static class CategoryController extends Controller { }
+	public static class CategoryController extends HttpController { }
 
 	public static class AccountView extends View { }
 	public static class InvalidView extends View { InvalidView(String str) { } }
@@ -89,11 +89,11 @@ public class RouterTests {
 	public static class Member extends Model {
 		public Member() { set("type", "admin"); }
 	}
-	public static class MemberController extends Controller { }
+	public static class MemberController extends HttpController { }
 
 	@ModelDescription(hasOne={@Relation(name="member",type=Member.class)})
 	public static class Phone extends Model { }
-	public static class PhoneController extends Controller { }
+	public static class PhoneController extends HttpController { }
 
 	public static class AccountStyles extends StyleSheet { }
 	public static class AccountScripts extends ScriptFile { }
@@ -130,9 +130,9 @@ public class RouterTests {
 		logger = mock(Logger.class);
 		service = mock(AppService.class);
 		when(service.getLogger()).thenReturn(logger);
-		when(service.getControllerClass(any(Class.class))).thenAnswer(new Answer<Class<? extends Controller>>() {
+		when(service.getControllerClass(any(Class.class))).thenAnswer(new Answer<Class<? extends HttpController>>() {
 			@Override
-			public Class<? extends Controller> answer(InvocationOnMock invocation) throws Throwable {
+			public Class<? extends HttpController> answer(InvocationOnMock invocation) throws Throwable {
 				Object arg = invocation.getArguments()[0];
 				if(arg == Account.class)	return AccountController.class;
 				if(arg == Category.class)	return CategoryController.class;
@@ -172,8 +172,8 @@ public class RouterTests {
 		
 		RouteHandler handler = router.getHandler(request("[GET] /"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(showAll, ch.action);
 		assertEquals("null", asString(ch.params));
@@ -197,8 +197,8 @@ public class RouterTests {
 		
 		RouteHandler handler = router.getHandler(request("[GET] /"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(showAll, ch.action);
 		assertEquals("null", asString(ch.params));
@@ -395,8 +395,8 @@ public class RouterTests {
 		
 		RouteHandler handler = router.getHandler(request("[GET] /accounts"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(showAll, ch.action);
 		assertEquals("null", asString(ch.params));
@@ -435,8 +435,8 @@ public class RouterTests {
 		
 		handler = router.getHandler(request);
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(showAll, ch.action);
 		assertEquals("null", asString(ch.params));
@@ -460,8 +460,8 @@ public class RouterTests {
 		
 		RouteHandler handler = router.getHandler(request("[GET] /accounts/0"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(show, ch.action);
 		assertNotNull(ch.params);
@@ -486,8 +486,8 @@ public class RouterTests {
 
 		RouteHandler handler = router.getHandler(request("[GET] /accounts/0/edit"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(showEdit, ch.action);
 		assertEquals("[[id, 0]]", asString(ch.params));
@@ -511,8 +511,8 @@ public class RouterTests {
 		
 		RouteHandler handler = router.getHandler(request("[GET] /accounts/new"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(showNew, ch.action);
 		assertEquals("null", asString(ch.params));
@@ -536,8 +536,8 @@ public class RouterTests {
 		
 		RouteHandler handler = router.getHandler(request("[POST] /accounts"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(create, ch.action);
 		assertEquals("null", asString(ch.params));
@@ -561,8 +561,8 @@ public class RouterTests {
 		
 		RouteHandler handler = router.getHandler(request("[PUT] /accounts/0"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(update, ch.action);
 		assertEquals("[[id, 0]]", asString(ch.params));
@@ -586,8 +586,8 @@ public class RouterTests {
 
 		RouteHandler handler = router.getHandler(request("[DELETE] /accounts/0"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(destroy, ch.action);
 		assertEquals("[[id, 0]]", asString(ch.params));
@@ -611,8 +611,8 @@ public class RouterTests {
 		
 		RouteHandler handler = router.getHandler(request("[GET] /my_account"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(show, ch.action);
 		assertEquals("null", asString(ch.params));
@@ -636,8 +636,8 @@ public class RouterTests {
 		
 		RouteHandler handler = router.getHandler(request("[GET] /my_account"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(show, ch.action);
 		assertEquals("null", asString(ch.params));
@@ -661,8 +661,8 @@ public class RouterTests {
 		
 		RouteHandler handler = router.getHandler(request("[GET] /accounts/0"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(show, ch.action);
 		assertEquals("[[id, 0]]", asString(ch.params));
@@ -686,8 +686,8 @@ public class RouterTests {
 		
 		RouteHandler handler = router.getHandler(request("[GET] /0/accounts"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(show, ch.action);
 		assertEquals("[[id, 0]]", asString(ch.params));
@@ -711,8 +711,8 @@ public class RouterTests {
 		
 		RouteHandler handler = router.getHandler(request("[GET] /accounts/0"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(show, ch.action);
 		assertEquals("[[id, 0], [name, business]]", asString(ch.params));
@@ -736,8 +736,8 @@ public class RouterTests {
 		
 		RouteHandler handler = router.getHandler(request("[GET] /accounts/business"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(show, ch.action);
 		assertEquals("[[name, business]]", asString(ch.params));
@@ -761,8 +761,8 @@ public class RouterTests {
 		
 		RouteHandler handler = router.getHandler(request("[GET] /savings/accounts/holiday"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(show, ch.action);
 		assertEquals("[[type, savings], [name, holiday]]", asString(ch.params));
@@ -786,8 +786,8 @@ public class RouterTests {
 
 		RouteHandler handler = router.getHandler(request("[GET] /prefix/accounts/business"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(show, ch.action);
 		assertEquals("[[name, business]]", asString(ch.params));
@@ -811,8 +811,8 @@ public class RouterTests {
 
 		RouteHandler handler = router.getHandler(request("[GET] /businessAccount"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(show, ch.action);
 		assertEquals("[[name, business]]", asString(ch.params));
@@ -836,8 +836,8 @@ public class RouterTests {
 		
 		RouteHandler handler = router.getHandler(request("[GET] /accounts/new?type=savings"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(showNew, ch.action);
 		assertEquals("[[type, savings]]", asString(ch.params));
@@ -861,8 +861,8 @@ public class RouterTests {
 		
 		RouteHandler handler = router.getHandler(request("[POST] /accounts"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(create, ch.action);
 		assertEquals("[[type, checking], [name, personal]]", asString(ch.params));
@@ -886,8 +886,8 @@ public class RouterTests {
 		
 		RouteHandler handler = router.getHandler(request("[GET] /accounts/1"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(show, ch.action);
 		assertEquals("[[id, 1], [type, checking], [name, business]]", asString(ch.params));
@@ -911,8 +911,8 @@ public class RouterTests {
 
 		RouteHandler handler = router.getHandler(request("[GET] /accounts/1/new"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(showNew, ch.action);
 		assertEquals("[[id, 1], [type, checking], [name, business]]", asString(ch.params));
@@ -936,8 +936,8 @@ public class RouterTests {
 		
 		RouteHandler handler = router.getHandler(request("[POST] /registers"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(create, ch.action);
 		assertEquals("null", asString(ch.params));
@@ -961,8 +961,8 @@ public class RouterTests {
 		
 		RouteHandler handler = router.getHandler(request("[GET] /registers/1"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(show, ch.action);
 		assertEquals("[[id, 1]]", asString(ch.params));
@@ -986,8 +986,8 @@ public class RouterTests {
 		
 		RouteHandler handler = router.getHandler(request("[GET] /registers/new"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(showNew, ch.action);
 		assertEquals("null", asString(ch.params));
@@ -1808,8 +1808,8 @@ public class RouterTests {
 
 		RouteHandler handler = router.getHandler(request("[GET] /members/1/phones"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(PhoneController.class, ch.controllerClass);
 		assertEquals(showAll, ch.action);
 		assertEquals("[[member[id], 1]]", asString(ch.params));
@@ -1855,16 +1855,16 @@ public class RouterTests {
 
 		RouteHandler handler = router.getHandler(request("[GET] /accounts/1/categories"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(CategoryController.class, ch.controllerClass);
 		assertEquals(showAll, ch.action);
 		assertEquals("[[account[id], 1]]", asString(ch.params));
 
 		handler = router.getHandler(request("[GET] /accounts/1/categories/new"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		ch = (HttpHandler) handler;
 		assertEquals(CategoryController.class, ch.controllerClass);
 		assertEquals(showNew, ch.action);
 		assertEquals("[[category[cAccount], 1]]", asString(ch.params));
@@ -1912,8 +1912,8 @@ public class RouterTests {
 
 		RouteHandler handler = router.getHandler(request("[GET] /adminMember/phones"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(PhoneController.class, ch.controllerClass);
 		assertEquals(showAll, ch.action);
 		assertEquals("[[member[type], admin]]", asString(ch.params));
@@ -1962,16 +1962,16 @@ public class RouterTests {
 
 		RouteHandler handler = router.getHandler(request("[GET] /checkingAccount/categories"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(CategoryController.class, ch.controllerClass);
 		assertEquals(showAll, ch.action);
 		assertEquals("[[account[type], checking]]", asString(ch.params));
 
 		handler = router.getHandler(request("[POST] /checkingAccount/categories"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		ch = (HttpHandler) handler;
 		assertEquals(CategoryController.class, ch.controllerClass);
 		assertEquals(create, ch.action);
 		assertEquals("[[category[cAccount][type], checking]]", asString(ch.params));
@@ -1999,8 +1999,8 @@ public class RouterTests {
 
 		RouteHandler handler = router.getHandler(request("[GET] /my_account"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(showAll, ch.action);
 		assertEquals("null", asString(ch.params));
@@ -2026,8 +2026,8 @@ public class RouterTests {
 
 		RouteHandler handler = router.getHandler(request("[GET] /accounts/personal"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(show, ch.action);
 		assertEquals("[[name, personal]]", asString(ch.params));
@@ -2053,8 +2053,8 @@ public class RouterTests {
 
 		RouteHandler handler = router.getHandler(request("[GET] /accounts/1"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(show, ch.action);
 		assertEquals("[[id, 1]]", asString(ch.params));
@@ -2097,8 +2097,8 @@ public class RouterTests {
 
 		RouteHandler handler = router.getHandler(request("[GET] /accounts/show"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(show, ch.action);
 		assertEquals("[[name, business]]", asString(ch.params));
@@ -2123,8 +2123,8 @@ public class RouterTests {
 
 		RouteHandler handler = router.getHandler(request("[GET] /accounts"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals(show, ch.action);
 		assertEquals("[[name, business]]", asString(ch.params));
@@ -2149,8 +2149,8 @@ public class RouterTests {
 
 		RouteHandler handler = router.getHandler(request("[GET] /my_account"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertNull(ch.action);
 		assertEquals("null", asString(ch.params));
@@ -2175,8 +2175,8 @@ public class RouterTests {
 
 		RouteHandler handler = router.getHandler(request("[GET] /account"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertNull(ch.action);
 		assertEquals("null", asString(ch.params));
@@ -2203,8 +2203,8 @@ public class RouterTests {
 
 		RouteHandler handler = router.getHandler(request("[GET] /my_account"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertNull(ch.action);
 		assertEquals("null", asString(ch.params));
@@ -2234,8 +2234,8 @@ public class RouterTests {
 
 		RouteHandler handler = router.getHandler(request("[GET] /my_account"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertNull(ch.action);
 		assertEquals("null", asString(ch.params));
@@ -2262,8 +2262,8 @@ public class RouterTests {
 
 		RouteHandler handler = router.getHandler(request("[GET] /account"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertNull(ch.action);
 		assertEquals("null", asString(ch.params));
@@ -2290,8 +2290,8 @@ public class RouterTests {
 
 		RouteHandler handler = router.getHandler(request("[GET] /account"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertNull(ch.action);
 		assertEquals("null", asString(ch.params));
@@ -2332,8 +2332,8 @@ public class RouterTests {
 
 		RouteHandler handler = router.getHandler(request("[GET] /account"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertNull(ch.action);
 		assertEquals("null", asString(ch.params));
@@ -2527,8 +2527,8 @@ public class RouterTests {
 
 		RouteHandler handler = router.getHandler(request("[GET] /test/route/business"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals("[[name, business]]", asString(ch.params));
 	}
@@ -2553,8 +2553,8 @@ public class RouterTests {
 
 		RouteHandler handler = router.getHandler(request("[GET] /my_business"));
 		assertNotNull(handler);
-		assertEquals(ControllerHandler.class, handler.getClass());
-		ControllerHandler ch = (ControllerHandler) handler;
+		assertEquals(HttpHandler.class, handler.getClass());
+		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(AccountController.class, ch.controllerClass);
 		assertEquals("[[types, my_business]]", asString(ch.params));
 	}

@@ -16,31 +16,31 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jboss.netty.handler.codec.http.HttpMethod;
-import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.HttpController;
 import org.oobium.app.routing.Route;
 import org.oobium.app.http.Action;
 import org.oobium.persist.Model;
 
-public class ControllerRoute extends Route {
+public class HttpRoute extends Route {
 
 	public final Class<? extends Model> modelClass;
-	public final Class<? extends Controller> controllerClass;
+	public final Class<? extends HttpController> controllerClass;
 	public final Action action;
 	public final String[][] params;
 	
 	public String realm;
 
 	
-	public ControllerRoute(HttpMethod method, String rule, Controller controller, Action action) {
+	public HttpRoute(HttpMethod method, String rule, HttpController controller, Action action) {
 		this(method, rule, controller, null, controller.getClass(), action);
 	}
 	
-	public ControllerRoute(HttpMethod method, String rule, Class<? extends Model> modelClass, Class<? extends Controller> controllerClass, Action action) {
+	public HttpRoute(HttpMethod method, String rule, Class<? extends Model> modelClass, Class<? extends HttpController> controllerClass, Action action) {
 		this(method, rule, null, modelClass, controllerClass, action);
 	}
 	
-	private ControllerRoute(HttpMethod method, String rule, Controller controller, Class<? extends Model> modelClass, Class<? extends Controller> controllerClass, Action action) {
-		super(Route.CONTROLLER, method, rule);
+	private HttpRoute(HttpMethod method, String rule, HttpController controller, Class<? extends Model> modelClass, Class<? extends HttpController> controllerClass, Action action) {
+		super(Route.HTTP_CONTROLLER, method, rule);
 
 		this.modelClass = modelClass;
 		this.controllerClass = controllerClass;

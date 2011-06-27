@@ -28,7 +28,7 @@ import org.jsoup.select.Elements;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.oobium.app.AppService;
-import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.HttpController;
 import org.oobium.app.http.Action;
 import org.oobium.app.request.Request;
 import org.oobium.app.routing.AppRouter;
@@ -79,7 +79,7 @@ public class ViewTester {
 	public final TestPersistService persistor;
 	private final AtomicInteger persistorSessionCount;
 	
-	public Controller controller;
+	public HttpController controller;
 	private Request request;
 	private Session session;
 
@@ -287,7 +287,7 @@ public class ViewTester {
 			if(params != null) setParams(params);
 			persistor.openSession("test session " + persistorSessionCount.incrementAndGet());
 			Model.setPersistService(persistor);
-			controller = new Controller();
+			controller = new HttpController();
 			controller.initialize(router, request, null);
 			controller.render(view, partial || controller.isXhr());
 			if(partial) {

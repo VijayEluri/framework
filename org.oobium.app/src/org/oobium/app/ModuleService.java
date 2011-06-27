@@ -22,7 +22,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import org.oobium.app.controllers.ActionCache;
-import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.HttpController;
 import org.oobium.app.routing.Router;
 import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
@@ -112,10 +112,10 @@ public abstract class ModuleService implements BundleActivator {
 		return context;
 	}
 	
-	public Class<? extends Controller> getControllerClass(Class<? extends Model> modelClass) {
+	public Class<? extends HttpController> getControllerClass(Class<? extends Model> modelClass) {
 		Config config = loadConfiguration();
 		String controllerName = modelClass.getSimpleName() + "Controller";
-		Class<? extends Controller> controllerClass = getControllerClass(config, controllerName, context.getBundle());
+		Class<? extends HttpController> controllerClass = getControllerClass(config, controllerName, context.getBundle());
 		if(controllerClass != null) {
 			return controllerClass;
 		}
@@ -139,7 +139,7 @@ public abstract class ModuleService implements BundleActivator {
 		return null;
 	}
 
-	private Class<? extends Controller> getControllerClass(Config config, String controllerName, Bundle bundle) {
+	private Class<? extends HttpController> getControllerClass(Config config, String controllerName, Bundle bundle) {
 		String base;
 		int ix = name.lastIndexOf('_');
 		if(ix == -1) {
@@ -150,8 +150,8 @@ public abstract class ModuleService implements BundleActivator {
 		String name = config.getPathToControllers(base).replace('/', '.') + "." + controllerName;
 		try {
 			Class<?> clazz = bundle.loadClass(name);
-			if(Controller.class.isAssignableFrom(clazz)) {
-				return clazz.asSubclass(Controller.class);
+			if(HttpController.class.isAssignableFrom(clazz)) {
+				return clazz.asSubclass(HttpController.class);
 			}
 		} catch(ClassNotFoundException e) {
 			// discard

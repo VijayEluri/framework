@@ -26,7 +26,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.HttpController;
 import org.oobium.build.model.ModelDefinition;
 import org.oobium.build.util.SourceFile;
 import org.oobium.build.workspace.Module;
@@ -67,8 +67,8 @@ public class ControllerGenerator {
 		if(extendAppController) {
 			src.superName = "ApplicationController";
 		} else {
-			src.superName = Controller.class.getSimpleName();
-			src.imports.add(Controller.class.getCanonicalName());
+			src.superName = HttpController.class.getSimpleName();
+			src.imports.add(HttpController.class.getCanonicalName());
 		}
 		src.imports.add(SQLException.class.getCanonicalName());
 		
@@ -186,8 +186,8 @@ public class ControllerGenerator {
 		if(extendAppController) {
 			src.superName = "ApplicationController";
 		} else {
-			src.superName = Controller.class.getSimpleName();
-			src.imports.add(Controller.class.getCanonicalName());
+			src.superName = HttpController.class.getSimpleName();
+			src.imports.add(HttpController.class.getCanonicalName());
 		}
 		src.imports.add(SQLException.class.getCanonicalName());
 

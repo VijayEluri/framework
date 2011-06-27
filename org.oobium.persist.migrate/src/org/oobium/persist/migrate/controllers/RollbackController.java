@@ -2,10 +2,10 @@ package org.oobium.persist.migrate.controllers;
 
 import java.sql.SQLException;
 
-import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.HttpController;
 import org.oobium.persist.migrate.MigratorService;
 
-public class RollbackController extends Controller {
+public class RollbackController extends HttpController {
 
 	public void handleRequest() throws SQLException {
 		if(hasParam("log")) {

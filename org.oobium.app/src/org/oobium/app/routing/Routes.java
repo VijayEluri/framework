@@ -19,7 +19,7 @@ import static org.oobium.utils.StringUtils.*;
 
 import java.util.List;
 
-import org.oobium.app.routing.routes.ControllerRoute;
+import org.oobium.app.routing.routes.HttpRoute;
 import org.oobium.app.http.Action;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
@@ -127,7 +127,7 @@ public class Routes {
 		
 		for(Action action : actions) {
 			String key = router.getKey(parentClass, field, action);
-			ControllerRoute route = null;
+			HttpRoute route = null;
 			switch(action) {
 			case create:
 				route = router.addRoute(key, rule, parentClass, field, hasManyClass, action);
@@ -172,7 +172,7 @@ public class Routes {
 		return this;
 	}
 
-	private void updateParams(ControllerRoute route, String parentIdParam, String hasManyParam) {
+	private void updateParams(HttpRoute route, String parentIdParam, String hasManyParam) {
 		if(hasManyParam != null) {
 			for(int i = 0; i < route.params.length; i++) {
 				if(route.params[i][0].equals(parentIdParam)) {

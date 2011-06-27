@@ -14,7 +14,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
-import org.oobium.app.controllers.Controller;
+import org.oobium.app.controllers.HttpController;
 import org.oobium.app.dev.views.persist_services.ShowAllPersistServices;
 import org.oobium.app.dev.views.persist_services.ShowPersistService;
 import org.oobium.app.dev.views.persist_services.ShowQueryResults;
@@ -24,7 +24,7 @@ import org.oobium.persist.Model;
 import org.oobium.persist.PersistService;
 import org.oobium.utils.SqlUtils;
 
-public class PersistServicesController extends Controller {
+public class PersistServicesController extends HttpController {
 
 	@Override
 	public void showAll() throws SQLException {

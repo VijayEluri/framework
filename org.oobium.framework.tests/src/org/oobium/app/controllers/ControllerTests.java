@@ -1,6 +1,6 @@
 package org.oobium.app.controllers;
 
-import static org.oobium.app.controllers.Controller.*;
+import static org.oobium.app.controllers.HttpController.*;
 import static org.junit.Assert.*;
 
 import java.util.HashMap;
