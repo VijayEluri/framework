@@ -30,7 +30,7 @@
    <extension
          point="org.eclipse.ui.newWizards">
       <category
-            id="org.oobium.builder"
+            id="org.oobium.newWizards"
             name="Oobium">
       </category>
       <wizard
