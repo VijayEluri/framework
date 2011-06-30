@@ -64,6 +64,23 @@ public class Application extends Module {
 	public int getPort(Mode mode) {
 		return loadConfiguration().getPort(mode);
 	}
+
+	public Site getSite() {
+		return getSite(Mode.DEV);
+	}
+	
+	public Site getSite(Mode mode) {
+		if(hasSite()) {
+			Site site = new Site(this);
+			site.setMode(mode);
+			return site;
+		}
+		return null;
+	}
+	
+	public boolean hasSite() {
+		return site != null && site.isFile();
+	}
 	
 	public String name() {
 		return name;

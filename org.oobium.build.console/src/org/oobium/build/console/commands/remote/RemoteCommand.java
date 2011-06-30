@@ -31,7 +31,7 @@ public class RemoteCommand extends BuilderCommand {
 	protected RemoteConfig getRemoteConfig(Application app, Mode mode) {
 		RemoteConfig remoteConfig = new RemoteConfig();
 		
-		if(app.site != null && app.site.isFile()) {
+		if(app.hasSite()) {
 			Config config = Config.loadConfiguration(app.site, mode);
 			remoteConfig.host = config.getString("host");
 			remoteConfig.dir = config.getString("path");
