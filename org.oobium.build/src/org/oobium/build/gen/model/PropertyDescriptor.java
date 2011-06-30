@@ -53,7 +53,7 @@ public class PropertyDescriptor {
 	private String relatedType;
 
 	public PropertyDescriptor(ModelAttribute attribute) {
-		this(attribute.model.getSimpleType(), attribute.getJavaType(), attribute.name);
+		this(attribute.model.getSimpleName(), attribute.getJavaType(), attribute.name);
 
 		rawType = attribute.type;
 		
@@ -73,7 +73,7 @@ public class PropertyDescriptor {
 	}
 
 	public PropertyDescriptor(ModelRelation relation) {
-		this(relation.model.getSimpleType(), relation.type, relation.name);
+		this(relation.model.getSimpleName(), relation.type, relation.name);
 
 		init = null;
 		

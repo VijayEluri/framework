@@ -144,7 +144,7 @@ public class DbGenerator {
 		Set<ModelTable> joinedModels = new HashSet<ModelTable>();
 		
 		for(ModelDefinition model : models) {
-			tables.put(model.getSimpleType(), new ModelTable(sf, model, models));
+			tables.put(model.getSimpleName(), new ModelTable(sf, model, models));
 		}
 		
 		for(ModelDefinition model : models) {
@@ -152,7 +152,7 @@ public class DbGenerator {
 				if(relation.hasMany && !relation.isThrough()) {
 					ModelRelation opposite = relation.getOpposite();
 					if(opposite == null || opposite.hasMany) {
-						ModelTable table1 = tables.get(model.getSimpleType());
+						ModelTable table1 = tables.get(model.getSimpleName());
 						ModelTable table2 = tables.get(relation.getSimpleType());
 						JoinTable joinTable = new JoinTable(table1.name, columnName(relation.name), table2.name, columnName(relation.opposite));
 						if(!joins.containsKey(joinTable.name)) {

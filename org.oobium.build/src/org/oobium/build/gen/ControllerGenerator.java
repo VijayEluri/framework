@@ -96,7 +96,7 @@ public class ControllerGenerator {
 		this.model = model;
 		extendAppController = module.getController("ApplicationController").isFile();
 		withViews = !module.hasNature(Module.NATURE_WEBSERVICE);
-		mType = model.getSimpleType();
+		mType = model.getSimpleName();
 		mTypePlural = plural(mType);
 		varName = varName(mType);
 		varNamePlural = varName(mType, true);

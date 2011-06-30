@@ -110,7 +110,7 @@ public class ModelGenerator {
 	}
 	
 	private static void createOverrideMethods(SourceFile src, ModelDefinition model) {
-		String type = model.getSimpleType();
+		String type = model.getSimpleName();
 		
 		src.methods.put("put(String field, Object value)", 	build(type, "put(String field, Object value)", "put(field, value)"));
 		src.methods.put("putAll(JsonModel model)", 			build(type, "putAll(JsonModel model)", "putAll(model)"));
@@ -281,7 +281,7 @@ public class ModelGenerator {
 			src.imports.add(di);
 		}
 		
-		src.simpleName = model.getSimpleType() + "Model";
+		src.simpleName = model.getSimpleName() + "Model";
 		src.packageName = model.getPackageName();
 		src.superName = Model.class.getSimpleName();
 		src.isAbstract = true;
@@ -316,7 +316,7 @@ public class ModelGenerator {
 
 		createOverrideMethods(src, model);
 		
-		src.staticMethods.put("finders", createStaticMethods(model.getSimpleType()));
+		src.staticMethods.put("finders", createStaticMethods(model.getSimpleName()));
 		
 		for(Iterator<String> iter = src.imports.iterator(); iter.hasNext(); ) {
 			if(model.getCanonicalName().equals(iter.next())) {
@@ -331,7 +331,7 @@ public class ModelGenerator {
 		for(ModelDefinition model : models) {
 			String src = ControllerGenerator.generate(module, model);
 
-			File controller = module.getController(model.getSimpleType());
+			File controller = module.getController(model.getSimpleName());
 			files.add(writeFile(controller, src));
 		}
 	}
@@ -351,7 +351,7 @@ public class ModelGenerator {
 	
 	private void generateViewFiles(Module module, ModelDefinition[] models) {
 		for(ModelDefinition model : models) {
-			String name = model.getSimpleType();
+			String name = model.getSimpleName();
 			String plur = plural(name);
 			File folder = module.getViewsFolder(name);
 			
@@ -389,13 +389,13 @@ public class ModelGenerator {
 
 	private void modifySrcFile(ModelDefinition model) {
 		StringBuilder sb = readFile(model.file);
-		String s = "class " + model.getSimpleType();
+		String s = "class " + model.getSimpleName();
 		int start = sb.indexOf(s) + s.length();
 		int end = sb.indexOf("implements", start);
 		if(end == -1) {
 			end = sb.indexOf("{", start);
 		}
-		String superStr = " " + model.getSimpleType() + "Model ";
+		String superStr = " " + model.getSimpleName() + "Model ";
 		s = sb.toString().substring(start, end);
 		if(!s.contains(superStr)) {
 			sb.replace(start, end, " extends" + superStr);

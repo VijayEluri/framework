@@ -44,7 +44,7 @@ public class ModelTable {
 	public ModelTable(SourceFile sf, ModelDefinition model, ModelDefinition[] models) {
 		this.sf = sf;
 		
-		name = tableName(model.getSimpleType());
+		name = tableName(model.getSimpleName());
 		columns = new ArrayList<Column>();
 		foreignKeys = new ArrayList<ForeignKey>();
 		indexes = new ArrayList<Index>();

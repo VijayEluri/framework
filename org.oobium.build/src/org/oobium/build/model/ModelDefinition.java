@@ -317,7 +317,7 @@ public class ModelDefinition {
 		return (file != null) ? file.getParentFile().list() : new String[0];
 	}
 	
-	public String getSimpleType() {
+	public String getSimpleName() {
 		return simpleName(type);
 	}
 

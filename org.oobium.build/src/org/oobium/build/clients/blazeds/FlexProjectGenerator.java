@@ -59,7 +59,7 @@ public class FlexProjectGenerator {
 		as.imports.add("mx.rpc.events.ResultEvent");
 		as.imports.add("mx.rpc.events.FaultEvent");
 		as.classMetaTags.add("RemoteClass(alias=\"" + model.getCanonicalName() + "\")");
-		as.simpleName = model.getSimpleType();
+		as.simpleName = model.getSimpleName();
 		
 		as.staticVariables.put("ro", "public static const ro:Object = createRemoteObject()");
 		

@@ -55,7 +55,7 @@ public class ViewGenerator {
 		properties = model.getProperties();
 
 		mPkg = model.getPackageName();
-		mType = model.getSimpleType();
+		mType = model.getSimpleName();
 		mVar = varName(mType);
 		mVarPlural = varName(mType, true);
 	}

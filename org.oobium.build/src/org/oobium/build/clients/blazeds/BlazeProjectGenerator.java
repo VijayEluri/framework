@@ -128,7 +128,7 @@ public class BlazeProjectGenerator {
 	}
 	
 	private void createController(File srcFolder, ModelDefinition model) {
-		String mType = model.getSimpleType();
+		String mType = model.getSimpleName();
 		String mVar = varName(mType);
 
 		SourceFile sf = new SourceFile();
@@ -187,7 +187,7 @@ public class BlazeProjectGenerator {
 	private void createModel(File srcFolder, ModelDefinition model) throws IOException {
 		SourceFile sf = new SourceFile();
 		sf.packageName = model.getPackageName();
-		sf.simpleName = model.getSimpleType();
+		sf.simpleName = model.getSimpleName();
 		sf.superName = sf.simpleName + "Model";
 
 		sf.variables.put("", "public int id");
