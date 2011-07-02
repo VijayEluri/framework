@@ -44,19 +44,40 @@ public class Observer<T extends Model> {
 	 */
 	protected synchronized static boolean addObserver(Observer<? extends Model> observer) {
 		List<Observer<? extends Model>> observers = observerMap.get(observer.modelClass);
+		
 		if(observers == null) {
 			observers = new ArrayList<Observer<? extends Model>>();
 			observerMap.put(observer.modelClass, observers);
+
+			// add the socket listener if RemotePersistService and first time adding this modelClass
+			PersistService service = Model.getPersistService(observer.modelClass);
+			if(service instanceof RemotePersistService) {
+				try {
+					((RemotePersistService) service).addSocketListener();
+				} catch(Exception e) { // catch all, or just IllegalArgumentException?
+					slogger.warn("could not add socket listener to remote persist service: " + e.getClass() + ": " + e.getLocalizedMessage());
+				}
+			}
 		}
 
-		if(!observers.contains(observer)) {
-			observers.add(observer);
+		if(observers.add(observer)) {
 			if(slogger.isLoggingInfo()) {
 				slogger.info("added observer (" + observer.getClass().getSimpleName() + ", " + observer.modelClass.getSimpleName() + ")");
 			}
 			return true;
 		}
 		return false;
+	}
+	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private static Class<? extends Model> findModelClass(Class<? extends Observer> clazz) {
+		Type type = clazz.getGenericSuperclass();
+		if(type instanceof ParameterizedType) {
+			ParameterizedType pt = (ParameterizedType) type;
+			return (Class<? extends Model>) pt.getActualTypeArguments()[0];
+		} else {
+			throw new IllegalArgumentException("Observer class must be parameterized");
+		}
 	}
 	
 	synchronized static void removeObservers(Class<?> clazz) {
@@ -67,6 +88,7 @@ public class Observer<T extends Model> {
 					slogger.info("removed observer (" + observer.getClass().getSimpleName() + ", " + clazz.getSimpleName() + ")");
 				}
 			}
+			removeSocketListener(clazz.asSubclass(Model.class));
 		} else if(Observer.class.isAssignableFrom(clazz)) {
 			for(Iterator<List<Observer<?>>> observersIter = observerMap.values().iterator(); observersIter.hasNext(); ) {
 				List<Observer<?>> observers = observersIter.next();
@@ -81,6 +103,7 @@ public class Observer<T extends Model> {
 				}
 				if(observers.isEmpty()) {
 					observersIter.remove();
+					removeSocketListener(findModelClass(clazz.asSubclass(Observer.class)));
 				}
 			}
 		}
@@ -92,9 +115,21 @@ public class Observer<T extends Model> {
 			observers.remove(observer);
 			if(observers.isEmpty()) {
 				observerMap.remove(observer.modelClass);
+				removeSocketListener(observer.modelClass);
 			}
 			if(slogger.isLoggingInfo()) {
 				slogger.info("removed observer (" + observer.getClass().getSimpleName() + ", " + observer.modelClass.getSimpleName() + ")");
+			}
+		}
+	}
+	
+	private static void removeSocketListener(Class<? extends Model> modelClass) {
+		PersistService service = Model.getPersistService(modelClass);
+		if(service instanceof RemotePersistService) {
+			try {
+				((RemotePersistService) service).removeSocketListener();
+			} catch(Exception e) { // catch all, or just IllegalArgumentException?
+				slogger.warn("could not add socket listener to remote persist service: " + e.getClass() + ": " + e.getLocalizedMessage());
 			}
 		}
 	}
@@ -219,7 +254,7 @@ public class Observer<T extends Model> {
 	protected final Class<? extends Model> modelClass;
 
 	public Observer() {
-		modelClass = findModelClass();
+		modelClass = findModelClass(getClass());
 	}
 
 	protected void afterCreate(T model) {
@@ -311,17 +346,6 @@ public class Observer<T extends Model> {
 		// subclasses to implement if necessary
 	}
 
-	@SuppressWarnings("unchecked")
-	private Class<? extends Model> findModelClass() {
-		Type type = getClass().getGenericSuperclass();
-		if(type instanceof ParameterizedType) {
-			ParameterizedType pt = (ParameterizedType) type;
-			return (Class<? extends Model>) pt.getActualTypeArguments()[0];
-		} else {
-			throw new IllegalArgumentException("Observer class must be parameterized");
-		}
-	}
-	
 	public Class<? extends Model> getModelClass() {
 		return modelClass;
 	}

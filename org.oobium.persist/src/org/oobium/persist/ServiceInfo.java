@@ -48,6 +48,4 @@ public interface ServiceInfo {
 	 */
 	public abstract String getVersion();
 	
-	public abstract boolean isRemote();
-	
 }

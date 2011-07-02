@@ -398,7 +398,7 @@ public abstract class Model implements JsonModel {
 							destroyed = id;
 							id = 0;
 							fields.clear();
-							if(!service.getInfo().isRemote()) {
+							if(!(service instanceof RemotePersistService)) {
 								Observer.runAfterDestroy(this);
 							}
 						} catch(SQLException e) {
@@ -481,7 +481,7 @@ public abstract class Model implements JsonModel {
 				PersistService service = getPersistor();
 				service.create(this);
 				saved = true;
-				if(!service.getInfo().isRemote()) {
+				if(!(service instanceof RemotePersistService)) {
 					Observer.runAfterCreate(this);
 				}
 			} catch(SQLException e) {
@@ -502,7 +502,7 @@ public abstract class Model implements JsonModel {
 					PersistService service = getPersistor();
 					service.update(this);
 					saved = true;
-					if(!service.getInfo().isRemote()) {
+					if(!(service instanceof RemotePersistService)) {
 						Observer.runAfterUpdate(this);
 					}
 				} catch(SQLException e) {

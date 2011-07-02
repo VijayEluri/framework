@@ -17,8 +17,6 @@ import static org.oobium.utils.json.JsonUtils.toList;
 import static org.oobium.utils.json.JsonUtils.toObject;
 import static org.oobium.utils.literal.Map;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -36,7 +34,6 @@ import org.oobium.client.websockets.WebsocketListener;
 import org.oobium.client.websockets.Websockets;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
-import org.oobium.persist.Observer;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.RemotePersistService;
 import org.oobium.persist.ServiceInfo;
@@ -45,6 +42,7 @@ import org.oobium.persist.http.HttpApiService.Route;
 public class HttpPersistService extends RemotePersistService implements PersistService {
 
 	private final HttpApiService api;
+	private Websocket socket;
 	private WebsocketListener socketListener;
 
 	public HttpPersistService() {
@@ -65,25 +63,16 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 		}
 	}
 
-	private Model getModel(String text) {
-		String[] sa = text.split(":", 2);
-		if(sa.length == 2) {
-			try {
-				Class<?> clazz = Class.forName(sa[0]);
-				int id = Integer.parseInt(sa[1]);
-				return (Model) coerce(id, clazz);
-			} catch(Exception e) {
-				// TODO log error
-			}
+	public synchronized void addSocketListener() {
+		if(socket != null) {
+			return; // don't add twice, but do allow calling twice
 		}
-		return null;
-	}
-	
-	public void addSocketListener() {
+		
 		String url = api.getModelNotificationUrl();
 		if(url == null) {
-			throw new RuntimeException("no published model notification route found");
+			throw new IllegalArgumentException("no published model notification route found");
 		}
+		
 		socketListener = new WebsocketListener() {
 			@Override
 			public void onMessage(Websocket websocket, WebSocketFrame frame) {
@@ -141,7 +130,7 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 				// TODO log
 			}
 		};
-		Websockets.connect(url, socketListener);
+		socket = Websockets.connect(url, socketListener);
 	}
 	
 	@Override
@@ -439,11 +428,21 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 			public String getMigrationService() {
 				return null;
 			}
-			@Override
-			public boolean isRemote() {
-				return true;
-			}
 		};
+	}
+	
+	private Model getModel(String text) {
+		String[] sa = text.split(":", 2);
+		if(sa.length == 2) {
+			try {
+				Class<?> clazz = Class.forName(sa[0]);
+				int id = Integer.parseInt(sa[1]);
+				return (Model) coerce(id, clazz);
+			} catch(Exception e) {
+				// TODO log error
+			}
+		}
+		return null;
 	}
 	
 	private Map<String, String> getParams(Model model) {
@@ -472,6 +471,14 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 		expireCache();
 	}
 
+	public synchronized void removeSocketListener() {
+		if(socket != null) {
+			socket.disconnect();
+			socket = null;
+			socketListener = null;
+		}
+	}
+	
 	// always run the query (this is a reload request), but update the cache with the result
 	private void retrieve(Model model) throws SQLException{
 		if(model == null) {

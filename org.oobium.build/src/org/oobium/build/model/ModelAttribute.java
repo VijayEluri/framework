@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.oobium.build.model;
 
+import static org.oobium.utils.StringUtils.simpleName;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.build.model.ModelDefinition.*;
 
@@ -85,6 +86,10 @@ public class ModelAttribute {
 			return "byte[]";
 		}
 		return type;
+	}
+
+	public String getSimpleType() {
+		return simpleName(type);
 	}
 
 	public boolean isPrimitive() {

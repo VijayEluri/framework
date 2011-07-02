@@ -4,6 +4,8 @@ package org.oobium.persist;
 
 public abstract class RemotePersistService implements PersistService {
 
+	protected abstract void addSocketListener();
+	
 	protected void notifyCreate(Model model) {
 		Observer.runAfterCreate(model);
 	}
@@ -17,5 +19,7 @@ public abstract class RemotePersistService implements PersistService {
 		model.destroyed = id;
 		Observer.runAfterDestroy(model);
 	}
+
+	protected abstract void removeSocketListener();
 
 }
