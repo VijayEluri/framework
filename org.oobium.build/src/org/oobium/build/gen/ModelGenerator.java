@@ -269,7 +269,7 @@ public class ModelGenerator {
 	private String generate(String classAnnotations, ModelDefinition model) {
 		SourceFile src = new SourceFile();
 
-		src.classAnnotations.put(0, model.description);
+		src.classAnnotations.put(0, model.getDescription());
 		src.imports.add(ModelDescription.class.getCanonicalName());
 		if(model.hasAttributes()) {
 			src.imports.add(Attribute.class.getCanonicalName());
@@ -277,7 +277,7 @@ public class ModelGenerator {
 		if(model.hasRelations()) {
 			src.imports.add(Relation.class.getCanonicalName());
 		}
-		for(String di : model.descriptionImports) {
+		for(String di : model.getDescriptionImports()) {
 			src.imports.add(di);
 		}
 		
@@ -291,7 +291,7 @@ public class ModelGenerator {
 			src.properties.put(attribute.name, new PropertyDescriptor(attribute));
 		}
 
-		for(ModelRelation relation : model.relations.values()) {
+		for(ModelRelation relation : model.getRelations()) {
 			src.properties.put(relation.name, new PropertyDescriptor(relation));
 		}
 
@@ -339,8 +339,8 @@ public class ModelGenerator {
 	private void generateModelFiles(Module module, ModelDefinition[] models) {
 		for(ModelDefinition model : models) {
 			try {
-				File genFile = module.getGenModel(model.file);
-				String annotations = getSrcAnnotations(model.file);
+				File genFile = module.getGenModel(model.getFile());
+				String annotations = getSrcAnnotations(model.getFile());
 				String src = generate(annotations, model);
 				files.add(writeFile(genFile, src));
 			} catch(IOException e) {
@@ -369,26 +369,12 @@ public class ModelGenerator {
 		return files.toArray(new File[files.size()]);
 	}
 	
-	private ModelDefinition[] getModelDefinitions(File[] models) {
-		ModelDefinition[] defs = new ModelDefinition[models.length];
-
-		for(int i = 0; i < defs.length; i++) {
-			defs[i] = new ModelDefinition(models[i]);
-		}
-		
-		for(ModelDefinition def : defs) {
-			def.setOpposites(defs);
-		}
-		
-		return defs;
-	}
-	
 	public Workspace getWorkspace() {
 		return workspace;
 	}
 
 	private void modifySrcFile(ModelDefinition model) {
-		StringBuilder sb = readFile(model.file);
+		StringBuilder sb = readFile(model.getFile());
 		String s = "class " + model.getSimpleName();
 		int start = sb.indexOf(s) + s.length();
 		int end = sb.indexOf("implements", start);
@@ -399,7 +385,7 @@ public class ModelGenerator {
 		s = sb.toString().substring(start, end);
 		if(!s.contains(superStr)) {
 			sb.replace(start, end, " extends" + superStr);
-			files.add(writeFile(model.file, sb.toString()));
+			files.add(writeFile(model.getFile(), sb.toString()));
 		}
 	}
 	
@@ -410,7 +396,7 @@ public class ModelGenerator {
 	}
 
 	private void process(File[] models) {
-		ModelDefinition[] defs = getModelDefinitions(models);
+		ModelDefinition[] defs = ModelDefinition.getModelDefinitions(models);
 		
 		if((action & GEN_MODELS) != 0) {
 			generateModelFiles(module, defs);

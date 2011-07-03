@@ -16,6 +16,7 @@ import static org.oobium.build.model.ModelDefinition.*;
 
 import java.util.Map;
 
+import org.oobium.persist.Attribute;
 import org.oobium.persist.Binary;
 import org.oobium.persist.Text;
 
@@ -94,6 +95,16 @@ public class ModelAttribute {
 
 	public boolean isPrimitive() {
 		return (type.indexOf('.') == -1) && !type.endsWith("[]");
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append('@').append(Attribute.class.getSimpleName()).append('(');
+		sb.append("name=\"").append(name).append("\"");
+		sb.append(", type=").append(getSimpleType()).append(".class");
+		sb.append(')');
+		return sb.toString();
 	}
 	
 }

@@ -71,7 +71,7 @@ public class ModelTable {
 			columns.add(new Column(null, TIMESTAMPS));
 		}
 		
-		for(ModelRelation relation : model.relations.values()) {
+		for(ModelRelation relation : model.getRelations()) {
 			if(!relation.hasMany && !relation.isThrough()) {
 				addRelation(relation);
 			}

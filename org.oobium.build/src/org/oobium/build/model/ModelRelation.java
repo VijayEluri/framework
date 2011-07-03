@@ -10,10 +10,11 @@
  ******************************************************************************/
 package org.oobium.build.model;
 
-import static org.oobium.utils.StringUtils.*;
-import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.build.model.ModelDefinition.getJavaEntries;
 import static org.oobium.build.model.ModelDefinition.getString;
+import static org.oobium.utils.StringUtils.blank;
+import static org.oobium.utils.StringUtils.simpleName;
+import static org.oobium.utils.coercion.TypeCoercer.coerce;
 
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -112,13 +113,23 @@ public class ModelRelation {
 		if(hasOpposite() && oppositeRelation == null) {
 			for(ModelDefinition model : models) {
 				if(type.equals(model.getCanonicalName())) {
-					oppositeRelation = model.relations.get(opposite);
+					oppositeRelation = model.getRelation(opposite);
 					if(oppositeRelation != null) {
 						oppositeRelation.oppositeRelation = this;
 					}
 				}
 			}
 		}
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append('@').append(Relation.class.getSimpleName()).append('(');
+		sb.append("name=\"").append(name).append("\"");
+		sb.append(", type=").append(getSimpleType()).append(".class");
+		sb.append(')');
+		return sb.toString();
 	}
 
 }

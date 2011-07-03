@@ -15,12 +15,15 @@ import static org.oobium.utils.CharStreamUtils.find;
 import static org.oobium.utils.CharStreamUtils.findAll;
 import static org.oobium.utils.CharStreamUtils.findEOL;
 import static org.oobium.utils.FileUtils.readFile;
+import static org.oobium.utils.FileUtils.writeFile;
 import static org.oobium.utils.StringUtils.controllerSimpleName;
 import static org.oobium.utils.StringUtils.simpleName;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +51,24 @@ public class ModelDefinition {
 		primitives.add("double");
 		primitives.add("boolean");
 		primitives.add("char");
+	}
+	
+	public static ModelDefinition[] getModelDefinitions(Collection<File> models) {
+		return getModelDefinitions(models.toArray(new File[models.size()]));
+	}
+	
+	public static ModelDefinition[] getModelDefinitions(File[] models) {
+		ModelDefinition[] defs = new ModelDefinition[models.length];
+
+		for(int i = 0; i < defs.length; i++) {
+			defs[i] = new ModelDefinition(models[i]);
+		}
+		
+		for(ModelDefinition def : defs) {
+			def.setOpposites(defs);
+		}
+		
+		return defs;
 	}
 	
 	public static List<String> getJavaArguments(char[] ca, int start, int end) {
@@ -201,31 +222,37 @@ public class ModelDefinition {
 		return in;
 	}
 
-	public final File file; // TODO this file object will not work when we need to deal with jars...
-	private final String source;
-	public final String description;
-	public final List<String> descriptionImports;
+	
+	private final File file; // TODO this file object will not work when we need to deal with jars...
+	private String source;
+	private int mdstart;
+	private int mdend;
 
 	public final String packageName;
 	public final String type;
 	public final Map<String, ModelAttribute> attributes;
-	public final Map<String, ModelRelation> relations;
+	public final Map<String, ModelRelation> hasOne;
+	public final Map<String, ModelRelation> hasMany;
 	public final List<String> indexes;
-	public final boolean datestamps;
-	public final boolean timestamps;
+	public boolean datestamps;
+	public boolean timestamps;
 
 	public String[] siblings;
 
 	public ModelDefinition(File file) {
-		this(file.getName(), readFile(file).toString(), file, null);
+		this(file.getName(), null, file, null);
 	}
 
 	public ModelDefinition(String simpleName, String source, String[] siblings) {
 		this(simpleName, source, null, siblings);
 	}
 
-	public ModelDefinition(String simpleName, String source, File file, String[] siblings) {
-		this.source = source;
+	private ModelDefinition(String simpleName, String source, File file, String[] siblings) {
+		if(file == null) {
+			this.source = source;
+		} else {
+			this.source = readFile(file).toString();
+		}
 
 		this.packageName = parsePackageName();
 		this.type = parseType(simpleName);
@@ -234,37 +261,67 @@ public class ModelDefinition {
 		this.siblings = siblings;
 		
 		this.attributes = new LinkedHashMap<String, ModelAttribute>();
-		this.relations = new LinkedHashMap<String, ModelRelation>();
+		this.hasOne = new LinkedHashMap<String, ModelRelation>();
+		this.hasMany = new LinkedHashMap<String, ModelRelation>();
 		this.indexes = new ArrayList<String>();
 
-		description = parse();
-		descriptionImports = getDescriptionImports();
+		parse();
 		
-		this.datestamps = attributes.containsKey("datestamps");
-		this.timestamps = attributes.containsKey("timestamps");
+		datestamps = attributes.containsKey("datestamps");
+		timestamps = attributes.containsKey("timestamps");
+	}
+
+	public void load() {
+		attributes.clear();
+		hasOne.clear();
+		hasMany.clear();
+		indexes.clear();
+
+		if(file != null) {
+			source = readFile(file).toString();
+		}
+		
+		parse();
+		
+		datestamps = attributes.containsKey("datestamps");
+		timestamps = attributes.containsKey("timestamps");
+	}
+	
+	public void save() {
+		if(file != null && mdstart != -1) {
+			source = readFile(file).replace(mdstart, mdend, getDescription()).toString();
+			writeFile(file, source);
+		}
 	}
 	
 	public File getFile() {
 		return file;
 	}
 	
-	private List<String> getDescriptionImports() {
-		List<String> di = new ArrayList<String>();
+	public List<String> getDescriptionImports() {
+		List<String> imports = new ArrayList<String>();
 		for(ModelAttribute attr : attributes.values()) {
 			Pattern p = Pattern.compile("import\\s+" + attr.type + "\\s*;");
 			Matcher m = p.matcher(source);
 			if(m.find()) {
-				di.add(attr.type);
+				imports.add(attr.type);
 			}
 		}
-		for(ModelRelation r : relations.values()) {
+		for(ModelRelation r : hasOne.values()) {
 			Pattern p = Pattern.compile("import\\s+" + r.type + "\\s*;");
 			Matcher m = p.matcher(source);
 			if(m.find()) {
-				di.add(r.type);
+				imports.add(r.type);
 			}
 		}
-		return di;
+		for(ModelRelation r : hasMany.values()) {
+			Pattern p = Pattern.compile("import\\s+" + r.type + "\\s*;");
+			Matcher m = p.matcher(source);
+			if(m.find()) {
+				imports.add(r.type);
+			}
+		}
+		return imports;
 	}
 
 	public String getCanonicalName() {
@@ -292,7 +349,10 @@ public class ModelDefinition {
 		for(Entry<String, ModelAttribute> entry : attributes.entrySet()) {
 			properties.put(entry.getKey(), new PropertyDescriptor(entry.getValue()));
 		}
-		for(Entry<String, ModelRelation> entry : relations.entrySet()) {
+		for(Entry<String, ModelRelation> entry : hasOne.entrySet()) {
+			properties.put(entry.getKey(), new PropertyDescriptor(entry.getValue()));
+		}
+		for(Entry<String, ModelRelation> entry : hasMany.entrySet()) {
 			properties.put(entry.getKey(), new PropertyDescriptor(entry.getValue()));
 		}
 		if(properties.containsKey("createdAt")) {
@@ -372,15 +432,25 @@ public class ModelDefinition {
 	}
 	
 	public boolean hasAttributes() {
-		return attributes != null && !attributes.isEmpty();
+		return !attributes.isEmpty();
 	}
 
-	public boolean hasRelations() {
-		return relations != null && !relations.isEmpty();
+	public boolean hasOne() {
+		return !hasOne.isEmpty();
 	}
 	
-	private String parse() {
-		String md = null;
+	public boolean hasMany() {
+		return !hasMany.isEmpty();
+	}
+	
+	public boolean hasRelations() {
+		return !hasOne.isEmpty() || !hasMany.isEmpty();
+	}
+	
+	private void parse() {
+		mdstart = -1;
+		mdend = -1;
+		
 		char[] ca = source.toCharArray();
 		
 		int s0 = findAll(ca, 0, MODEL_DESCRIPTION);
@@ -389,7 +459,8 @@ public class ModelDefinition {
 			if(s1 != -1) {
 				int s2 = closer(ca, s1);
 				if(s2 != -1) {
-					md = source.substring(s0, s2+1);
+					mdstart = s0;
+					mdend = s2+1;
 					parseDescription(ca, s1+1, s2);
 					s1 = findAll(ca, 0, INDEXES);
 					if(s1 != -1) {
@@ -404,8 +475,6 @@ public class ModelDefinition {
 				}
 			}
 		}
-		
-		return md;
 	}
 	
 	private void parseAttrs(String attrs) {
@@ -465,7 +534,11 @@ public class ModelDefinition {
 		char[] ca = relation.toCharArray();
 		for(String arg : getJavaArguments(ca, 1, ca.length-1)) {
 			ModelRelation rel = new ModelRelation(this, arg, hasMany);
-			relations.put(rel.name, rel);
+			if(hasMany) {
+				this.hasMany.put(rel.name, rel);
+			} else {
+				this.hasOne.put(rel.name, rel);
+			}
 		}
 	}
 
@@ -480,16 +553,102 @@ public class ModelDefinition {
 		return name;
 	}
 
-	public Map<String, ModelRelation> relations() {
+	public ModelRelation getRelation(String field) {
+		ModelRelation r = hasOne.get(field);
+		if(r == null) {
+			r = hasMany.get(field);
+		}
+		return r;
+	}
+	
+	public List<ModelRelation> getRelations() {
+		List<ModelRelation> relations = new ArrayList<ModelRelation>();
+		relations.addAll(hasOne.values());
+		relations.addAll(hasMany.values());
 		return relations;
 	}
 
 	public void setOpposites(ModelDefinition[] models) {
-		for(ModelRelation relation : relations.values()) {
+		for(ModelRelation relation : hasOne.values()) {
+			relation.setOpposite(models);
+		}
+		for(ModelRelation relation : hasMany.values()) {
 			relation.setOpposite(models);
 		}
 	}
 	
+	public String getDescription() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("@ModelDescription(");
+		boolean first = true;
+		if(!attributes.isEmpty()) {
+			if(first) {
+				first = false;
+				sb.append("\n");
+			}
+			sb.append("\tattrs = {\n");
+			for(Iterator<ModelAttribute> iter = attributes.values().iterator(); iter.hasNext(); ) {
+				sb.append("\t\t").append(iter.next());
+				if(iter.hasNext()) sb.append(',');
+				sb.append('\n');
+			}
+			sb.append("\t}");
+		}
+		if(!hasOne.isEmpty()) {
+			if(first) {
+				first = false;
+				sb.append("\n");
+			} else {
+				sb.append(",\n");
+			}
+			sb.append("\thasOne = {\n");
+			for(Iterator<ModelRelation> iter = hasOne.values().iterator(); iter.hasNext(); ) {
+				sb.append("\t\t").append(iter.next());
+				if(iter.hasNext()) sb.append(',');
+				sb.append('\n');
+			}
+			sb.append("\t}");
+		}
+		if(!hasMany.isEmpty()) {
+			if(first) {
+				first = false;
+				sb.append("\n");
+			} else {
+				sb.append(",\n");
+			}
+			sb.append("\thasMany = {\n");
+			for(Iterator<ModelRelation> iter = hasMany.values().iterator(); iter.hasNext(); ) {
+				sb.append("\t\t").append(iter.next());
+				if(iter.hasNext()) sb.append(',');
+				sb.append('\n');
+			}
+			sb.append("\t}");
+		}
+		if(datestamps) {
+			if(first) {
+				first = false;
+				sb.append("\n");
+			} else {
+				sb.append(",\n");
+			}
+			sb.append("\tdatestamps = true");
+		}
+		if(timestamps) {
+			if(first) {
+				first = false;
+				sb.append("\n");
+			} else {
+				sb.append(",\n");
+			}
+			sb.append("\ttimestamps = true");
+		}
+		if(!first) {
+			sb.append('\n');
+		}
+		sb.append(')');
+		return sb.toString();
+	}
+
 	@Override
 	public String toString() {
 		return type + " => {" + "}";
