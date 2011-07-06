@@ -12,6 +12,8 @@ package org.oobium.build.util;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TreeMap;
@@ -128,6 +130,110 @@ public class SourceFile {
 		}
 		return -1;
 	}
+	
+	private static final char[] CLASS = {'c','l','a','s','s'};
+	private static final char[] IMPORT = {'i','m','p','o','r','t'};
+	private static final char[] PACKAGE = {'p','a','c','k','a','g','e'};
+
+	public static String ensureImports(String src, Collection<String> imports) {
+		return ensureImports(new StringBuilder(src), imports);
+	}
+	
+	public static String ensureImports(StringBuilder sb, Collection<String> imports) {
+		TreeSet<String> imps = loadImports(sb);
+		imps.addAll(imports);
+		replaceImports(sb, imps);
+		return sb.toString();
+	}
+	
+	private static TreeSet<String> loadImports(StringBuilder sb) {
+		TreeSet<String> imports = new TreeSet<String>();
+		int stop = find(sb, 0, sb.length(), CLASS);
+		int start = find(sb, 0, stop, IMPORT);
+		while(start != -1) {
+			start += IMPORT.length;
+			while(Character.isWhitespace(sb.charAt(start)) && start < stop) {
+				start++;
+			}
+			int end = find(sb, start, stop, ';');
+			imports.add(sb.substring(start, end));
+			start = find(sb, end, stop, IMPORT);
+		}
+		return imports;
+	}
+
+	private static void replaceImports(StringBuilder sb, TreeSet<String> imports) {
+		if(imports.isEmpty()) {
+			return;
+		}
+		
+		int stop = find(sb, 0, sb.length(), CLASS);
+		if(stop == -1) {
+			return;
+		}
+		
+		int start = find(sb, 0, stop, PACKAGE);
+		if(start == -1) {
+			start = 0;
+		} else {
+			start = find(sb, start+1, stop, '\n') + 1;
+		}
+
+		int end = find(sb, start, stop, IMPORT);
+		if(end != -1) {
+			while(true) {
+				int i = find(sb, end + IMPORT.length, stop, IMPORT);
+				if(i != -1) {
+					end = i;
+				} else {
+					end = find(sb, end, stop, '\n') + 1;
+					break;
+				}
+			}
+		}
+		
+		TreeSet<String> statics = new TreeSet<String>();
+		for(Iterator<String> iter = imports.iterator(); iter.hasNext(); ) {
+			String imp = iter.next();
+			if(imp.startsWith("static ")) {
+				statics.add(imp);
+				iter.remove();
+			}
+		}
+		for(String imp1 : new HashSet<String>(statics)) {
+			if(imp1.endsWith(".*")) {
+				String s1 = imp1.substring(0, imp1.lastIndexOf('.'));
+				for(Iterator<String> iter = statics.iterator(); iter.hasNext(); ) {
+					String imp2 = iter.next();
+					if(imp1 != imp2) {
+						String s2 = imp2.substring(0, imp2.lastIndexOf('.'));
+						if(s1.equals(s2) || (s1 + "Model").equals(s2)) {
+							iter.remove();
+						}
+					}
+				}
+			}
+		}
+		
+		StringBuilder sb2 = new StringBuilder();
+		sb2.append('\n');
+		for(String imp : statics) {
+			sb2.append("import ").append(imp).append(";\n");
+		}
+		if(!statics.isEmpty() && !imports.isEmpty()) {
+			sb2.append('\n');
+		}
+		for(String imp : imports) {
+			sb2.append("import ").append(imp).append(";\n");
+		}
+		
+		if(end == -1) {
+			sb.insert(start, sb2.toString());
+		} else {
+			sb.replace(start, end, sb2.toString());
+		}
+	}
+
 
 	public String simpleName;
 	public String packageName;

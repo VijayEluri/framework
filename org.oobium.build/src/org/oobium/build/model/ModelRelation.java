@@ -26,17 +26,17 @@ public class ModelRelation {
 	public final ModelDefinition model;
 
 	public final boolean hasMany;
-	public final int limit;
-	public final String name;
-	public final String type;
-	public final String opposite;
-	public final String through;
-	public final boolean readOnly;
-	public final boolean required;
-	public final boolean unique;
-	public final boolean virtual;
-	public final int onDelete;
-	public final int onUpdate;
+	public int limit;
+	public String name;
+	public String type;
+	public String opposite;
+	public String through;
+	public boolean readOnly;
+	public boolean required;
+	public boolean unique;
+	public boolean virtual;
+	public int onDelete;
+	public int onUpdate;
 	private ModelRelation oppositeRelation;
 	
 	public ModelRelation(ModelDefinition model, String annotation, boolean hasMany) {
@@ -59,6 +59,34 @@ public class ModelRelation {
 		this.virtual = coerce(entries.get("virtual"), false);
 		this.onDelete = getReferential(entries.get("onDelete"));
 		this.onUpdate = getReferential(entries.get("onUpdate"));
+	}
+
+	private ModelRelation(ModelRelation original, ModelDefinition model, boolean hasMany) {
+		this.model = model;
+		this.hasMany = hasMany;
+		this.name = original.name;
+		this.type = original.type;
+		this.limit = original.limit;
+		this.opposite = original.opposite;
+		this.through = original.through;
+		this.readOnly = original.readOnly;
+		this.required = original.required;
+		this.unique = original.unique;
+		this.virtual = original.virtual;
+		this.onDelete = original.onDelete;
+		this.onUpdate = original.onUpdate;
+	}
+	
+	public ModelRelation getCopy() {
+		return new ModelRelation(this, model, hasMany);
+	}
+	
+	public ModelRelation getCopy(ModelDefinition model) {
+		return new ModelRelation(this, model, hasMany);
+	}
+	
+	public ModelRelation getCopy(ModelDefinition model, boolean hasMany) {
+		return new ModelRelation(this, model, hasMany);
 	}
 	
 	public ModelRelation getOpposite() {
@@ -128,6 +156,9 @@ public class ModelRelation {
 		sb.append('@').append(Relation.class.getSimpleName()).append('(');
 		sb.append("name=\"").append(name).append("\"");
 		sb.append(", type=").append(getSimpleType()).append(".class");
+		if(hasOpposite()) {
+			sb.append(", opposite=\"").append(opposite).append("\"");
+		}
 		sb.append(')');
 		return sb.toString();
 	}

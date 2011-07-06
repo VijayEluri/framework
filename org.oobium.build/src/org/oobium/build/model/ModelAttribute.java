@@ -79,6 +79,29 @@ public class ModelAttribute {
 		}
 	}
 	
+	private ModelAttribute(ModelAttribute original, ModelDefinition model) {
+		this.model = model;
+		this.check = original.check;
+		this.init = original.init;
+		this.name = original.name;
+		this.precision = original.precision;
+		this.scale = original.scale;
+		this.type = original.type;
+		this.indexed = original.indexed;
+		this.readOnly = original.readOnly;
+		this.unique = original.unique;
+		this.virtual = original.virtual;
+		
+	}
+	
+	public ModelAttribute getCopy() {
+		return new ModelAttribute(this, model);
+	}
+	
+	public ModelAttribute getCopy(ModelDefinition model) {
+		return new ModelAttribute(this, model);
+	}
+	
 	public String getJavaType() {
 		if(Text.class.getCanonicalName().equals(type)) {
 			return "java.lang.String";

@@ -287,7 +287,7 @@ public class ModelGenerator {
 		src.isAbstract = true;
 
 		src.propertiesArray = "FIELDS";
-		for(ModelAttribute attribute : model.attributes.values()) {
+		for(ModelAttribute attribute : model.getAttributes()) {
 			src.properties.put(attribute.name, new PropertyDescriptor(attribute));
 		}
 

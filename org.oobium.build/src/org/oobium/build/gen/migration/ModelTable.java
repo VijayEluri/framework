@@ -51,7 +51,7 @@ public class ModelTable {
 
 		boolean datestamps = model.datestamps;
 		boolean timestamps = model.timestamps;
-		for(ModelAttribute attribute : model.attributes.values()) {
+		for(ModelAttribute attribute : model.getAttributes()) {
 			if(datestamps) {
 				if(attribute.name.equals("createdOn") || attribute.name.equals("updatedOn")) {
 					continue;

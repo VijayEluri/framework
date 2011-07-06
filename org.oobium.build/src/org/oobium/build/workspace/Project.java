@@ -650,26 +650,42 @@ public class Project implements Comparable<Project> {
 	}
 
 	/**
-	 * Get the java package name for the given file.<br>
+	 * Get the java package name for the given file in this module's src folder.<br>
 	 * The given file may be an actual file, or a directory.
 	 */
 	public String packageName(File file) {
-		return packageName(src, file);
+		return packageName(src, file, file.isFile());
 	}
 
 	/**
-	 * Get the java package name for the given file.<br>
+	 * Get the java package name for the given file in this module's src folder.<br>
+	 * The given file does not need to exist on the file system.
+	 */
+	public String packageName(File file, boolean isFile) {
+		return packageName(src, file, isFile);
+	}
+
+	/**
+	 * Get the java package name for the given file in the given srcFolder.<br>
 	 * The given file may be an actual file, or a directory.
 	 */
 	public String packageName(File srcFolder, File file) {
-		if(file.isFile()) {
-			file = file.getParentFile();
-		}
-		int ix = srcFolder.getAbsolutePath().length();
-		String name = file.getAbsolutePath().substring(ix + 1).replace(File.separatorChar, '.');
-		return name;
+		return packageName(srcFolder, file, file.isFile());
 	}
 
+	/**
+	 * Get the java package name for the given file in the given srcFolder.<br>
+	 * The given file does not need to exist on the file system.
+	 */
+	public String packageName(File srcFolder, File file, boolean isFile) {
+		if(isFile) {
+			file = file.getParentFile();
+		}
+		int len = srcFolder.getAbsolutePath().length();
+		String name = file.getAbsolutePath().substring(len + 1).replace(File.separatorChar, '.');
+		return name;
+	}
+	
 	private String parseName(Manifest manifest) {
 		if(manifest == null) {
 			if(isJar) {
