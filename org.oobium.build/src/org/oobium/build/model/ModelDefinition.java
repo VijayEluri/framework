@@ -441,7 +441,7 @@ public class ModelDefinition {
 		if(hasAttributes()) {
 			imports.add(Attribute.class.getCanonicalName());
 			for(ModelAttribute attr : attributes.values()) {
-				if(!attr.type.startsWith("java.lang")) {
+				if(!attr.type.startsWith("java.lang") && !primitives.contains(attr.type)) {
 					imports.add(attr.type);
 				}
 			}
