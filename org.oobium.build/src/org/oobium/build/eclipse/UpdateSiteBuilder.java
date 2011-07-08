@@ -127,7 +127,9 @@ public class UpdateSiteBuilder {
 	}
 
 	private void build() throws Exception {
-		siteDirectory = new File(site.workspace.getWorkingDirectory(), site.file.getParentFile().getName());
+		if(siteDirectory == null) {
+			siteDirectory = new File(site.workspace.getWorkingDirectory(), site.file.getParentFile().getName());
+		}
 		if(siteDirectory.exists()) {
 			if(clean) {
 				FileUtils.deleteContents(siteDirectory);
@@ -213,6 +215,10 @@ public class UpdateSiteBuilder {
 			}
 		}
 	}
+	
+	public File getSiteDirectory() {
+		return siteDirectory;
+	}
 
 	private String getXML(Document doc) throws Exception {
 		TransformerFactory transfac = TransformerFactory.newInstance();
@@ -234,6 +240,10 @@ public class UpdateSiteBuilder {
 
 	public void setIncludeSource(boolean include) {
 		this.includeSource = include;
+	}
+
+	public void setSiteDirectory(File directory) {
+		this.siteDirectory = directory;
 	}
 	
 }
