@@ -7,7 +7,6 @@ Bundle-Vendor: Oobium.org
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Require-Bundle: org.junit;bundle-version="4.7.0",
  org.mockito;bundle-version="1.8.5",
- org.oobium.persist.db.tests,
  org.oobium.app;bundle-version="0.6.0",
  org.oobium.app.common,
  org.oobium.build;bundle-version="0.6.0",
@@ -41,5 +40,6 @@ Export-Package: org.oobium.build.esp,
  org.oobium.build.workspace,
  org.oobium.console,
  org.oobium.mailer,
+ org.oobium.persist.db.tests,
  org.oobium.utils.coercion,
  org.oobium.utils.json
