@@ -7,8 +7,6 @@ Bundle-Vendor: Oobium.org
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Require-Bundle: org.junit;bundle-version="4.7.0",
  org.mockito;bundle-version="1.8.5",
- org.oobium.console.tests,
- org.oobium.mailer.tests,
  org.oobium.persist.db.tests,
  org.oobium.app;bundle-version="0.6.0",
  org.oobium.app.common,
@@ -36,9 +34,12 @@ Require-Bundle: org.junit;bundle-version="4.7.0",
  org.oobium.persist.migrate.db.postgresql;bundle-version="0.6.0",
  org.oobium.test;bundle-version="0.6.0",
  org.oobium.utils;bundle-version="0.6.0",
- org.jboss.netty;bundle-version="3.2.4"
+ org.jboss.netty;bundle-version="3.2.4",
+ com.sun.mail;bundle-version="1.4.2"
 Import-Package: org.osgi.framework;version="1.5.0"
 Export-Package: org.oobium.build.esp,
  org.oobium.build.workspace,
+ org.oobium.console,
+ org.oobium.mailer,
  org.oobium.utils.coercion,
  org.oobium.utils.json
