@@ -77,36 +77,65 @@ public interface Logger {
 	public abstract void debug(String message);
 
 	/**
+	 * Log the given message at the {@link #DEBUG} level.<br/>
 	 * Message can contain anchors, denoted by an opening brace immediately followed by a closing brace - {},
 	 * which will be replaced by the String representation of the corresponding value in the given values.
 	 * See <a href="http://www.slf4j.org/faq.html#logging_performance">SLF4J FAQ</a> for more information.
-	 * @param message
-	 * @param values
 	 */
 	public abstract void debug(String message, Object...values);
 
 	public abstract void debug(String message, Throwable exception);
 
+	/**
+	 * Log the given message and Throwable at the {@link #DEBUG} level.<br/>
+	 * Message can contain anchors, denoted by an opening brace immediately followed by a closing brace - {},
+	 * which will be replaced by the String representation of the corresponding value in the given values.
+	 * See <a href="http://www.slf4j.org/faq.html#logging_performance">SLF4J FAQ</a> for more information.
+	 */
 	public abstract void debug(String message, Throwable exception, Object...values);
 
 	public abstract void debug(Throwable exception);
 
 	public abstract void error(String message);
 
+	/**
+	 * Log the given message at the {@link #ERROR} level.<br/>
+	 * Message can contain anchors, denoted by an opening brace immediately followed by a closing brace - {},
+	 * which will be replaced by the String representation of the corresponding value in the given values.
+	 * See <a href="http://www.slf4j.org/faq.html#logging_performance">SLF4J FAQ</a> for more information.
+	 */
 	public abstract void error(String message, Object...values);
 
 	public abstract void error(String message, Throwable exception);
 
+	/**
+	 * Log the given message and Throwable at the {@link #ERROR} level.<br/>
+	 * Message can contain anchors, denoted by an opening brace immediately followed by a closing brace - {},
+	 * which will be replaced by the String representation of the corresponding value in the given values.
+	 * See <a href="http://www.slf4j.org/faq.html#logging_performance">SLF4J FAQ</a> for more information.
+	 */
 	public abstract void error(String message, Throwable exception, Object...values);
 
 	public abstract void error(Throwable exception);
 
 	public abstract void info(String message);
 
+	/**
+	 * Log the given message at the {@link #INFO} level.<br/>
+	 * Message can contain anchors, denoted by an opening brace immediately followed by a closing brace - {},
+	 * which will be replaced by the String representation of the corresponding value in the given values.
+	 * See <a href="http://www.slf4j.org/faq.html#logging_performance">SLF4J FAQ</a> for more information.
+	 */
 	public abstract void info(String message, Object...values);
 
 	public abstract void info(String message, Throwable exception);
 
+	/**
+	 * Log the given message and Throwable at the {@link #INFO} level.<br/>
+	 * Message can contain anchors, denoted by an opening brace immediately followed by a closing brace - {},
+	 * which will be replaced by the String representation of the corresponding value in the given values.
+	 * See <a href="http://www.slf4j.org/faq.html#logging_performance">SLF4J FAQ</a> for more information.
+	 */
 	public abstract void info(String message, Throwable exception, Object...values);
 
 	public abstract void info(Throwable exception);
@@ -131,6 +160,17 @@ public interface Logger {
 
 	public abstract void log(int level, String message);
 
+	/**
+	 * Log the given message at the given level.<br/>
+	 * Message can contain anchors, denoted by an opening brace immediately followed by a closing brace - {},
+	 * which will be replaced by the String representation of the corresponding value in the given values.
+	 * See <a href="http://www.slf4j.org/faq.html#logging_performance">SLF4J FAQ</a> for more information.
+	 * @see #ERROR
+	 * @see #WARN
+	 * @see #INFO
+	 * @see #DEBUG
+	 * @see #TRACE
+	 */
 	public abstract void log(int level, String message, Object...values);
 	
 	public abstract void log(int level, String message, Throwable exception);
@@ -159,10 +199,22 @@ public interface Logger {
 
 	public abstract void warn(String message);
 
+	/**
+	 * Log the given message at the {@link #WARN} level.<br/>
+	 * Message can contain anchors, denoted by an opening brace immediately followed by a closing brace - {},
+	 * which will be replaced by the String representation of the corresponding value in the given values.
+	 * See <a href="http://www.slf4j.org/faq.html#logging_performance">SLF4J FAQ</a> for more information.
+	 */
 	public abstract void warn(String message, Object...values);
 
 	public abstract void warn(String message, Throwable exception);
 
+	/**
+	 * Log the given message and Throwable at the {@link #WARN} level.<br/>
+	 * Message can contain anchors, denoted by an opening brace immediately followed by a closing brace - {},
+	 * which will be replaced by the String representation of the corresponding value in the given values.
+	 * See <a href="http://www.slf4j.org/faq.html#logging_performance">SLF4J FAQ</a> for more information.
+	 */
 	public abstract void warn(String message, Throwable exception, Object...values);
 
 	public abstract void warn(Throwable exception);

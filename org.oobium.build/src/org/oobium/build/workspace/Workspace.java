@@ -141,9 +141,7 @@ public class Workspace {
 			Project project = Project.load(cfile);
 			if(project instanceof Bundle) {
 				Bundle bundle = (Bundle) project;
-				if(logger.isLoggingDebug()) {
-					logger.debug("adding bundle: " + bundle);
-				}
+				logger.trace("adding bundle: {}", bundle);
 				bundles.put(cfile, bundle);
 				if(bundle instanceof Application) {
 					applications.put(cfile, (Application) bundle);
@@ -155,9 +153,7 @@ public class Workspace {
 				} else if(bundle.name.equals("org.apache.felix.main")) {
 					felixRuntimeBundle = bundle;
 				}
-				if(logger.isLoggingDebug()) {
-					logger.debug("added bundle: " + bundle);
-				}
+				logger.trace("added bundle: {}", bundle);
 			} else {
 				projects.put(cfile, project);
 			}
@@ -993,19 +989,13 @@ public class Workspace {
 		try {
 			Project project = projects.get(file);
 			if(project != null) {
-				if(logger.isLoggingDebug()) {
-					logger.debug("project already loaded: " + project);
-				}
+				logger.trace("project already loaded: {}", project);
 			} else {
 				project = bundles.get(file);
 				if(project != null) {
-					if(logger.isLoggingDebug()) {
-						logger.debug("bundle already loaded: " + project);
-					}
+					logger.trace("bundle already loaded: {}", project);
 				} else {
-					if(logger.isLoggingDebug()) {
-						logger.debug("loading: " + file);
-					}
+					logger.trace("loading: {}", file);
 					project = add(file);
 					if(project != null) {
 						boolean foundRepo = false;
