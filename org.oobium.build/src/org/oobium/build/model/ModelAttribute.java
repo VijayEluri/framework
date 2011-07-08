@@ -24,16 +24,16 @@ import org.oobium.persist.Text;
 public class ModelAttribute {
 
 	public final ModelDefinition model;
-	public final String check;
-	public final String init;
-	public final String name;
-	public final int precision;
-	public final int scale;
-	public final String type;
-	public final boolean indexed;
-	public final boolean readOnly;
-	public final boolean unique;
-	public final boolean virtual;
+	public String check;
+	public String init;
+	public String name;
+	public int precision;
+	public int scale;
+	public String type;
+	public boolean indexed;
+	public boolean readOnly;
+	public boolean unique;
+	public boolean virtual;
 	
 	public ModelAttribute(ModelDefinition model, String annotation) {
 		this.model = model;
@@ -91,7 +91,6 @@ public class ModelAttribute {
 		this.readOnly = original.readOnly;
 		this.unique = original.unique;
 		this.virtual = original.virtual;
-		
 	}
 	
 	public ModelAttribute getCopy() {

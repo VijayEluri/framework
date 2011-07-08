@@ -233,14 +233,14 @@ public class ModelDefinition {
 
 	public final String packageName;
 	public final String type;
-	private final Map<String, ModelAttribute> attributes;
+	private Map<String, ModelAttribute> attributes;
 	private final Map<String, ModelRelation> hasOne;
 	private final Map<String, ModelRelation> hasMany;
 	private final List<String> indexes;
 	public boolean datestamps;
-	public boolean timestamps;
-	public boolean allowUpdate; // TODO
-	public boolean allowDelete; // TODO
+	public boolean timestamps = true;
+	public boolean allowUpdate = true; // TODO
+	public boolean allowDelete = true; // TODO
 
 	public String[] siblings;
 
@@ -307,7 +307,7 @@ public class ModelDefinition {
 		}
 		return rel;
 	}
-	
+
 	public ModelRelation addRelation(String annotation, boolean hasMany) {
 		ModelRelation rel = new ModelRelation(this, annotation, hasMany);
 		if(rel.hasMany) {
@@ -322,20 +322,30 @@ public class ModelDefinition {
 		if(!type.endsWith(".class")) type = type + ".class";
 		return addRelation("(name=\"" + name + "\",type=" + type + ")", hasMany);
 	}
-
+	
+	public ModelAttribute getAttribute(String name) {
+		return attributes.get(name);
+	}
+	
 	public List<ModelAttribute> getAttributes() {
+		return getAttributes(true);
+	}
+
+	public List<ModelAttribute> getAttributes(boolean includeTemporal) {
 		List<ModelAttribute> attrs = new ArrayList<ModelAttribute>(attributes.values());
-		
-		if(datestamps) {
-			attrs.add(new ModelAttribute(this, "createdOn"));
-			attrs.add(new ModelAttribute(this, "updatedOn"));
-		}
 
-		if(timestamps) {
-			attrs.add(new ModelAttribute(this, "createdAt"));
-			attrs.add(new ModelAttribute(this, "updatedAt"));
+		if(includeTemporal) {
+			if(datestamps) {
+				for(ModelAttribute attr : getDatestampFields()) {
+					attrs.add(attr);
+				}
+			}
+			if(timestamps) {
+				for(ModelAttribute attr : getTimestampFields()) {
+					attrs.add(attr);
+				}
+			}
 		}
-
 		return attrs;
 	}
 	
@@ -347,6 +357,13 @@ public class ModelDefinition {
 		return controllerSimpleName(type);
 	}
 
+	public ModelAttribute[] getDatestampFields() {
+		return new ModelAttribute[] {
+				new ModelAttribute(this, "createdOn"),
+				new ModelAttribute(this, "updatedOn")
+		};
+	}
+	
 	public String getDescription() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("@ModelDescription(");
@@ -448,15 +465,15 @@ public class ModelDefinition {
 		}
 		return imports;
 	}
-
+	
 	public File getFile() {
 		return file;
 	}
-	
+
 	public List<String> getIndexes() {
 		return indexes;
 	}
-
+	
 	public String getPackageName() {
 		int ix = type.lastIndexOf('.');
 		if(ix == -1) {
@@ -464,7 +481,7 @@ public class ModelDefinition {
 		}
 		return type.substring(0, ix);
 	}
-	
+
 	public LinkedHashMap<String, PropertyDescriptor> getProperties() {
 		LinkedHashMap<String, PropertyDescriptor> properties = new LinkedHashMap<String, PropertyDescriptor>();
 		for(Entry<String, ModelAttribute> entry : attributes.entrySet()) {
@@ -490,7 +507,7 @@ public class ModelDefinition {
 		}
 		return properties;
 	}
-
+	
 	public ModelRelation getRelation(String field) {
 		ModelRelation r = hasOne.get(field);
 		if(r == null) {
@@ -498,7 +515,7 @@ public class ModelDefinition {
 		}
 		return r;
 	}
-	
+
 	public List<ModelRelation> getRelations() {
 		List<ModelRelation> relations = new ArrayList<ModelRelation>();
 		relations.addAll(hasOne.values());
@@ -512,9 +529,24 @@ public class ModelDefinition {
 		}
 		return (file != null) ? file.getParentFile().list() : new String[0];
 	}
-	
+
 	public String getSimpleName() {
 		return simpleName(type);
+	}
+
+	public void setAttributeOrder(String[] names) {
+		Map<String, ModelAttribute> attrs = attributes;
+		attributes = new LinkedHashMap<String, ModelAttribute>();
+		for(String name : names) {
+			attributes.put(name, attrs.get(name));
+		}
+	}
+	
+	public ModelAttribute[] getTimestampFields() {
+		return new ModelAttribute[] {
+				new ModelAttribute(this, "createdAt"),
+				new ModelAttribute(this, "updatedAt")
+		};
 	}
 	
 	String getType(String name) {
@@ -567,16 +599,36 @@ public class ModelDefinition {
 		return type;
 	}
 	
+	public boolean hasAttribute(String name) {
+		return attributes.containsKey(name);
+	}
+	
 	public boolean hasAttributes() {
 		return !attributes.isEmpty();
+	}
+	
+	public boolean hasField(String name) {
+		return attributes.containsKey(name) || hasOne.containsKey(name) || hasMany.containsKey(name);
 	}
 	
 	public boolean hasMany() {
 		return !hasMany.isEmpty();
 	}
 	
+	public boolean hasMany(String field) {
+		return hasMany.containsKey(field);
+	}
+	
 	public boolean hasOne() {
 		return !hasOne.isEmpty();
+	}
+
+	public boolean hasOne(String field) {
+		return hasOne.containsKey(field);
+	}
+	
+	public boolean hasRelation(String name) {
+		return hasOne.containsKey(name) || hasMany.containsKey(name);
 	}
 
 	public boolean hasRelations() {

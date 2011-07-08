@@ -81,6 +81,10 @@ public class ModelRelation {
 		return new ModelRelation(this, model, hasMany);
 	}
 	
+	public ModelRelation getCopy(boolean hasMany) {
+		return new ModelRelation(this, model, hasMany);
+	}
+	
 	public ModelRelation getCopy(ModelDefinition model) {
 		return new ModelRelation(this, model, hasMany);
 	}
