@@ -39,5 +39,7 @@ Require-Bundle: org.junit;bundle-version="4.7.0",
  org.oobium.utils;bundle-version="0.6.0",
  org.jboss.netty;bundle-version="3.2.4"
 Import-Package: org.osgi.framework;version="1.5.0"
-Export-Package: org.oobium.utils.coercion,
+Export-Package: org.oobium.build.esp,
+ org.oobium.build.workspace,
+ org.oobium.utils.coercion,
  org.oobium.utils.json

@@ -14,6 +14,4 @@ Require-Bundle: org.junit;bundle-version="4.7.0",
  org.oobium.utils
 Import-Package: org.osgi.framework;version="1.4.0",
  org.osgi.service.log;version="1.3.0"
-Export-Package: org.oobium.build.esp,
- org.oobium.build.views.dom.html_elements,
- org.oobium.build.workspace
+Export-Package: org.oobium.build.views.dom.html_elements

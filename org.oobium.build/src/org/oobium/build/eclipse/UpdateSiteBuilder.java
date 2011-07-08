@@ -26,8 +26,8 @@ import org.w3c.dom.NodeList;
 public class UpdateSiteBuilder {
 
 	private static Workspace loadWorkspace() {
-		File projectDirectory = new File("/home/jeremyd/Oobium/workspace/framework");
-		File workingDirectory = new File("/home/jeremyd/Oobium/workspace/studio");
+		File projectDirectory = new File("..");
+		File workingDirectory = new File("../../studio");
 		
 		Workspace ws = new Workspace(workingDirectory);
 		for(File file : projectDirectory.listFiles()) {
@@ -45,7 +45,10 @@ public class UpdateSiteBuilder {
 		UpdateSiteBuilder builder = new UpdateSiteBuilder(workspace, "org.oobium.framework.update-site");
 		builder.setClean(true);
 		builder.setIncludeSource(true);
+		builder.setSiteDirectory(new File("../../website/org.oobium.www.update_site/assets/updates"));
 		builder.build();
+		
+		System.out.println("update-site created in " + builder.getSiteDirectory().getCanonicalPath());
 	}
 	
 	
