@@ -142,7 +142,7 @@ public class Workspace {
 			if(project instanceof Bundle) {
 				Bundle bundle = (Bundle) project;
 				if(logger.isLoggingDebug()) {
-					logger.debug("adding bundle: " + bundle);
+					logger.debug("adding bundle: {}", bundle);
 				}
 				bundles.put(cfile, bundle);
 				if(bundle instanceof Application) {
@@ -156,7 +156,7 @@ public class Workspace {
 					felixRuntimeBundle = bundle;
 				}
 				if(logger.isLoggingDebug()) {
-					logger.debug("added bundle: " + bundle);
+					logger.trace("added bundle: {}", bundle);
 				}
 			} else {
 				projects.put(cfile, project);

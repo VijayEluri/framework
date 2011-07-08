@@ -144,15 +144,11 @@ public class OobiumPlugin extends AbstractUIPlugin {
 		String repos = getPreferenceStore().getString(BUNDLE_REPOS);
 		if(repos.length() > 0) {
 			workspace.setRepositories(repos);
-			if(logger.isLoggingDebug()) {
-				logger.debug("workspace bundle repos set to \"" + repos + "\"");
-			}
+			logger.debug("workspace bundle repos set to \"{}\"", repos);
 		}
 
 		String install = Platform.getInstallLocation().getURL().getFile();
-		if(logger.isLoggingDebug()) {
-			logger.debug("Eclipse installed at: " + install);
-		}
+		logger.debug("Eclipse installed at: {}", install);
 		
 		for(org.osgi.framework.Bundle bundle : context.getBundles()) {
 			if(bundle.getState() != org.osgi.framework.Bundle.UNINSTALLED) {
@@ -161,17 +157,13 @@ public class OobiumPlugin extends AbstractUIPlugin {
 				if(ix != -1) {
 					File file = FileUtils.getAbsolute(location.substring(ix+5), install);
 					Project loaded = workspace.load(file);
-					if(logger.isLoggingDebug()) {
-						if(loaded != null) {
-							logger.debug("loaded " + loaded + " from "+ loaded.file);
-						} else {
-							logger.debug("could not load bundle: "+ file);
-						}
+					if(loaded != null) {
+						logger.trace("loaded {} from {}", loaded, loaded.file);
+					} else {
+						logger.trace("could not load bundle: {}", file);
 					}
 				} else {
-					if(logger.isLoggingDebug()) {
-						logger.debug("skipping " + location);
-					}
+					logger.trace("skipping {}", location);
 				}
 			}
 		}
@@ -200,9 +192,7 @@ public class OobiumPlugin extends AbstractUIPlugin {
 						FileUtils.copy(new File(src, "org.apache.felix.log-1.0.0.jar"), dst);
 						workspace.addRepository(dst);
 					}
-					if(logger.isLoggingDebug()) {
-						logger.debug("felix bundles loaded from " + dataArea);
-					}
+					logger.debug("felix bundles loaded from {}", dataArea);
 				} catch(Exception e) {
 					logger.warn("failed to copy felix bundles", e);
 				}
@@ -213,9 +203,7 @@ public class OobiumPlugin extends AbstractUIPlugin {
 		for(IProject project : ResourcesPlugin.getWorkspace().getRoot().getProjects()) {
 			if(project.isOpen()) {
 				workspace.load(project.getLocation().toFile());
-				if(logger.isLoggingDebug()) {
-					logger.debug("loaded " + project.getName());
-				}
+				logger.debug("loaded {}", project.getName());
 			}
 		}
 		
