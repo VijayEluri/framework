@@ -20,7 +20,7 @@ and web connected clients in Java and OSGi.
    </license>
 
    <url>
-      <update label="Oobium Update Site" url="http://www.oobium.com/updates"/>
+      <update label="Oobium Update Site" url="http://oobium.org/updates"/>
    </url>
 
    <plugin
