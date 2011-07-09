@@ -13,6 +13,7 @@ package org.oobium.build.workspace;
 import static org.oobium.utils.FileUtils.findFiles;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FilenameFilter;
@@ -429,9 +430,8 @@ public class Project implements Comparable<Project> {
 
 	public Map<String, File> getBuildFiles(boolean includeSource) throws IOException {
 		Map<String, File> buildFiles = new HashMap<String, File>();
-		File[] files = findFiles(bin);
 		int len = bin.getAbsolutePath().length() + 1;
-		for(File file : files) {
+		for(File file : findFiles(bin)) {
 			String relativePath = file.getAbsolutePath().substring(len);
 			if('\\' == File.separatorChar) {
 				relativePath = relativePath.replace('\\', '/');
@@ -448,16 +448,23 @@ public class Project implements Comparable<Project> {
 				String[] includes = prop.split("\\s*,\\s*");
 				len = file.getAbsolutePath().length() + 1;
 				for(String include : includes) {
-					if(!".".equals(include)) {
+					File[] files;
+					if(".".equals(include)) {
+						files = this.file.listFiles(new FileFilter() {
+							public boolean accept(File f) {
+								return f.isFile() && !f.isHidden() && !"build.properties".equals(f.getName()) && !f.getName().endsWith(".launch");
+							}
+						});
+					} else {
 						File folder = new File(file, include);
 						files = findFiles(folder);
-						for(File file : files) {
-							String relativePath = file.getAbsolutePath().substring(len);
-							if('\\' == File.separatorChar) {
-								relativePath = relativePath.replace('\\', '/');
-							}
-							buildFiles.put(relativePath, file);
+					}
+					for(File file : files) {
+						String relativePath = file.getAbsolutePath().substring(len);
+						if('\\' == File.separatorChar) {
+							relativePath = relativePath.replace('\\', '/');
 						}
+						buildFiles.put(relativePath, file);
 					}
 				}
 			}

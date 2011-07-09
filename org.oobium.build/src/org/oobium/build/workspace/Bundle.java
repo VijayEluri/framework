@@ -21,6 +21,7 @@ import static org.oobium.utils.literal.Map;
 import static org.oobium.utils.literal.e;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,6 +31,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -615,15 +617,39 @@ public class Bundle extends Project {
 	public void createSourceJar(File jar, Version version) throws IOException {
 		Map<String, File> files = getSourceBuildFiles();
 
+		String sourceName = name + ".source";
+		
 		Manifest manifest = manifest(file);
+		manifest.getMainAttributes().putValue("Bundle-SymbolicName", sourceName);
 		manifest.getMainAttributes().putValue("Bundle-Version", version.toString());
+		manifest.getMainAttributes().putValue("Eclipse-SourceBundle", name + ";version=\"" + version.toString() + "\"");
 
 		if(jar.isDirectory()) {
-			jar = new File(jar, name + ".source_" + version + ".jar");
+			jar = new File(jar, sourceName + "_" + version + ".jar");
 		}
 		FileUtils.createJar(jar, files, manifest);
 	}
 
+	public boolean hasSource() throws IOException {
+		if(!isJar) {
+			File buildFile = new File(file, "build.properties");
+			if(buildFile.isFile()) {
+				Properties props = new Properties();
+				props.load(new FileReader(buildFile));
+				String prop = props.getProperty("source..");
+				if(prop != null && prop.length() > 0) {
+					return true;
+				} else {
+					prop = props.getProperty("src.includes");
+					if(prop != null && prop.length() > 0) {
+						return true;
+					}
+				}
+			}
+		}		
+		return false;
+	}
+	
 	public boolean exports(String regex) {
 		if(exportedPackages != null) {
 			for(ExportedPackage ep : exportedPackages) {

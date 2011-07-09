@@ -118,7 +118,13 @@ public class UpdateSiteBuilder {
 				Node node = list.item(i);
 				if(node.getNodeType() == Node.ELEMENT_NODE) {
 					element = (Element) node;
-					element.setAttribute("id", element.getAttribute("id") + ".source");
+					String id = element.getAttribute("id");
+					Bundle bundle = site.workspace.getBundle(id);
+					if(bundle != null && bundle.hasSource()) {
+						element.setAttribute("id", id + ".source");
+					} else {
+						element.getParentNode().removeChild(element);
+					}
 				}
 			}
 			
@@ -213,7 +219,9 @@ public class UpdateSiteBuilder {
 				Version version = plugin.version.resolve(site.date);
 				plugin.createJar(plugins, version);
 				if(includeSource) {
-					plugin.createSourceJar(plugins, version);
+					if(plugin.hasSource()) {
+						plugin.createSourceJar(plugins, version);
+					}
 				}
 			}
 		}
@@ -234,7 +242,7 @@ public class UpdateSiteBuilder {
 		DOMSource source = new DOMSource(doc);
 		trans.transform(source, result);
 		
-		return sw.toString();
+		return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + sw.toString();
 	}
 
 	public void setClean(boolean clean) {
