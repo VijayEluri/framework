@@ -116,16 +116,16 @@ public class ProjectGenerator {
 		String rType = AppRouter.class.getSimpleName();
 		
 		StringBuilder sb = new StringBuilder();
-		sb.append("\t@Override\n");
-		sb.append("\tpublic void addRoutes(").append(cType).append(" config, ").append(rType).append(" router) {\n");
+		sb.append("@Override\n");
+		sb.append("public void addRoutes(").append(cType).append(" config, ").append(rType).append(" router) {\n");
 		sb.append('\n');
-		sb.append("\t\t// TODO add routes specific to your application\n");
+		sb.append("\t// TODO add routes specific to your application\n");
 		sb.append('\n');
 		if(createViews) {
-			sb.append("\t\trouter.addAssetRoutes();\n");
-			sb.append("\t\trouter.setHome(Home.class);\n");
+			sb.append("\trouter.addAssetRoutes();\n");
+			sb.append("\trouter.setHome(Home.class);\n");
 		}
-		sb.append("\t}");
+		sb.append("}");
 		src.methods.put("addRoutes", sb.toString());
 
 		writeFile(main, "Activator.java", src.toSource());
@@ -350,10 +350,10 @@ public class ProjectGenerator {
 			src.imports.add(imp);
 			
 			sb = new StringBuilder();
-			sb.append("\tprotected void " + methodName + "() {\n");
-			sb.append("\t\t// TODO auto-generated method\n");
-			sb.append("\t\trender(new ").append(templateName).append("());\n");
-			sb.append("\t}");
+			sb.append("protected void " + methodName + "() {\n");
+			sb.append("\t// TODO auto-generated method\n");
+			sb.append("\trender(new ").append(templateName).append("());\n");
+			sb.append("}");
 			
 			src.methods.put(methodName, sb.toString());
 		}
@@ -487,10 +487,10 @@ public class ProjectGenerator {
 		src.imports.add(src.packageName + ".migrations.CreateDatabase");
 
 		StringBuilder sb = new StringBuilder();
-		sb.append("\t@Override\n");
-		sb.append("\tpublic void addMigrations(Migrations migrations) {\n");
-		sb.append("\t\tmigrations.add(CreateDatabase.class);\n");
-		sb.append("\t}");
+		sb.append("@Override\n");
+		sb.append("public void addMigrations(Migrations migrations) {\n");
+		sb.append("\tmigrations.add(CreateDatabase.class);\n");
+		sb.append("}");
 		src.methods.put("1", sb.toString());
 
 		writeFile(mainFolder(migration), src.simpleName + ".java", src.toSource());
@@ -504,17 +504,17 @@ public class ProjectGenerator {
 		src.imports.add(SQLException.class.getCanonicalName());
 
 		sb = new StringBuilder();
-		sb.append("\t@Override\n");
-		sb.append("\tpublic void up() throws SQLException {\n");
-		sb.append("\t\t// TODO auto-generated method\n");
-		sb.append("\t}");
+		sb.append("@Override\n");
+		sb.append("public void up() throws SQLException {\n");
+		sb.append("\t// TODO auto-generated method\n");
+		sb.append("}");
 		src.methods.put("1", sb.toString());
 
 		sb = new StringBuilder();
-		sb.append("\t@Override\n");
-		sb.append("\tpublic void down() throws SQLException {\n");
-		sb.append("\t\t// TODO auto-generated method\n");
-		sb.append("\t}");
+		sb.append("@Override\n");
+		sb.append("public void down() throws SQLException {\n");
+		sb.append("\t// TODO auto-generated method\n");
+		sb.append("}");
 		src.methods.put("2", sb.toString());
 		
 		writeFile(mainFolder(migration) + File.separator + "migrations", src.simpleName + ".java", src.toSource());
@@ -584,13 +584,13 @@ public class ProjectGenerator {
 		String rType = Router.class.getSimpleName();
 		
 		StringBuilder sb = new StringBuilder();
-		sb.append("\t@Override\n");
-		sb.append("\tpublic void addRoutes(").append(cType).append(" config, ").append(rType).append(" router) {\n");
-		sb.append("\t\t// TODO add the routes specific to this module\n");
+		sb.append("@Override\n");
+		sb.append("public void addRoutes(").append(cType).append(" config, ").append(rType).append(" router) {\n");
+		sb.append("\t// TODO add the routes specific to this module\n");
 		if(hasViews) {
-			sb.append("\t\trouter.addAssetRoutes();\n");
+			sb.append("\trouter.addAssetRoutes();\n");
 		}
-		sb.append("\t}");
+		sb.append("}");
 		src.methods.put("addRoutes", sb.toString());
 		
 		writeFile(mainFolder(project), "Activator.java", src.toSource());
@@ -773,11 +773,11 @@ public class ProjectGenerator {
 		src.imports.add(Action.class.getCanonicalName());
 
 		src.methods.put("select",
-			"\t@Override\n" +
-			"\tprotected boolean select(Websocket socket, Action action) {\n" +
-			"\t\t// TODO Auto-generated method stub\n" +
-			"\t\treturn true;\n" +
-			"\t}");
+			"@Override\n" +
+			"protected boolean select(Websocket socket, Action action) {\n" +
+			"\t// TODO Auto-generated method stub\n" +
+			"\treturn true;\n" +
+			"}");
 
 		return writeFile(module.observers, name + ".java", src.toSource());
 	}
@@ -793,10 +793,10 @@ public class ProjectGenerator {
 		src.imports.add(Observer.class.getCanonicalName());
 
 		src.methods.put("afterCreate", 
-			"\t@Override\n" +
-			"\tprotected void afterCreate(Post model) {\n" +
-			"\t\t// TODO Auto-generated method stub\n" +
-			"\t}");
+			"@Override\n" +
+			"protected void afterCreate(Post model) {\n" +
+			"\t// TODO Auto-generated method stub\n" +
+			"}");
 
 		return writeFile(module.observers, name + ".java", src.toSource());
 	}
