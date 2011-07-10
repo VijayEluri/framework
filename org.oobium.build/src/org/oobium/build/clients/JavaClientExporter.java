@@ -254,10 +254,10 @@ public class JavaClientExporter {
 	}
 	
 	private void addAndroidLogger(Map<String, File> files) {
-		File file = writeFile(tmpDir, "LoggerImpl.class", getClass().getResourceAsStream("LoggerImpl.class.android"));
+		File file = writeFile(tmpDir, "LoggerImpl.class", getClass().getResourceAsStream("android/logger/LoggerImpl.class.android"));
 		files.put("org/oobium/logging/LoggerImpl.class", file);
 		if(includeSource) {
-			file = writeFile(tmpDir, "LoggerImpl.java", getClass().getResourceAsStream("LoggerImpl.java.android"));
+			file = writeFile(tmpDir, "LoggerImpl.java", getClass().getResourceAsStream("android/logger/LoggerImpl.java.android"));
 			files.put("org/oobium/logging/LoggerImpl.java", file);
 		}
 	}
