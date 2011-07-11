@@ -13,20 +13,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.oobium.build.BuildBundle;
 import org.oobium.build.workspace.AndroidApp;
 import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.Project;
 import org.oobium.build.workspace.Workspace;
-import org.oobium.logging.LogProvider;
-import org.oobium.logging.Logger;
 import org.oobium.utils.Config.Mode;
 import org.oobium.utils.FileUtils;
 
 public class JavaClientExporter {
 
-	private final Logger logger;
+//	private final Logger logger;
 	private final Workspace workspace;
 	private final Module module;
 	private final File exportDir;
@@ -39,7 +36,7 @@ public class JavaClientExporter {
 	private boolean includeSource;
 	
 	public JavaClientExporter(Workspace workspace, Module module) {
-		this.logger = LogProvider.getLogger(BuildBundle.class);
+//		this.logger = LogProvider.getLogger(BuildBundle.class);
 		this.workspace = workspace;
 		this.module = module;
 		this.exportDir = workspace.getExportDir();
@@ -115,23 +112,26 @@ public class JavaClientExporter {
 	}
 
 	private File[] exportAndroid(File targetDir) throws IOException {
-		Map<String, File> files = new HashMap<String, File>();
-
-		// export core oobium jar
-		File oobiumJar = new File(targetDir, "org.oobium.android.jar");
-		addFiles("org.jboss.netty", "org.jboss.netty.handler.codec.http", files);
-		addFiles("org.oobium.client", files);
-		addFiles("org.oobium.app.common", "org.oobium.app.http", files);
-		addFile("org.oobium.logging", "org.oobium.logging.Logger", files);
-		addFile("org.oobium.logging", "org.oobium.logging.LogProvider", files);
-		addAndroidLogger(files);
-		addFiles("org.oobium.persist", files);
-		addFiles("org.oobium.persist.http", files);
-		addFiles("org.oobium.utils", files);
-
-		oobiumJar = createJar(oobiumJar, files);
+		// export netty jar (should just have a jar built already...)
+		Map<String, File> nettyFiles = new HashMap<String, File>();
+		addFiles("org.jboss.netty", nettyFiles);
 		
-		files = new HashMap<String, File>();
+		File nettyJar = createJar(targetDir, "org.jboss.netty.jar", nettyFiles);
+
+		
+		// export core oobium jar
+		Map<String, File> oobiumFiles = new HashMap<String, File>();
+		addFiles("org.oobium.client", oobiumFiles);
+		addFiles("org.oobium.app.common", "org.oobium.app.http", oobiumFiles);
+		addFile("org.oobium.logging", "org.oobium.logging.Logger", oobiumFiles);
+		addFile("org.oobium.logging", "org.oobium.logging.LogProvider", oobiumFiles);
+		addAndroidLogger(oobiumFiles);
+		addFiles("org.oobium.persist", oobiumFiles);
+		addFiles("org.oobium.persist.http", oobiumFiles);
+		addFiles("org.oobium.utils", oobiumFiles);
+
+		File oobiumJar = createJar(targetDir, "org.oobium.android.jar", oobiumFiles);
+		
 
 		// export application jar
 		Set<Bundle> bundles = new TreeSet<Bundle>();
@@ -139,42 +139,38 @@ public class JavaClientExporter {
 		bundles.addAll(deps.keySet());
 		bundles.add(module);
 		
+		Map<String, File> applicationFiles = new HashMap<String, File>();
 		int len = module.bin.getAbsolutePath().length() + 1;
 		if(full) {
-			addFiles(module.name, files);
+			addFiles(module.name, applicationFiles);
 		} else {
 			for(File model : module.findModels()) {
 				File genModel = module.getGenModel(model);
 				File[] modelClasses = module.getBinFiles(model);
 				File[] genModelClasses = module.getBinFiles(genModel);
 				for(File modelClass : modelClasses) {
-					files.put(relativePath(modelClass, len), modelClass);
+					applicationFiles.put(relativePath(modelClass, len), modelClass);
 				}
 				for(File genModelClass : genModelClasses) {
-					files.put(relativePath(genModelClass, len), genModelClass);
+					applicationFiles.put(relativePath(genModelClass, len), genModelClass);
 				}
 				if(includeSource) {
-					files.put(relativeSrcPath(model, modelClasses[0], len), model);
-					files.put(relativeSrcPath(genModel, genModelClasses[0], len), genModel);
+					applicationFiles.put(relativeSrcPath(model, modelClasses[0], len), model);
+					applicationFiles.put(relativeSrcPath(genModel, genModelClasses[0], len), genModel);
 				}
 			}
 		}
 		
-		String name = module.name + ".android.jar";
-		logger.info("creating client jar: " + name);
-		File applicationJar = createJar(targetDir, name, files);
-		if(target != null) {
-			target.addBuildPath("oobium/" + name, "lib");
-		}
+		File applicationJar = createJar(targetDir, module.name + (full ? ".android.jar" : ".models.android.jar"), applicationFiles);
 
-		if(oobiumJar == null) {
-			return new File[] { applicationJar };
-		} else {
-			if(target != null) {
-				target.addBuildPath("oobium/" + oobiumJar.getName(), "lib");
-			}
-			return new File[] { oobiumJar, applicationJar };
+		
+		if(target != null) {
+			target.addBuildPath("oobium/" + nettyJar.getName(), "lib");
+			target.addBuildPath("oobium/" + applicationJar.getName(), "lib");
+			target.addBuildPath("oobium/" + oobiumJar.getName(), "lib");
 		}
+		
+		return new File[] { nettyJar, oobiumJar, applicationJar };
 	}
 	
 	private File[] exportJava(File targetDir) throws IOException {

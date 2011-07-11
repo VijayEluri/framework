@@ -64,7 +64,7 @@ public class ClientCommand extends BuilderCommand {
 			}
 		}
 		try {
-			boolean full = !module.hasModels() || ("Y".equalsIgnoreCase(ask("export the full [P]roject, or just its [M]odels? [P/M] ")));
+			boolean full = !module.hasModels() || ("P".equalsIgnoreCase(ask("export the full [P]roject, or just its [M]odels? [P/M] ")));
 
 			JavaClientExporter exporter = new JavaClientExporter(workspace, module);
 			exporter.setFull(full);
