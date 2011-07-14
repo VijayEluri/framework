@@ -27,6 +27,7 @@ public class WebsocketRoute extends Route {
 		} else {
 			this.params = params.toArray(new String[params.size()][]);
 		}
+		string = controllerClass.getSimpleName();
 	}
 
 	@Override

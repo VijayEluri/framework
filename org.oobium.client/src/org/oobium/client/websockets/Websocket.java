@@ -50,6 +50,12 @@ public class Websocket {
 	
 	public String getFullPath() {
     	String path = uri.getPath();
+    	if(path.length() == 0) {
+    		path = "/";
+    	}
+    	else if(path.charAt(0) != '/') {
+    		path = "/" + path;
+    	}
         if (uri.getQuery() != null && uri.getQuery().length() > 0) {
             path = uri.getPath() + "?" + uri.getQuery();
         }

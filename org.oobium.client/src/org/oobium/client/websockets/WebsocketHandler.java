@@ -41,7 +41,6 @@ public class WebsocketHandler extends SimpleChannelUpstreamHandler {
 		this.bootstrap = bootstrap;
 		this.socket = new Websocket(this, uri);
 		this.listeners = new ArrayList<WebsocketListener>();
-		this.autoReconnect = true;
 	}
 
 	@Override

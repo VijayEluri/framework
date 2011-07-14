@@ -90,7 +90,7 @@ public class WebsocketServerHandler extends SimpleChannelUpstreamHandler {
 			return controller;
 		} catch(Exception e) {
 			if(logger.isLoggingDebug()) {
-				logger.debug(e);
+				logger.warn(e);
 			} else {
 				logger.warn(e.getLocalizedMessage());
 			}

@@ -62,7 +62,7 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
-		if(logger.isLoggingTrace()) {
+		if(logger.isLoggingDebug()) {
 			logger.warn(e.getCause());
 		} else {
 			Throwable t = e.getCause();
