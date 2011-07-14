@@ -64,7 +64,13 @@ public class ClientCommand extends BuilderCommand {
 			}
 		}
 		try {
-			boolean full = !module.hasModels() || ("P".equalsIgnoreCase(ask("export the full [P]roject, or just its [M]odels? [P/M] ")));
+			String s = ask("export the full [P]roject, or just its [M]odels? [P/M] ");
+			if(!s.equalsIgnoreCase("P") && !s.equalsIgnoreCase("M")) {
+				console.out.println("exiting");
+				return;
+			}
+			
+			boolean full = !module.hasModels() || ("P".equalsIgnoreCase(s));
 
 			JavaClientExporter exporter = new JavaClientExporter(workspace, module);
 			exporter.setFull(full);
@@ -84,7 +90,7 @@ public class ClientCommand extends BuilderCommand {
 			}
 
 			if(target instanceof AndroidApp) {
-				String s = ask("create scaffolding? [Y/N] ");
+				s = ask("create scaffolding? [Y/N] ");
 				if("Y".equalsIgnoreCase(s)) {
 					AndroidApp android = (AndroidApp) target;
 					ScaffoldingGenerator gen = new ScaffoldingGenerator(module, android);
