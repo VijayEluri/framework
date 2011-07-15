@@ -41,22 +41,22 @@ public class AttributeBuilder extends PropertyBuilder {
 	private String getGetterMethod() {
 		StringBuilder sb = new StringBuilder();
 		if("Map".equals(descriptor.type())) {
-			sb.append("\tpublic Map<String, String> ").append(descriptor.getterName()).append("() {\n");
-			sb.append("\t\treturn JsonUtils.toStringMap(get(").append(descriptor.enumProp()).append(", String.class));\n");
-			sb.append("\t}");
+			sb.append("public Map<String, String> ").append(descriptor.getterName()).append("() {\n");
+			sb.append("\treturn JsonUtils.toStringMap(get(").append(descriptor.enumProp()).append(", String.class));\n");
+			sb.append("}");
 		} else {
-			sb.append("\tpublic ").append(descriptor.type()).append(' ').append(descriptor.getterName()).append("() {\n");
-			sb.append("\t\treturn get(").append(descriptor.enumProp()).append(", ").append(descriptor.type()).append(".class);\n");
-			sb.append("\t}");
+			sb.append("public ").append(descriptor.type()).append(' ').append(descriptor.getterName()).append("() {\n");
+			sb.append("\treturn get(").append(descriptor.enumProp()).append(", ").append(descriptor.type()).append(".class);\n");
+			sb.append("}");
 		}
 		return sb.toString();
 	}
 	
 	private String getHasserMethod() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("\tpublic boolean ").append(descriptor.hasserName()).append("() {\n");
-		sb.append("\t\treturn get(").append(descriptor.enumProp()).append(") != null;\n");
-		sb.append("\t}");
+		sb.append("public boolean ").append(descriptor.hasserName()).append("() {\n");
+		sb.append("\treturn get(").append(descriptor.enumProp()).append(") != null;\n");
+		sb.append("}");
 		return sb.toString();
 	}
 
@@ -75,9 +75,9 @@ public class AttributeBuilder extends PropertyBuilder {
 	
 	private String getIsMethod() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("\tpublic boolean ").append(getterName(descriptor.variable(), true)).append("() {\n");
-		sb.append("\t\treturn Boolean.TRUE.equals(").append(descriptor.getterName()).append("());\n");
-		sb.append("\t}");
+		sb.append("public boolean ").append(getterName(descriptor.variable(), true)).append("() {\n");
+		sb.append("\treturn Boolean.TRUE.equals(").append(descriptor.getterName()).append("());\n");
+		sb.append("}");
 		return sb.toString();
 	}
 
@@ -101,15 +101,15 @@ public class AttributeBuilder extends PropertyBuilder {
 		String var = descriptor.variable();
 		String varType = "Map".equals(descriptor.type()) ? "Map<String, String>" : descriptor.type();
 		StringBuilder sb = new StringBuilder();
-		sb.append("\tpublic ").append(type).append(' ').append(descriptor.setterName()).append("(").append(varType).append(" ").append(var).append(") {\n");
+		sb.append("public ").append(type).append(' ').append(descriptor.setterName()).append("(").append(varType).append(" ").append(var).append(") {\n");
 		if(descriptor.hasCheck()) {
-			sb.append("\t\tif((").append(descriptor.getCheck()).append(")) {\n");
-			sb.append("\t\t\treturn set(").append(prop).append(", ").append(var).append(");\n");
-			sb.append("\t\t}\n");
-		} else {
+			sb.append("\tif((").append(descriptor.getCheck()).append(")) {\n");
 			sb.append("\t\treturn set(").append(prop).append(", ").append(var).append(");\n");
+			sb.append("\t}\n");
+		} else {
+			sb.append("\treturn set(").append(prop).append(", ").append(var).append(");\n");
 		}
-		sb.append("\t}");
+		sb.append("}");
 		return sb.toString();
 	}
 

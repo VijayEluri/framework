@@ -359,8 +359,8 @@ public class SourceFile {
 			}
 		}
 		for(String method : staticMethods.values()) {
-			sb.append('\n');
-			sb.append(method).append('\n');
+			sb.append("\n\t");
+			sb.append(method.replace("\n", "\n\t")).append('\n');
 		}
 		if(!staticInitializers.isEmpty()) {
 			sb.append("\tstatic {\n");
@@ -400,12 +400,12 @@ public class SourceFile {
 			sb.append("\t}\n");
 		}
 		if(rawSource != null && rawSource.length() > 0) {
-			sb.append('\n');
-			sb.append(rawSource);
+			sb.append("\n\t");
+			sb.append(rawSource.replace("\n", "\n\t")).append('\n');
 		}
 		for(String constructor : constructors.values()) {
-			sb.append('\n');
-			sb.append(constructor).append('\n');
+			sb.append("\n\t");
+			sb.append(constructor.replace("\n", "\n\t")).append('\n');
 		}
 		for(String method : methods.values()) {
 			sb.append("\n\t");

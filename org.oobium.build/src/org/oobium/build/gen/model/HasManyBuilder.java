@@ -37,10 +37,10 @@ public class HasManyBuilder extends PropertyBuilder {
 	
 	private String getGetterMethod() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("\t@SuppressWarnings(\"unchecked\")\n");
-		sb.append("\tpublic ").append(retTypeStr).append(' ').append(descriptor.getterName()).append("() {\n");
-		sb.append("\t\treturn (").append(retTypeStr).append(") get(").append(descriptor.enumProp()).append(");\n");
-		sb.append("\t}");
+		sb.append("@SuppressWarnings(\"unchecked\")\n");
+		sb.append("public ").append(retTypeStr).append(' ').append(descriptor.getterName()).append("() {\n");
+		sb.append("\treturn (").append(retTypeStr).append(") get(").append(descriptor.enumProp()).append(");\n");
+		sb.append("}");
 		return sb.toString();
 	}
 

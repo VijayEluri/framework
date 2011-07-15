@@ -75,7 +75,7 @@ public class ModelGenerator {
 		for(String line : doc.toString().split("\n")) {
 			sb.append(" * ").append(line).append('\n');
 		}
-		sb.append("*/\n");
+		sb.append(" */\n");
 	}
 
 	private static String build(String type, String sig, String body) {
@@ -122,28 +122,41 @@ public class ModelGenerator {
 		src.methods.put("setId(int id)", 					build(type, "setId(int id)", "setId(id)"));
 	}
 	
-	private static String createStaticMethods(String type) {
-		StringBuilder sb = new StringBuilder();
+	private static void createStaticMethods(SourceFile src, ModelDefinition model) {
+		String type = model.getSimpleName();
+
+		int i = 0;
+		StringBuilder sb;
+		
+		sb = new StringBuilder();
 		appendDoc(sb, "Get the PersistService appropriate for the ? class.", type);
 		sb.append("public static PersistService getPersistService() {\n");
 		sb.append("\treturn Model.getPersistService(").append(type).append(".class);\n");
-		sb.append("}\n");
-		sb.append("\n");
+		sb.append("}");
+		src.staticMethods.put(String.valueOf(i++), sb.toString());
+		
+		sb = new StringBuilder();
 		appendDoc(sb, "Get the count of all instances of ?", type);
 		sb.append("public static int count() throws SQLException {\n");
 		sb.append("\treturn Model.count(").append(type).append(".class);\n");
-		sb.append("}\n");
-		sb.append("\n");
+		sb.append("}");
+		src.staticMethods.put(String.valueOf(i++), sb.toString());
+		
+		sb = new StringBuilder();
 		appendDoc(sb, "Get the count of all instances of ? using the given sql query and values.", type);
 		sb.append("public static int count(String sql, Object...values) throws SQLException {\n");
 		sb.append("\treturn Model.count(").append(type).append(".class, sql, values);\n");
-		sb.append("}\n");
-		sb.append("\n");
+		sb.append("}");
+		src.staticMethods.put(String.valueOf(i++), sb.toString());
+		
+		sb = new StringBuilder();
 		appendDoc(sb, "Find the ? with the given id", type);
 		sb.append("public static ").append(type).append(" find(int id) throws SQLException {\n");
 		sb.append("\treturn Model.find(").append(type).append(".class, id);\n");
-		sb.append("}\n");
-		sb.append("\n");
+		sb.append("}");
+		src.staticMethods.put(String.valueOf(i++), sb.toString());
+		
+		sb = new StringBuilder();
 		appendDoc(sb, "Find the ? with the given id and include the given fields.\nThe include option can start with 'include:', but it is not required.\nIf include is null, then this method delegates to find(int).", type);
 		sb.append("public static ").append(type).append(" find(int id, String include) throws SQLException {\n");
 		sb.append("\tif(include == null) {\n");
@@ -152,36 +165,47 @@ public class ModelGenerator {
 		sb.append("\t\tString sql = (include.startsWith(\"include:\") ? \"where id=? \" : \"where id=? include:\") + include;\n");
 		sb.append("\t\treturn Model.find(").append(type).append(".class, sql, id);\n");
 		sb.append("\t}\n");
-		sb.append("}\n");
-		sb.append("\n");
+		sb.append("}");
+		src.staticMethods.put(String.valueOf(i++), sb.toString());
+		
+		sb = new StringBuilder();
 		appendDoc(sb, "Find the ? using the given sql query and values.  Note that only one instance will be returned.\nPrepend the query with 'where' to enter only the where clause.", type);
 		sb.append("public static ").append(type).append(" find(String sql, Object...values) throws SQLException {\n");
 		sb.append("\treturn Model.find(").append(type).append(".class, sql, values);\n");
-		sb.append("}\n");
-		sb.append("\n");
+		sb.append("}");
+		src.staticMethods.put(String.valueOf(i++), sb.toString());
+		
+		sb = new StringBuilder();
 		appendDoc(sb, "Find all instances of ?", type);
 		sb.append("public static List<").append(type).append("> findAll() throws SQLException {\n");
 		sb.append("\treturn Model.findAll(").append(type).append(".class);\n");
-		sb.append("}\n");
-		sb.append("\n");
+		sb.append("}");
+		src.staticMethods.put(String.valueOf(i++), sb.toString());
+		
+		sb = new StringBuilder();
 		appendDoc(sb, "Find all instances of ? using the given query Map and array of its entries to use.", type);
 		sb.append("public static List<").append(type).append("> findAll(Map<?, ?> query, String...entries) throws SQLException {\n");
 		sb.append("\treturn Model.findAll(").append(type).append(".class, query, entries);\n");
-		sb.append("}\n");
-		sb.append("\n");
+		sb.append("}");
+		src.staticMethods.put(String.valueOf(i++), sb.toString());
+		
+		sb = new StringBuilder();
 		appendDoc(sb, "Find all instances of ? using the given sql query and values.", type);
 		sb.append("public static List<").append(type).append("> findAll(String sql, Object...values) throws SQLException {\n");
 		sb.append("\treturn Model.findAll(").append(type).append(".class, sql, values);\n");
-		sb.append("}\n");
-		sb.append("\n");
+		sb.append("}");
+		src.staticMethods.put(String.valueOf(i++), sb.toString());
+		
+		sb = new StringBuilder();
 		sb.append("public static Paginator<").append(type).append("> paginate(int page, int perPage) throws SQLException {\n");
 		sb.append("\treturn Paginator.paginate(").append(type).append(".class, page, perPage);\n");
-		sb.append("}\n");
-		sb.append("\n");
+		sb.append("}");
+		src.staticMethods.put(String.valueOf(i++), sb.toString());
+		
+		sb = new StringBuilder();
 		sb.append("public static Paginator<").append(type).append("> paginate(int page, int perPage, String sql, Object...values) throws SQLException {\n");
 		sb.append("\treturn Paginator.paginate(").append(type).append(".class, page, perPage, sql, values);\n");
 		sb.append("}");
-		return sb.toString();
 	}
 	
 	public static File[] generate(Workspace workspace, Module module, File...models) {
@@ -316,7 +340,7 @@ public class ModelGenerator {
 
 		createOverrideMethods(src, model);
 		
-		src.staticMethods.put("finders", createStaticMethods(model.getSimpleName()));
+		createStaticMethods(src, model);
 		
 		for(Iterator<String> iter = src.imports.iterator(); iter.hasNext(); ) {
 			if(model.getCanonicalName().equals(iter.next())) {
