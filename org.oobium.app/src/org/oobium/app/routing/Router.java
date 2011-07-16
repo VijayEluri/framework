@@ -54,9 +54,9 @@ import org.oobium.app.controllers.WebsocketController;
 import org.oobium.app.http.Action;
 import org.oobium.app.http.MimeType;
 import org.oobium.app.request.Request;
-import org.oobium.app.routing.routes.HttpRoute;
 import org.oobium.app.routing.routes.DynamicAssetRoute;
 import org.oobium.app.routing.routes.HasManyRoute;
+import org.oobium.app.routing.routes.HttpRoute;
 import org.oobium.app.routing.routes.RedirectRoute;
 import org.oobium.app.routing.routes.RtspRoute;
 import org.oobium.app.routing.routes.StaticRoute;
@@ -68,6 +68,7 @@ import org.oobium.app.views.View;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.utils.Base64;
+import org.oobium.utils.json.JsonUtils;
 
 public class Router {
 
@@ -136,6 +137,44 @@ public class Router {
 	public NamedRoute add(String name) {
 		checkName(name);
 		return new NamedRoute(this, name);
+	}
+	
+	public void addFromJson(String json) {
+		for(Object o : JsonUtils.toList(json)) {
+			try {
+				addFromJson(o);
+			} catch(Exception e) {
+				if(logger.isLoggingDebug()) {
+					logger.error(e);
+				} else {
+					logger.error(e.getMessage());
+				}
+			}
+		}
+	}
+	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private void addFromJson(Object o) throws ClassNotFoundException {
+		Map m = (Map) o;
+		
+		// Resource Route
+		if(m.containsKey("model")) {
+			String path = (String) m.get("path");
+			Class<? extends Model> clazz = (Class<? extends Model>) Class.forName((String) m.get("model"));
+			String s = (String) m.get("action");
+			if(s == null) {
+				s = (String) m.get("actions");
+				if(s == null) {
+					addResources(path, clazz);
+				} else {
+					for(String action : s.split("\\s*,\\s*")) {
+						addResource(path, clazz, Action.valueOf(action));
+					}
+				}
+			} else {
+				addResource(path, clazz, Action.valueOf(s));
+			}
+		}
 	}
 	
 	public Routed addAsset(Class<? extends DynamicAsset> clazz) {

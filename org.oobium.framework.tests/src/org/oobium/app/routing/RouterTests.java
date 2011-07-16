@@ -2592,4 +2592,32 @@ public class RouterTests {
 		assertEquals("[[type, business]]", asString(vh.params));
 	}
 	
+	@Test
+	public void testAddModelRoutesFromJson() throws Exception {
+		String json = 
+			"[" +
+			"  {" +
+			"    model:  \"" + Account.class.getName() + "\"," +
+			"    action: \"create\"" +
+			"  }," +
+			"  {" +
+			"    model:  \"" + Category.class.getName() + "\"," +
+			"    action: \"showAll\"" +
+			"  }," +
+			"  {" +
+			"    model:  \"" + Member.class.getName() + "\"," +
+			"    actions: \"create, update, destroy, show, showAll\"" +
+			"  }" +
+			"]";
+		router.addFromJson(json);
+		assertEquals(7, router.getRoutes().size());
+		assertEquals("[GET] /categories -> CategoryController#showAll", 			router.getRoutes().get(0).toString());
+		assertEquals("[GET] /members -> MemberController#showAll", 					router.getRoutes().get(1).toString());
+		assertEquals("[POST] /accounts -> AccountController#create", 				router.getRoutes().get(2).toString());
+		assertEquals("[POST] /members -> MemberController#create", 					router.getRoutes().get(3).toString());
+		assertEquals("[PUT] /members/(\\d+) -> MemberController#update(id)", 		router.getRoutes().get(4).toString());
+		assertEquals("[DELETE] /members/(\\d+) -> MemberController#destroy(id)", 	router.getRoutes().get(5).toString());
+		assertEquals("[GET] /members/(\\d+) -> MemberController#show(id)", 				router.getRoutes().get(6).toString());
+	}
+	
 }
