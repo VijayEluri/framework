@@ -87,8 +87,6 @@ public class DerbyEmbeddedDatabase extends Database {
 		sb.append("jdbc:derby:");
 		if(inMemory()) {
 			sb.append("memory:");
-		} else if(database.charAt(0) != File.separatorChar) {
-			sb.append(File.separatorChar);
 		}
 		sb.append(database);
 		sb.append(";create=true;");
