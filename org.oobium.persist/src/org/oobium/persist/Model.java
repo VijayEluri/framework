@@ -610,8 +610,16 @@ public abstract class Model implements JsonModel {
 		return coerce(get(field), type);
 	}
 	
+	public <T> T get(String field, T defaultValue) {
+		return coerce(get(field), defaultValue);
+	}
+	
 	public <T> T get(String field, Class<T> type, boolean load) {
 		return coerce(get(field, load), type);
+	}
+
+	public <T> T get(String field, T defaultValue, boolean load) {
+		return coerce(get(field, load), defaultValue);
 	}
 
 	/**
