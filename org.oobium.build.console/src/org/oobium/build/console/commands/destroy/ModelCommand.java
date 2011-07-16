@@ -28,9 +28,9 @@ public class ModelCommand extends BuilderCommand {
 
 	@Override
 	public void run() {
-		retainFlags('f', 'm', 'v', 'c');
+		retainFlags('f', 'm', 'v', 'c', 'n');
 		if(!hasFlags() || (flagCount() == 1 && flag('f'))) {
-			setFlag('m', 'v', 'c');
+			setFlag('m', 'v', 'c', 'n');
 		}
 		
 		Module module = getModule();
@@ -70,6 +70,20 @@ public class ModelCommand extends BuilderCommand {
 					return;
 				}
 				FileUtils.delete(controller);
+			}
+		}
+
+		if(flag('n')) {
+			File notifier = module.getNotifier(modelName);
+			if(notifier.exists()) {
+				String notifierName = notifier.getName();
+				notifierName = notifierName.substring(0, name.length() - 5);
+				String confirm = flag('f') ? "y" : ask("Permanently delete the " + notifierName + " from the file system?[Y/N] ");
+				if(!"Y".equalsIgnoreCase(confirm)) {
+					console.out.println("operation cancelled");
+					return;
+				}
+				FileUtils.delete(notifier);
 			}
 		}
 

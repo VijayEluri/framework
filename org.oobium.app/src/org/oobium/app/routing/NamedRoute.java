@@ -11,6 +11,7 @@
 package org.oobium.app.routing;
 
 import static org.jboss.netty.handler.codec.http.HttpMethod.GET;
+import static org.oobium.app.routing.Router.DEFAULT_MODEL_NOTIFY_PATH;
 import static org.oobium.app.routing.Router.MODEL_NOTIFY_GROUP;
 import static org.oobium.app.routing.Router.checkClass;
 
@@ -37,7 +38,7 @@ public class NamedRoute {
 	}
 	
 	public Routed asModelNotifier() {
-		return asModelNotifier("/model_notifications");
+		return asModelNotifier(DEFAULT_MODEL_NOTIFY_PATH);
 	}
 	
 	public Routed asModelNotifier(String path) {

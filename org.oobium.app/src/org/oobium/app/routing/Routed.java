@@ -19,21 +19,27 @@ import org.oobium.app.routing.routes.HttpRoute;
 
 public class Routed {
 
+	private static Route[] toArray(Collection<Routed> routed) {
+		List<Route> list = new ArrayList<Route>();
+		for(Routed r : routed) {
+			list.addAll(Arrays.asList(r.routes));
+		}
+		return list.toArray(new Route[list.size()]);
+	}
+	
 	protected final Router router;
 	protected final Route[] routes;
 	
 	Routed(Router router, Route...routes) {
 		this.router = router;
 		this.routes = routes;
+		if(router.autoPublish) {
+			publish();
+		}
 	}
 	
 	Routed(Router router, Collection<Routed> routed) {
-		this.router = router;
-		List<Route> list = new ArrayList<Route>();
-		for(Routed r : routed) {
-			list.addAll(Arrays.asList(r.routes));
-		}
-		this.routes = list.toArray(new Route[list.size()]);
+		this(router, toArray(routed));
 	}
 	
 	public Routed publish() {
@@ -56,4 +62,11 @@ public class Routed {
 		return this;
 	}
 	
+	public Routed unpublish() {
+		for(Route route : routes) {
+			router.unpublish(route);
+		}
+		return this;
+	}
+
 }

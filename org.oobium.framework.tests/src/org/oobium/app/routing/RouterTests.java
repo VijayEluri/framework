@@ -2504,7 +2504,7 @@ public class RouterTests {
 
 	@Test
 	public void testPublish() throws Exception {
-		router.setDiscovery("paths");
+		router.setApi("paths");
 		router.addAsset(AccountScripts.class).publish();
 	}
 

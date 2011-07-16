@@ -487,13 +487,19 @@ public class Module extends Bundle {
 		return ProjectGenerator.createObserver(this, modelPackage, adjust(modelName));
 	}
 
+	public File createNotifier(File model) {
+		String pkg = packageName(model);
+		String modelName = getModelName(model);
+		return createNotifier(pkg, modelName);
+	}
+	
 	public File createNotifier(String modelPackage, String modelName) {
 		addImportPackage(Action.class.getPackage().getName());
 		addImportPackage(ModelNotifier.class.getPackage().getName());
 		addImportPackage(Websocket.class.getPackage().getName());
 		return ProjectGenerator.createNotifier(this, modelPackage, adjust(modelName));
 	}
-
+	
 	public File createView(String name, String content) {
 		File view = ViewGenerator.createView(views, adjust(name), content);
 		addImportPackage(View.class.getPackage().getName());
@@ -1221,6 +1227,10 @@ public class Module extends Bundle {
 		return new File(observers, adjust(name, "Observer") + ".java");
 	}
 
+	public File getNotifier(File model) {
+		return getNotifier(getModelName(model));
+	}
+	
 	public File getNotifier(String name) {
 		return new File(observers, adjust(name, "Notifier") + ".java");
 	}

@@ -40,9 +40,9 @@ public class ModelCommand extends BuilderCommand {
 		Module module = getModule();
 
 		try {
-			retainFlags('m', 'v', 'c', 't', 'r', 'f');
+			retainFlags('m', 'v', 'c', 'n', 't', 'r', 'f');
 			if(!hasFlags() || (flagCount() == 1 && flag('f'))) {
-				setFlag('m', 'c', 't', 'r');
+				setFlag('m', 'c', 'n', 't', 'r');
 				if(!module.isWebservice()) {
 					setFlag('v');
 				}
@@ -116,6 +116,24 @@ public class ModelCommand extends BuilderCommand {
 				default:
 					console.out.println("modified file <a href=\"open file " + file + "\">" + file.getName() + "</a>");
 				}
+			}
+			
+			if(flag('n')) {
+				File notifier = module.getNotifier(model);
+				if(notifier.exists()) {
+					String name = notifier.getName();
+					name = name.substring(0, name.length() - 5);
+					String confirm = flag('f') ? "Y" : ask(name + " already exists. Overwrite?[Y/N] ");
+					if(!confirm.equalsIgnoreCase("Y")) {
+						console.out.println("operation cancelled");
+						return;
+					}
+				}
+
+				File file = module.createNotifier(model);
+				String name = file.getName();
+				name = name.substring(0, name.length()-5);
+				console.out.println("created notifier <a href=\"open notifier " + name + "\">" + name + "</a>");
 			}
 
 			if(flag('t')) {

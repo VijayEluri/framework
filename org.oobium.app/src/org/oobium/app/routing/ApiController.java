@@ -25,7 +25,7 @@ import org.oobium.app.controllers.HttpController;
 import org.oobium.app.routing.routes.HttpRoute;
 import org.oobium.app.http.Action;
 
-public class DiscoveryController extends HttpController {
+public class ApiController extends HttpController {
 
 	private Map<String, String> build(Route route) {
 		Map<String, String> map = new HashMap<String, String>();

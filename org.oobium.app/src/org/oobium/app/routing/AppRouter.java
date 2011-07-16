@@ -55,25 +55,24 @@ import org.oobium.persist.Model;
 
 public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 
-	private static final String DISCOVERY_DEFAULT = "__discovery__";
+	private static final String API_NAME = "__api__";
 
 	
 	private final int port;
 	private final String[] hosts;
 	private List<Router> moduleRouters;
-	private String discoveryHeader;
+	private String apiHeader;
 	
 
 	public AppRouter(AppService service, String host, int port) {
-		super(service);
-		this.hosts = new String[] { host };
-		this.port = port;
+		this(service, new String[] { host }, port);
 	}
 
 	public AppRouter(AppService service, String[] hosts, int port) {
 		super(service);
 		this.hosts = hosts;
 		this.port = port;
+		setApi(API_NAME, true);
 	}
 
 	public synchronized void add(Router moduleRouter) {
@@ -83,10 +82,15 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		moduleRouters.add(moduleRouter);
 	}
 
+	public void addApiHeader(boolean addApiHeader) {
+		String path = getRoute(this, API_NAME).path;
+		this.apiHeader = addApiHeader ? path : null;
+	}
+	
 	public void applyHeaders(Request request, Response response) {
 		if(request.isHome()) {
-			if(discoveryHeader != null) {
-				response.setApiLocation(discoveryHeader);
+			if(apiHeader != null) {
+				response.setApiLocation(apiHeader);
 			}
 			String path = getModelNotificationsPath();
 			if(path != null) {
@@ -931,24 +935,28 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		}
 	}
 
-	public void setDiscovery(String path) {
-		setDiscovery(path, false);
+	public void removeApi() {
+		remove(API_NAME);
+	}
+	
+	public void setApi(String path) {
+		setApi(path, false);
 	}
 
-	public void setDiscovery(String path, boolean addDiscoveryHeader) {
-		remove(DISCOVERY_DEFAULT);
+	public void setApi(String path, boolean addApiHeader) {
+		remove(API_NAME);
 		if(path != null) {
-			add(DISCOVERY_DEFAULT).asRoute(GET, path, DiscoveryController.class);
+			add(API_NAME).asRoute(GET, path, ApiController.class);
 		}
-		this.discoveryHeader = addDiscoveryHeader ? path : null;
+		this.apiHeader = addApiHeader ? path : null;
 	}
 
-	public void setDiscovery(String path, String realm) {
-		setDiscovery(path, false);
+	public void setApi(String path, String realm) {
+		setApi(path, false);
 	}
 
-	public void setDiscovery(String path, String realm, boolean addDiscoverHeader) {
-		setDiscovery(path, discoveryHeader);
+	public void setApi(String path, String realm, boolean addApiHeader) {
+		setApi(path, apiHeader);
 		addBasicAuthentication(path, realm);
 	}
 

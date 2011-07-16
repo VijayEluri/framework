@@ -73,6 +73,7 @@ import org.oobium.utils.json.JsonUtils;
 public class Router {
 
 	public static final String MODEL_NOTIFY_GROUP = "model-notifications";
+	public static final String DEFAULT_MODEL_NOTIFY_PATH = "model_notifications";
 	
 	public static final String UNKNOWN_PATH = "/#";
 	public static final String HOME = "Home";
@@ -85,7 +86,7 @@ public class Router {
 		if(Modifier.isPrivate(modifiers)) {
 			throw new IllegalArgumentException(clazz.getCanonicalName() + " cannot be routed because it is a private class");
 		}
-		if(clazz != DiscoveryController.class) {
+		if(clazz != ApiController.class) {
 			try {
 				clazz.getConstructor();
 			} catch(SecurityException e) {
@@ -121,11 +122,15 @@ public class Router {
 	protected Map<String, Realm> realms;
 	
 	String modelNotificationPath;
+	
+	boolean autoPublish;
 	Set<Route> published;
 	
 	public Router(ModuleService service) {
 		this.service = service;
 		this.logger = service.getLogger();
+		this.autoPublish = true;
+		addModelNotifier();
 	}
 
 	/**
@@ -583,7 +588,7 @@ public class Router {
 	}
 
 	public Routed addModelNotifier() {
-		return add("model_notifications").asModelNotifier();
+		return add(DEFAULT_MODEL_NOTIFY_PATH).asModelNotifier();
 	}
 
 	public Routed addModelNotifier(String path) {
@@ -1034,7 +1039,7 @@ public class Router {
 		}
 		published.add(route);
 	}
-
+	
 	public void registerWebsocket(Websocket socket) {
 		String id = socket.getId();
 		if(id != null && id.length() > 0) {
@@ -1197,6 +1202,10 @@ public class Router {
 		return false;
 	}
 	
+	public void removeModelNotifier() {
+		remove(modelNotificationPath);
+	}
+	
 	public void removeRedirect(String from) {
 		from = checkRule(from);
 		removeRoute(from);
@@ -1334,6 +1343,10 @@ public class Router {
 		remove(getName(show, path));
 	}
 	
+	public void setAutoPublish(boolean autoPublish) {
+		this.autoPublish = autoPublish;
+	}
+	
 	/**
 	 * Set the home path ("/") of this router to render the given view class.
 	 * @param clazz the view class to render
@@ -1380,6 +1393,12 @@ public class Router {
 			return new Routed(this, route);
 		} else {
 			throw new IllegalArgumentException("invalid type: " + clazz.getSimpleName() + " (valid types are Model and Controller)");
+		}
+	}
+
+	void unpublish(Route route) {
+		if(published != null) {
+			published.remove(route);
 		}
 	}
 
