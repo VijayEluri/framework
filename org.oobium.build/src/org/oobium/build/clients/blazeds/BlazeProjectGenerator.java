@@ -6,6 +6,7 @@ import static org.oobium.utils.StringUtils.*;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.List;
 
 import org.oobium.build.clients.JavaClientExporter;
@@ -185,19 +186,114 @@ public class BlazeProjectGenerator {
 	}
 	
 	private void createModel(File srcFolder, ModelDefinition model) throws IOException {
+		String type = model.getSimpleName();
+		String var = varName(type);
+		String plural = varName(type, true);
+		Collection<PropertyDescriptor> props = model.getProperties().values();
+		
 		SourceFile sf = new SourceFile();
 		sf.packageName = model.getPackageName();
-		sf.simpleName = model.getSimpleName();
+		sf.imports.add(List.class.getCanonicalName());
+		sf.imports.add(SQLException.class.getCanonicalName());
+		sf.simpleName = type;
 		sf.superName = sf.simpleName + "Model";
 
+		int i = 0;
+		StringBuilder sb;
+		
+		sb = new StringBuilder();
+		sb.append("private static ").append(type).append(" setVars(").append(type).append(' ').append(var).append(") {\n");
+		sb.append("\tif(").append(var).append(" != null) {\n");
+		sb.append("\t\t").append(var).append(".id = ").append(var).append(".getId();\n");
+		for(PropertyDescriptor prop : props) {
+			sb.append("\t\t").append(var).append(".").append(prop.variable()).append(" = ").append(var).append(".").append(prop.getterName()).append("();\n");
+		}
+		sb.append("\t}\n");
+		sb.append("\treturn ").append(var).append(";\n");
+		sb.append("}");
+		sf.staticMethods.put(String.valueOf(i++), sb.toString());
+		
+		sb = new StringBuilder();
+		sb.append("private static List<").append(type).append("> setVars(List<").append(type).append("> ").append(plural).append(") {\n");
+		sb.append("\tfor(").append(type).append(' ').append(var).append(" : ").append(plural).append(") {\n");
+		sb.append("\t\tsetVars(").append(var).append(");\n");
+		sb.append("\t}\n");
+		sb.append("\treturn ").append(plural).append(";\n");
+		sb.append("}");
+		sf.staticMethods.put(String.valueOf(i++), sb.toString());
+		
+		sb = new StringBuilder();
+		sb.append("private static ").append(type).append(" setFields(").append(type).append(' ').append(var).append(") {\n");
+		sb.append("\tif(").append(var).append(" != null) {\n");
+		sb.append("\t\t").append(var).append(".setId(").append(var).append(".id);\n");
+		for(PropertyDescriptor prop : props) {
+			sb.append("\t\t").append(var).append(".").append(prop.setterName()).append("(").append(var).append(".").append(prop.variable()).append(");\n");
+		}
+		sb.append("\t}\n");
+		sb.append("\treturn ").append(var).append(";\n");
+		sb.append("}");
+		sf.staticMethods.put(String.valueOf(i++), sb.toString());
+		
+
+		sb = new StringBuilder();
+		sf.staticMethods.put(String.valueOf(i++), sb.toString());
+		sb = new StringBuilder();
+		sb.append("public static ").append(type).append(" find(int id) throws SQLException {\n");
+		sb.append("\treturn setVars(").append(sf.superName).append(".find(id));\n");
+		sb.append("}");
+		sf.staticMethods.put(String.valueOf(i++), sb.toString());
+		
+		sb = new StringBuilder();
+		sb.append("public static ").append(sf.simpleName).append(" find(String where) throws SQLException {\n");
+		sb.append("\treturn setVars(").append(sf.superName).append(".find(where));\n");
+		sb.append("}");
+		sf.staticMethods.put(String.valueOf(i++), sb.toString());
+		
+		sb = new StringBuilder();
+		sb.append("public static List<").append(sf.simpleName).append("> findAll() throws SQLException {\n");
+		sb.append("\treturn setVars(").append(sf.superName).append(".findAll());\n");
+		sb.append("}");
+		sf.staticMethods.put(String.valueOf(i++), sb.toString());
+		
+		sb = new StringBuilder();
+		sb.append("public static List<").append(sf.simpleName).append("> findAll(String where) throws SQLException {\n");
+		sb.append("\treturn setVars(").append(sf.superName).append(".findAll(where));\n");
+		sb.append("}");
+		sf.staticMethods.put(String.valueOf(i++), sb.toString());
+		
+
 		sf.variables.put("", "public int id");
-		for(PropertyDescriptor prop : model.getProperties().values()) {
+		for(PropertyDescriptor prop : props) {
 			if(!prop.fullType().startsWith("java.lang")) {
 				sf.imports.add(prop.fullType());
 			}
 			sf.variables.put(prop.variable(), "public " + prop.castType() + " " + prop.variable());
 		}
 
+		sb = new StringBuilder();
+		sb.append("@Override\n");
+		sb.append("public boolean create() {\n");
+		sb.append("\tsetFields(this);\n");
+		sb.append("\treturn super.create();\n");
+		sb.append("}");
+		sf.methods.put(String.valueOf(i++), sb.toString());
+
+		sb = new StringBuilder();
+		sb.append("@Override\n");
+		sb.append("public boolean update() {\n");
+		sb.append("\tsetFields(this);\n");
+		sb.append("\treturn super.update();\n");
+		sb.append("}");
+		sf.methods.put(String.valueOf(i++), sb.toString());
+
+		sb = new StringBuilder();
+		sb.append("@Override\n");
+		sb.append("public boolean destroy() {\n");
+		sb.append("\tsetId(id);\n");
+		sb.append("\treturn super.destroy();\n");
+		sb.append("}");
+		sf.methods.put(String.valueOf(i++), sb.toString());
+		
 		writeFile(srcFolder, sf.getFilePath(), sf.toSource());
 	}
 
