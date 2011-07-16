@@ -84,18 +84,20 @@ public class WebsocketServerHandler extends SimpleChannelUpstreamHandler {
 	}
 	
 	private WebsocketController getController(Request request) {
-		try {
-			WebsocketController controller = controllerClass.newInstance();
-			controller.init(logger, request, websocket);
-			return controller;
-		} catch(Exception e) {
-			if(logger.isLoggingDebug()) {
-				logger.warn(e);
-			} else {
-				logger.warn(e.getLocalizedMessage());
+		if(controllerClass != null) {
+			try {
+				WebsocketController controller = controllerClass.newInstance();
+				controller.init(logger, request, websocket);
+				return controller;
+			} catch(Exception e) {
+				if(logger.isLoggingDebug()) {
+					logger.warn(e);
+				} else {
+					logger.warn(e.getLocalizedMessage());
+				}
 			}
-			return null;
 		}
+		return null;
 	}
 
 	public Websocket getWebsocket() {
