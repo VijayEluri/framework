@@ -27,7 +27,7 @@ public class WebsocketRoute extends Route {
 		} else {
 			this.params = params.toArray(new String[params.size()][]);
 		}
-		string = controllerClass.getSimpleName();
+		string = getString();
 	}
 
 	@Override
@@ -35,4 +35,20 @@ public class WebsocketRoute extends Route {
 		return params;
 	}
 
+	private String getString() {
+		if(group != null) {
+			return group;
+		}
+		if(controllerClass != null) {
+			return controllerClass.getSimpleName();
+		}
+		if(path != null) {
+			return path;
+		}
+		if(pattern != null) {
+			return pattern.toString();
+		}
+		return "!unknown websocket!";
+	}
+	
 }
