@@ -1422,7 +1422,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 			} else {
 				for(MimeType accept : acceptedTypes) {
 					if(accept == MimeType.ALL) {
-						return options[0].name;
+						return options[options.length-1].name;
 					} else {
 						for(MimeType produce : options) {
 							if(accept.resolves(produce)) {
