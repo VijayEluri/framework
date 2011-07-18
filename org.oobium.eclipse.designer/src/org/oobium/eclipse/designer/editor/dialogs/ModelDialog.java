@@ -42,6 +42,8 @@ public class ModelDialog extends SimpleDialog {
 		{ "Integer", "java.lang.Integer" },
 		{ "long", "long" },
 		{ "Long", "java.lang.Long" },
+		{ "Map<String, String>", "java.util.Map" },
+		{ "Password", "org.oobium.persist.Password" },
 		{ "Text", "org.oobium.persist.Text" },
 		{ "Time", "java.sql.Time" },
 		{ "Timestamp", "java.sql.Timestamp" },
@@ -60,8 +62,9 @@ public class ModelDialog extends SimpleDialog {
 	
 	private String name;
 	private String[][] attributes;
-	private boolean timestamps = true;
+	private boolean activation;
 	private boolean datestamps;
+	private boolean timestamps = true;
 	private boolean allowUpdate = true;
 	private boolean allowDelete = true;
 	
@@ -120,15 +123,16 @@ public class ModelDialog extends SimpleDialog {
 					break;
 				case SWT.Traverse:
 					switch(event.detail) {
-					case SWT.TRAVERSE_RETURN:
-						item.setText(0, text.getText());
 					case SWT.TRAVERSE_ESCAPE:
 						text.dispose();
 						event.doit = false;
 						break;
+					case SWT.TRAVERSE_RETURN:
+						event.doit = false;
 					case SWT.TRAVERSE_TAB_NEXT:
 						item.setText(0, text.getText());
 						text.dispose();
+						table.getColumn(0).pack();
 						createAttrTypeEditor(editor, item);
 						break;
 					}
@@ -144,7 +148,46 @@ public class ModelDialog extends SimpleDialog {
 		editor.setEditor(text, item, 0);
 	}
 
-	private void createAttrTypeEditor(TableEditor editor, final TableItem item) {
+	private void handleKeydown(CCombo combo, char character) {
+		String txt = (String) combo.getData();
+		if(character == 8) { // backspace
+			if(txt == null) {
+				return;
+			} else if(txt.length() == 1) {
+				combo.setData(null);
+				combo.removeAll();
+				for(String[] type : types) {
+					combo.add(type[0]);
+				}
+				combo.select(0);
+				return;
+			} else {
+				txt = txt.substring(0, txt.length() - 1);
+			}
+		} else {
+			if(txt == null) {
+				txt = String.valueOf(character);
+			} else {
+				txt = txt + character;
+			}
+		}
+		txt = txt.toLowerCase();
+		combo.setData(txt);
+		combo.removeAll();
+		for(String[] type : types) {
+			if(type[0].toLowerCase().startsWith(txt)) {
+				combo.add(type[0]);
+			}
+		}
+		if(combo.getItemCount() == 0) {
+			for(String[] type : types) {
+				combo.add(type[0]);
+			}
+		}
+		combo.select(0);
+	}
+	
+	private void createAttrTypeEditor(final TableEditor editor, final TableItem item) {
 		final CCombo combo = new CCombo(table, SWT.DROP_DOWN | SWT.READ_ONLY);
 		editControl = combo;
 		for(String[] type : types) {
@@ -159,10 +202,19 @@ public class ModelDialog extends SimpleDialog {
 					item.setText(1, combo.getText());
 					combo.dispose();
 					break;
+				case SWT.KeyDown:
+					handleKeydown(combo, event.character);
+					break;
 				case SWT.Traverse:
 					switch(event.detail) {
 					case SWT.TRAVERSE_RETURN:
 						item.setText(1, combo.getText());
+						combo.dispose();
+						TableItem item = new TableItem(table, SWT.NONE);
+						item.setText(new String[] { "", types[0][0] });
+						createAttrNameEditor(editor, item);
+						event.doit = false;
+						break;
 					case SWT.TRAVERSE_ESCAPE:
 						combo.dispose();
 						event.doit = false;
@@ -172,6 +224,7 @@ public class ModelDialog extends SimpleDialog {
 			}
 		};
 		combo.addListener(SWT.FocusOut, listener);
+		combo.addListener(SWT.KeyDown, listener);
 		combo.addListener(SWT.Traverse, listener);
 		
 		combo.setFocus();
@@ -280,6 +333,7 @@ public class ModelDialog extends SimpleDialog {
 		downImage = new Image(shell.getDisplay(), getClass().getResourceAsStream("arrow_down.gif"));
 		
 		ToolItem item = new ToolItem(tb, SWT.PUSH);
+		item.setToolTipText("Add a new attribute");
 		item.setImage(addImage);
 		item.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -292,6 +346,7 @@ public class ModelDialog extends SimpleDialog {
 		});
 
 		final ToolItem del = new ToolItem(tb, SWT.PUSH);
+		item.setToolTipText("Remove selected attribute");
 		del.setImage(delImage);
 		del.setEnabled(false);
 		del.addSelectionListener(new SelectionAdapter() {
@@ -306,6 +361,7 @@ public class ModelDialog extends SimpleDialog {
 		});
 
 		up = new ToolItem(tb, SWT.PUSH);
+		up.setToolTipText("Move selected attribute up one position");
 		up.setImage(upImage);
 		up.setEnabled(false);
 		up.addSelectionListener(new SelectionAdapter() {
@@ -316,6 +372,7 @@ public class ModelDialog extends SimpleDialog {
 		});
 
 		dn = new ToolItem(tb, SWT.PUSH);
+		up.setToolTipText("Move selected attribute down one position");
 		dn.setImage(downImage);
 		dn.setEnabled(false);
 		dn.addSelectionListener(new SelectionAdapter() {
@@ -386,6 +443,17 @@ public class ModelDialog extends SimpleDialog {
 				allowDelete = ((Button) e.widget).getSelection();
 			}
 		});
+		
+		b = new Button(bcomp, SWT.CHECK);
+		b.setText("Activation");
+		b.setSelection(activation);
+		b.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
+		b.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				activation = ((Button) e.widget).getSelection();
+			}
+		});
 	}
 
 	private void moveSelectedItemDown() {
@@ -432,6 +500,10 @@ public class ModelDialog extends SimpleDialog {
 		downImage.dispose();
 	}
 
+	public boolean getActivation() {
+		return activation;
+	}
+	
 	public boolean getAllowDelete() {
 		return allowDelete;
 	}
@@ -477,11 +549,24 @@ public class ModelDialog extends SimpleDialog {
 	@Override
 	protected boolean onOK() {
 		TableItem[] items = table.getItems();
+		for(TableItem item : items) {
+			if(item.getText(0).trim().length() == 0) {
+				item.dispose();
+			}
+		}
+		items = table.getItems();
 		attributes = new String[items.length][];
 		for(int i = 0; i < items.length; i++) {
 			attributes[i] = new String[] { items[i].getText(0), getFullType(items[i].getText(1)) };
 		}
 		return true;
+	}
+	
+	/**
+	 * must be called before calling open
+	 */
+	public void setActivation(boolean activation) {
+		this.activation = activation;
 	}
 	
 	/**

@@ -23,7 +23,6 @@ public class DesignerSelectionTool extends SelectionTool {
 	
 	@Override
 	public void setDragTracker(DragTracker newDragTracker) {
-		System.out.println("set drag tracker: " + newDragTracker);
 		super.setDragTracker(newDragTracker);
 	}
 	

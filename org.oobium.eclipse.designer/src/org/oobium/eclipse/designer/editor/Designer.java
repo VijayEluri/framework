@@ -7,9 +7,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.gef.ContextMenuProvider;
 import org.eclipse.gef.DefaultEditDomain;
-import org.eclipse.gef.EditDomain;
 import org.eclipse.gef.GraphicalViewer;
-import org.eclipse.gef.Tool;
 import org.eclipse.gef.dnd.TemplateTransferDropTargetListener;
 import org.eclipse.gef.editparts.ScalableFreeformRootEditPart;
 import org.eclipse.gef.requests.CreationFactory;
@@ -18,6 +16,10 @@ import org.eclipse.gef.ui.actions.ActionRegistry;
 import org.eclipse.gef.ui.parts.GraphicalEditor;
 import org.eclipse.gef.ui.parts.GraphicalViewerKeyHandler;
 import org.eclipse.jface.util.TransferDropTargetListener;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IFileEditorInput;
 import org.oobium.eclipse.designer.editor.actions.CreateConnectionsAction;
@@ -30,7 +32,7 @@ public class Designer extends GraphicalEditor {
 
 	public static String ID = Designer.class.getCanonicalName();
 
-	
+	private DesignerActionBar actionbar;
 	private SiteDiagram diagram;
 
 	public Designer() {
@@ -55,6 +57,30 @@ public class Designer extends GraphicalEditor {
 		ContextMenuProvider provider = new DesignerContextMenuProvider(viewer, getActionRegistry());
 		viewer.setContextMenu(provider);
 		getSite().registerContextMenu(provider, viewer);
+	}
+	
+	@Override
+	public void createPartControl(Composite parent) {
+		GridLayout layout = new GridLayout();
+		layout.marginWidth = 0;
+		layout.marginHeight = 0;
+		layout.verticalSpacing = 0;
+		parent.setLayout(layout);
+		
+		actionbar = new DesignerActionBar(parent);
+		actionbar.setEditDomain(getEditDomain());
+		
+		super.createPartControl(parent);
+		
+		GraphicalViewer viewer = getGraphicalViewer();
+		viewer.getControl().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+		actionbar.hookViewer(viewer);
+	}
+	
+	@Override
+	public void dispose() {
+		actionbar.dispose();
+		super.dispose();
 	}
 	
 	@Override
