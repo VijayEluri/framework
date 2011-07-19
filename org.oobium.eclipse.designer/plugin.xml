@@ -24,5 +24,26 @@
          </selection>
       </wizard>
    </extension>
+   <extension
+         point="org.eclipse.ui.commands">
+      <command
+            defaultHandler="org.oobium.eclipse.designer.commands.OpenDesignerCommand"
+            id="org.oobium.eclipse.designer.commands.OpenDesignerCommand"
+            name="Open Model Editor">
+      </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            allPopups="false"
+            locationURI="popup:org.eclipse.jdt.ui.PackageExplorer">
+         <command
+               commandId="org.oobium.eclipse.designer.commands.OpenDesignerCommand"
+               icon="icons/sitemap.png"
+               label="Open Model Editor"
+               style="push">
+         </command>
+      </menuContribution>
+   </extension>
 
 </plugin>

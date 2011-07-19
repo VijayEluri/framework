@@ -1203,7 +1203,7 @@ public class Router {
 	}
 	
 	public void removeModelNotifier() {
-		remove(modelNotificationPath);
+		remove(DEFAULT_MODEL_NOTIFY_PATH);
 	}
 	
 	public void removeRedirect(String from) {

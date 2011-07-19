@@ -25,6 +25,7 @@ import org.eclipse.swt.widgets.ToolItem;
 import org.oobium.app.http.Action;
 import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
+import org.oobium.eclipse.OobiumPlugin;
 
 public class DesignerActionBarPopup {
 
@@ -113,7 +114,8 @@ public class DesignerActionBarPopup {
 						else {
 							File file = module.getControllerFor(model);
 							if(!file.isFile()) {
-								module.createController(model);
+								module.createForModel(OobiumPlugin.getWorkspace(), module.getModel(model), Module.CONTROLLER);
+								Eclipse.refreshProject(module.name);
 							}
 							int line = module.getLine(model, Action.valueOf(label));
 							Eclipse.openFile(module.file, file, line);
@@ -206,8 +208,8 @@ public class DesignerActionBarPopup {
 				changed = module.addModelRoute(model, Action.valueOf(label));
 				File file = module.getControllerFor(model);
 				if(!file.isFile()) {
-					module.createController(model);
-					Eclipse.refresh(module.file, file.getParentFile());
+					module.createForModel(OobiumPlugin.getWorkspace(), module.getModel(model), Module.CONTROLLER);
+					Eclipse.refreshProject(module.name);
 				}
 			} else {
 				changed = module.removeModelRoute(model, Action.valueOf(label));

@@ -19,6 +19,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
 
 import org.oobium.build.gen.model.PropertyDescriptor;
 
@@ -142,6 +143,47 @@ public class SourceFile {
 	
 	public static String ensureImports(String src, Collection<String> imports) {
 		return ensureImports(new StringBuilder(src), imports);
+	}
+	
+	public static String removeUnusedImport(String src, String imp) {
+		StringBuilder sb = new StringBuilder(src);
+		TreeSet<String> imports = loadImports(sb);
+		if(imports.remove(imp)) {
+			replaceImports(sb, imports);
+			String s = sb.toString();
+			if(unused(s, imp)) {
+				return s;
+			}
+		}
+		return src;
+	}
+	
+	public static String removeUnusedImports(StringBuilder sb, Collection<String> imports) {
+		String src = sb.toString();
+		TreeSet<String> imps = loadImports(sb);
+		boolean doit = false;
+		for(String imp : imports) {
+			if(imps.contains(imp) && unused(src, imp)) {
+				imps.remove(imp);
+				doit = true;
+			}
+		}
+		if(doit) {
+			replaceImports(sb, imps);
+			return sb.toString();
+		} else {
+			return src;
+		}
+	}
+	
+	private static boolean unused(String src, String imp) {
+		String s = imp.startsWith("static ") ? imp.substring(7) : imp;
+		int ix = s.lastIndexOf('.');
+		if(ix != -1) {
+			s = s.substring(ix+1);
+		}
+		Pattern p = Pattern.compile("\\W+" + s + "\\W+");
+		return !p.matcher(src).find();
 	}
 	
 	public static String ensureImports(StringBuilder sb, Collection<String> imports) {

@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -257,24 +258,80 @@ public class Module extends Bundle {
 		String oldsrc = FileUtils.readFile(activator).toString();
 		String newsrc = oldsrc;
 
-		String regex;
-		
-		regex = "router.addResource\\s*\\(\\s*" + modelName + ".class\\s*,\\s*(Action\\.)?" + action.name() + "\\)\\s*;";
-		if(!Pattern.compile(regex).matcher(newsrc).find()) {
+		Pattern p;
+
+		String regex2 = "router.addResource\\s*\\(\\s*" + modelName + ".class\\s*,\\s*(Action\\.)?(\\w+)\\)\\s*;";
+		p = Pattern.compile(regex2);
+		Matcher m2 = p.matcher(newsrc);
+		boolean found2 = m2.find();
+		if(found2) {
+			// check the singular to see if it already exists - exit if it does (nothing to do)
+			try {
+				if(Action.valueOf(m2.group(2)) == action) {
+					return false; // already routed
+				}
+			} catch(IllegalArgumentException e) {
+				// skip it
+			}
+			// don't add it here - prefer the plural, so check for that first
+		}
+
+		String regex1 = "router.addResources\\s*\\(\\s*" + modelName + ".class\\s*([^\\)]*)\\s*\\)\\s*;";
+		p = Pattern.compile(regex1);
+		Matcher m1 = p.matcher(newsrc);
+		boolean found1 = m1.find();
+		if(found1) {
+			if(m1.group(1).length() == 0) {
+				return false; // already routed
+			}
+			List<Action> actions = getActions(m1.group(1));
+			for(Action a : actions) {
+				if(a == action) {
+					return false; // already routed
+				}
+			}
+			actions.add(action);
+			newsrc = updateRoute(newsrc, modelName, actions, regex1);
+		}
+		else if(found2) {
+			// there's no plural so if a singular exists, add the action to that
+			List<Action> actions = new ArrayList<Action>();
+			try {
+				actions.add(Action.valueOf(m2.group(2)));
+				actions.add(action);
+				newsrc = updateRoute(newsrc, modelName, actions, regex2);
+			} catch(IllegalArgumentException e) {
+				newsrc = newsrc.replaceFirst(regex2, "router.addResources(" + modelName + ".class, $1$2, " + action.name() + ");");
+				newsrc = SourceFile.ensureImport(newsrc, "static " + Action.class.getCanonicalName() + "." + action.name());
+			}
+		}
+		else {
+			// lastly, neither were found so add it fresh
 			newsrc = oldsrc.replaceFirst("public\\s+void\\s+addRoutes\\s*\\(\\s*Config\\s+config\\s*,\\s*(App)?Router\\s+router\\s*\\)\\s*\\{\\s*",
 											"public void addRoutes(Config config, $1Router router) {\n" +
-											"\t\trouter.addResource(" + modelName + ".class, " + action.name() + ");\n\n\t\t");
+											"\t\trouter.addResource(" + modelName + ".class, " + action.name() + ");\n\t\t");
+			newsrc = SourceFile.ensureImport(newsrc, packageName(getModel(modelName)) + "." + modelName);
+			newsrc = SourceFile.ensureImport(newsrc, "static " + Action.class.getCanonicalName() + "." + action.name());
 		}
 		
 		if(!newsrc.equals(oldsrc)) {
-			newsrc = SourceFile.ensureImport(newsrc, packageName(getModel(modelName)) + "." + modelName);
-			newsrc = SourceFile.ensureImport(newsrc, "static " + Action.class.getCanonicalName() + "." + action.name());
 			FileUtils.writeFile(activator, newsrc);
 			return true;
 		}
 		return false;
 	}
 
+	private String updateRoute(String newsrc, String modelName, List<Action> actions, String regex) {
+		Set<String> imports = new TreeSet<String>();
+		StringBuilder sb = new StringBuilder();
+		for(Action a : sortActions(actions)) {
+			sb.append(", ").append(a.name());
+			imports.add("static " + Action.class.getCanonicalName() + "." + a.name());
+		}
+		newsrc = newsrc.replaceFirst(regex, "router.addResources(" + modelName + ".class" + sb.toString() + ");");
+		return SourceFile.ensureImports(newsrc, imports);
+	}
+	
 	public boolean removeModelRoute(String modelName, Action action) {
 		modelName = adjust(modelName);
 
@@ -285,50 +342,64 @@ public class Module extends Bundle {
 		Pattern p = Pattern.compile(regex);
 		Matcher m = p.matcher(newsrc);
 		if(m.find()) {
-			Set<String> imports = new TreeSet<String>();
-			StringBuilder sb = new StringBuilder();
-			Action[] actions;
-			if(m.group(1).length() == 0) {
-				actions = Action.values();
-			} else {
-				List<Action> list = new ArrayList<Action>();
-				for(String s : m.group(1).split("\\s*,\\s*")) {
-					if(s.length() > 0) {
-						if(s.startsWith("Action.")) {
-							s = s.substring(7);
-						}
-						try {
-							list.add(Action.valueOf(s));
-						} catch(IllegalArgumentException e) {
-							// skip it
-						}
+			List<Action> actions = (m.group(1).length() == 0) ? Arrays.asList(Action.values()) : getActions(m.group(1));
+			for(Action a1 : actions) {
+				if(a1 == action) {
+					Set<String> imports = new TreeSet<String>();
+					StringBuilder sb = new StringBuilder();
+					actions.remove(action);
+					for(Action a2 : sortActions(actions)) {
+						sb.append(", ").append(a2.name());
+						imports.add("static " + Action.class.getCanonicalName() + "." + a2.name());
 					}
+					if(actions.size() == 1) {
+						newsrc = newsrc.replaceFirst(regex, "router.addResource(" + modelName + ".class" + sb.toString() + ");");
+					} else {
+						newsrc = newsrc.replaceFirst(regex, "router.addResources(" + modelName + ".class" + sb.toString() + ");");
+					}
+					newsrc = SourceFile.ensureImports(newsrc, imports);
+					break;
 				}
-				actions = list.toArray(new Action[list.size()]);
-			}
-			boolean doit = false;
-			for(Action a : actions) {
-				if(a == action) {
-					doit = true;
-				} else {
-					sb.append(", ").append(a.name());
-					imports.add("static " + Action.class.getCanonicalName() + "." + a.name());
-				}
-			}
-			if(doit) {
-				newsrc = newsrc.replaceFirst(regex, "router.addResources(" + modelName + ".class" + sb.toString() + ");");
-				newsrc = SourceFile.ensureImports(newsrc, imports);
 			}
 		}
 
 		regex = "router.addResource\\s*\\(\\s*" + modelName + ".class\\s*,\\s*(Action\\.)?" + action.name() + "\\s*\\)\\s*;";
-		newsrc = newsrc.replaceFirst(regex + "\\s*", "");
+		newsrc = newsrc.replaceFirst(regex + "\\s*", "\n\t\t");
 
 		if(!newsrc.equals(oldsrc)) {
+			newsrc = SourceFile.removeUnusedImport(newsrc, packageName(getModel(modelName)) + "." + modelName);
+			newsrc = SourceFile.removeUnusedImport(newsrc, "static " + Action.class.getCanonicalName() + "." + action.name());
 			FileUtils.writeFile(activator, newsrc);
 			return true;
 		}
 		return false;
+	}
+	
+	private List<Action> getActions(String str) {
+		List<Action> actions = new ArrayList<Action>();
+		for(String s : str.split("\\s*,\\s*")) {
+			if(s.length() > 0) {
+				if(s.startsWith("Action.")) {
+					s = s.substring(7);
+				}
+				try {
+					actions.add(Action.valueOf(s));
+				} catch(IllegalArgumentException e) {
+					// skip it
+				}
+			}
+		}
+		return actions;
+	}
+
+	private List<Action> sortActions(List<Action> actions) {
+		Collections.sort(actions, new Comparator<Action>() {
+			@Override
+			public int compare(Action a1, Action a2) {
+				return a1.ordinal() - a2.ordinal();
+			}
+		});
+		return actions;
 	}
 	
 	/**

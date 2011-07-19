@@ -157,7 +157,7 @@ public class ViewGenerator {
 		sb.append("ShowAll").append(camelCase(mVarPlural)).append("(Collection<").append(mType).append("> ").append(mVarPlural).append(")\n");
 		sb.append("ShowAll").append(camelCase(mVarPlural)).append("(Paginator<").append(mType).append("> paginator)\n");
 		sb.append('\n');
-		sb.append("h1 Listing ").append(mVarPlural).append('\n');
+		sb.append("h1 Listing ").append(titleize(mVarPlural)).append('\n');
 		sb.append('\n');
 		sb.append("table\n");
 		sb.append("\ttr\n");
