@@ -40,10 +40,15 @@ public class FlexProjectGenerator {
 		}
 		
 		createProjectFile();
+		
+		// TODO .actionsrciptProperties
+		// TODO .flexProperties
+		// TODO html-template directory ?
 
 		createFolder(project, "bin");
-		File src = createFolder(project, "src");
+		createFolder(project, "libs");
 
+		File src = createFolder(project, "src");
 		for(File file : module.findModels()) {
 			createModel(src, file);
 		}
@@ -147,7 +152,7 @@ public class FlexProjectGenerator {
 				"\t</projects>\n" +
 				"\t<buildSpec>\n" +
 				"\t\t<buildCommand>\n" +
-				"\t\t\t<name>org.eclipse.jdt.core.javabuilder</name>\n" +
+				"\t\t\t<name>com.adobe.flexbuilder.project.flexbuilder</name>\n" +
 				"\t\t\t<arguments>\n" +
 				"\t\t\t</arguments>\n" +
 				"\t\t</buildCommand>\n" +
@@ -155,6 +160,14 @@ public class FlexProjectGenerator {
 				"\t<natures>\n" +
 				"\t\t<nature>com.adobe.flexbuilder.project.flexnature</nature>\n" +
 				"\t\t<nature>com.adobe.flexbuilder.project.actionscriptnature</nature>\n" +
+//				TODO project file: linked resource (bin-debug)
+				"\t<linkedResources>\n" +
+				"\t\t<link>\n" +
+				"\t\t<name>bin-debug</name>\n" +
+				"\t\t\t<type>2</type>\n" +
+				"\t\t<location>C:/Users/jeremyd/BlazeDS/tomcat/webapps/dn2k/dn2k-flex-debug</location>\n" +
+				"\t</link>\n" +
+				"\t</linkedResources>\n" +
 				"\t</natures>\n" +
 				"</projectDescription>\n"
 			);
