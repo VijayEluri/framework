@@ -16,4 +16,5 @@ Require-Bundle: org.eclipse.gef;bundle-version="[3.5.0,4.0.0)",
  org.oobium.build;bundle-version="0.6.0",
  org.oobium.eclipse;bundle-version="0.6.0",
  org.oobium.utils;bundle-version="0.6.0",
- org.oobium.build.console;bundle-version="0.6.0"
+ org.oobium.build.console;bundle-version="0.6.0",
+ org.oobium.app.common;bundle-version="0.6.0"

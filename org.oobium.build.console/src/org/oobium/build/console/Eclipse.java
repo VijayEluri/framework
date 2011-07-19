@@ -117,12 +117,20 @@ public class Eclipse {
 	}
 	
 	public static void openFile(File project, File file) {
+		openFile(project, file, -1);
+	}
+	
+	public static void openFile(File project, File file, int line) {
 		String projectName = project.getName();
 		String fileName = file.getAbsolutePath().substring(project.getAbsolutePath().length());
-		openFile(projectName, fileName);
+		openFile(projectName, fileName, line);
 	}
 	
 	public static void openFile(String projectName, String fileName) {
+		openFile(projectName, fileName, -1);
+	}
+	
+	public static void openFile(String projectName, String fileName, final int line) {
 		try {
 			IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
 			if(!project.isOpen()) {
@@ -138,6 +146,16 @@ public class Eclipse {
 							IWorkbenchWindow window = PlatformUI.getWorkbench().getWorkbenchWindows()[0];
 						    IEditorPart editor = IDE.openEditor(window.getActivePage(), file, true);
 						    if(editor != null) {
+							    if(line > 0 && editor instanceof AbstractDecoratedTextEditor) {
+								    AbstractDecoratedTextEditor ed = (AbstractDecoratedTextEditor) editor;
+								    IDocument doc = ed.getDocumentProvider().getDocument(ed.getEditorInput());
+								    try {
+										int offset = doc.getLineOffset(line - 1);
+										ed.selectAndReveal(offset, 0);
+									} catch(BadLocationException e) {
+										e.printStackTrace();
+									}
+							    }
 								editor.setFocus();
 								// TODO Shell#forceActive() does not currently work... check SWT bugs
 								window.getShell().forceActive();

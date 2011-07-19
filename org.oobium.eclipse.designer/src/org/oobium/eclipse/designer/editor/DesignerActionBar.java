@@ -1,5 +1,7 @@
 package org.oobium.eclipse.designer.editor;
 
+import static org.oobium.utils.StringUtils.plural;
+
 import java.util.Iterator;
 
 import org.eclipse.draw2d.ColorConstants;
@@ -14,10 +16,10 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
+import org.oobium.build.workspace.Module;
 import org.oobium.eclipse.designer.editor.parts.ConnectionPart;
 import org.oobium.eclipse.designer.editor.parts.ModelPart;
 import org.oobium.eclipse.designer.editor.tools.ConnectionCreateTool;
@@ -34,8 +36,11 @@ public class DesignerActionBar {
 	private ToolItem addModel;
 	private ToolItem addConnection;
 	private ToolItem delete;
+	private ToolItem controller;
+	private ToolItem views;
 	
 	private DefaultEditDomain editDomain;
+	private ModelPart activeModel;
 	
 	public DesignerActionBar(Composite parent) {
 		createResources(parent);
@@ -50,7 +55,7 @@ public class DesignerActionBar {
 	}
 	
 	public void createToolBar(Composite parent) {
-		ToolBar tb = new ToolBar(parent, SWT.BORDER);
+		final ToolBar tb = new ToolBar(parent, SWT.BORDER);
 		tb.setBackground(ColorConstants.listBackground);
 		tb.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
 
@@ -100,46 +105,41 @@ public class DesignerActionBar {
 
 		new ToolItem(tb, SWT.SEPARATOR);
 
-		ToolItem item;
-		Combo combo;
+		controller = new ToolItem(tb, SWT.PUSH);
+		controller.setText("Controller");
+		controller.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				Module module = activeModel.getModel().getModuleElement().getModule();
+				String model = activeModel.getModel().getName();
+				DesignerActionBarPopup pop = new DesignerActionBarPopup(controller, module, model);
+				for(String label : new String[] { "create", "update", "destroy", "show", "showAll" }) {
+					pop.addRow(label, false);
+				}
+				pop.addSeparator();
+				for(String label : new String[] { "showEdit", "showNew" }) {
+					pop.addRow(label, false);
+				}
+				pop.open();
+			}
+		});
 		
-		item = new ToolItem(tb, SWT.PUSH);
-		item.setText("Controller");
+		new ToolItem(tb, SWT.SEPARATOR);
 
-		combo = new Combo(tb, SWT.DROP_DOWN | SWT.READ_ONLY);
-		for(String s : new String[] { "create", "update", "destroy", "show", "showAll", "showEdit", "showNew" }) {
-			combo.add(s);
-		}
-		combo.setBackground(tb.getBackground());
-		item = new ToolItem(tb, SWT.SEPARATOR);
-		item.setControl(combo);
-		item.setWidth(combo.computeSize(-1, -1).x);
-
-
-		item = new ToolItem(tb, SWT.PUSH);
-		item.setText("Views");
-
-		combo = new Combo(tb, SWT.DROP_DOWN | SWT.READ_ONLY);
-		for(String s : new String[] { "AlarmForm", "ShowAlarm", "ShowAllAlarms", "ShowEditAlarm", "ShowNewAlarm" }) {
-			combo.add(s);
-		}
-		combo.setBackground(tb.getBackground());
-		item = new ToolItem(tb, SWT.SEPARATOR);
-		item.setControl(combo);
-		item.setWidth(combo.computeSize(-1, -1).x);
-
-
-		item = new ToolItem(tb, SWT.PUSH);
-		item.setText("Routes");
-
-		combo = new Combo(tb, SWT.DROP_DOWN | SWT.READ_ONLY);
-		for(String s : new String[] { "create", "retrieve", "retrieveAll", "update", "destroy" }) {
-			combo.add(s);
-		}
-		combo.setBackground(tb.getBackground());
-		item = new ToolItem(tb, SWT.SEPARATOR);
-		item.setControl(combo);
-		item.setWidth(combo.computeSize(-1, -1).x);
+		views = new ToolItem(tb, SWT.PUSH);
+		views.setText("Views");
+		views.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				Module module = activeModel.getModel().getModuleElement().getModule();
+				String model = activeModel.getModel().getName();
+				DesignerActionBarPopup pop = new DesignerActionBarPopup(views, module, model);
+				for(String label : new String[] { "Show"+model, "ShowAll"+plural(model), "ShowEdit"+model, "ShowNew"+model, model+"Form" }) {
+					pop.addRow(label);
+				}
+				pop.open();
+			}
+		});
 	}
 
 	public void dispose() {
@@ -164,6 +164,9 @@ public class DesignerActionBar {
 	}
 
 	private void updateSelection(ISelection selection) {
+		activeModel = null;
+		controller.setEnabled(false);
+		views.setEnabled(false);
 		if(selection instanceof StructuredSelection) {
 			if(selection.isEmpty()) {
 				delete.setEnabled(false);
@@ -171,7 +174,15 @@ public class DesignerActionBar {
 				StructuredSelection ss = (StructuredSelection) selection;
 				for(Iterator<?> iter = ss.iterator(); iter.hasNext(); ) {
 					Object o = iter.next();
-					if(o instanceof ModelPart || o instanceof ConnectionPart) {
+					if(o instanceof ModelPart) {
+						if(ss.size() == 1) {
+							activeModel = (ModelPart) o;
+							controller.setEnabled(true);
+							views.setEnabled(true);
+						}
+						continue;
+					}
+					if(o instanceof ConnectionPart) {
 						continue;
 					}
 					delete.setEnabled(false);

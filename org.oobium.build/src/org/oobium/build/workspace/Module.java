@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.Manifest;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.mail.internet.InternetAddress;
@@ -1026,6 +1027,28 @@ public class Module extends Bundle {
 		return binFiles;
 	}
 	
+	public int getLine(String name, Action action) {
+		if(!isJar) {
+			File controller = getController(name);
+			if(controller.isFile()) {
+				String src = readFile(controller).toString();
+				String regex = "public\\s+void\\s+" + action.name() + "\\s*()";
+				Pattern p = Pattern.compile(regex);
+				Matcher m = p.matcher(src);
+				if(m.find()) {
+					int line = 1;
+					for(int i = m.start(); i > 0; i--) {
+						if(src.charAt(i) == '\n') {
+							line++;
+						}
+					}
+					return line;
+				}
+			}
+		}
+		return 0;
+	}
+	
 	/**
 	 * Get a File for a controller in this module with the given name (the controller name, or the model name).<br>
 	 * Note that this controller may not actually exist - check using {@link File#exists()}.
@@ -1060,6 +1083,11 @@ public class Module extends Bundle {
 		String name = controller.getAbsolutePath();
 		name = name.substring(controllers.getAbsolutePath().length() + 1, name.length() - 5);
 		return name;
+	}
+	
+	public String getControllerType(String name) {
+		File controller = getController(name);
+		return packageName(controller) + "." + getControllerName(controller);
 	}
 	
 	/**
@@ -1321,6 +1349,10 @@ public class Module extends Bundle {
 		return new File(views, adjust(name) + ".esp");
 	}
 
+	public File getView(String modelName, String name) {
+		return new File(getViewsFolder(modelName), adjust(name) + ".esp");
+	}
+	
 	/**
 	 * Get the name of the view from either the source file (.esp) or its generated file (.java).<br>
 	 * Works also for style sheets (.ess) and script files (.ejs).
