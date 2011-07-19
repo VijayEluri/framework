@@ -137,8 +137,8 @@ public class Eclipse {
 				project.open(new NullProgressMonitor());
 			}
 			final IFile file = project.getFile(fileName);
+			file.refreshLocal(IResource.DEPTH_ONE, new NullProgressMonitor());
 			if(file.exists()) {
-				file.refreshLocal(IResource.DEPTH_ONE, new NullProgressMonitor());
 				Display.getDefault().syncExec(new Runnable() {
 					@Override
 					public void run() {
