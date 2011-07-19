@@ -30,6 +30,11 @@ public class BlazeClientCommand extends BuilderCommand {
 		Workspace workspace = getWorkspace();
 		Module module = getModule();
 		
+		if(!module.hasModels()) {
+			console.err.println(module + " has no models... exiting.");
+			return;
+		}
+		
 		try {
 			BlazeProjectGenerator blaze = new BlazeProjectGenerator(workspace, module);
 			blaze.setExportFlex(true);
