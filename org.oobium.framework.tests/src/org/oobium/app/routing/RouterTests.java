@@ -142,6 +142,8 @@ public class RouterTests {
 			}
 		});
 		router = new AppRouter(service, "localhost", 5555);
+		router.setApi(null);
+		router.removeModelNotifier();
 		account = new Account();
 		category = new Category();
 	}
