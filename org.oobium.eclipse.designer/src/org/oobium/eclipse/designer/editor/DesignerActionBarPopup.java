@@ -1,5 +1,6 @@
 package org.oobium.eclipse.designer.editor;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -110,8 +111,12 @@ public class DesignerActionBarPopup {
 							Eclipse.openFile(module.file, module.getView(model, label));
 						}
 						else {
+							File file = module.getControllerFor(model);
+							if(!file.isFile()) {
+								module.createController(model);
+							}
 							int line = module.getLine(model, Action.valueOf(label));
-							Eclipse.openFile(module.file, module.getControllerFor(model), line);
+							Eclipse.openFile(module.file, file, line);
 						}
 						shell.close();
 					}
@@ -196,6 +201,20 @@ public class DesignerActionBarPopup {
 		if(old != connected) {
 			connections.put(label, connected);
 			images.get(label).setImage(connected ? connectImg : disconnectImg);
+			boolean changed;
+			if(connected) {
+				changed = module.addModelRoute(model, Action.valueOf(label));
+				File file = module.getControllerFor(model);
+				if(!file.isFile()) {
+					module.createController(model);
+					Eclipse.refresh(module.file, file.getParentFile());
+				}
+			} else {
+				changed = module.removeModelRoute(model, Action.valueOf(label));
+			}
+			if(changed) {
+				Eclipse.refresh(module.file, module.activator);
+			}
 		}
 	}
 	

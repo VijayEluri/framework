@@ -19,6 +19,7 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
+import org.oobium.app.http.Action;
 import org.oobium.build.workspace.Module;
 import org.oobium.eclipse.designer.editor.parts.ConnectionPart;
 import org.oobium.eclipse.designer.editor.parts.ModelPart;
@@ -113,12 +114,12 @@ public class DesignerActionBar {
 				Module module = activeModel.getModel().getModuleElement().getModule();
 				String model = activeModel.getModel().getName();
 				DesignerActionBarPopup pop = new DesignerActionBarPopup(controller, module, model);
-				for(String label : new String[] { "create", "update", "destroy", "show", "showAll" }) {
-					pop.addRow(label, false);
+				for(String action : new String[] { "create", "update", "destroy", "show", "showAll" }) {
+					pop.addRow(action, module.isRouted(model, Action.valueOf(action)));
 				}
 				pop.addSeparator();
-				for(String label : new String[] { "showEdit", "showNew" }) {
-					pop.addRow(label, false);
+				for(String action : new String[] { "showEdit", "showNew" }) {
+					pop.addRow(action, module.isRouted(model, Action.valueOf(action)));
 				}
 				pop.open();
 			}

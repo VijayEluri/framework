@@ -13,6 +13,7 @@ package org.oobium.build.util;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -135,6 +136,10 @@ public class SourceFile {
 	private static final char[] IMPORT = {'i','m','p','o','r','t'};
 	private static final char[] PACKAGE = {'p','a','c','k','a','g','e'};
 
+	public static String ensureImport(String src, String imp) {
+		return ensureImports(src, Collections.singleton(imp));
+	}
+	
 	public static String ensureImports(String src, Collection<String> imports) {
 		return ensureImports(new StringBuilder(src), imports);
 	}
@@ -146,7 +151,11 @@ public class SourceFile {
 		return sb.toString();
 	}
 	
-	private static TreeSet<String> loadImports(StringBuilder sb) {
+	public static TreeSet<String> loadImports(String src) {
+		return loadImports(new StringBuilder(src));
+	}
+	
+	public static TreeSet<String> loadImports(StringBuilder sb) {
 		TreeSet<String> imports = new TreeSet<String>();
 		int stop = find(sb, 0, sb.length(), CLASS);
 		int start = find(sb, 0, stop, IMPORT);

@@ -64,7 +64,6 @@ public class ModelPart extends AbstractGraphicalEditPart implements PropertyChan
 		installEditPolicy(EditPolicy.COMPONENT_ROLE, new ComponentEditPolicy() {
 			@Override
 			public Command getCommand(Request request) {
-				System.out.println(request.getType());
 				return super.getCommand(request);
 			}
 			@Override

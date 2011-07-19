@@ -35,6 +35,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.jar.Manifest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -56,6 +57,7 @@ import org.oobium.build.gen.ModelGenerator;
 import org.oobium.build.gen.ProjectGenerator;
 import org.oobium.build.gen.ViewGenerator;
 import org.oobium.build.util.ProjectUtils;
+import org.oobium.build.util.SourceFile;
 import org.oobium.mailer.Mailer;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelDescription;
@@ -241,6 +243,90 @@ public class Module extends Bundle {
 				FileUtils.writeFile(activator, src);
 				return true;
 			}
+		}
+		return false;
+	}
+	
+	/**
+	 * @param modelName
+	 * @return true if there were changes made to Application.java; false otherwise
+	 */
+	public boolean addModelRoute(String modelName, Action action) {
+		modelName = adjust(modelName);
+		
+		String oldsrc = FileUtils.readFile(activator).toString();
+		String newsrc = oldsrc;
+
+		String regex;
+		
+		regex = "router.addResource\\s*\\(\\s*" + modelName + ".class\\s*,\\s*(Action\\.)?" + action.name() + "\\)\\s*;";
+		if(!Pattern.compile(regex).matcher(newsrc).find()) {
+			newsrc = oldsrc.replaceFirst("public\\s+void\\s+addRoutes\\s*\\(\\s*Config\\s+config\\s*,\\s*(App)?Router\\s+router\\s*\\)\\s*\\{\\s*",
+											"public void addRoutes(Config config, $1Router router) {\n" +
+											"\t\trouter.addResource(" + modelName + ".class, " + action.name() + ");\n\n\t\t");
+		}
+		
+		if(!newsrc.equals(oldsrc)) {
+			newsrc = SourceFile.ensureImport(newsrc, packageName(getModel(modelName)) + "." + modelName);
+			newsrc = SourceFile.ensureImport(newsrc, "static " + Action.class.getCanonicalName() + "." + action.name());
+			FileUtils.writeFile(activator, newsrc);
+			return true;
+		}
+		return false;
+	}
+
+	public boolean removeModelRoute(String modelName, Action action) {
+		modelName = adjust(modelName);
+
+		String oldsrc = FileUtils.readFile(activator).toString();
+		String newsrc = oldsrc;
+		
+		String regex = "router.addResources\\s*\\(\\s*" + modelName + ".class\\s*([^\\)]*)\\s*\\)\\s*;";
+		Pattern p = Pattern.compile(regex);
+		Matcher m = p.matcher(newsrc);
+		if(m.find()) {
+			Set<String> imports = new TreeSet<String>();
+			StringBuilder sb = new StringBuilder();
+			Action[] actions;
+			if(m.group(1).length() == 0) {
+				actions = Action.values();
+			} else {
+				List<Action> list = new ArrayList<Action>();
+				for(String s : m.group(1).split("\\s*,\\s*")) {
+					if(s.length() > 0) {
+						if(s.startsWith("Action.")) {
+							s = s.substring(7);
+						}
+						try {
+							list.add(Action.valueOf(s));
+						} catch(IllegalArgumentException e) {
+							// skip it
+						}
+					}
+				}
+				actions = list.toArray(new Action[list.size()]);
+			}
+			boolean doit = false;
+			for(Action a : actions) {
+				if(a == action) {
+					doit = true;
+				} else {
+					sb.append(", ").append(a.name());
+					imports.add("static " + Action.class.getCanonicalName() + "." + a.name());
+				}
+			}
+			if(doit) {
+				newsrc = newsrc.replaceFirst(regex, "router.addResources(" + modelName + ".class" + sb.toString() + ");");
+				newsrc = SourceFile.ensureImports(newsrc, imports);
+			}
+		}
+
+		regex = "router.addResource\\s*\\(\\s*" + modelName + ".class\\s*,\\s*(Action\\.)?" + action.name() + "\\s*\\)\\s*;";
+		newsrc = newsrc.replaceFirst(regex + "\\s*", "");
+
+		if(!newsrc.equals(oldsrc)) {
+			FileUtils.writeFile(activator, newsrc);
+			return true;
 		}
 		return false;
 	}
@@ -615,7 +701,7 @@ public class Module extends Bundle {
 	public File[] destroyModel(String name) {
 		List<File> files = new ArrayList<File>();
 		File model = getModel(name);
-		if(removeFromActivator(model)) {
+		if(removeModelRoutes(model)) {
 			files.add(activator);
 		}
 		if(model.delete()) {
@@ -1027,6 +1113,42 @@ public class Module extends Bundle {
 		return binFiles;
 	}
 	
+	public boolean isRouted(String modelName, Action action) {
+		if(!isJar) {
+			String model = adjust(modelName);
+			String src = readFile(activator).toString();
+			String regex = "router.addResources\\s*\\(\\s*" + modelName + ".class\\s*([^\\)]*)\\s*\\)\\s*;";
+			Pattern p = Pattern.compile(regex);
+			Matcher m = p.matcher(src);
+			if(m.find()) {
+				String actions = m.group(1);
+				if(actions.length() == 0) {
+					return true;
+				}
+				for(String s : actions.split("\\s*,\\s*")) {
+					if(s.length() > 0) {
+						if(s.startsWith("Action.")) {
+							s = s.substring(7);
+						}
+						try {
+							if(action == Action.valueOf(s)) {
+								return true;
+							}
+						} catch(IllegalArgumentException e) {
+							// skip it
+						}
+					}
+				}
+			}
+			p = Pattern.compile("router.addResource\\s*\\(\\s*" + model + "\\.class\\s*,\\s*(Action\\.)?" + action.name() + "\\)");
+			m = p.matcher(src);
+			if(m.find()) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	public int getLine(String name, Action action) {
 		if(!isJar) {
 			File controller = getController(name);
@@ -1421,9 +1543,16 @@ public class Module extends Bundle {
 		return Config.loadConfiguration(config);
 	}
 
-	private boolean removeFromActivator(File file) {
-		String modelName = getModelName(file);
-		String className = packageName(file) + "." + modelName;
+	public boolean removeModelRoutes(File model) {
+		return removeModelRoutes(model, getModelName(model));
+	}
+	
+	public boolean removeModelRoutes(String modelName) {
+		return removeModelRoutes(getModel(modelName), modelName);
+	}
+	
+	private boolean removeModelRoutes(File model, String modelName) {
+		String className = packageName(model) + "." + modelName;
 		String srcOld = readFile(activator).toString();
 		String srcNew = srcOld.replaceFirst("import\\s+" + className + "\\s*;\\s*", "");
 		if(!srcOld.equals(srcNew)) {
