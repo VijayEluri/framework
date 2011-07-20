@@ -263,9 +263,9 @@ public class Module extends Bundle {
 		String regex2 = "router.addResource\\s*\\(\\s*" + modelName + ".class\\s*,\\s*(Action\\.)?(\\w+)\\)\\s*;";
 		p = Pattern.compile(regex2);
 		Matcher m2 = p.matcher(newsrc);
-		boolean found2 = m2.find();
-		if(found2) {
-			// check the singular to see if it already exists - exit if it does (nothing to do)
+		boolean singular = m2.find();
+		if(singular) {
+			// check the singular to see if our action already exists - exit if it does (nothing to do)
 			try {
 				if(Action.valueOf(m2.group(2)) == action) {
 					return false; // already routed
@@ -279,10 +279,10 @@ public class Module extends Bundle {
 		String regex1 = "router.addResources\\s*\\(\\s*" + modelName + ".class\\s*([^\\)]*)\\s*\\)\\s*;";
 		p = Pattern.compile(regex1);
 		Matcher m1 = p.matcher(newsrc);
-		boolean found1 = m1.find();
-		if(found1) {
+		boolean plural = m1.find();
+		if(plural) {
 			if(m1.group(1).length() == 0) {
-				return false; // already routed
+				return false; // already routed - no actions means they are all routed
 			}
 			List<Action> actions = getActions(m1.group(1));
 			for(Action a : actions) {
@@ -293,8 +293,8 @@ public class Module extends Bundle {
 			actions.add(action);
 			newsrc = updateRoute(newsrc, modelName, actions, regex1);
 		}
-		else if(found2) {
-			// there's no plural so if a singular exists, add the action to that
+		else if(singular) {
+			// there's no plural, but there is a singular so add the action to that
 			List<Action> actions = new ArrayList<Action>();
 			try {
 				actions.add(Action.valueOf(m2.group(2)));
@@ -306,7 +306,7 @@ public class Module extends Bundle {
 			}
 		}
 		else {
-			// lastly, neither were found so add it fresh
+			// lastly, neither plural nor singular were found so add it fresh
 			newsrc = oldsrc.replaceFirst("public\\s+void\\s+addRoutes\\s*\\(\\s*Config\\s+config\\s*,\\s*(App)?Router\\s+router\\s*\\)\\s*\\{\\s*",
 											"public void addRoutes(Config config, $1Router router) {\n" +
 											"\t\trouter.addResource(" + modelName + ".class, " + action.name() + ");\n\t\t");
@@ -321,87 +321,6 @@ public class Module extends Bundle {
 		return false;
 	}
 
-	private String updateRoute(String newsrc, String modelName, List<Action> actions, String regex) {
-		Set<String> imports = new TreeSet<String>();
-		StringBuilder sb = new StringBuilder();
-		for(Action a : sortActions(actions)) {
-			sb.append(", ").append(a.name());
-			imports.add("static " + Action.class.getCanonicalName() + "." + a.name());
-		}
-		newsrc = newsrc.replaceFirst(regex, "router.addResources(" + modelName + ".class" + sb.toString() + ");");
-		return SourceFile.ensureImports(newsrc, imports);
-	}
-	
-	public boolean removeModelRoute(String modelName, Action action) {
-		modelName = adjust(modelName);
-
-		String oldsrc = FileUtils.readFile(activator).toString();
-		String newsrc = oldsrc;
-		
-		String regex = "router.addResources\\s*\\(\\s*" + modelName + ".class\\s*([^\\)]*)\\s*\\)\\s*;";
-		Pattern p = Pattern.compile(regex);
-		Matcher m = p.matcher(newsrc);
-		if(m.find()) {
-			List<Action> actions = (m.group(1).length() == 0) ? Arrays.asList(Action.values()) : getActions(m.group(1));
-			for(Action a1 : actions) {
-				if(a1 == action) {
-					Set<String> imports = new TreeSet<String>();
-					StringBuilder sb = new StringBuilder();
-					actions.remove(action);
-					for(Action a2 : sortActions(actions)) {
-						sb.append(", ").append(a2.name());
-						imports.add("static " + Action.class.getCanonicalName() + "." + a2.name());
-					}
-					if(actions.size() == 1) {
-						newsrc = newsrc.replaceFirst(regex, "router.addResource(" + modelName + ".class" + sb.toString() + ");");
-					} else {
-						newsrc = newsrc.replaceFirst(regex, "router.addResources(" + modelName + ".class" + sb.toString() + ");");
-					}
-					newsrc = SourceFile.ensureImports(newsrc, imports);
-					break;
-				}
-			}
-		}
-
-		regex = "router.addResource\\s*\\(\\s*" + modelName + ".class\\s*,\\s*(Action\\.)?" + action.name() + "\\s*\\)\\s*;";
-		newsrc = newsrc.replaceFirst(regex + "\\s*", "\n\t\t");
-
-		if(!newsrc.equals(oldsrc)) {
-			newsrc = SourceFile.removeUnusedImport(newsrc, packageName(getModel(modelName)) + "." + modelName);
-			newsrc = SourceFile.removeUnusedImport(newsrc, "static " + Action.class.getCanonicalName() + "." + action.name());
-			FileUtils.writeFile(activator, newsrc);
-			return true;
-		}
-		return false;
-	}
-	
-	private List<Action> getActions(String str) {
-		List<Action> actions = new ArrayList<Action>();
-		for(String s : str.split("\\s*,\\s*")) {
-			if(s.length() > 0) {
-				if(s.startsWith("Action.")) {
-					s = s.substring(7);
-				}
-				try {
-					actions.add(Action.valueOf(s));
-				} catch(IllegalArgumentException e) {
-					// skip it
-				}
-			}
-		}
-		return actions;
-	}
-
-	private List<Action> sortActions(List<Action> actions) {
-		Collections.sort(actions, new Comparator<Action>() {
-			@Override
-			public int compare(Action a1, Action a2) {
-				return a1.ordinal() - a2.ordinal();
-			}
-		});
-		return actions;
-	}
-	
 	/**
 	 * @param modelName
 	 * @return true if there were changes made to Application.java; false otherwise
@@ -428,11 +347,11 @@ public class Module extends Bundle {
 		}
 		return false;
 	}
-
+	
 	public void addModule(Module module) {
 		addModule(module, null);
 	}
-
+	
 	public void addModule(Module module, Mode mode) {
 		MutableAppConfig config = MutableAppConfig.loadMutableConfiguration(this.config);
 		config.add(mode, "modules", module.getName());
@@ -491,11 +410,11 @@ public class Module extends Bundle {
 			}
 		}
 	}
-	
+
 	private String adjust(String rawName) {
 		return adjust(rawName, null);
 	}
-	
+
 	private String adjust(String rawName, String nameEnding) {
 		String name = rawName;
 		
@@ -531,11 +450,11 @@ public class Module extends Bundle {
 		
 		return name;
 	}
-	
+
 	public void clean() {
 		FileUtils.deleteContents(bin, generated);
 	}
-
+	
 	public File createActionCache(String name, String modelName, Action...actions) {
 		return ProjectGenerator.createActionCache(this, adjust(name), adjust(modelName), actions);
 	}
@@ -591,7 +510,7 @@ public class Module extends Bundle {
 		}
 		return new File[0];
 	}
-	
+
 	/**
 	 * Creates the mailer, if it does not exist, and updates the Manifest's
 	 * Import-Package and Export-Package sections accordingly.
@@ -607,11 +526,11 @@ public class Module extends Bundle {
 		addImportPackage(InternetAddress.class.getPackage().getName());
 		return mailer;
 	}
-
+	
 	public File createMailerLayout() {
 		return MailerGenerator.createLayout(this);
 	}
-
+	
 	public File createMailerLayout(String mailerName) {
 		return MailerGenerator.createLayout(this, mailerName);
 	}
@@ -624,7 +543,7 @@ public class Module extends Bundle {
 	public List<File> createMailerTemplates(String Name) {
 		return MailerGenerator.createTemplates(this, Name);
 	}
-	
+
 	/**
 	 * Creates the model, if it does not exist, and updates the Manifest's
 	 * Import-Package and Export-Package sections accordingly.
@@ -640,10 +559,6 @@ public class Module extends Bundle {
 		addImportPackage(ModelDescription.class.getPackage().getName());
 		return model;
 	}
-	
-	public File createObserver(String modelPackage, String modelName) {
-		return ProjectGenerator.createObserver(this, modelPackage, adjust(modelName));
-	}
 
 	public File createNotifier(File model) {
 		String pkg = packageName(model);
@@ -656,6 +571,10 @@ public class Module extends Bundle {
 		addImportPackage(ModelNotifier.class.getPackage().getName());
 		addImportPackage(Websocket.class.getPackage().getName());
 		return ProjectGenerator.createNotifier(this, modelPackage, adjust(modelName));
+	}
+	
+	public File createObserver(String modelPackage, String modelName) {
+		return ProjectGenerator.createObserver(this, modelPackage, adjust(modelName));
 	}
 	
 	public File createView(String name, String content) {
@@ -764,11 +683,11 @@ public class Module extends Bundle {
 
 		return files.toArray(new File[files.size()]);
 	}
-
+	
 	public File[] destroyMailerTemplate(String name) {
 		return destroy(getMailerTemplate(name));
 	}
-
+	
 	public File[] destroyModel(String name) {
 		List<File> files = new ArrayList<File>();
 		File model = getModel(name);
@@ -791,24 +710,24 @@ public class Module extends Bundle {
 		}
 		return files.toArray(new File[files.size()]);
 	}
-
+	
 	public File[] destroyView(String name) {
 		return destroy(getView(name));
 	}
-	
+
 	private File file(File file, String configPath) {
 		if('/' != File.separatorChar) {
 			return new File(file, configPath.replace('/', File.separatorChar));
 		}
 		return new File(file, configPath);
 	}
-	
+
 	public List<File> findControllers() {
 		List<File> files = Arrays.asList(findFiles(controllers, "Controller.java"));
 		Collections.sort(files);
 		return new ArrayList<File>(files);
 	}
-	
+
 	public List<File> findGenMailers() {
 		File folder = gen(mailers);
 		if(folder.isDirectory()) {
@@ -825,7 +744,7 @@ public class Module extends Bundle {
 		}
 		return new ArrayList<File>(0);
 	}
-
+	
 	public List<File> findGenModels() {
 		File folder = gen(models);
 		if(folder.isDirectory()) {
@@ -833,7 +752,7 @@ public class Module extends Bundle {
 		}
 		return new ArrayList<File>(0);
 	}
-
+	
 	/**
 	 * Get a list of all the Java source files in the generated views folder of this module.
 	 * These will consist of views (.esp), style sheets (.ess), and script files (.ejs).
@@ -846,7 +765,7 @@ public class Module extends Bundle {
 		}
 		return new ArrayList<File>(0);
 	}
-
+	
 	/**
 	 * Get a list of all the Java source files in the generated views folder of the given model.
 	 * These will consist of views (.esp), style sheets (.ess), and script files (.ejs).
@@ -859,7 +778,7 @@ public class Module extends Bundle {
 		}
 		return new ArrayList<File>(0);
 	}
-	
+
 	public List<File> findMailers() {
 		if(mailers.isDirectory()) {
 			List<File> files = Arrays.asList(mailers.listFiles(mailersFilter));
@@ -868,7 +787,7 @@ public class Module extends Bundle {
 		}
 		return new ArrayList<File>(0);
 	}
-	
+
 	public List<File> findMailerTemplates() {
 		if(mailers != null && mailers.isDirectory()) {
 			List<File> files = Arrays.asList(findFiles(mailers, ".emt"));
@@ -890,7 +809,7 @@ public class Module extends Bundle {
 		}
 		return new ArrayList<File>(0);
 	}
-	
+
 	public List<File> findScriptFiles() {
 		if(views.isDirectory()) {
 			List<File> files = Arrays.asList(findFiles(views, ".ejs"));
@@ -917,7 +836,7 @@ public class Module extends Bundle {
 		}
 		return new ArrayList<File>(0);
 	}
-	
+
 	public List<File> findViews(String modelName) {
 		File folder = getViewsFolder(modelName);
 		if(folder.isDirectory()) {
@@ -927,7 +846,7 @@ public class Module extends Bundle {
 		}
 		return new ArrayList<File>(0);
 	}
-
+	
 	private File gen(File srcFile) {
 		String relativePath = srcFile.getAbsolutePath().substring(src.getAbsolutePath().length());
 		return new File(generated, relativePath);
@@ -954,7 +873,7 @@ public class Module extends Bundle {
 	public ESourceFile generate(File efile, String source) {
 		return EFileGenerator.generate(this, efile, source);
 	}
-
+	
 	/**
 	 * Generate the Java sources for the given EFiles (.esp, .emt, .ess, or .ejs).<br>
 	 * This method also creates the generated Java source files on the file system.
@@ -964,7 +883,7 @@ public class Module extends Bundle {
 	public List<File> generate(List<File> efiles) {
 		return EFileGenerator.generate(this, efiles);
 	}
-	
+
 	public List<File> generate(Workspace workspace) {
 		Generator generator = new Generator(workspace, this);
 		List<File> list = generator.generate().get(this);
@@ -979,7 +898,7 @@ public class Module extends Bundle {
 		generator.setMode(mode);
 		return generator.generate();
 	}
-
+	
 	/**
 	 * Generate the asset list file (assets.js) from the assets currently contained by this module.<br/>
 	 * Paths in the assets.js file have the following format: <pre>path|size|lastModified[:realm]</pre>
@@ -1049,7 +968,7 @@ public class Module extends Bundle {
 		}
 		return null;
 	}
-
+	
 	/**
 	 * Generate the super class for the given model file.  This is a convenience method that
 	 * simply calls <code>generateModel(model, true)</code>.
@@ -1106,16 +1025,33 @@ public class Module extends Bundle {
 		}
 		return null;
 	}
-	
+
 	public File generateView(File view) {
 		if(view.exists()) {
 			return EFileGenerator.generate(this, view);
 		}
 		return null;
 	}
-	
+
 	public File getActionCache(String name) {
 		return new File(caches, adjust(name) + ".java");
+	}
+
+	private List<Action> getActions(String str) {
+		List<Action> actions = new ArrayList<Action>();
+		for(String s : str.split("\\s*,\\s*")) {
+			if(s.length() > 0) {
+				if(s.startsWith("Action.")) {
+					s = s.substring(7);
+				}
+				try {
+					actions.add(Action.valueOf(s));
+				} catch(IllegalArgumentException e) {
+					// skip it
+				}
+			}
+		}
+		return actions;
 	}
 	
 	public File[] getBinEFiles(File...efiles) {
@@ -1144,7 +1080,7 @@ public class Module extends Bundle {
 		}
 		return getBinFiles(path, len);
 	}
-
+	
 	public Set<File> getBinFiles(List<File> srcFiles) {
 		Set<File> binFiles = new HashSet<File>();
 
@@ -1184,64 +1120,6 @@ public class Module extends Bundle {
 		return binFiles;
 	}
 	
-	public boolean isRouted(String modelName, Action action) {
-		if(!isJar) {
-			String model = adjust(modelName);
-			String src = readFile(activator).toString();
-			String regex = "router.addResources\\s*\\(\\s*" + modelName + ".class\\s*([^\\)]*)\\s*\\)\\s*;";
-			Pattern p = Pattern.compile(regex);
-			Matcher m = p.matcher(src);
-			if(m.find()) {
-				String actions = m.group(1);
-				if(actions.length() == 0) {
-					return true;
-				}
-				for(String s : actions.split("\\s*,\\s*")) {
-					if(s.length() > 0) {
-						if(s.startsWith("Action.")) {
-							s = s.substring(7);
-						}
-						try {
-							if(action == Action.valueOf(s)) {
-								return true;
-							}
-						} catch(IllegalArgumentException e) {
-							// skip it
-						}
-					}
-				}
-			}
-			p = Pattern.compile("router.addResource\\s*\\(\\s*" + model + "\\.class\\s*,\\s*(Action\\.)?" + action.name() + "\\)");
-			m = p.matcher(src);
-			if(m.find()) {
-				return true;
-			}
-		}
-		return false;
-	}
-	
-	public int getLine(String name, Action action) {
-		if(!isJar) {
-			File controller = getController(name);
-			if(controller.isFile()) {
-				String src = readFile(controller).toString();
-				String regex = "public\\s+void\\s+" + action.name() + "\\s*()";
-				Pattern p = Pattern.compile(regex);
-				Matcher m = p.matcher(src);
-				if(m.find()) {
-					int line = 1;
-					for(int i = m.start(); i > 0; i--) {
-						if(src.charAt(i) == '\n') {
-							line++;
-						}
-					}
-					return line;
-				}
-			}
-		}
-		return 0;
-	}
-	
 	/**
 	 * Get a File for a controller in this module with the given name (the controller name, or the model name).<br>
 	 * Note that this controller may not actually exist - check using {@link File#exists()}.
@@ -1261,7 +1139,7 @@ public class Module extends Bundle {
 	public File getControllerFor(File modelFile) {
 		return getController(getModelName(modelFile));
 	}
-	
+
 	/**
 	 * Get a File for a controller in this module with the given model name.<br>
 	 * Note that this controller may not actually exist - check using {@link File#exists()}.
@@ -1324,7 +1202,7 @@ public class Module extends Bundle {
 	public File getGenMailerTemplate(File template) {
 		return getGenMailerTemplate(getMailerTemplateName(template));
 	}
-
+	
 	/**
 	 * Get the generated file for the mailer template with the given name.<br>
 	 * Note that the file may not actually exist on the file system - 
@@ -1341,7 +1219,7 @@ public class Module extends Bundle {
 		path = path.substring(0, path.length() - 5) + "Model.java";
 		return gen(new File(path));
 	}
-
+	
 	/**
 	 * Get the generated file for the given view.<br>
 	 * Note that the file may not actually exist on the file system - 
@@ -1352,7 +1230,7 @@ public class Module extends Bundle {
 	public File getGenView(File view) {
 		return getGenView(getViewName(view));
 	}
-
+	
 	/**
 	 * Get the generated file for the view with the given name.<br>
 	 * Note that the file may not actually exist on the file system - 
@@ -1371,11 +1249,33 @@ public class Module extends Bundle {
 	public File getLayout() {
 		return new File(views, "_layouts" + File.separator + "_Layout.esp");
 	}
-
+	
 	public File getLayoutFor(String modelName) {
 		return new File(views, "_layouts" + File.separator + adjust(modelName) + "Layout.esp");
 	}
-	
+
+	public int getLine(String name, Action action) {
+		if(!isJar) {
+			File controller = getController(name);
+			if(controller.isFile()) {
+				String src = readFile(controller).toString();
+				String regex = "public\\s+void\\s+" + action.name() + "\\s*()";
+				Pattern p = Pattern.compile(regex);
+				Matcher m = p.matcher(src);
+				if(m.find()) {
+					int line = 1;
+					for(int i = m.start(); i > 0; i--) {
+						if(src.charAt(i) == '\n') {
+							line++;
+						}
+					}
+					return line;
+				}
+			}
+		}
+		return 0;
+	}
+
 	/**
 	 * Get a File for a mailer in this module with the given name.
 	 * Note that this mailer may not actually exist - check using
@@ -1390,11 +1290,11 @@ public class Module extends Bundle {
 	public File getMailerLayout() {
 		return new File(mailers, "_layouts" + File.separator + "_Layout.emt");
 	}
-	
+
 	public File getMailerLayout(String mailerName) {
 		return new File(mailers, "_layouts" + File.separator + adjust(mailerName, "Layout") + ".emt");
 	}
-	
+
 	/**
 	 * Get a File for a mailer template in this module with the given name.<br>
 	 * Note that this view may not actually exist - check using {@link File#exists()}.
@@ -1444,10 +1344,6 @@ public class Module extends Bundle {
 		return modules.toArray(new String[modules.size()]);
 	}
 	
-	public File getObserver(String name) {
-		return new File(observers, adjust(name, "Observer") + ".java");
-	}
-
 	public File getNotifier(File model) {
 		return getNotifier(getModelName(model));
 	}
@@ -1455,7 +1351,11 @@ public class Module extends Bundle {
 	public File getNotifier(String name) {
 		return new File(observers, adjust(name, "Notifier") + ".java");
 	}
-
+	
+	public File getObserver(String name) {
+		return new File(observers, adjust(name, "Observer") + ".java");
+	}
+	
 	/**
 	 * Get a File for a script in this module with the given name.<br>
 	 * Note that this script may not actually exist - check using {@link File#exists()}.
@@ -1466,7 +1366,7 @@ public class Module extends Bundle {
 	public File getScriptFile(String name) {
 		return new File(views, adjust(name) + ".ejs");
 	}
-
+	
 	public File getSrcMailer(File genMailer) {
 		return src(genMailer);
 	}
@@ -1480,7 +1380,7 @@ public class Module extends Bundle {
 		path = path.substring(0, path.length() - 10) + ".java";
 		return src(new File(path));
 	}
-	
+
 	/**
 	 * Get a File for the view in this module that is used to generate the given Java file.<br>
 	 * The returned File may be for an actual view (.esp), or a style sheet (.ess), or script file (.ejs).
@@ -1500,7 +1400,7 @@ public class Module extends Bundle {
 		}
 		return file;
 	}
-	
+
 	/**
 	 * Get a File for a style sheet in this module with the given name.<br>
 	 * Note that this style sheet may not actually exist - check using {@link File#exists()}.
@@ -1530,7 +1430,7 @@ public class Module extends Bundle {
 		}
 		return -1;
 	}
-
+	
 	/**
 	 * Get a File for a view in this module with the given name.<br>
 	 * Note that this view may not actually exist - check using {@link File#exists()}.
@@ -1541,7 +1441,7 @@ public class Module extends Bundle {
 	public File getView(String name) {
 		return new File(views, adjust(name) + ".esp");
 	}
-
+	
 	public File getView(String modelName, String name) {
 		return new File(getViewsFolder(modelName), adjust(name) + ".esp");
 	}
@@ -1579,7 +1479,7 @@ public class Module extends Bundle {
 		}
 		return false;
 	}
-
+	
 	/**
 	 * Does this module have any mailer template files (.emt).
 	 * @return true if there are .emt files, false otherwise
@@ -1606,6 +1506,42 @@ public class Module extends Bundle {
 		return !findViews().isEmpty();
 	}
 
+	public boolean isRouted(String modelName, Action action) {
+		if(!isJar) {
+			String model = adjust(modelName);
+			String src = readFile(activator).toString();
+			String regex = "router.addResources\\s*\\(\\s*" + modelName + ".class\\s*([^\\)]*)\\s*\\)\\s*;";
+			Pattern p = Pattern.compile(regex);
+			Matcher m = p.matcher(src);
+			if(m.find()) {
+				String actions = m.group(1);
+				if(actions.length() == 0) {
+					return true;
+				}
+				for(String s : actions.split("\\s*,\\s*")) {
+					if(s.length() > 0) {
+						if(s.startsWith("Action.")) {
+							s = s.substring(7);
+						}
+						try {
+							if(action == Action.valueOf(s)) {
+								return true;
+							}
+						} catch(IllegalArgumentException e) {
+							// skip it
+						}
+					}
+				}
+			}
+			p = Pattern.compile("router.addResource\\s*\\(\\s*" + model + "\\.class\\s*,\\s*(Action\\.)?" + action.name() + "\\)");
+			m = p.matcher(src);
+			if(m.find()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public boolean isWebservice() {
 		return hasNature(NATURE_WEBSERVICE);
 	}
@@ -1614,14 +1550,53 @@ public class Module extends Bundle {
 		return Config.loadConfiguration(config);
 	}
 
+	public boolean removeModelRoute(String modelName, Action action) {
+		modelName = adjust(modelName);
+
+		String oldsrc = FileUtils.readFile(activator).toString();
+		String newsrc = oldsrc;
+		
+		String regex = "router.addResources\\s*\\(\\s*" + modelName + ".class\\s*([^\\)]*)\\s*\\)\\s*;";
+		Pattern p = Pattern.compile(regex);
+		Matcher m = p.matcher(newsrc);
+		if(m.find()) {
+			List<Action> actions = (m.group(1).length() == 0) ? Arrays.asList(Action.values()) : getActions(m.group(1));
+			for(Action a1 : actions) {
+				if(a1 == action) {
+					Set<String> imports = new TreeSet<String>();
+					StringBuilder sb = new StringBuilder();
+					actions.remove(action);
+					for(Action a2 : sortActions(actions)) {
+						sb.append(", ").append(a2.name());
+						imports.add("static " + Action.class.getCanonicalName() + "." + a2.name());
+					}
+					if(actions.size() == 1) {
+						newsrc = newsrc.replaceFirst(regex, "router.addResource(" + modelName + ".class" + sb.toString() + ");");
+					} else {
+						newsrc = newsrc.replaceFirst(regex, "router.addResources(" + modelName + ".class" + sb.toString() + ");");
+					}
+					newsrc = SourceFile.ensureImports(newsrc, imports);
+					break;
+				}
+			}
+		}
+
+		regex = "router.addResource\\s*\\(\\s*" + modelName + ".class\\s*,\\s*(Action\\.)?" + action.name() + "\\s*\\)\\s*;";
+		newsrc = newsrc.replaceFirst(regex + "\\s*", "\n\t\t");
+
+		if(!newsrc.equals(oldsrc)) {
+			newsrc = SourceFile.removeUnusedImport(newsrc, packageName(getModel(modelName)) + "." + modelName);
+			newsrc = SourceFile.removeUnusedImport(newsrc, "static " + Action.class.getCanonicalName() + "." + action.name());
+			FileUtils.writeFile(activator, newsrc);
+			return true;
+		}
+		return false;
+	}
+
 	public boolean removeModelRoutes(File model) {
 		return removeModelRoutes(model, getModelName(model));
 	}
-	
-	public boolean removeModelRoutes(String modelName) {
-		return removeModelRoutes(getModel(modelName), modelName);
-	}
-	
+
 	private boolean removeModelRoutes(File model, String modelName) {
 		String className = packageName(model) + "." + modelName;
 		String srcOld = readFile(activator).toString();
@@ -1632,6 +1607,10 @@ public class Module extends Bundle {
 			return true;
 		}
 		return false;
+	}
+
+	public boolean removeModelRoutes(String modelName) {
+		return removeModelRoutes(getModel(modelName), modelName);
 	}
 	
 	public void removeModule(Module module) {
@@ -1648,9 +1627,30 @@ public class Module extends Bundle {
 		}
 	}
 	
+	private List<Action> sortActions(List<Action> actions) {
+		Collections.sort(actions, new Comparator<Action>() {
+			@Override
+			public int compare(Action a1, Action a2) {
+				return a1.ordinal() - a2.ordinal();
+			}
+		});
+		return actions;
+	}
+	
 	private File src(File genFile) {
 		String relativePath = genFile.getAbsolutePath().substring(generated.getAbsolutePath().length());
 		return new File(src, relativePath);
+	}
+	
+	private String updateRoute(String newsrc, String modelName, List<Action> actions, String regex) {
+		Set<String> imports = new TreeSet<String>();
+		StringBuilder sb = new StringBuilder();
+		for(Action a : sortActions(actions)) {
+			sb.append(", ").append(a.name());
+			imports.add("static " + Action.class.getCanonicalName() + "." + a.name());
+		}
+		newsrc = newsrc.replaceFirst(regex, "router.addResources(" + modelName + ".class" + sb.toString() + ");");
+		return SourceFile.ensureImports(newsrc, imports);
 	}
 	
 }
