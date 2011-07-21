@@ -5,6 +5,8 @@ import java.util.LinkedHashSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import org.oobium.build.util.MethodCreator;
+
 public class ActionScriptFile {
 
 	public String simpleName;
@@ -18,6 +20,10 @@ public class ActionScriptFile {
 	public TreeMap<String, String> variables = new TreeMap<String, String>();
 	public TreeMap<Integer, String> constructors = new TreeMap<Integer, String>();
 	public TreeMap<String, String> methods = new TreeMap<String, String>();
+	
+	public void addMethod(MethodCreator mc){
+		methods.put(mc.name, mc.toString());
+	}
 
 	public String getCanonicalName() {
 		return packageName + "." + simpleName;

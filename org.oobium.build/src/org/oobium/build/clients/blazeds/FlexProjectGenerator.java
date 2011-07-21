@@ -6,6 +6,7 @@ import java.io.File;
 
 import org.oobium.build.gen.model.PropertyDescriptor;
 import org.oobium.build.model.ModelDefinition;
+import org.oobium.build.util.MethodCreator;
 import org.oobium.build.workspace.Module;
 
 public class FlexProjectGenerator {
@@ -52,8 +53,69 @@ public class FlexProjectGenerator {
 		for(File file : module.findModels()) {
 			createModel(src, file);
 		}
-		
+		createUserSession(src);
 		return project;
+	}
+	
+	private void createUserSession(File srcFolder){
+		ActionScriptFile as = new ActionScriptFile();
+		as.packageName = module.packageName(module.models);
+		//as.classMetaTags.add("RemoteClass(alias=\"" + module.packageName(module.models) +".UserSession\")");
+		as.simpleName = "UserSession";
+		as.staticVariables.put("ro", "public static const ro:Object = createRemoteObject()");
+		
+		MethodCreator m0 = new MethodCreator("0UserSession()");
+		m0.addLine("public function UserSession():void{");
+			m0.addLine("ro = new RemoteObject();");
+			m0.addLine("ro.destination = \"UserSessionController\";");
+			m0.addLine("ro.addEventListener(\"fault\", faultHandler);");
+		m0.addLine("}");
+		as.addMethod(m0);
+		
+
+		MethodCreator m1 = new MethodCreator("1login");
+		m1.addLine("public function login(userName:String, password:String, callBack:Function):void {");
+			m1.addLine("ro.login.addEventListener(\"result\", callBack);");
+			m1.addLine("ro.login(userName, password);");
+		m1.addLine("}");
+		as.addMethod(m1);
+		
+		MethodCreator m2 = new MethodCreator("2logout()");
+		m2.addLine("public function logout(callBack:Function):void {");
+			m2.addLine("ro.logout();");
+		m2.addLine("}");
+		as.addMethod(m2);
+		
+		MethodCreator m3 = new MethodCreator("3getUserName()");
+		m3.addLine("public function getUserName(callBack:Function):void {");
+			m3.addLine("ro.getUserName.addEventListener(\"result\", callBack);");
+			m3.addLine("ro.getUserName();");
+		m3.addLine("}");
+		as.addMethod(m3);
+		
+		MethodCreator m4 = new MethodCreator("4getPassword()");
+		m4.addLine("public function getPassword(callBack:Function):void {");
+			m4.addLine("ro.getPassword.addEventListener(\"result\", callBack);");
+			m4.addLine("ro.getPassword();");
+		m4.addLine("}");
+		as.addMethod(m4);
+	
+		MethodCreator m5 = new MethodCreator("5getSessionId()");
+		m5.addLine("public function getSessionId(callBack:Function):void {");
+			m5.addLine("ro.getSessionId.addEventListener(\"result\", callBack);");
+			m5.addLine("ro.getSessionId();");
+		m5.addLine("}");
+		as.addMethod(m5);
+		
+		//PRIVATE_FUNCTIONS used to make the public functions work
+	
+		MethodCreator m6 = new MethodCreator("6faultHandler()");
+		m6.addLine("private function faultHandler (event:FaultEvent):void {");
+			m6.addLine("Alert.show(event.fault.faultString, 'Error');");
+		m6.addLine("}");
+		as.addMethod(m6);
+		
+		writeFile(srcFolder, as.getFilePath(), as.toSource());
 	}
 
 	private void createModel(File srcFolder, File modelFile) {

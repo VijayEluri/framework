@@ -12,6 +12,7 @@ import java.util.List;
 import org.oobium.build.clients.JavaClientExporter;
 import org.oobium.build.gen.model.PropertyDescriptor;
 import org.oobium.build.model.ModelDefinition;
+import org.oobium.build.util.MethodCreator;
 import org.oobium.build.util.SourceFile;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.Project;
@@ -70,7 +71,11 @@ public class BlazeProjectGenerator {
 			createController(src, model);
 			createModel(src, model);
 		}
-
+		
+		createChannelController(src);
+		createSessionController(src);
+		createPersistController(src);
+		
 		if(exportFlex) {
 			FlexProjectGenerator flex = new FlexProjectGenerator(module, flexProject);
 			flex.setForce(force);
@@ -129,6 +134,8 @@ public class BlazeProjectGenerator {
 	}
 	
 	private void createController(File srcFolder, ModelDefinition model) {
+		System.out.println("BLAZE_PROJECT_GENERATOR::CREATE_CONTROLLER");
+
 		String mType = model.getSimpleName();
 		String mVar = varName(mType);
 
@@ -186,6 +193,7 @@ public class BlazeProjectGenerator {
 	}
 	
 	private void createModel(File srcFolder, ModelDefinition model) throws IOException {
+		System.out.println("BLAZE_PROJECT_GENERATOR::CREATE_MODEL");
 		String type = model.getSimpleName();
 		String var = varName(type);
 		String plural = varName(type, true);
@@ -315,6 +323,198 @@ public class BlazeProjectGenerator {
 	
 	public void setForce(boolean force) {
 		this.force = force;
+	}
+	
+	public void createPersistController(File srcFolder){
+		String mType = "Persist";
+		SourceFile sf = new SourceFile();
+		sf.packageName = module.packageName(module.controllers);
+		sf.simpleName = mType + "Controller";
+		sf.imports.add("org.oobium.persist.http.HttpPersistService");
+		sf.variables.put("INSTANCE", "private static final PersistController INSTANCE = new PersistController();");
+	 
+	    // Private constructor prevents instantiation from other classes
+		MethodCreator m0 = new MethodCreator("0PersistController()");
+	    m0.addLine("private PersistController() {");
+	    	m0.addLine("HttpPersistService service = new HttpPersistService(\"localhost:5000\", true);");
+	    m0.addLine("}");
+	    sf.addMethod(m0);
+	 
+		MethodCreator m1 = new MethodCreator("1getInstance()");
+	    m1.addLine("public static PersistController getInstance() {");
+	        m1.addLine("return INSTANCE;");
+	    m1.addLine("}");
+	    sf.addMethod(m1);
+	    
+		writeFile(srcFolder, sf.getFilePath(), sf.toSource());
+	}
+	
+	public void createChannelController(File srcFolder){
+		System.out.println("BLAZE_PROJECT_GENERATOR::CREATE_CHANNEL_CONTROLLER");
+
+		String mType = "Channel";
+		String mVar = varName(mType);
+		SourceFile sf = new SourceFile();
+		sf.packageName = module.packageName(module.controllers);
+		sf.simpleName = mType + "Controller";
+
+		sf.imports.add(SQLException.class.getCanonicalName());
+		//sf.imports.add(module.packageName(module.models) + "." + mType);
+		
+		sf.imports.add("flex.messaging.Destination");
+		sf.imports.add("import flex.messaging.MessageBroker");
+		sf.imports.add("import flex.messaging.MessageDestination");
+		sf.imports.add("import flex.messaging.services.MessageService");
+		
+		sf.methods.put("0removeChannel", 
+				"public static void removeChannel(String channelName){\n"+
+				"\ttry {\n"+
+				"\t\tMessageBroker broker = MessageBroker.getMessageBroker(null);\n"+
+				"\t\tMessageService service = (MessageService) broker.getService(\"message-service\");\n"+
+				"\t\tDestination destination = (MessageDestination) service.getDestination(channelName);\n" +
+				"\t\tif(destination != null) {\n"+
+					"\t\t\tservice.removeDestination(destination.getId());\n"+
+				"\t\t}\n" +
+				
+			"\t} catch(Exception e){\n" +
+				"\t\t//LogHelper.write(e.toString());\n"+
+			"\t}\n"+
+		"}");
+		
+		MethodCreator m = new MethodCreator("1addChannel");
+		m.addLine("public static void addChannel(String channelName){");
+		m.addLine("try{");
+		m.addLine("MessageBroker broker = MessageBroker.getMessageBroker(null);");
+		m.addLine("MessageService service = (MessageService) broker.getService(\"message-service\");");
+		m.addLine("Destination findDestination = (MessageDestination) service.getDestination(channelName);");
+		m.addLine("if(findDestination == null) {");
+		m.addLine("Destination destination = (MessageDestination) service.createDestination(channelName);");
+		m.addLine("//LogHelper.write((\"CHANNEL_CONTROLLER::SERVICE_IS_STARTED::\"+service.isStarted()));");
+		m.addLine("if (service.isStarted()) {");
+		m.addLine("destination.start();");
+		m.addLine("}");	
+		m.addLine("} else {");
+		m.addLine("//LogHelper.write(\"CHANNEL_CONTROLLER::CHANNEL_ALREADY_EXISTS::ChannelName=\"+channelName);");
+		m.addLine("}");
+		m.addLine("} catch(Exception e){");
+		m.addLine("//LogHelper.write(e.toString());");
+		m.addLine("}");
+		m.addLine("}");
+		
+		sf.methods.put(m.name, m.toString());
+		writeFile(srcFolder, sf.getFilePath(), sf.toSource());
+	}
+	
+	public void createSessionController(File srcFolder){
+		System.out.println("BLAZE_PROJECT_GENERATOR::CREATE_USER_SESSION_CONTROLLER");
+
+		String mType = "UserSession";
+
+		SourceFile sf = new SourceFile();
+		sf.packageName = module.packageName(module.controllers);
+		sf.simpleName = mType + "Controller";
+
+		sf.imports.add(SQLException.class.getCanonicalName());
+		sf.imports.add("import java.util.List");
+		sf.imports.add("import com.dn2k.blazeds.models.User");
+		sf.imports.add("import com.dn2k.blazeds.stub.UserSvcStub");
+		sf.imports.add("import com.dn2k.blazeds.util.LogHelper");
+		sf.imports.add("import flex.messaging.FlexContext");
+		sf.imports.add("import flex.messaging.FlexSession");
+
+		sf.variables.put("User", "private static User user");
+		sf.variables.put("FlexSession", "private static FlexSession mySession");
+		
+		MethodCreator m0 = new MethodCreator("0UserSessionController");
+		m0.addLine("public UserSessionController(){");
+		m0.addLine("mySession = FlexContext.getFlexSession();");
+		m0.addLine("}");
+		sf.methods.put(m0.name, m0.toString());
+		
+		MethodCreator m1 = new MethodCreator("1getSessionId()");
+		m1.addLine("public String getSessionId(){");
+			m1.addLine("return mySession.getId();");
+		m1.addLine("}");
+		sf.methods.put(m1.name, m1.toString());
+		
+		MethodCreator m2 = new MethodCreator("2getUserId()");
+		m2.addLine("public int getUserId(){");
+			m2.addLine("return user.id;");
+		m2.addLine("}");
+		sf.methods.put(m2.name, m2.toString());
+		
+		MethodCreator m3 = new MethodCreator("3getUserName()");
+		m3.addLine("public String getUserName(){");
+			m3.addLine("//LogHelper.write(\"SESSION_CONTROLLER::GET_USER\");");
+			m3.addLine("if(user==null) {");
+				m3.addLine("return \"\";");
+			m3.addLine("}");
+			m3.addLine("//LogHelper.write(\"SESSION_CONTROLLER::userName=\"+user.userName);");
+			m3.addLine("return user.userName;");
+		m3.addLine("}");
+		sf.methods.put(m3.name, m3.toString());
+	
+		MethodCreator m4 = new MethodCreator("4getPassword()");
+		m4.addLine("public String getPassword(){");
+		m4.addLine("return user.password;");
+		m4.addLine("}");
+		sf.addMethod(m4);
+	
+		
+		MethodCreator m5 = new MethodCreator("5login()");
+		m5.addLine("public boolean login(String userName, String password) {");
+			m5.addLine("//LogHelper.write(\"LOGIN::userName=\"+userName+\", password=\"+password);");
+			m5.addLine("user = authenticate(userName, password);");
+			m5.addLine("if(user!=null){");
+			m5.addLine("return true;");
+			m5.addLine("} else {");
+			m5.addLine("return false;");
+			m5.addLine("}");
+		m5.addLine("}");
+		sf.addMethod(m5);
+		
+		MethodCreator m6 = new MethodCreator("6logout()");
+		m6.addLine("public void logout() {");
+			m6.addLine("mySession = FlexContext.getFlexSession();");
+			m6.addLine("mySession.removeAttribute(\"userName\");");
+			m6.addLine("mySession.removeAttribute(\"password\");");
+		m6.addLine("}");
+		sf.addMethod(m6);
+		
+		MethodCreator m7 = new MethodCreator("7authenticate()");
+		m7.addLine("public User authenticate(String userName, String password){");
+			m7.addLine("try {");
+				m7.addLine("mySession = FlexContext.getFlexSession();");
+				m7.addLine("if(mySession==null){");
+					m7.addLine("//LogHelper.write(\"SESSION is NULL!!!!!!!!!!!!!\");");
+				m7.addLine("}");
+				m7.addLine("List userList = UserSvcStub.findAll();");
+				m7.addLine("//LogHelper.write(\"USER_LIST_SIZE::size=\"+userList.size());");
+				m7.addLine("for(Object obj:userList){");
+					m7.addLine("User mUser = (User)obj;");
+					m7.addLine("//LogHelper.write(\"SESSION_CONTROLLER::authenticate::userName\"+userName+\", password=\"+password);");
+					m7.addLine("//LogHelper.write(\"USER_OBJECT::username=\"+mUser.userName+\", password=\"+mUser.password);");
+					m7.addLine("if(mUser.userName.equals(userName)){");
+						m7.addLine("if(mUser.password.equals(password)){");
+							m7.addLine("//LogHelper.write(\"MATCH USER::\"+mUser.userName);");
+							m7.addLine("mySession.setAttribute(\"userName\", mUser.userName);");
+							m7.addLine("mySession.setAttribute(\"password\", mUser.password);");
+							m7.addLine("user = mUser;");
+							m7.addLine("return mUser;");
+						m7.addLine("}");
+					m7.addLine("}");
+				m7.addLine("}");
+			m7.addLine("} catch(Exception e){");
+				m7.addLine("//LogHelper.write(e.toString());");
+				m7.addLine("for(StackTraceElement element: e.getStackTrace()){");
+					m7.addLine("//LogHelper.write(element.toString());");
+				m7.addLine("}");
+			m7.addLine("}");
+			m7.addLine("return null;");
+		m7.addLine("}");
+		sf.addMethod(m7);
+		
+		writeFile(srcFolder, sf.getFilePath(), sf.toSource());
 	}
 
 }

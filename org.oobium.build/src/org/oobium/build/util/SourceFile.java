@@ -308,6 +308,10 @@ public class SourceFile {
 
 	public ClassModifier classModifier = ClassModifier.PUBLIC;
 	
+	public void addMethod(MethodCreator mc){
+		methods.put(mc.name, mc.toString());
+	}
+	
 	public String getCanonicalName() {
 		return packageName + "." + simpleName;
 	}
