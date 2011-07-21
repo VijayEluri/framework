@@ -29,12 +29,14 @@ public class RemoteWorkers {
 		}
 	}
 
-	public static <T> void run(RemoteWorker<T> worker) {
+	public static <T> T run(RemoteWorker<T> worker) {
 		if(worker.id == 0) { // non-zero id: worker has already been submitted or run
 			worker.workers = instance;
 			worker.id = instance.workerCount.addAndGet(1);
 			worker.task.run();
+			return worker.getResult();
 		}
+		return null;
 	}
 	
 	public static <T> long submit(RemoteWorker<T> worker) {
