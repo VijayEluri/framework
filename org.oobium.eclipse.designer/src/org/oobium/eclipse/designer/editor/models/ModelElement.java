@@ -58,16 +58,10 @@ public class ModelElement extends Element {
 	}
 
 	public Map<String, Object> commit() {
-		if(isDeleted()) {
-			getFile().delete();
-			module.removeModel(this);
-			return null;
-		} else {
-			definition.save();
-			Map<String, Object> data = new LinkedHashMap<String, Object>();
-			data.put("bounds", getBounds());
-			return data;
-		}
+		definition.save();
+		Map<String, Object> data = new LinkedHashMap<String, Object>();
+		data.put("bounds", getBounds());
+		return data;
 	}
 	
 	public boolean isDeleted() {
