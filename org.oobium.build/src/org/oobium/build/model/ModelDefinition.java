@@ -756,9 +756,13 @@ public class ModelDefinition {
 
 	public void save() {
 		if(file != null && mdstart != -1) {
+			// TODO not the most efficient scheme in the world...
+			String desciption = getDescription();
+			List<String> imports = getDescriptionImports();
+			load();
 			StringBuilder sb = new StringBuilder(source);
-			sb.replace(mdstart, mdend, getDescription());
-			ensureImports(sb, getDescriptionImports());
+			sb.replace(mdstart, mdend, desciption);
+			ensureImports(sb, imports);
 			writeFile(file, sb.toString());
 			load();
 		}
