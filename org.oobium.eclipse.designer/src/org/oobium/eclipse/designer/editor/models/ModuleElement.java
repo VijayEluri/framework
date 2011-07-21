@@ -16,10 +16,12 @@ public class ModuleElement extends Element {
 
 	public static final String PROP_MODELS = "Module.Models";
 	
+	private SiteDiagram site;
 	private Module module;
 	private Map<String, ModelElement> models;
 	
-	public ModuleElement(Module module, Map<?,?> modMap) {
+	public ModuleElement(SiteDiagram site, Module module, Map<?,?> modMap) {
+		this.site = site;
 		this.module = module;
 		this.models = new HashMap<String, ModelElement>();
 
@@ -40,12 +42,20 @@ public class ModuleElement extends Element {
 				String sourceField = relation.name;
 				ModelElement targetModel = models.get(relation.type);
 				String targetField = relation.opposite;
-				Connection connection = new Connection(sourceModel, sourceField, targetModel, targetField);
-				model.addConnection(connection);
+				try {
+					Connection connection = new Connection(sourceModel, sourceField, targetModel, targetField);
+					model.addConnection(connection);
+				} catch(IllegalArgumentException e) {
+					System.err.println("error creating connection: " + sourceModel + ", " + sourceField + ", " + targetModel + ", " + targetField);
+				}
 			}
 		}
 	}
 
+	public SiteDiagram getSite() {
+		return site;
+	}
+	
 	public Module getModule() {
 		return module;
 	}

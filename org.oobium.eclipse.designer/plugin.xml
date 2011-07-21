@@ -27,8 +27,8 @@
    <extension
          point="org.eclipse.ui.commands">
       <command
-            defaultHandler="org.oobium.eclipse.designer.commands.OpenDesignerCommand"
-            id="org.oobium.eclipse.designer.commands.OpenDesignerCommand"
+            defaultHandler="org.oobium.eclipse.designer.handlers.OpenDesignerHandler"
+            id="org.oobium.eclipse.designer.handlers.OpenDesignerHandler"
             name="Open Model Editor">
       </command>
    </extension>
@@ -38,7 +38,7 @@
             allPopups="false"
             locationURI="popup:org.eclipse.jdt.ui.PackageExplorer">
          <command
-               commandId="org.oobium.eclipse.designer.commands.OpenDesignerCommand"
+               commandId="org.oobium.eclipse.designer.handlers.OpenDesignerHandler"
                icon="icons/sitemap.png"
                label="Open Model Editor"
                style="push">

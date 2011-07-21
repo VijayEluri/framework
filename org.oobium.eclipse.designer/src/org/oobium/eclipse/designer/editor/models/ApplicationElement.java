@@ -10,8 +10,8 @@ public class ApplicationElement extends ModuleElement {
 
 	private List<ModuleElement> modules;
 
-	public ApplicationElement(Application application, Map<?,?> appMap) {
-		super(application, appMap);
+	public ApplicationElement(SiteDiagram site, Application application, Map<?,?> appMap) {
+		super(site, application, appMap);
 		for(String name : application.getModules()) {
 			// TODO
 			System.out.println("TODO: models (skipping " + name + ")");

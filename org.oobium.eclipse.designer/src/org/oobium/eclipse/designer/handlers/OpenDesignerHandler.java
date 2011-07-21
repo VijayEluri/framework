@@ -1,4 +1,4 @@
-package org.oobium.eclipse.designer.commands;
+package org.oobium.eclipse.designer.handlers;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,7 +12,7 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.handlers.HandlerUtil;
 import org.oobium.build.console.Eclipse;
 
-public class OpenDesignerCommand extends AbstractHandler {
+public class OpenDesignerHandler extends AbstractHandler {
 
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {

@@ -7,6 +7,7 @@ import java.util.Iterator;
 import org.eclipse.draw2d.ColorConstants;
 import org.eclipse.gef.DefaultEditDomain;
 import org.eclipse.gef.GraphicalViewer;
+import org.eclipse.gef.commands.CompoundCommand;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
@@ -21,6 +22,8 @@ import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 import org.oobium.app.http.Action;
 import org.oobium.build.workspace.Module;
+import org.oobium.eclipse.designer.editor.models.commands.ConnectionDeleteCommand;
+import org.oobium.eclipse.designer.editor.models.commands.ModelDeleteCommand;
 import org.oobium.eclipse.designer.editor.parts.ConnectionPart;
 import org.oobium.eclipse.designer.editor.parts.ModelPart;
 import org.oobium.eclipse.designer.editor.tools.ConnectionCreateTool;
@@ -42,6 +45,8 @@ public class DesignerActionBar {
 	
 	private DefaultEditDomain editDomain;
 	private ModelPart activeModel;
+
+	private GraphicalViewer viewer;
 	
 	public DesignerActionBar(Composite parent) {
 		createResources(parent);
@@ -100,7 +105,24 @@ public class DesignerActionBar {
 		delete.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				super.widgetSelected(e);
+				ISelection selection = viewer.getSelection();
+				if(!selection.isEmpty() && selection instanceof StructuredSelection) {
+					CompoundCommand cc = new CompoundCommand();
+					StructuredSelection ss = (StructuredSelection) selection;
+					for(Iterator<?> iter = ss.iterator(); iter.hasNext(); ) {
+						Object o = iter.next();
+						if(o instanceof ModelPart) {
+							cc.add(new ModelDeleteCommand(((ModelPart) o).getModel()));
+							continue;
+						}
+						if(o instanceof ConnectionPart) {
+							cc.add(new ConnectionDeleteCommand(((ConnectionPart) o).getModel()));
+							continue;
+						}
+						return; // can't do a delete, just exit
+					}
+					editDomain.getCommandStack().execute(cc);
+				}
 			}
 		});
 
@@ -150,7 +172,8 @@ public class DesignerActionBar {
 		delImage.dispose();
 	}
 
-	public void hookViewer(GraphicalViewer viewer) {
+	public void setViewer(GraphicalViewer viewer) {
+		this.viewer = viewer;
 		updateSelection(viewer.getSelection());
 		viewer.addSelectionChangedListener(new ISelectionChangedListener() {
 			@Override
@@ -190,6 +213,7 @@ public class DesignerActionBar {
 					return;
 				}
 				delete.setEnabled(true);
+				return;
 			}
 		}
 		delete.setEnabled(false);

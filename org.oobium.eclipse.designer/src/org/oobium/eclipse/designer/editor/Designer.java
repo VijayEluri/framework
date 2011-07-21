@@ -74,7 +74,7 @@ public class Designer extends GraphicalEditor {
 		
 		GraphicalViewer viewer = getGraphicalViewer();
 		viewer.getControl().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-		actionbar.hookViewer(viewer);
+		actionbar.setViewer(viewer);
 	}
 	
 	@Override

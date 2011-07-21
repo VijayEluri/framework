@@ -37,7 +37,7 @@ public class SiteDiagram extends Element {
 		
 		Site site = application.getSite();
 		if(site == null) {
-			ApplicationElement element = new ApplicationElement(application, (Map<?,?>) data.get(application.name));
+			ApplicationElement element = new ApplicationElement(diagram, application, (Map<?,?>) data.get(application.name));
 			diagram.addApplication(element);
 		} else {
 			for(String name : site.getApplications()) {
@@ -45,7 +45,7 @@ public class SiteDiagram extends Element {
 				if(application == null) {
 					throw new IllegalArgumentException("no application with the name: " + name);
 				}
-				ApplicationElement element = new ApplicationElement(application, (Map<?,?>) data.get(application.name));
+				ApplicationElement element = new ApplicationElement(diagram, application, (Map<?,?>) data.get(application.name));
 				diagram.addApplication(element);
 			}
 		}
@@ -57,6 +57,8 @@ public class SiteDiagram extends Element {
 		Map<String, Object> site = new LinkedHashMap<String, Object>();
 		Map<String, Map<String, Object>> applications = new LinkedHashMap<String, Map<String,Object>>();
 		
+		diagram.firePreCommit(null);
+
 		for(ApplicationElement app : diagram.getApplications()) {
 			Map<String, Object> appData = new LinkedHashMap<String, Object>();
 			Map<String, Map<String, Object>> models = new LinkedHashMap<String, Map<String,Object>>();
@@ -81,11 +83,48 @@ public class SiteDiagram extends Element {
 		
 		String json = JsonUtils.format(JsonUtils.toJson(site));
 		dst.setContents(new ByteArrayInputStream(json.getBytes()), true, false, monitor);
+
+		diagram.firePostCommit(null, null);
 	}
 	
 	
 	private List<ApplicationElement> applications;
+
+	private List<ModelCommitListener> commitListeners;
 	
+	
+	public void addCommitListener(ModelCommitListener listener) {
+		if(commitListeners == null) {
+			commitListeners = new ArrayList<ModelCommitListener>();
+			commitListeners.add(listener);
+		}
+		else if(!commitListeners.contains(listener)) {
+			commitListeners.add(listener);
+		}
+	}
+
+	public void removeCommitListener(ModelCommitListener listener) {
+		if(commitListeners != null) {
+			commitListeners.remove(listener);
+		}
+	}
+	
+	private void firePostCommit(ModelElement model, Map<String, Object> mData) {
+		if(commitListeners != null) {
+			for(ModelCommitListener l : commitListeners.toArray(new ModelCommitListener[commitListeners.size()])) {
+				l.postCommit(model, mData);
+			}
+		}
+	}
+	
+	private void firePreCommit(ModelElement model) {
+		if(commitListeners != null) {
+			for(ModelCommitListener l : commitListeners.toArray(new ModelCommitListener[commitListeners.size()])) {
+				l.preCommit(model);
+			}
+		}
+	}
+
 	public void addApplication(ApplicationElement application) {
 		if(applications == null) {
 			applications = new ArrayList<ApplicationElement>();
