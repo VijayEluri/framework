@@ -414,8 +414,8 @@ public class SourceFile {
 			}
 		}
 		for(String method : staticMethods.values()) {
-			sb.append("\n\t");
-			sb.append(method.replace("\n", "\n\t")).append('\n');
+			sb.append('\n');
+			sb.append(tabbify(method)).append('\n');
 		}
 		if(!staticInitializers.isEmpty()) {
 			sb.append("\tstatic {\n");
@@ -455,19 +455,43 @@ public class SourceFile {
 			sb.append("\t}\n");
 		}
 		if(rawSource != null && rawSource.length() > 0) {
-			sb.append("\n\t");
-			sb.append(rawSource.replace("\n", "\n\t")).append('\n');
+			sb.append('\n');
+			sb.append(tabbify(rawSource)).append('\n');
 		}
 		for(String constructor : constructors.values()) {
-			sb.append("\n\t");
-			sb.append(constructor.replace("\n", "\n\t")).append('\n');
+			sb.append('\n');
+			sb.append(tabbify(constructor)).append('\n');
 		}
 		for(String method : methods.values()) {
-			sb.append("\n\t");
-			sb.append(method.replace("\n", "\n\t")).append('\n');
+			sb.append('\n');
+			sb.append(tabbify(method)).append('\n');
 		}
 		sb.append("\n}");
 
+		return sb.toString();
+	}
+	
+	private String tabbify(String s) {
+		StringBuilder sb = new StringBuilder(s.length());
+		sb.append('\t');
+		for(int i = 0; i < s.length(); i++) {
+			char c = s.charAt(i);
+			sb.append(c);
+			if(c == '\n') {
+				i++;
+				sb.append('\t');
+				while(i < s.length()) {
+					c = s.charAt(i);
+					if(Character.isWhitespace(c)) {
+						sb.append('\t');
+						i++;
+					} else {
+						sb.append(c);
+						break;
+					}
+				}
+			}
+		}
 		return sb.toString();
 	}
 	

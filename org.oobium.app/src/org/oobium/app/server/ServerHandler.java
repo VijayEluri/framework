@@ -163,6 +163,14 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 		}
 		
 		if(request.getMethod() == POST) {
+			String expect = request.getHeader(HttpHeaders.Names.EXPECT);
+			if(!blank(expect)) {
+				// TODO support HTTP Header: Expect
+				HttpResponse response = new DefaultHttpResponse(HTTP_1_1, EXPECTATION_FAILED);
+				response.setContent(ChannelBuffers.copiedBuffer(EXPECTATION_FAILED.getReasonPhrase(), CharsetUtil.UTF_8));
+				writeResponse(ctx, request, response);
+				return;
+			}
 			Object attr = request.getParameters().get("_method");
 			if(attr instanceof Attribute) {
 				try {
