@@ -82,7 +82,7 @@ public class StringUtils {
 	}
 	
 	public static String attrEncode(String name, String value) {
-		StringBuffer sb = new StringBuffer(name.length() + ((value == null) ? 1 : (value.length() + 1)));
+		StringBuilder sb = new StringBuilder(name.length() + ((value == null) ? 1 : (value.length() + 1)));
 		sb.append(name).append('=');
 		if(value != null) {
 			sb.append(value);
@@ -107,7 +107,7 @@ public class StringUtils {
 			return "";
 		}
 
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for(Iterator<String> iter = attributes.keySet().iterator(); iter.hasNext();) {
 			String key = iter.next();
 			if(key != null && key.length() > 0) {
