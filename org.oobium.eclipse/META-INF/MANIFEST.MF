@@ -14,7 +14,6 @@ Require-Bundle: org.eclipse.core.runtime,
  org.oobium.build.console
 Export-Package: org.oobium.eclipse,
  org.oobium.eclipse.dialogs,
- org.oobium.eclipse.projects,
  org.oobium.eclipse.util,
  org.oobium.eclipse.wizards,
  org.oobium.eclipse.workspace
