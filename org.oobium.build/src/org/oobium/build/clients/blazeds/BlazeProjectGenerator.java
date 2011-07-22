@@ -73,9 +73,14 @@ public class BlazeProjectGenerator {
 		}
 		
 		createChannelController(src);
-		createSessionController(src);
 		createPersistController(src);
+		// createSessionController(src);
 		
+		String name = "flex-messaging-core.jar";
+		File jar = new File(createFolder(project, "lib"), name);
+		copy(getClass().getResourceAsStream("/lib/" + name), jar);
+		target.addBuildPath("lib/" + name, "lib");
+
 		if(exportFlex) {
 			FlexProjectGenerator flex = new FlexProjectGenerator(module, flexProject);
 			flex.setForce(force);
@@ -142,6 +147,7 @@ public class BlazeProjectGenerator {
 		SourceFile sf = new SourceFile();
 		sf.packageName = module.packageName(module.controllers);
 		sf.simpleName = mType + "Controller";
+		sf.superName = "PersistController";
 
 		sf.imports.add(List.class.getCanonicalName());
 		sf.imports.add(SQLException.class.getCanonicalName());
@@ -149,43 +155,43 @@ public class BlazeProjectGenerator {
 
 		sf.methods.put("0find(int id)",
 				"public " + mType + " find(int id) throws SQLException {\n" +
-				"\treturn " + mType + ".find(id);\n" +
+				" return " + mType + ".find(id);\n" +
 				"}"
 			);
 		
 		sf.methods.put("1find(String where)",
 				"public " + mType + " find(String where) throws SQLException {\n" +
-				"\treturn " + mType + ".find(where);\n" +
+				" return " + mType + ".find(where);\n" +
 				"}"
 			);
 		
 		sf.methods.put("2findAll()",
 				"public List<" + mType + "> findAll() throws SQLException {\n" +
-				"\treturn " + mType + ".findAll();\n" +
+				" return " + mType + ".findAll();\n" +
 				"}"
 			);
 		
 		sf.methods.put("3findAll(String where)",
 				"public List<" + mType + "> findAll(String where) throws SQLException {\n" +
-				"\treturn " + mType + ".findAll(where);\n" +
+				" return " + mType + ".findAll(where);\n" +
 				"}"
 			);
 		
 		sf.methods.put("4create",
 				"public void create(" + mType + " " + mVar + ") throws SQLException {\n" +
-				"\t" + mVar + ".create();\n" +
+				" " + mVar + ".create();\n" +
 				"}"
 			);
 
 		sf.methods.put("5destroy",
 				"public void destroy(" + mType + " " + mVar + ") throws SQLException {\n" +
-				"\t" + mVar + ".destroy();\n" +
+				" " + mVar + ".destroy();\n" +
 				"}"
 			);
 
 		sf.methods.put("6update",
 				"public void update(" + mType + " " + mVar + ") throws SQLException {\n" +
-				"\t" + mVar + ".update();\n" +
+				" " + mVar + ".update();\n" +
 				"}"
 			);
 
@@ -193,7 +199,6 @@ public class BlazeProjectGenerator {
 	}
 	
 	private void createModel(File srcFolder, ModelDefinition model) throws IOException {
-		System.out.println("BLAZE_PROJECT_GENERATOR::CREATE_MODEL");
 		String type = model.getSimpleName();
 		String var = varName(type);
 		String plural = varName(type, true);
@@ -211,34 +216,34 @@ public class BlazeProjectGenerator {
 		
 		sb = new StringBuilder();
 		sb.append("private static ").append(type).append(" setVars(").append(type).append(' ').append(var).append(") {\n");
-		sb.append("\tif(").append(var).append(" != null) {\n");
-		sb.append("\t\t").append(var).append(".id = ").append(var).append(".getId();\n");
+		sb.append(" if(").append(var).append(" != null) {\n");
+		sb.append("  ").append(var).append(".id = ").append(var).append(".getId();\n");
 		for(PropertyDescriptor prop : props) {
-			sb.append("\t\t").append(var).append(".").append(prop.variable()).append(" = ").append(var).append(".").append(prop.getterName()).append("();\n");
+			sb.append("  ").append(var).append(".").append(prop.variable()).append(" = ").append(var).append(".").append(prop.getterName()).append("();\n");
 		}
-		sb.append("\t}\n");
-		sb.append("\treturn ").append(var).append(";\n");
+		sb.append(" }\n");
+		sb.append(" return ").append(var).append(";\n");
 		sb.append("}");
 		sf.staticMethods.put(String.valueOf(i++), sb.toString());
 		
 		sb = new StringBuilder();
 		sb.append("private static List<").append(type).append("> setVars(List<").append(type).append("> ").append(plural).append(") {\n");
-		sb.append("\tfor(").append(type).append(' ').append(var).append(" : ").append(plural).append(") {\n");
-		sb.append("\t\tsetVars(").append(var).append(");\n");
-		sb.append("\t}\n");
-		sb.append("\treturn ").append(plural).append(";\n");
+		sb.append(" for(").append(type).append(' ').append(var).append(" : ").append(plural).append(") {\n");
+		sb.append("  setVars(").append(var).append(");\n");
+		sb.append(" }\n");
+		sb.append(" return ").append(plural).append(";\n");
 		sb.append("}");
 		sf.staticMethods.put(String.valueOf(i++), sb.toString());
 		
 		sb = new StringBuilder();
 		sb.append("private static ").append(type).append(" setFields(").append(type).append(' ').append(var).append(") {\n");
-		sb.append("\tif(").append(var).append(" != null) {\n");
-		sb.append("\t\t").append(var).append(".setId(").append(var).append(".id);\n");
+		sb.append(" if(").append(var).append(" != null) {\n");
+		sb.append("  ").append(var).append(".setId(").append(var).append(".id);\n");
 		for(PropertyDescriptor prop : props) {
-			sb.append("\t\t").append(var).append(".").append(prop.setterName()).append("(").append(var).append(".").append(prop.variable()).append(");\n");
+			sb.append("  ").append(var).append(".set(").append(prop.enumProp()).append(", ").append(var).append(".").append(prop.variable()).append(");\n");
 		}
-		sb.append("\t}\n");
-		sb.append("\treturn ").append(var).append(";\n");
+		sb.append(" }\n");
+		sb.append(" return ").append(var).append(";\n");
 		sb.append("}");
 		sf.staticMethods.put(String.valueOf(i++), sb.toString());
 		
@@ -247,25 +252,25 @@ public class BlazeProjectGenerator {
 		sf.staticMethods.put(String.valueOf(i++), sb.toString());
 		sb = new StringBuilder();
 		sb.append("public static ").append(type).append(" find(int id) throws SQLException {\n");
-		sb.append("\treturn setVars(").append(sf.superName).append(".find(id));\n");
+		sb.append(" return setVars(").append(sf.superName).append(".find(id));\n");
 		sb.append("}");
 		sf.staticMethods.put(String.valueOf(i++), sb.toString());
 		
 		sb = new StringBuilder();
 		sb.append("public static ").append(sf.simpleName).append(" find(String where) throws SQLException {\n");
-		sb.append("\treturn setVars(").append(sf.superName).append(".find(where));\n");
+		sb.append(" return setVars(").append(sf.superName).append(".find(where));\n");
 		sb.append("}");
 		sf.staticMethods.put(String.valueOf(i++), sb.toString());
 		
 		sb = new StringBuilder();
 		sb.append("public static List<").append(sf.simpleName).append("> findAll() throws SQLException {\n");
-		sb.append("\treturn setVars(").append(sf.superName).append(".findAll());\n");
+		sb.append(" return setVars(").append(sf.superName).append(".findAll());\n");
 		sb.append("}");
 		sf.staticMethods.put(String.valueOf(i++), sb.toString());
 		
 		sb = new StringBuilder();
 		sb.append("public static List<").append(sf.simpleName).append("> findAll(String where) throws SQLException {\n");
-		sb.append("\treturn setVars(").append(sf.superName).append(".findAll(where));\n");
+		sb.append(" return setVars(").append(sf.superName).append(".findAll(where));\n");
 		sb.append("}");
 		sf.staticMethods.put(String.valueOf(i++), sb.toString());
 		
@@ -276,29 +281,30 @@ public class BlazeProjectGenerator {
 				sf.imports.add(prop.fullType());
 			}
 			sf.variables.put(prop.variable(), "public " + prop.castType() + " " + prop.variable());
+			sf.imports.addAll(prop.imports());
 		}
 
 		sb = new StringBuilder();
 		sb.append("@Override\n");
 		sb.append("public boolean create() {\n");
-		sb.append("\tsetFields(this);\n");
-		sb.append("\treturn super.create();\n");
+		sb.append(" setFields(this);\n");
+		sb.append(" return super.create();\n");
 		sb.append("}");
 		sf.methods.put(String.valueOf(i++), sb.toString());
 
 		sb = new StringBuilder();
 		sb.append("@Override\n");
 		sb.append("public boolean update() {\n");
-		sb.append("\tsetFields(this);\n");
-		sb.append("\treturn super.update();\n");
+		sb.append(" setFields(this);\n");
+		sb.append(" return super.update();\n");
 		sb.append("}");
 		sf.methods.put(String.valueOf(i++), sb.toString());
 
 		sb = new StringBuilder();
 		sb.append("@Override\n");
 		sb.append("public boolean destroy() {\n");
-		sb.append("\tsetId(id);\n");
-		sb.append("\treturn super.destroy();\n");
+		sb.append(" setId(id);\n");
+		sb.append(" return super.destroy();\n");
 		sb.append("}");
 		sf.methods.put(String.valueOf(i++), sb.toString());
 		
@@ -325,61 +331,44 @@ public class BlazeProjectGenerator {
 		this.force = force;
 	}
 	
-	public void createPersistController(File srcFolder){
-		String mType = "Persist";
+	private void createPersistController(File srcFolder){
 		SourceFile sf = new SourceFile();
+
 		sf.packageName = module.packageName(module.controllers);
-		sf.simpleName = mType + "Controller";
+		sf.simpleName = "PersistController";
 		sf.imports.add("org.oobium.persist.http.HttpPersistService");
-		sf.variables.put("INSTANCE", "private static final PersistController INSTANCE = new PersistController();");
-	 
-	    // Private constructor prevents instantiation from other classes
-		MethodCreator m0 = new MethodCreator("0PersistController()");
-	    m0.addLine("private PersistController() {");
-	    	m0.addLine("HttpPersistService service = new HttpPersistService(\"localhost:5000\", true);");
-	    m0.addLine("}");
-	    sf.addMethod(m0);
-	 
-		MethodCreator m1 = new MethodCreator("1getInstance()");
-	    m1.addLine("public static PersistController getInstance() {");
-	        m1.addLine("return INSTANCE;");
-	    m1.addLine("}");
-	    sf.addMethod(m1);
-	    
+
+		sf.staticInitializers.add("new HttpPersistService(\"localhost:5000\", true)");
+
 		writeFile(srcFolder, sf.getFilePath(), sf.toSource());
 	}
 	
-	public void createChannelController(File srcFolder){
+	private void createChannelController(File srcFolder){
 		System.out.println("BLAZE_PROJECT_GENERATOR::CREATE_CHANNEL_CONTROLLER");
 
 		String mType = "Channel";
-		String mVar = varName(mType);
 		SourceFile sf = new SourceFile();
 		sf.packageName = module.packageName(module.controllers);
 		sf.simpleName = mType + "Controller";
 
-		sf.imports.add(SQLException.class.getCanonicalName());
-		//sf.imports.add(module.packageName(module.models) + "." + mType);
-		
 		sf.imports.add("flex.messaging.Destination");
-		sf.imports.add("import flex.messaging.MessageBroker");
-		sf.imports.add("import flex.messaging.MessageDestination");
-		sf.imports.add("import flex.messaging.services.MessageService");
+		sf.imports.add("flex.messaging.MessageBroker");
+		sf.imports.add("flex.messaging.MessageDestination");
+		sf.imports.add("flex.messaging.services.MessageService");
 		
 		sf.methods.put("0removeChannel", 
-				"public static void removeChannel(String channelName){\n"+
-				"\ttry {\n"+
-				"\t\tMessageBroker broker = MessageBroker.getMessageBroker(null);\n"+
-				"\t\tMessageService service = (MessageService) broker.getService(\"message-service\");\n"+
-				"\t\tDestination destination = (MessageDestination) service.getDestination(channelName);\n" +
-				"\t\tif(destination != null) {\n"+
-					"\t\t\tservice.removeDestination(destination.getId());\n"+
-				"\t\t}\n" +
-				
+			"public static void removeChannel(String channelName){\n"+
+			"\ttry {\n"+
+			"\t\tMessageBroker broker = MessageBroker.getMessageBroker(null);\n"+
+			"\t\tMessageService service = (MessageService) broker.getService(\"message-service\");\n"+
+			"\t\tDestination destination = (MessageDestination) service.getDestination(channelName);\n" +
+			"\t\tif(destination != null) {\n"+
+			"\t\t\tservice.removeDestination(destination.getId());\n"+
+			"\t\t}\n" +
 			"\t} catch(Exception e){\n" +
-				"\t\t//LogHelper.write(e.toString());\n"+
+			"\t\t//LogHelper.write(e.toString());\n"+
 			"\t}\n"+
-		"}");
+			"}");
 		
 		MethodCreator m = new MethodCreator("1addChannel");
 		m.addLine("public static void addChannel(String channelName){");
@@ -405,7 +394,7 @@ public class BlazeProjectGenerator {
 		writeFile(srcFolder, sf.getFilePath(), sf.toSource());
 	}
 	
-	public void createSessionController(File srcFolder){
+	private void createSessionController(File srcFolder){
 		System.out.println("BLAZE_PROJECT_GENERATOR::CREATE_USER_SESSION_CONTROLLER");
 
 		String mType = "UserSession";
@@ -433,51 +422,50 @@ public class BlazeProjectGenerator {
 		
 		MethodCreator m1 = new MethodCreator("1getSessionId()");
 		m1.addLine("public String getSessionId(){");
-			m1.addLine("return mySession.getId();");
+		m1.addLine("return mySession.getId();");
 		m1.addLine("}");
 		sf.methods.put(m1.name, m1.toString());
-		
+
 		MethodCreator m2 = new MethodCreator("2getUserId()");
 		m2.addLine("public int getUserId(){");
-			m2.addLine("return user.id;");
+		m2.addLine("return user.id;");
 		m2.addLine("}");
 		sf.methods.put(m2.name, m2.toString());
-		
+
 		MethodCreator m3 = new MethodCreator("3getUserName()");
 		m3.addLine("public String getUserName(){");
-			m3.addLine("//LogHelper.write(\"SESSION_CONTROLLER::GET_USER\");");
-			m3.addLine("if(user==null) {");
-				m3.addLine("return \"\";");
-			m3.addLine("}");
-			m3.addLine("//LogHelper.write(\"SESSION_CONTROLLER::userName=\"+user.userName);");
-			m3.addLine("return user.userName;");
+		m3.addLine("//LogHelper.write(\"SESSION_CONTROLLER::GET_USER\");");
+		m3.addLine("if(user==null) {");
+		m3.addLine("return \"\";");
+		m3.addLine("}");
+		m3.addLine("//LogHelper.write(\"SESSION_CONTROLLER::userName=\"+user.userName);");
+		m3.addLine("return user.userName;");
 		m3.addLine("}");
 		sf.methods.put(m3.name, m3.toString());
-	
+
 		MethodCreator m4 = new MethodCreator("4getPassword()");
 		m4.addLine("public String getPassword(){");
 		m4.addLine("return user.password;");
 		m4.addLine("}");
 		sf.addMethod(m4);
-	
-		
+
 		MethodCreator m5 = new MethodCreator("5login()");
 		m5.addLine("public boolean login(String userName, String password) {");
-			m5.addLine("//LogHelper.write(\"LOGIN::userName=\"+userName+\", password=\"+password);");
-			m5.addLine("user = authenticate(userName, password);");
-			m5.addLine("if(user!=null){");
-			m5.addLine("return true;");
-			m5.addLine("} else {");
-			m5.addLine("return false;");
-			m5.addLine("}");
+		m5.addLine("//LogHelper.write(\"LOGIN::userName=\"+userName+\", password=\"+password);");
+		m5.addLine("user = authenticate(userName, password);");
+		m5.addLine("if(user!=null){");
+		m5.addLine("return true;");
+		m5.addLine("} else {");
+		m5.addLine("return false;");
+		m5.addLine("}");
 		m5.addLine("}");
 		sf.addMethod(m5);
-		
+
 		MethodCreator m6 = new MethodCreator("6logout()");
 		m6.addLine("public void logout() {");
-			m6.addLine("mySession = FlexContext.getFlexSession();");
-			m6.addLine("mySession.removeAttribute(\"userName\");");
-			m6.addLine("mySession.removeAttribute(\"password\");");
+		m6.addLine("mySession = FlexContext.getFlexSession();");
+		m6.addLine("mySession.removeAttribute(\"userName\");");
+		m6.addLine("mySession.removeAttribute(\"password\");");
 		m6.addLine("}");
 		sf.addMethod(m6);
 		
