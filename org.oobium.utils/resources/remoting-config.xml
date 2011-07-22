@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service id="remoting-service"
+    class="flex.messaging.services.RemotingService">
+
+    <adapters>
+        <adapter-definition id="java-object" class="flex.messaging.services.remoting.adapters.JavaAdapter" default="true"/>
+    </adapters>
+
+    <default-channels>
+        <channel ref="my-amf"/>
+    </default-channels>
+    
+    <destination id="AssetDAO">
+    	<properties>
+    		<source>com.dn2k.blazeds.dao.AssetDAO</source>
+    		<scope>application</scope>
+    	</properties>
+    </destination>
+    
+    <destination id="AssetTypeDAO">
+    	<properties>
+    		<source>com.dn2k.blazeds.dao.AssetTypeDAO</source>
+    		<scope>application</scope>
+    	</properties>
+    </destination>
+
+    <destination id="DeviceDAO">
+    	<properties>
+    		<source>com.dn2k.blazeds.dao.DeviceDAO</source>
+    		<scope>application</scope>
+    	</properties>
+    </destination>
+    
+    <destination id="DeviceTypeDAO">
+    	<properties>
+    		<source>com.dn2k.blazeds.dao.DeviceTypeDAO</source>
+    		<scope>application</scope>
+    	</properties>
+    </destination>
+    
+    <destination id="GroupDAO">
+    	<properties>
+    		<source>com.dn2k.blazeds.dao.GroupDAO</source>
+    		<scope>application</scope>
+    	</properties>
+    </destination>
+    
+    <destination id="ConvoyDemoDAO">
+    	<properties>
+    		<source>com.dn2k.blazeds.dao.ConvoyDemoDAO</source>
+    		<scope>application</scope>
+    	</properties>
+    </destination>
+    
+    <destination id="UserController">
+    	<properties>
+    		<source>com.dn2k.blazeds.controller.UserController</source>
+    		<scope>application</scope>
+    	</properties>
+    </destination>
+    
+    <destination id="AssetLocationController">
+    	<properties>
+    		<source>com.dn2k.blazeds.controller.AssetLocationController</source>
+    		<scope>application</scope>
+    	</properties>
+    </destination>
+    
+    <destination id="SessionController">
+    	<properties>
+    		<source>com.dn2k.blazeds.controller.SessionController</source>
+    		<scope>application</scope>
+    	</properties>
+    </destination>
+    
+    <destination id="TestObjectController">
+    	<properties>
+    		<source>com.dn2k.blazeds.test.controller.TestObjectController</source>
+    		<scope>application</scope>
+    	</properties>
+    </destination>
+    
+  </service>
