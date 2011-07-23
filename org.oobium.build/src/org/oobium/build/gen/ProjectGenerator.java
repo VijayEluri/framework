@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.oobium.build.gen;
 
+import static org.oobium.build.util.ProjectUtils.getPrefsFileDate;
 import static org.oobium.utils.FileUtils.createFolder;
 import static org.oobium.utils.FileUtils.writeFile;
 import static org.oobium.utils.StringUtils.camelCase;
@@ -198,7 +199,7 @@ public class ProjectGenerator {
 		createClasspathFile(project, createViews ? PTYPE_APP : PTYPE_APP_WS);
 		createBuildFile(project, createViews ? PTYPE_APP : PTYPE_APP_WS);
 		createManifestFile(project, PTYPE_APP, properties);
-		createJdtPrefsFile(project);
+		createPrefsFile(project);
 		createAppActivator(project, createViews);
 		createApplicationConfigFile(project, false);
 		createApplicationController(project);
@@ -280,9 +281,6 @@ public class ProjectGenerator {
 		}
 		sb.append("output.. = bin/\n");
 		sb.append("bin.includes = META-INF/,\\\n");
-//		if(type >= 0 && PTYPE_APP_WS != type && PTYPE_MOD_WS != type) {
-//			sb.append("           assets/,\\\n");
-//		}
 		sb.append(".\n");
 		if(PTYPE_TEST == type) {
 			sb.append("additional.bundles = org.oobium.cache\n");
@@ -316,11 +314,11 @@ public class ProjectGenerator {
 		writeFile(project, ".classpath", sb.toString());
 	}
 	
-	private static void createJdtPrefsFile(File project) {
-		String src = "eclipse.preferences.version=1\n" +
-		"org.eclipse.jdt.core.builder.resourceCopyExclusionFilter=*.launch,*.esp,*.ess,*.ejs,*.emt,site.js";
-		File folder = createFolder(project, ".settings");
-		writeFile(folder, "org.eclipse.jdt.core.prefs", src);
+	private static void createPrefsFile(File project) {
+		writeFile(createFolder(project, ".settings"), "org.eclipse.jdt.core.prefs",
+				"#" + getPrefsFileDate() + "\n" +
+				"org.eclipse.jdt.core.builder.resourceCopyExclusionFilter=*.launch,*.esp,*.ess,*.ejs,*.emt,site.js"
+			);
 	}
 	
 	public static File createMailer(Module module, String name, String...methods) {
@@ -468,7 +466,7 @@ public class ProjectGenerator {
 		createClasspathFile(migrator, PTYPE_MIG);
 		createBuildFile(migrator, PTYPE_MIG);
 		createMigrationManifestFile(migrator, module, dependencies);
-		createJdtPrefsFile(migrator);
+		createPrefsFile(migrator);
 		createMigratorFiles(migrator);
 		
 		return migrator;
@@ -731,7 +729,7 @@ public class ProjectGenerator {
 		createClasspathFile(project, createViews ? PTYPE_MOD : PTYPE_MOD_WS);
 		createBuildFile(project, createViews ? PTYPE_MOD : PTYPE_MOD_WS);
 		createManifestFile(project, PTYPE_MOD, properties);
-		createJdtPrefsFile(project);
+		createPrefsFile(project);
 		createModActivator(project, createViews);
 		createModuleConfigFile(project);
 
@@ -875,7 +873,7 @@ public class ProjectGenerator {
 		createClasspathFile(project, PTYPE_TEST);
 		createBuildFile(project, PTYPE_TEST);
 		createManifestFile(project, PTYPE_TEST, properties);
-		createJdtPrefsFile(project);
+		createPrefsFile(project);
 		
 		return project;
 	}
@@ -909,7 +907,7 @@ public class ProjectGenerator {
 		createClasspathFile(project, PTYPE_APP_WS);
 		createBuildFile(project, PTYPE_APP_WS);
 		createManifestFile(project, PTYPE_APP_WS, properties);
-		createJdtPrefsFile(project);
+		createPrefsFile(project);
 		createAppActivator(project, false);
 		createApplicationConfigFile(project, true);
 		createApplicationController(project);
@@ -945,7 +943,7 @@ public class ProjectGenerator {
 		createClasspathFile(project, -1);
 		createBuildFile(project, -1);
 		createManifestFile(project, -1, properties);
-		createJdtPrefsFile(project);
+		createPrefsFile(project);
 		
 		return project;
 	}
