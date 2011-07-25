@@ -297,6 +297,7 @@ public class SourceFile {
 	public TreeSet<String> staticImports = new TreeSet<String>();
 	public List<String> staticInitializers = new ArrayList<String>();
 	public List<String> initializers = new ArrayList<String>();
+	public TreeMap<String, String> staticVariables = new TreeMap<String, String>();
 	public TreeMap<String, String> staticMethods = new TreeMap<String, String>();
 	public TreeMap<String, String> variables = new TreeMap<String, String>();
 	public TreeMap<Integer, String> constructors = new TreeMap<Integer, String>();
@@ -412,6 +413,21 @@ public class SourceFile {
 					}
 					sb.append("};\n");
 				}
+			}
+		}
+		if(!staticVariables.isEmpty()) {
+			sb.append('\n');
+			for(String var : staticVariables.values()) {
+				sb.append("\t");
+				if(var.startsWith("public ") || var.startsWith("protected ") || var.startsWith("private ")) {
+					sb.append(var);
+				} else {
+					sb.append("private ").append(var);
+				}
+				if(!var.endsWith(";")) {
+					sb.append(';');
+				}
+				sb.append('\n');
 			}
 		}
 		for(String method : staticMethods.values()) {

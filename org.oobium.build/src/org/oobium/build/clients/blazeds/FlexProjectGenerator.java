@@ -3,7 +3,7 @@ package org.oobium.build.clients.blazeds;
 import static org.oobium.build.util.ProjectUtils.getPrefsFileDate;
 import static org.oobium.utils.FileUtils.createFolder;
 import static org.oobium.utils.FileUtils.deleteContents;
-import static org.oobium.utils.FileUtils.writeFile;
+import static org.oobium.utils.FileUtils.*;
 import static org.oobium.utils.StringUtils.*;
 
 import java.io.File;
@@ -48,7 +48,7 @@ public class FlexProjectGenerator {
 		createFolder(project, "bin");
 		
 		File src = createFolder(project, "src");
-		createObserverEventHandlerFile(src);
+		createObserverFiles(src);
 		for(File file : module.findModels()) {
 			createModel(src, file);
 		}
@@ -61,94 +61,51 @@ public class FlexProjectGenerator {
 		return project;
 	}
 	
-	private void createObserverEventHandlerFile(File src) {
-		ActionScriptFile as = new ActionScriptFile();
+	private void createObserverFiles(File src) {
+		String source = getResourceAsString(getClass(), "Observers.as");
+		source.replace("{serverUrl}", "http://localhost:8400"); // TODO server URL
+		writeFile(src, "org/oobium/persist/Observers.as", source);
 		
-		as.packageName = "org.oobium.persist";
-		
-		as.imports.add("flash.events.Event");
-		as.imports.add("mx.controls.Alert");
-		as.imports.add("mx.messaging.Consumer");
-		as.imports.add("mx.rpc.events.ResultEvent");
-		as.imports.add("mx.rpc.remoting.RemoteObject");
-		as.imports.add("mx.messaging.ChannelSet");
-		as.imports.add("mx.messaging.channels.AMFChannel");
-		as.imports.add("mx.rpc.events.FaultEvent");
-		as.imports.add("mx.messaging.events.*");
-		
-		as.simpleName = "ObserverEventHandler";
-		
-		as.variables.put("0", "private var messageHandler:Function");
-		
-		as.constructors.put(0, source(
-				"public function ObserverEventHandler(aMessageHandler:Function):void {",
-				" messageHandler = aMessageHandler;",
-				"}"
-			));
-		
-		as.methods.put("0", source(
-				"public function handleEvents(event:ResultEvent):void {",
-				" var channelName:String = event.result as String;",
-				"",
-				" var consumer:Consumer = new Consumer();",
-				" consumer.destination = channelName;",
-				"",
-				" var channelSet:ChannelSet = new ChannelSet();",
-				" channelSet.addChannel(new AMFChannel(\"my-polling-amf\", \"{serverUrl}/messagebroker/amfpolling\"));",
-				"",
-				" consumer.channelSet = channelSet;",
-				" consumer.addEventListener(MessageEvent.MESSAGE, messageHandler);",
-				" consumer.addEventListener(MessageFaultEvent.FAULT, faultHandler);",
-				" consumer.subscribe();",
-				"}"
-			).replace("{serverUrl}", "http://localhost:8400")); // TODO serverUrl
-		
-		as.methods.put("1", source(
-				"private function faultHandler (event:FaultEvent):void {",
-				" Alert.show(event.fault.faultString, 'Error');",
-				"}"
-			));
-
-		writeFile(src, "org/oobium/persist/ObserverEventHandler.as", as.toSource());
+		writeFile(src, "org/oobium/persist/Observer.as", getClass().getResourceAsStream("Observer.as"));
 	}
 	
 	private void createActionScriptPropertiesFile() {
 		String appPath = project.getName() + ".as";
 		String uuid = UUID.randomUUID().toString();
-		writeFile(project, ".actionScriptProperties",
-				"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n" +
-				"<actionScriptProperties analytics=\"false\" mainApplicationPath=\"" + appPath + "\" projectUUID=\"" + uuid + "\" version=\"10\">\n" +
-				" <compiler additionalCompilerArguments=\"-locale en_US\" autoRSLOrdering=\"true\" copyDependentFiles=\"false\" fteInMXComponents=\"false\" generateAccessible=\"false\" htmlExpressInstall=\"true\" htmlGenerate=\"false\" htmlHistoryManagement=\"false\" htmlPlayerVersionCheck=\"true\" includeNetmonSwc=\"false\" outputFolderPath=\"bin\" removeUnusedRSL=\"true\" sourceFolderPath=\"src\" strict=\"true\" targetPlayerVersion=\"0.0.0\" useApolloConfig=\"false\" useDebugRSLSwfs=\"true\" verifyDigests=\"true\" warn=\"true\">\n" +
-				"  <compilerSourcePath/>\n" +
-				"  <libraryPath defaultLinkType=\"0\">\n" +
-				"   <libraryPathEntry kind=\"4\" path=\"\">\n" +
-				"    <excludedEntries>\n" +
-				"     <libraryPathEntry kind=\"3\" linkType=\"1\" path=\"${PROJECT_FRAMEWORKS}/libs/flex.swc\" useDefaultLinkType=\"false\"/>\n" +
-				"     <libraryPathEntry kind=\"3\" linkType=\"1\" path=\"${PROJECT_FRAMEWORKS}/libs/core.swc\" useDefaultLinkType=\"false\"/>\n" +
-				"    </excludedEntries>\n" +
-				"   </libraryPathEntry>\n" +
-				"  </libraryPath>\n" +
-				"  <sourceAttachmentPath/>\n" +
-				" </compiler>\n" +
-				" <applications>\n" +
-				"  <application path=\"" + appPath + "\"/>\n" +
-				" </applications>\n" +
-				" <modules/>\n" +
-				" <buildCSSFiles/>\n" +
-				" <flashCatalyst validateFlashCatalystCompatibility=\"false\"/>\n" +
+		writeFile(project, ".actionScriptProperties", source(
+				"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>",
+				"<actionScriptProperties analytics=\"false\" mainApplicationPath=\"" + appPath + "\" projectUUID=\"" + uuid + "\" version=\"10\">",
+				" <compiler additionalCompilerArguments=\"-locale en_US\" autoRSLOrdering=\"true\" copyDependentFiles=\"false\" fteInMXComponents=\"false\" generateAccessible=\"false\" htmlExpressInstall=\"true\" htmlGenerate=\"false\" htmlHistoryManagement=\"false\" htmlPlayerVersionCheck=\"true\" includeNetmonSwc=\"false\" outputFolderPath=\"bin\" removeUnusedRSL=\"true\" sourceFolderPath=\"src\" strict=\"true\" targetPlayerVersion=\"0.0.0\" useApolloConfig=\"false\" useDebugRSLSwfs=\"true\" verifyDigests=\"true\" warn=\"true\">",
+				"  <compilerSourcePath/>",
+				"  <libraryPath defaultLinkType=\"0\">",
+				"   <libraryPathEntry kind=\"4\" path=\"\">",
+				"    <excludedEntries>",
+				"     <libraryPathEntry kind=\"3\" linkType=\"1\" path=\"${PROJECT_FRAMEWORKS}/libs/flex.swc\" useDefaultLinkType=\"false\"/>",
+				"     <libraryPathEntry kind=\"3\" linkType=\"1\" path=\"${PROJECT_FRAMEWORKS}/libs/core.swc\" useDefaultLinkType=\"false\"/>",
+				"    </excludedEntries>",
+				"   </libraryPathEntry>",
+				"  </libraryPath>",
+				"  <sourceAttachmentPath/>",
+				" </compiler>",
+				" <applications>",
+				"  <application path=\"" + appPath + "\"/>",
+				" </applications>",
+				" <modules/>",
+				" <buildCSSFiles/>",
+				" <flashCatalyst validateFlashCatalystCompatibility=\"false\"/>",
 				"</actionScriptProperties>"
-			);
+			));
 	}
 
 	private void createFlexLibPropertiesFile() {
-		writeFile(project, ".flexLibProperties",
-				"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n" +
-				"<flexLibProperties includeAllClasses=\"true\" useMultiPlatformConfig=\"false\" version=\"3\">\n" +
-				" <includeClasses/>\n" +
-				" <includeResources/>\n" +
-				" <namespaceManifests/>\n" +
+		writeFile(project, ".flexLibProperties", source(
+				"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>",
+				"<flexLibProperties includeAllClasses=\"true\" useMultiPlatformConfig=\"false\" version=\"3\">",
+				" <includeClasses/>",
+				" <includeResources/>",
+				" <namespaceManifests/>",
 				"</flexLibProperties>"
-			);
+			));
 	}
 
 	private void createModel(File srcFolder, File modelFile) {
@@ -160,7 +117,8 @@ public class FlexProjectGenerator {
 		as.imports.add("mx.rpc.remoting.RemoteObject");
 		as.imports.add("mx.rpc.events.ResultEvent");
 		as.imports.add("mx.rpc.events.FaultEvent");
-		as.imports.add("org.oobium.persist.ObserverEventHandler");
+		as.imports.add("org.oobium.persist.Observer");
+		as.imports.add("org.oobium.persist.Observers");
 		
 		as.classMetaTags.add("RemoteClass(alias=\"" + model.getCanonicalName() + "\")");
 		as.simpleName = model.getSimpleName();
@@ -170,14 +128,14 @@ public class FlexProjectGenerator {
 		as.staticInitializers.add("ro = new RemoteObject();");
 		as.staticInitializers.add("ro.destination = \"" + model.getControllerName() + "\";");
 		as.staticInitializers.add("ro.addEventListener(\"fault\", faultHandler);");
+		as.staticInitializers.add("ro.addObserver.addEventListener(\"result\", Observers.onChannelAdded);");
 		
 		as.staticMethods.put("addObserver", source(
-				"public static function addObserver(messageHandler:Function):void {",
-				" var handler:ObserverEventHandler = new ObserverEventHandler(messageHandler);",
-				" ro.addObserver.addEventListener(handler.handleEvents);",
+				"public static function addObserver(observer:Observer):void {",
 				" ro.addObserver();",
+				" Observers.addObserver(\"{fullType}\", observer);",
 				"}"
-			));
+			).replace("{fullType}", model.getCanonicalName()));
 
 		as.staticMethods.put("fault", source(
 				"private static function faultHandler (event:FaultEvent):void {",
@@ -185,35 +143,35 @@ public class FlexProjectGenerator {
 				"}"
 			));
 		
-		as.staticMethods.put("find",
-				"public static function find(o:Object, callback:Function):void {\n" +
-				" " + as.simpleName + ".ro.find.addEventListener(\"result\", callback);\n" +
-				" if(typeof(o) == \"number\") {\n" +
-				"  " + as.simpleName + ".ro.find(o as int);\n" +
-				" } else if(typeof(o) == \"string\") {\n" +
-				"  " + as.simpleName + ".ro.find(o as String);\n" +
-				" } else if(o != null) {\n" +
-				"  " + as.simpleName + ".ro.find(o.toString());\n" +
-				" } else {\n" +
-				"  throw new Error(\"o cannot be null\");\n" +
-				" }\n" +
+		as.staticMethods.put("find", source(
+				"public static function find(o:Object, callback:Function):void {",
+				" {type}.ro.find.addEventListener(\"result\", callback);",
+				" if(typeof(o) == \"number\") {",
+				"  {type}.ro.find(o as int);",
+				" } else if(typeof(o) == \"string\") {",
+				"  {type}.ro.find(o as String);",
+				" } else if(o != null) {",
+				"  {type}.ro.find(o.toString());",
+				" } else {",
+				"  throw new Error(\"o cannot be null\");",
+				" }",
 				"}"
-			);
+			).replace("{type}", as.simpleName));
 
-		as.staticMethods.put("findAll",
-				"public static function findAll(o:Object, callback:Function):void {\n" +
-				" " + as.simpleName + ".ro.findAll.addEventListener(\"result\", callback);\n" +
-				" if(o == \"*\") {\n" +
-				"  " + as.simpleName + ".ro.findAll();\n" +
-				" } else if(typeof(o) == \"string\") {\n" +
-				"  " + as.simpleName + ".ro.findAll(o as String);\n" +
-				" } else if(o != null) {\n" +
-				"  " + as.simpleName + ".ro.findAll(o.toString());\n" +
-				" } else {\n" +
-				"  throw new Error(\"o cannot be null\");\n" +
-				" }\n" +
+		as.staticMethods.put("findAll", source(
+				"public static function findAll(o:Object, callback:Function):void {",
+				" {type}.ro.findAll.addEventListener(\"result\", callback);",
+				" if(o == \"*\") {",
+				"  {type}.ro.findAll();",
+				" } else if(typeof(o) == \"string\") {",
+				"  {type}.ro.findAll(o as String);",
+				" } else if(o != null) {",
+				"  {type}.ro.findAll(o.toString());",
+				" } else {",
+				"  throw new Error(\"o cannot be null\");",
+				" }",
 				"}"
-			);
+			).replace("{type}", as.simpleName));
 		
 
 		as.variables.put("", "public var id:int");

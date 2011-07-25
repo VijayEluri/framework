@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.oobium.build.clients.JavaClientExporter;
 import org.oobium.build.gen.model.PropertyDescriptor;
@@ -84,7 +85,10 @@ public class BlazeProjectGenerator {
 			ModelDefinition model = new ModelDefinition(file);
 			createController(src, model);
 			createModel(src, model);
+			createNotifier(src, model);
 		}
+		
+		writeFile(src, "org/oobium/persist/blaze/ModelNotifier.java", getClass().getResourceAsStream("ModelNotifier.java.blaze"));
 		
 		createChannelController(src);
 		createApplicationController(src);
@@ -207,10 +211,34 @@ public class BlazeProjectGenerator {
 		sf.simpleName = mType + "Controller";
 		sf.superName = "ApplicationController";
 
+		sf.imports.add(AtomicBoolean.class.getCanonicalName());
+		sf.imports.add("flex.messaging.FlexContext");
+		sf.imports.add("flex.messaging.FlexSession");
 		sf.imports.add(List.class.getCanonicalName());
 		sf.imports.add(SQLException.class.getCanonicalName());
-		sf.imports.add(module.packageName(module.models) + "." + mType);
+		sf.imports.add(model.getCanonicalName());
+		sf.imports.add(model.packageName + ".notifiers." + model.getSimpleName() + "Notifier");
 
+		sf.staticVariables.put("addNotifier", "private static AtomicBoolean addNotifier = new AtomicBoolean(true);");
+		
+		sf.methods.put("0addObserver", source(
+				"public String addObserver() {",
+				" FlexSession session = FlexContext.getFlexSession();",
+				" String channelName = (String) session.getAttribute(\"userName\");",
+				" if(channelName == null || channelName.trim().length() == 0) {",
+				"  channelName = session.getId();",
+				" }",
+				"",
+				" ChannelController.addChannel(channelName);",
+				"",
+				" if(addNotifier.getAndSet(false)) {",
+				"  {mType}.addObserver(new {mType}Notifier(channelName));",
+				" }",
+				"",
+				" return channelName;",
+				"}"
+			).replace("{mType}", mType));
+		
 		sf.methods.put("0find(int id)", source(
 				"public {type} find(int id) throws SQLException {",
 				" return {type}.find(id);",
@@ -327,7 +355,7 @@ public class BlazeProjectGenerator {
 				"</service>"
 			));
 	}
-	
+
 	private void createModel(File srcFolder, ModelDefinition model) throws IOException {
 		String type = model.getSimpleName();
 		String var = varName(type);
@@ -449,6 +477,24 @@ public class BlazeProjectGenerator {
 			));
 		
 		writeFile(srcFolder, sf.getFilePath(), sf.toSource());
+	}
+	
+	private void createNotifier(File srcFolder, ModelDefinition model) throws IOException {
+		String name = model.packageName.replace('.', '/') + "/notifiers/" + model.getSimpleName() + "Notifier.java";
+		writeFile(srcFolder, name, source(
+				"package {modelsPackage}.notifiers;",
+				"",
+				"import {modelsPackage}.*;",
+				"import org.oobium.persist.blaze.ModelNotifier;",
+				"",
+				"public class {type}Notifier extends ModelNotifier<{type}> {",
+				"",
+				" public {type}Notifier(String channelName) {",
+				"  super(channelName);",
+				" }",
+				"",
+				"}"
+			).replace("{modelsPackage}", model.packageName).replace("{type}", model.getSimpleName()));
 	}
 	
 	private void createPrefsFile() {
