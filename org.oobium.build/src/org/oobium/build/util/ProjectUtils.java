@@ -18,6 +18,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.oobium.persist.ModelDescription;
 
@@ -55,6 +57,11 @@ public class ProjectUtils {
 		}
 		
 		throw new IllegalStateException("could not find the class annotations in file: " + file);
+	}
+
+	public static String getPrefsFileDate() {
+		SimpleDateFormat sdf = new SimpleDateFormat("E MMM dd HH:mm:ss z yyyy");
+		return sdf.format(new Date());
 	}
 	
 	public static String getSrcAnnotations(File file) throws IOException {

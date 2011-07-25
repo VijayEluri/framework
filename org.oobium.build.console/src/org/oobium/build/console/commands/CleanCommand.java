@@ -12,7 +12,7 @@ package org.oobium.build.console.commands;
 
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.Eclipse;
-import org.oobium.build.workspace.Bundle;
+import org.oobium.build.workspace.Project;
 
 public class CleanCommand extends BuilderCommand {
 
@@ -23,7 +23,7 @@ public class CleanCommand extends BuilderCommand {
 
 	@Override
 	public void run() {
-		Bundle bundle = getBundle();
+		Project bundle = getProject();
 		bundle.clean();
 		Eclipse.refreshProject(bundle.name);
 	}

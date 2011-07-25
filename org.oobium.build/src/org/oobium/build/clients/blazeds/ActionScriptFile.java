@@ -1,7 +1,12 @@
 package org.oobium.build.clients.blazeds;
 
+import static org.oobium.utils.StringUtils.join;
+import static org.oobium.utils.StringUtils.source;
+
 import java.io.File;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -16,6 +21,7 @@ public class ActionScriptFile {
 	public TreeSet<String> imports = new TreeSet<String>();
 	public LinkedHashSet<String> classMetaTags = new LinkedHashSet<String>();
 	public TreeMap<String, String> staticVariables = new TreeMap<String, String>();
+	public List<String> staticInitializers = new ArrayList<String>();
 	public TreeMap<String, String> staticMethods = new TreeMap<String, String>();
 	public TreeMap<String, String> variables = new TreeMap<String, String>();
 	public TreeMap<Integer, String> constructors = new TreeMap<Integer, String>();
@@ -25,6 +31,10 @@ public class ActionScriptFile {
 		methods.put(mc.name, mc.toString());
 	}
 
+	public void addMethod(String name, String...lines) {
+		methods.put(name, join(lines, '\n'));
+	}
+	
 	public String getCanonicalName() {
 		return packageName + "." + simpleName;
 	}
@@ -95,8 +105,18 @@ public class ActionScriptFile {
 			}
 		}
 		for(String method : staticMethods.values()) {
-			sb.append("\n\t\t");
-			sb.append(method.replace("\n", "\n\t\t")).append('\n');
+			sb.append('\n');
+			sb.append(source("\t\t", '\t', method)).append('\n');
+		}
+		if(!staticInitializers.isEmpty()) {
+			sb.append('\n');
+			for(String init : staticInitializers) {
+				sb.append("\t\t").append(init);
+				if(!init.endsWith(";")) {
+					sb.append(';');
+				}
+				sb.append('\n');
+			}
 		}
 		if(!staticVariables.isEmpty() || !staticMethods.isEmpty()) {
 			sb.append('\n');
@@ -117,12 +137,12 @@ public class ActionScriptFile {
 			}
 		}
 		for(String constructor : constructors.values()) {
-			sb.append("\n\t");
-			sb.append(constructor).append('\n');
+			sb.append('\n');
+			sb.append(source("\t\t", '\t', constructor)).append('\n');
 		}
 		for(String method : methods.values()) {
-			sb.append("\n\t\t");
-			sb.append(method.replace("\n", "\n\t\t")).append('\n');
+			sb.append('\n');
+			sb.append(source("\t\t", '\t', method)).append('\n');
 		}
 		sb.append("\n\t}\n\n}");
 

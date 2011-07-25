@@ -46,6 +46,7 @@ import org.oobium.build.workspace.Application;
 import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Migrator;
 import org.oobium.build.workspace.Module;
+import org.oobium.build.workspace.Project;
 import org.oobium.build.workspace.TestSuite;
 import org.oobium.build.workspace.Workspace;
 
@@ -54,7 +55,7 @@ public class BuilderRootCommand extends BuilderCommand {
 
 	private Workspace workspace;
 	private Application application;
-	private Bundle bundle;
+	private Project project;
 	private String pwd;
 	
 	private PropertyChangeSupport listeners;
@@ -109,22 +110,29 @@ public class BuilderRootCommand extends BuilderCommand {
 	}
 
 	public Bundle getBundle() {
-		return bundle;
+		if(project instanceof Bundle) {
+			return (Bundle) project;
+		}
+		return null;
 	}
 	
-	public String getBundleName() {
-		return (bundle != null) ? bundle.name : "";
+	public Project getProject() {
+		return project;
+	}
+	
+	public String getProjectName() {
+		return (project != null) ? project.name : "";
 	}
 	
 	public Module getModule() {
-		if(bundle instanceof Module) {
-			return (Module) bundle;
+		if(project instanceof Module) {
+			return (Module) project;
 		}
-		if(bundle instanceof Migrator) {
-			return workspace.getModule(((Migrator) bundle).moduleName);
+		if(project instanceof Migrator) {
+			return workspace.getModule(((Migrator) project).moduleName);
 		}
-		if(bundle instanceof TestSuite) {
-			return workspace.getModule(((TestSuite) bundle).moduleName);
+		if(project instanceof TestSuite) {
+			return workspace.getModule(((TestSuite) project).moduleName);
 		}
 		return null;
 	}
@@ -138,7 +146,7 @@ public class BuilderRootCommand extends BuilderCommand {
 	}
 	
 	public boolean hasBundle() {
-		return bundle != null;
+		return project instanceof Bundle;
 	}
 
 	public boolean hasModule() {
@@ -155,10 +163,10 @@ public class BuilderRootCommand extends BuilderCommand {
 		listeners.firePropertyChange("application", oldValue, application);
 	}
 
-	public void setBundle(Bundle bundle) {
-		Bundle oldValue = this.bundle;
-		this.bundle = bundle;
-		listeners.firePropertyChange("bundle", oldValue, bundle);
+	public void setProject(Project project) {
+		Project oldValue = this.project;
+		this.project = project;
+		listeners.firePropertyChange("project", oldValue, project);
 	}
 	
 	public boolean setPwd(String pwd) {

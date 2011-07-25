@@ -117,7 +117,7 @@ public class MigrateCommand extends RemoteCommand {
 		try {
 			long start = System.currentTimeMillis();
 
-			ws.cleanExport(app);
+			ws.cleanExport();
 			File exportDir = ws.exportMigrator(app, mode);
 			
 			String msg = "exported <a href=\"open file " + exportDir + "\">" + app.name() + "</a>";

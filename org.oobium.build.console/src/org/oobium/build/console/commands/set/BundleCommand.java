@@ -31,7 +31,7 @@ public class BundleCommand extends BuilderCommand {
 	public void run() {
 		Bundle project = getWorkspace().getBundle((paramCount() == 0) ? null : param(0));
 		if(project != null) {
-			setBundle(project);
+			setProject(project);
 			console.out.println("project successfully set");
 		} else {
 			console.err.println("failed to set project: project does not exist");

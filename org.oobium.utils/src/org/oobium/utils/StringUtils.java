@@ -739,15 +739,19 @@ public class StringUtils {
 	}
 
 	public static String join(String[] segments, char separator) {
+		return join(segments, separator, false);
+	}
+	
+	public static String join(String[] segments, char separator, boolean includeBlank) {
 		int len = segments.length;
 		for(String segment : segments) {
-			if(!blank(segment)) {
+			if(includeBlank || !blank(segment)) {
 				len += segment.length();
 			}
 		}
 		StringBuilder sb = new StringBuilder(len);
 		for(String segment : segments) {
-			if(!blank(segment)) {
+			if(includeBlank || !blank(segment)) {
 				sb.append(segment).append(separator);
 			}
 		}
@@ -1129,6 +1133,50 @@ public class StringUtils {
 			return plural.substring(0, plural.length() - 1);
 		}
 		return plural;
+	}
+	
+	public static String source(Collection<String> lines) {
+		if(lines == null) {
+			return "";
+		}
+		return source(lines.toArray(new String[lines.size()]));
+	}
+	
+	public static String source(String...lines) {
+		return source("", '\t', lines);
+	}
+	
+	public static String source(char indentChar, String...lines) {
+		return source("", indentChar, lines);
+	}
+	
+	public static String source(char indent, char indentChar, String...lines) {
+		return source(String.valueOf(indent), indentChar, lines);
+	}
+	
+	public static String source(String indent, char indentChar, String...lines) {
+		String s = join(lines, '\n', true);
+		StringBuilder sb = new StringBuilder(s.length() + (indent.length() * lines.length));
+		sb.append(indent);
+		for(int i = 0; i < s.length(); i++) {
+			char c = s.charAt(i);
+			sb.append(c);
+			if(c == '\n' && i+1 < s.length() && s.charAt(i+1) != '\n') {
+				i++;
+				sb.append(indent);
+				while(i < s.length()) {
+					c = s.charAt(i);
+					if(Character.isWhitespace(c)) {
+						sb.append(indentChar);
+						i++;
+					} else {
+						sb.append(c);
+						break;
+					}
+				}
+			}
+		}
+		return sb.toString();
 	}
 	
 	public static String tableName(Class<?> clazz) {

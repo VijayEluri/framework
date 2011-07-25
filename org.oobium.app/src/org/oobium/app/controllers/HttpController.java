@@ -1059,7 +1059,6 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	public void renderDestroyed(Model model) {
 		rendering();
 		response = new Response();
-		response.addHeader("id", String.valueOf(model.getId()));
 		if(wantsJS()) {
 			response.setContentType(wants());
 			response.setContent("null");

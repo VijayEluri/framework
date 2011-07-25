@@ -166,7 +166,7 @@ public class DeployCommand extends RemoteCommand {
 		try {
 			long start = System.currentTimeMillis();
 
-			ws.cleanExport(app);
+			ws.cleanExport();
 			File exportDir = ws.export(app, mode);
 			
 			String msg = "exported <a href=\"open file " + exportDir + "\">" + app.name() + "</a>";

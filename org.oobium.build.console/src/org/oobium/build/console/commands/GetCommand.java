@@ -30,7 +30,7 @@ public class GetCommand extends BuilderCommand {
 			}
 		} else if("bundle".equals(param(0))) {
 			if(hasBundle()) {
-				console.out.println(getBundleName());
+				console.out.println(getProjectName());
 			} else {
 				console.out.println("project has not been set");
 			}

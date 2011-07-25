@@ -11,7 +11,7 @@
 package org.oobium.build.console.commands.show;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.workspace.Bundle;
+import org.oobium.build.workspace.Project;
 import org.oobium.utils.FileUtils;
 
 public class ManifestCommand extends BuilderCommand {
@@ -23,11 +23,11 @@ public class ManifestCommand extends BuilderCommand {
 
 	@Override
 	public void run() {
-		Bundle bundle = getBundle();
-		if(bundle.isJar) {
-			console.out.println(FileUtils.readJarEntry(bundle.file, "/META-INF/MANIFEST.MF"));
+		Project project = getProject();
+		if(project.isJar) {
+			console.out.println(FileUtils.readJarEntry(project.file, "/META-INF/MANIFEST.MF"));
 		} else {
-			console.out.println(FileUtils.readFile(bundle.manifest));
+			console.out.println(FileUtils.readFile(project.manifest));
 		}
 	}
 

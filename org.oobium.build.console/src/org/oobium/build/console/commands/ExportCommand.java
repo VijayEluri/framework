@@ -13,12 +13,14 @@ package org.oobium.build.console.commands;
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.commands.export.ApplicationCommand;
 import org.oobium.build.console.commands.export.ClientCommand;
+import org.oobium.build.console.commands.export.ProjectCommand;
 
 public class ExportCommand extends BuilderCommand {
 
 	@Override
 	public void configure() {
-		set(new ApplicationCommand());
+		set(new ProjectCommand());
+		add(new ApplicationCommand());
 		add(new ClientCommand());
 	}
 	

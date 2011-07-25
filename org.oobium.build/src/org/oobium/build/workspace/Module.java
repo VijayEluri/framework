@@ -1157,8 +1157,11 @@ public class Module extends Bundle {
 	}
 	
 	public String getControllerType(String name) {
-		File controller = getController(name);
-		return packageName(controller) + "." + getControllerName(controller);
+		return getControllerType(getController(name));
+	}
+	
+	public String getControllerType(File controller) {
+		return packageName(controller, true) + "." + getControllerName(controller);
 	}
 	
 	/**
@@ -1336,6 +1339,10 @@ public class Module extends Bundle {
 		String name = model.getAbsolutePath();
 		name = name.substring(models.getAbsolutePath().length() + 1, name.length() - 5);
 		return name;
+	}
+	
+	public String getModelType(File model) {
+		return packageName(model, true) + "." + getModelName(model);
 	}
 	
 	public String[] getModules() {

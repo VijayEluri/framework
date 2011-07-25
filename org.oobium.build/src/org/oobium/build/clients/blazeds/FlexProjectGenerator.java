@@ -1,8 +1,13 @@
 package org.oobium.build.clients.blazeds;
 
-import static org.oobium.utils.FileUtils.*;
+import static org.oobium.build.util.ProjectUtils.getPrefsFileDate;
+import static org.oobium.utils.FileUtils.createFolder;
+import static org.oobium.utils.FileUtils.deleteContents;
+import static org.oobium.utils.FileUtils.writeFile;
+import static org.oobium.utils.StringUtils.*;
 
 import java.io.File;
+import java.util.UUID;
 
 import org.oobium.build.gen.model.PropertyDescriptor;
 import org.oobium.build.model.ModelDefinition;
@@ -40,21 +45,256 @@ public class FlexProjectGenerator {
 			throw new UnsupportedOperationException(project.getName() + " already exists");
 		}
 		
-		createProjectFile();
-		
-		// TODO .actionsrciptProperties
-		// TODO .flexProperties
-		// TODO html-template directory ?
-
 		createFolder(project, "bin");
-		createFolder(project, "libs");
-
+		
 		File src = createFolder(project, "src");
+		createObserverEventHandlerFile(src);
 		for(File file : module.findModels()) {
 			createModel(src, file);
 		}
-		createUserSession(src);
+
+		createProjectFile();
+		createActionScriptPropertiesFile();
+		createFlexLibPropertiesFile();
+		createPrefsFile();
+
 		return project;
+	}
+	
+	private void createObserverEventHandlerFile(File src) {
+		ActionScriptFile as = new ActionScriptFile();
+		
+		as.packageName = "org.oobium.persist";
+		
+		as.imports.add("flash.events.Event");
+		as.imports.add("mx.controls.Alert");
+		as.imports.add("mx.messaging.Consumer");
+		as.imports.add("mx.rpc.events.ResultEvent");
+		as.imports.add("mx.rpc.remoting.RemoteObject");
+		as.imports.add("mx.messaging.ChannelSet");
+		as.imports.add("mx.messaging.channels.AMFChannel");
+		as.imports.add("mx.rpc.events.FaultEvent");
+		as.imports.add("mx.messaging.events.*");
+		
+		as.simpleName = "ObserverEventHandler";
+		
+		as.variables.put("0", "private var messageHandler:Function");
+		
+		as.constructors.put(0, source(
+				"public function ObserverEventHandler(aMessageHandler:Function):void {",
+				" messageHandler = aMessageHandler;",
+				"}"
+			));
+		
+		as.methods.put("0", source(
+				"public function handleEvents(event:ResultEvent):void {",
+				" var channelName:String = event.result as String;",
+				"",
+				" var consumer:Consumer = new Consumer();",
+				" consumer.destination = channelName;",
+				"",
+				" var channelSet:ChannelSet = new ChannelSet();",
+				" channelSet.addChannel(new AMFChannel(\"my-polling-amf\", \"{serverUrl}/messagebroker/amfpolling\"));",
+				"",
+				" consumer.channelSet = channelSet;",
+				" consumer.addEventListener(MessageEvent.MESSAGE, messageHandler);",
+				" consumer.addEventListener(MessageFaultEvent.FAULT, faultHandler);",
+				" consumer.subscribe();",
+				"}"
+			).replace("{serverUrl}", "http://localhost:8400")); // TODO serverUrl
+		
+		as.methods.put("1", source(
+				"private function faultHandler (event:FaultEvent):void {",
+				" Alert.show(event.fault.faultString, 'Error');",
+				"}"
+			));
+
+		writeFile(src, "org/oobium/persist/ObserverEventHandler.as", as.toSource());
+	}
+	
+	private void createActionScriptPropertiesFile() {
+		String appPath = project.getName() + ".as";
+		String uuid = UUID.randomUUID().toString();
+		writeFile(project, ".actionScriptProperties",
+				"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n" +
+				"<actionScriptProperties analytics=\"false\" mainApplicationPath=\"" + appPath + "\" projectUUID=\"" + uuid + "\" version=\"10\">\n" +
+				" <compiler additionalCompilerArguments=\"-locale en_US\" autoRSLOrdering=\"true\" copyDependentFiles=\"false\" fteInMXComponents=\"false\" generateAccessible=\"false\" htmlExpressInstall=\"true\" htmlGenerate=\"false\" htmlHistoryManagement=\"false\" htmlPlayerVersionCheck=\"true\" includeNetmonSwc=\"false\" outputFolderPath=\"bin\" removeUnusedRSL=\"true\" sourceFolderPath=\"src\" strict=\"true\" targetPlayerVersion=\"0.0.0\" useApolloConfig=\"false\" useDebugRSLSwfs=\"true\" verifyDigests=\"true\" warn=\"true\">\n" +
+				"  <compilerSourcePath/>\n" +
+				"  <libraryPath defaultLinkType=\"0\">\n" +
+				"   <libraryPathEntry kind=\"4\" path=\"\">\n" +
+				"    <excludedEntries>\n" +
+				"     <libraryPathEntry kind=\"3\" linkType=\"1\" path=\"${PROJECT_FRAMEWORKS}/libs/flex.swc\" useDefaultLinkType=\"false\"/>\n" +
+				"     <libraryPathEntry kind=\"3\" linkType=\"1\" path=\"${PROJECT_FRAMEWORKS}/libs/core.swc\" useDefaultLinkType=\"false\"/>\n" +
+				"    </excludedEntries>\n" +
+				"   </libraryPathEntry>\n" +
+				"  </libraryPath>\n" +
+				"  <sourceAttachmentPath/>\n" +
+				" </compiler>\n" +
+				" <applications>\n" +
+				"  <application path=\"" + appPath + "\"/>\n" +
+				" </applications>\n" +
+				" <modules/>\n" +
+				" <buildCSSFiles/>\n" +
+				" <flashCatalyst validateFlashCatalystCompatibility=\"false\"/>\n" +
+				"</actionScriptProperties>"
+			);
+	}
+
+	private void createFlexLibPropertiesFile() {
+		writeFile(project, ".flexLibProperties",
+				"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n" +
+				"<flexLibProperties includeAllClasses=\"true\" useMultiPlatformConfig=\"false\" version=\"3\">\n" +
+				" <includeClasses/>\n" +
+				" <includeResources/>\n" +
+				" <namespaceManifests/>\n" +
+				"</flexLibProperties>"
+			);
+	}
+
+	private void createModel(File srcFolder, File modelFile) {
+		ModelDefinition model = new ModelDefinition(modelFile);
+		ActionScriptFile as = new ActionScriptFile();
+		as.packageName = model.getPackageName();
+
+		as.imports.add("mx.controls.Alert");
+		as.imports.add("mx.rpc.remoting.RemoteObject");
+		as.imports.add("mx.rpc.events.ResultEvent");
+		as.imports.add("mx.rpc.events.FaultEvent");
+		as.imports.add("org.oobium.persist.ObserverEventHandler");
+		
+		as.classMetaTags.add("RemoteClass(alias=\"" + model.getCanonicalName() + "\")");
+		as.simpleName = model.getSimpleName();
+		
+		as.staticVariables.put("ro", "private static var ro:RemoteObject;");
+		
+		as.staticInitializers.add("ro = new RemoteObject();");
+		as.staticInitializers.add("ro.destination = \"" + model.getControllerName() + "\";");
+		as.staticInitializers.add("ro.addEventListener(\"fault\", faultHandler);");
+		
+		as.staticMethods.put("addObserver", source(
+				"public static function addObserver(messageHandler:Function):void {",
+				" var handler:ObserverEventHandler = new ObserverEventHandler(messageHandler);",
+				" ro.addObserver.addEventListener(handler.handleEvents);",
+				" ro.addObserver();",
+				"}"
+			));
+
+		as.staticMethods.put("fault", source(
+				"private static function faultHandler (event:FaultEvent):void {",
+				" Alert.show(event.fault.faultString, 'Error');",
+				"}"
+			));
+		
+		as.staticMethods.put("find",
+				"public static function find(o:Object, callback:Function):void {\n" +
+				" " + as.simpleName + ".ro.find.addEventListener(\"result\", callback);\n" +
+				" if(typeof(o) == \"number\") {\n" +
+				"  " + as.simpleName + ".ro.find(o as int);\n" +
+				" } else if(typeof(o) == \"string\") {\n" +
+				"  " + as.simpleName + ".ro.find(o as String);\n" +
+				" } else if(o != null) {\n" +
+				"  " + as.simpleName + ".ro.find(o.toString());\n" +
+				" } else {\n" +
+				"  throw new Error(\"o cannot be null\");\n" +
+				" }\n" +
+				"}"
+			);
+
+		as.staticMethods.put("findAll",
+				"public static function findAll(o:Object, callback:Function):void {\n" +
+				" " + as.simpleName + ".ro.findAll.addEventListener(\"result\", callback);\n" +
+				" if(o == \"*\") {\n" +
+				"  " + as.simpleName + ".ro.findAll();\n" +
+				" } else if(typeof(o) == \"string\") {\n" +
+				"  " + as.simpleName + ".ro.findAll(o as String);\n" +
+				" } else if(o != null) {\n" +
+				"  " + as.simpleName + ".ro.findAll(o.toString());\n" +
+				" } else {\n" +
+				"  throw new Error(\"o cannot be null\");\n" +
+				" }\n" +
+				"}"
+			);
+		
+
+		as.variables.put("", "public var id:int");
+		for(PropertyDescriptor prop : model.getProperties().values()) {
+			if(prop.hasMany()) {
+				as.imports.add("mx.collections.ArrayCollection");
+				as.variables.put(prop.variable(), "public var " + prop.variable() + ":ArrayCollection");
+			} else {
+				as.variables.put(prop.variable(), "public var " + prop.variable() + ":" + prop.castType());
+			}
+		}
+
+		as.methods.put("create", source(
+				"public function create(callBack:Function = null):void {",
+				" if(callBack != null) {",
+				"  ro.create.addEventListener(\"result\", callBack);",
+				" }",
+				" ro.create(this);",
+				"}"
+			));
+		
+		as.methods.put("update", source(
+				"public function update(callBack:Function = null):void {",
+				" if(callBack != null) {",
+				"  ro.update.addEventListener(\"result\", callBack);",
+				" }",
+				" ro.update(this);",
+				"}"
+			));
+		
+		as.methods.put("destroy", source(
+				"public function destroy(callBack:Function = null):void {",
+				" if(callBack != null) {",
+				"  ro.destroy.addEventListener(\"result\", callBack);",
+				" }",
+				" ro.destroy(this);",
+				"}"
+			));
+
+		as.methods.put("save", source(
+				"public function save(callBack:Function = null):void {",
+				" if(id < 1) {",
+				"  create(callBack);",
+				" } else {",
+				"  update(callBack);",
+				" }",
+				"}"
+		));
+		
+		writeFile(srcFolder, as.getFilePath(), as.toSource());
+	}
+	
+	private void createPrefsFile() {
+		writeFile(createFolder(project, ".settings"), "org.eclipse.jdt.core.prefs",
+				"#" + getPrefsFileDate() + "\n" +
+				"eclipse.preferences.version=1\n" +
+				"encoding/<project>=utf-8"
+			);
+	}
+	
+	private void createProjectFile() {
+		writeFile(project, ".project",
+				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+				"<projectDescription>\n" +
+				" <name>" + project.getName() + "</name>\n" +
+				" <comment></comment>\n" +
+				" <projects>\n" +
+				" </projects>\n" +
+				" <buildSpec>\n" +
+				"  <buildCommand>\n" +
+				"   <name>com.adobe.flexbuilder.project.flexbuilder</name>\n" +
+				"   <arguments>\n" +
+				"   </arguments>\n" +
+				"  </buildCommand>\n" +
+				" </buildSpec>\n" +
+				" <natures>\n" +
+				"  <nature>com.adobe.flexbuilder.project.flexlibnature</nature>\n" +
+				"  <nature>com.adobe.flexbuilder.project.actionscriptnature</nature>\n" +
+				" </natures>\n" +
+				"</projectDescription>\n"
+			);
 	}
 	
 	private void createUserSession(File srcFolder){
@@ -99,13 +339,13 @@ public class FlexProjectGenerator {
 			m4.addLine("ro.getPassword();");
 		m4.addLine("}");
 		as.addMethod(m4);
-	
-		MethodCreator m5 = new MethodCreator("5getSessionId()");
-		m5.addLine("public function getSessionId(callBack:Function):void {");
-			m5.addLine("ro.getSessionId.addEventListener(\"result\", callBack);");
-			m5.addLine("ro.getSessionId();");
-		m5.addLine("}");
-		as.addMethod(m5);
+		
+		as.addMethod("5",
+				"public function getSessionId(callBack:Function):void {",
+				" ro.getSessionId.addEventListener(\"result\", callBack);",
+				" ro.getSessionId();",
+				"}"
+			);
 		
 		//PRIVATE_FUNCTIONS used to make the public functions work
 	
@@ -116,123 +356,6 @@ public class FlexProjectGenerator {
 		as.addMethod(m6);
 		
 		writeFile(srcFolder, as.getFilePath(), as.toSource());
-	}
-
-	private void createModel(File srcFolder, File modelFile) {
-		ModelDefinition model = new ModelDefinition(modelFile);
-		ActionScriptFile as = new ActionScriptFile();
-		as.packageName = model.getPackageName();
-		as.imports.add("mx.rpc.remoting.RemoteObject");
-		as.imports.add("mx.rpc.events.ResultEvent");
-		as.imports.add("mx.rpc.events.FaultEvent");
-		as.classMetaTags.add("RemoteClass(alias=\"" + model.getCanonicalName() + "\")");
-		as.simpleName = model.getSimpleName();
-		
-		as.staticVariables.put("ro", "public static const ro:Object = createRemoteObject()");
-		
-		as.staticMethods.put("createRemoteObject", 
-				"private static function createRemoteObject():RemoteObject {\n" +
-				"\tvar ro:RemoteObject = new RemoteObject();\n" +
-				"\tro.destination = \"" + as.simpleName + "Controller\";\n" +
-				"\treturn ro;\n" +
-				"}"
-			);
-
-		as.variables.put("", "public var id:int");
-		for(PropertyDescriptor prop : model.getProperties().values()) {
-			as.variables.put(prop.variable(), "public var " + prop.variable() + ":" + prop.castType());
-		}
-
-		as.staticMethods.put("find",
-				"public static function find(o:Object, callback:Function):void {\n" +
-				"\t" + as.simpleName + ".ro.find.addEventListener(\"result\", callback);\n" +
-				"\tif(typeof(o) == \"number\") {\n" +
-				"\t\t" + as.simpleName + ".ro.find(o as int);\n" +
-				"\t} else if(typeof(o) == \"string\") {\n" +
-				"\t\t" + as.simpleName + ".ro.find(o as String);\n" +
-				"\t} else if(type != null) {\n" +
-				"\t\t" + as.simpleName + ".ro.find(o.toString());\n" +
-				"\t} else {\n" +
-				"\t\tthrow new Error(\"o cannot be null\");\n" +
-				"\t}\n" +
-				"}"
-			);
-
-		as.staticMethods.put("findAll",
-				"public static function findAll(o:Object, callback:Function):void {\n" +
-				"\t" + as.simpleName + ".ro.findAll.addEventListener(\"result\", callback);\n" +
-				"\tif(o == \"*\") {\n" +
-				"\t\t" + as.simpleName + ".ro.findAll();\n" +
-				"\t} else if(typeof(o) == \"string\") {\n" +
-				"\t\t" + as.simpleName + ".ro.findAll(o as String);\n" +
-				"\t} else if(type != null) {\n" +
-				"\t\t" + as.simpleName + ".ro.findAll(o.toString());\n" +
-				"\t} else {\n" +
-				"\t\tthrow new Error(\"o cannot be null\");\n" +
-				"\t}\n" +
-				"}"
-			);
-		
-		as.methods.put("create",
-				"public function create():void {\n" +
-				"\t" + as.simpleName + ".ro.create(this);\n" +
-				"}"
-			);
-		
-		as.methods.put("update",
-				"public function update():void {\n" +
-				"\t" + as.simpleName + ".ro.update(this);\n" +
-				"}"
-			);
-		
-		as.methods.put("save",
-				"public function save():void {\n" +
-				"\tif(id < 1) {\n" +
-				"\t\t" + as.simpleName + ".ro.create(this);\n" +
-				"\t} else {\n" +
-				"\t\t" + as.simpleName + ".ro.update(this);\n" +
-				"\t}\n" +
-				"}"
-			);
-		
-		as.methods.put("destroy",
-				"public function destroy():void {\n" +
-				"\t" + as.simpleName + ".ro.destroy(this);\n" +
-				"}"
-			);
-
-		writeFile(srcFolder, as.getFilePath(), as.toSource());
-	}
-
-	private void createProjectFile() {
-		writeFile(project, ".project",
-				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-				"<projectDescription>\n" +
-				"\t<name>" + project.getName() + "</name>\n" +
-				"\t<comment></comment>\n" +
-				"\t<projects>\n" +
-				"\t</projects>\n" +
-				"\t<buildSpec>\n" +
-				"\t\t<buildCommand>\n" +
-				"\t\t\t<name>com.adobe.flexbuilder.project.flexbuilder</name>\n" +
-				"\t\t\t<arguments>\n" +
-				"\t\t\t</arguments>\n" +
-				"\t\t</buildCommand>\n" +
-				"\t</buildSpec>\n" +
-				"\t<natures>\n" +
-				"\t\t<nature>com.adobe.flexbuilder.project.flexnature</nature>\n" +
-				"\t\t<nature>com.adobe.flexbuilder.project.actionscriptnature</nature>\n" +
-//				TODO project file: linked resource (bin-debug)
-				"\t<linkedResources>\n" +
-				"\t\t<link>\n" +
-				"\t\t<name>bin-debug</name>\n" +
-				"\t\t\t<type>2</type>\n" +
-				"\t\t<location>C:/Users/jeremyd/BlazeDS/tomcat/webapps/dn2k/dn2k-flex-debug</location>\n" +
-				"\t</link>\n" +
-				"\t</linkedResources>\n" +
-				"\t</natures>\n" +
-				"</projectDescription>\n"
-			);
 	}
 	
 	public void setForce(boolean force) {

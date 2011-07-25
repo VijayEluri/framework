@@ -11,7 +11,7 @@
 package org.oobium.build.console.commands.remove;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.workspace.Bundle;
+import org.oobium.build.workspace.Project;
 
 public class NatureCommand extends BuilderCommand {
 
@@ -24,17 +24,17 @@ public class NatureCommand extends BuilderCommand {
 	
 	@Override
 	public void run() {
-		Bundle bundle = getBundle();
-		if(bundle.isJar) {
+		Project project = getProject();
+		if(project.isJar) {
 			console.err.println("Project is a jar; Natures are only relevant to source projects");
 			return;
 		}
-		if(!bundle.project.exists()) {
+		if(!project.project.exists()) {
 			console.err.println("Project is a jar; Natures are only relevant to source projects");
 			return;
 		}
 		
-		bundle.removeNature(param(0));
+		project.removeNature(param(0));
 	}
 
 }

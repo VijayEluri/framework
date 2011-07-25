@@ -102,8 +102,8 @@ public class FileUtils {
 	 * @throws IOException
 	 * @see {@link #copy(File, File, int, boolean)}
 	 */
-	public static void copy(File src, File dst) throws IOException {
-		copy(src, dst, NONE, false);
+	public static File copy(File src, File dst) throws IOException {
+		return copy(src, dst, NONE, false);
 	}
 	
 	/**
@@ -117,8 +117,8 @@ public class FileUtils {
 	 * @throws IOException
 	 * @see {@link #copy(File, File, int, boolean)}
 	 */
-	public static void copy(File src, File dst, boolean skipHidden) throws IOException {
-		copy(src, dst, NONE, skipHidden);
+	public static File copy(File src, File dst, boolean skipHidden) throws IOException {
+		return copy(src, dst, NONE, skipHidden);
 	}
 	
 	/**
@@ -131,8 +131,8 @@ public class FileUtils {
 	 * @throws IOException
 	 * @see {@link #copy(File, File, int, boolean)}
 	 */
-	public static void copy(File src, File dst, int flags) throws IOException {
-		copy(src, dst, flags, false);
+	public static File copy(File src, File dst, int flags) throws IOException {
+		return copy(src, dst, flags, false);
 	}
 	
 	/**
@@ -152,14 +152,20 @@ public class FileUtils {
 	 * @see #PERSIST_LAST_MODIFIED
 	 * @see #READ_ONLY
 	 */
-	public static void copy(File src, File dst, int flags, boolean skipHidden) throws IOException {
+	public static File copy(File src, File dst, int flags, boolean skipHidden) throws IOException {
 		if(src != null && dst != null) {
-			if(dst.isDirectory()) {
-				dst = new File(dst, src.getName());
-			}
 			if(src.isFile()) {
+				if(dst.isDirectory()) {
+					dst = new File(dst, src.getName());
+				}
 				doCopy(src, dst, flags);
 			} else if(src.isDirectory()) {
+				if(!dst.exists()) {
+					dst = new File(dst, src.getName());
+				}
+				else if(dst.isDirectory()) {
+					dst = new File(dst, src.getName());
+				}
 				int beginIndex = src.getAbsolutePath().length();
 				File[] sfiles = skipHidden ? findFiles(src) : findAll(src);
 				for(File sfile : sfiles) {
@@ -167,6 +173,20 @@ public class FileUtils {
 					doCopy(sfile, dfile, flags);
 				}
 			} // else nothing to do...
+		}
+		return dst;
+	}
+	
+	public static void copyContents(File srcFolder, File dstFolder) throws IOException {
+		copyContents(srcFolder, dstFolder, NONE, false);
+	}
+	
+	public static void copyContents(File srcFolder, File dstFolder, int flags, boolean skipHidden) throws IOException {
+		int beginIndex = srcFolder.getAbsolutePath().length();
+		File[] sfiles = skipHidden ? findFiles(srcFolder) : findAll(srcFolder);
+		for(File sfile : sfiles) {
+			File dfile = new File(dstFolder, sfile.getAbsolutePath().substring(beginIndex));
+			doCopy(sfile, dfile, flags);
 		}
 	}
 

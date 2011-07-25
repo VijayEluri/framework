@@ -10,6 +10,8 @@
  ******************************************************************************/
 package org.oobium.build.util;
 
+import static org.oobium.utils.StringUtils.*;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -26,6 +28,10 @@ import org.oobium.build.gen.model.PropertyDescriptor;
 
 public class SourceFile {
 	
+	private static final char[] CLASS = {'c','l','a','s','s'};
+	private static final char[] IMPORT = {'i','m','p','o','r','t'};
+	private static final char[] PACKAGE = {'p','a','c','k','a','g','e'};
+
 	public enum ClassModifier {
 		DEFAULT, PUBLIC, PROTECTED, PRIVATE;
 		public String getModifier() {
@@ -133,10 +139,6 @@ public class SourceFile {
 		return -1;
 	}
 	
-	private static final char[] CLASS = {'c','l','a','s','s'};
-	private static final char[] IMPORT = {'i','m','p','o','r','t'};
-	private static final char[] PACKAGE = {'p','a','c','k','a','g','e'};
-
 	public static String ensureImport(String src, String imp) {
 		return ensureImports(src, Collections.singleton(imp));
 	}
@@ -285,15 +287,14 @@ public class SourceFile {
 		}
 	}
 
-
 	public String simpleName;
 	public String packageName;
 	public String superName;
 	public boolean isAbstract;
 	public TreeSet<String> interfaces = new TreeSet<String>();
+	public TreeSet<String> imports = new TreeSet<String>();
 	public TreeMap<Integer, String> classAnnotations = new TreeMap<Integer, String>();
 	public TreeSet<String> staticImports = new TreeSet<String>();
-	public TreeSet<String> imports = new TreeSet<String>();
 	public List<String> staticInitializers = new ArrayList<String>();
 	public List<String> initializers = new ArrayList<String>();
 	public TreeMap<String, String> staticMethods = new TreeMap<String, String>();
@@ -415,9 +416,10 @@ public class SourceFile {
 		}
 		for(String method : staticMethods.values()) {
 			sb.append('\n');
-			sb.append(tabbify(method)).append('\n');
+			sb.append(source('\t', '\t', method)).append('\n');
 		}
 		if(!staticInitializers.isEmpty()) {
+			sb.append('\n');
 			sb.append("\tstatic {\n");
 			for(String init : staticInitializers) {
 				sb.append("\t\t").append(init);
@@ -456,42 +458,18 @@ public class SourceFile {
 		}
 		if(rawSource != null && rawSource.length() > 0) {
 			sb.append('\n');
-			sb.append(tabbify(rawSource)).append('\n');
+			sb.append(source('\t', '\t', rawSource)).append('\n');
 		}
 		for(String constructor : constructors.values()) {
 			sb.append('\n');
-			sb.append(tabbify(constructor)).append('\n');
+			sb.append(source('\t', '\t', constructor)).append('\n');
 		}
 		for(String method : methods.values()) {
 			sb.append('\n');
-			sb.append(tabbify(method)).append('\n');
+			sb.append(source('\t', '\t', method)).append('\n');
 		}
 		sb.append("\n}");
 
-		return sb.toString();
-	}
-	
-	private String tabbify(String s) {
-		StringBuilder sb = new StringBuilder(s.length());
-		sb.append('\t');
-		for(int i = 0; i < s.length(); i++) {
-			char c = s.charAt(i);
-			sb.append(c);
-			if(c == '\n') {
-				i++;
-				sb.append('\t');
-				while(i < s.length()) {
-					c = s.charAt(i);
-					if(Character.isWhitespace(c)) {
-						sb.append('\t');
-						i++;
-					} else {
-						sb.append(c);
-						break;
-					}
-				}
-			}
-		}
 		return sb.toString();
 	}
 	

@@ -13,6 +13,7 @@ package org.oobium.build.console;
 import org.oobium.build.workspace.Application;
 import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Module;
+import org.oobium.build.workspace.Project;
 import org.oobium.build.workspace.Workspace;
 import org.oobium.console.Command;
 
@@ -62,20 +63,28 @@ public abstract class BuilderCommand extends Command {
 		return getRoot().hasBundle();
 	}
 	
+	public boolean hasProject() {
+		return getRoot().hasProject();
+	}
+	
 	public Application getApplication() {
 		return getRoot().getApplication();
 	}
 
+	public Bundle getBundle() {
+		return getRoot().getBundle();
+	}
+	
 	public Module getModule() {
 		return getRoot().getModule();
 	}
 	
-	public Bundle getBundle() {
-		return getRoot().getBundle();
+	public Project getProject() {
+		return getRoot().getProject();
 	}
 
-	public String getBundleName() {
-		return getRoot().getBundleName();
+	public String getProjectName() {
+		return getRoot().getProjectName();
 	}
 	
 	public Workspace getWorkspace() {
@@ -86,8 +95,8 @@ public abstract class BuilderCommand extends Command {
 		getRoot().setApplication(application);
 	}
 	
-	public void setBundle(Bundle bundle) {
-		getRoot().setBundle(bundle);
+	public void setProject(Bundle bundle) {
+		getRoot().setProject(bundle);
 	}
 
 	public String getPwd() {

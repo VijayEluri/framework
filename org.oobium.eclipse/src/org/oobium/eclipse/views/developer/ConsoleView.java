@@ -57,7 +57,6 @@ import org.eclipse.ui.part.ViewPart;
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.BuilderRootCommand;
 import org.oobium.build.workspace.Application;
-import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Migrator;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.Project;
@@ -171,11 +170,11 @@ public class ConsoleView extends ViewPart {
 			}
 		});
 		
-		root.addListener("bundle", bundleListener = new PropertyChangeListener() {
+		root.addListener("project", bundleListener = new PropertyChangeListener() {
 			@Override
 			public void propertyChange(PropertyChangeEvent evt) {
-				Bundle bundle = (Bundle) evt.getNewValue();
-				setProject((bundle == null) ? null : bundle.file);
+				Project project = (Project) evt.getNewValue();
+				setProject((project == null) ? null : project.file);
 			}
 		});
 		
@@ -459,7 +458,7 @@ public class ConsoleView extends ViewPart {
 	}
 
 	public void setProject(File dir) {
-		final Bundle bundle = OobiumPlugin.getWorkspace().getBundle(dir);
+		final Project p = OobiumPlugin.getWorkspace().getProject(dir);
 		project = (dir == null || !dir.isDirectory()) ? null : dir.getAbsolutePath();
 		if(projectLbl != null) {
 			Display.getDefault().syncExec(new Runnable() {
@@ -471,7 +470,7 @@ public class ConsoleView extends ViewPart {
 						((GridData) projectImg.getLayoutData()).exclude = true;
 						((GridData) projectLbl.getLayoutData()).exclude = true;
 					} else {
-						if(bundle instanceof Module) {
+						if(p instanceof Module) {
 							projectImg.setImage(OobiumPlugin.getImage("/icons/module.png"));
 							projectImg.setToolTipText("Active Project (Module)");
 						} else {
@@ -490,9 +489,9 @@ public class ConsoleView extends ViewPart {
 			});
 		}
 		if(root != null) {
-			root.removeListener("bundle", bundleListener);
-			root.setBundle(bundle);
-			root.addListener("bundle", bundleListener);
+			root.removeListener("project", bundleListener);
+			root.setProject(p);
+			root.addListener("project", bundleListener);
 		}
 	}
 
@@ -508,34 +507,28 @@ public class ConsoleView extends ViewPart {
 			}
 			if(sel instanceof IResource) {
 				IProject iproject = ((IResource) sel).getProject();
-				try {
-					if(iproject.isOpen() && iproject.hasNature(OobiumNature.ID)) {
-						File file = iproject.getLocation().toFile();
-						Project project = OobiumPlugin.getWorkspace().getBundle(file);
-						if(project == null) {
-							project = OobiumPlugin.getWorkspace().load(file);
+				File file = iproject.getLocation().toFile();
+				Project project = OobiumPlugin.getWorkspace().getProject(file);
+				if(project == null) {
+					project = OobiumPlugin.getWorkspace().load(file);
+				}
+				if(project != null) {
+					if(project.isApplication()) {
+						setApplication(file);
+					} else if(project.isMigration()) {
+						Migrator migrator = (Migrator) project;
+						Module module = OobiumPlugin.getWorkspace().getModule(migrator.moduleName);
+						if(module != null && module.isApplication()) {
+							setApplication(module.file);
 						}
-						if(project != null) {
-							if(project.isApplication()) {
-								setApplication(file);
-							} else if(project.isMigration()) {
-								Migrator migrator = (Migrator) project;
-								Module module = OobiumPlugin.getWorkspace().getModule(migrator.moduleName);
-								if(module != null && module.isApplication()) {
-									setApplication(module.file);
-								}
-							} else if(project.isTestSuite()) {
-								TestSuite tests = (TestSuite) project;
-								Module module = OobiumPlugin.getWorkspace().getModule(tests.moduleName);
-								if(module != null && module.isApplication()) {
-									setApplication(module.file);
-								}
-							}
-							setProject(file);
+					} else if(project.isTestSuite()) {
+						TestSuite tests = (TestSuite) project;
+						Module module = OobiumPlugin.getWorkspace().getModule(tests.moduleName);
+						if(module != null && module.isApplication()) {
+							setApplication(module.file);
 						}
 					}
-				} catch(CoreException e) {
-					e.printStackTrace();
+					setProject(file);
 				}
 			}
 		}

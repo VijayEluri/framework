@@ -56,38 +56,49 @@ import org.w3c.dom.NodeList;
 public class Project implements Comparable<Project> {
 
 	public enum Type {
-		Application, Module, Migrator, TestSuite, Bundle, Fragment, Project, Android
+		Android, Application, Blaze, Bundle, Flex, Fragment, Java, Migrator, Module, Project, TestSuite
 	}
 
 	protected static Logger slogger = LogProvider.getLogger(BuildBundle.class);
 
+	private static Set<String> getNatures(File file) {
+		Set<String> natures = new LinkedHashSet<String>();
+		if(file != null && file.isFile()) {
+			try {
+				DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
+				DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
+				Document doc = docBuilder.parse(file);
+				NodeList list = doc.getElementsByTagName("nature");
+				for(int i = 0; i < list.getLength(); i++) {
+					Node node = list.item(i);
+					if(node.getNodeType() == Node.ELEMENT_NODE) {
+						String nature = node.getFirstChild().getNodeValue();
+						natures.add(nature);
+					}
+				}
+			} catch(Exception e) {
+				slogger.debug(e);
+			}
+		}
+		return natures;
+	}
+
+
 	public static Project load(File file) {
 		Manifest manifest = manifest(file);
-		if(manifest == null) {
-			File androidManifest = new File(file, "AndroidManifest.xml");
-			if(androidManifest.exists()) {
-				return new AndroidApp(file);
-			} else {
-				return new Project(Type.Project, file, null);
-			}
-		} else {
-			Type type = parseType(manifest);
-			switch(type) {
-			case Application:
-				return new Application(type, file, manifest);
-			case Module:
-				return new Module(type, file, manifest);
-			case Migrator:
-				return new Migrator(type, file, manifest);
-			case TestSuite:
-				return new TestSuite(type, file, manifest);
-			case Bundle:
-				return new Bundle(type, file, manifest);
-			case Fragment:
-				return new Fragment(type, file, manifest);
-			default:
-				return new Project(Type.Project, file, manifest);
-			}
+		Type type = parseType(file, manifest);
+		switch(type) {
+		case Android:		return new AndroidApp(file);
+		case Application:	return new Application(type, file, manifest);
+		case Blaze:			return new BlazeApp(type, file, manifest);
+		case Bundle:		return new Bundle(type, file, manifest);
+		case Fragment:		return new Fragment(type, file, manifest);
+		case Java:			return new JavaApp(type, file, manifest);
+		case Module:		return new Module(type, file, manifest);
+		case Migrator:		return new Migrator(type, file, manifest);
+		case TestSuite:		return new TestSuite(type, file, manifest);
+		default:
+			return new Project(Type.Project, file, manifest);
 		}
 	}
 
@@ -132,28 +143,47 @@ public class Project implements Comparable<Project> {
 		return null;
 	}
 
-	private static Type parseType(Manifest manifest) {
-		Attributes attrs = manifest.getMainAttributes();
-		
-		String type = (String) attrs.getValue("Oobium-Type");
-		if(type != null) {
-			type = StringUtils.camelCase(type);
-			try {
-				return Type.valueOf(type);
-			} catch(Exception e) {
-				// discard and fall through
+	private static Type parseType(File file, Manifest manifest) {
+		if(manifest == null) {
+			File androidManifest = new File(file, "AndroidManifest.xml");
+			if(androidManifest.exists()) {
+				return Type.Android;
 			}
-		}
-		
-		if(attrs.getValue("Bundle-Version") != null) {
-			if(attrs.getValue("Fragment-Host") != null) {
-				return Type.Fragment;
+		} else {
+			Attributes attrs = manifest.getMainAttributes();
+			
+			String type = (String) attrs.getValue("Oobium-Type");
+			if(type != null) {
+				type = StringUtils.camelCase(type);
+				try {
+					return Type.valueOf(type);
+				} catch(Exception e) {
+					// discard and fall through
+				}
 			}
-			return Type.Bundle;
+			
+			if(attrs.getValue("Bundle-Version") != null) {
+				if(attrs.getValue("Fragment-Host") != null) {
+					return Type.Fragment;
+				}
+				return Type.Bundle;
+			}
+			
+			File projectFile = new File(file, ".project");
+			if(projectFile.isFile()) {
+				Set<String> natures = getNatures(projectFile);
+				if(natures.contains(BlazeApp.NATURE)) {
+					return Type.Blaze;
+				}
+				if(natures.contains(JavaApp.NATURE)) {
+					return Type.Java;
+				}
+			}
 		}
 		return Type.Project;
 	}
 
+	
 	protected final Logger logger;
 
 	/**
@@ -174,7 +204,7 @@ public class Project implements Comparable<Project> {
 	public final String name;
 	
 	/**
-	 * This bundle's manifest file, or null if this is a jarred bundle.
+	 * This bundle's manifest file; may be null if the project is binary or of a type that does not use it.
 	 */
 	public final File manifest;
 
@@ -191,23 +221,22 @@ public class Project implements Comparable<Project> {
 	public final File src;
 
 	/**
-	 * this project's main source directory
+	 * this project's main directory
 	 */
 	public final File main;
 
 	/**
-	 * this project's .classpath file (created by Eclipse if this project was
-	 * created by Eclipse)
+	 * this project's .classpath file (Eclipse format, but also used by Oobium)
 	 */
 	public final File classpath;
 
 	/**
-	 * this project's .project file (created by Eclipse if this project was
-	 * created by Eclipse)
+	 * this project's .project file (Eclipse format, but also used by Oobium)
 	 */
 	public final File project;
 
 	/**
+	 * TODO: should probably be refactored to "isBinary"...<br>
 	 * true if this bundle is a jar file, false otherwise.
 	 */
 	public final boolean isJar;
@@ -519,25 +548,7 @@ public class Project implements Comparable<Project> {
 	}
 
 	public Set<String> getNatures() {
-		Set<String> natures = new LinkedHashSet<String>();
-		if(project.isFile()) {
-			try {
-				DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
-				DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
-				Document doc = docBuilder.parse(project);
-				NodeList list = doc.getElementsByTagName("nature");
-				for(int i = 0; i < list.getLength(); i++) {
-					Node node = list.item(i);
-					if(node.getNodeType() == Node.ELEMENT_NODE) {
-						String nature = node.getFirstChild().getNodeValue();
-						natures.add(nature);
-					}
-				}
-			} catch(Exception e) {
-				logger.warn(e);
-			}
-		}
-		return natures;
+		return getNatures(project);
 	}
 
 	public Map<String, File> getSourceBuildFiles() {
@@ -693,26 +704,33 @@ public class Project implements Comparable<Project> {
 		return name;
 	}
 	
+	private String parseName() {
+		// yup, parsing xml with a regex. read it and weep!
+		if(project.exists()) {
+			String src = FileUtils.readFile(project).toString();
+			Pattern p = Pattern.compile("<name>([^<]*)</name>");
+			Matcher m = p.matcher(src);
+			if(m.find()) {
+				return m.group(1);
+			}
+		} else {
+			return file.getName();
+		}
+		return "!UNKNOWN!";
+	}
+	
 	private String parseName(Manifest manifest) {
 		if(manifest == null) {
 			if(isJar) {
 				// TODO
 			} else {
-				// yup, parsing xml with a regex. read it and weep!
-				if(project.exists()) {
-					String src = FileUtils.readFile(project).toString();
-					Pattern p = Pattern.compile("<name>([^<]*)</name>");
-					Matcher m = p.matcher(src);
-					if(m.find()) {
-						return m.group(1);
-					}
-				} else {
-					return file.getName();
-				}
+				return parseName();
 			}
 		} else {
 			String name = (String) manifest.getMainAttributes().getValue("Bundle-SymbolicName");
-			if(name != null) {
+			if(name == null) {
+				return parseName();
+			} else {
 				int ix = name.indexOf(';');
 				if(ix == -1) {
 					return name.trim();

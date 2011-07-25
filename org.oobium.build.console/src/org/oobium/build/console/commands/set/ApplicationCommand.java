@@ -32,7 +32,7 @@ public class ApplicationCommand extends BuilderCommand {
 		Application application = getWorkspace().getApplication((paramCount() == 0) ? null : param(0));
 		if(application != null) {
 			setApplication(application);
-			setBundle(application);
+			setProject(application);
 			console.out.println("application successfully set");
 		} else {
 			console.err.println("failed to set application: application does not exist");

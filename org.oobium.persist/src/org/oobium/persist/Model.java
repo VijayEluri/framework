@@ -1426,6 +1426,15 @@ public abstract class Model implements JsonModel {
 		return this;
 	}
 	
+	protected void setErrors(List<String> errors) {
+		clearErrors();
+		if(errors != null) {
+			for(String error : errors) {
+				addError(error);
+			}
+		}
+	}
+	
 	private void setField(String field, Object value) {
 		if("id".equals(field)) {
 			setId(coerce(value, int.class));

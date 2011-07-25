@@ -11,7 +11,7 @@
 package org.oobium.build.console.commands.show;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.workspace.Bundle;
+import org.oobium.build.workspace.Project;
 
 public class NaturesCommand extends BuilderCommand {
 
@@ -22,11 +22,11 @@ public class NaturesCommand extends BuilderCommand {
 
 	@Override
 	public void run() {
-		Bundle bundle = getBundle();
-		if(bundle.isJar) {
+		Project project = getProject();
+		if(project.isJar) {
 			console.err.println("Project is a jar; Natures are only relevant to source projects");
 		} else {
-			for(String nature : bundle.getNatures()) {
+			for(String nature : project.getNatures()) {
 				console.out.println(nature);
 			}
 		}

@@ -203,11 +203,9 @@ public class Workspace {
 		bundles.add(bundle);
 	}
 	
-	public File cleanExport(Application application) {
-		Exporter exporter = new Exporter(this, application);
-		File exportDir = exporter.getExportDir();
-		FileUtils.deleteContents(exportDir);
-		return exportDir;
+	public File cleanExport() {
+		FileUtils.deleteContents(getExportDir());
+		return getExportDir();
 	}
 	
 	public Application createApplication(File file, Map<String, String> properties) {

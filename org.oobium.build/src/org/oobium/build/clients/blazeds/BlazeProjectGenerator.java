@@ -1,11 +1,17 @@
 package org.oobium.build.clients.blazeds;
 
-import static org.oobium.utils.FileUtils.*;
+import static org.oobium.build.util.ProjectUtils.getPrefsFileDate;
+import static org.oobium.utils.FileUtils.copy;
+import static org.oobium.utils.FileUtils.createFolder;
+import static org.oobium.utils.FileUtils.deleteContents;
+import static org.oobium.utils.FileUtils.writeFile;
+import static org.oobium.utils.StringUtils.source;
 import static org.oobium.utils.StringUtils.*;
 
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -54,13 +60,21 @@ public class BlazeProjectGenerator {
 			throw new UnsupportedOperationException(project.getName() + " already exists");
 		}
 
+		createBuildFile();
 		createClassPathFile();
-		createProjectFile();
+		createManifest();
 		createPrefsFile();
+		createProjectFile();
+		createWebXmlFile(project.getName(), project.getName() + " BlazeDS project");
 		
-		createFolder(project, "bin");
-		File src = createFolder(project, "src");
+		createFolder(project, "classes");
+		createFolder(project, "lib");
 
+		File flex = createFolder(project, "flex");
+		createFlexFiles(flex);
+
+		File src = createFolder(project, "src");
+		
 		Project target = workspace.load(project);
 		JavaClientExporter javaExporter = new JavaClientExporter(workspace, module);
 		javaExporter.setTarget(target);
@@ -73,269 +87,37 @@ public class BlazeProjectGenerator {
 		}
 		
 		createChannelController(src);
-		createPersistController(src);
+		createApplicationController(src);
 		// createSessionController(src);
-		
-		String name = "flex-messaging-core.jar";
-		File jar = new File(createFolder(project, "lib"), name);
-		copy(getClass().getResourceAsStream("/lib/" + name), jar);
-		target.addBuildPath("lib/" + name, "lib");
+
+		String[] names = {
+				"commons-codec-1.3.jar",
+				"commons-httpclient-3.0.1.jar",
+				"commons-logging.jar",
+				"flex-messaging-common.jar",
+				"flex-messaging-core.jar",
+				"flex-messaging-opt.jar",
+				"flex-messaging-proxy.jar",
+				"flex-messaging-remoting.jar"
+		};
+		for(String name : names) {
+			File jar = new File(createFolder(project, "lib"), name);
+			copy(getClass().getResourceAsStream("/lib/blazeds/" + name), jar);
+			target.addBuildPath("lib/" + name, "lib");
+		}
 
 		if(exportFlex) {
-			FlexProjectGenerator flex = new FlexProjectGenerator(module, flexProject);
-			flex.setForce(force);
-			flexProject = flex.create();
+			FlexProjectGenerator flexGen = new FlexProjectGenerator(module, flexProject);
+			flexGen.setForce(force);
+			flexProject = flexGen.create();
 		}
 	}
 
-	private void createClassPathFile() {
-		writeFile(project, ".classpath",
-				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-				"<classpath>\n" +
-				"\t<classpathentry kind=\"src\" path=\"src\"/>\n" +
-				"\t<classpathentry kind=\"con\" path=\"org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6\"/>\n" +
-				"\t<classpathentry kind=\"output\" path=\"bin\"/>\n" +
-				"</classpath>"
-			);
-	}
-	
-	private void createProjectFile() {
-		writeFile(project, ".project",
-				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-				"<projectDescription>\n" +
-				"\t<name>" + project.getName() + "</name>\n" +
-				"\t<comment></comment>\n" +
-				"\t<projects>\n" +
-				"\t</projects>\n" +
-				"\t<buildSpec>\n" +
-				"\t\t<buildCommand>\n" +
-				"\t\t\t<name>org.eclipse.jdt.core.javabuilder</name>\n" +
-				"\t\t\t<arguments>\n" +
-				"\t\t\t</arguments>\n" +
-				"\t\t</buildCommand>\n" +
-				"\t</buildSpec>\n" +
-				"\t<natures>\n" +
-				"\t\t<nature>org.eclipse.jdt.core.javanature</nature>\n" +
-				"\t</natures>\n" +
-				"</projectDescription>\n"
-			);
-	}
-	
-	private void createPrefsFile() {
-		writeFile(createFolder(project, ".settings"), "org.eclipse.jdt.core.prefs",
-				"#Sat Jun 25 15:21:51 MDT 2011\n" +
-				"eclipse.preferences.version=1\n" +
-				"org.eclipse.jdt.core.compiler.codegen.inlineJsrBytecode=enabled\n" +
-				"org.eclipse.jdt.core.compiler.codegen.targetPlatform=1.6\n" +
-				"org.eclipse.jdt.core.compiler.codegen.unusedLocal=preserve\n" +
-				"org.eclipse.jdt.core.compiler.compliance=1.6\n" +
-				"org.eclipse.jdt.core.compiler.debug.lineNumber=generate\n" +
-				"org.eclipse.jdt.core.compiler.debug.localVariable=generate\n" +
-				"org.eclipse.jdt.core.compiler.debug.sourceFile=generate\n" +
-				"org.eclipse.jdt.core.compiler.problem.assertIdentifier=error\n" +
-				"org.eclipse.jdt.core.compiler.problem.enumIdentifier=error\n" +
-				"org.eclipse.jdt.core.compiler.source=1.6"
-			);
-	}
-	
-	private void createController(File srcFolder, ModelDefinition model) {
-		System.out.println("BLAZE_PROJECT_GENERATOR::CREATE_CONTROLLER");
-
-		String mType = model.getSimpleName();
-		String mVar = varName(mType);
-
-		SourceFile sf = new SourceFile();
-		sf.packageName = module.packageName(module.controllers);
-		sf.simpleName = mType + "Controller";
-		sf.superName = "PersistController";
-
-		sf.imports.add(List.class.getCanonicalName());
-		sf.imports.add(SQLException.class.getCanonicalName());
-		sf.imports.add(module.packageName(module.models) + "." + mType);
-
-		sf.methods.put("0find(int id)",
-				"public " + mType + " find(int id) throws SQLException {\n" +
-				" return " + mType + ".find(id);\n" +
-				"}"
-			);
-		
-		sf.methods.put("1find(String where)",
-				"public " + mType + " find(String where) throws SQLException {\n" +
-				" return " + mType + ".find(where);\n" +
-				"}"
-			);
-		
-		sf.methods.put("2findAll()",
-				"public List<" + mType + "> findAll() throws SQLException {\n" +
-				" return " + mType + ".findAll();\n" +
-				"}"
-			);
-		
-		sf.methods.put("3findAll(String where)",
-				"public List<" + mType + "> findAll(String where) throws SQLException {\n" +
-				" return " + mType + ".findAll(where);\n" +
-				"}"
-			);
-		
-		sf.methods.put("4create",
-				"public void create(" + mType + " " + mVar + ") throws SQLException {\n" +
-				" " + mVar + ".create();\n" +
-				"}"
-			);
-
-		sf.methods.put("5destroy",
-				"public void destroy(" + mType + " " + mVar + ") throws SQLException {\n" +
-				" " + mVar + ".destroy();\n" +
-				"}"
-			);
-
-		sf.methods.put("6update",
-				"public void update(" + mType + " " + mVar + ") throws SQLException {\n" +
-				" " + mVar + ".update();\n" +
-				"}"
-			);
-
-		writeFile(srcFolder, sf.getFilePath(), sf.toSource());
-	}
-	
-	private void createModel(File srcFolder, ModelDefinition model) throws IOException {
-		String type = model.getSimpleName();
-		String var = varName(type);
-		String plural = varName(type, true);
-		Collection<PropertyDescriptor> props = model.getProperties().values();
-		
-		SourceFile sf = new SourceFile();
-		sf.packageName = model.getPackageName();
-		sf.imports.add(List.class.getCanonicalName());
-		sf.imports.add(SQLException.class.getCanonicalName());
-		sf.simpleName = type;
-		sf.superName = sf.simpleName + "Model";
-
-		int i = 0;
-		StringBuilder sb;
-		
-		sb = new StringBuilder();
-		sb.append("private static ").append(type).append(" setVars(").append(type).append(' ').append(var).append(") {\n");
-		sb.append(" if(").append(var).append(" != null) {\n");
-		sb.append("  ").append(var).append(".id = ").append(var).append(".getId();\n");
-		for(PropertyDescriptor prop : props) {
-			sb.append("  ").append(var).append(".").append(prop.variable()).append(" = ").append(var).append(".").append(prop.getterName()).append("();\n");
-		}
-		sb.append(" }\n");
-		sb.append(" return ").append(var).append(";\n");
-		sb.append("}");
-		sf.staticMethods.put(String.valueOf(i++), sb.toString());
-		
-		sb = new StringBuilder();
-		sb.append("private static List<").append(type).append("> setVars(List<").append(type).append("> ").append(plural).append(") {\n");
-		sb.append(" for(").append(type).append(' ').append(var).append(" : ").append(plural).append(") {\n");
-		sb.append("  setVars(").append(var).append(");\n");
-		sb.append(" }\n");
-		sb.append(" return ").append(plural).append(";\n");
-		sb.append("}");
-		sf.staticMethods.put(String.valueOf(i++), sb.toString());
-		
-		sb = new StringBuilder();
-		sb.append("private static ").append(type).append(" setFields(").append(type).append(' ').append(var).append(") {\n");
-		sb.append(" if(").append(var).append(" != null) {\n");
-		sb.append("  ").append(var).append(".setId(").append(var).append(".id);\n");
-		for(PropertyDescriptor prop : props) {
-			sb.append("  ").append(var).append(".set(").append(prop.enumProp()).append(", ").append(var).append(".").append(prop.variable()).append(");\n");
-		}
-		sb.append(" }\n");
-		sb.append(" return ").append(var).append(";\n");
-		sb.append("}");
-		sf.staticMethods.put(String.valueOf(i++), sb.toString());
-		
-
-		sb = new StringBuilder();
-		sf.staticMethods.put(String.valueOf(i++), sb.toString());
-		sb = new StringBuilder();
-		sb.append("public static ").append(type).append(" find(int id) throws SQLException {\n");
-		sb.append(" return setVars(").append(sf.superName).append(".find(id));\n");
-		sb.append("}");
-		sf.staticMethods.put(String.valueOf(i++), sb.toString());
-		
-		sb = new StringBuilder();
-		sb.append("public static ").append(sf.simpleName).append(" find(String where) throws SQLException {\n");
-		sb.append(" return setVars(").append(sf.superName).append(".find(where));\n");
-		sb.append("}");
-		sf.staticMethods.put(String.valueOf(i++), sb.toString());
-		
-		sb = new StringBuilder();
-		sb.append("public static List<").append(sf.simpleName).append("> findAll() throws SQLException {\n");
-		sb.append(" return setVars(").append(sf.superName).append(".findAll());\n");
-		sb.append("}");
-		sf.staticMethods.put(String.valueOf(i++), sb.toString());
-		
-		sb = new StringBuilder();
-		sb.append("public static List<").append(sf.simpleName).append("> findAll(String where) throws SQLException {\n");
-		sb.append(" return setVars(").append(sf.superName).append(".findAll(where));\n");
-		sb.append("}");
-		sf.staticMethods.put(String.valueOf(i++), sb.toString());
-		
-
-		sf.variables.put("", "public int id");
-		for(PropertyDescriptor prop : props) {
-			if(!prop.fullType().startsWith("java.lang")) {
-				sf.imports.add(prop.fullType());
-			}
-			sf.variables.put(prop.variable(), "public " + prop.castType() + " " + prop.variable());
-			sf.imports.addAll(prop.imports());
-		}
-
-		sb = new StringBuilder();
-		sb.append("@Override\n");
-		sb.append("public boolean create() {\n");
-		sb.append(" setFields(this);\n");
-		sb.append(" return super.create();\n");
-		sb.append("}");
-		sf.methods.put(String.valueOf(i++), sb.toString());
-
-		sb = new StringBuilder();
-		sb.append("@Override\n");
-		sb.append("public boolean update() {\n");
-		sb.append(" setFields(this);\n");
-		sb.append(" return super.update();\n");
-		sb.append("}");
-		sf.methods.put(String.valueOf(i++), sb.toString());
-
-		sb = new StringBuilder();
-		sb.append("@Override\n");
-		sb.append("public boolean destroy() {\n");
-		sb.append(" setId(id);\n");
-		sb.append(" return super.destroy();\n");
-		sb.append("}");
-		sf.methods.put(String.valueOf(i++), sb.toString());
-		
-		writeFile(srcFolder, sf.getFilePath(), sf.toSource());
-	}
-
-	public File getProject() {
-		return project;
-	}
-	
-	public File getFlexProject() {
-		return flexProject;
-	}
-	
-	public void setExportFlex(boolean exportFlex) {
-		this.exportFlex = exportFlex;
-	}
-
-	public void setFlexProject(File project) {
-		this.flexProject = project;
-	}
-	
-	public void setForce(boolean force) {
-		this.force = force;
-	}
-	
-	private void createPersistController(File srcFolder){
+	private void createApplicationController(File srcFolder){
 		SourceFile sf = new SourceFile();
 
 		sf.packageName = module.packageName(module.controllers);
-		sf.simpleName = "PersistController";
+		sf.simpleName = "ApplicationController";
 		sf.imports.add("org.oobium.persist.http.HttpPersistService");
 
 		sf.staticInitializers.add("new HttpPersistService(\"localhost:5000\", true)");
@@ -343,6 +125,16 @@ public class BlazeProjectGenerator {
 		writeFile(srcFolder, sf.getFilePath(), sf.toSource());
 	}
 	
+	private void createBuildFile() {
+		writeFile(project, "build.properties", join('\n',
+				"source.. = src/",
+				"output.. = classes/",
+				"bin.includes = META-INF/,\\",
+				".",
+				""
+			));
+	}
+
 	private void createChannelController(File srcFolder){
 		System.out.println("BLAZE_PROJECT_GENERATOR::CREATE_CHANNEL_CONTROLLER");
 
@@ -356,19 +148,20 @@ public class BlazeProjectGenerator {
 		sf.imports.add("flex.messaging.MessageDestination");
 		sf.imports.add("flex.messaging.services.MessageService");
 		
-		sf.methods.put("0removeChannel", 
-			"public static void removeChannel(String channelName){\n"+
-			"\ttry {\n"+
-			"\t\tMessageBroker broker = MessageBroker.getMessageBroker(null);\n"+
-			"\t\tMessageService service = (MessageService) broker.getService(\"message-service\");\n"+
-			"\t\tDestination destination = (MessageDestination) service.getDestination(channelName);\n" +
-			"\t\tif(destination != null) {\n"+
-			"\t\t\tservice.removeDestination(destination.getId());\n"+
-			"\t\t}\n" +
-			"\t} catch(Exception e){\n" +
-			"\t\t//LogHelper.write(e.toString());\n"+
-			"\t}\n"+
-			"}");
+		sf.methods.put("0removeChannel", source(
+				"public static void removeChannel(String channelName){",
+				" try {",
+				"  MessageBroker broker = MessageBroker.getMessageBroker(null);",
+				"  MessageService service = (MessageService) broker.getService(\"message-service\");",
+				"  Destination destination = (MessageDestination) service.getDestination(channelName);",
+				"  if(destination != null) {",
+				"   service.removeDestination(destination.getId());",
+				"  }",
+				" } catch(Exception e){",
+				"  //LogHelper.write(e.toString());",
+				" }",
+				"}"
+			));
 		
 		MethodCreator m = new MethodCreator("1addChannel");
 		m.addLine("public static void addChannel(String channelName){");
@@ -392,6 +185,524 @@ public class BlazeProjectGenerator {
 		
 		sf.methods.put(m.name, m.toString());
 		writeFile(srcFolder, sf.getFilePath(), sf.toSource());
+	}
+
+	private void createClassPathFile() {
+		writeFile(project, ".classpath", source(
+				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+				"<classpath>",
+				" <classpathentry kind=\"src\" path=\"src\"/>",
+				" <classpathentry kind=\"con\" path=\"org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6\"/>",
+				" <classpathentry kind=\"output\" path=\"classes\"/>",
+				"</classpath>"
+			));
+	}
+	
+	private void createController(File srcFolder, ModelDefinition model) {
+		String mType = model.getSimpleName();
+		String mVar = varName(mType);
+
+		SourceFile sf = new SourceFile();
+		sf.packageName = module.packageName(module.controllers);
+		sf.simpleName = mType + "Controller";
+		sf.superName = "ApplicationController";
+
+		sf.imports.add(List.class.getCanonicalName());
+		sf.imports.add(SQLException.class.getCanonicalName());
+		sf.imports.add(module.packageName(module.models) + "." + mType);
+
+		sf.methods.put("0find(int id)", source(
+				"public {type} find(int id) throws SQLException {",
+				" return {type}.find(id);",
+				"}"
+			).replace("{type}", mType));
+		
+		sf.methods.put("1find(String where)", source(
+				"public {type} find(String where) throws SQLException {",
+				" return {type}.find(where);",
+				"}"
+			).replace("{type}", mType));
+		
+		sf.methods.put("2findAll()", source(
+				"public List<{type}> findAll() throws SQLException {",
+				" return {type}.findAll();",
+				"}"
+			).replace("{type}", mType));
+		
+		sf.methods.put("3findAll(String where)", source(
+				"public List<{type}> findAll(String where) throws SQLException {",
+				" return {type}.findAll(where);",
+				"}"
+			).replace("{type}", mType));
+		
+		sf.methods.put("4create", source(
+				"public {type} create({type} {var}) throws SQLException {",
+				" {var}.create();",
+				" return {var};",
+				"}"
+			).replace("{type}", mType).replace("{var}", mVar));
+
+		sf.methods.put("5destroy", source(
+				"public {type} destroy({type} {var}) throws SQLException {",
+				" {var}.destroy();",
+				" return {var};",
+				"}"
+			).replace("{type}", mType).replace("{var}", mVar));
+
+		sf.methods.put("6update", source(
+				"public {type} update({type} {var}) throws SQLException {",
+				" {var}.update();",
+				" return {var};",
+				"}"
+			).replace("{type}", mType).replace("{var}", mVar));
+
+		writeFile(srcFolder, sf.getFilePath(), sf.toSource());
+	}
+	
+	private void createFlexFiles(File flex) {
+		createMessagingConfigFile(flex);
+		createProxyConfigFile(flex);
+		createRemotingConfigFile(flex);
+		createServicesConfigFile(flex);
+		
+		writeFile(flex, "version.properties", source(
+				"#{date}",
+				"build=4.0.0.14931",
+				"minimumSDKVersion=3.5"
+			).replace("{date}", getPrefsFileDate()));
+	}
+	
+	private void createManifest() {
+		writeFile(project, "META-INF" + File.separator + "MANIFEST.MF", join('\n',
+				"Manifest-Version: 1.0",
+				"Ant-Version: Apache Ant 1.7.0",
+				"Created-By: 1.5.0_15-b04 (Sun Microsystems Inc.)",
+				"Sealed: false",
+				"Implementation-Title: {projectName}",
+				"Implementation-Version: 4.0.0.14931",
+				"Implementation-Vendor: Oobium"
+			).replace("{projectName}", project.getName()));
+	}
+
+	private void createMessagingConfigFile(File flex){
+		writeFile(flex, "messaging-config.xml", source(
+				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+				"<service id=\"message-service\" class=\"flex.messaging.services.MessageService\">",
+				"",
+				" <adapters>",
+				"  <adapter-definition id=\"actionscript\" class=\"flex.messaging.services.messaging.adapters.ActionScriptAdapter\" default=\"true\" />",
+				"  <adapter-definition id=\"jms\" class=\"flex.messaging.services.messaging.adapters.JMSAdapter\"/>",
+				" </adapters>",
+				" ",
+				" <default-channels>",
+				"  <channel ref=\"my-streaming-amf\"/>",
+				"  <channel ref=\"my-polling-amf\"/>",
+				" </default-channels>",
+				" <destination id=\"feed\">",
+				"  <!-- Destination specific channel configuration can be defined if needed",
+				"  <channels>",
+				"   <channel ref=\"my-streaming-amf\"/>",
+				"  </channels>  ",
+				"  -->",
+				" </destination>",
+				"",
+				" <destination id=\"chat\"/>",
+				"",
+				" <destination id=\"dashboard\"/>",
+				" ",
+				" <destination id=\"market-data-feed\">",
+				"  <properties>",
+				"   <server>",
+				"    <allow-subtopics>true</allow-subtopics>",
+				"    <subtopic-separator>.</subtopic-separator>s",
+				"   </server>",
+				"  </properties>",
+				"  <channels>",
+				"	<channel ref=\"my-polling-amf\"/>",
+				"	<channel ref=\"my-streaming-amf\"/>",
+				"   <channel ref=\"per-client-qos-polling-amf\"/>",
+				"  </channels>  ",
+				" </destination> ",
+				"",
+				"</service>"
+			));
+	}
+	
+	private void createModel(File srcFolder, ModelDefinition model) throws IOException {
+		String type = model.getSimpleName();
+		String var = varName(type);
+		String plural = varName(type, true);
+		Collection<PropertyDescriptor> props = model.getProperties().values();
+		
+		SourceFile sf = new SourceFile();
+		sf.packageName = model.getPackageName();
+		sf.imports.add(List.class.getCanonicalName());
+		sf.imports.add(SQLException.class.getCanonicalName());
+		sf.simpleName = type;
+		sf.superName = sf.simpleName + "Model";
+
+		int i = 0;
+		List<String> l;
+		
+		l = new ArrayList<String>();
+		l.add("private static {type} setVars({type} {var}) {");
+		l.add(" if({var} != null) {");
+		l.add("  {var}.id = {var}.getId();");
+		l.add("  {var}.errors = {var}.getErrorsList();");
+		for(PropertyDescriptor prop : props) {
+			l.add("  {var}.{prop} = {var}.{getter}();".replace("{prop}", prop.variable()).replace("{getter}", prop.getterName()));
+		}
+		l.add(" }");
+		l.add(" return {var};");
+		l.add("}");
+		sf.staticMethods.put(String.valueOf(i++), source(l).replace("{type}", type).replace("{var}", var));
+		
+		sf.staticMethods.put(String.valueOf(i++), source(
+				"private static List<{type}> setVars(List<{type}> {plural}) {",
+				" for({type} {var} : {plural}) {",
+				"  setVars({var});",
+				" }",
+				" return {plural};",
+				"}"
+			).replace("{type}", type).replace("{var}", var).replace("{plural}", plural));
+		
+		l = new ArrayList<String>();
+		l.add("private static {type} setFields({type} {var}) {");
+		l.add(" if({var} != null) {");
+		l.add("  {var}.setId({var}.id);");
+		l.add("  {var}.setErrors({var}.errors);");
+		for(PropertyDescriptor prop : props) {
+			l.add("  {var}.set({enum}, {var}.{prop});".replace("{enum}", prop.enumProp()).replace("{prop}", prop.variable()));
+		}
+		l.add(" }");
+		l.add(" return {var};");
+		l.add("}");
+		sf.staticMethods.put(String.valueOf(i++), source(l).replace("{type}", type).replace("{var}", var));
+		
+		sf.staticMethods.put(String.valueOf(i++), source(
+				"public static {type} find(int id) throws SQLException {",
+				" return setVars({super}.find(id));",
+				"}"
+			).replace("{type}", type).replace("{super}", sf.superName));
+		
+		sf.staticMethods.put(String.valueOf(i++), source(
+				"public static {type} find(String where) throws SQLException {",
+				" return setVars({super}.find(where));",
+				"}"
+			).replace("{type}", type).replace("{super}", sf.superName));
+		
+		sf.staticMethods.put(String.valueOf(i++), source(
+				"public static List<{type}> findAll() throws SQLException {",
+				" return setVars({super}.findAll());",
+				"}"
+			).replace("{type}", type).replace("{super}", sf.superName));
+		
+		sf.staticMethods.put(String.valueOf(i++), source(
+				"public static List<{type}> findAll(String where) throws SQLException {",
+				" return setVars({super}.findAll(where));",
+				"}"
+			).replace("{type}", type).replace("{super}", sf.superName));
+		
+
+		sf.variables.put("", "public int id");
+		sf.variables.put(" ", "public List<String> errors");
+		for(PropertyDescriptor prop : props) {
+			if(prop.hasImport() && !prop.fullType().startsWith("java.lang")) {
+				sf.imports.add(prop.fullType());
+			}
+			if(prop.hasMany()) {
+				sf.variables.put(prop.variable(), "public " + prop.castType() + "<" + prop.type() + "> "+ prop.variable());
+			} else {
+				sf.variables.put(prop.variable(), "public " + prop.castType() + " " + prop.variable());
+			}
+			sf.imports.addAll(prop.imports());
+		}
+
+		sf.methods.put(String.valueOf(i++), source(
+				"@Override",
+				"public boolean create() {",
+				" setFields(this);",
+				" boolean result = super.create();",
+				" setVars(this);",
+				" return result;",
+				"}"
+			));
+
+		sf.methods.put(String.valueOf(i++), source(
+				"@Override",
+				"public boolean update() {",
+				" setFields(this);",
+				" boolean result = super.update();",
+				" setVars(this);",
+				" return result;",
+				"}"
+			));
+
+		sf.methods.put(String.valueOf(i++), source(
+				"@Override",
+				"public boolean destroy() {",
+				" setFields(this);",
+				" boolean result = super.destroy();",
+				" errors = getErrorsList();",
+				" return result;",
+				"}"
+			));
+		
+		writeFile(srcFolder, sf.getFilePath(), sf.toSource());
+	}
+	
+	private void createPrefsFile() {
+		writeFile(createFolder(project, ".settings"), "org.eclipse.jdt.core.prefs", source(
+				"#{date}",
+				"eclipse.preferences.version=1",
+				"org.eclipse.jdt.core.compiler.codegen.inlineJsrBytecode=enabled",
+				"org.eclipse.jdt.core.compiler.codegen.targetPlatform=1.6",
+				"org.eclipse.jdt.core.compiler.codegen.unusedLocal=preserve",
+				"org.eclipse.jdt.core.compiler.compliance=1.6",
+				"org.eclipse.jdt.core.compiler.debug.lineNumber=generate",
+				"org.eclipse.jdt.core.compiler.debug.localVariable=generate",
+				"org.eclipse.jdt.core.compiler.debug.sourceFile=generate",
+				"org.eclipse.jdt.core.compiler.problem.assertIdentifier=error",
+				"org.eclipse.jdt.core.compiler.problem.enumIdentifier=error",
+				"org.eclipse.jdt.core.compiler.source=1.6"
+			).replace("{date}", getPrefsFileDate()));
+	}
+	
+	private void createProjectFile() {
+		writeFile(project, ".project", source(
+				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+				"<projectDescription>",
+				" <name>{projectName}</name>",
+				" <comment></comment>",
+				" <projects>",
+				" </projects>",
+				" <buildSpec>",
+				"  <buildCommand>",
+				"   <name>org.eclipse.jdt.core.javabuilder</name>",
+				"   <arguments>",
+				"   </arguments>",
+				"  </buildCommand>",
+				" </buildSpec>",
+				" <natures>",
+				"  <nature>org.oobium.blazenature</nature>",
+				"  <nature>org.eclipse.jdt.core.javanature</nature>",
+				" </natures>",
+				"</projectDescription>"
+			).replace("{projectName}", project.getName()));
+	}
+	
+	private void createProxyConfigFile(File flex) {
+		writeFile(flex, "proxy-config.xml", source(
+				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+				"<service id=\"proxy-service\" class=\"flex.messaging.services.HTTPProxyService\">",
+				"",
+				" <properties>",
+				"  <connection-manager>",
+				"   <max-total-connections>100</max-total-connections>",
+				"   <default-max-connections-per-host>2</default-max-connections-per-host>",
+				"  </connection-manager>",
+				"",
+				"  <allow-lax-ssl>true</allow-lax-ssl>",
+				" </properties>",
+				"",
+				" <default-channels>",
+				"  <channel ref=\"my-http\"/>",
+				"  <channel ref=\"my-amf\"/>",
+				" </default-channels>",
+				"",
+				" <adapters>",
+				"  <adapter-definition id=\"http-proxy\" class=\"flex.messaging.services.http.HTTPProxyAdapter\" default=\"true\"/>",
+				"  <adapter-definition id=\"soap-proxy\" class=\"flex.messaging.services.http.SOAPProxyAdapter\"/>",
+				" </adapters>",
+				"",
+				" <destination id=\"DefaultHTTP\">",
+				"  <properties>",
+				"  </properties>",
+				" </destination>",
+				"",
+				" <destination id=\"catalog\">",
+				"  <properties>",
+				"   <url>/{context.root}/testdrive-httpservice/catalog.jsp</url>",
+				"  </properties>",
+				" </destination>",
+				"",
+				" <destination id=\"ws-catalog\">",
+				"  <properties>",
+				"   <wsdl>http://feeds.adobe.com/webservices/mxna2.cfc?wsdl</wsdl>",
+				"   <soap>*</soap>",
+				"  </properties>",
+				"  <adapter ref=\"soap-proxy\"/>",
+				" </destination>",
+				"",
+				"</service>"
+			).replace("{context.root}", "TODO"));
+	}
+	
+	private void createRemotingConfigFile(File flex) {
+		StringBuilder sb = new StringBuilder();
+		for(File file : module.findControllers()) {
+			String name = module.getControllerName(file);
+			String type = module.getControllerType(file);
+			sb.append('\n');
+			sb.append(source('\t', '\t',
+				"<destination id=\"{name}\">",
+				" <properties>",
+				"  <source>{type}</source>",
+				"  <scope>application</scope>",
+				" </properties>",
+				"</destination>"
+			).replace("{name}", name).replace("{type}", type));
+		}
+		sb.append('\n');
+		
+		writeFile(flex, "remoting-config.xml", source(
+				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+				"<service id=\"remoting-service\"",
+				" class=\"flex.messaging.services.RemotingService\">",
+				"",
+				" <adapters>",
+				"  <adapter-definition id=\"java-object\" class=\"flex.messaging.services.remoting.adapters.JavaAdapter\" default=\"true\"/>",
+				" </adapters>",
+				"",
+				" <default-channels>",
+				"  <channel ref=\"my-amf\"/>",
+				" </default-channels>",
+				"",
+				" {controllers}",
+				"",
+				"</service>"
+			).replace("{controllers}", sb.toString()));
+		
+	}
+
+	private void createServicesConfigFile(File flex) {
+		writeFile(flex, "services-config.xml", source(
+				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+				"<services-config>",
+				"",
+				" <services>",
+				"",
+				"",
+				"  <service-include file-path=\"remoting-config.xml\" />",
+				"  <service-include file-path=\"proxy-config.xml\" />",
+				"  <service-include file-path=\"messaging-config.xml\" />",
+				"",
+				"",
+				"  <!-- ",
+				"  Application level default channels. Application level default channels are ",
+				"  necessary when a dynamic destination is being used by a service component",
+				"  and no ChannelSet has been defined for the service component. In that case,",
+				"  application level default channels will be used to contact the destination.",
+				"  -->",
+				"  <default-channels>",
+				"   <channel ref=\"my-amf\"/>",
+				"  </default-channels>",
+				" ",
+				" </services>",
+				"",
+				"",
+				" <security>",
+				"  <security-constraint id=\"sample-users\">",
+				"   <!--<service class=\"flex.samples.runtimeconfig.EmployeeRuntimeRemotingDestination\" id=\"runtime-employee-ro\" />-->",
+				"   <auth-method>Custom</auth-method>",
+				"   <roles>",
+				"    <role>sampleusers</role>",
+				"   </roles>",
+				"  </security-constraint>",
+				"",
+				"  <login-command class=\"flex.messaging.security.TomcatLoginCommand\" server=\"Tomcat\"/>  ",
+				"  <!-- Uncomment the correct app server",
+				"  <login-command class=\"flex.messaging.security.TomcatLoginCommand\" server=\"JBoss\">",
+				"  <login-command class=\"flex.messaging.security.JRunLoginCommand\" server=\"JRun\"/>",
+				"  <login-command class=\"flex.messaging.security.WeblogicLoginCommand\" server=\"Weblogic\"/>",
+				"  <login-command class=\"flex.messaging.security.WebSphereLoginCommand\" server=\"WebSphere\"/>  ",
+				"  -->",
+				" </security>",
+				"",
+				" <channels>",
+				" ",
+				"  <channel-definition id=\"my-streaming-amf\" class=\"mx.messaging.channels.StreamingAMFChannel\">",
+				"   <endpoint url=\"http://{server.name}:{server.port}/{context.root}/messagebroker/streamingamf\" class=\"flex.messaging.endpoints.StreamingAMFEndpoint\"/>",
+				"  </channel-definition>",
+				" ",
+				"  <channel-definition id=\"my-amf\" class=\"mx.messaging.channels.AMFChannel\">",
+				"   <endpoint url=\"http://{server.name}:{server.port}/{context.root}/messagebroker/amf\" class=\"flex.messaging.endpoints.AMFEndpoint\"/>",
+				"   <properties>",
+				"    <polling-enabled>false</polling-enabled>",
+				"   </properties>",
+				"  </channel-definition>",
+				"",
+				"  <channel-definition id=\"my-secure-amf\" class=\"mx.messaging.channels.SecureAMFChannel\">",
+				"   <endpoint url=\"https://{server.name}:{server.port}/{context.root}/messagebroker/amfsecure\" class=\"flex.messaging.endpoints.SecureAMFEndpoint\"/>",
+				"   <properties>",
+				"    <add-no-cache-headers>false</add-no-cache-headers>",
+				"   </properties>",
+				"  </channel-definition>",
+				"",
+				"  <channel-definition id=\"my-polling-amf\" class=\"mx.messaging.channels.AMFChannel\">",
+				"   <endpoint url=\"http://{server.name}:{server.port}/{context.root}/messagebroker/amfpolling\" class=\"flex.messaging.endpoints.AMFEndpoint\"/>",
+				"   <properties>",
+				"    <polling-enabled>true</polling-enabled>",
+				"    <polling-interval-seconds>4</polling-interval-seconds>",
+				"   </properties>",
+				"  </channel-definition>",
+				"",
+				"  <channel-definition id=\"my-http\" class=\"mx.messaging.channels.HTTPChannel\">",
+				"   <endpoint url=\"http://{server.name}:{server.port}/{context.root}/messagebroker/http\" class=\"flex.messaging.endpoints.HTTPEndpoint\"/>",
+				"  </channel-definition>",
+				"",
+				"  <channel-definition id=\"my-secure-http\" class=\"mx.messaging.channels.SecureHTTPChannel\">",
+				"   <endpoint url=\"https://{server.name}:{server.port}/{context.root}/messagebroker/httpsecure\" class=\"flex.messaging.endpoints.SecureHTTPEndpoint\"/>",
+				"   <properties>",
+				"    <add-no-cache-headers>false</add-no-cache-headers>",
+				"   </properties>",
+				"  </channel-definition>",
+				"",
+				"  <channel-definition id=\"per-client-qos-polling-amf\" class=\"mx.messaging.channels.AMFChannel\">",
+				"   <endpoint url=\"http://{server.name}:{server.port}/{context.root}/messagebroker/qosamfpolling\" class=\"flex.messaging.endpoints.AMFEndpoint\"/>",
+				"   <properties>",
+				"    <polling-enabled>true</polling-enabled>",
+				"    <polling-interval-millis>500</polling-interval-millis>",
+				"    <flex-client-outbound-queue-processor class=\"flex.samples.qos.CustomDelayQueueProcessor\">",
+				"     <!--<properties><flush-delay>5000</flush-delay></properties>-->",
+				"    </flex-client-outbound-queue-processor>",
+				"   </properties>",
+				"  </channel-definition>",
+				"",
+				" </channels>",
+				"",
+				" <logging>",
+				"  <!-- You may also use flex.messaging.log.ServletLogTarget -->",
+				"  <target class=\"flex.messaging.log.ConsoleTarget\" level=\"Error\">",
+				"   <properties>",
+				"    <prefix>[BlazeDS] </prefix>",
+				"    <includeDate>false</includeDate>",
+				"    <includeTime>false</includeTime>",
+				"    <includeLevel>true</includeLevel>",
+				"    <includeCategory>false</includeCategory>",
+				"   </properties>",
+				"   <filters>",
+				"    <pattern>Endpoint.*</pattern>",
+				"    <pattern>Service.*</pattern>",
+				"    <pattern>Configuration</pattern>",
+				"   </filters>",
+				"  </target>",
+				" </logging>",
+				"",
+				" <system>",
+				"  <redeploy>",
+				"   <enabled>true</enabled>",
+				"   <watch-interval>20</watch-interval>",
+				"   <watch-file>{context.root}/WEB-INF/flex/services-config.xml</watch-file>",
+				"   <watch-file>{context.root}/WEB-INF/flex/proxy-config.xml</watch-file>",
+				"   <watch-file>{context.root}/WEB-INF/flex/remoting-config.xml</watch-file>",
+				"   <watch-file>{context.root}/WEB-INF/flex/messaging-config.xml</watch-file>",
+				"   <touch-file>{context.root}/WEB-INF/web.xml</touch-file>",
+				"  </redeploy>",
+				" </system>",
+				"",
+				"</services-config>"
+			));
 	}
 	
 	private void createSessionController(File srcFolder){
@@ -503,6 +814,63 @@ public class BlazeProjectGenerator {
 		sf.addMethod(m7);
 		
 		writeFile(srcFolder, sf.getFilePath(), sf.toSource());
+	}
+	
+	private void createWebXmlFile(String name, String description) {
+		writeFile(project, "web.xml", source(
+				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+				"<!DOCTYPE web-app PUBLIC \"-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN\" \"http://java.sun.com/dtd/web-app_2_3.dtd\">",
+				"<web-app>",
+				" <display-name>{name}</display-name>",
+				" <description>{description}</description>",
+				"",
+				" <!-- Http Flex Session attribute and binding listener support -->",
+				" <listener>",
+				"  <listener-class>flex.messaging.HttpFlexSession</listener-class>",
+				" </listener>",
+				"",
+				" <!-- MessageBroker Servlet -->",
+				" <servlet>",
+				"  <servlet-name>MessageBrokerServlet</servlet-name>",
+				"  <display-name>MessageBrokerServlet</display-name>",
+				"  <servlet-class>flex.messaging.MessageBrokerServlet</servlet-class>",
+				"  <init-param>",
+				"   <param-name>services.configuration.file</param-name>",
+				"   <param-value>/WEB-INF/flex/services-config.xml</param-value>",
+				"  </init-param>",
+				"  <load-on-startup>1</load-on-startup>",
+				" </servlet>",
+				" <servlet-mapping>",
+				"  <servlet-name>MessageBrokerServlet</servlet-name>",
+				"  <url-pattern>/messagebroker/*</url-pattern>",
+				" </servlet-mapping>",
+				"",
+				" <welcome-file-list>",
+				"  <welcome-file>index.htm</welcome-file>",
+				" </welcome-file-list>",
+				"",
+				"</web-app>"
+			).replace("{name}", name).replace("{description}", description));
+	}
+
+	public File getFlexProject() {
+		return flexProject;
+	}
+	
+	public File getProject() {
+		return project;
+	}
+	
+	public void setExportFlex(boolean exportFlex) {
+		this.exportFlex = exportFlex;
+	}
+	
+	public void setFlexProject(File project) {
+		this.flexProject = project;
+	}
+	
+	public void setForce(boolean force) {
+		this.force = force;
 	}
 
 }

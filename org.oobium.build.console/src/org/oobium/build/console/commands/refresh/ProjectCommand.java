@@ -25,7 +25,7 @@ public class ProjectCommand extends BuilderCommand {
 	
 	@Override
 	public void run() {
-		Eclipse.refreshProject(getBundle().name);
+		Eclipse.refreshProject(getProject().name);
 	}
 
 }
