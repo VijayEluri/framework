@@ -1,11 +1,7 @@
 package org.oobium.persist.blaze;
 
-import static org.oobium.app.http.Action.*;
 import static org.oobium.utils.StringUtils.join;
 
-import java.util.Set;
-
-import org.oobium.app.http.Action;
 import org.oobium.persist.Model;
 import org.oobium.persist.Observer;
 
@@ -14,54 +10,44 @@ import flex.messaging.messages.AsyncMessage;
 
 public abstract class ModelNotifier<T extends Model> extends Observer<T> {
 
-	@Override
-	protected void afterCreate(T model) {
-		sendNotification(model.getId(), null, create);
-	}
-
-	@Override
-	protected void afterUpdate(T model) {
-		sendNotification(model.getId(), model.getAll().keySet(), update);
-	}
-
-	@Override
-	protected void afterDestroy(int id) {
-		sendNotification(id, null, destroy);
-	}
-
 	private final String channelName;
 	
 	public ModelNotifier(String channelName) {
 		this.channelName = channelName;
 	}
 
-	private void sendNotification(int id, Set<String> fields, Action action) {
-		String data = modelClass.getName() + ":" + id;
-		switch(action) {
-		case create:
-			send("CREATED " + data);
-			break;
-		case update:
-			send("UPDATED " + data + "-" + join(fields, ','));
-			break;
-		case destroy:
-			send("DESTROYED " + data);
-			break;
-		default:
-			logger.warn("invalid action: " + action + "; only create, update, and destroy are allowed");
-			return; // stop notifications for this action
-		}
+	@Override
+	protected void afterCreate(T model) {
+		AsyncMessage msg = createMessage("afterCreate", model.getId());
+		sendMessage(msg);
 	}
-
-	private void send(String body) {
+	
+	@Override
+	protected void afterUpdate(T model) {
+		AsyncMessage msg = createMessage("afterUpdate", model.getId());
+		msg.setHeader("fields", join(model.getAll().keySet(), ','));
+		sendMessage(msg);
+	}
+	
+	@Override
+	protected void afterDestroy(int id) {
+		AsyncMessage msg = createMessage("afterDestroy", id);
+		sendMessage(msg);
+	}
+	
+	private AsyncMessage createMessage(String method, int id) {
 		AsyncMessage msg = new AsyncMessage();
 		msg.setClientId("Java-Based-Producer-For-Messaging");
 		msg.setTimestamp(System.currentTimeMillis());
 		msg.setMessageId("Java-Based-Producer-For-Messaging-ID");
 		msg.setDestination(channelName);
-		msg.setBody(body);
-		msg.setHeader("sender", "From the server");
-
+		msg.setHeader("class", modelClass.getCanonicalName());
+		msg.setHeader("method", method);
+		msg.setHeader("id", id);
+		return msg;
+	}
+	
+	private void sendMessage(AsyncMessage msg) {
 		MessageBroker.getMessageBroker(null).routeMessageToService(msg, null);	
 	}
 	

@@ -48,7 +48,7 @@ public class FlexProjectGenerator {
 		createFolder(project, "bin");
 		
 		File src = createFolder(project, "src");
-		createObserverFiles(src);
+		createObserversFile(src);
 		for(File file : module.findModels()) {
 			createModel(src, file);
 		}
@@ -61,20 +61,18 @@ public class FlexProjectGenerator {
 		return project;
 	}
 	
-	private void createObserverFiles(File src) {
+	private void createObserversFile(File src) {
 		String source = getResourceAsString(getClass(), "Observers.as");
-		source.replace("{serverUrl}", "http://localhost:8400"); // TODO server URL
+		source = source.replace("{serverUrl}", "http://localhost:8400"); // TODO server URL
 		writeFile(src, "org/oobium/persist/Observers.as", source);
-		
-		writeFile(src, "org/oobium/persist/Observer.as", getClass().getResourceAsStream("Observer.as"));
 	}
 	
 	private void createActionScriptPropertiesFile() {
-		String appPath = project.getName() + ".as";
+		String path = project.getName() + ".as";
 		String uuid = UUID.randomUUID().toString();
 		writeFile(project, ".actionScriptProperties", source(
 				"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>",
-				"<actionScriptProperties analytics=\"false\" mainApplicationPath=\"" + appPath + "\" projectUUID=\"" + uuid + "\" version=\"10\">",
+				"<actionScriptProperties analytics=\"false\" mainApplicationPath=\"{path}\" projectUUID=\"{uuid}\" version=\"10\">",
 				" <compiler additionalCompilerArguments=\"-locale en_US\" autoRSLOrdering=\"true\" copyDependentFiles=\"false\" fteInMXComponents=\"false\" generateAccessible=\"false\" htmlExpressInstall=\"true\" htmlGenerate=\"false\" htmlHistoryManagement=\"false\" htmlPlayerVersionCheck=\"true\" includeNetmonSwc=\"false\" outputFolderPath=\"bin\" removeUnusedRSL=\"true\" sourceFolderPath=\"src\" strict=\"true\" targetPlayerVersion=\"0.0.0\" useApolloConfig=\"false\" useDebugRSLSwfs=\"true\" verifyDigests=\"true\" warn=\"true\">",
 				"  <compilerSourcePath/>",
 				"  <libraryPath defaultLinkType=\"0\">",
@@ -88,13 +86,13 @@ public class FlexProjectGenerator {
 				"  <sourceAttachmentPath/>",
 				" </compiler>",
 				" <applications>",
-				"  <application path=\"" + appPath + "\"/>",
+				"  <application path=\"{path}\"/>",
 				" </applications>",
 				" <modules/>",
 				" <buildCSSFiles/>",
 				" <flashCatalyst validateFlashCatalystCompatibility=\"false\"/>",
 				"</actionScriptProperties>"
-			));
+			).replace("{path}", path).replace("{uuid}", uuid));
 	}
 
 	private void createFlexLibPropertiesFile() {
@@ -117,7 +115,6 @@ public class FlexProjectGenerator {
 		as.imports.add("mx.rpc.remoting.RemoteObject");
 		as.imports.add("mx.rpc.events.ResultEvent");
 		as.imports.add("mx.rpc.events.FaultEvent");
-		as.imports.add("org.oobium.persist.Observer");
 		as.imports.add("org.oobium.persist.Observers");
 		
 		as.classMetaTags.add("RemoteClass(alias=\"" + model.getCanonicalName() + "\")");
@@ -131,9 +128,9 @@ public class FlexProjectGenerator {
 		as.staticInitializers.add("ro.addObserver.addEventListener(\"result\", Observers.onChannelAdded);");
 		
 		as.staticMethods.put("addObserver", source(
-				"public static function addObserver(observer:Observer):void {",
+				"public static function addObserver(method:String, callback:Function):void {",
 				" ro.addObserver();",
-				" Observers.addObserver(\"{fullType}\", observer);",
+				" Observers.addObserver(\"{fullType}\", method, callback);",
 				"}"
 			).replace("{fullType}", model.getCanonicalName()));
 
@@ -172,7 +169,7 @@ public class FlexProjectGenerator {
 				" }",
 				"}"
 			).replace("{type}", as.simpleName));
-		
+
 
 		as.variables.put("", "public var id:int");
 		for(PropertyDescriptor prop : model.getProperties().values()) {

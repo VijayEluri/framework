@@ -1,5 +1,7 @@
 package org.oobium.persist {
 
+	import com.test.ws.models.RemoteClient;
+	
 	import mx.controls.Alert;
 	import mx.messaging.ChannelSet;
 	import mx.messaging.Consumer;
@@ -15,39 +17,53 @@ package org.oobium.persist {
 		private static var channels:Object = {};
 		private static var observers:Object = {};
 
-		public static function addObserver(className:String, observer:Observer):void {
-			if(className != null || observer != null) {
-				if(observers[className]) {
-					observers[className].push(observer);
+		private static function key(className:String, method:String):String {
+			return className + "::" + method;
+		}
+		
+		public static function addObserver(className:String, method:String, callback:Function):void {
+			if(className != null && method != null && callback != null) {
+				var key:String = key(className, method);
+				if(observers[key]) {
+					observers[key].push(callback);
 				} else {
-					observers[className] = [ observer ];
+					observers[key] = [ callback ];
 				}
 			}
 		}
 
-		public static function onChannelAdded(channelName:String):void {
+		public static function onChannelAdded(event:ResultEvent):void {
+			var channelName:String = event.result as String;
 			if(!channels[channelName]) {
 				var consumer:Consumer = new Consumer();
 				consumer.destination = channelName;
 				
 				var channelSet:ChannelSet = new ChannelSet();
-				channelSet.addChannel(new AMFChannel("my-polling-amf", "{serverUrl}messagebroker/amfpolling"));
+				channelSet.addChannel(new AMFChannel("my-polling-amf", "{serverUrl}/messagebroker/amfpolling"));
 				
 				consumer.channelSet = channelSet;
 				consumer.addEventListener(MessageEvent.MESSAGE, onChannelEvent);
 				consumer.addEventListener(MessageFaultEvent.FAULT, onChannelError);
-				consumer.subscribe();	
+				consumer.subscribe();
 
 				channels[channelName] = consumer;
 			}
 		}
 
-		private static function onChannelError(event:MessageFaultEvent):void {
-			// TODO
+		public static function onChannelError(event:MessageFaultEvent):void {
+			Alert.show("onChannelError");
 		}
 
-		private static function onChannelEvent(event:ResultEvent):void {
-			Alert.show(event.result as String);
+		public static function onChannelEvent(event:MessageEvent):void {
+			var className:String = event.message.headers['class'];
+			var method:String = event.message.headers['method'];
+			var key:String = key(className, method);
+			if(observers[key]) {
+				var id:int = event.message.headers['id'];
+				for each(var f:Function in observers[key]) {
+					f(id);
+				}
+			}
 		}
 
 	}
