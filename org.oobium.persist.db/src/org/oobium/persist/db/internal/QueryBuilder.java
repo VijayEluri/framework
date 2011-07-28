@@ -412,10 +412,18 @@ public class QueryBuilder {
 		String field = query.getField();
 		if(parentAdapter.isThrough(field)) {
 			String through = parentAdapter.getThrough(field);
+			int ix = through.indexOf(':');
+			String throughField;
+			if(ix == -1) {
+				throughField = query.getType().getSimpleName();
+			} else {
+				throughField = through.substring(ix + 1);
+				through = through.substring(0, ix);
+			}
 			if(parentAdapter.isManyToOne(through)) {
 				String table1 = tableName(parentAdapter.getThroughClass(field));
 				String table2 = tableName(query.getType());
-				String safeCol1 = safeSqlWord(columnName(field));
+				String safeCol1 = safeSqlWord(columnName(throughField));
 				String safeCol2 = safeSqlWord(columnName(parentAdapter.getOpposite(through)));
 
 				String table = table1 + " a INNER JOIN " + table2 + " b ON a." + safeCol1 + "=b.id " +

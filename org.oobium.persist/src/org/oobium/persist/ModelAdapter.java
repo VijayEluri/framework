@@ -261,6 +261,8 @@ public class ModelAdapter {
 	public Class<? extends Model> getThroughClass(String field) {
 		String through = getThrough(field);
 		if(through != null) {
+			int ix = through.indexOf(':');
+			if(ix != -1) through = through.substring(0, ix);
 			return getRelationClass(through);
 		}
 		return null;

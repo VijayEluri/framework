@@ -379,7 +379,7 @@ public class QueryBuilderTests {
 		assertEquals(expected, child.getSql());
 	}
 	
-	@ModelDescription(hasMany={@Relation(name="a",type=A11.class,opposite="start"), @Relation(name="b",type=B11.class,through="a")}) class Start11 extends Model { }
+	@ModelDescription(hasMany={@Relation(name="a",type=A11.class,opposite="start"), @Relation(name="b",type=B11.class,through="a:b")}) class Start11 extends Model { }
 	@ModelDescription(hasOne={@Relation(name="start",type=Start11.class,opposite="a")}, hasMany={@Relation(name="b",type=A11.class)}) class A11 extends Model { }
 	@ModelDescription() class B11 extends Model { }
 

@@ -191,4 +191,58 @@ public class RetrieveTests extends BaseDbTestCase {
 		assertEquals(2, ((Collection<?>) b.get("aModels")).size());
 	}
 
+	@Test
+	public void testHasManyToMany_Through_ImpliedField() throws Exception {
+		DynModel am = DynClasses.getModel(pkg, "AModel").timestamps()
+			.addHasMany("bModels", "BModel.class", "opposite=\"aModel\"")
+			.addHasMany("cModels", "CModel.class", "through=\"bModels\"");
+		DynModel bm = DynClasses.getModel(pkg, "BModel").timestamps().addHasOne("aModel", "AModel.class", "opposite=\"bModels\"").addHasOne("cModel", "CModel.class", "opposite=\"bModels\"");
+		DynModel cm = DynClasses.getModel(pkg, "CModel").timestamps().addHasMany("bModels", "BModel.class", "opposite=\"cModel\"");
+
+		migrate(am, bm, cm);
+
+		persistService.executeUpdate("INSERT INTO a_models(created_at) VALUES(?)", new Timestamp(System.currentTimeMillis()));
+		persistService.executeUpdate("INSERT INTO c_models(created_at) VALUES(?)", new Timestamp(System.currentTimeMillis()));
+		persistService.executeUpdate("INSERT INTO b_models(a_model,c_model) VALUES(?,?)", 1, 1);
+
+		persistService.executeUpdate("INSERT INTO a_models(created_at) VALUES(?)", new Timestamp(System.currentTimeMillis()));
+		persistService.executeUpdate("INSERT INTO c_models(created_at) VALUES(?)", new Timestamp(System.currentTimeMillis()));
+		persistService.executeUpdate("INSERT INTO b_models(a_model,c_model) VALUES(?,?)", 2, 1);
+		persistService.executeUpdate("INSERT INTO b_models(a_model,c_model) VALUES(?,?)", 2, 2);
+
+		Model a = am.newInstance();
+		a.setId(2);
+
+		assertEquals(2, ((Collection<?>) a.get("bModels")).size());
+
+		assertEquals(2, ((Collection<?>) a.get("cModels")).size());
+	}
+
+	@Test
+	public void testHasManyToMany_Through_ExplicitField() throws Exception {
+		DynModel am = DynClasses.getModel(pkg, "AModel").timestamps()
+			.addHasMany("bModels", "BModel.class", "opposite=\"aModel\"")
+			.addHasMany("cModels", "CModel.class", "through=\"bModels:cModel\"");
+		DynModel bm = DynClasses.getModel(pkg, "BModel").timestamps().addHasOne("aModel", "AModel.class", "opposite=\"bModels\"").addHasOne("cModel", "CModel.class", "opposite=\"bModels\"");
+		DynModel cm = DynClasses.getModel(pkg, "CModel").timestamps().addHasMany("bModels", "BModel.class", "opposite=\"cModel\"");
+
+		migrate(am, bm, cm);
+
+		persistService.executeUpdate("INSERT INTO a_models(created_at) VALUES(?)", new Timestamp(System.currentTimeMillis()));
+		persistService.executeUpdate("INSERT INTO c_models(created_at) VALUES(?)", new Timestamp(System.currentTimeMillis()));
+		persistService.executeUpdate("INSERT INTO b_models(a_model,c_model) VALUES(?,?)", 1, 1);
+
+		persistService.executeUpdate("INSERT INTO a_models(created_at) VALUES(?)", new Timestamp(System.currentTimeMillis()));
+		persistService.executeUpdate("INSERT INTO c_models(created_at) VALUES(?)", new Timestamp(System.currentTimeMillis()));
+		persistService.executeUpdate("INSERT INTO b_models(a_model,c_model) VALUES(?,?)", 2, 1);
+		persistService.executeUpdate("INSERT INTO b_models(a_model,c_model) VALUES(?,?)", 2, 2);
+
+		Model a = am.newInstance();
+		a.setId(2);
+
+		assertEquals(2, ((Collection<?>) a.get("bModels")).size());
+
+		assertEquals(2, ((Collection<?>) a.get("cModels")).size());
+	}
+
 }
