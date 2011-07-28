@@ -95,17 +95,25 @@ public class Eclipse {
 		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
 		IProject project = root.getProject(name);
 		IProgressMonitor monitor = new NullProgressMonitor();
-		try {
-			IProjectDescription description = root.getWorkspace().newProjectDescription(name);
-			description.setLocationURI(location.toURI());
-			project.create(description, monitor);
-			project.open(monitor);
-		} catch(CoreException e1) {
+		if(project.exists()) {
 			try {
-				project.create(monitor);
+				project.refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
+			} catch(CoreException e) {
+				logger.warn(e);
+			}
+		} else {
+			try {
+				IProjectDescription description = root.getWorkspace().newProjectDescription(name);
+				description.setLocationURI(location.toURI());
+				project.create(description, monitor);
 				project.open(monitor);
-			} catch(CoreException e2) {
-				logger.warn(e2);
+			} catch(CoreException e1) {
+				try {
+					project.create(monitor);
+					project.open(monitor);
+				} catch(CoreException e2) {
+					logger.warn(e2);
+				}
 			}
 		}
 	}
