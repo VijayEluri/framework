@@ -856,6 +856,12 @@ public class FileUtils {
 		return null;
 	}
 	
+	public static String[] readLines(String path, String fileName){
+		StringBuilder sb = readFile(path, fileName);
+		String[] lines = sb.toString().split("\n");
+		return lines;
+	}
+	
 	public static byte[] readFile(File file, byte[] buffer) {
 		InputStream in = null;
 		try {
