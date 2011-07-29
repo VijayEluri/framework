@@ -46,6 +46,7 @@ public class ConnectionPart extends AbstractConnectionEditPart {
 	protected IFigure createFigure() {
 		PolylineConnection connection = new PolylineConnection();
 		
+		connection.setLineStyle(getModel().isThrough() ? SWT.LINE_DASH : SWT.LINE_SOLID);
 		connection.setLineWidth(2);
 		connection.setAntialias(SWT.ON);
 

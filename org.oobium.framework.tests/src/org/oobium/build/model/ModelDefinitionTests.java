@@ -76,6 +76,29 @@ public class ModelDefinitionTests {
 	}
 	
 	@Test
+	public void testRelation_HasMany_Through() throws Exception {
+		String description = 
+			"@ModelDescription(\n" +
+			"\thasMany = {\n" +
+			"\t\t@Relation(name=\"others\", type=Other.class),\n" +
+			"\t\t@Relation(name=\"direct\", type=MyModel.class, through=\"others\")\n" +
+			"\t}\n" +
+			")";
+		
+		String source = description + "\npublic class TestModel {\n\n}";
+		
+		File file = writeFile(File.createTempFile("test", null), source);
+		
+		ModelDefinition definition = new ModelDefinition(file);
+		System.out.println(definition.getDescription());
+		assertEquals(description, definition.getDescription());
+
+		definition.save();
+		System.out.println(readFile(file));
+		assertEquals(description, new ModelDefinition(file).getDescription());
+	}
+	
+	@Test
 	public void testCombined() throws Exception {
 		String description = 
 			"@ModelDescription(\n" +

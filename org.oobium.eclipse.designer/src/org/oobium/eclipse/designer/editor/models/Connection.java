@@ -15,8 +15,11 @@ public class Connection {
 	
 	private ModelElement sourceModel;
 	private String sourceField;
+	private boolean isThrough;
+	
 	private ModelElement targetModel;
 	private String targetField;
+	
 	private boolean connected;
 
 	public Connection(ModelElement sourceModel, String sourceField, ModelElement targetModel) {
@@ -38,6 +41,7 @@ public class Connection {
 	public void reconnect() {
 		if(!connected) {
 			sourceModel.addConnection(this);
+			isThrough = sourceModel.getDefinition().isThrough(sourceField);
 			targetModel.addConnection(this);
 			connected = true;
 		}
@@ -73,6 +77,10 @@ public class Connection {
 	
 	public String getTargetField() {
 		return (targetField != null) ? targetField : "";
+	}
+	
+	public boolean isThrough() {
+		return isThrough;
 	}
 	
 }
