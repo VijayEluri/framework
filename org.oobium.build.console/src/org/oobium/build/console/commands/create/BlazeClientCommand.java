@@ -13,6 +13,7 @@ package org.oobium.build.console.commands.create;
 import java.io.File;
 
 import org.oobium.build.clients.blazeds.BlazeProjectGenerator;
+import org.oobium.build.clients.blazeds.FlexProjectGenerator;
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
@@ -37,15 +38,23 @@ public class BlazeClientCommand extends BuilderCommand {
 		
 		try {
 			BlazeProjectGenerator blaze = new BlazeProjectGenerator(workspace, module);
-			blaze.setExportFlex(true);
 			blaze.setForce(true);
 			blaze.create();
 			
 			File blazeProject = blaze.getProject();
 			console.out.println("created blaze client project <a href=\"open file " + blazeProject + "\">" + blazeProject.getName() + "</a>");
 
-			File flexProject = blaze.getFlexProject();
+
+			FlexProjectGenerator flex = new FlexProjectGenerator(module);
+			if(hasParam("flexsdk")) {
+				flex.setFlexSdk(param("flexsdk"));
+			}
+			flex.setForce(true);
+			flex.create();
+			
+			File flexProject = flex.getProject();
 			console.out.println("created blaze flex client project <a href=\"open file " + flexProject + "\">" + flexProject.getName() + "</a>");
+			
 			
 			Eclipse.importProjects(blazeProject, flexProject);
 		} catch(Exception e) {

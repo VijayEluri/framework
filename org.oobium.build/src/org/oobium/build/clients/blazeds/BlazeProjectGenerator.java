@@ -31,9 +31,6 @@ public class BlazeProjectGenerator {
 	private final Module module;
 	private final File project;
 	
-	private boolean exportFlex;
-	private File flexProject;
-	
 	private boolean force;
 	
 	public BlazeProjectGenerator(Workspace workspace, Module module) {
@@ -108,12 +105,6 @@ public class BlazeProjectGenerator {
 			File jar = new File(createFolder(project, "lib"), name);
 			copy(getClass().getResourceAsStream("/lib/blazeds/" + name), jar);
 			target.addBuildPath("lib/" + name, "lib");
-		}
-
-		if(exportFlex) {
-			FlexProjectGenerator flexGen = new FlexProjectGenerator(module, flexProject);
-			flexGen.setForce(force);
-			flexProject = flexGen.create();
 		}
 	}
 
@@ -899,20 +890,8 @@ public class BlazeProjectGenerator {
 			).replace("{name}", name).replace("{description}", description));
 	}
 
-	public File getFlexProject() {
-		return flexProject;
-	}
-	
 	public File getProject() {
 		return project;
-	}
-	
-	public void setExportFlex(boolean exportFlex) {
-		this.exportFlex = exportFlex;
-	}
-	
-	public void setFlexProject(File project) {
-		this.flexProject = project;
 	}
 	
 	public void setForce(boolean force) {

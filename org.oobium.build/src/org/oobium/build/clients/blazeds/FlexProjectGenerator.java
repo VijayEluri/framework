@@ -7,19 +7,53 @@ import static org.oobium.utils.FileUtils.*;
 import static org.oobium.utils.StringUtils.*;
 
 import java.io.File;
+import java.math.BigDecimal;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import org.oobium.build.gen.model.PropertyDescriptor;
 import org.oobium.build.model.ModelDefinition;
 import org.oobium.build.util.MethodCreator;
 import org.oobium.build.workspace.Module;
+import org.oobium.persist.Binary;
+import org.oobium.persist.Text;
 
 public class FlexProjectGenerator {
 
+	private static final Map<String, String> flexTypes;
+	static {
+		flexTypes = new HashMap<String, String>();
+		flexTypes.put(Binary.class.getCanonicalName(),			null);
+		flexTypes.put(byte[].class.getCanonicalName(),			null);
+		flexTypes.put(String.class.getCanonicalName(),			"String");
+		flexTypes.put(Text.class.getCanonicalName(),			"String");
+		flexTypes.put(Integer.class.getCanonicalName(),			"int");
+		flexTypes.put(int.class.getCanonicalName(),				"int");
+		flexTypes.put(Float.class.getCanonicalName(),			"Number");
+		flexTypes.put(float.class.getCanonicalName(),			"Number");
+		flexTypes.put(Long.class.getCanonicalName(), 			"int");
+		flexTypes.put(long.class.getCanonicalName(), 			"int");
+		flexTypes.put(Boolean.class.getCanonicalName(), 		"Boolean");
+		flexTypes.put(boolean.class.getCanonicalName(), 		"Boolean");
+		flexTypes.put(Double.class.getCanonicalName(), 			"Number");
+		flexTypes.put(double.class.getCanonicalName(), 			"Number");
+		flexTypes.put(Date.class.getCanonicalName(), 			"Date");
+		flexTypes.put(java.sql.Date.class.getCanonicalName(),	"Date");
+		flexTypes.put(Time.class.getCanonicalName(),			"Date");
+		flexTypes.put(Timestamp.class.getCanonicalName(),		"Date");
+		flexTypes.put(BigDecimal.class.getCanonicalName(),		"Number");
+	}
+
+	
 	private final Module module;
 	private final File project;
 	
 	private boolean force;
+	private String flexSdk;
 	
 	public FlexProjectGenerator(Module module) {
 		this(module, null);
@@ -53,10 +87,13 @@ public class FlexProjectGenerator {
 			createModel(src, file);
 		}
 
-		createProjectFile();
 		createActionScriptPropertiesFile();
 		createFlexLibPropertiesFile();
 		createPrefsFile();
+		createProjectFile();
+		if(flexSdk != null) {
+			createExternalToolBuilderFile();
+		}
 
 		return project;
 	}
@@ -87,6 +124,20 @@ public class FlexProjectGenerator {
 				" <flashCatalyst validateFlashCatalystCompatibility=\"false\"/>",
 				"</actionScriptProperties>"
 			).replace("{path}", path).replace("{uuid}", uuid));
+	}
+	
+	private void createExternalToolBuilderFile() {
+		writeFile(project, ".externalToolBuilders/Flex_Builder.launch", source(
+				"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>",
+				"<launchConfiguration type=\"org.eclipse.ui.externaltools.ProgramBuilderLaunchConfigurationType\">",
+				" <booleanAttribute key=\"org.eclipse.debug.ui.ATTR_LAUNCH_IN_BACKGROUND\" value=\"true\"/>",
+				" <stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_LOCATION\" value=\"{flexSdk}/bin/compc\"/>",
+				" <stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_RUN_BUILD_KINDS\" value=\"full,\"/>",
+				" <stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_TOOL_ARGUMENTS\" value=\"-source-path=src/&#10;-include-sources=src/&#10;-output=bin/{module}.swc\"/>",
+				" <booleanAttribute key=\"org.eclipse.ui.externaltools.ATTR_TRIGGERS_CONFIGURED\" value=\"true\"/>",
+				" <stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_WORKING_DIRECTORY\" value=\"${workspace_loc:/{project}}\"/>",
+				"</launchConfiguration>"
+			).replace("{flexSdk}", flexSdk).replace("{module}", module.name).replace("{project}", project.getName()));
 	}
 	
 	private void createFlexLibPropertiesFile() {
@@ -170,8 +221,12 @@ public class FlexProjectGenerator {
 			if(prop.hasMany()) {
 				as.imports.add("mx.collections.ArrayCollection");
 				as.variables.put(prop.variable(), "public var " + prop.variable() + ":ArrayCollection");
-			} else {
+			}
+			else if(prop.hasOne()) {
 				as.variables.put(prop.variable(), "public var " + prop.variable() + ":" + prop.castType());
+			}
+			else {
+				as.variables.put(prop.variable(), "public var " + prop.variable() + ":" + flexType(prop.fullType()));
 			}
 		}
 
@@ -230,26 +285,41 @@ public class FlexProjectGenerator {
 	}
 	
 	private void createProjectFile() {
-		writeFile(project, ".project",
-				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-				"<projectDescription>\n" +
-				" <name>" + project.getName() + "</name>\n" +
-				" <comment></comment>\n" +
-				" <projects>\n" +
-				" </projects>\n" +
-				" <buildSpec>\n" +
-				"  <buildCommand>\n" +
+		String builder;
+		if(flexSdk == null) {
+			builder = 
 				"   <name>com.adobe.flexbuilder.project.flexbuilder</name>\n" +
 				"   <arguments>\n" +
-				"   </arguments>\n" +
-				"  </buildCommand>\n" +
-				" </buildSpec>\n" +
-				" <natures>\n" +
-				"  <nature>com.adobe.flexbuilder.project.flexlibnature</nature>\n" +
-				"  <nature>com.adobe.flexbuilder.project.actionscriptnature</nature>\n" +
-				" </natures>\n" +
-				"</projectDescription>\n"
-			);
+				"   </arguments>\n";
+		} else {
+			builder = 
+				"   <name>org.eclipse.ui.externaltools.ExternalToolBuilder</name>\n" +
+				"   <triggers>auto,full,incremental,</triggers>\n" +
+				"   <arguments>\n" +
+				"    <dictionary>\n" +
+				"     <key>LaunchConfigHandle</key>\n" +
+				"     <value>&lt;project&gt;/.externalToolBuilders/Flex_Builder.launch</value>\n" +
+				"    </dictionary>\n" +
+				"   </arguments>";
+		}
+		writeFile(project, ".project", source(
+				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+				"<projectDescription>",
+				" <name>{project}</name>",
+				" <comment></comment>",
+				" <projects>",
+				" </projects>",
+				" <buildSpec>",
+				"  <buildCommand>",
+				builder +
+				"  </buildCommand>",
+				" </buildSpec>",
+				" <natures>",
+				"  <nature>com.adobe.flexbuilder.project.flexlibnature</nature>",
+				"  <nature>com.adobe.flexbuilder.project.actionscriptnature</nature>",
+				" </natures>",
+				"</projectDescription>"
+			).replace("{project}", project.getName()).replace("{builder}", builder));
 	}
 	
 	private void createUserSession(File srcFolder){
@@ -311,6 +381,22 @@ public class FlexProjectGenerator {
 		as.addMethod(m6);
 		
 		writeFile(srcFolder, as.getFilePath(), as.toSource());
+	}
+	
+	private String flexType(String javaType) {
+		String flexType = flexTypes.get(javaType);
+		if(flexType == null) {
+			return "!unknown type: " + javaType + "!";
+		}
+		return flexType;
+	}
+	
+	public File getProject() {
+		return project;
+	}
+	
+	public void setFlexSdk(String flexSdk) {
+		this.flexSdk = flexSdk;
 	}
 	
 	public void setForce(boolean force) {

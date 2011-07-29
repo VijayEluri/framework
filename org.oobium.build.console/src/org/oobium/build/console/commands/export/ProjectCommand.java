@@ -29,23 +29,27 @@ public class ProjectCommand extends ApplicationCommand {
 			super.run();
 		}
 		else if(project instanceof BlazeApp) {
+			if(!hasParam("turnkey")) {
+				console.err.println("location of the blaze turnkey zip not specified (usage: export turnkey:<path/to/zip>)");
+				return;
+			}
+			File turnkeyZip = new File(param("turnkey"));
+			if(!turnkeyZip.isFile()) {
+				console.err.println("blaze turnkey zip cannot be found");
+				return;
+			}
+
 			Workspace ws = getWorkspace();
 			BlazeApp blaze = (BlazeApp) project;
-
+			
 			try {
 				long start = System.currentTimeMillis();
 
 				ws.cleanExport();
 
-				File blazeZip = new File("c:\\Users\\jeremyd\\BlazeDS\\blazeds-turnkey-3.3.0.20931.zip");
-				if(!blazeZip.isFile()) {
-					console.err.println("blaze turnkey zip cannot be found");
-					return;
-				}
-
 				File wd = new File(ws.getExportDir(), "blaze-server");
 	
-				FileUtils.extract(blazeZip, wd);
+				FileUtils.extract(turnkeyZip, wd);
 				
 				File tomcat = new File(wd, "tomcat");
 				File installDir = new File(tomcat, "webapps");
