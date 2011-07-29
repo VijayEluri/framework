@@ -635,6 +635,18 @@ public class ModelDefinition {
 		return !hasOne.isEmpty() || !hasMany.isEmpty();
 	}
 	
+	public boolean isThrough(String field) {
+		ModelRelation relation = hasOne.get(field);
+		if(relation != null) {
+			return relation.isThrough();
+		}
+		relation = hasMany.get(field);
+		if(relation != null) {
+			return relation.isThrough();
+		}
+		return false;
+	}
+	
 	public void load() {
 		attributes.clear();
 		hasOne.clear();
