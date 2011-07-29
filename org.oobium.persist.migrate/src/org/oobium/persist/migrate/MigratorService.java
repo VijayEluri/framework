@@ -20,6 +20,7 @@ import java.util.List;
 import org.oobium.app.AppService;
 import org.oobium.app.routing.Router;
 import org.oobium.app.workers.Worker;
+import org.oobium.logging.Logger;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.migrate.controllers.MigrateController;
 import org.oobium.persist.migrate.controllers.PurgeController;
@@ -202,8 +203,7 @@ public abstract class MigratorService extends AppService {
 					for(int i = cix + 1; i <= tix; i++) {
 						String name = names.get(i);
 						if(!migrated.contains(name)) {
-							Migration migration = migrations.get(i).newInstance();
-							migration.setService(mservice);
+							Migration migration = createMigration(migrations.get(i), mservice);
 							migration.up();
 							commit();
 							setMigrated(name, true);
@@ -214,8 +214,7 @@ public abstract class MigratorService extends AppService {
 					for(int i = cix; i >= tix; i--) {
 						String name = names.get(i);
 						if(migrated.contains(name)) {
-							Migration migration = migrations.get(i).newInstance();
-							migration.setService(mservice);
+							Migration migration = createMigration(migrations.get(i), mservice);
 							migration.down();
 							commit();
 							setMigrated(name, false);
@@ -238,11 +237,10 @@ public abstract class MigratorService extends AppService {
 		addMigrations(migrations);
 		try {
 			setAutoCommit(false);
+			MigrationService mservice = getMigrationService();
 			for(int i = 0; i < migrations.size(); i++) {
-				Migration migration = migrations.get(i).newInstance();
+				Migration migration = createMigration(migrations.get(i), mservice);
 				if(name.equals(migration.getClass().getSimpleName())) {
-					migration.setLogger(logger);
-					migration.setService(getMigrationService());
 					if(up) {
 						migration.up();
 						commit();
@@ -285,8 +283,7 @@ public abstract class MigratorService extends AppService {
 				for(int i = 0; i < step && ix >= 0; i++, ix--) {
 					String name = names.get(ix);
 					if(migrated.contains(name)) {
-						Migration migration = migrations.get(i).newInstance();
-						migration.setService(mservice);
+						Migration migration = createMigration(migrations.get(i), mservice);
 						migration.down();
 						commit();
 						setMigrated(name, false);
@@ -295,8 +292,7 @@ public abstract class MigratorService extends AppService {
 				}
 				for(int i = ix + 1; i <= cix; i++) {
 					String name = names.get(i);
-					Migration migration = migrations.get(i).newInstance();
-					migration.setService(mservice);
+					Migration migration = createMigration(migrations.get(i), mservice);
 					migration.up();
 					commit();
 					setMigrated(name, true);
@@ -310,6 +306,13 @@ public abstract class MigratorService extends AppService {
 				setCurrentMigration(migratedName);
 			}
 		}
+	}
+	
+	private Migration createMigration(Class<? extends Migration> clazz, MigrationService service) throws InstantiationException, IllegalAccessException {
+		Migration migration = clazz.newInstance();
+		migration.setLogger(logger);
+		migration.setService(service);
+		return migration;
 	}
 	
 	public synchronized String migrateRollback() throws SQLException {
@@ -335,8 +338,7 @@ public abstract class MigratorService extends AppService {
 				for(int i = 0; i < step && ix >= 0; i++, ix--) {
 					String name = names.get(ix);
 					if(migrated.contains(name)) {
-						Migration migration = migrations.get(i).newInstance();
-						migration.setService(mservice);
+						Migration migration = createMigration(migrations.get(i), mservice);
 						migration.down();
 						commit();
 						setMigrated(name, false);
