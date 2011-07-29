@@ -1,7 +1,5 @@
 package org.oobium.persist {
 
-	import com.test.ws.models.RemoteClient;
-	
 	import mx.controls.Alert;
 	import mx.messaging.ChannelSet;
 	import mx.messaging.Consumer;
