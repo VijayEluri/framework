@@ -241,6 +241,7 @@ public abstract class MigratorService extends AppService {
 			for(int i = 0; i < migrations.size(); i++) {
 				Migration migration = migrations.get(i).newInstance();
 				if(name.equals(migration.getClass().getSimpleName())) {
+					migration.setLogger(logger);
 					migration.setService(getMigrationService());
 					if(up) {
 						migration.up();

@@ -19,6 +19,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
+import org.oobium.logging.Logger;
 import org.oobium.persist.migrate.defs.Change;
 import org.oobium.persist.migrate.defs.Column;
 import org.oobium.persist.migrate.defs.Index;
@@ -34,6 +35,7 @@ import org.oobium.persist.migrate.defs.columns.ForeignKey;
 
 public abstract class AbstractMigration implements Migration {
 
+	protected Logger logger;
 	private MigrationService service;
 	
 
@@ -385,6 +387,11 @@ public abstract class AbstractMigration implements Migration {
 
 	private MigrationService getService() {
 		return service;
+	}
+	
+	@Override
+	public void setLogger(Logger logger) {
+		this.logger = logger;
 	}
 	
 	@Override
