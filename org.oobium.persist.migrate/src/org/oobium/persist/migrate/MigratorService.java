@@ -20,7 +20,6 @@ import java.util.List;
 import org.oobium.app.AppService;
 import org.oobium.app.routing.Router;
 import org.oobium.app.workers.Worker;
-import org.oobium.logging.Logger;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.migrate.controllers.MigrateController;
 import org.oobium.persist.migrate.controllers.PurgeController;
@@ -74,9 +73,12 @@ public abstract class MigratorService extends AppService {
 		instance = this;
 	}
 	
-	public Config getConfig() {
-		return appConfig;
-	}
+	/**
+	 * Add all of your migrations here. They will be run in the
+	 * order that they are added.
+	 * @param migrations
+	 */
+	public abstract void addMigrations(Migrations migrations);
 	
 	@Override
 	public void addRoutes(Config config, Router router) {
@@ -95,6 +97,29 @@ public abstract class MigratorService extends AppService {
 		}
 	}
 
+	protected abstract void commit() throws SQLException;
+	
+	private Migration createMigration(Class<? extends Migration> clazz, MigrationService service) throws InstantiationException, IllegalAccessException {
+		Migration migration = clazz.newInstance();
+		migration.setLogger(logger);
+		migration.setService(service);
+		return migration;
+	}
+	
+	protected void createSystemAttrs() {
+		try {
+			Table systemAttrs = new Table(getMigrationService(), "system_attrs");
+			systemAttrs.add(new Column(Column.STRING, "name"));
+			systemAttrs.add(new Column(Column.STRING, "detail"));
+			systemAttrs.add(new Column(Column.TEXT, "data"));
+			systemAttrs.create();
+			systemAttrs.addUniqueIndex("name", "detail");
+			systemAttrs.update();
+		} catch(SQLException e) {
+			logger.error(e);
+		}
+	}
+	
 	private Bundle getBundle(String symbolicName) {
 		ServiceReference ref = context.getServiceReference(PackageAdmin.class.getName());
 		if(ref == null) {
@@ -111,16 +136,13 @@ public abstract class MigratorService extends AppService {
 		}
 	}
 	
+	public Config getConfig() {
+		return appConfig;
+	}
+
 	protected abstract String getCurrentMigration();
 	
 	protected abstract List<String> getMigrated();
-	
-	/**
-	 * Add all of your migrations here. They will be run in the
-	 * order that they are added.
-	 * @param migrations
-	 */
-	public abstract void addMigrations(Migrations migrations);
 	
 	public MigrationService getMigrationService() {
 		if(msTracker == null) {
@@ -147,7 +169,7 @@ public abstract class MigratorService extends AppService {
 		}
 		throw new IllegalStateException("MigrationService is not present - Migration cannot proceed");
 	}
-
+	
 	@Override
 	public String getPersistClientName() {
 //		if(isActive()) {
@@ -155,7 +177,6 @@ public abstract class MigratorService extends AppService {
 //		}
 		return appName + "_" + appVersion;
 	}
-	
 	@Override
 	protected Config loadConfiguration() {
 		return new Config(Map(
@@ -164,14 +185,9 @@ public abstract class MigratorService extends AppService {
 				e(Config.PORT, "5001")
 			));
 	}
-	
 	public synchronized String migrate() throws SQLException {
 		return migrate(null);
 	}
-	
-	protected abstract void setAutoCommit(boolean autoCommit) throws SQLException;
-	protected abstract void commit() throws SQLException;
-	protected abstract void rollback() throws SQLException;
 	
 	public synchronized String migrate(String to) throws SQLException {
 		Migrations migrations = new Migrations();
@@ -308,13 +324,6 @@ public abstract class MigratorService extends AppService {
 		}
 	}
 	
-	private Migration createMigration(Class<? extends Migration> clazz, MigrationService service) throws InstantiationException, IllegalAccessException {
-		Migration migration = clazz.newInstance();
-		migration.setLogger(logger);
-		migration.setService(service);
-		return migration;
-	}
-	
 	public synchronized String migrateRollback() throws SQLException {
 		return migrateRollback(1);
 	}
@@ -355,19 +364,9 @@ public abstract class MigratorService extends AppService {
 		}
 	}
 	
-	protected void createSystemAttrs() {
-		try {
-			Table systemAttrs = new Table(getMigrationService(), "system_attrs");
-			systemAttrs.add(new Column(Column.STRING, "name"));
-			systemAttrs.add(new Column(Column.STRING, "detail"));
-			systemAttrs.add(new Column(Column.TEXT, "data"));
-			systemAttrs.create();
-			systemAttrs.addUniqueIndex("name", "detail");
-			systemAttrs.update();
-		} catch(SQLException e) {
-			logger.error(e);
-		}
-	}
+	protected abstract void rollback() throws SQLException;
+	
+	protected abstract void setAutoCommit(boolean autoCommit) throws SQLException;
 	
 	protected abstract void setCurrentMigration(String current) throws SQLException;
 	
