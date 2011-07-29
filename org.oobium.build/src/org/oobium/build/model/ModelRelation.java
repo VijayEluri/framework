@@ -161,7 +161,10 @@ public class ModelRelation {
 		sb.append("name=\"").append(name).append("\"");
 		sb.append(", type=").append(getSimpleType()).append(".class");
 		if(hasOpposite()) {
-			sb.append(", opposite=\"").append(opposite).append("\"");
+			sb.append(", opposite=\"").append(opposite).append('"');
+		}
+		if(isThrough()) {
+			sb.append(", through=\"").append(through).append('"');
 		}
 		sb.append(')');
 		return sb.toString();
