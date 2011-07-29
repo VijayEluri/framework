@@ -61,12 +61,6 @@ public class FlexProjectGenerator {
 		return project;
 	}
 	
-	private void createObserversFile(File src) {
-		String source = getResourceAsString(getClass(), "Observers.as");
-		source = source.replace("{serverUrl}", "http://localhost:8400"); // TODO server URL
-		writeFile(src, "org/oobium/persist/Observers.as", source);
-	}
-	
 	private void createActionScriptPropertiesFile() {
 		String path = project.getName() + ".as";
 		String uuid = UUID.randomUUID().toString();
@@ -94,7 +88,7 @@ public class FlexProjectGenerator {
 				"</actionScriptProperties>"
 			).replace("{path}", path).replace("{uuid}", uuid));
 	}
-
+	
 	private void createFlexLibPropertiesFile() {
 		writeFile(project, ".flexLibProperties", source(
 				"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>",
@@ -219,6 +213,12 @@ public class FlexProjectGenerator {
 		));
 		
 		writeFile(srcFolder, as.getFilePath(), as.toSource());
+	}
+
+	private void createObserversFile(File src) {
+		String source = getResourceAsString(getClass(), "Observers.as");
+		source = source.replace("{serverUrl}", "http://localhost:8400"); // TODO server URL
+		writeFile(src, "org/oobium/persist/Observers.as", source);
 	}
 	
 	private void createPrefsFile() {
