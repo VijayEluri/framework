@@ -62,8 +62,18 @@ public class AppServer implements BundleActivator {
 
 	private void removeShutdownHook() {
 		if(shutdownHook != null) {
-			Runtime.getRuntime().removeShutdownHook(shutdownHook);
-			shutdownHook = null;
+			Thread hook;
+			synchronized(AppServer.class) {
+				hook = shutdownHook;
+				shutdownHook = null;
+			}
+			if(hook != null) {
+				try {
+					Runtime.getRuntime().removeShutdownHook(shutdownHook);
+				} catch(IllegalStateException e) {
+					// discard - virtual machine is shutting down anyway
+				}
+			}
 		}
 	}
 	
