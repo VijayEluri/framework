@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="init()">
+	<mx:Script>
+		
+		<![CDATA[
+			import {fullType};
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.Panel;
+			import mx.containers.VBox;
+			import mx.controls.Alert;
+			import mx.controls.Button;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			
+			[Bindable]
+			private var daoData:ArrayCollection;
+			private var panel:Panel;
+			private var idTextValue:Label;
+			private var nameTextBox:TextInput;
+			private var descriptionTextBox:TextInput;
+			private var myObject:{type};
+			
+			private function init():void {
+				panel = new Panel();
+				panel.title = "Test Object Editor";
+				panel.width = 240;
+				panel.height = 180;
+				
+				idTextValue = new Label();
+				nameTextBox = new TextInput();
+				descriptionTextBox = new TextInput();
+				
+				var idHBox:HBox = new HBox();
+				var nameHBox:HBox = new HBox();
+				var descHBox:HBox = new HBox();
+				var buttonHBox:HBox = new HBox();
+				
+				//ID Row
+				var idLabel:Label = new Label();
+				idLabel.text = "ID:";
+				
+				idHBox.addChild(idLabel);
+				idHBox.addChild(idTextValue);
+				
+				//Name Row
+				var nameLabel:Label = new Label();
+				nameLabel.text = "Name:";
+				
+				nameHBox.addChild(nameLabel);
+				nameHBox.addChild(nameTextBox);
+				
+				//Description Row
+				var descLabel:Label = new Label();
+				descLabel.text = "Description:";
+				descHBox.addChild(descLabel);
+				descHBox.addChild(descriptionTextBox);
+				
+				//Button Row
+				var closeButton:Button = new Button();
+				closeButton.label = "Cancel";
+				closeButton.addEventListener(MouseEvent.CLICK, closePopUp);
+				
+				var updateButton:Button = new Button();
+				updateButton.label = "Update";
+				updateButton.addEventListener(MouseEvent.CLICK, updateObject);
+				
+				var deleteButton:Button = new Button();
+				deleteButton.label = "Delete";
+				deleteButton.addEventListener(MouseEvent.CLICK, destroyObject);
+				
+				//Add children
+				buttonHBox.addChild(updateButton);
+				buttonHBox.addChild(deleteButton);
+				buttonHBox.addChild(closeButton);
+				
+				panel.addChild(idHBox);
+				panel.addChild(nameHBox);
+				panel.addChild(descHBox);
+				panel.addChild(buttonHBox);
+			}
+			
+			
+			
+			public function create(objName:String):void{
+				var object:{type} = new {type}();
+				if(objName.length < 1){
+					object.name = "new {type}";
+				} else {
+					object.name = objName;
+				}
+				object.save(createCallBack);
+			}
+			
+			public function updateObject(evt:MouseEvent):void {
+				myObject.name = nameTextBox.text;
+				
+				myObject.save(saveCallBack);
+				Alert.show("Object Updated!");
+				closePanel();
+				{type}.findAll("*", gridCallBack);
+			}
+			
+			private function editObject(obj:{type}): void {
+				myObject = obj;
+				idTextValue.text = obj.id.toString();
+				nameTextBox.text = obj.name;
+				
+				PopUpManager.addPopUp(panel, this, true);
+				PopUpManager.centerPopUp(panel);	
+			}
+			
+			private function destroyObject(evt:MouseEvent):void {
+				destroyFunction();
+			}
+			
+			private function destroyFunction():void {
+				myObject.destroy();
+				closePanel();
+				{type}.findAll("*", gridCallBack);	
+			}
+			
+			private function closePopUp(evt:MouseEvent):void {
+				closePanel();
+			}
+			
+			private function closePanel():void {
+				PopUpManager.removePopUp(panel);
+			}
+			
+			public function createCallBack(event:ResultEvent):void
+			{
+				var obj:{type} = event.result as {type};
+				showObject("Test Object", obj);
+			}
+			
+			public function findCallBack(event:ResultEvent):void {
+				var obj:{type} = event.result as {type};
+				if(obj != null) {
+					showObject("TestObject found", obj);
+				} else {
+					Alert.show("TestObject not found");
+				}
+			}
+			
+			public function saveCallBack(event:ResultEvent):void {
+				var obj:{type} = event.result as {type};
+				if(obj != null) {
+					showObject("TestObject saved", obj);
+					{type}.findAll("*", gridCallBack);
+				} else {
+					Alert.show("TestObject not saved");
+				}
+			}
+			
+			public function gridCallBack(event:ResultEvent):void
+			{
+				daoData = event.result as ArrayCollection;
+			}
+			
+			private function onItemClick(e:ListEvent): void {
+				if(e.itemRenderer.data is {type}){
+					var obj:{type} = e.itemRenderer.data as {type};
+					editObject(obj);
+				}
+			}
+			
+			public function findById(objectId:String):void{
+				if(objectId.length < 1 || isNaN(parseInt(objectId))){
+					Alert.show("TestObject id="+objectId+" is invalid");	
+				} else {
+					{type}.find(parseInt(objectId), findCallBack);
+				}
+			}
+			
+			public function findByString(criteria:String):void{
+				if(criteria.length < 1){
+					Alert.show("TestObject Search String is null");	
+				} else {
+					{type}.find(criteria, findCallBack);
+				}
+			}
+			
+			private function showObject(text:String, obj:{type}):void {
+				Alert.show(text+": id="+obj.id+", name="+obj.name);
+			}
+			
+			private function afterCreate(id:int):void {
+				{type}.find(id, findCallBack);
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:DataGrid dataProvider="{daoData}" width="100%" height="100%" itemClick="onItemClick(event);">
+		<mx:columns> 
+			<mx:DataGridColumn dataField="id" /> 
+			<mx:DataGridColumn dataField="name" /> 
+			<mx:DataGridColumn dataField="description" /> 
+		</mx:columns>
+	</mx:DataGrid>
+	
+	
+	
+	<mx:HBox>
+		<mx:Label text="Object Name:"/>
+		<mx:TextInput id="objectName"/>
+		<mx:Button label="Create" click="create(objectName.text)"/>
+	</mx:HBox>
+	
+	<mx:HBox>
+		<mx:Label text="Object Id:"/>
+		<mx:TextInput id="objectId"/>
+		<mx:Button label="Find(id:int)" click="findById(objectId.text)"/>
+	</mx:HBox>
+	
+	<mx:HBox>
+		<mx:Label text="Search by Name:"/>
+		<mx:TextInput id="objectCriteria"/>
+		<mx:Button label="Find(criteria:String)" click="findByString(objectCriteria.text)"/>
+	</mx:HBox>
+	
+	<mx:Button label="FindAll()" click="{type}.findAll('*', gridCallBack);"/>
+	<mx:HBox>
+		<mx:TextInput id="findAllCriteria"/>
+		<mx:Button label="FindAll(criteria:String)" click="{type}.findAll(findAllCriteria.text, gridCallBack);"/>
+	</mx:HBox>
+	
+	<mx:Button label="addObserver()" click="{type}.addObserver('afterCreate', afterCreate);"/>
+	
+</mx:Application>
+
