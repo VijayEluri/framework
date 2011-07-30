@@ -470,6 +470,10 @@ public class ModelDefinition {
 		return file;
 	}
 
+	public File getFile(File srcFolder) {
+		return new File(srcFolder, getPackageName().replace('.', File.separatorChar) + "/" + getSimpleName());
+	}
+	
 	public List<String> getIndexes() {
 		return indexes;
 	}
