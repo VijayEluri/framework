@@ -482,7 +482,7 @@ public class ModelDefinition {
 			}
 		}
 		String folder = getPackageName().replace('.', File.separatorChar);
-		return new File(srcFolder, folder + "/" + name);
+		return new File(srcFolder, folder + File.separator + name);
 	}
 	
 	public List<String> getIndexes() {
