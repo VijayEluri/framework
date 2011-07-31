@@ -394,9 +394,7 @@ public class ConsoleView extends ViewPart {
 		
 		super.init(site);
 		
-		if(project == null) {
-			setSelection(getSite().getPage().getSelection());
-		}
+		setSelection(getSite().getPage().getSelection());
 		
 		getSite().getPage().addSelectionListener(/*JavaUI.ID_PACKAGES, */explorerListener = new ISelectionListener() {
 			@Override
