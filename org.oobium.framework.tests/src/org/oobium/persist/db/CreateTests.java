@@ -294,4 +294,32 @@ public class CreateTests extends BaseDbTestCase {
 		verify(b2, never()).create();
 	}
 
+	@Test
+	public void testHasManyToMany_Through() throws Exception {
+		DynModel am = DynClasses.getModel(pkg, "AModel").timestamps()
+			.addHasMany("bModels", "BModel.class", "opposite=\"aModel\"")
+			.addHasMany("cModels", "CModel.class", "through=\"bModels:cModel\"");
+		DynModel bm = DynClasses.getModel(pkg, "BModel").timestamps()
+			.addHasOne("aModel", "AModel.class", "opposite=\"bModels\"")
+			.addHasOne("cModel", "CModel.class", "opposite=\"bModels\"");
+		DynModel cm = DynClasses.getModel(pkg, "CModel").timestamps()
+			.addHasMany("bModels", "BModel.class", "opposite=\"cModel\"");
+	
+		migrate(am, bm, cm);
+
+		Model c1 = spy(cm.newInstance());
+		Model c2 = spy(cm.newInstance());
+		Model a = am.newInstance();
+		a.set("cModels", new Model[] { c1, c2 });
+		
+		assertTrue(a.create());
+
+		assertEquals(1, persistService.executeQueryValue("SELECT id from a_models where id=?", 1));
+		assertEquals(1, persistService.executeQueryValue("SELECT id from c_models where id=?", 1));
+		assertEquals(2, count("b_models"));
+
+		verify(c1, never()).create();
+		verify(c2, never()).create();
+	}
+
 }

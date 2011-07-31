@@ -517,8 +517,17 @@ public class SqlUtils {
 	 * @param column
 	 * @return a word that is safe to use in an SQL query
 	 */
-	public static String safeSqlWord(String column) {
-		return reservedWords.contains(column) ? ("\"" + column + "\"") : column;
+	public static String safeSqlWord(int dbType, String column) {
+		if(reservedWords.contains(column)) {
+			switch(dbType) {
+			case DERBY:      return "\"" + column + "\"";
+			case MYSQL:      return "`" + column + "`";
+			case POSTGRESQL: return "\"" + column + "\"";
+			}
+			return "\"" + column + "\"";
+		} else {
+			return column;
+		}
 	}
     
     public static void setObject(PreparedStatement ps, int index, Object object) throws SQLException {
@@ -564,5 +573,11 @@ public class SqlUtils {
 			}
     	}
 	}
+
+	public static final int DERBY		= 1;
+
+	public static final int MYSQL		= 2;
+
+	public static final int POSTGRESQL	= 3;
     
 }

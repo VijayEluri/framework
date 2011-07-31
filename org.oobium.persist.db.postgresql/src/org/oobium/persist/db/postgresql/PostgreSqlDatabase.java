@@ -1,5 +1,6 @@
 package org.oobium.persist.db.postgresql;
 
+import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 
 import java.sql.Connection;
@@ -24,6 +25,9 @@ public class PostgreSqlDatabase extends Database {
 	protected Map<String, Object> initProperties(Map<String, Object> properties) {
 		Map<String, Object> props = new HashMap<String, Object>(properties);
 		Object o = props.get("database");
+		if(blank(o)) {
+			throw new IllegalArgumentException("\"database\" field cannot be blank in persist configuration");
+		}
 		if(o instanceof String) {
 			// unquoted object names in PostgreSQL are folded to lower case
 			//  except when creating the ConnectionPoolDataSource

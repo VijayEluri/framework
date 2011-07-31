@@ -38,6 +38,7 @@ import org.oobium.logging.LogProvider;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
 import org.oobium.persist.db.DbPersistService;
+import org.oobium.utils.SqlUtils;
 import org.oobium.utils.json.JsonUtils;
 
 public class QueryBuilder {
@@ -249,7 +250,7 @@ public class QueryBuilder {
 	}
 
 	private void appendAliasIfNeeded(StringBuilder sb, String field) {
-		String column = safeSqlWord(columnName(field));
+		String column = safeSqlWord(dbType, columnName(field));
 		int ln = column.length();
 		int ix = sb.indexOf(column);
 		while(ix != -1) {
@@ -301,8 +302,8 @@ public class QueryBuilder {
 	
 	private void buildLimitSql(StringBuilder sb) {
 		switch(dbType) {
-		case QueryUtils.DERBY:
-		case QueryUtils.POSTGRESQL:
+		case SqlUtils.DERBY:
+		case SqlUtils.POSTGRESQL:
 			if(offset > 0) {
 				if(offset == 1) {
 					sb.append(" OFFSET 1 ROW");
@@ -318,7 +319,7 @@ public class QueryBuilder {
 				}
 			}
 			break;
-		case QueryUtils.MYSQL:
+		case SqlUtils.MYSQL:
 			if(limit > 0 && offset > 0) {
 				sb.append(" LIMIT ").append(offset).append(',').append(limit);
 			} else if(offset > 0) {
@@ -335,10 +336,10 @@ public class QueryBuilder {
 	private String column(String alias, String field) {
 		String name = columnName(field);
 		if(alias == null) {
-			return safeSqlWord(name);
+			return safeSqlWord(dbType, name);
 		} else {
 			StringBuilder sb = new StringBuilder();
-			sb.append(alias).append('.').append(safeSqlWord(name));
+			sb.append(alias).append('.').append(safeSqlWord(dbType, name));
 			sb.append(' ');
 			sb.append(alias).append('_').append(name);
 			return sb.toString();
@@ -423,8 +424,8 @@ public class QueryBuilder {
 			if(parentAdapter.isManyToOne(through)) {
 				String table1 = tableName(parentAdapter.getThroughClass(field));
 				String table2 = tableName(query.getType());
-				String safeCol1 = safeSqlWord(columnName(throughField));
-				String safeCol2 = safeSqlWord(columnName(parentAdapter.getOpposite(through)));
+				String safeCol1 = safeSqlWord(dbType, columnName(throughField));
+				String safeCol2 = safeSqlWord(dbType, columnName(parentAdapter.getOpposite(through)));
 
 				String table = table1 + " a INNER JOIN " + table2 + " b ON a." + safeCol1 + "=b.id " +
 											"AND a." + safeCol2 + " IN (" + Query.ID_MARKER + ")";
@@ -444,9 +445,9 @@ public class QueryBuilder {
 				String table2 = tableName(class2);
 				String table3 = tableName(query.getType());
 				
-				String safeCol1 = safeSqlWord(col1);
-				String safeCol2 = safeSqlWord(col2);
-				String safeCol3 = safeSqlWord(field);
+				String safeCol1 = safeSqlWord(dbType, col1);
+				String safeCol2 = safeSqlWord(dbType, col2);
+				String safeCol3 = safeSqlWord(dbType, field);
 				
 				String table = table1 + " a INNER JOIN " + table2 + " b0 ON a." + safeCol1 + "=b0.id AND a." + safeCol2 + " IN (" + Query.ID_MARKER + ") " +
 											"INNER JOIN " + table3 + " b ON b0." + safeCol3 + "=b.id";
@@ -458,7 +459,7 @@ public class QueryBuilder {
 			}
 		} else {
 			if(parentAdapter.isManyToOne(field)) {
-				String col = "b." + safeSqlWord(columnName(parentAdapter.getOpposite(field)));
+				String col = "b." + safeSqlWord(dbType, columnName(parentAdapter.getOpposite(field)));
 				columns.add(col + " a_id");
 				addColumns("b", adapter);
 				tables.add(tableName(adapter.getModelClass()) + " b");
@@ -569,10 +570,10 @@ public class QueryBuilder {
 		StringBuilder sb = new StringBuilder();
 		sb.append("LEFT JOIN ").append(includeTable).append(' ').append(alias);
 		if(parentAdapter.isOneToOne(field) && !parentAdapter.hasKey(field)) {
-			String column = safeSqlWord(columnName(parentAdapter.getOpposite(field)));
+			String column = safeSqlWord(dbType, columnName(parentAdapter.getOpposite(field)));
 			sb.append(" ON ").append(alias).append('.').append(column).append('=').append(parentAlias).append(".id");
 		} else {
-			String column = safeSqlWord(columnName(field));
+			String column = safeSqlWord(dbType, columnName(field));
 			sb.append(" ON ").append(parentAlias).append('.').append(column).append('=').append(alias).append(".id");
 		}
 		if(!blank(where)) {

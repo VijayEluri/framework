@@ -19,12 +19,12 @@ import org.oobium.framework.tests.dyn.DynClasses;
 import org.oobium.framework.tests.dyn.DynModel;
 import org.oobium.framework.tests.dyn.SimpleDynClass;
 import org.oobium.persist.db.DbPersistService;
-import org.oobium.persist.db.internal.QueryUtils;
 import org.oobium.persist.migrate.AbstractMigration;
 import org.oobium.persist.migrate.MigrationService;
 import org.oobium.persist.migrate.db.derby.embedded.DerbyEmbeddedMigrationService;
 import org.oobium.persist.migrate.db.mysql.MySqlMigrationService;
 import org.oobium.persist.migrate.db.postgresql.PostgreSqlMigrationService;
+import org.oobium.utils.SqlUtils;
 
 public class MigrateTester {
 
@@ -56,9 +56,9 @@ public class MigrateTester {
 		when(persistor.getConnection()).thenReturn(connection);
 		
 		switch(dbType) {
-		case QueryUtils.DERBY:		migrationService = new DerbyEmbeddedMigrationService(); break;
-		case QueryUtils.MYSQL:		migrationService = new MySqlMigrationService(); break;
-		case QueryUtils.POSTGRESQL:	migrationService = new PostgreSqlMigrationService(); break;
+		case SqlUtils.DERBY:		migrationService = new DerbyEmbeddedMigrationService(); break;
+		case SqlUtils.MYSQL:		migrationService = new MySqlMigrationService(); break;
+		case SqlUtils.POSTGRESQL:	migrationService = new PostgreSqlMigrationService(); break;
 		}
 		migrationService.setPersistService(persistor);
 	}

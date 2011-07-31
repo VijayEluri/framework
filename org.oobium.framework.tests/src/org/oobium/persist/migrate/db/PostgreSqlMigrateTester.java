@@ -5,13 +5,13 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Test;
 import org.oobium.framework.tests.dyn.DynClasses;
-import org.oobium.persist.db.internal.QueryUtils;
+import org.oobium.utils.SqlUtils;
 
 public class PostgreSqlMigrateTester extends MigrateTester {
 
 	@Before
 	public void setup() throws Exception {
-		super.setup(QueryUtils.POSTGRESQL);
+		super.setup(SqlUtils.POSTGRESQL);
 	}
 	
 	@Test

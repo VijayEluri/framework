@@ -49,7 +49,7 @@ public class PersistConfig {
 					this.models.add(String.valueOf(o));
 				}
 			} else {
-				throw new IllegalArgumentException(models + " is not a valid \"" + PersistService.MODELS + "\" property value");
+				this.models = new ArrayList<String>(0);
 			}
 		}
 		
@@ -130,8 +130,8 @@ public class PersistConfig {
 			service = (String) obj;
 			services = new ArrayList<PersistConfig.Service>(0);
 		} else if(obj instanceof List<?>) {
+			services = new ArrayList<PersistConfig.Service>();
 			for(Object o : (List<?>) obj) {
-				services = new ArrayList<PersistConfig.Service>();
 				if(o instanceof String) {
 					service = (String) o;
 				} else if(o instanceof Map<?,?>) {
@@ -140,6 +140,11 @@ public class PersistConfig {
 					throw new IllegalArgumentException();
 				}
 			}
+		} else if(obj instanceof Map<?,?>) {
+			Service s = new Service((Map<?,?>) obj);
+			service = s.getName();
+			services = new ArrayList<PersistConfig.Service>();
+			services.add(s);
 		} else {
 			throw new IllegalArgumentException();
 		}

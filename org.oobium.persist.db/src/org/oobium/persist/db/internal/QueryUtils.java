@@ -28,13 +28,10 @@ import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
 import org.oobium.persist.ModelDescription;
 import org.oobium.persist.db.DbPersistService;
+import org.oobium.utils.SqlUtils;
 
 public class QueryUtils {
 
-	public static final int DERBY		= 1;
-	public static final int MYSQL		= 2;
-	public static final int POSTGRESQL	= 3;
-	
 	private static final Logger logger = LogProvider.getLogger(DbPersistService.class);
 	
 	public static final String ID = columnName(ModelDescription.ID);
@@ -89,12 +86,12 @@ public class QueryUtils {
 	public static int getDbType(Connection connection) {
 		String name = connection.getClass().getCanonicalName();
 		if(name.contains(".mysql.")) {
-			return MYSQL;
+			return SqlUtils.MYSQL;
 		}
 		if(name.contains(".postgresql.")) {
-			return POSTGRESQL;
+			return SqlUtils.POSTGRESQL;
 		}
-		return DERBY;
+		return SqlUtils.DERBY;
 	}
 	
 	public static Object getObject(Class<? extends Model> clazz, int id) throws InstantiationException, IllegalAccessException, NoSuchFieldException {

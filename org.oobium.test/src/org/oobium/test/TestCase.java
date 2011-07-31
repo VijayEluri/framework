@@ -37,6 +37,7 @@ import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
 import org.oobium.persist.db.DbPersistService;
 import org.oobium.persist.db.derby.embedded.DerbyEmbeddedPersistService;
+import org.oobium.utils.SqlUtils;
 import org.oobium.utils.json.JsonUtils;
 
 /**
@@ -106,7 +107,7 @@ public abstract class TestCase {
 	protected Object getDbValue(Model model, String field) throws NoSuchFieldException, SQLException {
 		ModelAdapter adapter = ModelAdapter.getAdapter(model.getClass());
 		String table = tableName(adapter.getModelClass());
-		String column = safeSqlWord(columnName(field));
+		String column = safeSqlWord(SqlUtils.DERBY, columnName(field));
 		String sql = "SELECT " + column + " FROM " + table + " WHERE id=" + model.getId();
 		logger.debug(sql);
 		Object value = service.executeQueryValue(sql);
@@ -221,7 +222,7 @@ public abstract class TestCase {
 		
 		List<String> columns = new ArrayList<String>();
 		for(String field : fields.keySet()) {
-			columns.add(safeSqlWord(columnName(field)));
+			columns.add(safeSqlWord(SqlUtils.DERBY, columnName(field)));
 		}
 		if(adapter.isDateStamped()) {
 			columns.add("created_on");
@@ -261,7 +262,7 @@ public abstract class TestCase {
 	
 	protected int setDbValue(Model model, String field, Object value) throws Exception {
 		String table = tableName(model.getClass());
-		String column = safeSqlWord(columnName(field));
+		String column = safeSqlWord(SqlUtils.DERBY, columnName(field));
 		return service.executeUpdate("UPDATE " + table + " set " + column + "=? WHERE id=" + model.getId());
 	}
 

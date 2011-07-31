@@ -21,12 +21,13 @@ import org.oobium.persist.ModelDescription;
 import org.oobium.persist.Relation;
 import org.oobium.persist.db.internal.Query;
 import org.oobium.persist.db.internal.QueryBuilder;
+import org.oobium.utils.SqlUtils;
 
 public class QueryBuilderTests {
 
 	
 //	protected final int dbType = QueryUtils.DERBY;
-	protected final int dbType = QueryUtils.MYSQL;
+	protected final int dbType = SqlUtils.MYSQL;
 //	protected final int dbType = QueryUtils.POSTGRESQL;
 
 	

@@ -172,7 +172,7 @@ public class DbGenerator {
 		sf.imports.add(SQLException.class.getCanonicalName());
 
 		StringBuilder sb = new StringBuilder();
-		sb.append("@Override\n\tpublic void up() throws SQLException {");
+		sb.append("@Override\npublic void up() throws SQLException {");
 		
 		for(ModelTable table : tables.values()) {
 			sb.append('\n');

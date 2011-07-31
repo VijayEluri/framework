@@ -5,6 +5,7 @@ import static org.oobium.persist.Relation.NO_ACTION;
 import static org.oobium.persist.Relation.RESTRICT;
 import static org.oobium.persist.Relation.SET_DEFAULT;
 import static org.oobium.persist.Relation.SET_NULL;
+import static org.oobium.utils.SqlUtils.POSTGRESQL;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -90,7 +91,7 @@ public class PostgreSqlMigrationService extends DbMigrationService {
 
 	@Override
 	protected String getSqlSafe(String rawString) {
-		return SqlUtils.safeSqlWord(rawString);
+		return SqlUtils.safeSqlWord(POSTGRESQL, rawString);
 	}
 
 	@Override

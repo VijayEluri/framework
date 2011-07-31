@@ -291,10 +291,11 @@ public class DbPersistor {
 	}
 
 	private int doCreate(Connection connection, String table, List<Cell> cells) throws SQLException {
+		int dbType = getDbType(connection);
 		StringBuilder sb = new StringBuilder();
 		sb.append("INSERT INTO ").append(table).append('(');
 		for(Iterator<Cell> iter = cells.iterator(); iter.hasNext();) {
-			sb.append(safeSqlWord(iter.next().column));
+			sb.append(safeSqlWord(dbType, iter.next().column));
 			if(iter.hasNext()) {
 				sb.append(",");
 			}
@@ -327,7 +328,7 @@ public class DbPersistor {
 			for(int i = 0; i < cells.size(); i++) {
 				Cell cell = cells.get(i);
 				if(logger.isLoggingTrace()) {
-					logger.trace("  " + safeSqlWord(cell.column) + " -> " + cell.value);
+					logger.trace("  " + safeSqlWord(dbType, cell.column) + " -> " + cell.value);
 				}
 				setObject(ps, i + 1, cell.value, cell.type);
 			}
@@ -362,13 +363,17 @@ public class DbPersistor {
 						int dId = dModel.isNew() ? doCreate(connection, dModel) : dModel.getId();
 						dIds.add(dId);
 					}
-					String table1 = tableName(adapter.getModelClass());
-					String column1 = columnName(field);
-					String table2 = tableName(adapter.getHasManyMemberClass(field));
-					String column2 = columnName(adapter.getOpposite(field));
-					String table = joinTable(table1, column1, table2, column2);
-					String[] columns = joinColumns(table1, column1, table2, column2);
-					doUpdateManyToMany(connection, table, columns[0], model.getId(), columns[1], dIds);
+					if(adapter.isThrough(field)) {
+						throw new SQLException("creating from a through field not yet supported");
+					} else {
+						String table1 = tableName(adapter.getModelClass());
+						String column1 = columnName(field);
+						String table2 = tableName(adapter.getHasManyMemberClass(field));
+						String column2 = columnName(adapter.getOpposite(field));
+						String table = joinTable(table1, column1, table2, column2);
+						String[] columns = joinColumns(table1, column1, table2, column2);
+						doUpdateManyToMany(connection, table, columns[0], model.getId(), columns[1], dIds);
+					}
 				}
 			}
 		}
@@ -632,6 +637,7 @@ public class DbPersistor {
 	}
 
 	private int doUpdate(Connection connection, String table, int id, List<Cell> cells) throws SQLException {
+		int dbType = getDbType(connection);
 		StringBuilder sb = new StringBuilder();
 		sb.append("UPDATE ").append(table).append(" SET ");
 		for(Iterator<Cell> iter = cells.iterator(); iter.hasNext();) {
@@ -640,7 +646,7 @@ public class DbPersistor {
 				iter.remove();
 				sb.append(cell.column).append('=').append(cell.value);
 			} else {
-				sb.append(safeSqlWord(cell.column)).append("=?");
+				sb.append(safeSqlWord(dbType, cell.column)).append("=?");
 			}
 			if(iter.hasNext()) {
 				sb.append(",");
@@ -658,7 +664,7 @@ public class DbPersistor {
 				Cell cell = cells.get(i);
 				setObject(ps, i + 1, cell.value, cell.type);
 				if(logger.isLoggingTrace()) {
-					logger.trace("  " + safeSqlWord(cell.column) + " -> " + cell.value);
+					logger.trace("  " + safeSqlWord(dbType, cell.column) + " -> " + cell.value);
 				}
 			}
 			return ps.executeUpdate();

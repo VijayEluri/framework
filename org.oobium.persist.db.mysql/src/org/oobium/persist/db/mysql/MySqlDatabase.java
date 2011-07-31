@@ -1,6 +1,7 @@
 package org.oobium.persist.db.mysql;
 
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
+import static org.oobium.utils.StringUtils.*;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -24,6 +25,9 @@ public class MySqlDatabase extends Database {
 	@Override
 	protected Map<String, Object> initProperties(Map<String, Object> properties) {
 		Map<String, Object> props = new HashMap<String, Object>(properties);
+		if(blank(props.get("database"))) {
+			throw new IllegalArgumentException("\"database\" field cannot be blank in persist configuration");
+		}
 		if(props.get("host") == null) {
 			props.put("host", "127.0.0.1");
 		}

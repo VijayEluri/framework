@@ -10,6 +10,7 @@ Import-Package: javax.sql,
  org.oobium.logging,
  org.oobium.persist,
  org.oobium.persist.db,
+ org.oobium.utils,
  org.oobium.utils.coercion,
  org.osgi.framework;version="1.3.0"
 Require-Bundle: org.postgresql.jdbc4
