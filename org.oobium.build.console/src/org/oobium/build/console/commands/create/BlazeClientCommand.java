@@ -55,7 +55,7 @@ public class BlazeClientCommand extends BuilderCommand {
 			console.out.println("created blaze flex client project <a href=\"open file " + flexProject + "\">" + flexProject.getName() + "</a>");
 
 			
-			FlexTestProjectGenerator test = new FlexTestProjectGenerator(module);
+			FlexTestProjectGenerator test = new FlexTestProjectGenerator(workspace, module);
 			test.setForce(true);
 			test.setFlexSdk(param("flexsdk"));
 //			test.setOutput(output);
