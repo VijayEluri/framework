@@ -470,8 +470,19 @@ public class ModelDefinition {
 		return file;
 	}
 
-	public File getFile(File srcFolder) {
-		return new File(srcFolder, getPackageName().replace('.', File.separatorChar) + "/" + getSimpleName());
+	public File getFile(File srcFolder, String extension) {
+		String name = getSimpleName();
+		if(extension != null && extension.length() > 0) {
+			if(extension.charAt(0) == '.') {
+				if(extension.length() > 1) {
+					name = name + extension;
+				}
+			} else {
+				name = name + "." + extension;
+			}
+		}
+		String folder = getPackageName().replace('.', File.separatorChar);
+		return new File(srcFolder, folder + "/" + name);
 	}
 	
 	public List<String> getIndexes() {

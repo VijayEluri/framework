@@ -1136,12 +1136,19 @@ public class StringUtils {
 	}
 	
 	public static String source(Collection<String> lines) {
-		if(lines == null) {
+		if(lines == null || lines.isEmpty()) {
 			return "";
 		}
 		return source(lines.toArray(new String[lines.size()]));
 	}
-	
+
+	public static String source(String indent, char indentChar, Collection<String> lines) {
+		if(lines == null || lines.isEmpty()) {
+			return "";
+		}
+		return source(indent, indentChar, lines.toArray(new String[lines.size()]));
+	}
+
 	public static String source(String...lines) {
 		return source("", '\t', lines);
 	}

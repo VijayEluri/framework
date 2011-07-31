@@ -7,6 +7,13 @@ import static org.oobium.utils.FileUtils.*;
 import static org.oobium.utils.StringUtils.*;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.UUID;
 
 import org.oobium.build.model.ModelDefinition;
@@ -54,8 +61,12 @@ public class FlexTestProjectGenerator {
 		createHtmlTemplateFolder();
 		
 		File src = createFolder(project, "src");
+		
+		createTestApplicationFile(src);
+		
+		String source = getResourceAsString(getClass(), "TestTemplate.mxml");
 		for(File file : module.findModels()) {
-			createTestApplication(src, file);
+			createTestCanvasFile(src, file, source);
 		}
 
 		createActionScriptPropertiesFile();
@@ -69,6 +80,42 @@ public class FlexTestProjectGenerator {
 		return project;
 	}
 
+	private void createTestApplicationFile(File src) {
+		Map<String, String> namespaces = new HashMap<String, String>();
+		List<String> contents = new ArrayList<String>();
+
+		for(File file : module.findModels()) {
+			ModelDefinition model = new ModelDefinition(file);
+			String pkg = model.getPackageName();
+			if(!namespaces.containsKey(pkg)) {
+				namespaces.put(pkg, "md" + namespaces.size());
+			}
+			contents.add(
+					"<mx:VBox label=\"" + titleize(plural(model.getSimpleName())) + "\">\n" +
+					" <" + namespaces.get(pkg) + ":" + model.getSimpleName() + " />\n" +
+					"</mx:VBox>"
+				);
+		}
+
+		for(Entry<String, String> entry : namespaces.entrySet()) {
+			String pkg = entry.getKey();
+			String ns = entry.getValue();
+			namespaces.put(pkg, "xmlns:" + ns + "=\"" + pkg + ".*\"");
+		}
+		namespaces.put("", "xmlns:mx=\"http://www.adobe.com/2006/mxml\"");
+		
+		writeFile(src, "Tests.mxml", source(
+				"<?xml version=\"1.0\"?>",
+				"<mx:Application",
+				"{namespaces}",
+				" >",
+				" <mx:TabNavigator borderStyle=\"solid\" >",
+				"{contents}",
+				" </mx:TabNavigator>",
+				"</mx:Application>"
+			).replace("{contents}", source("\t\t", '\t', contents)).replace("{namespaces}", source("\t\t", '\t', namespaces.values())));
+	}
+	
 	private void createActionScriptPropertiesFile() {
 		String path = project.getName() + ".as";
 		String uuid = UUID.randomUUID().toString();
@@ -105,9 +152,9 @@ public class FlexTestProjectGenerator {
 				"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>",
 				"<launchConfiguration type=\"org.eclipse.ui.externaltools.ProgramBuilderLaunchConfigurationType\">",
 				" <booleanAttribute key=\"org.eclipse.debug.ui.ATTR_LAUNCH_IN_BACKGROUND\" value=\"true\"/>",
-				" <stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_LOCATION\" value=\"{flexSdk}/bin/compc\"/>",
+				" <stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_LOCATION\" value=\"{flexSdk}/bin/mxmlc\"/>",
 				" <stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_RUN_BUILD_KINDS\" value=\"full,\"/>",
-				" <stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_TOOL_ARGUMENTS\" value=\"-source-path=src/&#10;-include-sources=src/&#10;-output=bin/{module}.swc\"/>",
+				" <stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_TOOL_ARGUMENTS\" value=\"src/Tests.mxml -output=bin/{module}.tests.swf -library-path+=libs\"/>",
 				" <booleanAttribute key=\"org.eclipse.ui.externaltools.ATTR_TRIGGERS_CONFIGURED\" value=\"true\"/>",
 				" <stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_WORKING_DIRECTORY\" value=\"${workspace_loc:/{project}}\"/>",
 				"</launchConfiguration>"
@@ -126,13 +173,17 @@ public class FlexTestProjectGenerator {
 	
 	private void createHtmlTemplateFolder() {
 		File folder = createFolder(project, "html-template");
-		writeFile(folder, "index.template.html", getClass().getResourceAsStream("flex/html-template/index.template.html"));
-		writeFile(folder, "playerProductInstall.swf", getClass().getResourceAsStream("flex/html-template/playerProductInstall.swf"));
-		writeFile(folder, "swfobject.js", getClass().getResourceAsStream("flex/html-template/swfobject.js"));
-		folder = createFolder(folder, "history");
-		writeFile(folder, "history.css", getClass().getResourceAsStream("flex/html-template/history/history.css"));
-		writeFile(folder, "history.js", getClass().getResourceAsStream("flex/html-template/history/history.js"));
-		writeFile(folder, "historyFrame.html", getClass().getResourceAsStream("flex/html-template/history/historyFrame.html"));
+		String[] names = {
+				"index.template.html",
+				"playerProductInstall.swf",
+				"swfobject.js",
+				"history/history.css",
+				"history/history.js",
+				"history/historyFrame.html"
+		};
+		for(String name : names) {
+			writeFile(folder, name, getClass().getResourceAsStream("/lib/flex/html-template/" + name));
+		}
 	}
 	
 	private void createPrefsFile() {
@@ -181,11 +232,10 @@ public class FlexTestProjectGenerator {
 			).replace("{project}", project.getName()).replace("{builder}", builder));
 	}
 	
-	private void createTestApplication(File src, File file) {
+	private void createTestCanvasFile(File src, File file, String source) {
 		ModelDefinition model = new ModelDefinition(file);
-		String source = readFile(file).toString();
 		source = source.replace("{fullType}", model.getCanonicalName()).replace("{type}", model.getSimpleName());
-		writeFile(model.getFile(src), source);
+		writeFile(model.getFile(src, "mxml"), source);
 	}
 
 	public File getProject() {

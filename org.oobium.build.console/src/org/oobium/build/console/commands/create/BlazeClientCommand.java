@@ -61,6 +61,7 @@ public class BlazeClientCommand extends BuilderCommand {
 //			test.setOutput(output);
 //			test.setServer(server);
 //			test.setServices(services)
+			test.create();
 
 			File testProject = test.getProject();
 			console.out.println("created flex test project <a href=\"open file " + testProject + "\">" + testProject.getName() + "</a>");
