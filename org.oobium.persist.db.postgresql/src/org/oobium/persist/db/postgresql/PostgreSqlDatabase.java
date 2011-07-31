@@ -29,7 +29,7 @@ public class PostgreSqlDatabase extends Database {
 			//  except when creating the ConnectionPoolDataSource
 			//  this means that mixed case database names (testDb) will be made lower case
 			//  for the #createDatabase and #dropDatabase methods, but will still be mixed
-			//  for regular connections - and errors will arrise from not finding the database
+			//  for regular connections - and errors will arise from not finding the database
 			// force all names to lower case (unless they are quoted) to handle this
 			String database = (String) o;
 			if(database.length() < 2 || database.charAt(0) != '"' || database.charAt(database.length()-1) != '"') {
