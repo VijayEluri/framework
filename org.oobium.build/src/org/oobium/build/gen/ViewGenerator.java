@@ -161,11 +161,13 @@ public class ViewGenerator {
 		sb.append('\n');
 		sb.append("table\n");
 		sb.append("\ttr\n");
+		sb.append("\t\tth ").append("id").append('\n');
 		for(PropertyDescriptor property : properties.values()) {
 			sb.append("\t\tth ").append(titleize(property.variable())).append('\n');
 		}
 		sb.append("\t- for(").append(mType).append(" ").append(mVar).append(" : ").append(mVarPlural).append(") {\n");
 		sb.append("\t\ttr\n");
+		sb.append("\t\t\ttd { ").append(mVar).append(".getId() }\n");
 		for(PropertyDescriptor property : properties.values()) {
 			sb.append("\t\t\ttd { ").append(mVar).append(".").append(property.getterName()).append("() }\n");
 		}
