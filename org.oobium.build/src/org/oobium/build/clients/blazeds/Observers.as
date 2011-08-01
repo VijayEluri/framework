@@ -1,5 +1,6 @@
 package org.oobium.persist {
 
+	import flash.external.ExternalInterface;
 	import mx.controls.Alert;
 	import mx.messaging.ChannelSet;
 	import mx.messaging.Consumer;
@@ -7,6 +8,7 @@ package org.oobium.persist {
 	import mx.messaging.events.MessageEvent;
 	import mx.messaging.events.MessageFaultEvent;
 	import mx.rpc.events.ResultEvent;
+	import mx.utils.URLUtil;
 
 	[RemoteClass(alias="org.oobium.persist.Observers")]
 
@@ -33,11 +35,14 @@ package org.oobium.persist {
 		public static function onChannelAdded(event:ResultEvent):void {
 			var channelName:String = event.result as String;
 			if(!channels[channelName]) {
+				var currentURL:String = ExternalInterface.call("window.location.href.toString");
+				var channelURL:String = "http://" + URLUtil.getServerNameWithPort(currentURL) + "/messagebroker/amfpolling";
+
 				var consumer:Consumer = new Consumer();
 				consumer.destination = channelName;
 				
 				var channelSet:ChannelSet = new ChannelSet();
-				channelSet.addChannel(new AMFChannel("my-polling-amf", "{serverUrl}/messagebroker/amfpolling"));
+				channelSet.addChannel(new AMFChannel("my-polling-amf", channelURL));
 				
 				consumer.channelSet = channelSet;
 				consumer.addEventListener(MessageEvent.MESSAGE, onChannelEvent);

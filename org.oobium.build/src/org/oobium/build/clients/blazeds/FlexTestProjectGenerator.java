@@ -182,11 +182,11 @@ public class FlexTestProjectGenerator {
 				" <booleanAttribute key=\"org.eclipse.debug.ui.ATTR_LAUNCH_IN_BACKGROUND\" value=\"true\"/>",
 				" <stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_LOCATION\" value=\"{flexSdk}/bin/mxmlc\"/>",
 				" <stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_RUN_BUILD_KINDS\" value=\"full,\"/>",
-				" <stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_TOOL_ARGUMENTS\" value=\"src/Main.mxml -output=bin/{module}.tests.swf -library-path+=libs\"/>",
+				" <stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_TOOL_ARGUMENTS\" value=\"src/Main.mxml -library-path+=libs -context-root=/ -services={services} -output={output}/{project}.swf\"/>",
 				" <booleanAttribute key=\"org.eclipse.ui.externaltools.ATTR_TRIGGERS_CONFIGURED\" value=\"true\"/>",
 				" <stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_WORKING_DIRECTORY\" value=\"${workspace_loc:/{project}}\"/>",
 				"</launchConfiguration>"
-			).replace("{flexSdk}", flexSdk).replace("{module}", module.name).replace("{project}", project.getName()));
+			).replace("{flexSdk}", flexSdk).replace("{output}", output).replace("{project}", project.getName()).replace("{services}", services));
 	}
 	
 	private void createFlexPropertiesFile() {
