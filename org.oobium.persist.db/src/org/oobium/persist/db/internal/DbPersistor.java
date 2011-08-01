@@ -456,7 +456,7 @@ public class DbPersistor {
 		ModelAdapter adapter = ModelAdapter.getAdapter(model);
 		
 		for(String field : adapter.getHasManyFields()) {
-			if(adapter.hasMany(field) && !adapter.isManyToOne(field)) {
+			if(adapter.hasMany(field) && !adapter.isManyToOne(field) && !adapter.isThrough(field)) {
 				String table1 = tableName(adapter.getModelClass());
 				String column1 = columnName(field);
 				String table2 = tableName(adapter.getHasManyMemberClass(field));
@@ -533,7 +533,7 @@ public class DbPersistor {
 			for(String field : fields.keySet()) {
 				if(!adapter.isVirtual(field)) {
 					if(adapter.hasOne(field)) {
-						Model fModel = (Model) fields.get(field);
+						Model fModel = coerce(fields.get(field), adapter.getHasOneClass(field));
 						Integer fId = (fModel != null) ? fModel.getId() : null;
 						if(fId != null && fId < 1) {
 							fId = doCreate(connection, fModel);
