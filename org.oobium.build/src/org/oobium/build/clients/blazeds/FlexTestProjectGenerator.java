@@ -87,11 +87,20 @@ public class FlexTestProjectGenerator {
 		
 		File src = createFolder(project, "src");
 		
-		createTestApplicationFile(src);
+		List<ModelDefinition> models = new ArrayList<ModelDefinition>();
+		for(File file : module.findModels()) {
+			ModelDefinition model = new ModelDefinition(file);
+			if(model.hasAttribute("name")) {
+				// temporary filter until a generic flex test app is written
+				models.add(model);
+			}
+		}
+		
+		createMainFile(src, models);
 		
 		String source = getResourceAsString(getClass(), "TestTemplate.mxml");
-		for(File file : module.findModels()) {
-			createTestCanvasFile(src, file, source);
+		for(ModelDefinition model : models) {
+			createCanvasFile(src, model, source);
 		}
 
 		createActionScriptPropertiesFile();
@@ -111,42 +120,6 @@ public class FlexTestProjectGenerator {
 		return project;
 	}
 
-	private void createTestApplicationFile(File src) {
-		Map<String, String> namespaces = new HashMap<String, String>();
-		List<String> contents = new ArrayList<String>();
-
-		for(File file : module.findModels()) {
-			ModelDefinition model = new ModelDefinition(file);
-			String pkg = model.getPackageName();
-			if(!namespaces.containsKey(pkg)) {
-				namespaces.put(pkg, "md" + namespaces.size());
-			}
-			contents.add(
-					"<mx:VBox label=\"" + titleize(plural(model.getSimpleName())) + "\">\n" +
-					" <" + namespaces.get(pkg) + ":" + model.getSimpleName() + "Canvas width=\"100%\" height=\"100%\" />\n" +
-					"</mx:VBox>"
-				);
-		}
-
-		for(Entry<String, String> entry : namespaces.entrySet()) {
-			String pkg = entry.getKey();
-			String ns = entry.getValue();
-			namespaces.put(pkg, "xmlns:" + ns + "=\"" + pkg + ".*\"");
-		}
-		namespaces.put("", "xmlns:mx=\"http://www.adobe.com/2006/mxml\"");
-		
-		writeFile(src, "Main.mxml", source(
-				"<?xml version=\"1.0\"?>",
-				"<mx:Application",
-				"{namespaces}",
-				" >",
-				" <mx:TabNavigator borderStyle=\"solid\" width=\"100%\" height=\"100%\">",
-				"{contents}",
-				" </mx:TabNavigator>",
-				"</mx:Application>"
-			).replace("{contents}", source("\t\t", '\t', contents)).replace("{namespaces}", source("\t\t", '\t', namespaces.values())));
-	}
-	
 	private void createActionScriptPropertiesFile() {
 		String uuid = UUID.randomUUID().toString();
 		writeFile(project, ".actionScriptProperties", source(
@@ -173,6 +146,12 @@ public class FlexTestProjectGenerator {
 				"  <flashCatalyst validateFlashCatalystCompatibility=\"false\"/>",
 				"</actionScriptProperties>"
 			).replace("{uuid}", uuid).replace("{services}", services).replace("{output}", output));
+	}
+	
+	private void createCanvasFile(File src, ModelDefinition model, String source) {
+		String name = model.getPackageName().replace('.', '/') + "/" + model.getSimpleName() + "Canvas.mxml";
+		source = source.replace("{fullType}", model.getCanonicalName()).replace("{type}", model.getSimpleName());
+		writeFile(src, name, source);
 	}
 	
 	private void createExternalToolBuilderFile() {
@@ -209,6 +188,41 @@ public class FlexTestProjectGenerator {
 		for(String name : names) {
 			writeFile(folder, name, getClass().getResourceAsStream("/lib/flex/html-template/" + name));
 		}
+	}
+	
+	private void createMainFile(File src, List<ModelDefinition> models) {
+		Map<String, String> namespaces = new HashMap<String, String>();
+		List<String> contents = new ArrayList<String>();
+
+		for(ModelDefinition model : models) {
+			String pkg = model.getPackageName();
+			if(!namespaces.containsKey(pkg)) {
+				namespaces.put(pkg, "md" + namespaces.size());
+			}
+			contents.add(
+					"<mx:VBox label=\"" + titleize(plural(model.getSimpleName())) + "\">\n" +
+					" <" + namespaces.get(pkg) + ":" + model.getSimpleName() + "Canvas width=\"100%\" height=\"100%\" />\n" +
+					"</mx:VBox>"
+				);
+		}
+
+		for(Entry<String, String> entry : namespaces.entrySet()) {
+			String pkg = entry.getKey();
+			String ns = entry.getValue();
+			namespaces.put(pkg, "xmlns:" + ns + "=\"" + pkg + ".*\"");
+		}
+		namespaces.put("", "xmlns:mx=\"http://www.adobe.com/2006/mxml\"");
+		
+		writeFile(src, "Main.mxml", source(
+				"<?xml version=\"1.0\"?>",
+				"<mx:Application",
+				"{namespaces}",
+				" >",
+				" <mx:TabNavigator borderStyle=\"solid\" width=\"100%\" height=\"100%\">",
+				"{contents}",
+				" </mx:TabNavigator>",
+				"</mx:Application>"
+			).replace("{contents}", source("\t\t", '\t', contents)).replace("{namespaces}", source("\t\t", '\t', namespaces.values())));
 	}
 	
 	private void createPrefsFile() {
@@ -262,13 +276,6 @@ public class FlexTestProjectGenerator {
 				" </linkedResources>",
 				"</projectDescription>"
 			).replace("{project}", project.getName()).replace("{builder}", builder).replace("{output}", output));
-	}
-	
-	private void createTestCanvasFile(File src, File file, String source) {
-		ModelDefinition model = new ModelDefinition(file);
-		String name = model.getPackageName().replace('.', '/') + "/" + model.getSimpleName() + "Canvas.mxml";
-		source = source.replace("{fullType}", model.getCanonicalName()).replace("{type}", model.getSimpleName());
-		writeFile(src, name, source);
 	}
 
 	public File getProject() {
