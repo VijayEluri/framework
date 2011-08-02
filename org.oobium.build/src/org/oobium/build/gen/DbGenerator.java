@@ -192,7 +192,7 @@ public class DbGenerator {
 					if(DATESTAMPS.equals(column.name)) {
 						sb.append("\t\tDatestamps(");
 					} else if(TIMESTAMPS.equals(column.name)) {
-						sb.append("\t\t\tTimestamps(");
+						sb.append("\t\tTimestamps(");
 					} else {
 						sb.append("\t\t").append(getMethod(column.type)).append("(\"").append(column.name).append("\"");
 						if(column.options.hasAny()) {
