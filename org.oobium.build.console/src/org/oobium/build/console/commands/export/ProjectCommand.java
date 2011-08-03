@@ -73,6 +73,12 @@ public class ProjectCommand extends ApplicationCommand {
 				File client = createFolder(appDir, "client");
 				writeFile(client, "index.html", "<html><head><title>Hello World!</title></head><body><h1>Hello World!</h1></body></html>");
 				
+				
+				for(File file : findAll(wd)) {
+					file.setExecutable(true);
+				}
+				
+				
 				String msg = "exported <a href=\"open file " + wd + "\">" + blaze.name + "</a>";
 				if(flag('v')) {
 					console.out.println(msg + " in " + (System.currentTimeMillis() - start) + "ms");
