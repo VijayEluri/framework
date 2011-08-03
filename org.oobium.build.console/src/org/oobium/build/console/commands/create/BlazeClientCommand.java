@@ -37,37 +37,43 @@ public class BlazeClientCommand extends BuilderCommand {
 			return;
 		}
 		
+		retainFlags('b', 'f', 't');
+		if(!hasFlags()) {
+			setFlag('b', 'f', 't');
+		}
+		
 		try {
-			BlazeProjectGenerator blaze = new BlazeProjectGenerator(workspace, module);
-			blaze.setForce(true);
-			blaze.create();
-			
-			File blazeProject = blaze.getProject();
-			console.out.println("created blaze client project <a href=\"open file " + blazeProject + "\">" + blazeProject.getName() + "</a>");
+			if(flag('b')) {
+				BlazeProjectGenerator blaze = new BlazeProjectGenerator(workspace, module);
+				blaze.setForce(true);
+				blaze.create();
+				
+				File blazeProject = blaze.getProject();
+				console.out.println("created blaze client project <a href=\"open file " + blazeProject + "\">" + blazeProject.getName() + "</a>");
+				Eclipse.importProjects(blazeProject);
+			}
 
-
-			FlexProjectGenerator flex = new FlexProjectGenerator(module);
-			flex.setForce(true);
-			flex.setFlexSdk(param("flexsdk"));
-			flex.create();
+			if(flag('f')) {
+				FlexProjectGenerator flex = new FlexProjectGenerator(module);
+				flex.setForce(true);
+				flex.setFlexSdk(param("flexsdk"));
+				flex.create();
+				
+				File flexProject = flex.getProject();
+				console.out.println("created blaze flex client project <a href=\"open file " + flexProject + "\">" + flexProject.getName() + "</a>");
+				Eclipse.importProjects(flexProject);
+			}
 			
-			File flexProject = flex.getProject();
-			console.out.println("created blaze flex client project <a href=\"open file " + flexProject + "\">" + flexProject.getName() + "</a>");
-
-			
-			FlexTestProjectGenerator test = new FlexTestProjectGenerator(workspace, module);
-			test.setForce(true);
-			test.setFlexSdk(param("flexsdk"));
-//			test.setOutput(output);
-//			test.setServer(server);
-//			test.setServices(services)
-			test.create();
-
-			File testProject = test.getProject();
-			console.out.println("created flex test project <a href=\"open file " + testProject + "\">" + testProject.getName() + "</a>");
-			
-			
-			Eclipse.importProjects(blazeProject, flexProject, testProject);
+			if(flag('t')) {
+				FlexTestProjectGenerator test = new FlexTestProjectGenerator(workspace, module);
+				test.setForce(true);
+				test.setFlexSdk(param("flexsdk"));
+				test.create();
+	
+				File testProject = test.getProject();
+				console.out.println("created flex test project <a href=\"open file " + testProject + "\">" + testProject.getName() + "</a>");
+				Eclipse.importProjects(testProject);
+			}
 		} catch(Exception e) {
 			console.err.print(e);
 		}
