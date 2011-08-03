@@ -174,10 +174,10 @@ public class FlexProjectGenerator {
 		
 		as.staticMethods.put("addObserver", source(
 				"public static function addObserver(method:String, callback:Function):void {",
-				" ro.addObserver();",
+				" {type}.ro.addObserver();",
 				" Observers.addObserver(\"{fullType}\", method, callback);",
 				"}"
-			).replace("{fullType}", model.getCanonicalName()));
+			).replace("{type}", as.simpleName).replace("{fullType}", model.getCanonicalName()));
 
 		as.staticMethods.put("fault", source(
 				"private static function faultHandler (event:FaultEvent):void {",
@@ -185,84 +185,51 @@ public class FlexProjectGenerator {
 				"}"
 			));
 		
-		as.staticMethods.put("find", source(
-				"public static function find(o:Object, callback:Function):void {",
-				" {type}.ro.find.addEventListener(\"result\", callback);",
+		String finders = source(
+				"public static function {name}(o:Object, callback:Function):void {",
+				" {type}.ro.{name}.addEventListener(\"result\", function(event:ResultEvent):void {",
+				"  {type}.ro.{name}.removeEventListener(\"result\", arguments.callee);",
+				"  callback(event);",
+				" });",
 				" if(typeof(o) == \"number\") {",
-				"  {type}.ro.find(o as int);",
+				"  {type}.ro.{name}(o as int);",
 				" } else if(typeof(o) == \"string\") {",
-				"  {type}.ro.find(o as String);",
+				"  {type}.ro.{name}(o as String);",
 				" } else if(o != null) {",
-				"  {type}.ro.find(o.toString());",
+				"  {type}.ro.{name}(o.toString());",
 				" } else {",
-				"  throw new Error(\"o cannot be null\");",
+				"  throw new Error(\"object cannot be null\");",
 				" }",
-				"}"
-			).replace("{type}", as.simpleName));
+				"}").replace("{type}", as.simpleName);
 
-		as.staticMethods.put("findAll", source(
-				"public static function findAll(o:Object, callback:Function):void {",
-				" {type}.ro.findAll.addEventListener(\"result\", callback);",
-				" if(o == \"*\") {",
-				"  {type}.ro.findAll();",
-				" } else if(typeof(o) == \"string\") {",
-				"  {type}.ro.findAll(o as String);",
-				" } else if(o != null) {",
-				"  {type}.ro.findAll(o.toString());",
-				" } else {",
-				"  throw new Error(\"o cannot be null\");",
-				" }",
-				"}"
-			).replace("{type}", as.simpleName));
+		as.staticMethods.put("find", finders.replace("{name}", "find"));
+		as.staticMethods.put("findAll", finders.replace("{name}", "findAll"));
 
 
 		as.variables.put("", "public var id:int");
 		for(PropertyDescriptor prop : model.getProperties().values()) {
-			if(prop.hasMany()) {
-				as.imports.add("mx.collections.ArrayCollection");
-				as.variables.put(prop.variable(), "public var " + prop.variable() + ":ArrayCollection");
+			if(prop.isAttr()) {
+				as.variables.put(prop.variable(), "public var " + prop.variable() + ":" + flexType(prop.fullType()));
 			}
 			else if(prop.hasOne()) {
 				as.variables.put(prop.variable(), "public var " + prop.variable() + ":" + prop.castType());
 			}
-			else {
-				as.variables.put(prop.variable(), "public var " + prop.variable() + ":" + flexType(prop.fullType()));
+			else if(prop.hasMany()) {
+				String name = prop.variable();
+				as.methods.put(name, createMethod(as.simpleName, name, false));
 			}
 		}
 
-		as.methods.put("create", source(
-				"public function create(callBack:Function = null):void {",
-				" if(callBack != null) {",
-				"  ro.create.addEventListener(\"result\", callBack);",
-				" }",
-				" ro.create(this);",
-				"}"
-			));
-		
-		as.methods.put("update", source(
-				"public function update(callBack:Function = null):void {",
-				" if(callBack != null) {",
-				"  ro.update.addEventListener(\"result\", callBack);",
-				" }",
-				" ro.update(this);",
-				"}"
-			));
-		
-		as.methods.put("destroy", source(
-				"public function destroy(callBack:Function = null):void {",
-				" if(callBack != null) {",
-				"  ro.destroy.addEventListener(\"result\", callBack);",
-				" }",
-				" ro.destroy(this);",
-				"}"
-			));
+		as.methods.put("create", createMethod(as.simpleName, "create", true));
+		as.methods.put("update", createMethod(as.simpleName, "update", true));
+		as.methods.put("destroy", createMethod(as.simpleName, "destroy", true));
 
 		as.methods.put("save", source(
-				"public function save(callBack:Function = null):void {",
+				"public function save(callback:Function = null):void {",
 				" if(id < 1) {",
-				"  create(callBack);",
+				"  create(callback);",
 				" } else {",
-				"  update(callBack);",
+				"  update(callback);",
 				" }",
 				"}"
 		));
@@ -270,6 +237,33 @@ public class FlexProjectGenerator {
 		writeFile(srcFolder, as.getFilePath(), as.toSource());
 	}
 
+	private String createMethod(String type, String name, boolean allowNull) {
+		if(allowNull) {
+			return source(
+					"public function {name}(callback:Function = null):void {",
+					" if(callback != null) {",
+					"  {type}.ro.{name}.addEventListener(\"result\", function(event:ResultEvent):void {",
+					"   {type}.ro.{name}.removeEventListener(\"result\", arguments.callee);",
+					"   callback(event);",
+					"  });",
+					" }",
+					" {type}.ro.{name}(this);",
+					"}"
+				).replace("{name}", name).replace("{type}", type);
+		}
+		else {
+			return source(
+					"public function {name}(callback:Function):void {",
+					"  {type}.ro.{name}.addEventListener(\"result\", function(event:ResultEvent):void {",
+					"   {type}.ro.{name}.removeEventListener(\"result\", arguments.callee);",
+					"   callback(event);",
+					"  });",
+					" {type}.ro.{name}(this);",
+					"}"
+				).replace("{name}", name).replace("{type}", type);
+		}
+	}
+	
 	private void createObserversFile(File src) {
 		String source = getResourceAsString(getClass(), "Observers.as");
 		source = source.replace("{serverUrl}", "http://localhost:8400"); // TODO server URL
@@ -339,35 +333,35 @@ public class FlexProjectGenerator {
 		
 
 		MethodCreator m1 = new MethodCreator("1login");
-		m1.addLine("public function login(userName:String, password:String, callBack:Function):void {");
-			m1.addLine("ro.login.addEventListener(\"result\", callBack);");
+		m1.addLine("public function login(userName:String, password:String, callback:Function):void {");
+			m1.addLine("ro.login.addEventListener(\"result\", callback);");
 			m1.addLine("ro.login(userName, password);");
 		m1.addLine("}");
 		as.addMethod(m1);
 		
 		MethodCreator m2 = new MethodCreator("2logout()");
-		m2.addLine("public function logout(callBack:Function):void {");
+		m2.addLine("public function logout(callback:Function):void {");
 			m2.addLine("ro.logout();");
 		m2.addLine("}");
 		as.addMethod(m2);
 		
 		MethodCreator m3 = new MethodCreator("3getUserName()");
-		m3.addLine("public function getUserName(callBack:Function):void {");
-			m3.addLine("ro.getUserName.addEventListener(\"result\", callBack);");
+		m3.addLine("public function getUserName(callback:Function):void {");
+			m3.addLine("ro.getUserName.addEventListener(\"result\", callback);");
 			m3.addLine("ro.getUserName();");
 		m3.addLine("}");
 		as.addMethod(m3);
 		
 		MethodCreator m4 = new MethodCreator("4getPassword()");
-		m4.addLine("public function getPassword(callBack:Function):void {");
-			m4.addLine("ro.getPassword.addEventListener(\"result\", callBack);");
+		m4.addLine("public function getPassword(callback:Function):void {");
+			m4.addLine("ro.getPassword.addEventListener(\"result\", callback);");
 			m4.addLine("ro.getPassword();");
 		m4.addLine("}");
 		as.addMethod(m4);
 		
 		as.addMethod("5",
-				"public function getSessionId(callBack:Function):void {",
-				" ro.getSessionId.addEventListener(\"result\", callBack);",
+				"public function getSessionId(callback:Function):void {",
+				" ro.getSessionId.addEventListener(\"result\", callback);",
 				" ro.getSessionId();",
 				"}"
 			);

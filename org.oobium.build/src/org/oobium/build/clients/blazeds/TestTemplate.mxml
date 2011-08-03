@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="init()">
+<mx:Grid xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="init()">
 	<mx:Script>
-		
 		<![CDATA[
 			import {fullType};
 			
 			import mx.collections.ArrayCollection;
 			import mx.containers.Panel;
+			import mx.containers.HBox;
 			import mx.containers.VBox;
 			import mx.controls.Alert;
 			import mx.controls.Button;
@@ -90,16 +90,16 @@
 				} else {
 					object.name = objName;
 				}
-				object.save(createCallBack);
+				object.save(createCallback);
 			}
 			
 			public function updateObject(evt:MouseEvent):void {
 				myObject.name = nameTextBox.text;
 				
-				myObject.save(saveCallBack);
+				myObject.save(saveCallback);
 				Alert.show("Object Updated!");
 				closePanel();
-				{type}.findAll("*", gridCallBack);
+				{type}.findAll("*", gridCallback);
 			}
 			
 			private function editObject(obj:{type}): void {
@@ -118,7 +118,7 @@
 			private function destroyFunction():void {
 				myObject.destroy();
 				closePanel();
-				{type}.findAll("*", gridCallBack);	
+				{type}.findAll("*", gridCallback);	
 			}
 			
 			private function closePopUp(evt:MouseEvent):void {
@@ -129,13 +129,13 @@
 				PopUpManager.removePopUp(panel);
 			}
 			
-			public function createCallBack(event:ResultEvent):void
+			public function createCallback(event:ResultEvent):void
 			{
 				var obj:{type} = event.result as {type};
 				showObject("Test Object", obj);
 			}
 			
-			public function findCallBack(event:ResultEvent):void {
+			public function findCallback(event:ResultEvent):void {
 				var obj:{type} = event.result as {type};
 				if(obj != null) {
 					showObject("TestObject found", obj);
@@ -144,17 +144,17 @@
 				}
 			}
 			
-			public function saveCallBack(event:ResultEvent):void {
+			public function saveCallback(event:ResultEvent):void {
 				var obj:{type} = event.result as {type};
 				if(obj != null) {
 					showObject("TestObject saved", obj);
-					{type}.findAll("*", gridCallBack);
+					{type}.findAll("*", gridCallback);
 				} else {
 					Alert.show("TestObject not saved");
 				}
 			}
 			
-			public function gridCallBack(event:ResultEvent):void
+			public function gridCallback(event:ResultEvent):void
 			{
 				daoData = event.result as ArrayCollection;
 			}
@@ -168,9 +168,9 @@
 			
 			public function findById(objectId:String):void{
 				if(objectId.length < 1 || isNaN(parseInt(objectId))){
-					Alert.show("TestObject id="+objectId+" is invalid");	
+					Alert.show("id="+objectId+" is invalid");	
 				} else {
-					{type}.find(parseInt(objectId), findCallBack);
+					{type}.find(parseInt(objectId), findCallback);
 				}
 			}
 			
@@ -178,7 +178,7 @@
 				if(criteria.length < 1){
 					Alert.show("TestObject Search String is null");	
 				} else {
-					{type}.find(criteria, findCallBack);
+					{type}.find(criteria, findCallback);
 				}
 			}
 			
@@ -186,47 +186,96 @@
 				Alert.show(text+": id="+obj.id+", name="+obj.name);
 			}
 			
-			private function afterCreate(id:int):void {
-				{type}.find(id, findCallBack);
+			private function observerCallback(id:int):void {
+				{type}.find(id, findCallback);
+			}
+
+			private function addObserver(method:String):void {
+				{type}.addObserver(method, observerCallback);
+				Alert.show("observing {type} for " + method);
 			}
 			
+			public function showCountCallback(event:ResultEvent):void {
+				var ac:ArrayCollection = event.result as ArrayCollection;
+				Alert.show("count: " + ac.length);
+			}
+			
+{fieldCallbacks}
+			
+			private function count(id:String, field:String):void {
+				if(id.length < 1 || isNaN(parseInt(id))){
+					Alert.show("id="+id+" is invalid");	
+				} else {
+{countIfStatements}
+				}
+			}
 		]]>
 	</mx:Script>
-	<mx:DataGrid dataProvider="{daoData}" width="100%" height="100%" itemClick="onItemClick(event);">
-		<mx:columns> 
-			<mx:DataGridColumn dataField="id" /> 
-			<mx:DataGridColumn dataField="name" /> 
-			<mx:DataGridColumn dataField="description" /> 
-		</mx:columns>
-	</mx:DataGrid>
 	
-	
-	
-	<mx:HBox>
-		<mx:Label text="Object Name:"/>
-		<mx:TextInput id="objectName"/>
-		<mx:Button label="Create" click="create(objectName.text)"/>
-	</mx:HBox>
-	
-	<mx:HBox>
-		<mx:Label text="Object Id:"/>
-		<mx:TextInput id="objectId"/>
-		<mx:Button label="Find(id:int)" click="findById(objectId.text)"/>
-	</mx:HBox>
-	
-	<mx:HBox>
-		<mx:Label text="Search by Name:"/>
-		<mx:TextInput id="objectCriteria"/>
-		<mx:Button label="Find(criteria:String)" click="findByString(objectCriteria.text)"/>
-	</mx:HBox>
-	
-	<mx:Button label="FindAll()" click="{type}.findAll('*', gridCallBack);"/>
-	<mx:HBox>
-		<mx:TextInput id="findAllCriteria"/>
-		<mx:Button label="FindAll(criteria:String)" click="{type}.findAll(findAllCriteria.text, gridCallBack);"/>
-	</mx:HBox>
-	
-	<mx:Button label="addObserver()" click="{type}.addObserver('afterCreate', afterCreate);"/>
-	
-</mx:Canvas>
-
+	<mx:GridRow width="100%" height="100%">
+		<mx:GridItem horizontalAlign="center">
+			<mx:DataGrid dataProvider="{daoData}" width="100%" height="100%" itemClick="onItemClick(event);">
+				<mx:columns> 
+					<mx:DataGridColumn dataField="id" />
+{columns}
+				</mx:columns>
+			</mx:DataGrid>
+		</mx:GridItem>
+	</mx:GridRow>	
+	<mx:GridRow>
+		<mx:GridItem horizontalAlign="center">
+			<mx:Label text="Object Name:"/>
+			<mx:TextInput id="objectName"/>
+			<mx:Button label="Create" click="create(objectName.text)"/>
+		</mx:GridItem>
+	</mx:GridRow>	
+	<mx:GridRow>
+		<mx:GridItem horizontalAlign="center">
+			<mx:Label text="Object Id:"/>
+			<mx:TextInput id="objectId"/>
+			<mx:Button label="Find(id:int)" click="findById(objectId.text)"/>
+		</mx:GridItem>
+	</mx:GridRow>	
+	<mx:GridRow>
+		<mx:GridItem horizontalAlign="center">
+			<mx:Label text="Search by Name:"/>
+			<mx:TextInput id="objectCriteria"/>
+			<mx:Button label="Find(criteria:String)" click="findByString(objectCriteria.text)"/>
+		</mx:GridItem>
+	</mx:GridRow>	
+	<mx:GridRow>
+		<mx:GridItem horizontalAlign="center">
+			<mx:Button label="FindAll()" click="Asset.findAll('*', gridCallback);"/>
+		</mx:GridItem>
+	</mx:GridRow>	
+	<mx:GridRow>
+		<mx:GridItem horizontalAlign="center">
+			<mx:TextInput id="findAllCriteria"/>
+			<mx:Button label="FindAll(criteria:String)" click="{type}.findAll(findAllCriteria.text, gridCallback);"/>
+		</mx:GridItem>
+	</mx:GridRow>	
+	<mx:GridRow>
+		<mx:GridItem horizontalAlign="center">
+			<mx:ComboBox id="observerMethod">
+				<mx:ArrayCollection>
+					<mx:String>afterCreate</mx:String>
+					<mx:String>afterUpdate</mx:String>
+					<mx:String>afterDestroy</mx:String>
+				</mx:ArrayCollection>
+			</mx:ComboBox>
+			<mx:Button label="addObserver(method)" click="addObserver(observerMethod.text);"/>
+		</mx:GridItem>
+	</mx:GridRow>	
+	<mx:GridRow>
+		<mx:GridItem horizontalAlign="center">
+			<mx:Label text="Asset Id:"/>
+			<mx:TextInput id="countId" width="25"/>
+			<mx:ComboBox id="countField">
+				<mx:ArrayCollection>
+{hasManyFields}
+				</mx:ArrayCollection>
+			</mx:ComboBox>
+			<mx:Button label="count" click="count(countId.text, countField.text);"/>
+		</mx:GridItem>
+	</mx:GridRow>	
+</mx:Grid>

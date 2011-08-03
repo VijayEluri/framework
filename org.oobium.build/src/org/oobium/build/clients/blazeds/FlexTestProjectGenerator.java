@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 
+import org.oobium.build.gen.model.PropertyDescriptor;
 import org.oobium.build.model.ModelDefinition;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.Workspace;
@@ -100,7 +101,7 @@ public class FlexTestProjectGenerator {
 		
 		String source = getResourceAsString(getClass(), "TestTemplate.mxml");
 		for(ModelDefinition model : models) {
-			createCanvasFile(src, model, source);
+			createTesterFile(src, model, source);
 		}
 
 		createActionScriptPropertiesFile();
@@ -148,9 +149,49 @@ public class FlexTestProjectGenerator {
 			).replace("{uuid}", uuid).replace("{services}", services).replace("{output}", output));
 	}
 	
-	private void createCanvasFile(File src, ModelDefinition model, String source) {
-		String name = model.getPackageName().replace('.', '/') + "/" + model.getSimpleName() + "Canvas.mxml";
-		source = source.replace("{fullType}", model.getCanonicalName()).replace("{type}", model.getSimpleName());
+	private void createTesterFile(File src, ModelDefinition model, String source) {
+		String name = model.getPackageName().replace('.', '/') + "/" + model.getSimpleName() + "Tester.mxml";
+
+		List<String> columns = new ArrayList<String>();
+		List<String> countIfStatements = new ArrayList<String>();
+		List<String> fieldCallbacks = new ArrayList<String>();
+		List<String> hasManyFields = new ArrayList<String>();
+		for(PropertyDescriptor prop : model.getProperties().values()) {
+			if(prop.isAttr()) {
+				String var = prop.variable();
+				String header = titleize(var);
+				columns.add("<mx:DataGridColumn dataField=\"{var}\" headerText=\"{header}\" />".replace("{var}", var).replace("{header}", header));
+			}
+			else if(prop.hasMany()) {
+				String field = prop.variable();
+				countIfStatements.add(source(
+						"if(\"{field}\" == field) {",
+						" {type}.find(parseInt(id), {field}Callback);",
+						"}"
+					).replace("{field}", field));
+				fieldCallbacks.add(source(
+						"public function {field}Callback(event:ResultEvent):void {",
+						" var obj:{type} = event.result as {type};",
+						"  if(obj != null) {",
+						"   obj.{field}(showCountCallback);",
+						"  } else {",
+						"   Alert.show(\"{type} not found\");",
+						" }",
+						"}"
+					).replace("{field}", field));
+				hasManyFields.add("<mx:String>{field}</mx:String>".replace("{field}", field));
+			}
+		}
+		
+		source = source
+						.replace("{columns}", source("\t\t\t\t\t", '\t', columns))
+						.replace("{fieldCallbacks}", source("\t\t\t", '\t', fieldCallbacks))
+						.replace("{countIfStatements}", source("\t\t\t\t\t", '\t', countIfStatements))
+						.replace("{hasManyFields}", source("\t\t\t\t\t", '\t', hasManyFields))
+						.replace("{fullType}", model.getCanonicalName())
+						.replace("{type}", model.getSimpleName())
+					;
+
 		writeFile(src, name, source);
 	}
 	
@@ -201,7 +242,7 @@ public class FlexTestProjectGenerator {
 			}
 			contents.add(
 					"<mx:VBox label=\"" + titleize(plural(model.getSimpleName())) + "\">\n" +
-					" <" + namespaces.get(pkg) + ":" + model.getSimpleName() + "Canvas width=\"100%\" height=\"100%\" />\n" +
+					" <" + namespaces.get(pkg) + ":" + model.getSimpleName() + "Tester width=\"100%\" height=\"100%\" />\n" +
 					"</mx:VBox>"
 				);
 		}

@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.oobium.build.clients.JavaClientExporter;
@@ -212,7 +213,7 @@ public class BlazeProjectGenerator {
 
 		sf.staticVariables.put("addNotifier", "private static AtomicBoolean addNotifier = new AtomicBoolean(true);");
 		
-		sf.methods.put("0addObserver", source(
+		sf.methods.put("addObserver", source(
 				"public String addObserver() {",
 				" FlexSession session = FlexContext.getFlexSession();",
 				" String channelName = (String) session.getAttribute(\"userName\");",
@@ -230,51 +231,66 @@ public class BlazeProjectGenerator {
 				"}"
 			).replace("{mType}", mType));
 		
-		sf.methods.put("0find(int id)", source(
+		sf.methods.put("find(int id)", source(
 				"public {type} find(int id) throws SQLException {",
 				" return {type}.find(id);",
 				"}"
 			).replace("{type}", mType));
 		
-		sf.methods.put("1find(String where)", source(
+		sf.methods.put("find(String where)", source(
 				"public {type} find(String where) throws SQLException {",
 				" return {type}.find(where);",
 				"}"
 			).replace("{type}", mType));
 		
-		sf.methods.put("2findAll()", source(
+		sf.methods.put("findAll", source(
 				"public List<{type}> findAll() throws SQLException {",
 				" return {type}.findAll();",
 				"}"
 			).replace("{type}", mType));
 		
-		sf.methods.put("3findAll(String where)", source(
+		sf.methods.put("findAll(String where)", source(
 				"public List<{type}> findAll(String where) throws SQLException {",
 				" return {type}.findAll(where);",
 				"}"
 			).replace("{type}", mType));
 		
-		sf.methods.put("4create", source(
+		sf.methods.put("create", source(
 				"public {type} create({type} {var}) throws SQLException {",
 				" {var}.create();",
 				" return {var};",
 				"}"
 			).replace("{type}", mType).replace("{var}", mVar));
 
-		sf.methods.put("5destroy", source(
+		sf.methods.put("destroy", source(
 				"public {type} destroy({type} {var}) throws SQLException {",
 				" {var}.destroy();",
 				" return {var};",
 				"}"
 			).replace("{type}", mType).replace("{var}", mVar));
 
-		sf.methods.put("6update", source(
+		sf.methods.put("update", source(
 				"public {type} update({type} {var}) throws SQLException {",
 				" {var}.update();",
 				" return {var};",
 				"}"
 			).replace("{type}", mType).replace("{var}", mVar));
 
+		for(PropertyDescriptor prop : model.getProperties().values()) {
+			if(prop.hasMany()) {
+				sf.imports.add(Set.class.getCanonicalName());
+				sf.imports.add(prop.fullType());
+				String cType = prop.castType();
+				String type = prop.type();
+				String name = prop.variable();
+				sf.methods.put(name, source(
+						"public {cast}<{type}> {name}({mType} {mVar}) {",
+						" return {mVar}.{name}();",
+						"}"
+					).replace("{cast}", cType).replace("{type}", type).replace("{name}", name).replace("{mType}", mType).replace("{mVar}", mVar));
+			}
+		}
+		
 		writeFile(srcFolder, sf.getFilePath(), sf.toSource());
 	}
 	
@@ -369,7 +385,9 @@ public class BlazeProjectGenerator {
 		l.add("  {var}.id = {var}.getId();");
 		l.add("  {var}.errors = {var}.getErrorsList();");
 		for(PropertyDescriptor prop : props) {
-			l.add("  {var}.{prop} = {var}.{getter}();".replace("{prop}", prop.variable()).replace("{getter}", prop.getterName()));
+			if(!prop.hasMany()) {
+				l.add("  {var}.{prop} = {var}.{getter}();".replace("{prop}", prop.variable()).replace("{getter}", prop.getterName()));
+			}
 		}
 		l.add(" }");
 		l.add(" return {var};");
@@ -391,7 +409,9 @@ public class BlazeProjectGenerator {
 		l.add("  {var}.setId({var}.id);");
 		l.add("  {var}.setErrors({var}.errors);");
 		for(PropertyDescriptor prop : props) {
-			l.add("  {var}.set({enum}, {var}.{prop});".replace("{enum}", prop.enumProp()).replace("{prop}", prop.variable()));
+			if(!prop.hasMany()) {
+				l.add("  {var}.set({enum}, {var}.{prop});".replace("{enum}", prop.enumProp()).replace("{prop}", prop.variable()));
+			}
 		}
 		l.add(" }");
 		l.add(" return {var};");
@@ -430,14 +450,21 @@ public class BlazeProjectGenerator {
 				sf.imports.add(prop.fullType());
 			}
 			if(prop.hasMany()) {
-				sf.variables.put(prop.variable(), "public " + prop.castType() + "<" + prop.type() + "> "+ prop.variable());
+				String name = prop.variable();
+				sf.methods.put(name, source(
+						"@Override",
+						"public {cast}<{type}> {name}() {",
+						" setFields(this);",
+						" return super.{name}();",
+						"}"
+					).replace("{cast}", prop.castType()).replace("{type}", prop.type()).replace("{name}", name));
 			} else {
 				sf.variables.put(prop.variable(), "public " + prop.castType() + " " + prop.variable());
 			}
 			sf.imports.addAll(prop.imports());
 		}
 
-		sf.methods.put(String.valueOf(i++), source(
+		sf.methods.put("create", source(
 				"@Override",
 				"public boolean create() {",
 				" setFields(this);",
@@ -447,7 +474,7 @@ public class BlazeProjectGenerator {
 				"}"
 			));
 
-		sf.methods.put(String.valueOf(i++), source(
+		sf.methods.put("update", source(
 				"@Override",
 				"public boolean update() {",
 				" setFields(this);",
@@ -457,7 +484,7 @@ public class BlazeProjectGenerator {
 				"}"
 			));
 
-		sf.methods.put(String.valueOf(i++), source(
+		sf.methods.put("destroy", source(
 				"@Override",
 				"public boolean destroy() {",
 				" setFields(this);",
