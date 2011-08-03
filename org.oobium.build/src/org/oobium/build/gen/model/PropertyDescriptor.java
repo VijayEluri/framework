@@ -48,6 +48,7 @@ public class PropertyDescriptor {
 
 	private ModelDefinition model;
 	private ModelRelation opposite;
+	private boolean isAttr;
 	private boolean hasOne;
 	private boolean hasMany;
 	private String relatedType;
@@ -65,9 +66,11 @@ public class PropertyDescriptor {
 		readOnly = attribute.readOnly;
 		unique = attribute.unique;
 		virtual = attribute.virtual;
+		
+		isAttr = true;
 		hasOne = false;
-		relatedType = null;
 		hasMany = false;
+		relatedType = null;
 
 		builder = new AttributeBuilder(this);
 	}
@@ -84,6 +87,8 @@ public class PropertyDescriptor {
 		readOnly = relation.readOnly;
 		unique = relation.unique;
 		virtual = relation.virtual;
+
+		isAttr = false;
 		hasOne = !relation.hasMany;
 		hasMany = relation.hasMany;
 		relatedType = relation.type;
@@ -156,6 +161,10 @@ public class PropertyDescriptor {
 
 	public String init() {
 		return init;
+	}
+	
+	public boolean isAttr() {
+		return isAttr;
 	}
 	
 	public boolean isRequired() {
