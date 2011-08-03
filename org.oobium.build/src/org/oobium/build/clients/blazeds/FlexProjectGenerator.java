@@ -254,10 +254,10 @@ public class FlexProjectGenerator {
 		else {
 			return source(
 					"public function {name}(callback:Function):void {",
-					"  {type}.ro.{name}.addEventListener(\"result\", function(event:ResultEvent):void {",
-					"   {type}.ro.{name}.removeEventListener(\"result\", arguments.callee);",
-					"   callback(event);",
-					"  });",
+					" {type}.ro.{name}.addEventListener(\"result\", function(event:ResultEvent):void {",
+					"  {type}.ro.{name}.removeEventListener(\"result\", arguments.callee);",
+					"  callback(event);",
+					" });",
 					" {type}.ro.{name}(this);",
 					"}"
 				).replace("{name}", name).replace("{type}", type);
