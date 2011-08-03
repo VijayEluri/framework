@@ -245,7 +245,7 @@
 	</mx:GridRow>	
 	<mx:GridRow>
 		<mx:GridItem horizontalAlign="center">
-			<mx:Button label="FindAll()" click="Asset.findAll('*', gridCallback);"/>
+			<mx:Button label="FindAll()" click="{type}.findAll('*', gridCallback);"/>
 		</mx:GridItem>
 	</mx:GridRow>	
 	<mx:GridRow>
@@ -268,7 +268,7 @@
 	</mx:GridRow>	
 	<mx:GridRow>
 		<mx:GridItem horizontalAlign="center">
-			<mx:Label text="Asset Id:"/>
+			<mx:Label text="{type} Id:"/>
 			<mx:TextInput id="countId" width="25"/>
 			<mx:ComboBox id="countField">
 				<mx:ArrayCollection>
