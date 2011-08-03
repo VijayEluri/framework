@@ -154,6 +154,7 @@ public class SqlUtils {
 	    _reservedWords.add("INT".toLowerCase());
 	    _reservedWords.add("INTEGER".toLowerCase());
 	    _reservedWords.add("INTERSECT".toLowerCase());
+	    _reservedWords.add("INTERVAL".toLowerCase());
 	    _reservedWords.add("INTO".toLowerCase());
 	    _reservedWords.add("IS".toLowerCase());
 	    _reservedWords.add("ISOLATION".toLowerCase());
