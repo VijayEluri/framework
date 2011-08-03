@@ -326,6 +326,10 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 		return false;
 	}
 	
+	public boolean hasMany(String field) {
+		return field != null && field.equals(getParam("hasMany"));
+	}
+	
 	@Override
 	public boolean hasParam(String name) {
 		return controller.hasParam(name);

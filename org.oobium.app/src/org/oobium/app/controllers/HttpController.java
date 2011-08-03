@@ -630,6 +630,10 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		return hasFlash(FLASH_WARNING);
 	}
 	
+	public boolean hasMany(String field) {
+		return field != null && field.equals(getParam("hasMany"));
+	}
+	
 	@Override
 	public boolean hasParam(String name) {
 		if(params == null) {

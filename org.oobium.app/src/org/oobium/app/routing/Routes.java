@@ -26,7 +26,7 @@ import org.oobium.persist.ModelAdapter;
 
 public class Routes {
 
-	private final Router router;
+	final Router router;
 	private final List<Routed> routed;
 	
 	private final Class<? extends Model> parentClass;
@@ -40,7 +40,7 @@ public class Routes {
 		this.baseRule = baseRule;
 	}
 
-	public Routed hasMany(String field, Action...actions) {
+	public RoutedRoutes hasMany(String field, Action...actions) {
 		if(baseRule == null) {
 			throw new IllegalArgumentException("base rule is null");
 		}
@@ -115,7 +115,8 @@ public class Routes {
 			sb.replace(id[0], id[1], parentIdParam);
 			sb.replace(models[0], models[1], parentName);
 		}
-		sb.append("/{models}");
+//		sb.append("/{models}");
+		sb.append('/').append(field);
 
 		String hasManyParam = adapter.hasOpposite(field) ? (varName(hasManyClass) + "[" + adapter.getOpposite(field) + "]") : null;
 		
@@ -130,14 +131,14 @@ public class Routes {
 			HttpRoute route = null;
 			switch(action) {
 			case create:
-				route = router.addRoute(key, rule, parentClass, field, hasManyClass, action);
+				route = router.addRoute(key, join(rule, field), parentClass, field, hasManyClass, action);
 				updateParams(route, parentIdParam, hasManyParam);
 				break;
 			case showAll:
-				route = router.addRoute(key, rule, parentClass, field, hasManyClass, action);
+				route = router.addRoute(key, join(rule, field), parentClass, field, hasManyClass, action);
 				break;
 			case showNew:
-				route = router.addRoute(key, rule + "/new", parentClass, field, hasManyClass, action);
+				route = router.addRoute(key, join(rule + "/new", field), parentClass, field, hasManyClass, action);
 				updateParams(route, parentIdParam, hasManyParam);
 				break;
 			case destroy:
@@ -151,7 +152,12 @@ public class Routes {
 			router.addHasMany(router.getKey(parentClass, action), key);
 			routed.add(new Routed(router, route));
 		}
-		return new Routed(router, routed);
+		return new RoutedRoutes(this, routed);
+	}
+
+	private String join(String rule, String field) {
+		String joiner = (rule.indexOf('?') == -1) ? "?" : "&";
+		return rule + joiner + "{hasMany=" + field + "}";
 	}
 	
 	public Routes publish() {

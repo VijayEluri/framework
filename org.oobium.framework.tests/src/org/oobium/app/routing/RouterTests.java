@@ -1781,9 +1781,9 @@ public class RouterTests {
 		assertEquals("[DELETE] /members/(\\d+) -> MemberController#destroy(id)", 				router.getRoutes().get(4).toString());
 		assertEquals("[GET] /members/(\\d+) -> MemberController#show(id)", 						router.getRoutes().get(5).toString());
 		assertEquals("[GET] /members/(\\d+)/edit -> MemberController#showEdit(id)", 			router.getRoutes().get(6).toString());
-		assertEquals("[POST] /members/(\\d+)/phones -> PhoneController#create(member[id])", 	router.getRoutes().get(7).toString());
-		assertEquals("[GET] /members/(\\d+)/phones -> PhoneController#showAll(member[id])", 	router.getRoutes().get(8).toString());
-		assertEquals("[GET] /members/(\\d+)/phones/new -> PhoneController#showNew(member[id])",	router.getRoutes().get(9).toString());
+		assertEquals("[POST] /members/(\\d+)/phones -> PhoneController#create(member[id],hasMany=phones)", 	router.getRoutes().get(7).toString());
+		assertEquals("[GET] /members/(\\d+)/phones -> PhoneController#showAll(member[id],hasMany=phones)", 	router.getRoutes().get(8).toString());
+		assertEquals("[GET] /members/(\\d+)/phones/new -> PhoneController#showNew(member[id],hasMany=phones)",	router.getRoutes().get(9).toString());
 		assertEquals("/members", router.pathTo(Member.class, create));
 		assertEquals("/members", router.pathTo(Member.class, showAll));
 		assertEquals("/members/new", router.pathTo(Member.class, showNew));
@@ -1814,7 +1814,7 @@ public class RouterTests {
 		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(PhoneController.class, ch.controllerClass);
 		assertEquals(showAll, ch.action);
-		assertEquals("[[member[id], 1]]", asString(ch.params));
+		assertEquals("[[member[id], 1], [hasMany, phones]]", asString(ch.params));
 	}
 	
 	@Test
@@ -1828,9 +1828,9 @@ public class RouterTests {
 		assertEquals("[DELETE] /accounts/(\\d+) -> AccountController#destroy(id)", 			router.getRoutes().get(4).toString());
 		assertEquals("[GET] /accounts/(\\d+) -> AccountController#show(id)", 				router.getRoutes().get(5).toString());
 		assertEquals("[GET] /accounts/(\\d+)/edit -> AccountController#showEdit(id)", 		router.getRoutes().get(6).toString());
-		assertEquals("[POST] /accounts/(\\d+)/categories -> CategoryController#create(category[cAccount])", 	router.getRoutes().get(7).toString());
-		assertEquals("[GET] /accounts/(\\d+)/categories -> CategoryController#showAll(account[id])", 	router.getRoutes().get(8).toString());
-		assertEquals("[GET] /accounts/(\\d+)/categories/new -> CategoryController#showNew(category[cAccount])",	router.getRoutes().get(9).toString());
+		assertEquals("[POST] /accounts/(\\d+)/categories -> CategoryController#create(category[cAccount],hasMany=categories)", 	router.getRoutes().get(7).toString());
+		assertEquals("[GET] /accounts/(\\d+)/categories -> CategoryController#showAll(account[id],hasMany=categories)", 	router.getRoutes().get(8).toString());
+		assertEquals("[GET] /accounts/(\\d+)/categories/new -> CategoryController#showNew(category[cAccount],hasMany=categories)",	router.getRoutes().get(9).toString());
 		assertEquals("/accounts", router.pathTo(Account.class, create));
 		assertEquals("/accounts", router.pathTo(Account.class, showAll));
 		assertEquals("/accounts/new", router.pathTo(Account.class, showNew));
@@ -1861,7 +1861,7 @@ public class RouterTests {
 		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(CategoryController.class, ch.controllerClass);
 		assertEquals(showAll, ch.action);
-		assertEquals("[[account[id], 1]]", asString(ch.params));
+		assertEquals("[[account[id], 1], [hasMany, categories]]", asString(ch.params));
 
 		handler = router.getHandler(request("[GET] /accounts/1/categories/new"));
 		assertNotNull(handler);
@@ -1869,7 +1869,7 @@ public class RouterTests {
 		ch = (HttpHandler) handler;
 		assertEquals(CategoryController.class, ch.controllerClass);
 		assertEquals(showNew, ch.action);
-		assertEquals("[[category[cAccount], 1]]", asString(ch.params));
+		assertEquals("[[category[cAccount], 1], [hasMany, categories]]", asString(ch.params));
 	}
 	
 	@Test
@@ -1885,9 +1885,9 @@ public class RouterTests {
 		assertEquals("[DELETE] /(\\w+)Member -> MemberController#destroy(type)", 		router.getRoutes().get(4).toString());
 		assertEquals("[GET] /(\\w+)Member -> MemberController#show(type)", 			router.getRoutes().get(5).toString());
 		assertEquals("[GET] /(\\w+)Member/edit -> MemberController#showEdit(type)",	router.getRoutes().get(6).toString());
-		assertEquals("[POST] /(\\w+)Member/phones -> PhoneController#create(member[type])", 	router.getRoutes().get(7).toString());
-		assertEquals("[GET] /(\\w+)Member/phones -> PhoneController#showAll(member[type])", 	router.getRoutes().get(8).toString());
-		assertEquals("[GET] /(\\w+)Member/phones/new -> PhoneController#showNew(member[type])",router.getRoutes().get(9).toString());
+		assertEquals("[POST] /(\\w+)Member/phones -> PhoneController#create(member[type],hasMany=phones)", 	router.getRoutes().get(7).toString());
+		assertEquals("[GET] /(\\w+)Member/phones -> PhoneController#showAll(member[type],hasMany=phones)", 	router.getRoutes().get(8).toString());
+		assertEquals("[GET] /(\\w+)Member/phones/new -> PhoneController#showNew(member[type],hasMany=phones)",router.getRoutes().get(9).toString());
 		assertEquals("/Member", router.pathTo(Member.class, create));
 		assertEquals("/Member", router.pathTo(Member.class, showAll));
 		assertEquals("/Member/new", router.pathTo(Member.class, showNew));
@@ -1918,7 +1918,7 @@ public class RouterTests {
 		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(PhoneController.class, ch.controllerClass);
 		assertEquals(showAll, ch.action);
-		assertEquals("[[member[type], admin]]", asString(ch.params));
+		assertEquals("[[member[type], admin], [hasMany, phones]]", asString(ch.params));
 
 		router.removeResources("{id=type:\\w+}{models=Member}", Member.class);
 		assertEquals(0, router.getRoutes().size());
@@ -1935,9 +1935,9 @@ public class RouterTests {
 		assertEquals("[DELETE] /(\\w+)Account -> AccountController#destroy(type)", 		router.getRoutes().get(4).toString());
 		assertEquals("[GET] /(\\w+)Account -> AccountController#show(type)", 			router.getRoutes().get(5).toString());
 		assertEquals("[GET] /(\\w+)Account/edit -> AccountController#showEdit(type)",	router.getRoutes().get(6).toString());
-		assertEquals("[POST] /(\\w+)Account/categories -> CategoryController#create(category[cAccount][type])", 	router.getRoutes().get(7).toString());
-		assertEquals("[GET] /(\\w+)Account/categories -> CategoryController#showAll(account[type])", 	router.getRoutes().get(8).toString());
-		assertEquals("[GET] /(\\w+)Account/categories/new -> CategoryController#showNew(category[cAccount][type])",	router.getRoutes().get(9).toString());
+		assertEquals("[POST] /(\\w+)Account/categories -> CategoryController#create(category[cAccount][type],hasMany=categories)", 	router.getRoutes().get(7).toString());
+		assertEquals("[GET] /(\\w+)Account/categories -> CategoryController#showAll(account[type],hasMany=categories)", 	router.getRoutes().get(8).toString());
+		assertEquals("[GET] /(\\w+)Account/categories/new -> CategoryController#showNew(category[cAccount][type],hasMany=categories)",	router.getRoutes().get(9).toString());
 		assertEquals("/Account", router.pathTo(Account.class, create));
 		assertEquals("/Account", router.pathTo(Account.class, showAll));
 		assertEquals("/Account/new", router.pathTo(Account.class, showNew));
@@ -1968,7 +1968,7 @@ public class RouterTests {
 		HttpHandler ch = (HttpHandler) handler;
 		assertEquals(CategoryController.class, ch.controllerClass);
 		assertEquals(showAll, ch.action);
-		assertEquals("[[account[type], checking]]", asString(ch.params));
+		assertEquals("[[account[type], checking], [hasMany, categories]]", asString(ch.params));
 
 		handler = router.getHandler(request("[POST] /checkingAccount/categories"));
 		assertNotNull(handler);
@@ -1976,7 +1976,7 @@ public class RouterTests {
 		ch = (HttpHandler) handler;
 		assertEquals(CategoryController.class, ch.controllerClass);
 		assertEquals(create, ch.action);
-		assertEquals("[[category[cAccount][type], checking]]", asString(ch.params));
+		assertEquals("[[category[cAccount][type], checking], [hasMany, categories]]", asString(ch.params));
 
 		router.removeResources("{id=type:\\w+}{models=Account}", Account.class);
 		assertEquals(0, router.getRoutes().size());
