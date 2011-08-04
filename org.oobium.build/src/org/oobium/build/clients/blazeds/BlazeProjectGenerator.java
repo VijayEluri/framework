@@ -380,13 +380,18 @@ public class BlazeProjectGenerator {
 		List<String> l;
 		
 		l = new ArrayList<String>();
-		l.add("private static {type} setVars({type} {var}) {");
+		l.add("public static {type} setVars({type} {var}) {");
 		l.add(" if({var} != null) {");
 		l.add("  {var}.id = {var}.getId();");
 		l.add("  {var}.errors = {var}.getErrorsList();");
 		for(PropertyDescriptor prop : props) {
-			if(!prop.hasMany()) {
-				l.add("  {var}.{prop} = {var}.{getter}();".replace("{prop}", prop.variable()).replace("{getter}", prop.getterName()));
+			String pvar = prop.variable();
+			String getter = prop.getterName();
+			if(prop.isAttr()) {
+				l.add("  {var}.{pvar} = {var}.{getter}();".replace("{pvar}", pvar).replace("{getter}", getter));
+			}
+			else if(prop.hasOne()) {
+				l.add("  {var}.{pvar} = {ptype}.setVars({var}.{getter}());".replace("{pvar}", pvar).replace("{getter}", getter).replace("{ptype}", prop.type()));
 			}
 		}
 		l.add(" }");

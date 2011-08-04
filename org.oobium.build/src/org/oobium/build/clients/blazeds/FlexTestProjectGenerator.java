@@ -90,18 +90,19 @@ public class FlexTestProjectGenerator {
 		
 		List<ModelDefinition> models = new ArrayList<ModelDefinition>();
 		for(File file : module.findModels()) {
-			ModelDefinition model = new ModelDefinition(file);
-			if(model.hasAttribute("name")) {
-				// temporary filter until a generic flex test app is written
-				models.add(model);
-			}
+			models.add(new ModelDefinition(file));
 		}
 		
 		createMainFile(src, models);
 		
-		String source = getResourceAsString(getClass(), "TestTemplate.mxml");
+		String source1 = getResourceAsString(getClass(), "TestTemplateWithPopup.mxml");
+		String source2 = getResourceAsString(getClass(), "TestTemplate.mxml");
 		for(ModelDefinition model : models) {
-			createTesterFile(src, model, source);
+			if(model.hasAttribute("name")) {
+				createTesterFile(src, model, source1);
+			} else {
+				createTesterFile(src, model, source2);
+			}
 		}
 
 		createActionScriptPropertiesFile();

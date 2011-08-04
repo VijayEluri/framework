@@ -46,6 +46,7 @@ public class FlexProjectGenerator {
 		flexTypes.put(Time.class.getCanonicalName(),			"Date");
 		flexTypes.put(Timestamp.class.getCanonicalName(),		"Date");
 		flexTypes.put(BigDecimal.class.getCanonicalName(),		"Number");
+		flexTypes.put(Map.class.getCanonicalName(),				"Object");
 	}
 
 	
