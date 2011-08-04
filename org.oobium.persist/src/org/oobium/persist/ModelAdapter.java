@@ -251,19 +251,26 @@ public class ModelAdapter {
 		return rels;
 	}
 
-	public String getThrough(String field) {
-		if(hasMany.containsKey(field)) {
-			return hasMany.get(field).through();
+	public String[] getThrough(String field) {
+		Relation relation = hasMany.get(field);
+		if(relation != null) {
+			String through = relation.through();
+			if(!blank(through)) {
+				int ix = through.indexOf(':');
+				if(ix == -1) {
+					return new String[] { through, varName(relation.type()) };
+				} else {
+					return new String[] { through.substring(0, ix), through.substring(ix + 1) };
+				}
+			}
 		}
 		return null;
 	}
 
 	public Class<? extends Model> getThroughClass(String field) {
-		String through = getThrough(field);
+		String[] through = getThrough(field);
 		if(through != null) {
-			int ix = through.indexOf(':');
-			if(ix != -1) through = through.substring(0, ix);
-			return getRelationClass(through);
+			return getRelationClass(through[0]);
 		}
 		return null;
 	}
@@ -565,7 +572,10 @@ public class ModelAdapter {
 	}
 
 	public boolean isThrough(String field) {
-		return !blank(getThrough(field));
+		if(hasMany.containsKey(field)) {
+			return !blank(hasMany.get(field).through());
+		}
+		return false;
 	}
 	
 	public boolean isTimeStamped() {

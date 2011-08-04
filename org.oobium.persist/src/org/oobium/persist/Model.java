@@ -596,7 +596,7 @@ public abstract class Model implements JsonModel {
 						} else if(isOppositeRequired(field)) {
 							set = new RequiredSet<Model>(this, field, getOpposite(field));
 						} else {
-							set = new ActiveSet<Model>(this, field, getOpposite(field), isManyToMany(field));
+							set = new ActiveSet<Model>(this, field);
 						}
 						fields.put(field, set);
 					}
@@ -835,10 +835,6 @@ public abstract class Model implements JsonModel {
 	@Override
 	public final boolean isEmpty() {
 		return fields.isEmpty();
-	}
-	
-	private boolean isManyToMany(String field) {
-		return getAdapter(getClass()).isManyToMany(field);
 	}
 	
 	private boolean isManyToNone(String field) {
@@ -1325,7 +1321,7 @@ public abstract class Model implements JsonModel {
 			if(type == ActiveSet.class || type == RequiredSet.class) {
 				Set<Model> set;
 				if(type == ActiveSet.class) {
-					set = new ActiveSet<Model>(this, field, getOpposite(field), isManyToMany(field), models);
+					set = new ActiveSet<Model>(this, field, models);
 				} else {
 					set = new RequiredSet<Model>(this, field, getOpposite(field), models);
 				}

@@ -14,7 +14,6 @@ import static java.util.Arrays.asList;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -22,23 +21,27 @@ import java.util.Set;
 
 public class ActiveSet<E extends Model> implements Set<E> {
 
-	private Model owner;
-	private String ownerField;
-	private String memberField;
-	private boolean manyToMany;
+	private final Model owner;
+	private final String ownerField;
+	private final String memberField;
+	private final boolean manyToMany;
 	
-	private Set<E> members;
+	private final Set<E> members;
 
-	ActiveSet(Model owner, String ownerField, String memberField, boolean manyToMany) {
-		this(owner, ownerField, memberField, manyToMany, null);
+	ActiveSet(Model owner, String ownerField) {
+		this(owner, ownerField, null);
 	}
 	
-	ActiveSet(Model owner, String ownerField, String memberField, boolean manyToMany, E[] members) {
+	ActiveSet(Model owner, String ownerField, E[] members) {
 		this.owner = owner;
 		this.ownerField = ownerField;
+		
+		ModelAdapter adapter = ModelAdapter.getAdapter(owner);
+		
+		this.memberField = adapter.getOpposite(ownerField);
+		this.manyToMany = adapter.isManyToMany(ownerField);
+
 		this.members = (members != null) ? new LinkedHashSet<E>(asList(members)) : new LinkedHashSet<E>();
-		this.memberField = memberField;
-		this.manyToMany = manyToMany;
 	}
 
 	@Override
@@ -65,7 +68,6 @@ public class ActiveSet<E extends Model> implements Set<E> {
 	public void clear() {
 		List<E> ca = new ArrayList<E>(members);
 		members.clear();
-		members = new HashSet<E>();
 		for(E o : ca) {
 			clearOpposite(o);
 		}
@@ -100,6 +102,7 @@ public class ActiveSet<E extends Model> implements Set<E> {
 
 	@Override
 	public Iterator<E> iterator() {
+		// TODO create a custom iterator - this exposes the internal members collection
 		return members.iterator();
 	}
 

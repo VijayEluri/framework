@@ -412,20 +412,12 @@ public class QueryBuilder {
 	private void initAsSubQuery() {
 		String field = query.getField();
 		if(parentAdapter.isThrough(field)) {
-			String through = parentAdapter.getThrough(field);
-			int ix = through.indexOf(':');
-			String throughField;
-			if(ix == -1) {
-				throughField = query.getType().getSimpleName();
-			} else {
-				throughField = through.substring(ix + 1);
-				through = through.substring(0, ix);
-			}
-			if(parentAdapter.isManyToOne(through)) {
+			String[] through = parentAdapter.getThrough(field);
+			if(parentAdapter.isManyToOne(through[0])) {
 				String table1 = tableName(parentAdapter.getThroughClass(field));
 				String table2 = tableName(query.getType());
-				String safeCol1 = safeSqlWord(dbType, columnName(throughField));
-				String safeCol2 = safeSqlWord(dbType, columnName(parentAdapter.getOpposite(through)));
+				String safeCol1 = safeSqlWord(dbType, columnName(through[1]));
+				String safeCol2 = safeSqlWord(dbType, columnName(parentAdapter.getOpposite(through[0])));
 
 				String table = table1 + " a INNER JOIN " + table2 + " b ON a." + safeCol1 + "=b.id " +
 											"AND a." + safeCol2 + " IN (" + Query.ID_MARKER + ")";
@@ -435,9 +427,10 @@ public class QueryBuilder {
 				addColumns("b", adapter);
 				alias = "b";
 			} else {
+				//TODO UNTESTED
 				Class<?> class1 = parentAdapter.getModelClass();
 				Class<?> class2 = parentAdapter.getThroughClass(field);
-				String rel1 = parentAdapter.getThrough(field);
+				String rel1 = parentAdapter.getThrough(field)[0];
 				String rel2 = (parentAdapter.getOpposite(rel1));
 				String col1 = columnName(class1, rel1);
 				String col2 = columnName(class2, rel2);
