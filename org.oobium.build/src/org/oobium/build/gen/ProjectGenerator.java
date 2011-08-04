@@ -15,7 +15,7 @@ import static org.oobium.utils.FileUtils.createFolder;
 import static org.oobium.utils.FileUtils.writeFile;
 import static org.oobium.utils.StringUtils.camelCase;
 import static org.oobium.utils.StringUtils.impliedType;
-import static org.oobium.utils.StringUtils.underscored;
+import static org.oobium.utils.StringUtils.*;
 
 import java.io.File;
 import java.sql.SQLException;
@@ -790,11 +790,12 @@ public class ProjectGenerator {
 		src.imports.add(modelPackage + "." + modelName);
 		src.imports.add(Observer.class.getCanonicalName());
 
-		src.methods.put("afterCreate", 
-			"@Override\n" +
-			"protected void afterCreate(Post model) {\n" +
-			"\t// TODO Auto-generated method stub\n" +
-			"}");
+		src.methods.put("afterCreate", source(
+				"@Override",
+				"protected void afterCreate({mType} {mVar}) {",
+				"\t// TODO Auto-generated method stub",
+				"}"
+			).replace("{mType}", modelName).replace("{mVar}", varName(modelName)));
 
 		return writeFile(module.observers, name + ".java", src.toSource());
 	}
