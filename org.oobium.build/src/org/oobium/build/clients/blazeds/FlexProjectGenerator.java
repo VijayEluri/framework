@@ -157,7 +157,7 @@ public class FlexProjectGenerator {
 		ActionScriptFile as = new ActionScriptFile();
 		as.packageName = model.getPackageName();
 
-		as.imports.add("mx.controls.Alert");
+		as.imports.add("mx.collections.ArrayCollection");
 		as.imports.add("mx.rpc.remoting.RemoteObject");
 		as.imports.add("mx.rpc.events.ResultEvent");
 		as.imports.add("mx.rpc.events.FaultEvent");
@@ -166,38 +166,38 @@ public class FlexProjectGenerator {
 		as.classMetaTags.add("RemoteClass(alias=\"" + model.getCanonicalName() + "\")");
 		as.simpleName = model.getSimpleName();
 		
-		as.staticVariables.put("ro", "private static var ro:RemoteObject;");
+		as.staticVariables.put("sro", "private static var sro:RemoteObject;");
 		
-		as.staticInitializers.add("ro = new RemoteObject();");
-		as.staticInitializers.add("ro.destination = \"" + model.getControllerName() + "\";");
-		as.staticInitializers.add("ro.addEventListener(\"fault\", faultHandler);");
-		as.staticInitializers.add("ro.addObserver.addEventListener(\"result\", Observers.onChannelAdded);");
+		as.staticInitializers.add("sro = new RemoteObject();");
+		as.staticInitializers.add("sro.destination = \"" + model.getControllerName() + "\";");
+		as.staticInitializers.add("sro.addEventListener(\"fault\", faultHandler);");
+		as.staticInitializers.add("sro.addObserver.addEventListener(\"result\", Observers.onChannelAdded);");
 		
 		as.staticMethods.put("addObserver", source(
 				"public static function addObserver(method:String, callback:Function):void {",
-				" {type}.ro.addObserver();",
+				" {type}.sro.addObserver();",
 				" Observers.addObserver(\"{fullType}\", method, callback);",
 				"}"
 			).replace("{type}", as.simpleName).replace("{fullType}", model.getCanonicalName()));
 
 		as.staticMethods.put("fault", source(
 				"private static function faultHandler (event:FaultEvent):void {",
-				" Alert.show(event.fault.faultString, 'Error');",
+				" trace('Error: ' + event.fault.faultString);",
 				"}"
 			));
 		
 		String finders = source(
 				"public static function {name}(o:Object, callback:Function):void {",
-				" {type}.ro.{name}.addEventListener(\"result\", function(event:ResultEvent):void {",
-				"  {type}.ro.{name}.removeEventListener(\"result\", arguments.callee);",
+				" {type}.sro.{name}.addEventListener(\"result\", function(event:ResultEvent):void {",
+				"  {type}.sro.{name}.removeEventListener(\"result\", arguments.callee);",
 				"  callback(event);",
 				" });",
 				" if(typeof(o) == \"number\") {",
-				"  {type}.ro.{name}(o as int);",
+				"  {type}.sro.{name}(o as int);",
 				" } else if(typeof(o) == \"string\") {",
-				"  {type}.ro.{name}(o as String);",
+				"  {type}.sro.{name}(o as String);",
 				" } else if(o != null) {",
-				"  {type}.ro.{name}(o.toString());",
+				"  {type}.sro.{name}(o.toString());",
 				" } else {",
 				"  throw new Error(\"object cannot be null\");",
 				" }",
@@ -206,7 +206,7 @@ public class FlexProjectGenerator {
 		as.staticMethods.put("find", finders.replace("{name}", "find"));
 		as.staticMethods.put("findAll", finders.replace("{name}", "findAll"));
 
-
+		
 		as.variables.put("", "public var id:int");
 		for(PropertyDescriptor prop : model.getProperties().values()) {
 			if(prop.isAttr()) {
@@ -220,7 +220,19 @@ public class FlexProjectGenerator {
 				as.methods.put(name, createMethod(as.simpleName, name, false));
 			}
 		}
+		as.variables.put("z1", "public var errors:ArrayCollection");
+		as.variables.put("z2", "public var error:Object");
+		as.variables.put("z3", "public var persistor:Object");
+		as.variables.put("z4", "private var ro:RemoteObject");
 
+		as.constructors.put(0, source(
+				"public function {type}() {",
+				" ro = new RemoteObject();",
+				" ro.destination = \"{type}Controller\";",
+				" ro.addEventListener(\"fault\", faultHandler);",
+				"}"
+			).replace("{type}", as.simpleName));
+		
 		as.methods.put("create", createMethod(as.simpleName, "create", true));
 		as.methods.put("update", createMethod(as.simpleName, "update", true));
 		as.methods.put("destroy", createMethod(as.simpleName, "destroy", true));
@@ -243,25 +255,25 @@ public class FlexProjectGenerator {
 			return source(
 					"public function {name}(callback:Function = null):void {",
 					" if(callback != null) {",
-					"  {type}.ro.{name}.addEventListener(\"result\", function(event:ResultEvent):void {",
-					"   {type}.ro.{name}.removeEventListener(\"result\", arguments.callee);",
+					"  ro.{name}.addEventListener(\"result\", function(event:ResultEvent):void {",
+					"   ro.{name}.removeEventListener(\"result\", arguments.callee);",
 					"   callback(event);",
 					"  });",
 					" }",
-					" {type}.ro.{name}(this);",
+					" ro.{name}(this);",
 					"}"
-				).replace("{name}", name).replace("{type}", type);
+				).replace("{name}", name);
 		}
 		else {
 			return source(
 					"public function {name}(callback:Function):void {",
-					" {type}.ro.{name}.addEventListener(\"result\", function(event:ResultEvent):void {",
-					"  {type}.ro.{name}.removeEventListener(\"result\", arguments.callee);",
+					" ro.{name}.addEventListener(\"result\", function(event:ResultEvent):void {",
+					"  ro.{name}.removeEventListener(\"result\", arguments.callee);",
 					"  callback(event);",
 					" });",
-					" {type}.ro.{name}(this);",
+					" ro.{name}(this);",
 					"}"
-				).replace("{name}", name).replace("{type}", type);
+				).replace("{name}", name);
 		}
 	}
 	

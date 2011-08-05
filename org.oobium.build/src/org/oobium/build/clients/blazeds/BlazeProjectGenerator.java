@@ -372,6 +372,7 @@ public class BlazeProjectGenerator {
 		SourceFile sf = new SourceFile();
 		sf.packageName = model.getPackageName();
 		sf.imports.add(List.class.getCanonicalName());
+		sf.imports.add(Set.class.getCanonicalName());
 		sf.imports.add(SQLException.class.getCanonicalName());
 		sf.simpleName = type;
 		sf.superName = sf.simpleName + "Model";
@@ -401,6 +402,15 @@ public class BlazeProjectGenerator {
 		
 		sf.staticMethods.put(String.valueOf(i++), source(
 				"private static List<{type}> setVars(List<{type}> {plural}) {",
+				" for({type} {var} : {plural}) {",
+				"  setVars({var});",
+				" }",
+				" return {plural};",
+				"}"
+			).replace("{type}", type).replace("{var}", var).replace("{plural}", plural));
+		
+		sf.staticMethods.put(String.valueOf(i++), source(
+				"public static Set<{type}> setVars(Set<{type}> {plural}) {",
 				" for({type} {var} : {plural}) {",
 				"  setVars({var});",
 				" }",
@@ -451,22 +461,24 @@ public class BlazeProjectGenerator {
 		sf.variables.put("", "public int id");
 		sf.variables.put(" ", "public List<String> errors");
 		for(PropertyDescriptor prop : props) {
-			if(prop.hasImport() && !prop.fullType().startsWith("java.lang")) {
-				sf.imports.add(prop.fullType());
-			}
 			if(prop.hasMany()) {
+				sf.imports.add(Set.class.getCanonicalName());
 				String name = prop.variable();
 				sf.methods.put(name, source(
 						"@Override",
-						"public {cast}<{type}> {name}() {",
+						"public Set<{type}> {name}() {",
 						" setFields(this);",
-						" return super.{name}();",
+						" return {type}.setVars(super.{name}());",
 						"}"
-					).replace("{cast}", prop.castType()).replace("{type}", prop.type()).replace("{name}", name));
+					).replace("{type}", prop.type()).replace("{name}", name));
 			} else {
-				sf.variables.put(prop.variable(), "public " + prop.castType() + " " + prop.variable());
+				if(prop.hasImport() && !prop.fullType().startsWith("java.lang")) {
+					sf.imports.add(prop.fullType());
+				}
+				String cast = "Map".equals(prop.castType()) ? "Map<String, String>" : prop.castType();
+				sf.variables.put(prop.variable(), "public " + cast + " " + prop.variable());
 			}
-			sf.imports.addAll(prop.imports());
+//			sf.imports.addAll(prop.imports());
 		}
 
 		sf.methods.put("create", source(

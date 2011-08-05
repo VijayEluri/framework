@@ -1,7 +1,6 @@
 package org.oobium.persist {
 
 	import flash.external.ExternalInterface;
-	import mx.controls.Alert;
 	import mx.messaging.ChannelSet;
 	import mx.messaging.Consumer;
 	import mx.messaging.channels.AMFChannel;
@@ -54,7 +53,7 @@ package org.oobium.persist {
 		}
 
 		public static function onChannelError(event:MessageFaultEvent):void {
-			Alert.show("onChannelError");
+			trace("onChannelError" + event.toString);
 		}
 
 		public static function onChannelEvent(event:MessageEvent):void {
