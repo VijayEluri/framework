@@ -8,7 +8,7 @@
 			import mx.controls.Alert;
 			import mx.controls.Button;
 			import mx.events.ListEvent;
-			import mx.rpc.events.ResultEvent;
+			import org.oobium.persist.RemoteResult;
 			
 			[Bindable]
 			private var daoData:ArrayCollection;
@@ -19,14 +19,14 @@
 				object.save(createCallback);
 			}
 			
-			public function createCallback(event:ResultEvent):void
+			public function createCallback(result:RemoteResult):void
 			{
-				var obj:{type} = event.result as {type};
+				var obj:{type} = result.model as {type};
 				showObject("Test Object", obj);
 			}
 			
-			public function findCallback(event:ResultEvent):void {
-				var obj:{type} = event.result as {type};
+			public function findCallback(result:RemoteResult):void {
+				var obj:{type} = result.model as {type};
 				if(obj != null) {
 					showObject("TestObject found", obj);
 				} else {
@@ -34,8 +34,8 @@
 				}
 			}
 			
-			public function saveCallback(event:ResultEvent):void {
-				var obj:{type} = event.result as {type};
+			public function saveCallback(result:RemoteResult):void {
+				var obj:{type} = result.model as {type};
 				if(obj != null) {
 					showObject("TestObject saved", obj);
 					{type}.findAll("*", gridCallback);
@@ -44,9 +44,9 @@
 				}
 			}
 			
-			public function gridCallback(event:ResultEvent):void
+			public function gridCallback(result:RemoteResult):void
 			{
-				daoData = event.result as ArrayCollection;
+				daoData = result.models;
 			}
 			
 			public function findById(objectId:String):void{
@@ -78,9 +78,8 @@
 				Alert.show("observing {type} for " + method);
 			}
 			
-			public function showCountCallback(event:ResultEvent):void {
-				var ac:ArrayCollection = event.result as ArrayCollection;
-				Alert.show("count: " + ac.length);
+			public function showCountCallback(result:RemoteResult):void {
+				Alert.show("count: " + result.length);
 			}
 			
 {fieldCallbacks}

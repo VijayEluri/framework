@@ -20,15 +20,15 @@ package org.oobium.persist {
 			return className + "::" + method;
 		}
 		
-		public static function addObserver(className:String, method:String, callback:Function):void {
-			if(className != null && method != null && callback != null) {
-				var key:String = key(className, method);
-				if(observers[key]) {
-					observers[key].push(callback);
-				} else {
-					observers[key] = [ callback ];
-				}
+		public static function addObserver(className:String, method:String, callback:Function):Observer {
+			var observer:Observer = new Observer(className, method, callback);
+			var key:String = key(className, method);
+			if(observers[key]) {
+				observers[key].push(observer);
+			} else {
+				observers[key] = [ observer ];
 			}
+			return observer;
 		}
 
 		public static function onChannelAdded(event:ResultEvent):void {
@@ -62,8 +62,8 @@ package org.oobium.persist {
 			var key:String = key(className, method);
 			if(observers[key]) {
 				var id:int = event.message.headers['id'];
-				for each(var f:Function in observers[key]) {
-					f(id);
+				for each(var observer:Observer in observers[key]) {
+					observer.exec(id);
 				}
 			}
 		}

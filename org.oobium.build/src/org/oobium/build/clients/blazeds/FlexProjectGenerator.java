@@ -83,7 +83,8 @@ public class FlexProjectGenerator {
 		createFolder(project, "bin");
 		
 		File src = createFolder(project, "src");
-		createObserversFile(src);
+		writeFile(src, "org/oobium/persist/Observers.as", getResourceAsString(getClass(), "Observers.as"));
+		writeFile(src, "org/oobium/persist/RemoteResult.as", getResourceAsString(getClass(), "RemoteResult.as"));
 		for(File file : module.findModels()) {
 			createModel(src, file);
 		}
@@ -162,20 +163,29 @@ public class FlexProjectGenerator {
 		as.imports.add("mx.rpc.events.ResultEvent");
 		as.imports.add("mx.rpc.events.FaultEvent");
 		as.imports.add("org.oobium.persist.Observers");
+		as.imports.add("org.oobium.persist.RemoteResult");
 		
 		as.classMetaTags.add("RemoteClass(alias=\"" + model.getCanonicalName() + "\")");
 		as.simpleName = model.getSimpleName();
 		
-		as.staticVariables.put("sro", "private static var sro:RemoteObject;");
+		as.staticVariables.put("observerRO", "private static var observerRO:RemoteObject;");
 		
-		as.staticInitializers.add("sro = new RemoteObject();");
-		as.staticInitializers.add("sro.destination = \"" + model.getControllerName() + "\";");
-		as.staticInitializers.add("sro.addEventListener(\"fault\", faultHandler);");
-		as.staticInitializers.add("sro.addObserver.addEventListener(\"result\", Observers.onChannelAdded);");
-		
+		as.staticMethods.put("ro", source(
+				"private static function ro():RemoteObject {",
+				" var ro:RemoteObject = new RemoteObject();",
+				" ro.destination = \"{controller}\";",
+				" ro.addEventListener(\"fault\", faultHandler);",
+				" return ro;",
+				"}"
+			).replace("{controller}", model.getControllerName()));
+
 		as.staticMethods.put("addObserver", source(
 				"public static function addObserver(method:String, callback:Function):void {",
-				" {type}.sro.addObserver();",
+				" if(observerRO == null) {",
+				"  observerRO = {type}.ro();",
+				"  observerRO.addObserver.addEventListener(\"result\", Observers.onChannelAdded);",
+				"  observerRO.addObserver();",
+				" }",
 				" Observers.addObserver(\"{fullType}\", method, callback);",
 				"}"
 			).replace("{type}", as.simpleName).replace("{fullType}", model.getCanonicalName()));
@@ -188,16 +198,17 @@ public class FlexProjectGenerator {
 		
 		String finders = source(
 				"public static function {name}(o:Object, callback:Function):void {",
-				" {type}.sro.{name}.addEventListener(\"result\", function(event:ResultEvent):void {",
-				"  {type}.sro.{name}.removeEventListener(\"result\", arguments.callee);",
-				"  callback(event);",
+				" var ro:RemoteObject = {type}.ro();",
+				" ro.{name}.addEventListener(\"result\", function(event:ResultEvent):void {",
+				"  ro.{name}.removeEventListener(\"result\", arguments.callee);",
+				"  callback(new RemoteResult(event));",
 				" });",
 				" if(typeof(o) == \"number\") {",
-				"  {type}.sro.{name}(o as int);",
+				"  ro.{name}(o as int);",
 				" } else if(typeof(o) == \"string\") {",
-				"  {type}.sro.{name}(o as String);",
+				"  ro.{name}(o as String);",
 				" } else if(o != null) {",
-				"  {type}.sro.{name}(o.toString());",
+				"  ro.{name}(o.toString());",
 				" } else {",
 				"  throw new Error(\"object cannot be null\");",
 				" }",
@@ -225,14 +236,6 @@ public class FlexProjectGenerator {
 		as.variables.put("z3", "public var persistor:Object");
 		as.variables.put("z4", "private var ro:RemoteObject");
 
-		as.constructors.put(0, source(
-				"public function {type}() {",
-				" ro = new RemoteObject();",
-				" ro.destination = \"{type}Controller\";",
-				" ro.addEventListener(\"fault\", faultHandler);",
-				"}"
-			).replace("{type}", as.simpleName));
-		
 		as.methods.put("create", createMethod(as.simpleName, "create", true));
 		as.methods.put("update", createMethod(as.simpleName, "update", true));
 		as.methods.put("destroy", createMethod(as.simpleName, "destroy", true));
@@ -254,33 +257,29 @@ public class FlexProjectGenerator {
 		if(allowNull) {
 			return source(
 					"public function {name}(callback:Function = null):void {",
+					" var ro:RemoteObject = {type}.ro();",
 					" if(callback != null) {",
 					"  ro.{name}.addEventListener(\"result\", function(event:ResultEvent):void {",
 					"   ro.{name}.removeEventListener(\"result\", arguments.callee);",
-					"   callback(event);",
+					"   callback(new RemoteResult(event));",
 					"  });",
 					" }",
 					" ro.{name}(this);",
 					"}"
-				).replace("{name}", name);
+				).replace("{type}", type).replace("{name}", name);
 		}
 		else {
 			return source(
 					"public function {name}(callback:Function):void {",
+					" var ro:RemoteObject = {type}.ro();",
 					" ro.{name}.addEventListener(\"result\", function(event:ResultEvent):void {",
 					"  ro.{name}.removeEventListener(\"result\", arguments.callee);",
-					"  callback(event);",
+					"  callback(new RemoteResult(event));",
 					" });",
 					" ro.{name}(this);",
 					"}"
-				).replace("{name}", name);
+				).replace("{type}", type).replace("{name}", name);
 		}
-	}
-	
-	private void createObserversFile(File src) {
-		String source = getResourceAsString(getClass(), "Observers.as");
-		source = source.replace("{serverUrl}", "http://localhost:8400"); // TODO server URL
-		writeFile(src, "org/oobium/persist/Observers.as", source);
 	}
 	
 	private void createPrefsFile() {

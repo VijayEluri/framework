@@ -165,14 +165,14 @@ public class FlexTestProjectGenerator {
 			}
 			else if(prop.hasMany()) {
 				String field = prop.variable();
-				countIfStatements.add(source(
+				countIfStatements.add(join('\n',
 						"if(\"{field}\" == field) {",
 						" {type}.find(parseInt(id), {field}Callback);",
 						"}"
 					).replace("{field}", field));
-				fieldCallbacks.add(source(
-						"public function {field}Callback(event:ResultEvent):void {",
-						" var obj:{type} = event.result as {type};",
+				fieldCallbacks.add(join('\n',
+						"public function {field}Callback(result:RemoteResult):void {",
+						" var obj:{type} = result.model as {type};",
 						"  if(obj != null) {",
 						"   obj.{field}(showCountCallback);",
 						"  } else {",
