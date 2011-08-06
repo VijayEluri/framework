@@ -83,6 +83,7 @@ public class FlexProjectGenerator {
 		createFolder(project, "bin");
 		
 		File src = createFolder(project, "src");
+		writeFile(src, "org/oobium/persist/Observer.as", getResourceAsString(getClass(), "Observer.as"));
 		writeFile(src, "org/oobium/persist/Observers.as", getResourceAsString(getClass(), "Observers.as"));
 		writeFile(src, "org/oobium/persist/RemoteResult.as", getResourceAsString(getClass(), "RemoteResult.as"));
 		for(File file : module.findModels()) {
@@ -162,6 +163,7 @@ public class FlexProjectGenerator {
 		as.imports.add("mx.rpc.remoting.RemoteObject");
 		as.imports.add("mx.rpc.events.ResultEvent");
 		as.imports.add("mx.rpc.events.FaultEvent");
+		as.imports.add("org.oobium.persist.Observer");
 		as.imports.add("org.oobium.persist.Observers");
 		as.imports.add("org.oobium.persist.RemoteResult");
 		
@@ -180,13 +182,13 @@ public class FlexProjectGenerator {
 			).replace("{controller}", model.getControllerName()));
 
 		as.staticMethods.put("addObserver", source(
-				"public static function addObserver(method:String, callback:Function):void {",
+				"public static function addObserver(method:String, callback:Function):Observer {",
 				" if(observerRO == null) {",
 				"  observerRO = {type}.ro();",
 				"  observerRO.addObserver.addEventListener(\"result\", Observers.onChannelAdded);",
 				"  observerRO.addObserver();",
 				" }",
-				" Observers.addObserver(\"{fullType}\", method, callback);",
+				" return Observers.addObserver(\"{fullType}\", method, callback);",
 				"}"
 			).replace("{type}", as.simpleName).replace("{fullType}", model.getCanonicalName()));
 
