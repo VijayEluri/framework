@@ -9,8 +9,9 @@ package org.oobium.persist {
 		private var callback:Function;
 
 		public var models:Array;
+		public var includes:String;
 		
-		function Observer(className:String, method:String, callback:Function) {
+		function Observer(className:String, method:String, callback:Function, includes:String = null) {
 			this.className = className;
 			this.method = method;
 			this.callback = callback;
@@ -22,44 +23,35 @@ package org.oobium.persist {
 		 * destroy - only id available
 		 */
 		internal function exec(id:int):void {
-			if(models == null || models.length == 0) {
-				switch(method) {
-				case "afterCreate":
-					execFinder(id);
-					break;
-				case "afterUpdate":
-				case "afterDestroy":
+			switch(method) {
+			case "afterCreate":
+				execFinder(id);
+				break;
+			case "afterUpdate":
+				if(models == null || models.length == 0) {
 					callback(id);
-					break;
-				default:
-					trace("unknown method: " + method);
+				} else if(contains(id)) {
+					execFinder(id);
+				} // else: we're watching models, but not this one - exit
+				break;
+			case "afterDestroy":
+				if(models == null || models.length == 0 || contains(id)) {
+					callback(id);
 				}
-			} else {
-				if(contains(id)) {
-					switch(method) {
-					case "afterCreate":
-						// does this make sense?
-						//   maybe you want notification when the 10th model is created...?
-						execFinder(id);
-						break;
-					case "afterUpdate":
-						execFinder(id);
-						break;
-					case "afterDestroy":
-						callback(id);
-						break;
-					default:
-						trace("unknown method: " + method);
-					}
-				}
+				break;
+			default:
+				trace("unknown method: " + method);
 			}
 		}
 		
 		private function execFinder(id:int):void {
 			var modelClass:Class = getDefinitionByName(className) as Class;
-			modelClass['find'](id, function(result:RemoteResult):void {
-				callback(result.model);
-			});
+			var handler:Function = function(result:RemoteResult):void { callback(result.model); }
+			if(includes == null) {
+				modelClass['find'](id, handler);
+			} else {
+				modelClass['find']("where id=" + id + " include:" + includes, handler);
+			}
 		}
 		
 		public function forModels(... models):void {

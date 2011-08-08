@@ -9,6 +9,7 @@ import static org.oobium.utils.StringUtils.join;
 import static org.oobium.utils.StringUtils.plural;
 import static org.oobium.utils.StringUtils.source;
 import static org.oobium.utils.StringUtils.titleize;
+import static org.oobium.utils.StringUtils.varName;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -191,6 +192,7 @@ public class FlexTestProjectGenerator {
 						.replace("{hasManyFields}", source("\t\t\t\t\t", '\t', hasManyFields))
 						.replace("{fullType}", model.getCanonicalName())
 						.replace("{type}", model.getSimpleName())
+						.replace("{var}", varName(model.getSimpleName()))
 					;
 
 		writeFile(src, name, source);

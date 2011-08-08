@@ -32,6 +32,7 @@ public class BlazeProjectGenerator {
 	private final Module module;
 	private final File project;
 	
+	private String server;
 	private boolean force;
 	
 	public BlazeProjectGenerator(Workspace workspace, Module module) {
@@ -57,6 +58,10 @@ public class BlazeProjectGenerator {
 		}
 		else if(project.exists()) {
 			throw new UnsupportedOperationException(project.getName() + " already exists");
+		}
+		
+		if(server == null || server.trim().length() == 0) {
+			server = "localhost:5000";
 		}
 
 		createBuildFile();
@@ -116,7 +121,7 @@ public class BlazeProjectGenerator {
 		sf.simpleName = "ApplicationController";
 		sf.imports.add("org.oobium.persist.http.HttpPersistService");
 
-		sf.staticInitializers.add("new HttpPersistService(\"localhost:5000\", true)");
+		sf.staticInitializers.add("new HttpPersistService(\"{server}\", true)".replace("{server}", server));
 
 		writeFile(srcFolder, sf.getFilePath(), sf.toSource());
 	}
@@ -942,4 +947,8 @@ public class BlazeProjectGenerator {
 		this.force = force;
 	}
 
+	public void setServer(String server) {
+		this.server = server;
+	}
+	
 }

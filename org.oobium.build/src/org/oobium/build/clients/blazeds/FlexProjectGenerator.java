@@ -10,8 +10,10 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -219,14 +221,17 @@ public class FlexProjectGenerator {
 		as.staticMethods.put("find", finders.replace("{name}", "find"));
 		as.staticMethods.put("findAll", finders.replace("{name}", "findAll"));
 
+		List<String> properties = new ArrayList<String>();
 		
 		as.variables.put("", "public var id:int");
 		for(PropertyDescriptor prop : model.getProperties().values()) {
 			if(prop.isAttr()) {
 				as.variables.put(prop.variable(), "public var " + prop.variable() + ":" + flexType(prop.fullType()));
+				properties.add(prop.variable() + ":\" + " + prop.variable() + " + \"");
 			}
 			else if(prop.hasOne()) {
 				as.variables.put(prop.variable(), "public var " + prop.variable() + ":" + prop.castType());
+				properties.add(prop.variable() + ":\" + " + prop.variable() + " + \"");
 			}
 			else if(prop.hasMany()) {
 				String name = prop.variable();
@@ -251,6 +256,12 @@ public class FlexProjectGenerator {
 				" }",
 				"}"
 		));
+
+		as.methods.put("toString", source(
+				"public function toString():String {",
+				" return \"{type}(\" + id + \") { " + join(properties, ", ") + " }\";",
+				"}"
+			).replace("{type}", as.simpleName));
 		
 		writeFile(srcFolder, as.getFilePath(), as.toSource());
 	}
@@ -259,28 +270,30 @@ public class FlexProjectGenerator {
 		if(allowNull) {
 			return source(
 					"public function {name}(callback:Function = null):void {",
+					" var {var}:{type} = this;",
 					" var ro:RemoteObject = {type}.ro();",
 					" if(callback != null) {",
 					"  ro.{name}.addEventListener(\"result\", function(event:ResultEvent):void {",
 					"   ro.{name}.removeEventListener(\"result\", arguments.callee);",
-					"   callback(new RemoteResult(event));",
+					"   callback(new RemoteResult(event, {var}));",
 					"  });",
 					" }",
 					" ro.{name}(this);",
 					"}"
-				).replace("{type}", type).replace("{name}", name);
+				).replace("{type}", type).replace("{name}", name).replace("{var}", varName(type));
 		}
 		else {
 			return source(
 					"public function {name}(callback:Function):void {",
+					" var {var}:{type} = this;",
 					" var ro:RemoteObject = {type}.ro();",
 					" ro.{name}.addEventListener(\"result\", function(event:ResultEvent):void {",
 					"  ro.{name}.removeEventListener(\"result\", arguments.callee);",
-					"  callback(new RemoteResult(event));",
+					"  callback(new RemoteResult(event, {var}));",
 					" });",
 					" ro.{name}(this);",
 					"}"
-				).replace("{type}", type).replace("{name}", name);
+				).replace("{type}", type).replace("{name}", name).replace("{var}", varName(type));
 		}
 	}
 	

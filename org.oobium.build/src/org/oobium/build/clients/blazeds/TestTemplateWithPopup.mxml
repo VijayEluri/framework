@@ -186,8 +186,8 @@
 				Alert.show(text+": id="+obj.id+", name="+obj.name);
 			}
 			
-			private function observerCallback(id:int):void {
-				{type}.find(id, findCallback);
+			private function observerCallback({var}:{type}):void {
+				Alert.show("{type}: " + {var});
 			}
 
 			private function addObserver(method:String):void {

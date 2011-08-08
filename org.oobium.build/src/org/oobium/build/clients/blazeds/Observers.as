@@ -20,8 +20,8 @@ package org.oobium.persist {
 			return className + "::" + method;
 		}
 		
-		public static function addObserver(className:String, method:String, callback:Function):Observer {
-			var observer:Observer = new Observer(className, method, callback);
+		public static function addObserver(className:String, method:String, callback:Function, includes:String = null):Observer {
+			var observer:Observer = new Observer(className, method, callback, includes);
 			var key:String = key(className, method);
 			if(observers[key]) {
 				observers[key].push(observer);

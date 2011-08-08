@@ -3,9 +3,10 @@ package org.oobium.persist {
 	import mx.collections.ArrayCollection;
 	import mx.rpc.events.ResultEvent;
 
-	public class RemoteResult {
+	public dynamic class RemoteResult {
 
 		public var event:ResultEvent;
+		
 		public var caller:Object;
 		public var model:Object;
 		public var models:ArrayCollection;

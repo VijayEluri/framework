@@ -46,6 +46,7 @@ public class BlazeClientCommand extends BuilderCommand {
 			if(flag('b')) {
 				BlazeProjectGenerator blaze = new BlazeProjectGenerator(workspace, module);
 				blaze.setForce(true);
+				blaze.setServer(param("server"));
 				blaze.create();
 				
 				File blazeProject = blaze.getProject();
