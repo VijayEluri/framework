@@ -33,7 +33,6 @@ import static org.oobium.utils.StringUtils.joinColumn;
 import static org.oobium.utils.StringUtils.joinColumns;
 import static org.oobium.utils.StringUtils.joinTable;
 import static org.oobium.utils.StringUtils.tableName;
-import static org.oobium.utils.coercion.TypeCoercer.coerce;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -527,13 +526,12 @@ public class DbPersistor {
 			needsUpdatedOn = adapter.isDateStamped();
 			
 			Class<? extends Model> clazz = model.getClass();
-			Map<String, Object> fields = model.getAll();
 			List<Cell> cells = new ArrayList<Cell>();
 			
-			for(String field : fields.keySet()) {
-				if(!adapter.isVirtual(field)) {
+			for(String field : adapter.getFields()) {
+				if(model.isSet(field) && !adapter.isVirtual(field)) {
 					if(adapter.hasOne(field)) {
-						Model fModel = coerce(fields.get(field), adapter.getHasOneClass(field));
+						Model fModel = (Model) model.get(field);
 						Integer fId = (fModel != null) ? fModel.getId() : null;
 						if(fId != null && fId < 1) {
 							fId = doCreate(connection, fModel);
@@ -551,7 +549,7 @@ public class DbPersistor {
 							cells.add(new Cell(columnName(field), Types.INTEGER, fId));
 						}
 					} else if(adapter.hasMany(field)) {
-						Collection<?> collection = coerce(fields.get(field), Collection.class);
+						Collection<?> collection = (Collection<?>) model.get(field);
 						if(adapter.isManyToOne(field)) {
 							String table = tableName(adapter.getHasManyMemberClass(field));
 							String column = columnName(adapter.getOpposite(field));
@@ -606,7 +604,7 @@ public class DbPersistor {
 							if(needsUpdatedAt && name.equals(updatedAt.column)) needsUpdatedAt = false;
 							if(needsUpdatedOn && name.equals(updatedOn.column)) needsUpdatedOn = false;
 							int type = getSqlType(adapter.getClass(field));
-							Object val = fields.get(field);
+							Object val = model.get(field);
 							cells.add(new Cell(name, type, val));
 						}
 					}
