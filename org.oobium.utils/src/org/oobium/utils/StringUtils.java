@@ -35,6 +35,7 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import org.oobium.utils.json.JsonModel;
+import org.oobium.utils.json.JsonUtils;
 
 public class StringUtils {
 
@@ -441,6 +442,9 @@ public class StringUtils {
 		}
 		if(object instanceof JsonModel) {
 			return String.valueOf(((JsonModel) object).getId());
+		}
+		if(object instanceof Map) {
+			return htmlEscape(JsonUtils.toJson(object));
 		}
 		return htmlEscape(object);
 	}
