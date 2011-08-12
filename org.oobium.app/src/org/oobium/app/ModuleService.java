@@ -10,6 +10,8 @@
  ******************************************************************************/
 package org.oobium.app;
 
+import static org.oobium.utils.literal.Dictionary;
+
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
@@ -17,7 +19,6 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -356,9 +357,7 @@ public abstract class ModuleService implements BundleActivator {
 			setup();
 		}
 
-		Properties props = new Properties();
-		props.put("name", getName());
-		context.registerService(ModuleService.class.getName(), this, props);
+		context.registerService(ModuleService.class.getName(), this, Dictionary("name", getName()));
 
 		startWorkers();
 		
