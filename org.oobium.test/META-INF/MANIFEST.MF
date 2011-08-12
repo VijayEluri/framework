@@ -23,7 +23,7 @@ Import-Package: org.oobium.app,
  org.oobium.utils.coercion,
  org.oobium.utils.json,
  org.osgi.framework
-Require-Bundle: org.junit;bundle-version="4.7.0";visibility:=reexport,
+Require-Bundle: org.junit;visibility:=reexport,
  org.mockito;visibility:=reexport,
  org.jsoup;visibility:=reexport,
  org.jboss.netty;bundle-version="3.2.4"
