@@ -2,9 +2,12 @@ package org.oobium.build.console.commands.export;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.oobium.build.clients.JavaClientExporter;
 import org.oobium.build.clients.android.GeneratorEvent;
 import org.oobium.build.clients.android.GeneratorListener;
@@ -16,6 +19,7 @@ import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.Project;
 import org.oobium.build.workspace.Project.Type;
 import org.oobium.build.workspace.Workspace;
+import org.oobium.console.Suggestion;
 
 public class ClientCommand extends BuilderCommand {
 
@@ -134,6 +138,25 @@ public class ClientCommand extends BuilderCommand {
 		} catch(IOException e) {
 			console.err.print(e);
 		}
+	}
+	
+	@Override
+	protected Suggestion[] suggest(String cmd, Suggestion[] suggestions) {
+		if("target:".startsWith(cmd)) {
+			return new Suggestion[] { suggestions[0], new Suggestion("target:", "the target client, to which this module will be exported") };
+		}
+		if(cmd.startsWith("target:")) {
+			List<Suggestion> list = new ArrayList<Suggestion>();
+			if(suggestions != null && suggestions.length > 0) {
+				list.addAll(Arrays.asList(suggestions));
+			}
+			for(IProject project : ResourcesPlugin.getWorkspace().getRoot().getProjects()) {
+				String name = "target:" + project.getName();
+				list.add(new Suggestion(name, project.getFullPath().toOSString()));
+			}
+			return list.toArray(new Suggestion[list.size()]);
+		}
+		return super.suggest(cmd, suggestions);
 	}
 	
 }

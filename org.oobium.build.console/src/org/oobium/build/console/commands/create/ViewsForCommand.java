@@ -10,57 +10,33 @@
  ******************************************************************************/
 package org.oobium.build.console.commands.create;
 
+import static org.oobium.utils.StringUtils.blank;
+
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
+import org.oobium.console.Suggestion;
 
 public class ViewsForCommand extends BuilderCommand {
 
+	private static final String ALL_MODELS = "all_models";
+
+	
 	@Override
 	public void configure() {
 		moduleRequired = true;
 		maxParams = 2;
 		minParams = 1;
 	}
-	
-	@Override
-	public void run() {
-		File model;
-		String name;
-		
-		String[] sa = param(0).split("#");
-		if(sa.length == 1) {
-			Module module = getModule();
-			model = module.getModel(sa[0]);
-			name = module.getModelName(model);
-		} else {
-			Module module = getWorkspace().getModule(sa[0]);
-			if(module == null) {
-				console.err.println("module " + sa[0] + " does not exist");
-				return;
-			}
-			if(module.isJar) {
-				console.err.println("jarred modules not yet supported");
-				return;
-			}
-			model = module.getModel(sa[1]);
-			name = module.getModelName(model);
-		}
-		
-		Module module = getModule();
-		
-		if(!model.isFile()) {
-			console.err.println("model " + name + " does not exist");
-			return;
-		}
-		
+
+	private void createViewsFor(Module module, File model, String name) {
 		File folder = module.getViewsFolder(name);
 		if(folder.exists()) {
 			String confirm = flag('f') ? "Y" : ask("Views folder for " + name + " already exists. Overwrite standard Views?[Y/N] ");
 			if(!confirm.equalsIgnoreCase("Y")) {
-				console.out.println("operation cancelled");
+				console.out.println("skipped views folder for " + name);
 				return;
 			}
 		}
@@ -75,5 +51,59 @@ public class ViewsForCommand extends BuilderCommand {
 		}
 		Eclipse.refreshProject(module.name);
 	}
-
+	
+	@Override
+	public void run() {
+		if(ALL_MODELS.equals(param(0))) {
+			Module module = getModule();
+			for(File model : module.findModels()) {
+				String name = module.getModelName(model);
+				createViewsFor(module, model, name);
+			}
+		}
+		else {
+			File model;
+			String name;
+			
+			String[] sa = param(0).split("#");
+			if(sa.length == 1) {
+				Module module = getModule();
+				model = module.getModel(sa[0]);
+				name = module.getModelName(model);
+			} else {
+				Module module = getWorkspace().getModule(sa[0]);
+				if(module == null) {
+					console.err.println("module " + sa[0] + " does not exist");
+					return;
+				}
+				if(module.isJar) {
+					console.err.println("jarred modules not yet supported");
+					return;
+				}
+				model = module.getModel(sa[1]);
+				name = module.getModelName(model);
+			}
+			
+			Module module = getModule();
+			
+			if(!model.isFile()) {
+				console.err.println("model " + name + " does not exist");
+				return;
+			}
+			
+			createViewsFor(module, model, name);
+		}
+	}
+	
+	@Override
+	protected Suggestion[] suggest(String cmd, Suggestion[] suggestions) {
+		if(blank(cmd)) {
+			return new Suggestion[] { new Suggestion(ALL_MODELS, "create views for all models in the active project"), suggestions[0] };
+		}
+		if(ALL_MODELS.startsWith(cmd.trim())) {
+			return new Suggestion[] { new Suggestion(ALL_MODELS, "create views for all models in the active project") };
+		}
+		return super.suggest(cmd, suggestions);
+	}
+	
 }
