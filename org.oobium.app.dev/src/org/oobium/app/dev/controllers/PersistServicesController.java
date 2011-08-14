@@ -10,31 +10,27 @@
  ******************************************************************************/
 package org.oobium.app.dev.controllers;
 
-import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 
 import org.oobium.app.controllers.HttpController;
 import org.oobium.app.dev.views.persist_services.ShowAllPersistServices;
 import org.oobium.app.dev.views.persist_services.ShowPersistService;
-import org.oobium.app.dev.views.persist_services.ShowQueryResults;
-import org.oobium.app.dev.views.persist_services.ShowUpdateResults;
 import org.oobium.app.persist.PersistServices;
 import org.oobium.persist.Model;
+import org.oobium.persist.PersistException;
 import org.oobium.persist.PersistService;
-import org.oobium.utils.SqlUtils;
 
 public class PersistServicesController extends HttpController {
 
 	@Override
-	public void showAll() throws SQLException {
+	public void showAll() throws PersistException {
 		render(new ShowAllPersistServices((PersistServices) Model.getPersistServiceProvider()));
 	}
 	
 	@Override
-	public void show() throws SQLException {
+	public void show() throws PersistException {
 		List<PersistService> services = ((PersistServices) Model.getPersistServiceProvider()).getServices();
-		int id = getId();
+		int id = getId(int.class);
 		int ix = id - 1;
 		if(ix >= 0 && ix < services.size()) {
 			PersistService service = services.get(ix);

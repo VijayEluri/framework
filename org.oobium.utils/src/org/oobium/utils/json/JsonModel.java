@@ -13,16 +13,18 @@ package org.oobium.utils.json;
 import java.util.Map;
 
 public interface JsonModel {
+	
 	public abstract Object get(String field);
 	public abstract Map<String, Object> getAll();
 	
 	/**
-	 * Get the ID for this model. ID values greater than zero indicate that this
-	 * model has been persisted and is no longer new. Newly created models will
-	 * start out with their ID set to the Java <code>int</code> default of zero.
+	 * Get the ID for this model.<br/>
+	 * A null ID, or a numerical ID whose value is <= 0, indicates that this
+	 * model has not been persisted and is considered "new" ({@link #isNew()} must return true).
+	 * Newly created models will start out with their ID set to null.
 	 * @return the Id of this model
 	 */
-	public abstract int getId();
+	public abstract Object getId();
 	
 	/**
 	 * A model is considered blank if it is new, and the Map returned by {@link #getAll()}
@@ -41,9 +43,10 @@ public interface JsonModel {
 	public abstract boolean isEmpty();
 	
 	/**
-	 * A model is considered new until its ID is set to a value greater than zero.
+	 * Returns whether or not this model is considered new.
 	 * Note that even is a model is not new, it may still be empty (but not blank).
 	 * @return true if this model is considered to be new; false otherwise
+	 * @see #getId()
 	 */
 	public abstract boolean isNew();
 	
@@ -55,6 +58,7 @@ public interface JsonModel {
 	public abstract JsonModel set(String field, Object value);
 	public abstract JsonModel setAll(Map<String, Object> data);
 	public abstract JsonModel setAll(String json);
-	public abstract JsonModel setId(int id);
+	public abstract JsonModel setId(Object id);
 	public abstract String toJson();
+	
 }

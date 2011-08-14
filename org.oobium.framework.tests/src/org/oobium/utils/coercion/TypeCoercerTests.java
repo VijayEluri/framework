@@ -36,16 +36,16 @@ import org.oobium.utils.json.JsonUtils;
 public class TypeCoercerTests {
 	
 	public static class Model1 implements JsonModel {
-		private int id;
+		private Object id;
 		private Map<String, Object> data = new HashMap<String, Object>();
 		public Model1() { }
 		public Model1(String field, Object value) { put(field, value); }
 		public Object get(String field) { return data.get(field); }
 		public Map<String, Object> getAll() { return data; }
-		public int getId() { return id; }
+		public Object getId() { return id; }
 		public boolean isBlank() { return data.isEmpty(); }
 		public boolean isEmpty() { return data.isEmpty(); }
-		public boolean isNew() { return id == 0; }
+		public boolean isNew() { return id == null; }
 		public boolean isSet(String field) { return data.containsKey(field); }
 		public JsonModel put(String field, Object value) { data.put(field, value); return this; }
 		public JsonModel putAll(Map<String, Object> data) { this.data.putAll(data); return this; }
@@ -54,7 +54,7 @@ public class TypeCoercerTests {
 		public JsonModel putAll(JsonModel model) { return putAll(model.getAll()); }
 		public JsonModel setAll(Map<String, Object> data) { return putAll(data); }
 		public JsonModel setAll(String json) { return putAll(json); }
-		public JsonModel setId(int id) { this.id = id; return this; }
+		public JsonModel setId(Object id) { this.id = id; return this; }
 		public String toJson() { return data.toString(); }
 	}
 	

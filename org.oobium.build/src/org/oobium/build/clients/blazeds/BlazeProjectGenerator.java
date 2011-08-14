@@ -5,12 +5,12 @@ import static org.oobium.utils.FileUtils.copy;
 import static org.oobium.utils.FileUtils.createFolder;
 import static org.oobium.utils.FileUtils.deleteContents;
 import static org.oobium.utils.FileUtils.writeFile;
+import static org.oobium.utils.StringUtils.join;
 import static org.oobium.utils.StringUtils.source;
-import static org.oobium.utils.StringUtils.*;
+import static org.oobium.utils.StringUtils.varName;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -25,6 +25,7 @@ import org.oobium.build.util.SourceFile;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.Project;
 import org.oobium.build.workspace.Workspace;
+import org.oobium.persist.PersistException;
 
 public class BlazeProjectGenerator {
 
@@ -212,7 +213,7 @@ public class BlazeProjectGenerator {
 		sf.imports.add("flex.messaging.FlexContext");
 		sf.imports.add("flex.messaging.FlexSession");
 		sf.imports.add(List.class.getCanonicalName());
-		sf.imports.add(SQLException.class.getCanonicalName());
+		sf.imports.add(PersistException.class.getCanonicalName());
 		sf.imports.add(model.getCanonicalName());
 		sf.imports.add(model.packageName + ".notifiers." + model.getSimpleName() + "Notifier");
 
@@ -237,45 +238,45 @@ public class BlazeProjectGenerator {
 			).replace("{mType}", mType));
 		
 		sf.methods.put("find(int id)", source(
-				"public {type} find(int id) throws SQLException {",
+				"public {type} find(int id) throws PersistException {",
 				" return {type}.find(id);",
 				"}"
 			).replace("{type}", mType));
 		
 		sf.methods.put("find(String where)", source(
-				"public {type} find(String where) throws SQLException {",
+				"public {type} find(String where) throws PersistException {",
 				" return {type}.find(where);",
 				"}"
 			).replace("{type}", mType));
 		
 		sf.methods.put("findAll", source(
-				"public List<{type}> findAll() throws SQLException {",
+				"public List<{type}> findAll() throws PersistException {",
 				" return {type}.findAll();",
 				"}"
 			).replace("{type}", mType));
 		
 		sf.methods.put("findAll(String where)", source(
-				"public List<{type}> findAll(String where) throws SQLException {",
+				"public List<{type}> findAll(String where) throws PersistException {",
 				" return {type}.findAll(where);",
 				"}"
 			).replace("{type}", mType));
 		
 		sf.methods.put("create", source(
-				"public {type} create({type} {var}) throws SQLException {",
+				"public {type} create({type} {var}) throws PersistException {",
 				" {var}.create();",
 				" return {var};",
 				"}"
 			).replace("{type}", mType).replace("{var}", mVar));
 
 		sf.methods.put("destroy", source(
-				"public {type} destroy({type} {var}) throws SQLException {",
+				"public {type} destroy({type} {var}) throws PersistException {",
 				" {var}.destroy();",
 				" return {var};",
 				"}"
 			).replace("{type}", mType).replace("{var}", mVar));
 
 		sf.methods.put("update", source(
-				"public {type} update({type} {var}) throws SQLException {",
+				"public {type} update({type} {var}) throws PersistException {",
 				" {var}.update();",
 				" return {var};",
 				"}"
@@ -378,7 +379,7 @@ public class BlazeProjectGenerator {
 		sf.packageName = model.getPackageName();
 		sf.imports.add(List.class.getCanonicalName());
 		sf.imports.add(Set.class.getCanonicalName());
-		sf.imports.add(SQLException.class.getCanonicalName());
+		sf.imports.add(PersistException.class.getCanonicalName());
 		sf.simpleName = type;
 		sf.superName = sf.simpleName + "Model";
 
@@ -439,25 +440,25 @@ public class BlazeProjectGenerator {
 		sf.staticMethods.put(String.valueOf(i++), source(l).replace("{type}", type).replace("{var}", var));
 		
 		sf.staticMethods.put(String.valueOf(i++), source(
-				"public static {type} find(int id) throws SQLException {",
+				"public static {type} find(int id) throws PersistException {",
 				" return setVars({super}.find(id));",
 				"}"
 			).replace("{type}", type).replace("{super}", sf.superName));
 		
 		sf.staticMethods.put(String.valueOf(i++), source(
-				"public static {type} find(String where) throws SQLException {",
+				"public static {type} find(String where) throws PersistException {",
 				" return setVars({super}.find(where));",
 				"}"
 			).replace("{type}", type).replace("{super}", sf.superName));
 		
 		sf.staticMethods.put(String.valueOf(i++), source(
-				"public static List<{type}> findAll() throws SQLException {",
+				"public static List<{type}> findAll() throws PersistException {",
 				" return setVars({super}.findAll());",
 				"}"
 			).replace("{type}", type).replace("{super}", sf.superName));
 		
 		sf.staticMethods.put(String.valueOf(i++), source(
-				"public static List<{type}> findAll(String where) throws SQLException {",
+				"public static List<{type}> findAll(String where) throws PersistException {",
 				" return setVars({super}.findAll(where));",
 				"}"
 			).replace("{type}", type).replace("{super}", sf.superName));
@@ -800,7 +801,7 @@ public class BlazeProjectGenerator {
 		sf.packageName = module.packageName(module.controllers);
 		sf.simpleName = mType + "Controller";
 
-		sf.imports.add(SQLException.class.getCanonicalName());
+		sf.imports.add(PersistException.class.getCanonicalName());
 		sf.imports.add("import java.util.List");
 		sf.imports.add("import com.dn2k.blazeds.models.User");
 		sf.imports.add("import com.dn2k.blazeds.stub.UserSvcStub");

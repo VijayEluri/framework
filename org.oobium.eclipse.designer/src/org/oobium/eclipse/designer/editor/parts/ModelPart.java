@@ -131,9 +131,9 @@ public class ModelPart extends AbstractGraphicalEditPart implements PropertyChan
 		ModelElement model = getModel();
 		ModelFigure figure = new ModelFigure();
 		figure.setName(model.getName());
-		for(ModelAttribute attr : model.getDefinition().getAttributes()) {
-			figure.addAttribute(attr.name, attr.getSimpleType());
-		}
+//		for(ModelAttribute attr : model.getDefinition().getAttributes()) {
+//			figure.addAttribute(attr.name, attr.getSimpleType());
+//		}
 		for(ModelRelation rel : model.getDefinition().getRelations()) {
 			figure.addRelation(rel.name, rel.getSimpleType(), rel.hasMany);
 		}

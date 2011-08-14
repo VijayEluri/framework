@@ -13,13 +13,13 @@
 */
 package org.oobium.persist.http.models;
 
-import java.lang.String;
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
 import org.oobium.persist.Model;
 import org.oobium.persist.Paginator;
+import org.oobium.persist.PersistException;
 import org.oobium.persist.PersistService;
 import org.oobium.utils.json.JsonModel;
 
@@ -69,60 +69,60 @@ public abstract class CommentModel extends Model {
 	/**
 	 * Get the count of all instances of Comment
 	*/
-	public static int count() throws SQLException {
-		return Model.count(Comment.class);
+	public static int count() throws PersistException {
+		return getPersistService().count(Comment.class);
 	}
 
 	/**
 	 * Get the count of all instances of Comment using the given sql query and values.
 	*/
-	public static int count(String sql, Object...values) throws SQLException {
-		return Model.count(Comment.class, sql, values);
+	public static int count(String sql, Object...values) throws PersistException {
+		return getPersistService().count(Comment.class, sql, values);
 	}
 
 	/**
 	 * Find the Comment with the given id
 	*/
-	public static Comment find(int id) throws SQLException {
-		return Model.find(Comment.class, id);
+	public static Comment find(int id) throws PersistException {
+		return getPersistService().findById(Comment.class, id);
 	}
 
 	/**
 	 * Find the Comment with the given id and include the given fields.
 	 * The include option can start with 'include:', but it is not required.
 	*/
-	public static Comment find(int id, String include) throws SQLException {
+	public static Comment find(int id, String include) throws PersistException {
 		String sql = (include.startsWith("include:") ? "where id=? " : "where id=? include:") + include;
-		return Model.find(Comment.class, sql, id);
+		return getPersistService().find(Comment.class, sql, id);
 	}
 
 	/**
 	 * Find the Comment using the given sql query and values.  Note that only one instance will be returned.
 	 * Prepend the query with 'where' to enter only the where clause.
 	*/
-	public static Comment find(String sql, Object...values) throws SQLException {
-		return Model.find(Comment.class, sql, values);
+	public static Comment find(String sql, Object...values) throws PersistException {
+		return getPersistService().find(Comment.class, sql, values);
 	}
 
 	/**
 	 * Find all instances of Comment
 	*/
-	public static List<Comment> findAll() throws SQLException {
-		return Model.findAll(Comment.class);
+	public static List<Comment> findAll() throws PersistException {
+		return getPersistService().findAll(Comment.class);
 	}
 
 	/**
 	 * Find all instances of Comment using the given sql query and values.
 	*/
-	public static List<Comment> findAll(String sql, Object...values) throws SQLException {
-		return Model.findAll(Comment.class, sql, values);
+	public static List<Comment> findAll(String sql, Object...values) throws PersistException {
+		return getPersistService().findAll(Comment.class, sql, values);
 	}
 
-	public static Paginator<Comment> paginate(int page, int perPage) throws SQLException {
+	public static Paginator<Comment> paginate(int page, int perPage) throws PersistException {
 		return Paginator.paginate(Comment.class, page, perPage);
 	}
 
-	public static Paginator<Comment> paginate(int page, int perPage, String sql, Object...values) throws SQLException {
+	public static Paginator<Comment> paginate(int page, int perPage, String sql, Object...values) throws PersistException {
 		return Paginator.paginate(Comment.class, page, perPage, sql, values);
 	}
 
@@ -218,7 +218,7 @@ public abstract class CommentModel extends Model {
 	}
 
 	@Override
-	public Comment setId(int id) {
+	public Comment setId(Object id) {
 		return (Comment) super.setId(id);
 	}
 

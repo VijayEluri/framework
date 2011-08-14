@@ -286,7 +286,7 @@ public class DbPersistor {
 		}
 
 		logger.debug("end doCreate");
-		return model.getId();
+		return model.getId(int.class);
 	}
 
 	private int doCreate(Connection connection, String table, List<Cell> cells) throws SQLException {
@@ -359,7 +359,7 @@ public class DbPersistor {
 					List<Integer> dIds = new ArrayList<Integer>();
 					for(Object object : collection) {
 						Model dModel = (Model) object;
-						int dId = dModel.isNew() ? doCreate(connection, dModel) : dModel.getId();
+						int dId = dModel.isNew() ? doCreate(connection, dModel) : dModel.getId(int.class);
 						dIds.add(dId);
 					}
 					if(adapter.isThrough(field)) {
@@ -371,7 +371,7 @@ public class DbPersistor {
 						String column2 = columnName(adapter.getOpposite(field));
 						String table = joinTable(table1, column1, table2, column2);
 						String[] columns = joinColumns(table1, column1, table2, column2);
-						doUpdateManyToMany(connection, table, columns[0], model.getId(), columns[1], dIds);
+						doUpdateManyToMany(connection, table, columns[0], model.getId(int.class), columns[1], dIds);
 					}
 				}
 			}
@@ -511,7 +511,7 @@ public class DbPersistor {
 			logger.debug("start doUpdate: " + model.asSimpleString());
 		}
 
-		int id = model.getId();
+		int id = model.getId(int.class);
 		if(id < 1) {
 			throw new SQLException(ID + " has not yet been set for " + model.asSimpleString());
 		}
@@ -532,7 +532,7 @@ public class DbPersistor {
 				if(model.isSet(field) && !adapter.isVirtual(field)) {
 					if(adapter.hasOne(field)) {
 						Model fModel = (Model) model.get(field);
-						Integer fId = (fModel != null) ? fModel.getId() : null;
+						Integer fId = (fModel != null) ? fModel.getId(Integer.class) : null;
 						if(fId != null && fId < 1) {
 							fId = doCreate(connection, fModel);
 						}
@@ -557,7 +557,7 @@ public class DbPersistor {
 								List<Integer> dIds = new ArrayList<Integer>();
 								for(Object object : collection) {
 									Model m = (Model) object;
-									int dId = m.getId();
+									int dId = m.getId(int.class);
 									if(dId < 1) {
 										dId = doCreate(connection, m);
 									} else {
@@ -573,9 +573,9 @@ public class DbPersistor {
 									removedSets.add(set);
 									for(Object object : set.getRemoved()) {
 										Model m = (Model) object;
-										Integer mId = m.getId();
+										Integer mId = m.getId(Integer.class);
 										Model o = (Model) (m.isSet(field) ? m.get(field) : null);
-										Integer oId = (o != null) ? o.getId() : null;
+										Integer oId = (o != null) ? o.getId(Integer.class) : null;
 										ids.add(new Integer[] { mId, oId });
 									}
 								}
@@ -587,7 +587,7 @@ public class DbPersistor {
 							List<Integer> dIds = new ArrayList<Integer>();
 							for(Object object : collection) {
 								Model dModel = (Model) object;
-								int dId = dModel.isNew() ? doCreate(connection, dModel) : dModel.getId();
+								int dId = dModel.isNew() ? doCreate(connection, dModel) : dModel.getId(int.class);
 								dIds.add(dId);
 							}
 							String table1 = tableName(adapter.getModelClass());
@@ -596,7 +596,7 @@ public class DbPersistor {
 							String column2 = columnName(adapter.getOpposite(field));
 							String table = joinTable(table1, column1, table2, column2);
 							String[] columns = joinColumns(table1, column1, table2, column2);
-							doUpdateManyToMany(connection, table, columns[0], model.getId(), columns[1], dIds);
+							doUpdateManyToMany(connection, table, columns[0], model.getId(int.class), columns[1], dIds);
 						}
 					} else if(adapter.hasAttribute(field)) {
 						String name = columnName(field);
@@ -624,7 +624,7 @@ public class DbPersistor {
 			}
 			
 			if(!cells.isEmpty()) {
-				int result = doUpdate(connection, tableName(clazz), model.getId(), cells);
+				int result = doUpdate(connection, tableName(clazz), model.getId(int.class), cells);
 				if(result < 1) {
 					throw new SQLException("could not update " + model.asSimpleString() + " (does not exist in database)");
 				}
@@ -1002,7 +1002,7 @@ public class DbPersistor {
 		if(models.length == 0) {
 			return;
 		} else if(models.length == 1) {
-			Model cache = getCache(models[0].getClass(), models[0].getId());
+			Model cache = getCache(models[0].getClass(), models[0].getId(int.class));
 			if(cache != null) {
 				if(logger.isLoggingDebug()) {
 					logger.debug("retrieving data from cache: " + cache.asSimpleString());
@@ -1023,7 +1023,7 @@ public class DbPersistor {
 			for(Iterator<Model> iter = list.iterator(); iter.hasNext(); ) {
 				Model model = iter.next();
 				Class<? extends Model> clazz = model.getClass();
-				int id = model.getId();
+				int id = model.getId(int.class);
 				Model cache = getCache(clazz, id);
 				if(cache != null) {
 					if(logger.isLoggingDebug()) {
@@ -1056,7 +1056,7 @@ public class DbPersistor {
 					
 					for(Iterator<Model> iter = list.iterator(); iter.hasNext(); ) {
 						Model model = iter.next();
-						Model cache = getCache(clazz, model.getId());
+						Model cache = getCache(clazz, model.getId(int.class));
 						if(cache != null) {
 							setFields(model, cache.getAll());
 							iter.remove();

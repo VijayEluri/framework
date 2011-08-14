@@ -13,14 +13,14 @@
 */
 package org.oobium.persist.http.models;
 
-import java.lang.String;
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.oobium.persist.Model;
 import org.oobium.persist.Paginator;
+import org.oobium.persist.PersistException;
 import org.oobium.persist.PersistService;
 import org.oobium.utils.json.JsonModel;
 
@@ -70,60 +70,60 @@ public abstract class PostModel extends Model {
 	/**
 	 * Get the count of all instances of Post
 	*/
-	public static int count() throws SQLException {
-		return Model.count(Post.class);
+	public static int count() throws PersistException {
+		return getPersistService().count(Post.class);
 	}
 
 	/**
 	 * Get the count of all instances of Post using the given sql query and values.
 	*/
-	public static int count(String sql, Object...values) throws SQLException {
-		return Model.count(Post.class, sql, values);
+	public static int count(String sql, Object...values) throws PersistException {
+		return getPersistService().count(Post.class, sql, values);
 	}
 
 	/**
 	 * Find the Post with the given id
 	*/
-	public static Post find(int id) throws SQLException {
-		return Model.find(Post.class, id);
+	public static Post find(int id) throws PersistException {
+		return getPersistService().findById(Post.class, id);
 	}
 
 	/**
 	 * Find the Post with the given id and include the given fields.
 	 * The include option can start with 'include:', but it is not required.
 	*/
-	public static Post find(int id, String include) throws SQLException {
+	public static Post find(int id, String include) throws PersistException {
 		String sql = (include.startsWith("include:") ? "where id=? " : "where id=? include:") + include;
-		return Model.find(Post.class, sql, id);
+		return getPersistService().find(Post.class, sql, id);
 	}
 
 	/**
 	 * Find the Post using the given sql query and values.  Note that only one instance will be returned.
 	 * Prepend the query with 'where' to enter only the where clause.
 	*/
-	public static Post find(String sql, Object...values) throws SQLException {
-		return Model.find(Post.class, sql, values);
+	public static Post find(String sql, Object...values) throws PersistException {
+		return getPersistService().find(Post.class, sql, values);
 	}
 
 	/**
 	 * Find all instances of Post
 	*/
-	public static List<Post> findAll() throws SQLException {
-		return Model.findAll(Post.class);
+	public static List<Post> findAll() throws PersistException {
+		return getPersistService().findAll(Post.class);
 	}
 
 	/**
 	 * Find all instances of Post using the given sql query and values.
 	*/
-	public static List<Post> findAll(String sql, Object...values) throws SQLException {
-		return Model.findAll(Post.class, sql, values);
+	public static List<Post> findAll(String sql, Object...values) throws PersistException {
+		return getPersistService().findAll(Post.class, sql, values);
 	}
 
-	public static Paginator<Post> paginate(int page, int perPage) throws SQLException {
+	public static Paginator<Post> paginate(int page, int perPage) throws PersistException {
 		return Paginator.paginate(Post.class, page, perPage);
 	}
 
-	public static Paginator<Post> paginate(int page, int perPage, String sql, Object...values) throws SQLException {
+	public static Paginator<Post> paginate(int page, int perPage, String sql, Object...values) throws PersistException {
 		return Paginator.paginate(Post.class, page, perPage, sql, values);
 	}
 
@@ -220,7 +220,7 @@ public abstract class PostModel extends Model {
 	}
 
 	@Override
-	public Post setId(int id) {
+	public Post setId(Object id) {
 		return (Post) super.setId(id);
 	}
 

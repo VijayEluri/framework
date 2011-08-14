@@ -49,7 +49,7 @@ public class JsonModelCoercer extends AbstractCoercer {
 	private JsonModel createModel(int id, Class<? extends JsonModel> toType) {
 		try {
 			JsonModel model = toType.newInstance();
-			Method method = toType.getMethod("setId", int.class);
+			Method method = toType.getMethod("setId", Object.class);
 			method.invoke(model, id);
 			return model;
 		} catch(Exception e) {

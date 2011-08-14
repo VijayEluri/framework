@@ -10,11 +10,11 @@
  ******************************************************************************/
 package org.oobium.events.controllers;
 
-import java.sql.SQLException;
 import java.util.List;
 
-import org.oobium.events.models.Event;
 import org.oobium.app.http.Action;
+import org.oobium.events.models.Event;
+import org.oobium.persist.PersistException;
 
 public class EventController extends ApplicationController {
 
@@ -24,7 +24,7 @@ public class EventController extends ApplicationController {
 	}
 
 	@Override // POST/URL/[models]
-	public void create() throws SQLException {
+	public void create() throws PersistException {
 		Event event = param("event", Event.class);
 		if(event.save()) {
 			renderCreated(event);
@@ -34,8 +34,8 @@ public class EventController extends ApplicationController {
 	}
 
 	@Override // DELETE/URL/[models]/id
-	public void destroy() throws SQLException {
-		Event event = Event.newInstance(getId());
+	public void destroy() throws PersistException {
+		Event event = Event.newInstance(getId(int.class));
 		if(event.destroy()) {
 			renderDestroyed(event);
 		} else {
@@ -44,21 +44,21 @@ public class EventController extends ApplicationController {
 	}
 
 	@Override // GET/URL/[models]/id
-	public void show() throws SQLException {
-		Event event = Event.find(getId());
+	public void show() throws PersistException {
+		Event event = Event.find(getId(int.class));
 		if(event != null) {
 			render(event);
 		}
 	}
 
 	@Override // GET/URL/[models]
-	public void showAll() throws SQLException {
+	public void showAll() throws PersistException {
 		List<Event> events = Event.findAll();
 		render(events);
 	}
 
 	@Override // PUT/URL/[models]/id
-	public void update() throws SQLException {
+	public void update() throws PersistException {
 		Event event = param("event", Event.class);
 		if(event.save()) {
 			renderOK();

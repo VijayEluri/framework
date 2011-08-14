@@ -15,13 +15,13 @@ package org.oobium.events.models;
 
 import static org.oobium.utils.StringUtils.blank;
 
-import java.lang.String;
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
 import org.oobium.persist.Model;
 import org.oobium.persist.Paginator;
+import org.oobium.persist.PersistException;
 import org.oobium.utils.json.JsonModel;
 
 public abstract class EventModel extends Model {
@@ -63,40 +63,40 @@ public abstract class EventModel extends Model {
 	/**
 	 * Find the Event with the given id
 	*/
-	public static Event find(int id) throws SQLException {
-		return Model.find(Event.class, id);
+	public static Event find(int id) throws PersistException {
+		return getPersistService(Event.class).findById(Event.class, id);
 	}
 
 	/**
 	 * Find the Event with the given id and include the given fields.
 	 * The include option can start with 'include:', but it is not required.
 	*/
-	public static Event find(int id, String include) throws SQLException {
+	public static Event find(int id, String include) throws PersistException {
 		String sql = (include.startsWith("include:") ? "where id=? " : "where id=? include:") + include;
-		return Model.find(Event.class, sql, id);
+		return getPersistService(Event.class).find(Event.class, sql, id);
 	}
 
 	/**
 	 * Find the Event with using the given sql query and values.  Note that only one instance will be returned.
 	 * Prepend the query with 'where' to enter only the where clause.
 	*/
-	public static Event find(String sql, Object...values) throws SQLException {
-		return Model.find(Event.class, sql, values);
+	public static Event find(String sql, Object...values) throws PersistException {
+		return getPersistService(Event.class).find(Event.class, sql, values);
 	}
 
-	public static List<Event> findAll() throws SQLException {
-		return Model.findAll(Event.class);
+	public static List<Event> findAll() throws PersistException {
+		return getPersistService(Event.class).findAll(Event.class);
 	}
 
-	public static List<Event> findAll(String sql, Object...values) throws SQLException {
-		return Model.findAll(Event.class, sql, values);
+	public static List<Event> findAll(String sql, Object...values) throws PersistException {
+		return getPersistService(Event.class).findAll(Event.class, sql, values);
 	}
 
-	public static Paginator<Event> paginate(int page, int perPage) throws SQLException {
+	public static Paginator<Event> paginate(int page, int perPage) throws PersistException {
 		return Paginator.paginate(Event.class, page, perPage);
 	}
 
-	public static Paginator<Event> paginate(int page, int perPage, String sql, Object...values) throws SQLException {
+	public static Paginator<Event> paginate(int page, int perPage, String sql, Object...values) throws PersistException {
 		return Paginator.paginate(Event.class, page, perPage, sql, values);
 	}
 
@@ -216,7 +216,7 @@ public abstract class EventModel extends Model {
 	}
 
 	@Override
-	public Event setId(int id) {
+	public Event setId(Object id) {
 		return (Event) super.setId(id);
 	}
 

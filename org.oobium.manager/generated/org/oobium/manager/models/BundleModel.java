@@ -3,11 +3,12 @@
 */
 package org.oobium.manager.models;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+
 import org.oobium.persist.Model;
 import org.oobium.persist.Paginator;
+import org.oobium.persist.PersistException;
 import org.oobium.utils.json.JsonModel;
 
 public abstract class BundleModel extends Model {
@@ -42,40 +43,40 @@ public abstract class BundleModel extends Model {
 	/**
 	 * Find the Bundle with the given id
 	*/
-	public static Bundle find(int id) throws SQLException {
-		return Model.find(Bundle.class, id);
+	public static Bundle find(int id) throws PersistException {
+		return getPersistService(Bundle.class).findById(Bundle.class, id);
 	}
 
 	/**
 	 * Find the Bundle with the given id and include the given fields.
 	 * The include option can start with 'include:', but it is not required.
 	*/
-	public static Bundle find(int id, String include) throws SQLException {
+	public static Bundle find(int id, String include) throws PersistException {
 		String sql = (include.startsWith("include:") ? "where id=? " : "where id=? include:") + include;
-		return Model.find(Bundle.class, sql, id);
+		return getPersistService(Bundle.class).find(Bundle.class, sql, id);
 	}
 
 	/**
 	 * Find the Bundle with using the given sql query and values.  Note that only one instance will be returned.
 	 * Prepend the query with 'where' to enter only the where clause.
 	*/
-	public static Bundle find(String sql, Object...values) throws SQLException {
-		return Model.find(Bundle.class, sql, values);
+	public static Bundle find(String sql, Object...values) throws PersistException {
+		return getPersistService(Bundle.class).find(Bundle.class, sql, values);
 	}
 
-	public static List<Bundle> findAll() throws SQLException {
-		return Model.findAll(Bundle.class);
+	public static List<Bundle> findAll() throws PersistException {
+		return getPersistService(Bundle.class).findAll(Bundle.class);
 	}
 
-	public static List<Bundle> findAll(String sql, Object...values) throws SQLException {
-		return Model.findAll(Bundle.class, sql, values);
+	public static List<Bundle> findAll(String sql, Object...values) throws PersistException {
+		return getPersistService(Bundle.class).findAll(Bundle.class, sql, values);
 	}
 
-	public static Paginator<Bundle> paginate(int page, int perPage) throws SQLException {
+	public static Paginator<Bundle> paginate(int page, int perPage) throws PersistException {
 		return Paginator.paginate(Bundle.class, page, perPage);
 	}
 
-	public static Paginator<Bundle> paginate(int page, int perPage, String sql, Object...values) throws SQLException {
+	public static Paginator<Bundle> paginate(int page, int perPage, String sql, Object...values) throws PersistException {
 		return Paginator.paginate(Bundle.class, page, perPage, sql, values);
 	}
 
@@ -115,7 +116,7 @@ public abstract class BundleModel extends Model {
 	}
 
 	@Override
-	public Bundle setId(int id) {
+	public Bundle setId(Object id) {
 		return (Bundle) super.setId(id);
 	}
 

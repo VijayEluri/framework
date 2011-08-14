@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.oobium.build.gen.model;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -25,7 +26,9 @@ public abstract class PropertyBuilder {
 	/**
 	 * @return Map of variable declarations (Variable Name => Whole Declaration)
 	 */
-	public abstract Map<String, String> getDeclarations();
+	public Map<String, String> getDeclarations() {
+		return Collections.emptyMap();
+	}
 	
 	/**
 	 * @return List of fully qualified (canonical) class names

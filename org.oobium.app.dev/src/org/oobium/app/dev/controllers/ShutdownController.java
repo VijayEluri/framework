@@ -10,18 +10,17 @@
  ******************************************************************************/
 package org.oobium.app.dev.controllers;
 
-import java.sql.SQLException;
-
 import org.oobium.app.controllers.HttpController;
 import org.oobium.app.dev.AppDevActivator;
 import org.oobium.logging.LogProvider;
+import org.oobium.persist.PersistException;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 
 public class ShutdownController extends HttpController {
 
 	@Override
-	public void handleRequest() throws SQLException {
+	public void handleRequest() throws PersistException {
 		System.out.println("shutdown");
 		Bundle bundle;
 		if(hasParam("app")) {

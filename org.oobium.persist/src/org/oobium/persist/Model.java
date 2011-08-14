@@ -12,7 +12,6 @@ package org.oobium.persist;
 
 import static org.oobium.persist.ModelAdapter.getAdapter;
 import static org.oobium.utils.StringUtils.blank;
-import static org.oobium.utils.StringUtils.contains;
 import static org.oobium.utils.StringUtils.titleize;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.utils.json.JsonUtils.toList;
@@ -20,7 +19,6 @@ import static org.oobium.utils.json.JsonUtils.toList;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -52,83 +50,6 @@ public abstract class Model implements JsonModel {
 	
 	public static void addObserver(Observer<?> observer) {
 		Observer.addObserver(observer);
-	}
-	
-	public static int count(Class<? extends Model> clazz) throws SQLException {
-		return getPersistService(clazz).count(clazz, null);
-	}
-	
-	public static int count(Class<? extends Model> clazz, String where, Object...values) throws SQLException {
-		return getPersistService(clazz).count(clazz, where, values);
-	}
-	
-	public static <T extends Model> T find(Class<T> clazz, int id) throws SQLException {
-		return getPersistService(clazz).find(clazz, id);
-	}
-
-	public static <T extends Model> T find(Class<T> clazz, String sql, Object...values) throws SQLException {
-		return getPersistService(clazz).find(clazz, sql, values);
-	}
-	
-	public static <T extends Model> List<T> findAll(Class<T> clazz) throws SQLException {
-		return getPersistService(clazz).findAll(clazz);
-	}
-
-	public static <T extends Model> List<T> findAll(Class<T> clazz, Map<?, ?> query, String...entries) throws SQLException {
-		if(query != null && !query.isEmpty()) {
-			Object wheretmp = query.remove("where");
-			Object includetmp = query.remove("include");
-			Object valuestmp = query.remove("values");
-
-			if(query.isEmpty()) {
-				String sql = (entries.length == 0 || contains(entries, "where")) ? coerce(wheretmp, String.class) : null;
-				if(sql != null && sql.length() > 0) {
-					sql = "where " + sql;
-				}
-				
-				String include = (entries.length == 0 || contains(entries, "include")) ? coerce(includetmp, String.class) : null;
-				if(include != null && include.length() > 0) {
-					if(sql == null) {
-						sql = "include:" + include;
-					} else {
-						// query map values overwrite
-						int ix = sql.indexOf("include");
-						if(ix != -1) {
-							sql = sql.substring(ix);
-						}
-						sql = sql + " include:" + include;
-					}
-				}
-				
-				if(sql != null && sql.length() > 0) {
-					Object[] values = (entries.length == 0 || contains(entries, "values")) ? coerce(valuestmp, Object[].class) : new Object[0];
-					return Model.findAll(clazz, sql, values);
-				}
-			} else {
-				StringBuilder sb = new StringBuilder();
-				List<Object> list = new ArrayList<Object>();
-				
-				for(Entry<?, ?> entry : query.entrySet()) {
-					String name = String.valueOf(entry.getKey());
-					if(entries.length == 0 || contains(entries, name)) {
-						sb.append(name).append("=?,");
-						list.add(entry.getValue());
-					}
-				}
-				
-				if(sb.length() > 0) {
-					sb.insert(0, "where ");
-					sb.deleteCharAt(sb.length()-1);
-	
-					return Model.findAll(clazz, sb.toString(), list.toArray());
-				}
-			}
-		}		
-		return Model.findAll(clazz);
-	}
-	
-	public static <T extends Model> List<T> findAll(Class<T> clazz, String sql, Object...values) throws SQLException {
-		return getPersistService(clazz).findAll(clazz, sql, values);
 	}
 	
 	public static Logger getLogger() {
@@ -203,7 +124,7 @@ public abstract class Model implements JsonModel {
 	private PersistService persistor;
 	protected Logger logger;
 	
-	private int id;
+	private Object id;
 	private Map<String, Object> fields;
 	private Map<String, ArrayList<String>> errors;
 	
@@ -211,7 +132,7 @@ public abstract class Model implements JsonModel {
 	 * The value of this model's id before it was destroyed.
 	 * For use only by {@link Observer#afterDestroy(int)}.
 	 */
-	int destroyed;
+	Object destroyed;
 
 	public Model() {
 		logger = getLogger();
@@ -383,7 +304,7 @@ public abstract class Model implements JsonModel {
 	}
 
 	public boolean destroy() {
-		if(id == 0) {
+		if(isNew()) {
 			addError("cannot destroy a model that has not been saved");
 		} else {
 			if(getAdapter(getClass()).isDeletable()) {
@@ -401,12 +322,12 @@ public abstract class Model implements JsonModel {
 							if(!(service instanceof RemotePersistService)) {
 								Observer.runAfterDestroy(this);
 							}
-						} catch(SQLException e) {
+						} catch(PersistException e) {
 							logger.warn("failed to destroy " + asSimpleString(), e);
 							addError(e.getLocalizedMessage());
 						}
 					}
-					return id == 0;
+					return isNew();
 				}
 			} else {
 				addError("Destroy is not permitted.");
@@ -484,7 +405,7 @@ public abstract class Model implements JsonModel {
 				if(!(service instanceof RemotePersistService)) {
 					Observer.runAfterCreate(this);
 				}
-			} catch(SQLException e) {
+			} catch(PersistException e) {
 				logger.warn("failed to save " + asSimpleString(), e);
 				addError(e.getLocalizedMessage());
 			}
@@ -505,7 +426,7 @@ public abstract class Model implements JsonModel {
 					if(!(service instanceof RemotePersistService)) {
 						Observer.runAfterUpdate(this);
 					}
-				} catch(SQLException e) {
+				} catch(PersistException e) {
 					logger.warn("failed to save " + asSimpleString(), e);
 					addError(e.getLocalizedMessage());
 				}
@@ -518,11 +439,12 @@ public abstract class Model implements JsonModel {
 
 	@Override
 	public boolean equals(Object obj) {
+		// TODO what about comparing to JSON strings and Maps?
 		if(obj == this) {
 			return true;
 		}
-		if(obj != null && obj.getClass() == getClass() && ((Model) obj).getId() == id) {
-			return id != 0;
+		if(obj != null && obj.getClass() == getClass()) {
+			return (id != null) && id.equals(((Model) obj).getId());
 		}
 		return false;
 	}
@@ -575,13 +497,13 @@ public abstract class Model implements JsonModel {
 					} else if(adapter.isOneToOne(field) && !adapter.hasKey(field)) {
 						try {
 							getPersistor().retrieve(this, field);
-						} catch(SQLException e) {
+						} catch(PersistException e) {
 							logger.warn("failed to load relation " + field + " in " + asSimpleString(), e);
 						}
 					} else if(hasMany(field)) {
 						try {
 							getPersistor().retrieve(this, field);
-						} catch(SQLException e) {
+						} catch(PersistException e) {
 							logger.warn("failed to load relation " + field + " in " + asSimpleString(), e);
 						}
 					}
@@ -716,17 +638,25 @@ public abstract class Model implements JsonModel {
 		return list;
 	}
 	
-	public final int getId() {
+	public final Object getId() {
 		return getId(false);
 	}
 	
-	public final int getId(boolean saveFirst) {
+	public final <T> T getId(Class<T> clazz) {
+		return coerce(getId(false), clazz);
+	}
+	
+	public final Object getId(boolean saveFirst) {
 		if(saveFirst && isNew()) {
 			save();
 		}
 		return id;
 	}
 
+	public final <T> T getId(boolean saveFirst, Class<T> clazz) {
+		return coerce(getId(saveFirst), clazz);
+	}
+	
 	private int getLength(Object value, String tokenizer) {
 		if(value == null) {
 			return 0;
@@ -818,8 +748,8 @@ public abstract class Model implements JsonModel {
 	
 	@Override
 	public int hashCode() {
-		int hash = id + 2;
-		hash = hash * 31 + getClass().getCanonicalName().hashCode();
+		int hash = String.valueOf(id).hashCode() + 2;
+		hash = (hash * 31) + getClass().getCanonicalName().hashCode();
 		return hash;
 	}
 	
@@ -843,7 +773,13 @@ public abstract class Model implements JsonModel {
 
 	@Override
 	public final boolean isNew() {
-		return id <= 0;
+		if(id == null) {
+			return true;
+		}
+		if(id instanceof Number) {
+			return ((Number) id).intValue() <= 0;
+		}
+		return false;
 	}
 	
 	private boolean isOppositeRequired(String field) {
@@ -926,7 +862,7 @@ public abstract class Model implements JsonModel {
 		try {
 			getPersistor().retrieve(this);
 			return true;
-		} catch(SQLException e) {
+		} catch(PersistException e) {
 			logger.warn("failed to load " + asSimpleString(), e);
 		}
 		return false;
@@ -1458,7 +1394,7 @@ public abstract class Model implements JsonModel {
 	}
 	
 	@Override
-	public Model setId(int id) {
+	public Model setId(Object id) {
 		this.id = id;
 		return this;
 	}

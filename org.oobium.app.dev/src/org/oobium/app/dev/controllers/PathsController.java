@@ -10,12 +10,16 @@
  ******************************************************************************/
 package org.oobium.app.dev.controllers;
 
-import static org.jboss.netty.handler.codec.http.HttpMethod.*;
-import static org.oobium.app.http.MimeType.*;
+import static org.jboss.netty.handler.codec.http.HttpMethod.DELETE;
+import static org.jboss.netty.handler.codec.http.HttpMethod.GET;
+import static org.jboss.netty.handler.codec.http.HttpMethod.POST;
+import static org.jboss.netty.handler.codec.http.HttpMethod.PUT;
+import static org.oobium.app.http.MimeType.CSS;
+import static org.oobium.app.http.MimeType.HTML;
+import static org.oobium.app.http.MimeType.JS;
 import static org.oobium.utils.StringUtils.when;
 import static org.oobium.utils.json.JsonUtils.toJson;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,6 +29,7 @@ import org.oobium.app.controllers.HttpController;
 import org.oobium.app.dev.AppDevActivator;
 import org.oobium.app.http.MimeType;
 import org.oobium.app.routing.Router;
+import org.oobium.persist.PersistException;
 
 public class PathsController extends HttpController {
 
@@ -45,7 +50,7 @@ public class PathsController extends HttpController {
 	}
 	
 	@Override
-	public void handleRequest() throws SQLException {
+	public void handleRequest() throws PersistException {
 		ModuleService activator = AppDevActivator.getActivator(param("app"));
 		if(activator instanceof AppService) {
 			Router router = ((AppService) activator).getRouter();

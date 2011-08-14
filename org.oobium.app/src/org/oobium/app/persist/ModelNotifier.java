@@ -25,7 +25,7 @@ public abstract class ModelNotifier<T extends Model> extends Observer<T> {
 	}
 
 	@Override
-	protected void afterDestroy(int id) {
+	protected void afterDestroy(Object id) {
 		sendNotification(id, null, destroy);
 	}
 
@@ -38,7 +38,7 @@ public abstract class ModelNotifier<T extends Model> extends Observer<T> {
 	 */
 	protected abstract boolean select(Websocket socket, Action action);
 	
-	private void sendNotification(int id, Set<String> fields, Action action) {
+	private void sendNotification(Object id, Set<String> fields, Action action) {
 		AppService app = AppService.get();
 		Router router = app.getRouter();
 		Set<Websocket> sockets = router.getModelNotifiers();

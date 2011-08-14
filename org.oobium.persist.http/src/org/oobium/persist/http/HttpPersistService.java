@@ -14,14 +14,14 @@ import static org.oobium.utils.StringUtils.varName;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.utils.json.JsonUtils.toJson;
 import static org.oobium.utils.json.JsonUtils.toList;
+import static org.oobium.utils.json.JsonUtils.toMap;
 import static org.oobium.utils.json.JsonUtils.toObject;
 import static org.oobium.utils.literal.Map;
+import static org.oobium.utils.literal.e;
 
 import java.net.MalformedURLException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -34,6 +34,7 @@ import org.oobium.client.websockets.WebsocketListener;
 import org.oobium.client.websockets.Websockets;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
+import org.oobium.persist.PersistException;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.RemotePersistService;
 import org.oobium.persist.ServiceInfo;
@@ -74,6 +75,18 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 		}
 		
 		socketListener = new WebsocketListener() {
+			@Override
+			public void onConnect(Websocket websocket) {
+				// TODO log
+			}
+			@Override
+			public void onDisconnect(Websocket websocket) {
+				// TODO log
+			}
+			@Override
+			public void onError(Websocket websocket, Throwable t) {
+				// TODO log
+			}
 			@Override
 			public void onMessage(Websocket websocket, WebSocketFrame frame) {
 				if(frame.isText()) {
@@ -117,18 +130,6 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 					}
 				}
 			}
-			@Override
-			public void onError(Websocket websocket, Throwable t) {
-				// TODO log
-			}
-			@Override
-			public void onDisconnect(Websocket websocket) {
-				// TODO log
-			}
-			@Override
-			public void onConnect(Websocket websocket) {
-				// TODO log
-			}
 		};
 		socket = Websockets.connect(url, socketListener);
 	}
@@ -139,19 +140,31 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 	}
 	
 	@Override
-	public int count(Class<? extends Model> clazz, String where, Object... values) throws SQLException {
+	public int count(Class<? extends Model> clazz) throws PersistException {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException("not yet implemented");
 	}
 	
-	private void create(Model model) throws SQLException {
+	@Override
+	public int count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws PersistException {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("not yet implemented");
+	}
+	
+	@Override
+	public int count(Class<? extends Model> clazz, String query, Object... values) throws PersistException {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("not yet implemented");
+	}
+	
+	private void create(Model model) throws PersistException {
 		if(model == null) {
-			throw new SQLException("cannot create null model");
+			throw new PersistException("cannot create null model");
 		}
 		
 		Route request = api.getRoute(model, create);
 		if(request == null) {
-			throw new SQLException("no published route found for " + model.getClass() + ": create");
+			throw new PersistException("no published route found for " + model.getClass() + ": create");
 		}
 		
 		try {
@@ -167,7 +180,7 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 				model.setId(id);
 				setCache(model);
 			} else if(response.exceptionThrown()) {
-				throw new SQLException(response.getException().getLocalizedMessage());
+				throw new PersistException(response.getException().getLocalizedMessage());
 			}
 		} catch(MalformedURLException e) {
 			throw new IllegalStateException("malformed URL should have been caught earlier!");
@@ -175,20 +188,20 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 	}
 
 	@Override
-	public void create(Model... models) throws SQLException {
+	public void create(Model... models) throws PersistException {
 		for(Model model : models) {
 			create(model);
 		}
 	}
 	
-	private void destroy(Model model) throws SQLException {
+	private void destroy(Model model) throws PersistException {
 		if(model == null) {
-			throw new SQLException("cannot destroy null model");
+			throw new PersistException("cannot destroy null model");
 		}
 		
 		Route request = api.getRoute(model, destroy);
 		if(request == null) {
-			throw new SQLException("no published route found for " + model.getClass() + ": destroy");
+			throw new PersistException("no published route found for " + model.getClass() + ": destroy");
 		}
 		
 		Model cache = getCache(model.getClass(), model.getId());
@@ -206,7 +219,7 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 					cache.clear();
 				}
 			} else if(response.exceptionThrown()) {
-				throw new SQLException(response.getException().getLocalizedMessage());
+				throw new PersistException(response.getException().getLocalizedMessage());
 			}
 		} catch(MalformedURLException e) {
 			throw new IllegalStateException("malformed URL should have been caught earlier!");
@@ -214,7 +227,7 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 	}
 	
 	@Override
-	public void destroy(Model... models) throws SQLException {
+	public void destroy(Model... models) throws PersistException {
 		for(Model model : models) {
 			destroy(model);
 		}
@@ -226,15 +239,31 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 	}
 
 	@Override
-	public <T extends Model> T find(Class<T> clazz, int id) throws SQLException {
+	public <T extends Model> T find(Class<T> clazz, Map<String, Object> query, Object... values) throws PersistException {
 		if(clazz == null) {
-			throw new SQLException("cannot find null class with id: " + id);
+			throw new IllegalArgumentException("cannot find: null class");
 		}
-		
-		return find(clazz, id, null);
+
+		query.put("$limit", 1);
+
+		List<T> models = findAll(clazz, query, values);
+		if(models.isEmpty()) {
+			return null;
+		}
+		return models.get(0);
 	}
 	
-	private <T extends Model> T find(Class<T> clazz, int id, String include) throws SQLException {
+	@Override
+	public <T extends Model> T findById(Class<T> clazz, Object id) throws PersistException {
+		if(clazz == null) {
+			throw new PersistException("cannot find null class with id: " + id);
+		}
+		
+		return findById(clazz, id, null);
+	}
+
+	@Override
+	public <T extends Model> T findById(Class<T> clazz, Object id, String include) throws PersistException {
 		T model = getCache(clazz, id);
 		if(model != null) {
 			return model;
@@ -242,7 +271,7 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 		
 		Route request = api.getRoute(clazz, show);
 		if(request == null) {
-			throw new SQLException("no published route found for " + clazz + ": show");
+			throw new PersistException("no published route found for " + clazz + ": show");
 		}
 		
 		try {
@@ -272,7 +301,7 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 				return model;
 			} else {
 				if(response.exceptionThrown()) {
-					throw new SQLException(response.getException().getLocalizedMessage());
+					throw new PersistException(response.getException().getLocalizedMessage());
 				}
 				return null;
 			}
@@ -280,50 +309,26 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 			throw new IllegalStateException("malformed URL should have been caught earlier!");
 		}
 	}
-
+	
 	@Override
-	public <T extends Model> T find(Class<T> clazz, String where, Object... values) throws SQLException {
-		if(clazz == null) {
-			throw new IllegalArgumentException("cannot find: null class");
-		}
-
-		if(where == null) {
-			where = "limit 1";
-		} else {
-			int ix = where.indexOf("include");
-			if(ix == -1) {
-				if(where.equals("where id=?") && values.length == 1) {
-					return find(clazz, coerce(values[0], int.class));
-				}
-				where = where + " limit 1";
-			} else if(ix == 0) {
-				where = "limit 1 " + where;
-			} else if(where.startsWith("where id=? include")) {
-				return find(clazz, coerce(values[0], int.class), where.substring(ix));
-			} else {
-				StringBuilder sb = new StringBuilder(where);
-				sb.insert(ix, "limit 1 ");
-				where = sb.toString();
-			}
-		}
-		
-		List<T> models = findAll(clazz, where, values);
-		if(models.isEmpty()) {
-			return null;
-		}
-		return models.get(0);
+	public <T extends Model> T find(Class<T> clazz, String query, Object... values) throws PersistException {
+		return find(clazz, toMap(query), values);
+	}
+	
+	@Override
+	public <T extends Model> List<T> findAll(Class<T> clazz) throws PersistException {
+		return findAll(clazz, (Map<String, Object>) null);
 	}
 
 	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz) throws SQLException {
+	public <T extends Model> List<T> findAll(Class<T> clazz, Map<String, Object> query, Object... values) throws PersistException {
 		if(clazz == null) {
 			throw new IllegalArgumentException("cannot findAll: null class");
 		}
 
-		return findAll(clazz, "findAll", (Map<String,?>) null);
-	}
-
-	private <T extends Model> List<T> findAll(Class<T> clazz, String queryString, Map<String, ?> query) throws SQLException {
+		Map<String, Object> map = Map( e("query", query), e("values", values) );
+		String queryString = toJson(map);
+		
 		List<T> models = getCache(clazz, queryString);
 		if(models != null) {
 			return models;
@@ -331,7 +336,7 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 
 		Route request = api.getRoute(clazz, showAll);
 		if(request == null) {
-			throw new SQLException("no published route found for " + clazz + ": showAll");
+			throw new PersistException("no published route found for " + clazz + ": showAll");
 		}
 		
 		try {
@@ -340,7 +345,12 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 
 			String path = path(request.path, clazz);
 			
-			ClientResponse response = client.request(request.method, path, query);
+			ClientResponse response;
+			if(query == null) {
+				response = client.request(request.method, path);
+			} else {
+				response = client.request(request.method, path, map);
+			}
 			if(response.isSuccess()) {
 				List<Object> list = toList(response.getBody());
 				models = new ArrayList<T>();
@@ -352,9 +362,9 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 				return models;
 			} else {
 				if(response.exceptionThrown()) {
-					throw new SQLException(response.getException().getLocalizedMessage());
+					throw new PersistException(response.getException().getLocalizedMessage());
 				}
-				throw new SQLException("could not retrieve data from the server\nstatus: " + response.getStatus() + "\ncontent: " + response.getBody());
+				throw new PersistException("could not retrieve data from the server\nstatus: " + response.getStatus() + "\ncontent: " + response.getBody());
 			}
 		} catch(MalformedURLException e) {
 			throw new IllegalStateException("malformed URL should have been caught earlier!");
@@ -362,71 +372,32 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 	}
 	
 	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz, String where, Object... values) throws SQLException {
-		if(clazz == null) {
-			throw new IllegalArgumentException("cannot findAll: null class, where: " + where);
-		}
-
-		if(where.startsWith("where ")) {
-			where = where.substring(6);
-		}
-		
-		String include;
-		int ix = where.indexOf("include");
-		if(ix == -1) {
-			include = null;
-		} else {
-			include = where.substring(ix).trim();
-			where = where.substring(0, ix).trim();
-			if(where.length() == 0) {
-				where = null;
-			}
-			ix = include.indexOf(':');
-			if(ix == -1) {
-				include = null;
-			} else {
-				include = include.substring(ix+1);
-			}
-		}
-
-		Map<String, Object> query = new HashMap<String, Object>();
-		Map<String, Object> map = new LinkedHashMap<String, Object>();
-		if(where != null) {
-			map.put("where", where);
-		}
-		if(include != null) {
-			map.put("include", include);
-		}
-		map.put("values", values);
-		query.put("query", map);
-
-		String queryString = toJson(query);
-		
-		return findAll(clazz, queryString, query);
+	public <T extends Model> List<T> findAll(Class<T> clazz, String query, Object... values) throws PersistException {
+		return findAll(clazz, toMap(query), values);
 	}
 	
 	@Override
 	public ServiceInfo getInfo() {
 		return new ServiceInfo() {
 			@Override
-			public String getSymbolicName() {
-				return getClass().getName();
-			}
-			@Override
-			public String getProvider() {
-				return "oobium.org";
-			}
-			@Override
-			public String getVersion() {
-				return "0.6.0";
+			public String getMigrationService() {
+				return null;
 			}
 			@Override
 			public String getName() {
 				return getClass().getSimpleName();
 			}
 			@Override
-			public String getMigrationService() {
-				return null;
+			public String getProvider() {
+				return "oobium.org";
+			}
+			@Override
+			public String getSymbolicName() {
+				return getClass().getName();
+			}
+			@Override
+			public String getVersion() {
+				return "0.6.0";
 			}
 		};
 	}
@@ -480,14 +451,14 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 	}
 	
 	// always run the query (this is a reload request), but update the cache with the result
-	private void retrieve(Model model) throws SQLException{
+	private void retrieve(Model model) throws PersistException{
 		if(model == null) {
-			throw new SQLException("cannot retrieve null model");
+			throw new PersistException("cannot retrieve null model");
 		}
 		
 		Route request = api.getRoute(model, show);
 		if(request == null) {
-			throw new SQLException("no published route found for " + model.getClass() + ": show");
+			throw new PersistException("no published route found for " + model.getClass() + ": show");
 		}
 		
 		try {
@@ -507,7 +478,7 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 					model.putAll(cache);
 				}
 			} else if(response.exceptionThrown()) {
-				throw new SQLException(response.getException().getLocalizedMessage());
+				throw new PersistException(response.getException().getLocalizedMessage());
 			}
 		} catch(MalformedURLException e) {
 			throw new IllegalStateException("malformed URL should have been caught earlier!");
@@ -515,21 +486,21 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 	}
 	
 	@Override
-	public void retrieve(Model... models) throws SQLException {
+	public void retrieve(Model... models) throws PersistException {
 		for(Model model : models) {
 			retrieve(model);
 		}
 	}
 
 	@Override
-	public void retrieve(Model model, String field) throws SQLException {
+	public void retrieve(Model model, String field) throws PersistException {
 		if(model == null) {
-			throw new SQLException("cannot retrieve null model:" + field);
+			throw new PersistException("cannot retrieve null model:" + field);
 		}
 		
 		Route request = api.getRoute(model, showAll, field);
 		if(request == null) {
-			throw new SQLException("no published route found for " + model.getClass() + ": showAll:" + field);
+			throw new PersistException("no published route found for " + model.getClass() + ": showAll:" + field);
 		}
 		
 		try {
@@ -560,7 +531,7 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 					model.put(field, list);
 				}
 			} else if(response.exceptionThrown()) {
-				throw new SQLException(response.getException().getLocalizedMessage());
+				throw new PersistException(response.getException().getLocalizedMessage());
 			}
 		} catch(MalformedURLException e) {
 			throw new IllegalStateException("malformed URL should have been caught earlier!");
@@ -571,14 +542,14 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 		api.setDiscoveryUrl(url);
 	}
 	
-	private void update(Model model) throws SQLException {
+	private void update(Model model) throws PersistException {
 		if(model == null) {
-			throw new SQLException("cannot update null model");
+			throw new PersistException("cannot update null model");
 		}
 		
 		Route request = api.getRoute(model, update);
 		if(request == null) {
-			throw new SQLException("no published route found for " + model.getClass() + ": update");
+			throw new PersistException("no published route found for " + model.getClass() + ": update");
 		}
 		
 		try {
@@ -598,7 +569,7 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 					model.putAll(cache);
 				}
 			} else if(response.exceptionThrown()) {
-				throw new SQLException(response.getException().getLocalizedMessage());
+				throw new PersistException(response.getException().getLocalizedMessage());
 			}
 		} catch(MalformedURLException e) {
 			throw new IllegalStateException("malformed URL should have been caught earlier!");
@@ -606,7 +577,7 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 	}
 	
 	@Override
-	public void update(Model... models) throws SQLException {
+	public void update(Model... models) throws PersistException {
 		for(Model model : models) {
 			update(model);
 		}

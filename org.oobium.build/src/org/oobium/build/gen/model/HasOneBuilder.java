@@ -21,13 +21,6 @@ public class HasOneBuilder extends PropertyBuilder {
 		super(descriptor);
 	}
 
-	@Override
-	public Map<String, String> getDeclarations() {
-		Map<String, String> vars = new HashMap<String, String>();
-		vars.put(descriptor.variable(), "protected " + descriptor.type() + " " + descriptor.variable() + " = null;");
-		return vars;
-	}
-	
 	private String getGetterMethod() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("public ").append(descriptor.type()).append(' ').append(descriptor.getterName()).append("() {\n");

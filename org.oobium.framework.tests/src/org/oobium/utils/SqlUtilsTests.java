@@ -62,29 +62,4 @@ public class SqlUtilsTests {
 		assertEquals("select * from a LIMIT 1 include:b", limit("select * from a include:b", 1));
 	}
 
-	@Test
-	public void testPaginateNull() throws Exception {
-		assertEquals("LIMIT 0,10", paginate(null, 1, 10));
-	}
-	
-	@Test
-	public void testPaginateEmpty() throws Exception {
-		assertEquals("LIMIT 0,10", paginate("", 1, 10));
-	}
-
-	@Test
-	public void testPaginate() throws Exception {
-		assertEquals("select * from a LIMIT 0,10", paginate("select * from a", 1, 10));
-	}
-
-	@Test
-	public void testPaginateInclude() throws Exception {
-		assertEquals("LIMIT 0,10 include:a", paginate("include:a", 1, 10));
-	}
-
-	@Test
-	public void testPaginateWithInclude() throws Exception {
-		assertEquals("select * from a LIMIT 0,10 include:b", paginate("select * from a include:b", 1, 10));
-	}
-
 }

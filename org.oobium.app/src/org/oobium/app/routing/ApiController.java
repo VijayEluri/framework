@@ -13,7 +13,6 @@ package org.oobium.app.routing;
 import static org.oobium.utils.json.JsonUtils.format;
 import static org.oobium.utils.json.JsonUtils.toJson;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,8 +21,9 @@ import java.util.Set;
 
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.oobium.app.controllers.HttpController;
-import org.oobium.app.routing.routes.HttpRoute;
 import org.oobium.app.http.Action;
+import org.oobium.app.routing.routes.HttpRoute;
+import org.oobium.persist.PersistException;
 
 public class ApiController extends HttpController {
 
@@ -68,7 +68,7 @@ public class ApiController extends HttpController {
 	}
 	
 	@Override
-	public void handleRequest() throws SQLException {
+	public void handleRequest() throws PersistException {
 		Router router = getRouter();
 		Set<Route> routes = router.published;
 		if(routes == null) {

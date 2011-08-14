@@ -1,19 +1,21 @@
 package org.oobium.persist.migrate;
 
-import static org.oobium.utils.StringUtils.*;
-
-import static org.oobium.persist.migrate.defs.Column.*;
+import static org.oobium.persist.migrate.defs.Column.BINARY;
 import static org.oobium.persist.migrate.defs.Column.BOOLEAN;
 import static org.oobium.persist.migrate.defs.Column.DATE;
 import static org.oobium.persist.migrate.defs.Column.DATESTAMPS;
 import static org.oobium.persist.migrate.defs.Column.DECIMAL;
+import static org.oobium.persist.migrate.defs.Column.DOUBLE;
 import static org.oobium.persist.migrate.defs.Column.FLOAT;
 import static org.oobium.persist.migrate.defs.Column.INTEGER;
+import static org.oobium.persist.migrate.defs.Column.LONG;
 import static org.oobium.persist.migrate.defs.Column.STRING;
 import static org.oobium.persist.migrate.defs.Column.TEXT;
 import static org.oobium.persist.migrate.defs.Column.TIME;
 import static org.oobium.persist.migrate.defs.Column.TIMESTAMP;
 import static org.oobium.persist.migrate.defs.Column.TIMESTAMPS;
+import static org.oobium.utils.StringUtils.tableName;
+import static org.oobium.utils.StringUtils.tableNames;
 
 import java.sql.SQLException;
 import java.util.List;

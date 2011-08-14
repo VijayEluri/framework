@@ -20,7 +20,6 @@ import static org.oobium.utils.StringUtils.titleize;
 import static org.oobium.utils.StringUtils.varName;
 
 import java.io.File;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
@@ -30,6 +29,7 @@ import org.oobium.app.controllers.HttpController;
 import org.oobium.build.model.ModelDefinition;
 import org.oobium.build.util.SourceFile;
 import org.oobium.build.workspace.Module;
+import org.oobium.persist.PersistException;
 import org.oobium.app.http.Action;
 import org.oobium.app.http.MimeType;
 
@@ -70,11 +70,11 @@ public class ControllerGenerator {
 			src.superName = HttpController.class.getSimpleName();
 			src.imports.add(HttpController.class.getCanonicalName());
 		}
-		src.imports.add(SQLException.class.getCanonicalName());
+		src.imports.add(PersistException.class.getCanonicalName());
 		
 		StringBuilder sb = new StringBuilder();
 		sb.append("@Override\n");
-		sb.append("public void handleRequest() throws SQLException {\n");
+		sb.append("public void handleRequest() throws PersistException {\n");
 		sb.append("\t// TODO handle the request\n");
 		sb.append("}");
 		src.methods.put("show", sb.toString());
@@ -135,7 +135,7 @@ public class ControllerGenerator {
 	}
 	
 	private void addImports(TreeSet<String> imports) {
-		imports.add(SQLException.class.getCanonicalName());
+		imports.add(PersistException.class.getCanonicalName());
 		imports.add(model.getCanonicalName());
 	}
 	
@@ -189,7 +189,7 @@ public class ControllerGenerator {
 			src.superName = HttpController.class.getSimpleName();
 			src.imports.add(HttpController.class.getCanonicalName());
 		}
-		src.imports.add(SQLException.class.getCanonicalName());
+		src.imports.add(PersistException.class.getCanonicalName());
 
 		for(int i = 0; i < 7; i++) {
 			addImports(i, src.imports);
@@ -211,7 +211,7 @@ public class ControllerGenerator {
 	private String genCreate() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("@Override // POST/URL/[models]\n");
-		sb.append("public void create() throws SQLException {\n");
+		sb.append("public void create() throws PersistException {\n");
 		sb.append("\t").append(mType).append(" ").append(varName).append(" = ").append("param(\"").append(varName).append("\", new ").append(mType).append("());\n");
 		sb.append("\tif(").append(varName).append(".create()) {\n");
 		if(!withViews) {
@@ -241,7 +241,7 @@ public class ControllerGenerator {
 	private String genDestroy() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("@Override // DELETE/URL/[models]/id\n");
-		sb.append("public void destroy() throws SQLException {\n");
+		sb.append("public void destroy() throws PersistException {\n");
 		sb.append("\t").append(mType).append(" ").append(varName).append(" = new ").append(mType).append("().setId(getId());\n");
 		sb.append("\tif(").append(varName).append(".destroy()) {\n");
 		if(!withViews) {
@@ -264,8 +264,8 @@ public class ControllerGenerator {
 	private String genShow() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("@Override // GET/URL/[models]/id\n");
-		sb.append("public void show() throws SQLException {\n");
-		sb.append("\t").append(mType).append(" ").append(varName).append(" = ").append(mType).append(".find(getId());\n");
+		sb.append("public void show() throws PersistException {\n");
+		sb.append("\t").append(mType).append(" ").append(varName).append(" = ").append(mType).append(".findById(getId());\n");
 		sb.append("\tif(").append(varName).append(" != null) {\n");
 		if(!withViews) {
 			sb.append("\t\trender(").append(varName).append(");\n");
@@ -284,8 +284,8 @@ public class ControllerGenerator {
 	private String genShowAll() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("@Override // GET/URL/[models]\n");
-		sb.append("public void showAll() throws SQLException {\n");
-		sb.append("\tList<").append(mType).append("> ").append(varNamePlural).append(" = ").append(mType).append(".findAll();\n");
+		sb.append("public void showAll() throws PersistException {\n");
+		sb.append("\tList<").append(mType).append("> ").append(varNamePlural).append(" = ").append(mType).append(".findAll(getQuery(), getValues());\n");
 		sb.append('\n');
 		if(!withViews) {
 			sb.append("\trender(").append(varNamePlural).append(");\n");
@@ -303,8 +303,8 @@ public class ControllerGenerator {
 	private String genShowEdit() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("@Override // GET/URL/[models]/id/edit\n");
-		sb.append("public void showEdit() throws SQLException {\n");
-		sb.append("\t").append(mType).append(" ").append(varName).append(" = ").append(mType).append(".find(getId());\n");
+		sb.append("public void showEdit() throws PersistException {\n");
+		sb.append("\t").append(mType).append(" ").append(varName).append(" = ").append(mType).append(".findById(getId());\n");
 		sb.append("\tif(").append(varName).append(" != null) {\n");
 		sb.append("\t\trender(new ShowEdit").append(mType).append("(").append(varName).append("));\n");
 		sb.append("\t}\n");
@@ -315,7 +315,7 @@ public class ControllerGenerator {
 	private String genShowNew() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("@Override // GET/URL/[models]/new\n");
-		sb.append("public void showNew() throws SQLException {\n");
+		sb.append("public void showNew() throws PersistException {\n");
 		sb.append("\t").append(mType).append(" ").append(varName).append(" = new ").append(mType).append("();\n");
 		sb.append("\trender(new ShowNew").append(mType).append('(').append(varName).append("));\n");
 		sb.append("}");
@@ -325,7 +325,7 @@ public class ControllerGenerator {
 	private String genUpdate() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("@Override // PUT/URL/[models]/id\n");
-		sb.append("public void update() throws SQLException {\n");
+		sb.append("public void update() throws PersistException {\n");
 		sb.append("\t").append(mType).append(" ").append(varName).append(" = ").append("param(\"").append(varName).append("\", new ").append(mType).append("()).setId(getId());\n");
 		sb.append("\tif(").append(varName).append(".update()) {\n");
 		if(!withViews) {

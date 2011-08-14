@@ -10,10 +10,10 @@
  ******************************************************************************/
 package org.oobium.persist;
 
-import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
-public abstract class PersistAdapter implements PersistService {
+public class PersistAdapter implements PersistService {
 
 	private boolean open;
 	
@@ -24,41 +24,77 @@ public abstract class PersistAdapter implements PersistService {
 	}
 
 	@Override
-	public int count(Class<? extends Model> clazz, String where, Object... values) throws SQLException {
+	public int count(Class<? extends Model> clazz) throws PersistException {
 		// subclasses to override if necessary
 		return 0;
 	}
 
 	@Override
-	public void create(Model... models) throws SQLException {
+	public int count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws PersistException {
 		// subclasses to override if necessary
+		return 0;
 	}
 	
 	@Override
-	public void destroy(Model... models) throws SQLException {
+	public int count(Class<? extends Model> clazz, String where, Object... values) throws PersistException {
+		// subclasses to override if necessary
+		return 0;
+	}
+
+	@Override
+	public void create(Model... models) throws PersistException {
 		// subclasses to override if necessary
 	}
 
 	@Override
-	public <T extends Model> T find(Class<T> clazz, int id) throws SQLException {
+	public void destroy(Model... models) throws PersistException {
+		// subclasses to override if necessary
+	}
+
+	@Override
+	public <T extends Model> T find(Class<T> clazz, Map<String, Object> query, Object... values) throws PersistException {
 		// subclasses to override if necessary
 		return null;
 	}
 
 	@Override
-	public <T extends Model> T find(Class<T> clazz, String where, Object... values) throws SQLException {
+	public <T extends Model> T findById(Class<T> clazz, Object id) throws PersistException {
 		// subclasses to override if necessary
 		return null;
 	}
 
 	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz) throws SQLException {
+	public <T extends Model> T findById(Class<T> clazz, Object id, String include) throws PersistException {
 		// subclasses to override if necessary
 		return null;
 	}
 
 	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz, String where, Object... values) throws SQLException {
+	public <T extends Model> T find(Class<T> clazz, String where, Object... values) throws PersistException {
+		// subclasses to override if necessary
+		return null;
+	}
+
+	@Override
+	public <T extends Model> List<T> findAll(Class<T> clazz) throws PersistException {
+		// subclasses to override if necessary
+		return null;
+	}
+	
+	@Override
+	public <T extends Model> List<T> findAll(Class<T> clazz, Map<String, Object> query, Object... values) throws PersistException {
+		// subclasses to override if necessary
+		return null;
+	}
+
+	@Override
+	public <T extends Model> List<T> findAll(Class<T> clazz, String where, Object... values) throws PersistException {
+		// subclasses to override if necessary
+		return null;
+	}
+
+	@Override
+	public ServiceInfo getInfo() {
 		// subclasses to override if necessary
 		return null;
 	}
@@ -75,17 +111,17 @@ public abstract class PersistAdapter implements PersistService {
 	}
 
 	@Override
-	public void retrieve(Model... models) throws SQLException {
+	public void retrieve(Model... models) throws PersistException {
 		// subclasses to override if necessary
 	}
 
 	@Override
-	public void retrieve(Model model, String hasMany) throws SQLException {
+	public void retrieve(Model model, String hasMany) throws PersistException {
 		// subclasses to override if necessary
 	}
-	
+
 	@Override
-	public void update(Model... models) throws SQLException {
+	public void update(Model... models) throws PersistException {
 		// subclasses to override if necessary
 	}
 

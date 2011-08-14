@@ -175,6 +175,14 @@ public class ClientResponse {
 		return content != null && content.length > 0;
 	}
 
+	public boolean isNotFound() {
+		HttpResponseStatus status = getStatus();
+		if(status != null) {
+			return status.getCode() == 404;
+		}
+		return false;
+	}
+
 	public boolean isSuccess() {
 		HttpResponseStatus status = getStatus();
 		if(status != null) {

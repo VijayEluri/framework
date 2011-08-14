@@ -97,6 +97,10 @@ public class Response extends DefaultHttpResponse {
 		setHeader(HttpHeaders.Names.CONTENT_TYPE, type.contentType);
 	}
 	
+	public Cookie setCookie(String name, Object value) {
+		return setCookie(name, String.valueOf(value));
+	}
+	
 	public Cookie setCookie(String name, String value) {
 		if(cookies == null) {
 			cookies = new HashMap<String, Cookie>();
@@ -104,6 +108,10 @@ public class Response extends DefaultHttpResponse {
 		Cookie cookie = new DefaultCookie(name, value);
 		cookies.put(name, cookie);
 		return cookie;
+	}
+	
+	public Cookie setCookie(String name, Object value, int maxAge) {
+		return setCookie(name, String.valueOf(value), maxAge);
 	}
 	
 	public Cookie setCookie(String name, String value, int maxAge) {

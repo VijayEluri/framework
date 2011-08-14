@@ -10,30 +10,38 @@
  ******************************************************************************/
 package org.oobium.persist;
 
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 
-import org.oobium.utils.SqlUtils;
+import org.oobium.utils.json.JsonUtils;
 
 public class Paginator<E extends Model> implements List<E> {
 
 	public static final String DEFAULT_PAGE_KEY = "p";
 	
-	public static <T extends Model> Paginator<T> paginate(Class<T> clazz, int page, int perPage) throws SQLException {
+	public static <T extends Model> Paginator<T> paginate(Class<T> clazz, int page, int perPage) throws PersistException {
 		return paginate(clazz, page, perPage, null);
 	}
 	
-	public static <T extends Model> Paginator<T> paginate(Class<T> clazz, int page, int perPage, String sql, Object...values) throws SQLException {
-		int total = Model.count(clazz, sql, values);
-		String paginatedSql = SqlUtils.paginate(sql, page, perPage);
-		List<T> models = Model.findAll(clazz, paginatedSql, values);
+	public static <T extends Model> Paginator<T> paginate(Class<T> clazz, int page, int perPage, String query, Object...values) throws PersistException {
+		int total = Model.getPersistService(clazz).count(clazz, query, values);
+		Map<String, Object> paginatedQuery = JsonUtils.toMap(query);
+		paginatedQuery.put("limit", limit(page, perPage));
+		List<T> models = Model.getPersistService(clazz).findAll(clazz, paginatedQuery, values);
 		Paginator<T> paginator = new Paginator<T>(models, total, page, perPage);
 		return paginator;
 	}
 
+	private static String limit(int page, int perPage) {
+		int offset = (((page < 1) ? 1 : page) - 1) * perPage;
+		int limit = perPage;
+		return offset + "," + limit; 
+	}
+    
+	
 	private List<E> models;
 	private int total;
 	private int page;

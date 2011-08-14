@@ -1,9 +1,10 @@
 package org.oobium.test;
 
-import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 import org.oobium.persist.Model;
+import org.oobium.persist.PersistException;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.ServiceInfo;
 import org.oobium.persist.db.derby.embedded.DerbyEmbeddedPersistService;
@@ -40,40 +41,70 @@ public class TestPersistService implements PersistService {
 	}
 
 	@Override
-	public int count(Class<? extends Model> clazz, String where, Object... values) throws SQLException {
+	public int count(Class<? extends Model> clazz) throws PersistException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public int count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws PersistException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public int count(Class<? extends Model> clazz, String where, Object... values) throws PersistException {
 		return service.count(clazz, where, values);
 	}
 
 	@Override
-	public void create(Model... models) throws SQLException {
+	public void create(Model... models) throws PersistException {
 		service.create(models);
 	}
-
+	
 	@Override
-	public void destroy(Model... models) throws SQLException {
+	public void destroy(Model... models) throws PersistException {
 		service.destroy(models);
 	}
 
 	@Override
-	public <T extends Model> T find(Class<T> clazz, int id) throws SQLException {
-		return service.find(clazz, id);
+	public <T extends Model> T find(Class<T> clazz, Map<String, Object> query, Object... values) throws PersistException {
+		// TODO Auto-generated method stub
+		return null;
 	}
-	
+
 	@Override
-	public <T extends Model> T find(Class<T> clazz, String where, Object... values) throws SQLException {
+	public <T extends Model> T findById(Class<T> clazz, Object id) throws PersistException {
+		return service.findById(clazz, id);
+	}
+
+	@Override
+	public <T extends Model> T findById(Class<T> clazz, Object id, String include) throws PersistException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public <T extends Model> T find(Class<T> clazz, String where, Object... values) throws PersistException {
 		return service.find(clazz, where, values);
 	}
 
 	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz) throws SQLException {
+	public <T extends Model> List<T> findAll(Class<T> clazz) throws PersistException {
 		return service.findAll(clazz);
 	}
 
 	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz, String where, Object... values) throws SQLException {
-		return service.findAll(clazz, where, values);
+	public <T extends Model> List<T> findAll(Class<T> clazz, Map<String, Object> query, Object... values) throws PersistException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
+	@Override
+	public <T extends Model> List<T> findAll(Class<T> clazz, String where, Object... values) throws PersistException {
+		return service.findAll(clazz, where, values);
+	}
+	
 	@Override
 	public ServiceInfo getInfo() {
 		return service.getInfo();
@@ -90,17 +121,17 @@ public class TestPersistService implements PersistService {
 	}
 
 	@Override
-	public void retrieve(Model... models) throws SQLException {
+	public void retrieve(Model... models) throws PersistException {
 		service.retrieve(models);
 	}
 
 	@Override
-	public void retrieve(Model model, String hasMany) throws SQLException {
+	public void retrieve(Model model, String hasMany) throws PersistException {
 		service.retrieve(model, hasMany);
 	}
-	
+
 	@Override
-	public void update(Model... models) throws SQLException {
+	public void update(Model... models) throws PersistException {
 		service.update(models);
 	}
 

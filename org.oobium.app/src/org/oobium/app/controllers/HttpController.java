@@ -28,7 +28,6 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -69,6 +68,7 @@ import org.oobium.cache.CacheObject;
 import org.oobium.cache.CacheService;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
+import org.oobium.persist.PersistException;
 import org.oobium.utils.Base64;
 
 public class HttpController implements IFlash, IParams, IPathRouting, IUrlRouting, ISessions, IHttp {
@@ -328,22 +328,22 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	/**
 	 * POST url/[model]s
 	 * Implemented by subclasses, if necessary, to create a model.
-	 * @throws SQLException
+	 * @throws PersistException
 	 */
-	public void create() throws SQLException {
+	public void create() throws PersistException {
 		// to be implemented by subclasses if needed
 	}
 	
 	/** 
 	 * DELETE url/[model]s/1
 	 * Implemented by subclasses, if necessary, to destroy / delete a model.
-	 * @throws SQLException
+	 * @throws PersistException
 	 */
-	public void destroy() throws SQLException {
+	public void destroy() throws PersistException {
 		// to be implemented by subclasses if needed
 	}
 	
-	public void execute(Action action) throws SQLException {
+	public void execute(Action action) throws PersistException {
 		if(logger.isLoggingDebug()) {
 			logger.debug("start controller#execute - " + getControllerName() + "#" + ((action != null) ? action : "handleRequest"));
 		}
@@ -392,7 +392,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 					Timestamp exp = new Timestamp(System.currentTimeMillis() + 30*60*1000);
 					session.setExpiration(exp);
 					if(session.save()) {
-						response.setCookie(SESSION_ID_KEY, Integer.toString(session.getId()), 30);
+						response.setCookie(SESSION_ID_KEY, session.getId(), 30);
 						response.setCookie(SESSION_UUID_KEY, session.getUuid(), 30);
 					}
 				}
@@ -543,8 +543,21 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		return getFlash(FLASH_WARNING);
 	}
 
-	public int getId() {
-		return param("id", int.class);
+	public Object getId() {
+		return getParam("id");
+	}
+	
+	public <T> T getId(Class<T> type) {
+		return getParam("id", type);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public Map<String, Object> getQuery() {
+		return (Map<String, Object>) param("query", Map.class);
+	}
+
+	public Object[] getValues() {
+		return param("values", Object[].class);
 	}
 	
 	public Logger getLogger() {
@@ -600,10 +613,10 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	
 	/**
 	 * Implemented by subclasses, if necessary, to handle non-RESTful routes.
-	 * @throws SQLException
+	 * @throws PersistException
 	 * @see {@link Router#}
 	 */
-	public void handleRequest() throws SQLException {
+	public void handleRequest() throws PersistException {
 		// to be implemented by subclasses if needed
 	}
 
@@ -1043,7 +1056,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		renderCreated(id, null);
 	}
 
-	public void renderCreated(long id, String path) {
+	public void renderCreated(Object id, String path) {
 		rendering();
 		response = new Response(HttpResponseStatus.CREATED);
 		response.addHeader("id", String.valueOf(id));
@@ -1057,7 +1070,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	}
 	
 	public void renderCreated(Model model) {
-		renderCreated((long) model.getId(), pathTo(model));
+		renderCreated(model.getId(), pathTo(model));
 	}
 
 	public void renderDestroyed(Model model) {
@@ -1320,45 +1333,45 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	/**
 	 * GET url/[model]s/1
 	 * Implemented by subclasses, if necessary, to show (retrieve) a model.
-	 * @throws SQLException
+	 * @throws PersistException
 	 */
-	public void show() throws SQLException {
+	public void show() throws PersistException {
 		// to be implemented by subclasses if needed
 	}
 
 	/**
 	 * GET url/[model]s
 	 * Implemented by subclasses, if necessary, to show (retrieve) all models.
-	 * @throws SQLException
+	 * @throws PersistException
 	 */
-	public void showAll() throws SQLException {
+	public void showAll() throws PersistException {
 		// to be implemented by subclasses if needed
 	}
 
 	/**
 	 * GET url/[model]s/1/edit
 	 * Implemented by subclasses, if necessary, to show the edit page for a model.
-	 * @throws SQLException
+	 * @throws PersistException
 	 */
-	public void showEdit() throws SQLException {
+	public void showEdit() throws PersistException {
 		// to be implemented by subclasses if needed
 	}
 
 	/**
 	 * GET url/[model]s/new
 	 * Implemented by subclasses, if necessary, to show the new page for a model.
-	 * @throws SQLException
+	 * @throws PersistException
 	 */
-	public void showNew() throws SQLException {
+	public void showNew() throws PersistException {
 		// to be implemented by subclasses if needed
 	}
 
 	/**
 	 * PUT url/[model]s/1
 	 * Implemented by subclasses, if necessary, to update a model.
-	 * @throws SQLException
+	 * @throws PersistException
 	 */
-	public void update() throws SQLException {
+	public void update() throws PersistException {
 		// to be implemented by subclasses if needed
 	}
 

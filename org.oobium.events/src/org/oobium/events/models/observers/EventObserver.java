@@ -15,7 +15,6 @@ import static org.oobium.utils.literal.Map;
 import static org.oobium.utils.literal.e;
 
 import java.net.MalformedURLException;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +22,7 @@ import org.oobium.client.ClientResponse;
 import org.oobium.events.models.Event;
 import org.oobium.events.models.Listener;
 import org.oobium.persist.Observer;
+import org.oobium.persist.PersistException;
 import org.oobium.persist.PersistService;
 import org.oobium.utils.json.JsonUtils;
 
@@ -61,7 +61,7 @@ public class EventObserver extends Observer<Event> {
 					listener.destroy();
 				}
 			}
-		} catch(SQLException e) {
+		} catch(PersistException e) {
 			logger.error(e);
 		}
 	}

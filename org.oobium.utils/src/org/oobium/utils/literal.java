@@ -15,8 +15,8 @@ import java.util.Set;
 public class literal {
 
 	public static class Entry<K, V> {
-		private K key;
-		private V value;
+		public final K key;
+		public final V value;
 		private Entry(K key, V value) {
 			this.key = key;
 			this.value = value;

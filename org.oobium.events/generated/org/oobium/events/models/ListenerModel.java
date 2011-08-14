@@ -18,13 +18,13 @@ package org.oobium.events.models;
 
 import static org.oobium.utils.StringUtils.blank;
 
-import java.lang.String;
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
 import org.oobium.persist.Model;
 import org.oobium.persist.Paginator;
+import org.oobium.persist.PersistException;
 import org.oobium.utils.json.JsonModel;
 
 public abstract class ListenerModel extends Model {
@@ -69,40 +69,40 @@ public abstract class ListenerModel extends Model {
 	/**
 	 * Find the Listener with the given id
 	*/
-	public static Listener find(int id) throws SQLException {
-		return Model.find(Listener.class, id);
+	public static Listener find(int id) throws PersistException {
+		return getPersistService(Listener.class).findById(Listener.class, id);
 	}
 
 	/**
 	 * Find the Listener with the given id and include the given fields.
 	 * The include option can start with 'include:', but it is not required.
 	*/
-	public static Listener find(int id, String include) throws SQLException {
+	public static Listener find(int id, String include) throws PersistException {
 		String sql = (include.startsWith("include:") ? "where id=? " : "where id=? include:") + include;
-		return Model.find(Listener.class, sql, id);
+		return getPersistService(Listener.class).find(Listener.class, sql, id);
 	}
 
 	/**
 	 * Find the Listener with using the given sql query and values.  Note that only one instance will be returned.
 	 * Prepend the query with 'where' to enter only the where clause.
 	*/
-	public static Listener find(String sql, Object...values) throws SQLException {
-		return Model.find(Listener.class, sql, values);
+	public static Listener find(String sql, Object...values) throws PersistException {
+		return getPersistService(Listener.class).find(Listener.class, sql, values);
 	}
 
-	public static List<Listener> findAll() throws SQLException {
-		return Model.findAll(Listener.class);
+	public static List<Listener> findAll() throws PersistException {
+		return getPersistService(Listener.class).findAll(Listener.class);
 	}
 
-	public static List<Listener> findAll(String sql, Object...values) throws SQLException {
-		return Model.findAll(Listener.class, sql, values);
+	public static List<Listener> findAll(String sql, Object...values) throws PersistException {
+		return getPersistService(Listener.class).findAll(Listener.class, sql, values);
 	}
 
-	public static Paginator<Listener> paginate(int page, int perPage) throws SQLException {
+	public static Paginator<Listener> paginate(int page, int perPage) throws PersistException {
 		return Paginator.paginate(Listener.class, page, perPage);
 	}
 
-	public static Paginator<Listener> paginate(int page, int perPage, String sql, Object...values) throws SQLException {
+	public static Paginator<Listener> paginate(int page, int perPage, String sql, Object...values) throws PersistException {
 		return Paginator.paginate(Listener.class, page, perPage, sql, values);
 	}
 
@@ -250,7 +250,7 @@ public abstract class ListenerModel extends Model {
 	}
 
 	@Override
-	public Listener setId(int id) {
+	public Listener setId(Object id) {
 		return (Listener) super.setId(id);
 	}
 

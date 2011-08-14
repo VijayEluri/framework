@@ -495,24 +495,6 @@ public class SqlUtils {
 		}
 	}
 	
-    public static String paginate(String sql, int page, int perPage) {
-		int offset = (((page < 1) ? 1 : page) - 1) * perPage;
-		int limit = perPage;
-		if(blank(sql)) {
-			return "LIMIT " + offset + "," + limit;
-		}
-		int ix = sql.toLowerCase().indexOf("include:");
-		if(ix == -1) {
-			return sql.trim() + " LIMIT " + offset + "," + limit;
-		}
-		StringBuilder sb = new StringBuilder(sql.length() + 20);
-		if(ix > 0) {
-			sb.append(sql, 0, ix);
-		}
-		sb.append("LIMIT ").append(offset).append(',').append(limit).append(' ').append(sql, ix, sql.length());
-		return sb.toString();
-	}
-    
     /**
 	 * Escapes the word if it is an SQL reserved word by surrounding it with quotes (").
 	 * @param column

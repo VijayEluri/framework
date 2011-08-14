@@ -13,7 +13,6 @@ package org.oobium.manager.controllers;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.json.JsonUtils.toJson;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -29,6 +28,7 @@ import org.oobium.manager.controllers.workers.StartWorker;
 import org.oobium.manager.controllers.workers.StopWorker;
 import org.oobium.manager.controllers.workers.UninstallWorker;
 import org.oobium.manager.controllers.workers.UpdateWorker;
+import org.oobium.persist.PersistException;
 import org.oobium.utils.StringUtils;
 import org.oobium.utils.json.JsonUtils;
 import org.osgi.framework.Bundle;
@@ -55,7 +55,7 @@ public class BundleController extends HttpController {
 
 	
 	@Override // POST/URL/[models]
-	public void create() throws SQLException {
+	public void create() throws PersistException {
 		String location = param("location");
 		if(blank(location)) {
 			renderErrors("location not set");
@@ -71,7 +71,7 @@ public class BundleController extends HttpController {
 	// DELETE/URL/[models]/id
 	// DELETE/URL/[models]/name
 	// DELETE/URL/[models]/name_version
-	public void destroy() throws SQLException {
+	public void destroy() throws PersistException {
 		Bundle[] bundles = getBundles();
 		if(!isRendered()) {
 			// perform in a worker because the bundle may need to be stopped first
@@ -98,8 +98,8 @@ public class BundleController extends HttpController {
 	private Bundle[] getBundles() {
 		BundleContext context = ManagerService.context();
 
-		if(getId() > 0) {
-			Bundle bundle = context.getBundle(getId());
+		if(getId(int.class) > 0) {
+			Bundle bundle = context.getBundle(getId(int.class));
 			if(bundle != null) {
 				return new Bundle[] { bundle };
 			} else {
@@ -171,7 +171,7 @@ public class BundleController extends HttpController {
 	}
 	
 	@Override
-	public void handleRequest() throws SQLException {
+	public void handleRequest() throws PersistException {
 		Bundle[] bundles = getBundles();
 		if(!isRendered()) {
 			BundleContext context = ManagerService.context();
@@ -182,8 +182,8 @@ public class BundleController extends HttpController {
 	}
 	
 	@Override // GET/URL/[models]/id
-	public void show() throws SQLException {
-		Bundle bundle = ManagerService.context().getBundle(getId());
+	public void show() throws PersistException {
+		Bundle bundle = ManagerService.context().getBundle(getId(int.class));
 		if(bundle == null) {
 			renderErrors("there is no bundle with id: " + getId());
 		} else {
@@ -192,7 +192,7 @@ public class BundleController extends HttpController {
 	}
 
 	@Override // GET/URL/[models]
-	public void showAll() throws SQLException {
+	public void showAll() throws PersistException {
 		Bundle[] bundles = ManagerService.context().getBundles();
 		if(hasParam("name")) {
 			String name = param("name");
@@ -217,7 +217,7 @@ public class BundleController extends HttpController {
 	}
 
 	@Override // PUT/URL/[models]/id
-	public void update() throws SQLException {
+	public void update() throws PersistException {
 		Bundle[] bundles = getBundles();
 		if(!isRendered()) {
 			int state = param("state", int.class);

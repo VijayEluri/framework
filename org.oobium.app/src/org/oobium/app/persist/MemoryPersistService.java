@@ -12,7 +12,6 @@ package org.oobium.app.persist;
 
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
+import org.oobium.persist.PersistException;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.ServiceInfo;
 import org.oobium.utils.json.JsonUtils;
@@ -45,12 +45,12 @@ public class MemoryPersistService implements PersistService {
 	}
 	
 	@Override
-	public int count(Class<? extends Model> clazz, String where, Object... values) throws SQLException {
-		throw new SQLException(msg);
+	public int count(Class<? extends Model> clazz, String where, Object... values) throws PersistException {
+		throw new PersistException(msg);
 	}
 	
 	@Override
-	public void create(Model...models) throws SQLException {
+	public void create(Model...models) throws PersistException {
 		for(Model model : models) {
 			int id = count.incrementAndGet();
 			model.setId(id);
@@ -66,7 +66,7 @@ public class MemoryPersistService implements PersistService {
 	}
 
 	@Override
-	public void destroy(Model...models) throws SQLException {
+	public void destroy(Model...models) throws PersistException {
 		for(Model model : models) {
 			Map<String, Object> map = this.models.get(model.getId());
 			if(map != null && map.get("class") == model.getClass()) {
@@ -76,7 +76,7 @@ public class MemoryPersistService implements PersistService {
 	}
 
 	@Override
-	public <T extends Model> T find(Class<T> clazz, int id) throws SQLException {
+	public <T extends Model> T findById(Class<T> clazz, Object id) throws PersistException {
 		Map<String, Object> map = models.get(id);
 		if(map != null && map.get("class") == clazz) {
 			return coerce(map, clazz);
@@ -85,7 +85,7 @@ public class MemoryPersistService implements PersistService {
 	}
 	
 	@Override
-	public <T extends Model> T find(Class<T> clazz, String where, Object... values) throws SQLException {
+	public <T extends Model> T find(Class<T> clazz, String where, Object... values) throws PersistException {
 		if(where != null && where.startsWith("where ")) {
 			Map<String, Object> params = new HashMap<String, Object>();
 			String[] sa1 = where.substring(6).split("\\s+[aA][nN][dD]\\s+");
@@ -112,11 +112,11 @@ public class MemoryPersistService implements PersistService {
 			}
 			return null;
 		}
-		throw new SQLException(msg);
+		throw new PersistException(msg);
 	}
 
 	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz) throws SQLException {
+	public <T extends Model> List<T> findAll(Class<T> clazz) throws PersistException {
 		List<T> list = new ArrayList<T>();
 		for(Map<String, Object> map : models.values()) {
 			if(map.get("class") == clazz) {
@@ -127,7 +127,7 @@ public class MemoryPersistService implements PersistService {
 	}
 
 	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz, String where, Object... values) throws SQLException {
+	public <T extends Model> List<T> findAll(Class<T> clazz, String where, Object... values) throws PersistException {
 		if(where != null && where.startsWith("where ")) {
 			Map<String, Object> params = new HashMap<String, Object>();
 			String[] sa1 = where.substring(6).split("\\s+[aA][nN][dD]\\s+");
@@ -155,7 +155,7 @@ public class MemoryPersistService implements PersistService {
 			}
 			return list;
 		}
-		throw new SQLException(msg);
+		throw new PersistException(msg);
 	}
 
 	@Override
@@ -195,7 +195,7 @@ public class MemoryPersistService implements PersistService {
 	}
 
 	@Override
-	public void retrieve(Model...models) throws SQLException {
+	public void retrieve(Model...models) throws PersistException {
 		for(Model model : models) {
 			Map<String, Object> map = this.models.get(model.getId());
 			if(map != null && map.get("class") == model.getClass()) {
@@ -205,12 +205,12 @@ public class MemoryPersistService implements PersistService {
 	}
 	
 	@Override
-	public void retrieve(Model model, String hasMany) throws SQLException {
+	public void retrieve(Model model, String hasMany) throws PersistException {
 		throw new UnsupportedOperationException("not yet implemented");
 	}
 
 	@Override
-	public void update(Model...models) throws SQLException {
+	public void update(Model...models) throws PersistException {
 		for(Model model : models) {
 			Map<String, Object> map = this.models.get(model.getId());
 			if(map != null && map.get("class") == model.getClass()) {
@@ -221,6 +221,36 @@ public class MemoryPersistService implements PersistService {
 				}
 			}
 		}
+	}
+
+	@Override
+	public int count(Class<? extends Model> clazz) throws PersistException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public int count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws PersistException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public <T extends Model> T findById(Class<T> clazz, Object id, String include) throws PersistException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public <T extends Model> T find(Class<T> clazz, Map<String, Object> query, Object... values) throws PersistException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public <T extends Model> List<T> findAll(Class<T> clazz, Map<String, Object> query, Object... values) throws PersistException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

@@ -10,12 +10,12 @@
  ******************************************************************************/
 package org.oobium.events.controllers;
 
-import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.List;
 
-import org.oobium.events.models.Listener;
 import org.oobium.app.http.Action;
+import org.oobium.events.models.Listener;
+import org.oobium.persist.PersistException;
 
 public class ListenerController extends ApplicationController {
 
@@ -25,7 +25,7 @@ public class ListenerController extends ApplicationController {
 	}
 
 	@Override // POST/URL/[models]
-	public void create() throws SQLException {
+	public void create() throws PersistException {
 		Listener listener = param("listener", Listener.class);
 		listener.setHost(request.getHost() + ":" + request.getPort());
 		if(listener.save()) {
@@ -39,8 +39,8 @@ public class ListenerController extends ApplicationController {
 	}
 
 	@Override // DELETE/URL/[models]/id
-	public void destroy() throws SQLException {
-		Listener listener = Listener.newInstance(getId());
+	public void destroy() throws PersistException {
+		Listener listener = Listener.newInstance(getId(int.class));
 		if(listener.destroy()) {
 			renderDestroyed(listener);
 		} else {
@@ -49,15 +49,15 @@ public class ListenerController extends ApplicationController {
 	}
 
 	@Override // GET/URL/[models]/id
-	public void show() throws SQLException {
-		Listener listener = Listener.find(getId());
+	public void show() throws PersistException {
+		Listener listener = Listener.find(getId(int.class));
 		if(listener != null) {
 			render(listener);
 		}
 	}
 
 	@Override // GET/URL/[models]
-	public void showAll() throws SQLException {
+	public void showAll() throws PersistException {
 		List<Listener> listeners = Listener.findAll();
 		if(!listeners.isEmpty()) {
 			String service = param("service", String.class);
@@ -73,7 +73,7 @@ public class ListenerController extends ApplicationController {
 	}
 
 	@Override // PUT/URL/[models]/id
-	public void update() throws SQLException {
+	public void update() throws PersistException {
 		Listener listener = param("listener", Listener.class);
 		if(listener.save()) {
 			renderOK();

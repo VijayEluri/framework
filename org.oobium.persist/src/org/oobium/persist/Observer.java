@@ -261,7 +261,7 @@ public class Observer<T extends Model> {
 		// subclasses to implement if necessary
 	}
 
-	protected void afterDestroy(int id) {
+	protected void afterDestroy(Object id) {
 		// subclasses to implement if necessary
 	}
 

@@ -25,19 +25,6 @@ public class AttributeBuilder extends PropertyBuilder {
 		super(descriptor);
 	}
 
-	@Override
-	public Map<String, String> getDeclarations() {
-		Map<String, String> vars = new HashMap<String, String>();
-		StringBuilder sb = new StringBuilder();
-		sb.append("protected ").append(descriptor.type()).append(' ').append(descriptor.variable());
-		if(descriptor.hasInit()) {
-			sb.append(" = ").append(descriptor.init());
-		}
-		sb.append(';');
-		vars.put(descriptor.variable(), sb.toString());
-		return vars;
-	}
-
 	private String getGetterMethod() {
 		StringBuilder sb = new StringBuilder();
 		if("Map".equals(descriptor.type())) {

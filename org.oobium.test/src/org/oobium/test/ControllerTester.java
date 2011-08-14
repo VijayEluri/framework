@@ -589,7 +589,7 @@ public class ControllerTester {
 				int id = (Integer) invocation.getArguments()[0];
 				String uuid = (String) invocation.getArguments()[1];
 				if(session != null) {
-					int sid = session.getId();
+					int sid = session.getId(int.class);
 					String suuid = session.getUuid();
 					if((sid < 0 || sid == id) && (suuid.equals("*") || suuid.equals(uuid))) {
 						return session;

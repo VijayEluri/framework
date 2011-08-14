@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.oobium.persist.db;
 
+import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.persist.db.internal.DbCache.expireCache;
 import static org.oobium.utils.literal.Properties;
 
@@ -28,7 +29,9 @@ import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
 import org.oobium.persist.PersistClient;
+import org.oobium.persist.PersistException;
 import org.oobium.persist.PersistService;
+import org.oobium.persist.db.internal.Conversion;
 import org.oobium.persist.db.internal.DbPersistor;
 import org.oobium.persist.db.internal.LoggingConnection;
 import org.osgi.framework.Bundle;
@@ -195,14 +198,36 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	}
 	
 	@Override
-	public int count(Class<? extends Model> clazz, String where, Object... values) throws SQLException {
-		Connection connection = getConnection();
-		return persistor.count(connection, clazz, where, values);
+	public int count(Class<? extends Model> clazz) throws PersistException {
+		return count(clazz, (String) null);
 	}
 	
 	@Override
-	public void create(Model...models) throws SQLException {
-		handleCrud(CREATE, models);
+	public int count(Class<? extends Model> clazz, String query, Object... values) throws PersistException {
+		try {
+			Connection connection = getConnection();
+			return persistor.count(connection, clazz, query, values);
+		} catch(SQLException e) {
+			throw new PersistException(e);
+		}
+	}
+
+	@Override
+	public int count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws PersistException {
+		if(query != null && !query.isEmpty()) {
+			Conversion conversion = new Conversion(query, values);
+			return count(clazz, conversion.getSql(), conversion.getValues());
+		}
+		return count(clazz);
+	}
+	
+	@Override
+	public void create(Model...models) throws PersistException {
+		try {
+			handleCrud(CREATE, models);
+		} catch(SQLException e) {
+			throw new PersistException(e);
+		}
 	}
 
 	public void createDatabase(String client) throws SQLException {
@@ -213,8 +238,12 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	protected abstract Database createDatabase(String client, Map<String, Object> properties);
 
 	@Override
-	public void destroy(Model...models) throws SQLException {
-		handleCrud(DESTROY, models);
+	public void destroy(Model...models) throws PersistException {
+		try {
+			handleCrud(DESTROY, models);
+		} catch(SQLException e) {
+			throw new PersistException(e);
+		}
 	}
 
 	public void dropDatabase(String client) throws SQLException {
@@ -244,26 +273,63 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	}
 	
 	@Override
-	public <T extends Model> T find(Class<T> clazz, int id) throws SQLException {
-		Connection connection = getConnection();
-		return persistor.find(connection, clazz, id);
+	public <T extends Model> T findById(Class<T> clazz, Object id) throws PersistException {
+		try {
+			Connection connection = getConnection();
+			// TODO always an int for now?
+			return persistor.find(connection, clazz, coerce(id, int.class));
+		} catch(SQLException e) {
+			throw new PersistException(e);
+		}
 	}
 
 	@Override
-	public <T extends Model> T find(Class<T> clazz, String where, Object...values) throws SQLException {
-		Connection connection = getConnection();
-		return persistor.find(connection, clazz, where, values);
-	}
-
-	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz) throws SQLException {
-		return findAll(clazz, null);
+	public <T extends Model> T findById(Class<T> clazz, Object id, String include) throws PersistException {
+		// TODO
+		return find(clazz, "where id=? include:?", id, include);
 	}
 	
 	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz, String where, Object...values) throws SQLException {
-		Connection connection = getConnection();
-		return persistor.findAll(connection, clazz, where, values);
+	public <T extends Model> T find(Class<T> clazz, Map<String, Object> query, Object... values) throws PersistException {
+		if(query != null && !query.isEmpty()) {
+			Conversion conversion = new Conversion(query, values);
+			return find(clazz, conversion.getSql(), conversion.getValues());
+		}
+		return find(clazz, (String) null, new Object[0]);
+	}
+	
+	@Override
+	public <T extends Model> T find(Class<T> clazz, String query, Object...values) throws PersistException {
+		try {
+			Connection connection = getConnection();
+			return persistor.find(connection, clazz, query, values);
+		} catch(SQLException e) {
+			throw new PersistException(e);
+		}
+	}
+
+	@Override
+	public <T extends Model> List<T> findAll(Class<T> clazz) throws PersistException {
+		return findAll(clazz, (String) null);
+	}
+	
+	@Override
+	public <T extends Model> List<T> findAll(Class<T> clazz, Map<String, Object> query, Object... values) throws PersistException {
+		if(query != null && !query.isEmpty()) {
+			Conversion conversion = new Conversion(query, values);
+			return findAll(clazz, conversion.getSql(), conversion.getValues());
+		}
+		return findAll(clazz, (String) null);
+	}
+	
+	@Override
+	public <T extends Model> List<T> findAll(Class<T> clazz, String query, Object...values) throws PersistException {
+		try {
+			Connection connection = getConnection();
+			return persistor.findAll(connection, clazz, query, values);
+		} catch(SQLException e) {
+			throw new PersistException(e);
+		}
 	}
 	
 	public Connection getConnection() throws SQLException {
@@ -426,20 +492,28 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	}
 	
 	@Override
-	public void retrieve(Model...models) throws SQLException {
-		handleCrud(RETRIEVE, models);
+	public void retrieve(Model...models) throws PersistException {
+		try {
+			handleCrud(RETRIEVE, models);
+		} catch(SQLException e) {
+			throw new PersistException(e);
+		}
 	}
 
 	/**
 	 * @param relation may be a hasMany or hasOne (if 1:1 and opposite holds the key)
 	 */
 	@Override
-	public void retrieve(Model model, String relation) throws SQLException {
+	public void retrieve(Model model, String relation) throws PersistException {
 		// TODO hack: re-implement directly in DbPersistor
-		Connection connection = getConnection();
-		Model tmp = persistor.find(connection, model.getClass(), "where id=? include:?", model.getId(), relation);
-		if(tmp != null || ModelAdapter.getAdapter(model).hasOne(relation)) {
-			model.put(relation, tmp.get(relation));
+		try {
+			Connection connection = getConnection();
+			Model tmp = persistor.find(connection, model.getClass(), "where id=? include:?", model.getId(), relation);
+			if(tmp != null || ModelAdapter.getAdapter(model).hasOne(relation)) {
+				model.put(relation, tmp.get(relation));
+			}
+		} catch(SQLException e) {
+			throw new PersistException(e);
 		}
 	}
 
@@ -528,8 +602,12 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	}
 
 	@Override
-	public void update(Model...models) throws SQLException {
-		handleCrud(UPDATE, models);
+	public void update(Model...models) throws PersistException {
+		try {
+			handleCrud(UPDATE, models);
+		} catch(SQLException e) {
+			throw new PersistException(e);
+		}
 	}
 	
 }

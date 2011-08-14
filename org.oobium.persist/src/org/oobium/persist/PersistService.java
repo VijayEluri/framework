@@ -10,8 +10,8 @@
  ******************************************************************************/
 package org.oobium.persist;
 
-import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 
 public interface PersistService {
@@ -40,35 +40,36 @@ public interface PersistService {
 	public abstract boolean isSessionOpen();
 
 	
-    public abstract void create(Model...models) throws SQLException;
+    public abstract void create(Model...models) throws PersistException;
 
-    public abstract void retrieve(Model...models) throws SQLException;
+    public abstract void retrieve(Model...models) throws PersistException;
 
-    public abstract void retrieve(Model model, String hasMany) throws SQLException;
+    public abstract void retrieve(Model model, String hasMany) throws PersistException;
 
-    public abstract void update(Model...models) throws SQLException;
+    public abstract void update(Model...models) throws PersistException;
 
-	public abstract void destroy(Model...models) throws SQLException;
+	public abstract void destroy(Model...models) throws PersistException;
 	
 	
-	public abstract int count(Class<? extends Model> clazz, String where, Object...values) throws SQLException;
+	public abstract int count(Class<? extends Model> clazz) throws PersistException;
 	
+	public abstract int count(Class<? extends Model> clazz, Map<String, Object> query, Object...values) throws PersistException;
 	
-	public abstract <T extends Model> T find(Class<T> clazz, int id) throws SQLException;
-	
-	public abstract <T extends Model> T find(Class<T> clazz, String where, Object...values) throws SQLException;
-	
-	public abstract <T extends Model> List<T> findAll(Class<T> clazz) throws SQLException;
+	public abstract int count(Class<? extends Model> clazz, String query, Object...values) throws PersistException;
 
-	public abstract <T extends Model> List<T> findAll(Class<T> clazz, String where, Object...values) throws SQLException;
 	
-	
-//	public abstract List<Map<String, Object>> executeQuery(String sql, Object...values) throws SQLException;
-//
-//	public abstract List<List<Object>> executeQueryLists(String sql, Object...values) throws SQLException;
-//
-//	public abstract Object executeQueryValue(String sql, Object...values) throws SQLException;
-//
-//	public abstract int executeUpdate(String sql, Object...values) throws SQLException;
+	public abstract <T extends Model> T find(Class<T> clazz, Map<String, Object> query, Object...values) throws PersistException;
 
+	public abstract <T extends Model> T find(Class<T> clazz, String query, Object...values) throws PersistException;
+	
+	public abstract <T extends Model> List<T> findAll(Class<T> clazz) throws PersistException;
+	
+	public abstract <T extends Model> List<T> findAll(Class<T> clazz, Map<String, Object> query, Object...values) throws PersistException;
+
+	public abstract <T extends Model> List<T> findAll(Class<T> clazz, String query, Object...values) throws PersistException;
+	
+	public abstract <T extends Model> T findById(Class<T> clazz, Object id) throws PersistException;
+	
+	public abstract <T extends Model> T findById(Class<T> clazz, Object id, String include) throws PersistException;
+	
 }

@@ -12,6 +12,7 @@ package org.oobium.utils.coercion.coercers;
 
 import java.util.Date;
 
+import org.oobium.utils.coercion.TypeCoercer;
 import org.oobium.utils.json.JsonModel;
 
 public class LongCoercer extends AbstractCoercer {
@@ -42,7 +43,7 @@ public class LongCoercer extends AbstractCoercer {
 	}
 
 	public Long coerce(JsonModel model, Class<?> toType) {
-		return (long) model.getId();
+		return TypeCoercer.coerce(model.getId(), Long.class);
 	}
 	
 	@Override

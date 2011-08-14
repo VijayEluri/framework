@@ -41,8 +41,8 @@ public class Cache {
 		}
 	}
 
-	public static <T extends Model> T getCache(Class<T> clazz, int id) {
-		if(clazz != null && id >= 1) {
+	public static <T extends Model> T getCache(Class<T> clazz, Object id) {
+		if(clazz != null) {
 			Map<String, Model> cache = cachedModels.get();
 			if(cache != null) {
 				Object object = cache.get(clazz.getCanonicalName() + ":" + id);

@@ -167,6 +167,11 @@ public class ActiveSet<E extends Model> implements Set<E> {
 		}
 	}
 	
+	public boolean save() {
+		// TODO
+		return false;
+	}
+	
 	@Override
 	public int size() {
 		return members.size();

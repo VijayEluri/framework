@@ -10,8 +10,8 @@
  ******************************************************************************/
 package org.oobium.persist;
 
-import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 
 public class NullPersistService implements PersistService {
@@ -40,66 +40,91 @@ public class NullPersistService implements PersistService {
 	}
 	
 	@Override
-	public int count(Class<? extends Model> clazz, String where, Object... values) throws SQLException {
-		throw new SQLException(msg);
+	public int count(Class<? extends Model> clazz) throws PersistException {
+		throw new PersistException(msg);
 	}
 	
 	@Override
-	public void create(Model...models) throws SQLException {
-		throw new SQLException(msg);
+	public int count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws PersistException {
+		throw new PersistException(msg);
 	}
 
 	@Override
-	public void destroy(Model...models) throws SQLException {
-		throw new SQLException(msg);
+	public int count(Class<? extends Model> clazz, String query, Object... values) throws PersistException {
+		throw new PersistException(msg);
 	}
 
 	@Override
-	public <T extends Model> T find(Class<T> clazz, int id) throws SQLException {
-		throw new SQLException(msg);
+	public void create(Model...models) throws PersistException {
+		throw new PersistException(msg);
 	}
 	
 	@Override
-	public <T extends Model> T find(Class<T> clazz, String where, Object... values) throws SQLException {
-		throw new SQLException(msg);
+	public void destroy(Model...models) throws PersistException {
+		throw new PersistException(msg);
 	}
 
 	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz) throws SQLException {
-		throw new SQLException(msg);
+	public <T extends Model> T find(Class<T> clazz, Map<String, Object> query, Object... values) throws PersistException {
+		throw new PersistException(msg);
 	}
 
 	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz, String where, Object... values) throws SQLException {
-		throw new SQLException(msg);
+	public <T extends Model> T findById(Class<T> clazz, Object id) throws PersistException {
+		throw new PersistException(msg);
 	}
 
+	@Override
+	public <T extends Model> T findById(Class<T> clazz, Object id, String include) throws PersistException {
+		throw new PersistException(msg);
+	}
+	
+	@Override
+	public <T extends Model> T find(Class<T> clazz, String query, Object... values) throws PersistException {
+		throw new PersistException(msg);
+	}
+
+	@Override
+	public <T extends Model> List<T> findAll(Class<T> clazz) throws PersistException {
+		throw new PersistException(msg);
+	}
+
+	@Override
+	public <T extends Model> List<T> findAll(Class<T> clazz, Map<String, Object> query, Object... values) throws PersistException {
+		throw new PersistException(msg);
+	}
+
+	@Override
+	public <T extends Model> List<T> findAll(Class<T> clazz, String query, Object... values) throws PersistException {
+		throw new PersistException(msg);
+	}
+	
 	@Override
 	public ServiceInfo getInfo() {
 		return new ServiceInfo() {
 			@Override
-			public String getSymbolicName() {
-				return getClass().getName();
-			}
-			@Override
-			public String getProvider() {
-				return "oobium.org";
-			}
-			@Override
-			public String getVersion() {
-				return "0.6.0";
+			public String getMigrationService() {
+				return null;
 			}
 			@Override
 			public String getName() {
 				return msg;
 			}
 			@Override
-			public String getMigrationService() {
-				return null;
+			public String getProvider() {
+				return "oobium.org";
+			}
+			@Override
+			public String getSymbolicName() {
+				return getClass().getName();
+			}
+			@Override
+			public String getVersion() {
+				return "0.6.0";
 			}
 		};
 	}
-	
+
 	@Override
 	public boolean isSessionOpen() {
 		return open;
@@ -116,18 +141,18 @@ public class NullPersistService implements PersistService {
 	}
 
 	@Override
-	public void retrieve(Model...models) throws SQLException {
-		throw new SQLException(msg);
+	public void retrieve(Model...models) throws PersistException {
+		throw new PersistException(msg);
 	}
 
 	@Override
-	public void retrieve(Model model, String hasMany) throws SQLException {
-		throw new SQLException(msg);
+	public void retrieve(Model model, String hasMany) throws PersistException {
+		throw new PersistException(msg);
 	}
-	
+
 	@Override
-	public void update(Model...models) throws SQLException {
-		throw new SQLException(msg);
+	public void update(Model...models) throws PersistException {
+		throw new PersistException(msg);
 	}
 
 }

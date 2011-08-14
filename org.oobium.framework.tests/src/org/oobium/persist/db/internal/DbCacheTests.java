@@ -33,11 +33,11 @@ public class DbCacheTests {
 
 		setCache(model);
 		
-		assertEquals(model, getCache(model.getClass(), model.getId()));
+		assertEquals(model, getCache(model.getClass(), model.getId(int.class)));
 		
 		expireCache();
 		
-		assertNull(getCache(model.getClass(), model.getId()));
+		assertNull(getCache(model.getClass(), model.getId(int.class)));
 	}
 	
 	@Test
@@ -47,11 +47,11 @@ public class DbCacheTests {
 		
 		setCache(model);
 		
-		assertEquals(model, getCache(model.getClass(), model.getId()));
+		assertEquals(model, getCache(model.getClass(), model.getId(int.class)));
 		
 		expireCache();
 		
-		assertNull(getCache(model.getClass(), model.getId()));
+		assertNull(getCache(model.getClass(), model.getId(int.class)));
 	}
 	
 }

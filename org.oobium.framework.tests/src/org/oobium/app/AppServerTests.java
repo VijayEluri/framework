@@ -10,14 +10,13 @@
  ******************************************************************************/
 package org.oobium.app;
 
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
-
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.OK;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.net.URL;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -40,6 +39,7 @@ import org.oobium.app.server.Websocket;
 import org.oobium.app.views.View;
 import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
+import org.oobium.persist.PersistException;
 import org.oobium.utils.Config;
 import org.oobium.utils.FileUtils;
 import org.oobium.utils.json.JsonUtils;
@@ -113,7 +113,7 @@ public class AppServerTests {
 	
 	public static class TestController extends HttpController {
 		@Override
-		public void handleRequest() throws SQLException {
+		public void handleRequest() throws PersistException {
 			render(MimeType.HTML,
 					"<head>\n" +
 					"<link rel='stylesheet' type='text/css' href='/application.css' /n" +
@@ -245,7 +245,7 @@ public class AppServerTests {
 	
 	public static class ShowAllWebsocketsController extends HttpController {
 		@Override
-		public void handleRequest() throws SQLException {
+		public void handleRequest() throws PersistException {
 			Set<Websocket> sockets = getRouter().getWebsockets("lcws");
 			if(sockets.isEmpty()) {
 				render("no sockets");
@@ -263,7 +263,7 @@ public class AppServerTests {
 	
 	public static class WriteToLowerCaseController extends HttpController {
 		@Override
-		public void handleRequest() throws SQLException {
+		public void handleRequest() throws PersistException {
 			Websocket socket = getRouter().getWebsocket("android1");
 			if(socket == null) {
 				render("no socket");

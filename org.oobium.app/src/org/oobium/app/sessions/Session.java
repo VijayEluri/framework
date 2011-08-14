@@ -10,7 +10,6 @@
  ******************************************************************************/
 package org.oobium.app.sessions;
 
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,6 +18,7 @@ import java.util.UUID;
 import org.oobium.persist.Attribute;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelDescription;
+import org.oobium.persist.PersistException;
 
 @ModelDescription(
 	attrs = {
@@ -35,8 +35,8 @@ public class Session extends Model {
     public static Session retrieve(int id, String uuid) {
 		if(id > 0 && uuid != null) {
 			try {
-				return Model.find(Session.class, "WHERE id=? AND uuid=? AND expiration>?", id, uuid, new Date());
-			} catch(SQLException e) {
+				return Model.getPersistService(Session.class).find(Session.class, "id:?,uuid:?,expiration:{gt:?}", id, uuid, new Date());
+			} catch(PersistException e) {
 				Model.getLogger().warn(e);
 			}
 		}
@@ -95,15 +95,7 @@ public class Session extends Model {
 		return expiration == null || expiration.before(new Date());
 	}
 	
-	public void putData(String key, boolean value) {
-		putData(key, String.valueOf(value));
-	}
-	
-	public void putData(String key, double value) {
-		putData(key, String.valueOf(value));
-	}
-
-	public void putData(String key, long value) {
+	public void putData(String key, Object value) {
 		putData(key, String.valueOf(value));
 	}
 	
