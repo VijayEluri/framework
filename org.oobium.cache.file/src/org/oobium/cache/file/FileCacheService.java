@@ -10,11 +10,12 @@
  ******************************************************************************/
 package org.oobium.cache.file;
 
+import static org.oobium.utils.literal.Dictionary;
+
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Properties;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
@@ -43,9 +44,7 @@ public class FileCacheService implements BundleActivator, CacheService {
 	public void start(BundleContext context) throws Exception {
 		logger.setTag(context.getBundle().getSymbolicName());
 		
-		Properties properties = new Properties();
-		properties.put(CacheService.TYPE, CacheService.TYPE_FILE);
-		context.registerService(CacheService.class.getName(), this, properties);
+		context.registerService(CacheService.class.getName(), this, Dictionary(CacheService.TYPE, CacheService.TYPE_FILE));
 
 		logger.info("CacheService started");
 	}

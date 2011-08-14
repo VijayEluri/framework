@@ -3,8 +3,10 @@ package org.oobium.utils;
 import static java.util.Arrays.asList;
 
 import java.util.ArrayList;
+import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -99,6 +101,12 @@ public class literal {
 		return map;
 	}
 
+	public static <K, V> Dictionary<K, V> Dictionary(K key, V value) {
+		Hashtable<K, V> table = new Hashtable<K, V>();
+		table.put(key, value);
+		return table;
+	}
+	
 	public static Properties Properties(Entry<?,?>...entries) {
 		Properties props = new Properties();
 		for(Entry<?, ?> entry : entries) {

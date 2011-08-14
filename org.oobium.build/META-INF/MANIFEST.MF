@@ -10,7 +10,6 @@ Require-Bundle: org.oobium.app,
  org.oobium.persist.migrate,
  org.oobium.persist.migrate.db,
  org.oobium.utils,
- org.junit;bundle-version="4.7.0",
  org.oobium.test,
  org.oobium.mailer,
  com.jcraft.jsch;bundle-version="0.1.41"

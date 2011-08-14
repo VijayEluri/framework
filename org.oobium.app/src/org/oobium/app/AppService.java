@@ -11,11 +11,14 @@
 package org.oobium.app;
 
 import static org.oobium.utils.StringUtils.blank;
-import static org.oobium.utils.literal.Properties;
+import static org.oobium.utils.literal.Dictionary;
 
+import java.util.Dictionary;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
@@ -122,12 +125,12 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 			
 			if(module instanceof HttpRequest404Handler) {
 				request404HandlerRegistration.unregister();
-				request404HandlerRegistration = getContext().registerService(HttpRequest404Handler.class.getName(), module, Properties("port", getPort()));
+				request404HandlerRegistration = getContext().registerService(HttpRequest404Handler.class.getName(), module, Dictionary("port", getPort()));
 				logger.info("set port " + getPort() + "'s 404 handler to " + module);
 			}
 			if(module instanceof HttpRequest500Handler) {
 				request500HandlerRegistration.unregister();
-				request500HandlerRegistration = getContext().registerService(HttpRequest500Handler.class.getName(), module, Properties("port", getPort()));
+				request500HandlerRegistration = getContext().registerService(HttpRequest500Handler.class.getName(), module, Dictionary("port", getPort()));
 				logger.info("set port " + getPort() + "'s 500 handler to " + module);
 			}
 			
@@ -192,8 +195,8 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		// register handlers
 		if(context != null) {
 			context.registerService(HttpRequestHandler.class.getName(), this, null);
-			request404HandlerRegistration = context.registerService(HttpRequest404Handler.class.getName(), this, Properties("port", getPort()));
-			request500HandlerRegistration = context.registerService(HttpRequest500Handler.class.getName(), this, Properties("port", getPort()));
+			request404HandlerRegistration = context.registerService(HttpRequest404Handler.class.getName(), this, Dictionary("port", getPort()));
+			request500HandlerRegistration = context.registerService(HttpRequest500Handler.class.getName(), this, Dictionary("port", getPort()));
 		}
 		
 		// allow subclasses to register custom services
@@ -426,11 +429,13 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		if(logger.isLoggingDebug()) {
 			logger.debug("registering for persist service: " + service);
 		}
-		Properties properties = new Properties();
-		properties.setProperty(PersistService.SERVICE, service);
-		properties.setProperty(PersistService.CLIENT, getPersistClientName());
+		Hashtable<String, Object> properties = new Hashtable<String, Object>();
+		properties.put(PersistService.SERVICE, service);
+		properties.put(PersistService.CLIENT, getPersistClientName());
 		if(options != null && !options.isEmpty()) {
-			properties.putAll(options);
+			for(Entry<?, ?> entry : options.entrySet()) {
+				properties.put(String.valueOf(entry.getKey()), entry.getValue());
+			}
 		}
 		getContext().registerService(PersistClient.class.getName(), this, properties);
 	}
@@ -480,12 +485,12 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 
 			if(reference == request404HandlerRegistration.getReference()) {
 				request404HandlerRegistration.unregister();
-				request404HandlerRegistration = getContext().registerService(HttpRequest404Handler.class.getName(), this, Properties("port", getPort()));
+				request404HandlerRegistration = getContext().registerService(HttpRequest404Handler.class.getName(), this, Dictionary("port", getPort()));
 				logger.info("set port " + getPort() + "'s 404 handler to " + AppService.this);
 			}
 			if(reference == request500HandlerRegistration.getReference()) {
 				request500HandlerRegistration.unregister();
-				request500HandlerRegistration = getContext().registerService(HttpRequest500Handler.class.getName(), this, Properties("port", getPort()));
+				request500HandlerRegistration = getContext().registerService(HttpRequest500Handler.class.getName(), this, Dictionary("port", getPort()));
 				logger.info("set port " + getPort() + "'s 500 handler to " + AppService.this);
 			}
 			

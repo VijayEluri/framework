@@ -12,7 +12,7 @@ package org.oobium.persist.db;
 
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.persist.db.internal.DbCache.expireCache;
-import static org.oobium.utils.literal.Properties;
+import static org.oobium.utils.literal.Dictionary;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -588,7 +588,7 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		});
 		appTracker.open();
 
-		context.registerService(PersistService.class.getName(), this, Properties(PersistService.SERVICE, name));
+		context.registerService(PersistService.class.getName(), this, Dictionary(PersistService.SERVICE, name));
 
 		logger.info("PersistService started (" + name + ")");
 	}

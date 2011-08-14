@@ -10,7 +10,7 @@
  ******************************************************************************/
 package org.oobium.persist.migrate;
 
-import static org.oobium.utils.literal.Properties;
+import static org.oobium.utils.literal.Dictionary;
 
 import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
@@ -35,7 +35,7 @@ public abstract class AbstractMigrationService implements MigrationService, Bund
 	public void start(BundleContext context) throws Exception {
 		logger.setTag(context.getBundle().getSymbolicName());
 		String serviceName = context.getBundle().getSymbolicName();
-		context.registerService(MigrationService.class.getName(), this, Properties(MigrationService.SERVICE, serviceName));
+		context.registerService(MigrationService.class.getName(), this, Dictionary(MigrationService.SERVICE, serviceName));
 	}
 
 	@Override
