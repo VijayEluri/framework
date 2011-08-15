@@ -7,18 +7,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.oobium.persist.Model;
+import org.oobium.persist.ModelAdapter;
+import org.oobium.persist.PersistException;
+
 public class Conversion {
 
 	private static final Map<String, String> operators;
 	static {
 		operators = new HashMap<String, String>();
+		operators.put("is", "=");
+		operators.put("not", "!=");
 		operators.put("lt", "<");
 		operators.put("lte", "<=");
 		operators.put("gt", ">");
 		operators.put("gte", ">=");
 		operators.put("in", " IN ");
 		operators.put("nin", " NOT IN ");
-		operators.put("not", "!=");
 		operators.put("or", " OR ");
 		operators.put("and", " AND ");
 		operators.put("like", " LIKE ");
@@ -28,6 +33,7 @@ public class Conversion {
 	
 	private final Map<String, Object> inQuery;
 	private final Object[] inValues;
+	private ModelAdapter adapter;
 	
 	private String sql;
 	private Object[] values;
@@ -41,10 +47,13 @@ public class Conversion {
 	public Conversion(Map<String, Object> query, Object...values) {
 		this.inQuery = query;
 		this.inValues = values;
-		convert();
 	}
 	
-	private void add(String field, String key, Object value) {
+	private void add(String field, String key, Object value) throws PersistException {
+		if(adapter != null && !adapter.hasField(field)) {
+			throw new PersistException("model of type " + adapter.getModelClass() + " does not contain the field '" + field + "'");
+		}
+		
 		sb.append(field).append(operators.get(key)).append('?');
 		
 		if("?".equals(value)) {
@@ -54,19 +63,19 @@ public class Conversion {
 		}
 	}
 
-	private void and(Object value) {
+	private void and(Object value) throws PersistException {
 		if(value instanceof Map) {
 			handle((Map<?,?>) value, " AND ");
 		}
 		else if(value instanceof List) {
-			throw new UnsupportedOperationException("'and' not yet supported on a List");
+			throw new PersistException("'and' not yet supported on a List");
 		}
 		else {
-			throw new IllegalStateException("'and' not allowed on " + value);
+			throw new PersistException("'and' not allowed on " + value);
 		}
 	}
 	
-	private void convert() {
+	public void run() throws PersistException {
 		v = 0;
 		sb = new StringBuilder();
 		list = new ArrayList<Object>();
@@ -94,7 +103,7 @@ public class Conversion {
 		return values;
 	}
 
-	private void handle(Map<?,?> map, String separator) {
+	private void handle(Map<?,?> map, String separator) throws PersistException {
 		for(Iterator<?> iter = map.entrySet().iterator(); iter.hasNext(); ) {
 			Entry<?,?> entry = (Entry<?,?>) iter.next();
 
@@ -130,11 +139,7 @@ public class Conversion {
 				removeLast(separator);
 			}
 			else {
-				if("?".equals(value)) {
-					sb.append(field).append("=?");
-					list.add(inValues[v++]);
-				}
-				else if(value instanceof Map) {
+				if(value instanceof Map) {
 					Map<?,?> m = (Map<?,?>) value;
 					if(m.size() == 1) {
 						Entry<?,?> e = m.entrySet().iterator().next();
@@ -157,8 +162,7 @@ public class Conversion {
 					}
 				}
 				else {
-					sb.append(field).append("=?");
-					list.add(value);
+					add(field, "is", value);
 				}
 	
 				if(iter.hasNext()) {
@@ -168,15 +172,15 @@ public class Conversion {
 		}
 	}
 	
-	private void or(Object value) {
+	private void or(Object value) throws PersistException {
 		if(value instanceof Map) {
 			handle((Map<?,?>) value, " OR ");
 		}
 		else if(value instanceof List) {
-			throw new UnsupportedOperationException("'or' not yet supported on a List");
+			throw new PersistException("'or' not yet supported on a List");
 		}
 		else {
-			throw new IllegalStateException("'or' not allowed on " + value);
+			throw new PersistException("'or' not allowed on " + value);
 		}
 	}
 	
@@ -184,6 +188,10 @@ public class Conversion {
 		if(sb.length() > separator.length() && separator.equals(sb.substring(sb.length()-separator.length()))) {
 			sb.delete(sb.length()-separator.length(), sb.length());
 		}
+	}
+
+	public void setModelType(Class<? extends Model> modelType) {
+		this.adapter = ModelAdapter.getAdapter(modelType);
 	}
 	
 }

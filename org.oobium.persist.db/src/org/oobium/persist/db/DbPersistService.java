@@ -216,6 +216,8 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	public int count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws PersistException {
 		if(query != null && !query.isEmpty()) {
 			Conversion conversion = new Conversion(query, values);
+			conversion.setModelType(clazz);
+			conversion.run();
 			return count(clazz, conversion.getSql(), conversion.getValues());
 		}
 		return count(clazz);
@@ -293,6 +295,8 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	public <T extends Model> T find(Class<T> clazz, Map<String, Object> query, Object... values) throws PersistException {
 		if(query != null && !query.isEmpty()) {
 			Conversion conversion = new Conversion(query, values);
+			conversion.setModelType(clazz);
+			conversion.run();
 			return find(clazz, conversion.getSql(), conversion.getValues());
 		}
 		return find(clazz, (String) null, new Object[0]);
@@ -317,6 +321,8 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	public <T extends Model> List<T> findAll(Class<T> clazz, Map<String, Object> query, Object... values) throws PersistException {
 		if(query != null && !query.isEmpty()) {
 			Conversion conversion = new Conversion(query, values);
+			conversion.setModelType(clazz);
+			conversion.run();
 			return findAll(clazz, conversion.getSql(), conversion.getValues());
 		}
 		return findAll(clazz, (String) null);
