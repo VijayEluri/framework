@@ -44,14 +44,6 @@ public class Conversion {
 		convert();
 	}
 	
-	public String getSql() {
-		return sql;
-	}
-
-	public Object[] getValues() {
-		return values;
-	}
-	
 	private void add(String field, String key, Object value) {
 		sb.append(field).append(operators.get(key)).append('?');
 		
@@ -61,7 +53,7 @@ public class Conversion {
 			list.add(value);
 		}
 	}
-	
+
 	private void and(Object value) {
 		if(value instanceof Map) {
 			handle((Map<?,?>) value, " AND ");
@@ -73,25 +65,35 @@ public class Conversion {
 			throw new IllegalStateException("'and' not allowed on " + value);
 		}
 	}
+	
+	private void convert() {
+		v = 0;
+		sb = new StringBuilder();
+		list = new ArrayList<Object>();
 
-	private void or(Object value) {
-		if(value instanceof Map) {
-			handle((Map<?,?>) value, " OR ");
+		sb.append("WHERE ");
+		
+		and(inQuery);
+		
+		if(limit != null) {
+			sb.append(" LIMIT ").append(limit);
 		}
-		else if(value instanceof List) {
-			throw new UnsupportedOperationException("'or' not yet supported on a List");
+		if(include != null) {
+			sb.append(" INCLUDE:").append(include);
 		}
-		else {
-			throw new IllegalStateException("'or' not allowed on " + value);
-		}
-	}
-
-	private void removeLast(String separator) {
-		if(sb.length() > separator.length() && separator.equals(sb.substring(sb.length()-separator.length()))) {
-			sb.delete(sb.length()-separator.length(), sb.length());
-		}
+		
+		sql = sb.toString();
+		values = list.toArray(new Object[list.size()]);
 	}
 	
+	public String getSql() {
+		return sql;
+	}
+
+	public Object[] getValues() {
+		return values;
+	}
+
 	private void handle(Map<?,?> map, String separator) {
 		for(Iterator<?> iter = map.entrySet().iterator(); iter.hasNext(); ) {
 			Entry<?,?> entry = (Entry<?,?>) iter.next();
@@ -166,24 +168,22 @@ public class Conversion {
 		}
 	}
 	
-	public void convert() {
-		v = 0;
-		sb = new StringBuilder();
-		list = new ArrayList<Object>();
-
-		sb.append("WHERE ");
-		
-		and(inQuery);
-		
-		if(limit != null) {
-			sb.append(" LIMIT ").append(limit);
+	private void or(Object value) {
+		if(value instanceof Map) {
+			handle((Map<?,?>) value, " OR ");
 		}
-		if(include != null) {
-			sb.append(" INCLUDE:").append(include);
+		else if(value instanceof List) {
+			throw new UnsupportedOperationException("'or' not yet supported on a List");
 		}
-		
-		sql = sb.toString();
-		values = list.toArray(new Object[list.size()]);
+		else {
+			throw new IllegalStateException("'or' not allowed on " + value);
+		}
+	}
+	
+	private void removeLast(String separator) {
+		if(sb.length() > separator.length() && separator.equals(sb.substring(sb.length()-separator.length()))) {
+			sb.delete(sb.length()-separator.length(), sb.length());
+		}
 	}
 	
 }
