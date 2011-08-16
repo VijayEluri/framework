@@ -31,6 +31,7 @@ public class IntegerCoercer extends AbstractCoercer {
 	}
 	
 	public Integer coerce(String string, Class<?> toType) {
+		if("null".equals(string)) return coerceNull();
 		return (string.length() == 0) ? coerceNull() : new Integer(string);
 	}
 	
