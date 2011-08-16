@@ -1289,8 +1289,11 @@ public class StringUtils {
 	}
 	
 	public static String varName(Class<?> clazz) {
-		String var = camelCase(clazz.getSimpleName());
-		return Character.toLowerCase(var.charAt(0)) + var.substring(1);
+		return varName(clazz.getSimpleName());
+	}
+
+	public static String varName(Class<?> clazz, boolean plural) {
+		return varName(clazz.getSimpleName(), plural);
 	}
 
 	/**
