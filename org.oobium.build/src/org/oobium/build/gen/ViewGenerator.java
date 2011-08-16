@@ -159,6 +159,8 @@ public class ViewGenerator {
 		sb.append('\n');
 		sb.append("h1 Listing ").append(titleize(mVarPlural)).append('\n');
 		sb.append('\n');
+		sb.append("p <- a(").append(mType).append(".class, showNew) New ").append(mType).append('\n');
+		sb.append('\n');
 		sb.append("table\n");
 		sb.append("\ttr\n");
 		sb.append("\t\tth ").append("id").append('\n');
@@ -175,10 +177,6 @@ public class ViewGenerator {
 		sb.append("\t\t\ttd <- a(").append(mVar).append(", showEdit) Edit\n");
 		sb.append("\t\t\ttd <- a(").append(mVar).append(", destroy, confirm: \"Are you sure?\") Delete\n");
 		sb.append("\t- }\n");
-		sb.append('\n');
-		sb.append("br\n");
-		sb.append('\n');
-		sb.append("a(").append(mType).append(".class, showNew) New ").append(mType).append('\n');
 
 		return sb.toString();
 	}
