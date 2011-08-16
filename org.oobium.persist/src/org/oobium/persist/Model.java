@@ -317,7 +317,7 @@ public abstract class Model implements JsonModel {
 							service.destroy(this);
 							destroyDependents(false);
 							destroyed = id;
-							id = 0;
+							id = null;
 							fields.clear();
 							if(!(service instanceof RemotePersistService)) {
 								Observer.runAfterDestroy(this);
@@ -903,7 +903,7 @@ public abstract class Model implements JsonModel {
 	@Override
 	public Model put(String field, Object value) {
 		if("id".equals(field)) {
-			setId(coerce(id, int.class));
+			setId(id);
 		}
 		fields.put(field, value);
 		return this;
@@ -935,7 +935,7 @@ public abstract class Model implements JsonModel {
 	public Model putAll(Map<String, Object> fields) {
 		if(fields.containsKey("id")) {
 			Object id = fields.remove("id");
-			setId(coerce(id, int.class));
+			setId(id);
 		}
 		this.fields.putAll(fields);
 		return this;
@@ -1237,7 +1237,7 @@ public abstract class Model implements JsonModel {
 	@Override
 	public Model set(String field, Object value) {
 		if("id".equals(field)) {
-			setId(coerce(value, int.class));
+			setId(value);
 		} else {
 			Class<?> type = getAdapter(getClass()).getClass(field);
 			set(field, value, type);
@@ -1369,7 +1369,7 @@ public abstract class Model implements JsonModel {
 	
 	private void setField(String field, Object value) {
 		if("id".equals(field)) {
-			setId(coerce(value, int.class));
+			setId(value);
 		} else {
 			Class<?> type = getAdapter(getClass()).getClass(field);
 			if(type == null || Collection.class.isAssignableFrom(type)) {
@@ -1395,7 +1395,7 @@ public abstract class Model implements JsonModel {
 	
 	@Override
 	public Model setId(Object id) {
-		this.id = id;
+		this.id = "null".equals(id) ? null : id;
 		return this;
 	}
 
