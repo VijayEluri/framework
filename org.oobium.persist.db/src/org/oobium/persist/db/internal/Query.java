@@ -29,13 +29,14 @@ public class Query {
 	private Class<? extends Model> clazz;
 	
 	private String sql;
+	private Object[] values;
 	
 	private Map<String, ModelAdapter> aliasAdapters;
-
 	private Map<String, String> aliasFields;
 
 	private Map<String, String> parentAliases;
 	private List<Query> children;
+	
 	Query(Class<? extends Model> clazz) {
 		this.clazz = clazz;
 	}
@@ -113,6 +114,10 @@ public class Query {
 		return aliasAdapters.get(alias).getModelClass();
 	}
 	
+	public Object[] getValues() {
+		return values;
+	}
+	
 	boolean hasChildren() {
 		return children != null && !children.isEmpty();
 	}
@@ -152,6 +157,10 @@ public class Query {
 	
 	void setSql(String sql) {
 		this.sql = sql;
+	}
+	
+	void setValues(Object[] values) {
+		this.values = values;
 	}
 	
 }

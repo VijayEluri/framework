@@ -37,6 +37,7 @@ import java.util.regex.Matcher;
 import org.oobium.logging.LogProvider;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
+import org.oobium.persist.PersistException;
 import org.oobium.persist.db.DbPersistService;
 import org.oobium.utils.SqlUtils;
 import org.oobium.utils.json.JsonUtils;
@@ -265,10 +266,10 @@ public class QueryBuilder {
 
 	private void build() throws SQLException {
 		try {
-			if(parentAdapter != null) {
-				initAsSubQuery();
-			} else {
+			if(parentAdapter == null) {
 				initAsTopLevel();
+			} else {
+				initAsSubQuery();
 			}
 			parseInput();
 			addIncludes();
@@ -276,6 +277,7 @@ public class QueryBuilder {
 				processInclude();
 			}
 			query.setSql(buildSql());
+			query.setValues(values);
 		} catch(Exception e) {
 			LogProvider.getLogger(DbPersistService.class).warn(e);
 			throw new SQLException(e);
@@ -505,7 +507,21 @@ public class QueryBuilder {
 			ixs[2] = new int[] { sa[0].indexOf(LIMIT), LIMIT.length() };
 			ixs[3] = new int[] { include, INCLUDE.length() };
 			if((ixs[0][0] != 0) && (ixs[1][0] != 0) && (ixs[2][0] != 0) && (ixs[3][0] != 0)) {
-				throw new IllegalArgumentException("input must start with either: where, order by, limit, include");
+				Map<String, Object> map = JsonUtils.toMap(input);
+				if(!map.isEmpty()) {
+					try {
+						Conversion conversion = new Conversion(map, this.values);
+						conversion.setModelType(query.getType());
+						conversion.run();
+						this.input = conversion.getSql();
+						this.values = conversion.getValues();
+						parseInput();
+						return;
+					} catch(PersistException e) {
+						// fall through
+					}
+				}
+				throw new IllegalArgumentException("if input is not a JSON map, then it must start with either: where, order by, limit, include");
 			}
 			int pos = -1;
 			for(int i = 0; i < ixs.length; i++) {
@@ -513,7 +529,7 @@ public class QueryBuilder {
 					if(ixs[i][0] > pos) {
 						pos = ixs[i][0];
 					} else {
-						throw new IllegalArgumentException("invalid order of input elements.  order must be: where, order by, limit, include");
+						throw new IllegalArgumentException("if input is not a JSON map, then the order of its elments must be: where, order by, limit, include");
 					}
 				}
 			}

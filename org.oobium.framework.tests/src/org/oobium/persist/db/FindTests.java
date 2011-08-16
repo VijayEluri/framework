@@ -16,13 +16,13 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.sql.SQLException;
 import java.util.Collection;
 
 import org.junit.Test;
-import org.oobium.framework.tests.dyn.DynModel;
 import org.oobium.framework.tests.dyn.DynClasses;
+import org.oobium.framework.tests.dyn.DynModel;
 import org.oobium.persist.Model;
+import org.oobium.persist.PersistException;
 
 public class FindTests extends BaseDbTestCase {
 
@@ -39,10 +39,10 @@ public class FindTests extends BaseDbTestCase {
 		assertEquals("nameA1", a.get("name"));
 	}
 	
-	@Test(expected=SQLException.class)
+	@Test(expected=PersistException.class)
 	public void testFindInvalid() throws Exception {
 		DynModel am = DynClasses.getModel("AModel").addAttr("name", "String.class");
-		persistService.findById(am.getModelClass(), "blah");
+		persistService.find(am.getModelClass(), "blah");
 	}
 	
 	@Test
@@ -81,7 +81,7 @@ public class FindTests extends BaseDbTestCase {
 		persistService.executeUpdate("INSERT INTO b_models(name,c_model) VALUES(?,?)", "nameB2", 1);
 		persistService.executeUpdate("INSERT INTO a_models(name,b_model, included_b_model) VALUES(?,?,?)", "nameA1", 1, 2);
 
-		Model model = persistService.findById(am.getModelClass(), "include:bModel");
+		Model model = persistService.find(am.getModelClass(), "include:bModel");
 
 		assertNotNull(model);
 
@@ -113,7 +113,7 @@ public class FindTests extends BaseDbTestCase {
 		persistService.executeUpdate("INSERT INTO b_models(name,included_c_model,c_model) VALUES(?,?,?)", "nameB1", 1, 2);
 		persistService.executeUpdate("INSERT INTO a_models(name,b_model) VALUES(?,?)", "nameA1", 1);
 
-		Model a = persistService.findById(am.getModelClass(), "include:{bModel:cModel}");
+		Model a = persistService.find(am.getModelClass(), "include:{bModel:cModel}");
 
 		assertNotNull(a);
 		assertTrue(a.isSet("bModel"));
@@ -141,7 +141,7 @@ public class FindTests extends BaseDbTestCase {
 		persistService.executeUpdate("INSERT INTO b_models(name,c_model) VALUES(?,?)", "nameB1", 1);
 		persistService.executeUpdate("INSERT INTO a_models(name,b_model) VALUES(?,?)", "nameA1", 1);
 
-		Model a = persistService.findById(am.getModelClass(), "include:bModel");
+		Model a = persistService.find(am.getModelClass(), "include:bModel");
 
 		assertNotNull(a);
 		assertTrue(a.isSet("bModel"));
@@ -165,7 +165,7 @@ public class FindTests extends BaseDbTestCase {
 		persistService.executeUpdate("INSERT INTO b_models(name,c_model) VALUES(?,?)", "nameB1", 1);
 		persistService.executeUpdate("INSERT INTO a_models(name,b_model) VALUES(?,?)", "nameA1", 1);
 
-		Model a = persistService.findById(am.getModelClass(), "include:{bModel:cModel}");
+		Model a = persistService.find(am.getModelClass(), "include:{bModel:cModel}");
 
 		assertNotNull(a);
 		assertTrue(a.isSet("bModel"));
@@ -187,7 +187,7 @@ public class FindTests extends BaseDbTestCase {
 		persistService.executeUpdate("INSERT INTO a_models(name) VALUES(?)", "nameA2");
 		persistService.executeUpdate("INSERT INTO a_models(name) VALUES(?)", "nameA3");
 
-		Model a = persistService.findById(am.getModelClass(), "limit 2");
+		Model a = persistService.find(am.getModelClass(), "limit 2");
 		assertNotNull(a);
 		assertEquals("nameA1", a.get("name"));
 	}
@@ -201,7 +201,7 @@ public class FindTests extends BaseDbTestCase {
 		persistService.executeUpdate("INSERT INTO a_models(name) VALUES(?)", "nameA1");
 		persistService.executeUpdate("INSERT INTO a_models(name) VALUES(?)", "nameA2");
 
-		Model a = persistService.findById(am.getModelClass(), "order by name desc");
+		Model a = persistService.find(am.getModelClass(), "order by name desc");
 		assertNotNull(a);
 		assertEquals("nameA2", a.get("name"));
 	}
@@ -214,7 +214,7 @@ public class FindTests extends BaseDbTestCase {
 		
 		persistService.executeUpdate("INSERT INTO a_models(name) VALUES(?)", "nameA1");
 
-		Model a = persistService.findById(am.getModelClass(), "where name=?", "nameA1");
+		Model a = persistService.find(am.getModelClass(), "where name=?", "nameA1");
 		assertNotNull(a);
 		assertEquals("nameA1", a.get("name"));
 	}
@@ -231,7 +231,7 @@ public class FindTests extends BaseDbTestCase {
 		persistService.executeUpdate("INSERT INTO b_models(name,c_model) VALUES(?,?)", "nameB1", 1);
 		persistService.executeUpdate("INSERT INTO a_models(name,b_model) VALUES(?,?)", "nameA1", 1);
 
-		Model a = persistService.findById(am.getModelClass(), "");
+		Model a = persistService.find(am.getModelClass(), "");
 		
 		assertNotNull(a);
 		
@@ -260,7 +260,7 @@ public class FindTests extends BaseDbTestCase {
 		persistService.executeUpdate("INSERT INTO b_models(name,c_model) VALUES(?,?)", "nameB1", 1);
 		persistService.executeUpdate("INSERT INTO a_models(name,b_model) VALUES(?,?)", "nameA1", 1);
 
-		Model a = persistService.findById(am.getModelClass(), "include:bModel");
+		Model a = persistService.find(am.getModelClass(), "include:bModel");
 		
 		assertNotNull(a);
 		
@@ -285,7 +285,7 @@ public class FindTests extends BaseDbTestCase {
 		persistService.executeUpdate("INSERT INTO b_models(name,c_model) VALUES(?,?)", "nameB1", 1);
 		persistService.executeUpdate("INSERT INTO a_models(name,b_model) VALUES(?,?)", "nameA1", 1);
 
-		Model a = persistService.findById(am.getModelClass(), "include:?", "bModel");
+		Model a = persistService.find(am.getModelClass(), "include:?", "bModel");
 		
 		assertNotNull(a);
 		
@@ -312,7 +312,7 @@ public class FindTests extends BaseDbTestCase {
 		persistService.executeUpdate("INSERT INTO b_models(name,c_model) VALUES(?,?)", "nameB1", 1);
 		persistService.executeUpdate("INSERT INTO a_models(name) VALUES(?)", "nameA1");
 		
-		Model a = persistService.findById(am.getModelClass(), "include:bModel");
+		Model a = persistService.find(am.getModelClass(), "include:bModel");
 		
 		assertNotNull(a);
 		
@@ -332,7 +332,7 @@ public class FindTests extends BaseDbTestCase {
 		persistService.executeUpdate("INSERT INTO b_models(name,c_model) VALUES(?,?)", "nameB1", 1);
 		persistService.executeUpdate("INSERT INTO a_models(name,b_model) VALUES(?,?)", "nameA1", 1);
 
-		Model a = persistService.findById(am.getModelClass(), "include:{bModel:cModel}");
+		Model a = persistService.find(am.getModelClass(), "include:{bModel:cModel}");
 		
 		assertNotNull(a);
 		
@@ -355,7 +355,7 @@ public class FindTests extends BaseDbTestCase {
 		persistService.executeUpdate("INSERT INTO b_models(name,c_model) VALUES(?,?)", "nameB1", 1);
 		persistService.executeUpdate("INSERT INTO a_models(name,b_model,c_model) VALUES(?,?,?)", "nameA1", 1, 1);
 
-		Model a = persistService.findById(am.getModelClass(), "include:[bModel,cModel]");
+		Model a = persistService.find(am.getModelClass(), "include:[bModel,cModel]");
 		
 		assertNotNull(a);
 		
@@ -384,7 +384,7 @@ public class FindTests extends BaseDbTestCase {
 		persistService.executeUpdate("INSERT INTO b_models(name,c_model) VALUES(?,?)", "nameB1", 1);
 		persistService.executeUpdate("INSERT INTO a_models(name,b_model,c_model) VALUES(?,?,?)", "nameA1", 1, 1);
 
-		Model a = persistService.findById(am.getModelClass(), "include:[{bModel:cModel},cModel]");
+		Model a = persistService.find(am.getModelClass(), "include:[{bModel:cModel},cModel]");
 		
 		assertNotNull(a);
 		
@@ -412,7 +412,7 @@ public class FindTests extends BaseDbTestCase {
 		persistService.executeUpdate("INSERT INTO b_models(name,c_model) VALUES(?,?)", "nameB1", 1);
 		persistService.executeUpdate("INSERT INTO a_models(name,b_model,c_model) VALUES(?,?,?)", "nameA1", 1, 1);
 
-		Model a = persistService.findById(am.getModelClass(), "include:[cModel,{bModel:cModel}]");
+		Model a = persistService.find(am.getModelClass(), "include:[cModel,{bModel:cModel}]");
 		
 		assertNotNull(a);
 		
@@ -443,7 +443,7 @@ public class FindTests extends BaseDbTestCase {
 		persistService.executeUpdate("INSERT INTO a_models__b_models___b_models__null(a,b) VALUES(?,?)", 2, 1);
 		persistService.executeUpdate("INSERT INTO a_models__b_models___b_models__null(a,b) VALUES(?,?)", 3, 1);
 
-		Model a = persistService.findById(am.getModelClass(), "include:bModels");
+		Model a = persistService.find(am.getModelClass(), "include:bModels");
 		
 		assertNotNull(a);
 		
@@ -471,7 +471,7 @@ public class FindTests extends BaseDbTestCase {
 		persistService.executeUpdate("INSERT INTO a_models__b_models___b_models__null(a,b) VALUES(?,?)", 2, 1);
 		persistService.executeUpdate("INSERT INTO a_models__b_models___b_models__null(a,b) VALUES(?,?)", 3, 1);
 
-		Model a = persistService.findById(am.getModelClass(), "include:[bModels,bModel]");
+		Model a = persistService.find(am.getModelClass(), "include:[bModels,bModel]");
 		
 		assertNotNull(a);
 		
@@ -500,7 +500,7 @@ public class FindTests extends BaseDbTestCase {
 		
 		persistService.executeUpdate("INSERT INTO a_models(name) VALUES(?)", "nameA1");
 
-		Model a = persistService.findById(am.getModelClass(), "include:[bModels,bModel]");
+		Model a = persistService.find(am.getModelClass(), "include:[bModels,bModel]");
 		
 		assertNotNull(a);
 		
@@ -526,7 +526,7 @@ public class FindTests extends BaseDbTestCase {
 		persistService.executeUpdate("INSERT INTO a_models(name) VALUES(?)", "nameA1");
 		persistService.executeUpdate("INSERT INTO a_models__b_models___b_models__null(a,b) VALUES(?,?)", 1, 1);
 
-		Model model = persistService.findById(am.getModelClass(), "include:{bModels:cModel}");
+		Model model = persistService.find(am.getModelClass(), "include:{bModels:cModel}");
 		
 		assertNotNull(model);
 		
@@ -558,7 +558,7 @@ public class FindTests extends BaseDbTestCase {
 		persistService.executeUpdate("INSERT INTO a_models(name,b_model) VALUES(?,?)", "nameA1", 2);
 		persistService.executeUpdate("INSERT INTO a_models__b_models___b_models__null(a,b) VALUES(?,?)", 1, 1);
 
-		Model a = persistService.findById(am.getModelClass(), "include:[{bModels:cModel},{bModel:cModel}]");
+		Model a = persistService.find(am.getModelClass(), "include:[{bModels:cModel},{bModel:cModel}]");
 		
 		assertNotNull(a);
 		
@@ -601,7 +601,7 @@ public class FindTests extends BaseDbTestCase {
 		persistService.executeUpdate("INSERT INTO a_models__b_models___b_models__a_models(a,b) VALUES(?,?)", 1, 2);
 		persistService.executeUpdate("INSERT INTO a_models__b_models___b_models__a_models(a,b) VALUES(?,?)", 2, 2);
 
-		Model a = persistService.findById(am.getModelClass(), "include:bModels");
+		Model a = persistService.find(am.getModelClass(), "include:bModels");
 		
 		assertNotNull(a);
 		
@@ -628,7 +628,7 @@ public class FindTests extends BaseDbTestCase {
 		persistService.executeUpdate("INSERT INTO a_models(name,b_model) VALUES(?,?)", "nameA2", 2);
 		persistService.executeUpdate("INSERT INTO a_models(name,b_model) VALUES(?,?)", "nameA3", 2);
 
-		Model b = persistService.findById(bm.getModelClass(), "include:aModels");
+		Model b = persistService.find(bm.getModelClass(), "include:aModels");
 		
 		assertNotNull(b);
 		
@@ -653,7 +653,7 @@ public class FindTests extends BaseDbTestCase {
 		persistService.executeUpdate("INSERT INTO a_models(name,b_model) VALUES(?,?)", "nameA2", 2);
 		persistService.executeUpdate("INSERT INTO a_models(name,b_model) VALUES(?,?)", "nameA3", 2);
 
-		Model a = persistService.findById(am.getModelClass(), "include:bModel");
+		Model a = persistService.find(am.getModelClass(), "include:bModel");
 		
 		assertNotNull(a);
 		

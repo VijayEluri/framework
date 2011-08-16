@@ -11,6 +11,8 @@
 package org.oobium.persist.db.internal;
 
 import static org.junit.Assert.*;
+import static org.oobium.utils.SqlUtils.*;
+import static org.oobium.utils.StringUtils.*;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -21,14 +23,13 @@ import org.oobium.persist.ModelDescription;
 import org.oobium.persist.Relation;
 import org.oobium.persist.db.internal.Query;
 import org.oobium.persist.db.internal.QueryBuilder;
-import org.oobium.utils.SqlUtils;
 
 public class QueryBuilderTests {
 
 	
-//	protected final int dbType = QueryUtils.DERBY;
-	protected final int dbType = SqlUtils.MYSQL;
-//	protected final int dbType = QueryUtils.POSTGRESQL;
+//	protected final int dbType = DERBY;
+	protected final int dbType = MYSQL;
+//	protected final int dbType = POSTGRESQL;
 
 	
 	@ModelDescription(hasOne={@Relation(name="a",type=A0.class,include=true)}) class Start0 extends Model { }
@@ -413,4 +414,50 @@ public class QueryBuilderTests {
 		assertFalse(query.hasChildren());
 	}
 	
+	@Test
+	public void testSimple() throws Exception {
+		String sql = "where a=1";
+		Query query = QueryBuilder.build(dbType, Start1.class, sql);
+		
+		assertEquals("SELECT a.id a_id,a.a a_a FROM start1s a WHERE a.a=1", query.getSql());
+		assertEquals("[]", asString(query.getValues()));
+	}
+
+	@Test
+	public void testSimpleWithValue() throws Exception {
+		String sql = "where a=?";
+		Query query = QueryBuilder.build(dbType, Start1.class, sql, 1);
+		
+		assertEquals("SELECT a.id a_id,a.a a_a FROM start1s a WHERE a.a=?", query.getSql());
+		assertEquals("[1]", asString(query.getValues()));
+	}
+
+	@Test
+	public void testJsonInput() throws Exception {
+		String sql = "a:1";
+		Query query = QueryBuilder.build(dbType, Start1.class, sql);
+		
+		assertEquals("SELECT a.id a_id,a.a a_a FROM start1s a WHERE a.a=?", query.getSql());
+		assertEquals("[1]", asString(query.getValues()));
+	}
+	
+	@Test
+	public void testJsonInputWithInclude() throws Exception {
+		String sql = "a:1";
+		Query query = QueryBuilder.build(dbType, Start1.class, sql);
+		
+		assertEquals("SELECT a.id a_id,a.a a_a FROM start1s a WHERE a.a=?", query.getSql());
+		assertEquals("[1]", asString(query.getValues()));
+	}
+
+	@Test
+	public void testJsonHasOneSql4() throws Exception {
+		String sql = "a:1,$include:a";
+		Query query = QueryBuilder.build(dbType, Start1.class, sql);
+		
+		String expected = "SELECT a.id a_id,a.a a_a,b.id b_id,b.b b_b,b.c b_c FROM start1s a LEFT JOIN a1s b ON a.a=b.id WHERE a.a=?";
+		assertEquals(expected, query.getSql());
+		assertEquals("[1]", asString(query.getValues()));
+	}
+
 }

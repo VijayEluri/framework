@@ -152,6 +152,16 @@ public class ConversionTests {
 		conversion.setModelType(TestClass.class);
 		conversion.run();
 	}
-	
+
+	@Test
+	public void testInvalidJsonMap() throws Exception {
+		Conversion conversion = new Conversion(toMap("blah LIMIT 1"));
+		conversion.setModelType(TestClass.class);
+		try {
+			conversion.run();
+		} catch(Exception e) {
+			fail("currently not designed to throw an except... should it be?");
+		}
+	}
 
 }

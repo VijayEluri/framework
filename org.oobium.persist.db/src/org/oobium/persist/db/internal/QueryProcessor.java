@@ -46,7 +46,6 @@ public class QueryProcessor<E extends Model> {
 	}
 
 	private Query query;
-	private Object[] values;
 
 	private QueryProcessor() {
 		// private constructor
@@ -69,7 +68,6 @@ public class QueryProcessor<E extends Model> {
 		} else {
 			this.query = QueryBuilder.build(dbType, clazz, null);
 		}
-		this.values = values;
 	}
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -131,7 +129,7 @@ public class QueryProcessor<E extends Model> {
 		}
 	}
 
-	private List<Map<String, Map<String, Object>>> executeQuery(Connection connection, String sql) throws SQLException {
+	private List<Map<String, Map<String, Object>>> executeQuery(Connection connection, String sql, Object[] values) throws SQLException {
 		if(logger.isLoggingDebug()) {
 			logger.debug("start executeQuery: " + sql);
 		}
@@ -188,7 +186,7 @@ public class QueryProcessor<E extends Model> {
 	@SuppressWarnings("unchecked")
 	private List<E> processQuery(Connection connection, Query query) throws SQLException {
 		String sql = query.getSql();
-		List<Map<String, Map<String, Object>>> results = executeQuery(connection, sql);
+		List<Map<String, Map<String, Object>>> results = executeQuery(connection, sql, query.getValues());
 		List<E> objects = createModels(query, results);
 		if(!objects.isEmpty() && query.hasChildren()) {
 			for(Query child : query.getChildren()) {
@@ -203,7 +201,7 @@ public class QueryProcessor<E extends Model> {
 	private void processQuery(Connection connection, Query parentQuery, Query query, List<? extends Model> models) throws SQLException {
 		String sql = query.getSql(models);
 		
-		List<Map<String, Map<String, Object>>> results = executeQuery(connection, sql);
+		List<Map<String, Map<String, Object>>> results = executeQuery(connection, sql, query.getValues());
 		List<E> objects = createModels(query, results);
 		if(!objects.isEmpty() && query.hasChildren()) {
 			for(Query child : query.getChildren()) {

@@ -16,18 +16,18 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 
 import org.junit.Test;
-import org.oobium.framework.tests.dyn.DynModel;
 import org.oobium.framework.tests.dyn.DynClasses;
+import org.oobium.framework.tests.dyn.DynModel;
 import org.oobium.persist.Model;
+import org.oobium.persist.PersistException;
 
 public class FindAllTests extends BaseDbTestCase {
 
-	@Test(expected=SQLException.class)
+	@Test(expected=PersistException.class)
 	public void testFindAllInvalidSQL() throws Exception {
 		DynModel am = DynClasses.getModel("AModel");
 		persistService.findAll(am.getModelClass(), "blah");
