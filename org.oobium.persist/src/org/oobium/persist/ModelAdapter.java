@@ -258,7 +258,8 @@ public class ModelAdapter {
 			if(!blank(through)) {
 				int ix = through.indexOf(':');
 				if(ix == -1) {
-					return new String[] { through, varName(relation.type()) };
+					boolean plural = (isOneToMany(through) || isManyToMany(through));
+					return new String[] { through, varName(relation.type(), plural) };
 				} else {
 					return new String[] { through.substring(0, ix), through.substring(ix + 1) };
 				}
