@@ -274,17 +274,23 @@ public class EspCompiler {
 		}
 	}
 	
-	private void appendJavaType(MarkupElement element, Class<?> defaultType) {
+	private String appendJavaType(MarkupElement element, Class<?> defaultType) {
+		String type;
 		if(element.hasJavaType()) {
+			type = element.getJavaType();
 			bodyLocations.add(new EspLocation(body.length(), element.getJavaTypePart()));
-			body.append(element.getJavaType());
+			body.append(type);
 		} else if(defaultType != null) {
-			body.append(defaultType.getSimpleName());
+			type = defaultType.getSimpleName();
+			body.append(type);
 			String name = defaultType.getCanonicalName();
 			if(!name.startsWith("java.lang.")) {
 				esf.addImport(name);
 			}
+		} else {
+			type = null;
 		}
+		return type;
 	}
 	
 	private void appendUpdateJs(MarkupElement element, JavaSourcePart target) {
@@ -1796,8 +1802,8 @@ public class EspCompiler {
 			if(element.hasEntry("text") || element.hasEntry("value")) {
 				if(blank(selectionGetter)) {
 					body.append("for(");
-					appendJavaType(element, Object.class);
-					body.append(" option : ");
+					String var = varName(appendJavaType(element, Object.class));
+					body.append(" ").append(var).append(" : ");
 					build(options, body, true);
 					body.append(") {\n");
 					if(element.hasEntryValue("title")) {
@@ -1812,13 +1818,13 @@ public class EspCompiler {
 					if(element.hasEntryValue("value")) {
 						appendEntryValueWithoutQuotes(element, "value");
 					} else {
-						body.append("option");
+						body.append(var);
 					}
 					body.append(")).append(\"\\\" >\").append(h(");
 					if(element.hasEntryValue("text")) {
 						appendEntryValueWithoutQuotes(element, "text");
 					} else {
-						body.append("String.valueOf(option)");
+						body.append("String.valueOf(").append(var).append(")");
 					}
 					body.append(")).append(\"</option>\");\n");
 					indent(body);
@@ -1830,8 +1836,8 @@ public class EspCompiler {
 					body.append("Object ").append(selectionVar).append(" = ").append(selectionGetter).append(";\n");
 					indent(body);
 					body.append("for(");
-					appendJavaType(element, Object.class);
-					body.append(" option : ");
+					String var = varName(appendJavaType(element, Object.class));
+					body.append(" ").append(var).append(" : ");
 					build(options, body, true);
 					body.append(") {\n");
 					indent(body);
@@ -1839,7 +1845,7 @@ public class EspCompiler {
 					if(element.hasEntryValue("value")) {
 						appendEntryValueWithoutQuotes(element, "value");
 					} else {
-						body.append("option");
+						body.append(var);
 					}
 					body.append(", ").append(selectionVar).append(");\n");
 					if(element.hasEntryValue("title")) {
@@ -1854,13 +1860,13 @@ public class EspCompiler {
 					if(element.hasEntryValue("value")) {
 						appendEntryValueWithoutQuotes(element, "value");
 					} else {
-						body.append("option");
+						body.append(var);
 					}
 					body.append(")).append(\"\\\" \").append(").append(selectedVar).append(" ? \"selected >\" : \">\").append(h(");
 					if(element.hasEntryValue("text")) {
 						appendEntryValueWithoutQuotes(element, "text");
 					} else {
-						body.append("String.valueOf(option)");
+						body.append("String.valueOf(").append(var).append(")");
 					}
 					body.append(")).append(\"</option>\");\n");
 					indent(body);
