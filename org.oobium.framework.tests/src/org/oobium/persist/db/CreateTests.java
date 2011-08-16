@@ -95,7 +95,7 @@ public class CreateTests extends BaseDbTestCase {
 		assertTrue(a.hasErrors());
 		
 		assertEquals(1, a.getErrorCount());
-		assertTrue(a.getError(0).startsWith("can not create an empty model:"));
+		assertTrue(a.getError(0), a.getError(0).startsWith("java.sql.SQLException: can not create an empty model:"));
 	}
 	
 	@Test
