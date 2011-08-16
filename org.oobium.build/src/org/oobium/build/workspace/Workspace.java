@@ -738,9 +738,10 @@ public class Workspace {
 					if(bundle == null) {
 						throw new IllegalStateException("persist service missing: " + name);
 					}
-					bundle = getBundle(bundle.getManifestAttribute(Bundle.OOBIUM_MIGRATION_SERVICE));
+					String migratorName = bundle.getManifestAttribute(Bundle.OOBIUM_MIGRATION_SERVICE);
+					bundle = getBundle(migratorName);
 					if(bundle == null) {
-						throw new IllegalStateException("migrator service missing: " + name);
+						throw new IllegalStateException("migrator service missing: " + migratorName);
 					}
 					bundles.add(bundle);
 				}
