@@ -280,9 +280,16 @@ public abstract class ModuleService implements BundleActivator {
 	
 	@SuppressWarnings("unchecked")
 	void loadObservers(Config config) throws Exception {
-		logger.info("loading Observer classes");
+		logger.info("loading Observer and Notifier classes");
 
 		String pkg = pkg(config.getPathToObservers(pkgPath()));
+		for(Class<?> clazz : loadClassesInPackage(pkg)) {
+			if(Observer.class.isAssignableFrom(clazz)) {
+				Model.addObserver((Class<? extends Observer<?>>) clazz);
+			}
+		}
+		
+		pkg = pkg(config.getPathToNotifiers(pkgPath()));
 		for(Class<?> clazz : loadClassesInPackage(pkg)) {
 			if(Observer.class.isAssignableFrom(clazz)) {
 				Model.addObserver((Class<? extends Observer<?>>) clazz);
@@ -404,8 +411,7 @@ public abstract class ModuleService implements BundleActivator {
 		logger.info("unloading ActionCache classes");
 
 		String pkg = pkg(config.getPathToCaches(pkgPath()));
-		List<Class<?>> classes = loadClassesInPackage(pkg);
-		for(Class<?> clazz : classes) {
+		for(Class<?> clazz : loadClassesInPackage(pkg)) {
 			ActionCache.removeCache(this, clazz);
 		}
 	}
@@ -414,18 +420,21 @@ public abstract class ModuleService implements BundleActivator {
 		logger.info("unloading Model classes");
 
 		String pkg = pkg(config.getPathToModels(pkgPath()));
-		List<Class<?>> classes = loadClassesInPackage(pkg);
-		for(Class<?> clazz : classes) {
+		for(Class<?> clazz : loadClassesInPackage(pkg)) {
 			Model.removeObservers(clazz);
 		}
 	}
 
 	void unloadObservers(Config config) throws Exception {
-		logger.info("unloading Observer classes");
+		logger.info("unloading Observer and Notifier classes");
 
 		String pkg = pkg(config.getPathToObservers(pkgPath()));
-		List<Class<?>> classes = loadClassesInPackage(pkg);
-		for(Class<?> clazz : classes) {
+		for(Class<?> clazz : loadClassesInPackage(pkg)) {
+			Model.removeObservers(clazz);
+		}
+
+		pkg = pkg(config.getPathToNotifiers(pkgPath()));
+		for(Class<?> clazz : loadClassesInPackage(pkg)) {
 			Model.removeObservers(clazz);
 		}
 	}

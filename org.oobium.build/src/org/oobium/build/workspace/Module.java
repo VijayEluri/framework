@@ -125,6 +125,11 @@ public class Module extends Bundle {
 	public final File observers;
 
 	/**
+	 * this module's notifiers directory
+	 */
+	public final File notifiers;
+
+	/**
 	 * this module's views directory
 	 */
 	public final File views;
@@ -189,6 +194,7 @@ public class Module extends Bundle {
 		this.app = file(src, config.getPathToApp(base));
 		
 		this.models = file(src, config.getPathToModels(base));
+		this.notifiers = file(src, config.getPathToNotifiers(base));
 		this.observers = file(src, config.getPathToObservers(base));
 
 		this.views = file(src, config.getPathToViews(base));
@@ -1356,7 +1362,7 @@ public class Module extends Bundle {
 	}
 	
 	public File getNotifier(String name) {
-		return new File(observers, adjust(name, "Notifier") + ".java");
+		return new File(notifiers, adjust(name, "Notifier") + ".java");
 	}
 	
 	public File getObserver(String name) {

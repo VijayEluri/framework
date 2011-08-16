@@ -299,6 +299,10 @@ public class Config {
 		return moduleConfig;
 	}
 	
+	public String getPathToNotifiers(String base) {
+		return getPath("notifiers", getPathToModels(base));
+	}
+	
 	public String getPathToObservers(String base) {
 		return getPath("observers", getPathToModels(base));
 	}

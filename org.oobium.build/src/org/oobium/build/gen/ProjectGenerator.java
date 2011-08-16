@@ -762,7 +762,7 @@ public class ProjectGenerator {
 		SourceFile src = new SourceFile();
 
 		String name = modelName + "Notifier";
-		src.packageName = module.packageName(module.observers);
+		src.packageName = module.packageName(module.notifiers);
 		src.simpleName = name;
 		src.superName = ModelNotifier.class.getSimpleName() + "<" + modelName + ">";
 		src.imports.add(modelPackage + "." + modelName);
@@ -777,7 +777,7 @@ public class ProjectGenerator {
 			"\treturn true;\n" +
 			"}");
 
-		return writeFile(module.observers, name + ".java", src.toSource());
+		return writeFile(module.notifiers, name + ".java", src.toSource());
 	}
 	
 	public static File createObserver(Module module, String modelPackage, String modelName) {
