@@ -30,12 +30,12 @@ public abstract class ModelNotifier<T extends Model> extends Observer<T> {
 	}
 	
 	@Override
-	protected void afterDestroy(int id) {
+	protected void afterDestroy(Object id) {
 		AsyncMessage msg = createMessage("afterDestroy", id);
 		sendMessage(msg);
 	}
 	
-	private AsyncMessage createMessage(String method, int id) {
+	private AsyncMessage createMessage(String method, Object id) {
 		AsyncMessage msg = new AsyncMessage();
 		msg.setClientId("Java-Based-Producer-For-Messaging");
 		msg.setTimestamp(System.currentTimeMillis());

@@ -389,7 +389,7 @@ public class BlazeProjectGenerator {
 		l = new ArrayList<String>();
 		l.add("public static {type} setVars({type} {var}) {");
 		l.add(" if({var} != null) {");
-		l.add("  {var}.id = {var}.getId();");
+		l.add("  {var}.id = {var}.getId(int.class);");
 		l.add("  {var}.errors = {var}.getErrorsList();");
 		for(PropertyDescriptor prop : props) {
 			String pvar = prop.variable();
@@ -441,7 +441,7 @@ public class BlazeProjectGenerator {
 		
 		sf.staticMethods.put(String.valueOf(i++), source(
 				"public static {type} find(int id) throws PersistException {",
-				" return setVars({super}.find(id));",
+				" return setVars({super}.findById(id));",
 				"}"
 			).replace("{type}", type).replace("{super}", sf.superName));
 		
