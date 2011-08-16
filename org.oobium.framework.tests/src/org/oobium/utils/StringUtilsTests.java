@@ -19,18 +19,20 @@ public class StringUtilsTests {
 
 	@Test
 	public void testCamelCase() throws Exception {
-		assertEquals("Null", 	camelCase(null));
-		assertEquals("Mymodel", camelCase("mymodel"));
-		assertEquals("MyModel", camelCase("my_model"));
-		assertEquals("MyModel", camelCase("MY_MODEL"));
-		assertEquals("Model", 	camelCase("MODEL"));
-		assertEquals("MyModel", camelCase("myModel"));
-		assertEquals("MyModel", camelCase("my model"));
-		assertEquals("MyModel", camelCase("MY MODEL"));
-		assertEquals("MyModel", camelCase("my  model"));
-		assertEquals("MyModel", camelCase("MY  MODEL"));
-		assertEquals("MyModel", camelCase("my_ Model"));
-		assertEquals("MyModel", camelCase("MY _ MODEL"));
+		assertEquals("Null", 		camelCase(null));
+		assertEquals("Mymodel", 	camelCase("mymodel"));
+		assertEquals("MyModel", 	camelCase("my_model"));
+		assertEquals("MyModel", 	camelCase("MY_MODEL"));
+		assertEquals("Model", 		camelCase("MODEL"));
+		assertEquals("MyModel", 	camelCase("myModel"));
+		assertEquals("MyModel", 	camelCase("my model"));
+		assertEquals("MyModel", 	camelCase("MY MODEL"));
+		assertEquals("MyModel", 	camelCase("my  model"));
+		assertEquals("MyModel", 	camelCase("MY  MODEL"));
+		assertEquals("MyModel", 	camelCase("my_ Model"));
+		assertEquals("MyModel", 	camelCase("MY _ MODEL"));
+		assertEquals("AModel",		camelCase("AModel"));
+		assertEquals("AbcModel",	camelCase("ABCModel"));
 	}
 	
 	@Test
@@ -71,6 +73,7 @@ public class StringUtilsTests {
 		assertEquals("myModel", varName("my_model"));
 		assertEquals("myModel", varName("MY_MODEL"));
 		assertEquals("model",	varName("MODEL"));
+		assertEquals("mYmodel", varName("MYmodel"));
 		assertEquals("myModel", varName("myModel"));
 		assertEquals("myModel", varName("my model"));
 		assertEquals("myModel", varName("MY MODEL"));

@@ -12,6 +12,8 @@ package org.oobium.utils;
 
 import static org.oobium.utils.Utils.isEqual;
 import static org.oobium.utils.json.JsonUtils.toObject;
+import static java.lang.Character.isLowerCase;
+import static java.lang.Character.isUpperCase;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -222,13 +224,13 @@ public class StringUtils {
 				if(i == 0) {
 					sb.append(Character.toUpperCase(ca[i]));
 				} else {
-					if(wasUpper) {
+					if(wasUpper && (i+1 == ca.length || !isLowerCase(ca[i+1]))) {
 						sb.append(Character.toLowerCase(ca[i]));
 					} else {
 						sb.append(ca[i]);
 					}
 				}
-				wasUpper = Character.isUpperCase(ca[i]);
+				wasUpper = isUpperCase(ca[i]);
 			}
 		}
 		return sb.toString();
