@@ -181,6 +181,13 @@ public class JsonUtils {
 		return new JsonParser().toMap(json);
 	}
 
+	public static Map<String, Object> toMap(String json, Object...values) {
+		JsonParser parser = new JsonParser();
+		parser.setKeepOrder(true);
+		parser.setValues(values);
+		return parser.toMap(json);
+	}
+
 	public static Map<String, Object> toMap(String json, boolean keepOrder) {
 		JsonParser jp = new JsonParser();
 		jp.setKeepOrder(keepOrder);
@@ -191,6 +198,13 @@ public class JsonUtils {
 		return new JsonParser().toObject(json);
 	}
 
+	public static Object toObject(String json, Object...values) {
+		JsonParser parser = new JsonParser();
+		parser.setKeepOrder(true);
+		parser.setValues(values);
+		return parser.toObject(json);
+	}
+	
 	public static Object toObject(String json, boolean keepOrder) {
 		JsonParser jp = new JsonParser();
 		jp.setKeepOrder(keepOrder);

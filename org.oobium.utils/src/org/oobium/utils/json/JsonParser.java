@@ -32,13 +32,25 @@ import org.oobium.utils.Base64;
 
 public class JsonParser {
 
+	private class Values {
+		private Object[] values;
+		private int position;
+		Values(Object[] values) {
+			this.values = values;
+		}
+		Object next() {
+			if(position < values.length) {
+				return values[position++];
+			}
+			throw new IllegalStateException("JsonParser encountered another placeholder, but is out of values after " + position);
+		}
+	}
+	
+	
 	private boolean keepOrder;
 	private boolean stringsOnly;
 	private IConverter converter;
-	
-	public void setKeepOrder(boolean keepOrder) {
-		this.keepOrder = keepOrder;
-	}
+	private Values values;
 	
 	private Object getObject(char[] ca, int start, int end) {
 		if(ca == null || start >= end) {
@@ -48,6 +60,13 @@ public class JsonParser {
 		int s1 = forward(ca, start, end);
 		int s2 = reverse(ca, end-1) + 1;
 
+		if(s2 == (s1+1) && ca[s1] == '?') {
+			if(values != null) {
+				return values.next();
+			}
+			return "?";
+		}
+		
 		if(ca[s1] == '"' || ca[s1] == '\'') {
 			if((ca[s1] == '"' && ca[s2-1] == '"') || (ca[s1] == '\'' && ca[s2-1] == '\'')) {
 				if(ca[s1] == '\'') {
@@ -128,6 +147,14 @@ public class JsonParser {
 	
 	public void setConverter(IConverter converter) {
 		this.converter = converter;
+	}
+	
+	public void setKeepOrder(boolean keepOrder) {
+		this.keepOrder = keepOrder;
+	}
+	
+	public void setValues(Object...values) {
+		this.values = new Values(values);
 	}
 	
 	@SuppressWarnings("unchecked")
