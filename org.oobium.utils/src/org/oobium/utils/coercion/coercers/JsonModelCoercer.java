@@ -19,13 +19,13 @@ import org.oobium.utils.json.JsonModel;
 public class JsonModelCoercer extends AbstractCoercer {
 
 	public JsonModel coerce(Object object, Class<? extends JsonModel> toType) {
-		if(object instanceof Number) {
-			return createModel(((Number) object).intValue(), toType);
+		if(object instanceof String) {
+			return createModel((String) object, toType);
 		}
 		if(object instanceof Map<?,?>) {
 			return coerce((Map<?,?>) object, toType);
 		}
-		throw new UnsupportedOperationException();
+		return createModel(object, toType);
 	}
 
 	public JsonModel coerce(Map<?,?> map, Class<? extends JsonModel> toType) {
@@ -46,7 +46,7 @@ public class JsonModelCoercer extends AbstractCoercer {
 		return null;
 	}
 	
-	private JsonModel createModel(int id, Class<? extends JsonModel> toType) {
+	private JsonModel createModel(Object id, Class<? extends JsonModel> toType) {
 		try {
 			JsonModel model = toType.newInstance();
 			Method method = toType.getMethod("setId", Object.class);
