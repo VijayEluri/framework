@@ -1,0 +1,18 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Mongo Persist Service
+Bundle-SymbolicName: org.oobium.persist.mongo
+Bundle-Version: 0.6.0.qualifier
+Bundle-Vendor: Oobium.org
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Import-Package: org.oobium.logging,
+ org.oobium.persist,
+ org.oobium.utils,
+ org.oobium.utils.coercion,
+ org.oobium.utils.json,
+ org.osgi.framework,
+ org.osgi.util.tracker
+Bundle-ActivationPolicy: lazy
+Bundle-Activator: org.oobium.persist.mongo.MongoPersistService
+Oobium-Service: org.oobium.persist
+Export-Package: org.oobium.persist.mongo
