@@ -1,9 +1,9 @@
-package org.oobium.persist.migrate.defs.changes;
+package org.oobium.persist.migrate.db.defs.changes;
 
 import java.util.Map;
 
-import org.oobium.persist.migrate.defs.Change;
-import org.oobium.persist.migrate.defs.Column;
+import org.oobium.persist.migrate.db.defs.Change;
+import org.oobium.persist.migrate.db.defs.Column;
 
 public class AddColumn extends Change {
 

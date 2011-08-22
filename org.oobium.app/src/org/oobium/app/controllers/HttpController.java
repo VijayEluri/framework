@@ -68,7 +68,6 @@ import org.oobium.cache.CacheObject;
 import org.oobium.cache.CacheService;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
-import org.oobium.persist.PersistException;
 import org.oobium.utils.Base64;
 
 public class HttpController implements IFlash, IParams, IPathRouting, IUrlRouting, ISessions, IHttp {
@@ -328,22 +327,22 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	/**
 	 * POST url/[model]s
 	 * Implemented by subclasses, if necessary, to create a model.
-	 * @throws PersistException
+	 * @throws Exception
 	 */
-	public void create() throws PersistException {
+	public void create() throws Exception {
 		// to be implemented by subclasses if needed
 	}
 	
 	/** 
 	 * DELETE url/[model]s/1
 	 * Implemented by subclasses, if necessary, to destroy / delete a model.
-	 * @throws PersistException
+	 * @throws Exception
 	 */
-	public void destroy() throws PersistException {
+	public void destroy() throws Exception {
 		// to be implemented by subclasses if needed
 	}
 	
-	public void execute(Action action) throws PersistException {
+	public void execute(Action action) throws Exception {
 		if(logger.isLoggingDebug()) {
 			logger.debug("start controller#execute - " + getControllerName() + "#" + ((action != null) ? action : "handleRequest"));
 		}
@@ -613,10 +612,10 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	
 	/**
 	 * Implemented by subclasses, if necessary, to handle non-RESTful routes.
-	 * @throws PersistException
+	 * @throws Exception
 	 * @see {@link Router#}
 	 */
-	public void handleRequest() throws PersistException {
+	public void handleRequest() throws Exception {
 		// to be implemented by subclasses if needed
 	}
 
@@ -1333,45 +1332,45 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	/**
 	 * GET url/[model]s/1
 	 * Implemented by subclasses, if necessary, to show (retrieve) a model.
-	 * @throws PersistException
+	 * @throws Exception
 	 */
-	public void show() throws PersistException {
+	public void show() throws Exception {
 		// to be implemented by subclasses if needed
 	}
 
 	/**
 	 * GET url/[model]s
 	 * Implemented by subclasses, if necessary, to show (retrieve) all models.
-	 * @throws PersistException
+	 * @throws Exception
 	 */
-	public void showAll() throws PersistException {
+	public void showAll() throws Exception {
 		// to be implemented by subclasses if needed
 	}
 
 	/**
 	 * GET url/[model]s/1/edit
 	 * Implemented by subclasses, if necessary, to show the edit page for a model.
-	 * @throws PersistException
+	 * @throws Exception
 	 */
-	public void showEdit() throws PersistException {
+	public void showEdit() throws Exception {
 		// to be implemented by subclasses if needed
 	}
 
 	/**
 	 * GET url/[model]s/new
 	 * Implemented by subclasses, if necessary, to show the new page for a model.
-	 * @throws PersistException
+	 * @throws Exception
 	 */
-	public void showNew() throws PersistException {
+	public void showNew() throws Exception {
 		// to be implemented by subclasses if needed
 	}
 
 	/**
 	 * PUT url/[model]s/1
 	 * Implemented by subclasses, if necessary, to update a model.
-	 * @throws PersistException
+	 * @throws Exception
 	 */
-	public void update() throws PersistException {
+	public void update() throws Exception {
 		// to be implemented by subclasses if needed
 	}
 

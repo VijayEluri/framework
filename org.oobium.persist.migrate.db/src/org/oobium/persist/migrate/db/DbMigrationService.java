@@ -10,12 +10,12 @@
  ******************************************************************************/
 package org.oobium.persist.migrate.db;
 
-import static org.oobium.persist.migrate.defs.Column.*;
 import static org.oobium.persist.Relation.CASCADE;
 import static org.oobium.persist.Relation.NO_ACTION;
 import static org.oobium.persist.Relation.RESTRICT;
 import static org.oobium.persist.Relation.SET_DEFAULT;
 import static org.oobium.persist.Relation.SET_NULL;
+import static org.oobium.persist.migrate.db.defs.Column.DECIMAL;
 import static org.oobium.utils.StringUtils.join;
 
 import java.sql.Connection;
@@ -29,19 +29,19 @@ import org.oobium.logging.Logger;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.db.DbPersistService;
 import org.oobium.persist.migrate.AbstractMigrationService;
-import org.oobium.persist.migrate.defs.Change;
-import org.oobium.persist.migrate.defs.Column;
-import org.oobium.persist.migrate.defs.Index;
-import org.oobium.persist.migrate.defs.Table;
-import org.oobium.persist.migrate.defs.changes.AddColumn;
-import org.oobium.persist.migrate.defs.changes.AddForeignKey;
-import org.oobium.persist.migrate.defs.changes.AddIndex;
-import org.oobium.persist.migrate.defs.changes.RemoveColumn;
-import org.oobium.persist.migrate.defs.changes.RemoveForeignKey;
-import org.oobium.persist.migrate.defs.changes.RemoveIndex;
-import org.oobium.persist.migrate.defs.changes.Rename;
-import org.oobium.persist.migrate.defs.columns.ForeignKey;
-import org.oobium.persist.migrate.defs.columns.PrimaryKey;
+import org.oobium.persist.migrate.db.defs.Change;
+import org.oobium.persist.migrate.db.defs.Column;
+import org.oobium.persist.migrate.db.defs.Index;
+import org.oobium.persist.migrate.db.defs.Table;
+import org.oobium.persist.migrate.db.defs.changes.AddColumn;
+import org.oobium.persist.migrate.db.defs.changes.AddForeignKey;
+import org.oobium.persist.migrate.db.defs.changes.AddIndex;
+import org.oobium.persist.migrate.db.defs.changes.RemoveColumn;
+import org.oobium.persist.migrate.db.defs.changes.RemoveForeignKey;
+import org.oobium.persist.migrate.db.defs.changes.RemoveIndex;
+import org.oobium.persist.migrate.db.defs.changes.Rename;
+import org.oobium.persist.migrate.db.defs.columns.ForeignKey;
+import org.oobium.persist.migrate.db.defs.columns.PrimaryKey;
 
 public abstract class DbMigrationService extends AbstractMigrationService {
 
@@ -75,7 +75,6 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		createIndex(table, change.index);
 	}
 
-	@Override
 	public void create(Table table) throws SQLException {
 		createTable(table);
 		for(Index index : table.getIndexes()) {
@@ -84,7 +83,7 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 	}
 
 	@Override
-	public void createDatabase() throws SQLException {
+	public void createDatastore() throws Exception {
 		logger.info("Creating database...");
 		persistor.createDatabase(client);
 	}
@@ -105,7 +104,6 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 			);
 	}
 	
-	@Override
 	public void drop(Table table) throws SQLException {
 		exec(
 				"DROP TABLE " + table.name,
@@ -115,14 +113,13 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 	}
 	
 	@Override
-	public void dropDatabase() throws SQLException {
+	public void dropDatastore() throws Exception {
 		logger.info("Dropping database...");
 		persistor.dropDatabase(client);
 	}
 
 	protected void exec(String sql, String opener, String closer) throws SQLException {
-		// these are all long running operations compared to string concatenation, so don't worry about checking logging level
-		logger.info(opener + "...");
+		logger.info("{}...", opener);
 		long start = System.currentTimeMillis();
 		
 		Connection connection = persistor.getConnection();
@@ -131,7 +128,7 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 			logger.info(sql);
 			stmt.executeUpdate(sql);
 			long total = System.currentTimeMillis() - start;
-			logger.info(closer + " in " + total + "ms");
+			logger.info("{} in {} ms", closer, total);
 		} finally {
 			try {
 				stmt.close();
@@ -141,34 +138,20 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		}
 	}
 
-	@Override
 	public List<Map<String, Object>> executeQuery(String sql, Object...values) throws SQLException {
 		return persistor.executeQuery(sql, values);
 	}
 
-	@Override
 	public List<List<Object>> executeQueryLists(String sql, Object...values) throws SQLException {
 		return persistor.executeQueryLists(sql, values);
 	}
 
-	@Override
 	public Object executeQueryValue(String sql, Object...values) throws SQLException {
 		return persistor.executeQueryValue(sql, values);
 	}
 	
-	@Override
 	public int executeUpdate(String sql, Object...values) throws SQLException {
 		return persistor.executeUpdate(sql, values);
-	}
-	
-	@Override
-	public Table find(String table) {
-		throw new UnsupportedOperationException("not yet implemented");
-	}
-
-	@Override
-	public List<Table> findAll() {
-		throw new UnsupportedOperationException("not yet implemented");
 	}
 
 	protected String getAddColumnSql(Table table, Column column) {
@@ -283,12 +266,6 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		return sb.toString();
 	}
 	
-	@Override
-	public int getCurrentRevision() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
 	protected String getRemoveColumnSql(Table table, String column) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("ALTER TABLE ").append(getSqlSafe(table.name));
@@ -372,7 +349,6 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		}
 	}
 
-	@Override
 	public void update(Table table) throws SQLException {
 		for(Change change : table.getChanges()) {
 			switch(change.ctype) {

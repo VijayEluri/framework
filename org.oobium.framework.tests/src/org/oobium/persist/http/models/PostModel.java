@@ -20,7 +20,6 @@ import java.util.Set;
 
 import org.oobium.persist.Model;
 import org.oobium.persist.Paginator;
-import org.oobium.persist.PersistException;
 import org.oobium.persist.PersistService;
 import org.oobium.utils.json.JsonModel;
 
@@ -70,21 +69,21 @@ public abstract class PostModel extends Model {
 	/**
 	 * Get the count of all instances of Post
 	*/
-	public static int count() throws PersistException {
+	public static int count() throws Exception {
 		return getPersistService().count(Post.class);
 	}
 
 	/**
 	 * Get the count of all instances of Post using the given sql query and values.
 	*/
-	public static int count(String sql, Object...values) throws PersistException {
+	public static int count(String sql, Object...values) throws Exception {
 		return getPersistService().count(Post.class, sql, values);
 	}
 
 	/**
 	 * Find the Post with the given id
 	*/
-	public static Post find(int id) throws PersistException {
+	public static Post find(int id) throws Exception {
 		return getPersistService().findById(Post.class, id);
 	}
 
@@ -92,7 +91,7 @@ public abstract class PostModel extends Model {
 	 * Find the Post with the given id and include the given fields.
 	 * The include option can start with 'include:', but it is not required.
 	*/
-	public static Post find(int id, String include) throws PersistException {
+	public static Post find(int id, String include) throws Exception {
 		String sql = (include.startsWith("include:") ? "where id=? " : "where id=? include:") + include;
 		return getPersistService().find(Post.class, sql, id);
 	}
@@ -101,29 +100,29 @@ public abstract class PostModel extends Model {
 	 * Find the Post using the given sql query and values.  Note that only one instance will be returned.
 	 * Prepend the query with 'where' to enter only the where clause.
 	*/
-	public static Post find(String sql, Object...values) throws PersistException {
+	public static Post find(String sql, Object...values) throws Exception {
 		return getPersistService().find(Post.class, sql, values);
 	}
 
 	/**
 	 * Find all instances of Post
 	*/
-	public static List<Post> findAll() throws PersistException {
+	public static List<Post> findAll() throws Exception {
 		return getPersistService().findAll(Post.class);
 	}
 
 	/**
 	 * Find all instances of Post using the given sql query and values.
 	*/
-	public static List<Post> findAll(String sql, Object...values) throws PersistException {
+	public static List<Post> findAll(String sql, Object...values) throws Exception {
 		return getPersistService().findAll(Post.class, sql, values);
 	}
 
-	public static Paginator<Post> paginate(int page, int perPage) throws PersistException {
+	public static Paginator<Post> paginate(int page, int perPage) throws Exception {
 		return Paginator.paginate(Post.class, page, perPage);
 	}
 
-	public static Paginator<Post> paginate(int page, int perPage, String sql, Object...values) throws PersistException {
+	public static Paginator<Post> paginate(int page, int perPage, String sql, Object...values) throws Exception {
 		return Paginator.paginate(Post.class, page, perPage, sql, values);
 	}
 

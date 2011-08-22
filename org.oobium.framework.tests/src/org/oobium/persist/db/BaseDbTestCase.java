@@ -19,7 +19,7 @@ import org.oobium.persist.SimplePersistServiceProvider;
 import org.oobium.persist.db.derby.embedded.DerbyEmbeddedPersistService;
 import org.oobium.persist.db.mysql.MySqlPersistService;
 import org.oobium.persist.db.postgresql.PostgreSqlPersistService;
-import org.oobium.persist.migrate.AbstractMigration;
+import org.oobium.persist.migrate.Migration;
 import org.oobium.persist.migrate.db.DbMigrationService;
 import org.oobium.persist.migrate.db.derby.embedded.DerbyEmbeddedMigrationService;
 import org.oobium.persist.migrate.db.mysql.MySqlMigrationService;
@@ -28,9 +28,9 @@ import org.oobium.utils.SqlUtils;
 
 public class BaseDbTestCase {
 
-	protected final int dbType = SqlUtils.DERBY;
-//	protected final int dbType = QueryUtils.MYSQL;
-//	protected final int dbType = QueryUtils.POSTGRESQL;
+//	protected final int dbType = SqlUtils.DERBY;
+	protected final int dbType = SqlUtils.MYSQL;
+//	protected final int dbType = SqlUtils.POSTGRESQL;
 
 	protected static final Logger logger = LogProvider.getLogger(DbPersistService.class);
 	protected static final String client = "testClient";
@@ -47,7 +47,7 @@ public class BaseDbTestCase {
 		gen.generate();
 		System.out.println(gen.getSource());
 		Class<?> clazz = SimpleDynClass.getClass(gen.getFullName(), gen.getSource());
-		AbstractMigration mig = (AbstractMigration) clazz.newInstance();
+		Migration mig = (Migration) clazz.newInstance();
 		mig.setService(migrationService);
 		mig.up();
 	}
@@ -81,21 +81,21 @@ public class BaseDbTestCase {
 	}
 	
 	@Before
-	public void setup() throws SQLException {
+	public void setup() throws Exception {
 		DynClasses.reset();
 		pkg = "test" + count++;
 		createPersistence();
 		migrationService.setPersistService(persistService);
-		migrationService.createDatabase();
+		migrationService.createDatastore();
 		Model.setLogger(logger);
 		Model.setPersistServiceProvider(new SimplePersistServiceProvider(persistService));
 	}
 
 	@After
-	public void tearDown() throws SQLException {
+	public void tearDown() throws Exception {
 		Model.setLogger(null);
 		Model.setPersistServiceProvider(null);
-		migrationService.dropDatabase();
+		migrationService.dropDatastore();
 		persistService = null;
 	}
 

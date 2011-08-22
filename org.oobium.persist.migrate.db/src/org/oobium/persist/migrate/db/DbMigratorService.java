@@ -8,12 +8,14 @@ import java.util.List;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.db.DbPersistService;
 import org.oobium.persist.migrate.MigratorService;
+import org.oobium.persist.migrate.db.defs.Column;
+import org.oobium.persist.migrate.db.defs.Table;
 import org.oobium.utils.Config;
 
 public abstract class DbMigratorService extends MigratorService {
 
 	@Override
-	protected void commit() throws SQLException {
+	protected void commit() throws Exception {
 		getPersistService().commit();
 	}
 	
@@ -24,6 +26,25 @@ public abstract class DbMigratorService extends MigratorService {
 			return (String) getPersistService().executeQueryValue(sql);
 		} catch(SQLException e) {
 			return null;
+		}
+	}
+
+	@Override
+	public DbMigrationService getMigrationService() {
+		return (DbMigrationService) super.getMigrationService();
+	}
+	
+	protected void createSystemAttrs() {
+		try {
+			Table systemAttrs = new Table(getMigrationService(), "system_attrs");
+			systemAttrs.add(new Column(Column.STRING, "name"));
+			systemAttrs.add(new Column(Column.STRING, "detail"));
+			systemAttrs.add(new Column(Column.TEXT, "data"));
+			systemAttrs.create();
+			systemAttrs.addUniqueIndex("name", "detail");
+			systemAttrs.update();
+		} catch(SQLException e) {
+			logger.error(e);
 		}
 	}
 
@@ -52,17 +73,17 @@ public abstract class DbMigratorService extends MigratorService {
 	}
 
 	@Override
-	protected void rollback() throws SQLException {
+	protected void rollback() throws Exception {
 		getPersistService().rollback();
 	}
 
 	@Override
-	protected void setAutoCommit(boolean autoCommit) throws SQLException {
+	protected void setAutoCommit(boolean autoCommit) throws Exception {
 		getPersistService().setAutoCommit(autoCommit);
 	}
 	
 	@Override
-	protected void setCurrentMigration(String current) throws SQLException {
+	protected void setCurrentMigration(String current) throws Exception {
 		DbPersistService ps = getPersistService();
 		if(current == null) {
 			try {
@@ -90,7 +111,7 @@ public abstract class DbMigratorService extends MigratorService {
 	}
 
 	@Override
-	protected void setMigrated(String name, boolean migrated) throws SQLException {
+	protected void setMigrated(String name, boolean migrated) throws Exception {
 		if(migrated) {
 			String sql = "INSERT INTO system_attrs (name, detail, data) VALUES ('migrated', '" + name + "', NULL)";
 			try {

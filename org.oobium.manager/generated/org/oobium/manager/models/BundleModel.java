@@ -8,7 +8,6 @@ import java.util.Map;
 
 import org.oobium.persist.Model;
 import org.oobium.persist.Paginator;
-import org.oobium.persist.PersistException;
 import org.oobium.utils.json.JsonModel;
 
 public abstract class BundleModel extends Model {
@@ -43,7 +42,7 @@ public abstract class BundleModel extends Model {
 	/**
 	 * Find the Bundle with the given id
 	*/
-	public static Bundle find(int id) throws PersistException {
+	public static Bundle find(int id) throws Exception {
 		return getPersistService(Bundle.class).findById(Bundle.class, id);
 	}
 
@@ -51,7 +50,7 @@ public abstract class BundleModel extends Model {
 	 * Find the Bundle with the given id and include the given fields.
 	 * The include option can start with 'include:', but it is not required.
 	*/
-	public static Bundle find(int id, String include) throws PersistException {
+	public static Bundle find(int id, String include) throws Exception {
 		String sql = (include.startsWith("include:") ? "where id=? " : "where id=? include:") + include;
 		return getPersistService(Bundle.class).find(Bundle.class, sql, id);
 	}
@@ -60,23 +59,23 @@ public abstract class BundleModel extends Model {
 	 * Find the Bundle with using the given sql query and values.  Note that only one instance will be returned.
 	 * Prepend the query with 'where' to enter only the where clause.
 	*/
-	public static Bundle find(String sql, Object...values) throws PersistException {
+	public static Bundle find(String sql, Object...values) throws Exception {
 		return getPersistService(Bundle.class).find(Bundle.class, sql, values);
 	}
 
-	public static List<Bundle> findAll() throws PersistException {
+	public static List<Bundle> findAll() throws Exception {
 		return getPersistService(Bundle.class).findAll(Bundle.class);
 	}
 
-	public static List<Bundle> findAll(String sql, Object...values) throws PersistException {
+	public static List<Bundle> findAll(String sql, Object...values) throws Exception {
 		return getPersistService(Bundle.class).findAll(Bundle.class, sql, values);
 	}
 
-	public static Paginator<Bundle> paginate(int page, int perPage) throws PersistException {
+	public static Paginator<Bundle> paginate(int page, int perPage) throws Exception {
 		return Paginator.paginate(Bundle.class, page, perPage);
 	}
 
-	public static Paginator<Bundle> paginate(int page, int perPage, String sql, Object...values) throws PersistException {
+	public static Paginator<Bundle> paginate(int page, int perPage, String sql, Object...values) throws Exception {
 		return Paginator.paginate(Bundle.class, page, perPage, sql, values);
 	}
 

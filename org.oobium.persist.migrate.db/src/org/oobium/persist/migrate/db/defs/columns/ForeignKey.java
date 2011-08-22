@@ -1,8 +1,8 @@
-package org.oobium.persist.migrate.defs.columns;
+package org.oobium.persist.migrate.db.defs.columns;
 
 import java.util.Map;
 
-import org.oobium.persist.migrate.defs.Column;
+import org.oobium.persist.migrate.db.defs.Column;
 
 public class ForeignKey extends Column {
 

@@ -11,6 +11,7 @@
 package org.oobium.persist;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -22,14 +23,14 @@ public class Paginator<E extends Model> implements List<E> {
 
 	public static final String DEFAULT_PAGE_KEY = "p";
 	
-	public static <T extends Model> Paginator<T> paginate(Class<T> clazz, int page, int perPage) throws PersistException {
+	public static <T extends Model> Paginator<T> paginate(Class<T> clazz, int page, int perPage) throws Exception {
 		return paginate(clazz, page, perPage, null);
 	}
 	
-	public static <T extends Model> Paginator<T> paginate(Class<T> clazz, int page, int perPage, String query, Object...values) throws PersistException {
+	public static <T extends Model> Paginator<T> paginate(Class<T> clazz, int page, int perPage, String query, Object...values) throws Exception {
 		int total = Model.getPersistService(clazz).count(clazz, query, values);
-		Map<String, Object> paginatedQuery = JsonUtils.toMap(query);
-		paginatedQuery.put("limit", limit(page, perPage));
+		Map<String, Object> paginatedQuery = (query != null) ? JsonUtils.toMap(query) : new HashMap<String, Object>();
+		paginatedQuery.put("$limit", limit(page, perPage));
 		List<T> models = Model.getPersistService(clazz).findAll(clazz, paginatedQuery, values);
 		Paginator<T> paginator = new Paginator<T>(models, total, page, perPage);
 		return paginator;

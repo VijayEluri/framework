@@ -76,10 +76,27 @@ public abstract class Model implements JsonModel {
 		return provider;
 	}
 	
+	private static boolean isRequired(Class<?> clazz, String field) {
+		if(clazz != null && field != null) {
+			Validations validations = clazz.getAnnotation(Validations.class);
+			if(validations != null) {
+				for(Validate validate : validations.value()) {
+					String[] fields = validate.field().split("\\s*,\\s*");
+					for(String f : fields) {
+						if(f.equals(field)) {
+							return validate.isNotBlank() || validate.isNotNull();
+						}
+					}
+				}
+			}
+		}
+		return false;
+	}
+	
 	protected static boolean notEquals(Object o1, Object o2) {
 		return (o1 != null && !o1.equals(o2)) || o2 != null; 
 	}
-	
+
 	public static void removeObservers(Class<?> clazz) {
 		Observer.removeObservers(clazz);
 	}
@@ -97,7 +114,7 @@ public abstract class Model implements JsonModel {
 	public static void setLogger(Logger service) {
 		logService.set(service);
 	}
-
+	
 	public static PersistServiceProvider setPersistService(PersistService service) {
 		PersistServiceProvider services = new SimplePersistServiceProvider(service);
 		setPersistServiceProvider(services);
@@ -108,6 +125,7 @@ public abstract class Model implements JsonModel {
 		persistServiceProvider.set(services);
 	}
 	
+
 	public static String toJson(Collection<? extends Model> models, String include, Object...values) {
 		String json = ModelJsonBuilder.buildJson(models, include, values);
 		Logger logger = logService.get();
@@ -119,15 +137,14 @@ public abstract class Model implements JsonModel {
 		}
 		return json;
 	}
-	
-
 	private PersistService persistor;
-	protected Logger logger;
 	
+	protected Logger logger;
 	private Object id;
 	private Map<String, Object> fields;
-	private Map<String, ArrayList<String>> errors;
 	
+	private Map<String, ArrayList<String>> errors;
+
 	/**
 	 * The value of this model's id before it was destroyed.
 	 * For use only by {@link Observer#afterDestroy(int)}.
@@ -147,7 +164,7 @@ public abstract class Model implements JsonModel {
 	public final void addError(String message) {
 		addError(null, message);
 	}
-
+	
 	/**
 	 * Add a single error message to the given subject.
 	 * Used by the internal validation mechanism and available for use
@@ -168,6 +185,18 @@ public abstract class Model implements JsonModel {
 		if(logger.isLoggingDebug()) {
 			logger.debug("added error to " + asSimpleString() + ": " + subject + " -> "+ message);
 		}
+	}
+	
+	protected void afterCreate() {
+		// sublcasses to implement
+	}
+	
+	protected void afterDestroy(Object id) {
+		// sublcasses to implement
+	}
+	
+	protected void afterUpdate() {
+		// sublcasses to implement
 	}
 	
 	public String asSimpleString() {
@@ -196,7 +225,7 @@ public abstract class Model implements JsonModel {
 		sb.append("}");
 		return sb.toString();
 	}
-	
+
 	public String asString() {
 		return asString(false);
 	}
@@ -226,6 +255,18 @@ public abstract class Model implements JsonModel {
 		return sb.toString();
 	}
 	
+	protected void beforeCreate() {
+		// sublcasses to implement
+	}
+	
+	protected void beforeDestroy() {
+		// sublcasses to implement
+	}
+	
+	protected void beforeUpdate() {
+		// sublcasses to implement
+	}
+	
 	public final boolean canCreate() {
 		clearErrors();
 		Observer.runBeforeValidateCreate(this);
@@ -234,16 +275,22 @@ public abstract class Model implements JsonModel {
 		Observer.runAfterValidateCreate(this);
 		return !hasErrors();
 	}
-	
+
 	public final boolean canDestroy() {
 		clearErrors();
+		if(!getAdapter(getClass()).isDeletable()) {
+			addError("Destroy is not permitted.");
+		}
+		if(isNew()) {
+			addError("cannot destroy a model that has not been saved");
+		}
 		Observer.runBeforeValidateDestroy(this);
 		runValidations(Validate.DESTROY);
 		validateDestroy();
 		Observer.runAfterValidateDestroy(this);
 		return !hasErrors();
 	}
-
+	
 	public final boolean canSave() {
 		clearErrors();
 		Observer.runBeforeValidateSave(this);
@@ -267,14 +314,22 @@ public abstract class Model implements JsonModel {
 	
 	public final boolean canUpdate() {
 		clearErrors();
+		if(!getAdapter(getClass()).isUpdatable()) {
+			addError("Updates are not permitted.");
+			return false;
+		}
+		if(isNew()) {
+			addError("cannot update a model that has not been created");
+			return false;
+		}
 		if(isEmpty()) {
 			addError("nothing to update");
-		} else {
-			Observer.runBeforeValidateUpdate(this);
-			runValidations(Validate.UPDATE);
-			validateUpdate();
-			Observer.runAfterValidateUpdate(this);
+			return false;
 		}
+		Observer.runBeforeValidateUpdate(this);
+		runValidations(Validate.UPDATE);
+		validateUpdate();
+		Observer.runAfterValidateUpdate(this);
 		return !hasErrors();
 	}
 	
@@ -291,7 +346,7 @@ public abstract class Model implements JsonModel {
 			errors = null;
 		}
 	}
-	
+
 	public boolean create() {
 		if(!isNew()) {
 			addError("model has already been created");
@@ -304,38 +359,12 @@ public abstract class Model implements JsonModel {
 	}
 
 	public boolean destroy() {
-		if(isNew()) {
-			addError("cannot destroy a model that has not been saved");
-		} else {
-			if(getAdapter(getClass()).isDeletable()) {
-				if(canDestroy()) {
-					Observer.runBeforeDestroy(this);
-					if(!hasErrors()) {
-						try {
-							PersistService service = getPersistor();
-							destroyDependents(true);
-							service.destroy(this);
-							destroyDependents(false);
-							destroyed = id;
-							id = null;
-							fields.clear();
-							if(!(service instanceof RemotePersistService)) {
-								Observer.runAfterDestroy(this);
-							}
-						} catch(PersistException e) {
-							logger.warn("failed to destroy " + asSimpleString(), e);
-							addError(e.getLocalizedMessage());
-						}
-					}
-					return isNew();
-				}
-			} else {
-				addError("Destroy is not permitted.");
-			}
+		if(canDestroy()) {
+			return doDestroy();
 		}
 		return false;
 	}
-
+	
 	private void destroy(String field) {
 		Object o = get(field);
 		if(o instanceof Model) {
@@ -392,51 +421,75 @@ public abstract class Model implements JsonModel {
 			}
 		}
 	}
-	
+
 	private boolean doCreate() {
 		boolean saved = false;
 		Observer.runBeforeCreate(this);
 	
 		if(!hasErrors()) {
 			try {
+				beforeCreate();
 				PersistService service = getPersistor();
 				service.create(this);
 				saved = true;
+				afterCreate();
 				if(!(service instanceof RemotePersistService)) {
 					Observer.runAfterCreate(this);
 				}
-			} catch(PersistException e) {
+			} catch(Exception e) {
 				logger.warn("failed to save " + asSimpleString(), e);
 				addError(e.getLocalizedMessage());
 			}
 		}
 		return saved;
 	}
+	
+	private boolean doDestroy() {
+		Observer.runBeforeDestroy(this);
+		if(!hasErrors()) {
+			try {
+				beforeDestroy();
+				PersistService service = getPersistor();
+				destroyDependents(true);
+				service.destroy(this);
+				destroyDependents(false);
+				destroyed = id;
+				id = null;
+				fields.clear();
+				afterDestroy(destroyed);
+				if(!(service instanceof RemotePersistService)) {
+					Observer.runAfterDestroy(this);
+				}
+			} catch(Exception e) {
+				logger.warn("failed to destroy " + asSimpleString(), e);
+				addError(e.getLocalizedMessage());
+			}
+		}
+		return (destroyed != null);
+	}
 
 	private boolean doUpdate() {
 		boolean saved = false;
-		if(getAdapter(getClass()).isUpdatable()) {
-			Observer.runBeforeUpdate(this);
-			
-			if(!hasErrors()) {
-				try {
-					PersistService service = getPersistor();
-					service.update(this);
-					saved = true;
-					if(!(service instanceof RemotePersistService)) {
-						Observer.runAfterUpdate(this);
-					}
-				} catch(PersistException e) {
-					logger.warn("failed to save " + asSimpleString(), e);
-					addError(e.getLocalizedMessage());
+		Observer.runBeforeUpdate(this);
+		
+		if(!hasErrors()) {
+			try {
+				beforeUpdate();
+				PersistService service = getPersistor();
+				service.update(this);
+				saved = true;
+				afterUpdate();
+				if(!(service instanceof RemotePersistService)) {
+					Observer.runAfterUpdate(this);
 				}
+			} catch(Exception e) {
+				logger.warn("failed to save " + asSimpleString(), e);
+				addError(e.getLocalizedMessage());
 			}
-		} else {
-			addError("Updates are not permitted.");
 		}
 		return saved;
 	}
-
+	
 	@Override
 	public boolean equals(Object obj) {
 		// TODO what about comparing to JSON strings and Maps?
@@ -448,7 +501,7 @@ public abstract class Model implements JsonModel {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * Get a data field from the model object.
 	 * <p>If the field is a model field (it is specified in the @{@link ModelDescription} class annotation),
@@ -497,13 +550,13 @@ public abstract class Model implements JsonModel {
 					} else if(adapter.isOneToOne(field) && !adapter.hasKey(field)) {
 						try {
 							getPersistor().retrieve(this, field);
-						} catch(PersistException e) {
+						} catch(Exception e) {
 							logger.warn("failed to load relation " + field + " in " + asSimpleString(), e);
 						}
 					} else if(hasMany(field)) {
 						try {
 							getPersistor().retrieve(this, field);
-						} catch(PersistException e) {
+						} catch(Exception e) {
 							logger.warn("failed to load relation " + field + " in " + asSimpleString(), e);
 						}
 					}
@@ -527,17 +580,17 @@ public abstract class Model implements JsonModel {
 			}
 		}
 	}
-
+	
 	public <T> T get(String field, Class<T> type) {
 		return coerce(get(field), type);
 	}
 	
-	public <T> T get(String field, T defaultValue) {
-		return coerce(get(field), defaultValue);
-	}
-	
 	public <T> T get(String field, Class<T> type, boolean load) {
 		return coerce(get(field, load), type);
+	}
+
+	public <T> T get(String field, T defaultValue) {
+		return coerce(get(field), defaultValue);
 	}
 
 	public <T> T get(String field, T defaultValue, boolean load) {
@@ -555,7 +608,7 @@ public abstract class Model implements JsonModel {
 	public Map<String, Object> getAll() {
 		return new HashMap<String, Object>(fields);
 	}
-
+	
 	public String getError(int index) {
 		return getError(null, index);
 	}
@@ -588,7 +641,7 @@ public abstract class Model implements JsonModel {
 		}
 		return count;
 	}
-	
+
 	/**
 	 * Get all of the errors contained within this model.
 	 * @return a LinkedHashMap of Lists of error messages key by their subject in the order that they were added; never null.
@@ -614,7 +667,7 @@ public abstract class Model implements JsonModel {
 		}
 		return new ArrayList<String>(0);
 	}
-
+	
 	/**
 	 * A complete and flattened list of all errors in this model. The subject of each
 	 * error has been prepended to the original message.
@@ -642,10 +695,6 @@ public abstract class Model implements JsonModel {
 		return getId(false);
 	}
 	
-	public final <T> T getId(Class<T> clazz) {
-		return coerce(getId(false), clazz);
-	}
-	
 	public final Object getId(boolean saveFirst) {
 		if(saveFirst && isNew()) {
 			save();
@@ -657,6 +706,10 @@ public abstract class Model implements JsonModel {
 		return coerce(getId(saveFirst), clazz);
 	}
 	
+	public final <T> T getId(Class<T> clazz) {
+		return coerce(getId(false), clazz);
+	}
+
 	private int getLength(Object value, String tokenizer) {
 		if(value == null) {
 			return 0;
@@ -671,7 +724,7 @@ public abstract class Model implements JsonModel {
 		String s = value.toString();
 		return blank(tokenizer) ? s.length() : s.split(tokenizer).length;
 	}
-
+	
 	private String getOpposite(String field) {
 		return getAdapter(getClass()).getOpposite(field);
 	}
@@ -682,7 +735,7 @@ public abstract class Model implements JsonModel {
 		}
 		return persistor;
 	}
-	
+
 	/**
 	 * Find out if this model's persisted object contains the field.
 	 * True if the field is an attribute or hasOne relationship.
@@ -714,7 +767,7 @@ public abstract class Model implements JsonModel {
 		}
 		return false;
 	}
-
+	
 	/**
 	 * Find out if there are any errors associated with the nested field.
 	 * <p>For example - if a Post model has one Owner model and the Owner model has a name field, you
@@ -766,11 +819,11 @@ public abstract class Model implements JsonModel {
 	public final boolean isEmpty() {
 		return fields.isEmpty();
 	}
-	
+
 	private boolean isManyToNone(String field) {
 		return getAdapter(getClass()).isManyToNone(field);
 	}
-
+	
 	@Override
 	public final boolean isNew() {
 		if(id == null) {
@@ -781,7 +834,7 @@ public abstract class Model implements JsonModel {
 		}
 		return false;
 	}
-	
+
 	private boolean isOppositeRequired(String field) {
 		return getAdapter(getClass()).isOppositeRequired(field);
 	}
@@ -796,23 +849,6 @@ public abstract class Model implements JsonModel {
 	 */
 	public final boolean isRequired(String field) {
 		return isRequired(getClass(), field);
-	}
-
-	private static boolean isRequired(Class<?> clazz, String field) {
-		if(clazz != null && field != null) {
-			Validations validations = clazz.getAnnotation(Validations.class);
-			if(validations != null) {
-				for(Validate validate : validations.value()) {
-					String[] fields = validate.field().split("\\s*,\\s*");
-					for(String f : fields) {
-						if(f.equals(field)) {
-							return validate.isNotBlank() || validate.isNotNull();
-						}
-					}
-				}
-			}
-		}
-		return false;
 	}
 	
 	/**
@@ -862,7 +898,7 @@ public abstract class Model implements JsonModel {
 		try {
 			getPersistor().retrieve(this);
 			return true;
-		} catch(PersistException e) {
+		} catch(Exception e) {
 			logger.warn("failed to load " + asSimpleString(), e);
 		}
 		return false;
@@ -1426,10 +1462,6 @@ public abstract class Model implements JsonModel {
 	}
 
 	public boolean update() {
-		if(isNew()) {
-			addError("cannot update a model that has not been created");
-			return false;
-		}
 		if(canUpdate()) {
 			return doUpdate();
 		}

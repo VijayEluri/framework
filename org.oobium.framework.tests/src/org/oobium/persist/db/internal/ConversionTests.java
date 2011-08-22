@@ -9,7 +9,6 @@ import org.junit.Test;
 import org.oobium.persist.Attribute;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelDescription;
-import org.oobium.persist.PersistException;
 
 public class ConversionTests {
 
@@ -133,6 +132,13 @@ public class ConversionTests {
 		assertEquals("[bob]", asString(conversion.getValues()));
 	}
 
+	@Test
+	public void testLimitOnly() throws Exception {
+		Conversion conversion = new Conversion(toMap("$limit:'1,2'"));
+		conversion.run();
+		assertEquals("LIMIT 1,2", conversion.getSql());
+	}
+
 	
 	@ModelDescription(attrs={@Attribute(name="name",type=String.class)})
 	public static class TestClass extends Model { }
@@ -146,7 +152,7 @@ public class ConversionTests {
 		assertEquals("[bob]", asString(conversion.getValues()));
 	}
 	
-	@Test(expected=PersistException.class)
+	@Test(expected=Exception.class)
 	public void testInvalidSingleWithModelClass() throws Exception {
 		Conversion conversion = new Conversion(toMap("active:true"));
 		conversion.setModelType(TestClass.class);

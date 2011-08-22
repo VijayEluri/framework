@@ -18,7 +18,6 @@ import java.util.UUID;
 import org.oobium.persist.Attribute;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelDescription;
-import org.oobium.persist.PersistException;
 
 @ModelDescription(
 	attrs = {
@@ -36,7 +35,7 @@ public class Session extends Model {
 		if(id > 0 && uuid != null) {
 			try {
 				return Model.getPersistService(Session.class).find(Session.class, "id:?,uuid:?,expiration:{gt:?}", id, uuid, new Date());
-			} catch(PersistException e) {
+			} catch(Exception e) {
 				Model.getLogger().warn(e);
 			}
 		}

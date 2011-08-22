@@ -96,7 +96,7 @@ public class DbPersistorTestCase {
 			}
 			logger.info("database setup successfully\n");
 		} catch(SQLException e) {
-			throw new IllegalStateException("error during setup");
+			throw new IllegalStateException("error during setup", e);
 		}
 	}
 	

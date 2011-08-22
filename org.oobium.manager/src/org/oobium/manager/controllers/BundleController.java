@@ -28,7 +28,6 @@ import org.oobium.manager.controllers.workers.StartWorker;
 import org.oobium.manager.controllers.workers.StopWorker;
 import org.oobium.manager.controllers.workers.UninstallWorker;
 import org.oobium.manager.controllers.workers.UpdateWorker;
-import org.oobium.persist.PersistException;
 import org.oobium.utils.StringUtils;
 import org.oobium.utils.json.JsonUtils;
 import org.osgi.framework.Bundle;
@@ -55,7 +54,7 @@ public class BundleController extends HttpController {
 
 	
 	@Override // POST/URL/[models]
-	public void create() throws PersistException {
+	public void create() throws Exception {
 		String location = param("location");
 		if(blank(location)) {
 			renderErrors("location not set");
@@ -71,7 +70,7 @@ public class BundleController extends HttpController {
 	// DELETE/URL/[models]/id
 	// DELETE/URL/[models]/name
 	// DELETE/URL/[models]/name_version
-	public void destroy() throws PersistException {
+	public void destroy() throws Exception {
 		Bundle[] bundles = getBundles();
 		if(!isRendered()) {
 			// perform in a worker because the bundle may need to be stopped first
@@ -171,7 +170,7 @@ public class BundleController extends HttpController {
 	}
 	
 	@Override
-	public void handleRequest() throws PersistException {
+	public void handleRequest() throws Exception {
 		Bundle[] bundles = getBundles();
 		if(!isRendered()) {
 			BundleContext context = ManagerService.context();
@@ -182,7 +181,7 @@ public class BundleController extends HttpController {
 	}
 	
 	@Override // GET/URL/[models]/id
-	public void show() throws PersistException {
+	public void show() throws Exception {
 		Bundle bundle = ManagerService.context().getBundle(getId(int.class));
 		if(bundle == null) {
 			renderErrors("there is no bundle with id: " + getId());
@@ -192,7 +191,7 @@ public class BundleController extends HttpController {
 	}
 
 	@Override // GET/URL/[models]
-	public void showAll() throws PersistException {
+	public void showAll() throws Exception {
 		Bundle[] bundles = ManagerService.context().getBundles();
 		if(hasParam("name")) {
 			String name = param("name");
@@ -217,7 +216,7 @@ public class BundleController extends HttpController {
 	}
 
 	@Override // PUT/URL/[models]/id
-	public void update() throws PersistException {
+	public void update() throws Exception {
 		Bundle[] bundles = getBundles();
 		if(!isRendered()) {
 			int state = param("state", int.class);

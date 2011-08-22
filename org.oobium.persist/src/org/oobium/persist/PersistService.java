@@ -40,36 +40,36 @@ public interface PersistService {
 	public abstract boolean isSessionOpen();
 
 	
-    public abstract void create(Model...models) throws PersistException;
+    public abstract void create(Model...models) throws Exception;
 
-    public abstract void retrieve(Model...models) throws PersistException;
+    public abstract void retrieve(Model...models) throws Exception;
 
-    public abstract void retrieve(Model model, String hasMany) throws PersistException;
+    public abstract void retrieve(Model model, String hasMany) throws Exception;
 
-    public abstract void update(Model...models) throws PersistException;
+    public abstract void update(Model...models) throws Exception;
 
-	public abstract void destroy(Model...models) throws PersistException;
+	public abstract void destroy(Model...models) throws Exception;
 	
 	
-	public abstract int count(Class<? extends Model> clazz) throws PersistException;
+	public abstract int count(Class<? extends Model> clazz) throws Exception;
 	
-	public abstract int count(Class<? extends Model> clazz, Map<String, Object> query, Object...values) throws PersistException;
+	public abstract int count(Class<? extends Model> clazz, Map<String, Object> query, Object...values) throws Exception;
 	
-	public abstract int count(Class<? extends Model> clazz, String query, Object...values) throws PersistException;
+	public abstract int count(Class<? extends Model> clazz, String query, Object...values) throws Exception;
 
 	
-	public abstract <T extends Model> T find(Class<T> clazz, Map<String, Object> query, Object...values) throws PersistException;
+	public abstract <T extends Model> T find(Class<T> clazz, Map<String, Object> query, Object...values) throws Exception;
 
-	public abstract <T extends Model> T find(Class<T> clazz, String query, Object...values) throws PersistException;
+	public abstract <T extends Model> T find(Class<T> clazz, String query, Object...values) throws Exception;
 	
-	public abstract <T extends Model> List<T> findAll(Class<T> clazz) throws PersistException;
+	public abstract <T extends Model> List<T> findAll(Class<T> clazz) throws Exception;
 	
-	public abstract <T extends Model> List<T> findAll(Class<T> clazz, Map<String, Object> query, Object...values) throws PersistException;
+	public abstract <T extends Model> List<T> findAll(Class<T> clazz, Map<String, Object> query, Object...values) throws Exception;
 
-	public abstract <T extends Model> List<T> findAll(Class<T> clazz, String query, Object...values) throws PersistException;
+	public abstract <T extends Model> List<T> findAll(Class<T> clazz, String query, Object...values) throws Exception;
 	
-	public abstract <T extends Model> T findById(Class<T> clazz, Object id) throws PersistException;
+	public abstract <T extends Model> T findById(Class<T> clazz, Object id) throws Exception;
 	
-	public abstract <T extends Model> T findById(Class<T> clazz, Object id, String include) throws PersistException;
+	public abstract <T extends Model> T findById(Class<T> clazz, Object id, String include) throws Exception;
 	
 }

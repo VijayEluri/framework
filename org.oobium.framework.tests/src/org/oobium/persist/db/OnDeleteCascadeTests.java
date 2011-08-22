@@ -1,6 +1,5 @@
 package org.oobium.persist.db;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -52,6 +51,9 @@ public class OnDeleteCascadeTests extends BaseDbTestCase {
 
 	@Test(expected=SQLSyntaxErrorException.class)
 	public void testHasOneToOne() throws Exception {
+		
+		// passes Derby, fails MySQL and Postgres...
+		
 		DynModel am = DynClasses.getModel(pkg, "AModel").timestamps().addHasOne("bModel", "BModel.class", "opposite=\"aModel\"");
 		DynModel bm = DynClasses.getModel(pkg, "BModel").timestamps().addHasOne("aModel", "AModel.class", "opposite=\"bModel\"", "onDelete=Relation.CASCADE");
 
@@ -60,6 +62,9 @@ public class OnDeleteCascadeTests extends BaseDbTestCase {
 	
 	@Test(expected=SQLSyntaxErrorException.class)
 	public void testHasOneToOne_FromNonKey() throws Exception {
+		
+		// passes Derby, fails MySQL and Postgres...
+		
 		DynModel am = DynClasses.getModel(pkg, "AModel").timestamps().addHasOne("bModel", "BModel.class", "opposite=\"aModel\"", "onDelete=Relation.CASCADE");
 		DynModel bm = DynClasses.getModel(pkg, "BModel").timestamps().addHasOne("aModel", "AModel.class", "opposite=\"bModel\"");
 

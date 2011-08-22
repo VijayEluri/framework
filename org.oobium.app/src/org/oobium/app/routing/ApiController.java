@@ -23,7 +23,6 @@ import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.oobium.app.controllers.HttpController;
 import org.oobium.app.http.Action;
 import org.oobium.app.routing.routes.HttpRoute;
-import org.oobium.persist.PersistException;
 
 public class ApiController extends HttpController {
 
@@ -68,7 +67,7 @@ public class ApiController extends HttpController {
 	}
 	
 	@Override
-	public void handleRequest() throws PersistException {
+	public void handleRequest() throws Exception {
 		Router router = getRouter();
 		Set<Route> routes = router.published;
 		if(routes == null) {

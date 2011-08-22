@@ -1,19 +1,19 @@
-package org.oobium.persist.migrate;
+package org.oobium.persist.migrate.db;
 
-import static org.oobium.persist.migrate.defs.Column.BINARY;
-import static org.oobium.persist.migrate.defs.Column.BOOLEAN;
-import static org.oobium.persist.migrate.defs.Column.DATE;
-import static org.oobium.persist.migrate.defs.Column.DATESTAMPS;
-import static org.oobium.persist.migrate.defs.Column.DECIMAL;
-import static org.oobium.persist.migrate.defs.Column.DOUBLE;
-import static org.oobium.persist.migrate.defs.Column.FLOAT;
-import static org.oobium.persist.migrate.defs.Column.INTEGER;
-import static org.oobium.persist.migrate.defs.Column.LONG;
-import static org.oobium.persist.migrate.defs.Column.STRING;
-import static org.oobium.persist.migrate.defs.Column.TEXT;
-import static org.oobium.persist.migrate.defs.Column.TIME;
-import static org.oobium.persist.migrate.defs.Column.TIMESTAMP;
-import static org.oobium.persist.migrate.defs.Column.TIMESTAMPS;
+import static org.oobium.persist.migrate.db.defs.Column.BINARY;
+import static org.oobium.persist.migrate.db.defs.Column.BOOLEAN;
+import static org.oobium.persist.migrate.db.defs.Column.DATE;
+import static org.oobium.persist.migrate.db.defs.Column.DATESTAMPS;
+import static org.oobium.persist.migrate.db.defs.Column.DECIMAL;
+import static org.oobium.persist.migrate.db.defs.Column.DOUBLE;
+import static org.oobium.persist.migrate.db.defs.Column.FLOAT;
+import static org.oobium.persist.migrate.db.defs.Column.INTEGER;
+import static org.oobium.persist.migrate.db.defs.Column.LONG;
+import static org.oobium.persist.migrate.db.defs.Column.STRING;
+import static org.oobium.persist.migrate.db.defs.Column.TEXT;
+import static org.oobium.persist.migrate.db.defs.Column.TIME;
+import static org.oobium.persist.migrate.db.defs.Column.TIMESTAMP;
+import static org.oobium.persist.migrate.db.defs.Column.TIMESTAMPS;
 import static org.oobium.utils.StringUtils.tableName;
 import static org.oobium.utils.StringUtils.tableNames;
 
@@ -22,23 +22,25 @@ import java.util.List;
 import java.util.Map;
 
 import org.oobium.logging.Logger;
-import org.oobium.persist.migrate.defs.Change;
-import org.oobium.persist.migrate.defs.Column;
-import org.oobium.persist.migrate.defs.Index;
-import org.oobium.persist.migrate.defs.Table;
-import org.oobium.persist.migrate.defs.changes.AddColumn;
-import org.oobium.persist.migrate.defs.changes.AddForeignKey;
-import org.oobium.persist.migrate.defs.changes.AddIndex;
-import org.oobium.persist.migrate.defs.changes.RemoveColumn;
-import org.oobium.persist.migrate.defs.changes.RemoveForeignKey;
-import org.oobium.persist.migrate.defs.changes.RemoveIndex;
-import org.oobium.persist.migrate.defs.changes.Rename;
-import org.oobium.persist.migrate.defs.columns.ForeignKey;
+import org.oobium.persist.migrate.Migration;
+import org.oobium.persist.migrate.MigrationService;
+import org.oobium.persist.migrate.db.defs.Change;
+import org.oobium.persist.migrate.db.defs.Column;
+import org.oobium.persist.migrate.db.defs.Index;
+import org.oobium.persist.migrate.db.defs.Table;
+import org.oobium.persist.migrate.db.defs.changes.AddColumn;
+import org.oobium.persist.migrate.db.defs.changes.AddForeignKey;
+import org.oobium.persist.migrate.db.defs.changes.AddIndex;
+import org.oobium.persist.migrate.db.defs.changes.RemoveColumn;
+import org.oobium.persist.migrate.db.defs.changes.RemoveForeignKey;
+import org.oobium.persist.migrate.db.defs.changes.RemoveIndex;
+import org.oobium.persist.migrate.db.defs.changes.Rename;
+import org.oobium.persist.migrate.db.defs.columns.ForeignKey;
 
-public abstract class AbstractMigration implements Migration {
+public abstract class AbstractDbMigration implements Migration {
 
 	protected Logger logger;
-	private MigrationService service;
+	private DbMigrationService service;
 	
 
 	public Change add(String type, String column) {
@@ -338,7 +340,7 @@ public abstract class AbstractMigration implements Migration {
     }
 	
 	@Override
-	public abstract void down() throws SQLException;
+	public abstract void down() throws Exception;
 	
 	public void dropSessions() throws SQLException {
 		dropTable("sessions");
@@ -367,10 +369,6 @@ public abstract class AbstractMigration implements Migration {
 		return getService().executeUpdate(sql, values);
 	}
 
-	public Table findTable(String name) {
-		return getService().find(name);
-	}
-
 	public Column Float(String name) {
 		return Column(FLOAT, name);
 	}
@@ -387,7 +385,7 @@ public abstract class AbstractMigration implements Migration {
     	return new ForeignKey(column, reference, options);
     }
 
-	private MigrationService getService() {
+	private DbMigrationService getService() {
 		return service;
 	}
 	
@@ -398,7 +396,7 @@ public abstract class AbstractMigration implements Migration {
 	
 	@Override
 	public void setService(MigrationService service) {
-		this.service = service;
+		this.service = (DbMigrationService) service;
 	}
 
 	public Index Index(String...columns) {
@@ -511,6 +509,6 @@ public abstract class AbstractMigration implements Migration {
     }
 
 	@Override
-	public abstract void up() throws SQLException;
+	public abstract void up() throws Exception;
     
 }

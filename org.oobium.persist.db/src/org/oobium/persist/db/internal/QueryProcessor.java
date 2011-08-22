@@ -10,7 +10,7 @@
  ******************************************************************************/
 package org.oobium.persist.db.internal;
 
-import static org.oobium.persist.db.internal.DbCache.getCache;
+import static org.oobium.persist.SessionCache.*;
 import static org.oobium.persist.db.internal.QueryUtils.ID;
 import static org.oobium.persist.db.internal.QueryUtils.createModel;
 import static org.oobium.persist.db.internal.QueryUtils.valuePattern;
@@ -88,7 +88,7 @@ public class QueryProcessor<E extends Model> {
 					Object id = data.get(ID);
 					if(id != null) {
 						Class<? extends Model> clazz = query.getType(alias);
-						Model object = getCache(clazz, (Integer) id);
+						Model object = getCacheById(clazz, (Integer) id);
 						if(object == null) {
 							object = createModel(clazz, data);
 						}
@@ -115,7 +115,7 @@ public class QueryProcessor<E extends Model> {
 					String field = query.getField();
 					Class<? extends Model> parentClass = query.getParentClass();
 					Object parentId = nestedResult.get("a").get(ID);
-					Model parent = getCache(parentClass, (Integer) parentId);
+					Model parent = getCacheById(parentClass, parentId);
 					Object collection = parent.get(field, false);
 					if(collection instanceof Set<?>) {
 						((Set) collection).add(model);

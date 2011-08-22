@@ -12,9 +12,9 @@ import java.util.Map;
 
 import org.oobium.logging.Logger;
 import org.oobium.persist.migrate.db.DbMigrationService;
-import org.oobium.persist.migrate.defs.Table;
-import org.oobium.persist.migrate.defs.columns.ForeignKey;
-import org.oobium.persist.migrate.defs.columns.PrimaryKey;
+import org.oobium.persist.migrate.db.defs.Table;
+import org.oobium.persist.migrate.db.defs.columns.ForeignKey;
+import org.oobium.persist.migrate.db.defs.columns.PrimaryKey;
 import org.oobium.utils.SqlUtils;
 
 public class PostgreSqlMigrationService extends DbMigrationService {

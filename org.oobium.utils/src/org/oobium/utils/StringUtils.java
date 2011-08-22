@@ -968,6 +968,49 @@ public class StringUtils {
 		return sb.toString();
 	}
 	
+	public static Map<String, Object> parseUrl(String url) {
+		Map<String, Object> properties = new HashMap<String, Object>();
+		int ix = url.indexOf('@');
+		if(ix == -1) {
+			properties.put("username", "root");
+			properties.put("password", "");
+		} else {
+			String credentials = url.substring(0, ix);
+			url = url.substring(ix+1);
+			ix = credentials.indexOf(':');
+			if(ix == -1) {
+				properties.put("username", credentials);
+				properties.put("password", "");
+			} else {
+				properties.put("username", credentials.substring(0, ix));
+				properties.put("password", credentials.substring(ix+1));
+			}
+		}
+
+		ix = url.indexOf('/');
+		if(ix == -1) {
+			properties.put("host", null); // use default
+			properties.put("port", null); // use default
+			properties.put("database", url);
+		} else if(ix == 0) {
+			properties.put("host", null); // use default
+			properties.put("port", null); // use default
+			properties.put("database", url.substring(1));
+		} else {
+			String s = url.substring(0, ix);
+			properties.put("database", url.substring(ix+1));
+			ix = s.indexOf(':');
+			if(ix == -1) {
+				properties.put("host", s);
+				properties.put("port", null); // use default
+			} else {
+				properties.put("host", s.substring(0, ix));
+				properties.put("port", Integer.parseInt(s.substring(ix+1)));
+			}
+		}
+		return properties;
+	}
+
 	public static String path(String...segments) {
 		return join(segments, '/');
 	}

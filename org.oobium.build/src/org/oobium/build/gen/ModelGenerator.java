@@ -37,7 +37,6 @@ import org.oobium.persist.Attribute;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelDescription;
 import org.oobium.persist.Paginator;
-import org.oobium.persist.PersistException;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.Relation;
 import org.oobium.utils.Config.Mode;
@@ -137,82 +136,82 @@ public class ModelGenerator {
 		
 		sb = new StringBuilder();
 		appendDoc(sb, "Get the count of all instances of ?", type);
-		sb.append("public static int count() throws PersistException {\n");
+		sb.append("public static int count() throws Exception {\n");
 		sb.append("\treturn getPersistService().count(").append(type).append(".class);\n");
 		sb.append("}");
 		src.staticMethods.put(String.valueOf(i++), sb.toString());
 		
 		sb = new StringBuilder();
 		appendDoc(sb, "Get the count of all instances of ?", type);
-		sb.append("public static int count(Map<String, Object> query, Object...values) throws PersistException {\n");
+		sb.append("public static int count(Map<String, Object> query, Object...values) throws Exception {\n");
 		sb.append("\treturn getPersistService().count(").append(type).append(".class, query, values);\n");
 		sb.append("}");
 		src.staticMethods.put(String.valueOf(i++), sb.toString());
 
 		sb = new StringBuilder();
 		appendDoc(sb, "Get the count of all instances of ?", type);
-		sb.append("public static int count(String query, Object...values) throws PersistException {\n");
+		sb.append("public static int count(String query, Object...values) throws Exception {\n");
 		sb.append("\treturn getPersistService().count(").append(type).append(".class, query, values);\n");
 		sb.append("}");
 		src.staticMethods.put(String.valueOf(i++), sb.toString());
 
 		sb = new StringBuilder();
 		appendDoc(sb, "Find the ? with the given id", type);
-		sb.append("public static ").append(type).append(" findById(Object id) throws PersistException {\n");
+		sb.append("public static ").append(type).append(" findById(Object id) throws Exception {\n");
 		sb.append("\treturn getPersistService().findById(").append(type).append(".class, id);\n");
 		sb.append("}");
 		src.staticMethods.put(String.valueOf(i++), sb.toString());
 		
 		sb = new StringBuilder();
 		appendDoc(sb, "Find the ? with the given id and include the given fields.", type);
-		sb.append("public static ").append(type).append(" findById(Object id, String include) throws PersistException {\n");
+		sb.append("public static ").append(type).append(" findById(Object id, String include) throws Exception {\n");
 		sb.append("\treturn getPersistService().findById(").append(type).append(".class, id, include);\n");
 		sb.append("}");
 		src.staticMethods.put(String.valueOf(i++), sb.toString());
 		
 		sb = new StringBuilder();
 		appendDoc(sb, "Find the ? using the given query and values.  Note that only one instance will be returned.", type);
-		sb.append("public static ").append(type).append(" find(Map<String, Object> query, Object...values) throws PersistException {\n");
+		sb.append("public static ").append(type).append(" find(Map<String, Object> query, Object...values) throws Exception {\n");
 		sb.append("\treturn getPersistService().find(").append(type).append(".class, query, values);\n");
 		sb.append("}");
 		src.staticMethods.put(String.valueOf(i++), sb.toString());
 		
 		sb = new StringBuilder();
 		appendDoc(sb, "Find the ? using the given query and values.  Note that only one instance will be returned.", type);
-		sb.append("public static ").append(type).append(" find(String query, Object...values) throws PersistException {\n");
+		sb.append("public static ").append(type).append(" find(String query, Object...values) throws Exception {\n");
 		sb.append("\treturn getPersistService().find(").append(type).append(".class, query, values);\n");
 		sb.append("}");
 		src.staticMethods.put(String.valueOf(i++), sb.toString());
 		
 		sb = new StringBuilder();
 		appendDoc(sb, "Find all instances of ?", type);
-		sb.append("public static List<").append(type).append("> findAll() throws PersistException {\n");
+		sb.append("public static List<").append(type).append("> findAll() throws Exception {\n");
 		sb.append("\treturn getPersistService().findAll(").append(type).append(".class);\n");
 		sb.append("}");
 		src.staticMethods.put(String.valueOf(i++), sb.toString());
 		
 		sb = new StringBuilder();
 		appendDoc(sb, "Find all instances of ? using the given query Map and array of its entries to use.", type);
-		sb.append("public static List<").append(type).append("> findAll(Map<String, Object> query, Object...values) throws PersistException {\n");
+		sb.append("public static List<").append(type).append("> findAll(Map<String, Object> query, Object...values) throws Exception {\n");
 		sb.append("\treturn getPersistService().findAll(").append(type).append(".class, query, values);\n");
 		sb.append("}");
 		src.staticMethods.put(String.valueOf(i++), sb.toString());
 		
 		sb = new StringBuilder();
 		appendDoc(sb, "Find all instances of ? using the given query and values.", type);
-		sb.append("public static List<").append(type).append("> findAll(String query, Object...values) throws PersistException {\n");
+		sb.append("public static List<").append(type).append("> findAll(String query, Object...values) throws Exception {\n");
 		sb.append("\treturn getPersistService().findAll(").append(type).append(".class, query, values);\n");
 		sb.append("}");
 		src.staticMethods.put(String.valueOf(i++), sb.toString());
 		
 		sb = new StringBuilder();
-		sb.append("public static Paginator<").append(type).append("> paginate(int page, int perPage) throws PersistException {\n");
+		sb.append("public static Paginator<").append(type).append("> paginate(int page, int perPage) throws Exception {\n");
 		sb.append("\treturn Paginator.paginate(").append(type).append(".class, page, perPage);\n");
 		sb.append("}");
 		src.staticMethods.put(String.valueOf(i++), sb.toString());
 		
 		sb = new StringBuilder();
-		sb.append("public static Paginator<").append(type).append("> paginate(int page, int perPage, String query, Object...values) throws PersistException {\n");
+		sb.append("public static Paginator<").append(type).append("> paginate(int page, int perPage, String query, Object...values) throws Exception {\n");
 		sb.append("\treturn Paginator.paginate(").append(type).append(".class, page, perPage, query, values);\n");
 		sb.append("}");
 	}
@@ -332,7 +331,6 @@ public class ModelGenerator {
 		src.imports.add(List.class.getCanonicalName());
 		src.imports.add(Map.class.getCanonicalName());
 		src.imports.add(Paginator.class.getCanonicalName());
-		src.imports.add(PersistException.class.getCanonicalName());
 		src.imports.add(PersistService.class.getCanonicalName());
 
 		List<String> inits = new ArrayList<String>();

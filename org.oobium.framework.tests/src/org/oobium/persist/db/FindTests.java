@@ -22,7 +22,6 @@ import org.junit.Test;
 import org.oobium.framework.tests.dyn.DynClasses;
 import org.oobium.framework.tests.dyn.DynModel;
 import org.oobium.persist.Model;
-import org.oobium.persist.PersistException;
 
 public class FindTests extends BaseDbTestCase {
 
@@ -39,7 +38,7 @@ public class FindTests extends BaseDbTestCase {
 		assertEquals("nameA1", a.get("name"));
 	}
 	
-	@Test(expected=PersistException.class)
+	@Test(expected=Exception.class)
 	public void testFindInvalid() throws Exception {
 		DynModel am = DynClasses.getModel("AModel").addAttr("name", "String.class");
 		persistService.find(am.getModelClass(), "blah");

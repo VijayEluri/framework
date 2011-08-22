@@ -1,9 +1,9 @@
-package org.oobium.persist.migrate.defs.changes;
+package org.oobium.persist.migrate.db.defs.changes;
 
 import java.util.Map;
 
-import org.oobium.persist.migrate.defs.Change;
-import org.oobium.persist.migrate.defs.columns.ForeignKey;
+import org.oobium.persist.migrate.db.defs.Change;
+import org.oobium.persist.migrate.db.defs.columns.ForeignKey;
 
 
 public class AddForeignKey extends Change {

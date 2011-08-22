@@ -10,20 +10,20 @@
  ******************************************************************************/
 package org.oobium.build.gen;
 
-import static org.oobium.persist.migrate.defs.Column.BINARY;
-import static org.oobium.persist.migrate.defs.Column.BOOLEAN;
-import static org.oobium.persist.migrate.defs.Column.DATE;
-import static org.oobium.persist.migrate.defs.Column.DATESTAMPS;
-import static org.oobium.persist.migrate.defs.Column.DECIMAL;
-import static org.oobium.persist.migrate.defs.Column.DOUBLE;
-import static org.oobium.persist.migrate.defs.Column.FLOAT;
-import static org.oobium.persist.migrate.defs.Column.INTEGER;
-import static org.oobium.persist.migrate.defs.Column.LONG;
-import static org.oobium.persist.migrate.defs.Column.STRING;
-import static org.oobium.persist.migrate.defs.Column.TEXT;
-import static org.oobium.persist.migrate.defs.Column.TIME;
-import static org.oobium.persist.migrate.defs.Column.TIMESTAMP;
-import static org.oobium.persist.migrate.defs.Column.TIMESTAMPS;
+import static org.oobium.persist.migrate.db.defs.Column.BINARY;
+import static org.oobium.persist.migrate.db.defs.Column.BOOLEAN;
+import static org.oobium.persist.migrate.db.defs.Column.DATE;
+import static org.oobium.persist.migrate.db.defs.Column.DATESTAMPS;
+import static org.oobium.persist.migrate.db.defs.Column.DECIMAL;
+import static org.oobium.persist.migrate.db.defs.Column.DOUBLE;
+import static org.oobium.persist.migrate.db.defs.Column.FLOAT;
+import static org.oobium.persist.migrate.db.defs.Column.INTEGER;
+import static org.oobium.persist.migrate.db.defs.Column.LONG;
+import static org.oobium.persist.migrate.db.defs.Column.STRING;
+import static org.oobium.persist.migrate.db.defs.Column.TEXT;
+import static org.oobium.persist.migrate.db.defs.Column.TIME;
+import static org.oobium.persist.migrate.db.defs.Column.TIMESTAMP;
+import static org.oobium.persist.migrate.db.defs.Column.TIMESTAMPS;
 import static org.oobium.utils.StringUtils.columnName;
 import static org.oobium.utils.StringUtils.varName;
 
@@ -47,12 +47,12 @@ import org.oobium.build.model.ModelRelation;
 import org.oobium.build.util.SourceFile;
 import org.oobium.persist.Binary;
 import org.oobium.persist.Text;
-import org.oobium.persist.migrate.AbstractMigration;
 import org.oobium.persist.migrate.Options;
-import org.oobium.persist.migrate.defs.Column;
-import org.oobium.persist.migrate.defs.Index;
-import org.oobium.persist.migrate.defs.Table;
-import org.oobium.persist.migrate.defs.columns.ForeignKey;
+import org.oobium.persist.migrate.db.AbstractDbMigration;
+import org.oobium.persist.migrate.db.defs.Column;
+import org.oobium.persist.migrate.db.defs.Index;
+import org.oobium.persist.migrate.db.defs.Table;
+import org.oobium.persist.migrate.db.defs.columns.ForeignKey;
 import org.oobium.utils.literal;
 
 public class DbGenerator {
@@ -167,8 +167,8 @@ public class DbGenerator {
 
 		sf.packageName = packageName;
 		sf.simpleName = simpleName;
-		sf.superName = AbstractMigration.class.getSimpleName();
-		sf.imports.add(AbstractMigration.class.getCanonicalName());
+		sf.superName = AbstractDbMigration.class.getSimpleName();
+		sf.imports.add(AbstractDbMigration.class.getCanonicalName());
 		sf.imports.add(SQLException.class.getCanonicalName());
 
 		StringBuilder sb = new StringBuilder();

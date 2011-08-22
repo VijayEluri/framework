@@ -14,7 +14,6 @@ import static org.jboss.netty.handler.codec.http.HttpMethod.POST;
 import static org.oobium.utils.literal.Map;
 import static org.oobium.utils.literal.e;
 
-import java.sql.SQLException;
 import java.util.List;
 
 import org.oobium.app.AppService;
@@ -25,8 +24,6 @@ import org.oobium.persist.migrate.controllers.MigrateController;
 import org.oobium.persist.migrate.controllers.PurgeController;
 import org.oobium.persist.migrate.controllers.RedoController;
 import org.oobium.persist.migrate.controllers.RollbackController;
-import org.oobium.persist.migrate.defs.Column;
-import org.oobium.persist.migrate.defs.Table;
 import org.oobium.utils.Config;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -97,27 +94,13 @@ public abstract class MigratorService extends AppService {
 		}
 	}
 
-	protected abstract void commit() throws SQLException;
+	protected abstract void commit() throws Exception;
 	
 	private Migration createMigration(Class<? extends Migration> clazz, MigrationService service) throws InstantiationException, IllegalAccessException {
 		Migration migration = clazz.newInstance();
 		migration.setLogger(logger);
 		migration.setService(service);
 		return migration;
-	}
-	
-	protected void createSystemAttrs() {
-		try {
-			Table systemAttrs = new Table(getMigrationService(), "system_attrs");
-			systemAttrs.add(new Column(Column.STRING, "name"));
-			systemAttrs.add(new Column(Column.STRING, "detail"));
-			systemAttrs.add(new Column(Column.TEXT, "data"));
-			systemAttrs.create();
-			systemAttrs.addUniqueIndex("name", "detail");
-			systemAttrs.update();
-		} catch(SQLException e) {
-			logger.error(e);
-		}
 	}
 	
 	private Bundle getBundle(String symbolicName) {
@@ -177,6 +160,7 @@ public abstract class MigratorService extends AppService {
 //		}
 		return appName + "_" + appVersion;
 	}
+	
 	@Override
 	protected Config loadConfiguration() {
 		return new Config(Map(
@@ -185,11 +169,12 @@ public abstract class MigratorService extends AppService {
 				e(Config.PORT, "5001")
 			));
 	}
-	public synchronized String migrate() throws SQLException {
+	
+	public synchronized String migrate() throws Exception {
 		return migrate(null);
 	}
 	
-	public synchronized String migrate(String to) throws SQLException {
+	public synchronized String migrate(String to) throws Exception {
 		Migrations migrations = new Migrations();
 		addMigrations(migrations);
 		List<String> names = migrations.getNames();
@@ -207,8 +192,8 @@ public abstract class MigratorService extends AppService {
 			MigrationService mservice = getMigrationService();
 			if(cix == -1) {
 				try {
-					mservice.createDatabase();
-				} catch(SQLException e) {
+					mservice.createDatastore();
+				} catch(Exception e) {
 					// discard
 				}
 			}
@@ -241,14 +226,14 @@ public abstract class MigratorService extends AppService {
 				return "migrated successfully";
 			} catch(Exception e) {
 				rollback();
-				throw (e instanceof SQLException) ? ((SQLException) e) : new SQLException(e);
+				throw e; // pass it upstream
 			} finally {
 				setCurrentMigration(migratedName);
 			}
 		}
 	}
 	
-	public synchronized String migrate(String name, boolean up) throws SQLException {
+	public synchronized String migrate(String name, boolean up) throws Exception {
 		Migrations migrations = new Migrations();
 		addMigrations(migrations);
 		try {
@@ -270,17 +255,17 @@ public abstract class MigratorService extends AppService {
 			}
 		} catch(Exception e) {
 			rollback();
-			throw (e instanceof SQLException) ? ((SQLException) e) : new SQLException(e);
+			throw e; // pass it upstream
 		}
 		return "migration \"" + name + "\" does not exist";
 	}
 	
-	public synchronized String migratePurge() throws SQLException {
-		getMigrationService().dropDatabase();
+	public synchronized String migratePurge() throws Exception {
+		getMigrationService().dropDatastore();
 		return "database purged";
 	}
 	
-	public synchronized String migrateRedo(int step) throws SQLException {
+	public synchronized String migrateRedo(int step) throws Exception {
 		Migrations migrations = new Migrations();
 		addMigrations(migrations);
 		List<String> names = migrations.getNames();
@@ -317,18 +302,18 @@ public abstract class MigratorService extends AppService {
 				return "migrated successfully";
 			} catch(Exception e) {
 				rollback();
-				throw (e instanceof SQLException) ? ((SQLException) e) : new SQLException(e);
+				throw e; // pass it upstream
 			} finally {
 				setCurrentMigration(migratedName);
 			}
 		}
 	}
 	
-	public synchronized String migrateRollback() throws SQLException {
+	public synchronized String migrateRollback() throws Exception {
 		return migrateRollback(1);
 	}
 	
-	public synchronized String migrateRollback(int step) throws SQLException {
+	public synchronized String migrateRollback(int step) throws Exception {
 		Migrations migrations = new Migrations();
 		addMigrations(migrations);
 		List<String> names = migrations.getNames();
@@ -357,20 +342,20 @@ public abstract class MigratorService extends AppService {
 				return "migrated successfully";
 			} catch(Exception e) {
 				rollback();
-				throw (e instanceof SQLException) ? ((SQLException) e) : new SQLException(e);
+				throw e; // pass it upstream
 			} finally {
 				setCurrentMigration(migratedName);
 			}
 		}
 	}
 	
-	protected abstract void rollback() throws SQLException;
+	protected abstract void rollback() throws Exception;
 	
-	protected abstract void setAutoCommit(boolean autoCommit) throws SQLException;
+	protected abstract void setAutoCommit(boolean autoCommit) throws Exception;
 	
-	protected abstract void setCurrentMigration(String current) throws SQLException;
+	protected abstract void setCurrentMigration(String current) throws Exception;
 	
-	protected abstract void setMigrated(String name, boolean migrated) throws SQLException;
+	protected abstract void setMigrated(String name, boolean migrated) throws Exception;
 	
 	@Override
 	protected void setName(BundleContext context) throws Exception {

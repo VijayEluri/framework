@@ -1,7 +1,7 @@
-package org.oobium.persist.migrate.defs.changes;
+package org.oobium.persist.migrate.db.defs.changes;
 
-import org.oobium.persist.migrate.defs.Change;
-import org.oobium.persist.migrate.defs.Index;
+import org.oobium.persist.migrate.db.defs.Change;
+import org.oobium.persist.migrate.db.defs.Index;
 
 public class AddIndex extends Change {
 

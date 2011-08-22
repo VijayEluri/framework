@@ -40,63 +40,63 @@ public class NullPersistService implements PersistService {
 	}
 	
 	@Override
-	public int count(Class<? extends Model> clazz) throws PersistException {
-		throw new PersistException(msg);
+	public int count(Class<? extends Model> clazz) throws Exception {
+		throw new Exception(msg);
 	}
 	
 	@Override
-	public int count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws PersistException {
-		throw new PersistException(msg);
+	public int count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws Exception {
+		throw new Exception(msg);
 	}
 
 	@Override
-	public int count(Class<? extends Model> clazz, String query, Object... values) throws PersistException {
-		throw new PersistException(msg);
+	public int count(Class<? extends Model> clazz, String query, Object... values) throws Exception {
+		throw new Exception(msg);
 	}
 
 	@Override
-	public void create(Model...models) throws PersistException {
-		throw new PersistException(msg);
+	public void create(Model...models) throws Exception {
+		throw new Exception(msg);
 	}
 	
 	@Override
-	public void destroy(Model...models) throws PersistException {
-		throw new PersistException(msg);
+	public void destroy(Model...models) throws Exception {
+		throw new Exception(msg);
 	}
 
 	@Override
-	public <T extends Model> T find(Class<T> clazz, Map<String, Object> query, Object... values) throws PersistException {
-		throw new PersistException(msg);
+	public <T extends Model> T find(Class<T> clazz, Map<String, Object> query, Object... values) throws Exception {
+		throw new Exception(msg);
 	}
 
 	@Override
-	public <T extends Model> T findById(Class<T> clazz, Object id) throws PersistException {
-		throw new PersistException(msg);
+	public <T extends Model> T findById(Class<T> clazz, Object id) throws Exception {
+		throw new Exception(msg);
 	}
 
 	@Override
-	public <T extends Model> T findById(Class<T> clazz, Object id, String include) throws PersistException {
-		throw new PersistException(msg);
+	public <T extends Model> T findById(Class<T> clazz, Object id, String include) throws Exception {
+		throw new Exception(msg);
 	}
 	
 	@Override
-	public <T extends Model> T find(Class<T> clazz, String query, Object... values) throws PersistException {
-		throw new PersistException(msg);
+	public <T extends Model> T find(Class<T> clazz, String query, Object... values) throws Exception {
+		throw new Exception(msg);
 	}
 
 	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz) throws PersistException {
-		throw new PersistException(msg);
+	public <T extends Model> List<T> findAll(Class<T> clazz) throws Exception {
+		throw new Exception(msg);
 	}
 
 	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz, Map<String, Object> query, Object... values) throws PersistException {
-		throw new PersistException(msg);
+	public <T extends Model> List<T> findAll(Class<T> clazz, Map<String, Object> query, Object... values) throws Exception {
+		throw new Exception(msg);
 	}
 
 	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz, String query, Object... values) throws PersistException {
-		throw new PersistException(msg);
+	public <T extends Model> List<T> findAll(Class<T> clazz, String query, Object... values) throws Exception {
+		throw new Exception(msg);
 	}
 	
 	@Override
@@ -141,18 +141,18 @@ public class NullPersistService implements PersistService {
 	}
 
 	@Override
-	public void retrieve(Model...models) throws PersistException {
-		throw new PersistException(msg);
+	public void retrieve(Model...models) throws Exception {
+		throw new Exception(msg);
 	}
 
 	@Override
-	public void retrieve(Model model, String hasMany) throws PersistException {
-		throw new PersistException(msg);
+	public void retrieve(Model model, String hasMany) throws Exception {
+		throw new Exception(msg);
 	}
 
 	@Override
-	public void update(Model...models) throws PersistException {
-		throw new PersistException(msg);
+	public void update(Model...models) throws Exception {
+		throw new Exception(msg);
 	}
 
 }

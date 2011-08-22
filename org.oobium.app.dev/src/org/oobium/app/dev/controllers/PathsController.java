@@ -29,7 +29,6 @@ import org.oobium.app.controllers.HttpController;
 import org.oobium.app.dev.AppDevActivator;
 import org.oobium.app.http.MimeType;
 import org.oobium.app.routing.Router;
-import org.oobium.persist.PersistException;
 
 public class PathsController extends HttpController {
 
@@ -50,7 +49,7 @@ public class PathsController extends HttpController {
 	}
 	
 	@Override
-	public void handleRequest() throws PersistException {
+	public void handleRequest() throws Exception {
 		ModuleService activator = AppDevActivator.getActivator(param("app"));
 		if(activator instanceof AppService) {
 			Router router = ((AppService) activator).getRouter();

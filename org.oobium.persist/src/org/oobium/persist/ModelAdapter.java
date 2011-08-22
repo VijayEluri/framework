@@ -415,6 +415,16 @@ public class ModelAdapter {
 		return deletable;
 	}
 
+	public boolean isEmbedded(String field) {
+		if(hasOne.containsKey(field)) {
+			return hasOne.get(field).embedded();
+		}
+		if(hasMany.containsKey(field)) {
+			return hasMany.get(field).embedded();
+		}
+		return false;
+	}
+	
 	public boolean isIncluded(String field) {
 		if(hasOne.containsKey(field)) {
 			return hasOne.get(field).include();

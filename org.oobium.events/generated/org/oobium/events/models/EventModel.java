@@ -21,7 +21,6 @@ import java.util.Map;
 
 import org.oobium.persist.Model;
 import org.oobium.persist.Paginator;
-import org.oobium.persist.PersistException;
 import org.oobium.utils.json.JsonModel;
 
 public abstract class EventModel extends Model {
@@ -63,7 +62,7 @@ public abstract class EventModel extends Model {
 	/**
 	 * Find the Event with the given id
 	*/
-	public static Event find(int id) throws PersistException {
+	public static Event find(int id) throws Exception {
 		return getPersistService(Event.class).findById(Event.class, id);
 	}
 
@@ -71,7 +70,7 @@ public abstract class EventModel extends Model {
 	 * Find the Event with the given id and include the given fields.
 	 * The include option can start with 'include:', but it is not required.
 	*/
-	public static Event find(int id, String include) throws PersistException {
+	public static Event find(int id, String include) throws Exception {
 		String sql = (include.startsWith("include:") ? "where id=? " : "where id=? include:") + include;
 		return getPersistService(Event.class).find(Event.class, sql, id);
 	}
@@ -80,23 +79,23 @@ public abstract class EventModel extends Model {
 	 * Find the Event with using the given sql query and values.  Note that only one instance will be returned.
 	 * Prepend the query with 'where' to enter only the where clause.
 	*/
-	public static Event find(String sql, Object...values) throws PersistException {
+	public static Event find(String sql, Object...values) throws Exception {
 		return getPersistService(Event.class).find(Event.class, sql, values);
 	}
 
-	public static List<Event> findAll() throws PersistException {
+	public static List<Event> findAll() throws Exception {
 		return getPersistService(Event.class).findAll(Event.class);
 	}
 
-	public static List<Event> findAll(String sql, Object...values) throws PersistException {
+	public static List<Event> findAll(String sql, Object...values) throws Exception {
 		return getPersistService(Event.class).findAll(Event.class, sql, values);
 	}
 
-	public static Paginator<Event> paginate(int page, int perPage) throws PersistException {
+	public static Paginator<Event> paginate(int page, int perPage) throws Exception {
 		return Paginator.paginate(Event.class, page, perPage);
 	}
 
-	public static Paginator<Event> paginate(int page, int perPage, String sql, Object...values) throws PersistException {
+	public static Paginator<Event> paginate(int page, int perPage, String sql, Object...values) throws Exception {
 		return Paginator.paginate(Event.class, page, perPage, sql, values);
 	}
 

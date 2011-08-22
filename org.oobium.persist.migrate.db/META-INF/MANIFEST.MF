@@ -10,9 +10,12 @@ Import-Package: org.oobium.app,
  org.oobium.persist,
  org.oobium.persist.db,
  org.oobium.persist.migrate,
- org.oobium.persist.migrate.defs,
- org.oobium.persist.migrate.defs.changes,
- org.oobium.persist.migrate.defs.columns,
+ org.oobium.persist.migrate.db.defs,
+ org.oobium.persist.migrate.db.defs.changes,
+ org.oobium.persist.migrate.db.defs.columns,
  org.oobium.utils,
  org.osgi.framework
-Export-Package: org.oobium.persist.migrate.db
+Export-Package: org.oobium.persist.migrate.db,
+ org.oobium.persist.migrate.db.defs,
+ org.oobium.persist.migrate.db.defs.changes,
+ org.oobium.persist.migrate.db.defs.columns

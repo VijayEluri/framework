@@ -1,14 +1,11 @@
 package org.oobium.persist.migrate.controllers;
 
-import java.sql.SQLException;
-
 import org.oobium.app.controllers.HttpController;
-import org.oobium.persist.PersistException;
 import org.oobium.persist.migrate.MigratorService;
 
 public class MigrateController extends HttpController {
 
-	public void handleRequest() throws PersistException {
+	public void handleRequest() throws Exception {
 		if(hasParam("log")) {
 			System.setProperty("org.oobium.persist.db.logging", param("log"));
 		}
@@ -22,7 +19,7 @@ public class MigrateController extends HttpController {
 					response = service.migrate(param("name"));
 				}
 				logger.info(response);
-			} catch(SQLException e) {
+			} catch(Exception e) {
 				response = e.getLocalizedMessage();
 				logger.info(response);
 			}

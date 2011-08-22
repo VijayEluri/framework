@@ -21,7 +21,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
-import org.oobium.persist.PersistException;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.ServiceInfo;
 import org.oobium.utils.json.JsonUtils;
@@ -45,12 +44,12 @@ public class MemoryPersistService implements PersistService {
 	}
 	
 	@Override
-	public int count(Class<? extends Model> clazz, String where, Object... values) throws PersistException {
-		throw new PersistException(msg);
+	public int count(Class<? extends Model> clazz, String where, Object... values) throws Exception {
+		throw new Exception(msg);
 	}
 	
 	@Override
-	public void create(Model...models) throws PersistException {
+	public void create(Model...models) throws Exception {
 		for(Model model : models) {
 			int id = count.incrementAndGet();
 			model.setId(id);
@@ -66,7 +65,7 @@ public class MemoryPersistService implements PersistService {
 	}
 
 	@Override
-	public void destroy(Model...models) throws PersistException {
+	public void destroy(Model...models) throws Exception {
 		for(Model model : models) {
 			Map<String, Object> map = this.models.get(model.getId());
 			if(map != null && map.get("class") == model.getClass()) {
@@ -76,7 +75,7 @@ public class MemoryPersistService implements PersistService {
 	}
 
 	@Override
-	public <T extends Model> T findById(Class<T> clazz, Object id) throws PersistException {
+	public <T extends Model> T findById(Class<T> clazz, Object id) throws Exception {
 		Map<String, Object> map = models.get(id);
 		if(map != null && map.get("class") == clazz) {
 			return coerce(map, clazz);
@@ -85,7 +84,7 @@ public class MemoryPersistService implements PersistService {
 	}
 	
 	@Override
-	public <T extends Model> T find(Class<T> clazz, String where, Object... values) throws PersistException {
+	public <T extends Model> T find(Class<T> clazz, String where, Object... values) throws Exception {
 		if(where != null && where.startsWith("where ")) {
 			Map<String, Object> params = new HashMap<String, Object>();
 			String[] sa1 = where.substring(6).split("\\s+[aA][nN][dD]\\s+");
@@ -112,11 +111,11 @@ public class MemoryPersistService implements PersistService {
 			}
 			return null;
 		}
-		throw new PersistException(msg);
+		throw new Exception(msg);
 	}
 
 	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz) throws PersistException {
+	public <T extends Model> List<T> findAll(Class<T> clazz) throws Exception {
 		List<T> list = new ArrayList<T>();
 		for(Map<String, Object> map : models.values()) {
 			if(map.get("class") == clazz) {
@@ -127,7 +126,7 @@ public class MemoryPersistService implements PersistService {
 	}
 
 	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz, String where, Object... values) throws PersistException {
+	public <T extends Model> List<T> findAll(Class<T> clazz, String where, Object... values) throws Exception {
 		if(where != null && where.startsWith("where ")) {
 			Map<String, Object> params = new HashMap<String, Object>();
 			String[] sa1 = where.substring(6).split("\\s+[aA][nN][dD]\\s+");
@@ -155,7 +154,7 @@ public class MemoryPersistService implements PersistService {
 			}
 			return list;
 		}
-		throw new PersistException(msg);
+		throw new Exception(msg);
 	}
 
 	@Override
@@ -195,7 +194,7 @@ public class MemoryPersistService implements PersistService {
 	}
 
 	@Override
-	public void retrieve(Model...models) throws PersistException {
+	public void retrieve(Model...models) throws Exception {
 		for(Model model : models) {
 			Map<String, Object> map = this.models.get(model.getId());
 			if(map != null && map.get("class") == model.getClass()) {
@@ -205,12 +204,12 @@ public class MemoryPersistService implements PersistService {
 	}
 	
 	@Override
-	public void retrieve(Model model, String hasMany) throws PersistException {
+	public void retrieve(Model model, String hasMany) throws Exception {
 		throw new UnsupportedOperationException("not yet implemented");
 	}
 
 	@Override
-	public void update(Model...models) throws PersistException {
+	public void update(Model...models) throws Exception {
 		for(Model model : models) {
 			Map<String, Object> map = this.models.get(model.getId());
 			if(map != null && map.get("class") == model.getClass()) {
@@ -224,31 +223,31 @@ public class MemoryPersistService implements PersistService {
 	}
 
 	@Override
-	public int count(Class<? extends Model> clazz) throws PersistException {
+	public int count(Class<? extends Model> clazz) throws Exception {
 		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
-	public int count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws PersistException {
+	public int count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws Exception {
 		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
-	public <T extends Model> T findById(Class<T> clazz, Object id, String include) throws PersistException {
+	public <T extends Model> T findById(Class<T> clazz, Object id, String include) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public <T extends Model> T find(Class<T> clazz, Map<String, Object> query, Object... values) throws PersistException {
+	public <T extends Model> T find(Class<T> clazz, Map<String, Object> query, Object... values) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz, Map<String, Object> query, Object... values) throws PersistException {
+	public <T extends Model> List<T> findAll(Class<T> clazz, Map<String, Object> query, Object... values) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}

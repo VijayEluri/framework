@@ -10,8 +10,7 @@
  ******************************************************************************/
 package org.oobium.persist.db.internal;
 
-import static org.oobium.persist.db.internal.DbCache.getCache;
-import static org.oobium.persist.db.internal.DbCache.setCache;
+import static org.oobium.persist.SessionCache.*;
 import static org.oobium.persist.db.internal.QueryUtils.CREATED_AT;
 import static org.oobium.persist.db.internal.QueryUtils.CREATED_ON;
 import static org.oobium.persist.db.internal.QueryUtils.ID;
@@ -927,7 +926,7 @@ public class DbPersistor {
 			return null;
 		}
 
-		T object = getCache(clazz, id);
+		T object = getCacheById(clazz, id);
 		if(object != null) {
 			return object;
 		}
@@ -1002,7 +1001,7 @@ public class DbPersistor {
 		if(models.length == 0) {
 			return;
 		} else if(models.length == 1) {
-			Model cache = getCache(models[0].getClass(), models[0].getId(int.class));
+			Model cache = getCacheById(models[0].getClass(), models[0].getId(int.class));
 			if(cache != null) {
 				if(logger.isLoggingDebug()) {
 					logger.debug("retrieving data from cache: " + cache.asSimpleString());
@@ -1024,7 +1023,7 @@ public class DbPersistor {
 				Model model = iter.next();
 				Class<? extends Model> clazz = model.getClass();
 				int id = model.getId(int.class);
-				Model cache = getCache(clazz, id);
+				Model cache = getCacheById(clazz, id);
 				if(cache != null) {
 					if(logger.isLoggingDebug()) {
 						logger.debug("retrieving data from cache: " + cache.asSimpleString());
@@ -1056,7 +1055,7 @@ public class DbPersistor {
 					
 					for(Iterator<Model> iter = list.iterator(); iter.hasNext(); ) {
 						Model model = iter.next();
-						Model cache = getCache(clazz, model.getId(int.class));
+						Model cache = getCacheById(clazz, model.getId(int.class));
 						if(cache != null) {
 							setFields(model, cache.getAll());
 							iter.remove();

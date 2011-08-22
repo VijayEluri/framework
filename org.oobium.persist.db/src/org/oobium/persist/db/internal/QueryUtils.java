@@ -10,8 +10,7 @@
  ******************************************************************************/
 package org.oobium.persist.db.internal;
 
-import static org.oobium.persist.db.internal.DbCache.getCache;
-import static org.oobium.persist.db.internal.DbCache.setCache;
+import static org.oobium.persist.SessionCache.*;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.columnName;
 import static org.oobium.utils.StringUtils.tableName;
@@ -95,7 +94,7 @@ public class QueryUtils {
 	}
 	
 	public static Object getObject(Class<? extends Model> clazz, int id) throws InstantiationException, IllegalAccessException, NoSuchFieldException {
-		Model model = getCache(clazz, id);
+		Model model = getCacheById(clazz, id);
 		if(model == null) {
 			model = clazz.newInstance();
 			model.setId(id);

@@ -115,6 +115,13 @@ public @interface Relation {
 	int dependent() default UNDEFINED;
 
 	/**
+	 * If set true, then the related Model will be embedded within this Model, rather than being in a
+	 * separate table / collection / etc.
+	 * <p>PersistService implementation specific.</p>
+	 */
+	boolean embedded() default false;
+	
+	/**
 	 * If set true, specifies that this field should always be included (eagerly loaded) when loading the model.<br/>
 	 * default is false.
 	 */

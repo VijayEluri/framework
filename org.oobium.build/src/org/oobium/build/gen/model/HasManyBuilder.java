@@ -16,7 +16,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.oobium.persist.ActiveProxy;
-import org.oobium.persist.PersistException;
 
 
 public class HasManyBuilder extends PropertyBuilder {
@@ -51,7 +50,6 @@ public class HasManyBuilder extends PropertyBuilder {
 		imports.add(descriptor.fullType());
 		imports.add(ActiveProxy.class.getCanonicalName());
 		imports.add(Set.class.getCanonicalName());
-		imports.add(PersistException.class.getCanonicalName());
 		return imports;
 	}
 

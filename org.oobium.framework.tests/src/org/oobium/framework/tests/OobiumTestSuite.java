@@ -15,12 +15,12 @@ import org.oobium.build.workspace.BundleTests;
 import org.oobium.build.workspace.ModuleTests;
 import org.oobium.console.ParametersTests;
 import org.oobium.mailer.MailerTests;
+import org.oobium.persist.SessionCacheTests;
 import org.oobium.persist.ModelTests;
 import org.oobium.persist.ValidatorTests;
 import org.oobium.persist.db.FindAllTests;
 import org.oobium.persist.db.FindTests;
 import org.oobium.persist.db.PaginatorTests;
-import org.oobium.persist.db.internal.DbCacheTests;
 import org.oobium.persist.db.internal.DbPersistorUpdateTests;
 import org.oobium.persist.db.internal.QueryBuilderTests;
 import org.oobium.utils.CharStreamUtilsTests;
@@ -47,7 +47,7 @@ import org.oobium.utils.json.JsonUtilsTests;
 	// org.oobium.mailer.tests
 	MailerTests.class,
 	// org.oobium.persist.db.tests
-	DbCacheTests.class,
+	SessionCacheTests.class,
 	FindAllTests.class,
 	FindTests.class,
 	DbPersistorUpdateTests.class,

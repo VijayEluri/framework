@@ -37,7 +37,6 @@ import java.util.regex.Matcher;
 import org.oobium.logging.LogProvider;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
-import org.oobium.persist.PersistException;
 import org.oobium.persist.db.DbPersistService;
 import org.oobium.utils.SqlUtils;
 import org.oobium.utils.json.JsonUtils;
@@ -517,7 +516,7 @@ public class QueryBuilder {
 						this.values = conversion.getValues();
 						parseInput();
 						return;
-					} catch(PersistException e) {
+					} catch(Exception e) {
 						// fall through
 					}
 				}

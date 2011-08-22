@@ -9,7 +9,6 @@ import java.util.Map.Entry;
 
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
-import org.oobium.persist.PersistException;
 
 public class Conversion {
 
@@ -41,17 +40,15 @@ public class Conversion {
 	private StringBuilder sb;
 	private List<Object> list;
 	private int v;
-	private String limit;
-	private Object include;
 	
 	public Conversion(Map<String, Object> query, Object...values) {
 		this.inQuery = query;
 		this.inValues = values;
 	}
 	
-	private void add(String field, String key, Object value) throws PersistException {
+	private void add(String field, String key, Object value) throws Exception {
 		if(adapter != null && !adapter.hasField(field)) {
-			throw new PersistException("model of type " + adapter.getModelClass() + " does not contain the field '" + field + "'");
+			throw new Exception("model of type " + adapter.getModelClass() + " does not contain the field '" + field + "'");
 		}
 		
 		sb.append(field).append(operators.get(key)).append('?');
@@ -63,32 +60,45 @@ public class Conversion {
 		}
 	}
 
-	private void and(Object value) throws PersistException {
+	private void and(Object value) throws Exception {
 		if(value instanceof Map) {
 			handle((Map<?,?>) value, " AND ");
 		}
 		else if(value instanceof List) {
-			throw new PersistException("'and' not yet supported on a List");
+			throw new Exception("'and' not yet supported on a List");
 		}
 		else {
-			throw new PersistException("'and' not allowed on " + value);
+			throw new Exception("'and' not allowed on " + value);
 		}
 	}
 	
-	public void run() throws PersistException {
+	public void run() throws Exception {
 		v = 0;
 		sb = new StringBuilder();
 		list = new ArrayList<Object>();
 
-		sb.append("WHERE ");
+		Object limit = inQuery.remove("$limit");
+		Object include = inQuery.remove("$include");
+
+		if(inQuery.isEmpty()) {
+			if(limit != null) {
+				sb.append("LIMIT ").append(limit);
+			}
+			if(include != null) {
+				if(limit != null) sb.append(' ');
+				sb.append("INCLUDE:").append(include);
+			}
+		} else {
+			sb.append("WHERE ");
+
+			and(inQuery);
 		
-		and(inQuery);
-		
-		if(limit != null) {
-			sb.append(" LIMIT ").append(limit);
-		}
-		if(include != null) {
-			sb.append(" INCLUDE:").append(include);
+			if(limit != null) {
+				sb.append(" LIMIT ").append(limit);
+			}
+			if(include != null) {
+				sb.append(" INCLUDE:").append(include);
+			}
 		}
 		
 		sql = sb.toString();
@@ -103,7 +113,7 @@ public class Conversion {
 		return values;
 	}
 
-	private void handle(Map<?,?> map, String separator) throws PersistException {
+	private void handle(Map<?,?> map, String separator) throws Exception {
 		for(Iterator<?> iter = map.entrySet().iterator(); iter.hasNext(); ) {
 			Entry<?,?> entry = (Entry<?,?>) iter.next();
 
@@ -129,14 +139,6 @@ public class Conversion {
 					or(value);
 					sb.append(')');
 				}
-			}
-			else if("$limit".equalsIgnoreCase(field)) {
-				limit = String.valueOf(value);
-				removeLast(separator);
-			}
-			else if("$include".equalsIgnoreCase(field)) {
-				include = String.valueOf(value);
-				removeLast(separator);
 			}
 			else {
 				if(value instanceof Map) {
@@ -172,24 +174,18 @@ public class Conversion {
 		}
 	}
 	
-	private void or(Object value) throws PersistException {
+	private void or(Object value) throws Exception {
 		if(value instanceof Map) {
 			handle((Map<?,?>) value, " OR ");
 		}
 		else if(value instanceof List) {
-			throw new PersistException("'or' not yet supported on a List");
+			throw new Exception("'or' not yet supported on a List");
 		}
 		else {
-			throw new PersistException("'or' not allowed on " + value);
+			throw new Exception("'or' not allowed on " + value);
 		}
 	}
 	
-	private void removeLast(String separator) {
-		if(sb.length() > separator.length() && separator.equals(sb.substring(sb.length()-separator.length()))) {
-			sb.delete(sb.length()-separator.length(), sb.length());
-		}
-	}
-
 	public void setModelType(Class<? extends Model> modelType) {
 		this.adapter = ModelAdapter.getAdapter(modelType);
 	}

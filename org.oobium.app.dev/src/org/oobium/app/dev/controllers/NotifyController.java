@@ -15,13 +15,12 @@ import org.oobium.app.controllers.HttpController;
 import org.oobium.app.dev.AppDevActivator;
 import org.oobium.events.models.Event;
 import org.oobium.manager.ManagerService;
-import org.oobium.persist.PersistException;
 import org.oobium.utils.json.JsonUtils;
 
 public class NotifyController extends HttpController {
 
 	@Override
-	public void handleRequest() throws PersistException {
+	public void handleRequest() throws Exception {
 		AppService app = AppService.getActivator(ManagerService.class);
 		Event.create(app, AppDevActivator.ID, "openType", JsonUtils.toJson(params()));
 		renderOK();

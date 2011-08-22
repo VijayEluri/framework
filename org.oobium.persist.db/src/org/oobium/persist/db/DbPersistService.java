@@ -10,8 +10,9 @@
  ******************************************************************************/
 package org.oobium.persist.db;
 
+import static org.oobium.persist.SessionCache.expireCache;
+import static org.oobium.utils.StringUtils.parseUrl;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
-import static org.oobium.persist.db.internal.DbCache.expireCache;
 import static org.oobium.utils.literal.Dictionary;
 
 import java.io.FileWriter;
@@ -29,7 +30,6 @@ import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
 import org.oobium.persist.PersistClient;
-import org.oobium.persist.PersistException;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.db.internal.Conversion;
 import org.oobium.persist.db.internal.DbPersistor;
@@ -46,55 +46,12 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	private static final ThreadLocal<String> threadClient = new ThreadLocal<String>();
 	private static final ThreadLocal<Connection> threadConnection = new ThreadLocal<Connection>();
 	private static final ThreadLocal<Boolean> threadAutoCommit = new ThreadLocal<Boolean>();
-	private static final int CREATE = 0;
 
+	private static final int CREATE = 0;
 	private static final int DESTROY = 1;
 	private static final int RETRIEVE = 2;
 	private static final int UPDATE = 3;
 	
-	private static Map<String, Object> parseUrl(String url) {
-		Map<String, Object> properties = new HashMap<String, Object>();
-		int ix = url.indexOf('@');
-		if(ix == -1) {
-			properties.put("username", "root");
-			properties.put("password", "");
-		} else {
-			String credentials = url.substring(0, ix);
-			url = url.substring(ix+1);
-			ix = credentials.indexOf(':');
-			if(ix == -1) {
-				properties.put("username", credentials);
-				properties.put("password", "");
-			} else {
-				properties.put("username", credentials.substring(0, ix));
-				properties.put("password", credentials.substring(ix+1));
-			}
-		}
-
-		ix = url.indexOf('/');
-		if(ix == -1) {
-			properties.put("host", null); // use default
-			properties.put("port", null); // use default
-			properties.put("database", url);
-		} else if(ix == 0) {
-			properties.put("host", null); // use default
-			properties.put("port", null); // use default
-			properties.put("database", url.substring(1));
-		} else {
-			String s = url.substring(0, ix);
-			properties.put("database", url.substring(ix+1));
-			ix = s.indexOf(':');
-			if(ix == -1) {
-				properties.put("host", s);
-				properties.put("port", null); // use default
-			} else {
-				properties.put("host", s.substring(0, ix));
-				properties.put("port", Integer.parseInt(s.substring(ix+1)));
-			}
-		}
-		return properties;
-	}
-
 	protected final Logger logger;
 	private BundleContext context;
 	private DbPersistor persistor;
@@ -198,22 +155,18 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	}
 	
 	@Override
-	public int count(Class<? extends Model> clazz) throws PersistException {
+	public int count(Class<? extends Model> clazz) throws Exception {
 		return count(clazz, (String) null);
 	}
 	
 	@Override
-	public int count(Class<? extends Model> clazz, String query, Object... values) throws PersistException {
-		try {
-			Connection connection = getConnection();
-			return persistor.count(connection, clazz, query, values);
-		} catch(SQLException e) {
-			throw new PersistException(e);
-		}
+	public int count(Class<? extends Model> clazz, String query, Object... values) throws Exception {
+		Connection connection = getConnection();
+		return persistor.count(connection, clazz, query, values);
 	}
 
 	@Override
-	public int count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws PersistException {
+	public int count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws Exception {
 		if(query != null && !query.isEmpty()) {
 			Conversion conversion = new Conversion(query, values);
 			conversion.setModelType(clazz);
@@ -224,12 +177,8 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	}
 	
 	@Override
-	public void create(Model...models) throws PersistException {
-		try {
-			handleCrud(CREATE, models);
-		} catch(SQLException e) {
-			throw new PersistException(e);
-		}
+	public void create(Model...models) throws Exception {
+		handleCrud(CREATE, models);
 	}
 
 	public void createDatabase(String client) throws SQLException {
@@ -240,12 +189,8 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	protected abstract Database createDatabase(String client, Map<String, Object> properties);
 
 	@Override
-	public void destroy(Model...models) throws PersistException {
-		try {
-			handleCrud(DESTROY, models);
-		} catch(SQLException e) {
-			throw new PersistException(e);
-		}
+	public void destroy(Model...models) throws Exception {
+		handleCrud(DESTROY, models);
 	}
 
 	public void dropDatabase(String client) throws SQLException {
@@ -275,24 +220,20 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	}
 	
 	@Override
-	public <T extends Model> T findById(Class<T> clazz, Object id) throws PersistException {
-		try {
-			Connection connection = getConnection();
-			// TODO always an int for now?
-			return persistor.find(connection, clazz, coerce(id, int.class));
-		} catch(SQLException e) {
-			throw new PersistException(e);
-		}
+	public <T extends Model> T findById(Class<T> clazz, Object id) throws Exception {
+		Connection connection = getConnection();
+		// TODO always an int for now?
+		return persistor.find(connection, clazz, coerce(id, int.class));
 	}
 
 	@Override
-	public <T extends Model> T findById(Class<T> clazz, Object id, String include) throws PersistException {
+	public <T extends Model> T findById(Class<T> clazz, Object id, String include) throws Exception {
 		// TODO
 		return find(clazz, "where id=? include:?", id, include);
 	}
 	
 	@Override
-	public <T extends Model> T find(Class<T> clazz, Map<String, Object> query, Object... values) throws PersistException {
+	public <T extends Model> T find(Class<T> clazz, Map<String, Object> query, Object... values) throws Exception {
 		if(query != null && !query.isEmpty()) {
 			Conversion conversion = new Conversion(query, values);
 			conversion.setModelType(clazz);
@@ -303,22 +244,18 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	}
 	
 	@Override
-	public <T extends Model> T find(Class<T> clazz, String query, Object...values) throws PersistException {
-		try {
-			Connection connection = getConnection();
-			return persistor.find(connection, clazz, query, values);
-		} catch(SQLException e) {
-			throw new PersistException(e);
-		}
+	public <T extends Model> T find(Class<T> clazz, String query, Object...values) throws Exception {
+		Connection connection = getConnection();
+		return persistor.find(connection, clazz, query, values);
 	}
 
 	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz) throws PersistException {
+	public <T extends Model> List<T> findAll(Class<T> clazz) throws Exception {
 		return findAll(clazz, (String) null);
 	}
 	
 	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz, Map<String, Object> query, Object... values) throws PersistException {
+	public <T extends Model> List<T> findAll(Class<T> clazz, Map<String, Object> query, Object... values) throws Exception {
 		if(query != null && !query.isEmpty()) {
 			Conversion conversion = new Conversion(query, values);
 			conversion.setModelType(clazz);
@@ -329,13 +266,9 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	}
 	
 	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz, String query, Object...values) throws PersistException {
-		try {
-			Connection connection = getConnection();
-			return persistor.findAll(connection, clazz, query, values);
-		} catch(SQLException e) {
-			throw new PersistException(e);
-		}
+	public <T extends Model> List<T> findAll(Class<T> clazz, String query, Object...values) throws Exception {
+		Connection connection = getConnection();
+		return persistor.findAll(connection, clazz, query, values);
 	}
 	
 	public Connection getConnection() throws SQLException {
@@ -487,10 +420,10 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	private void removeDatabase(String client) {
 		lock.writeLock().lock();
 		try {
-			Database cp = databases.remove(client);
-			if(cp != null) {
-				cp.dispose();
-				logger.log(Logger.INFO, "removed Database for " + client);
+			Database db = databases.remove(client);
+			if(db != null) {
+				db.dispose();
+				logger.info("removed Database for {}", client);
 			}
 		} finally {
 			lock.writeLock().unlock();
@@ -498,28 +431,20 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	}
 	
 	@Override
-	public void retrieve(Model...models) throws PersistException {
-		try {
-			handleCrud(RETRIEVE, models);
-		} catch(SQLException e) {
-			throw new PersistException(e);
-		}
+	public void retrieve(Model...models) throws Exception {
+		handleCrud(RETRIEVE, models);
 	}
 
 	/**
 	 * @param relation may be a hasMany or hasOne (if 1:1 and opposite holds the key)
 	 */
 	@Override
-	public void retrieve(Model model, String relation) throws PersistException {
+	public void retrieve(Model model, String relation) throws Exception {
 		// TODO hack: re-implement directly in DbPersistor
-		try {
-			Connection connection = getConnection();
-			Model tmp = persistor.find(connection, model.getClass(), "where id=? include:?", model.getId(), relation);
-			if(tmp != null || ModelAdapter.getAdapter(model).hasOne(relation)) {
-				model.put(relation, tmp.get(relation));
-			}
-		} catch(SQLException e) {
-			throw new PersistException(e);
+		Connection connection = getConnection();
+		Model tmp = persistor.find(connection, model.getClass(), "where id=? include:?", model.getId(), relation);
+		if(tmp != null || ModelAdapter.getAdapter(model).hasOne(relation)) {
+			model.put(relation, tmp.get(relation));
 		}
 	}
 
@@ -608,11 +533,11 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	}
 
 	@Override
-	public void update(Model...models) throws PersistException {
+	public void update(Model...models) throws Exception {
 		try {
 			handleCrud(UPDATE, models);
 		} catch(SQLException e) {
-			throw new PersistException(e);
+			throw new Exception(e);
 		}
 	}
 	

@@ -22,7 +22,6 @@ import org.oobium.client.ClientResponse;
 import org.oobium.events.models.Event;
 import org.oobium.events.models.Listener;
 import org.oobium.persist.Observer;
-import org.oobium.persist.PersistException;
 import org.oobium.persist.PersistService;
 import org.oobium.utils.json.JsonUtils;
 
@@ -61,7 +60,7 @@ public class EventObserver extends Observer<Event> {
 					listener.destroy();
 				}
 			}
-		} catch(PersistException e) {
+		} catch(Exception e) {
 			logger.error(e);
 		}
 	}

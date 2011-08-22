@@ -48,8 +48,8 @@ import org.oobium.persist.ModelDescription;
 import org.oobium.persist.Observer;
 import org.oobium.persist.Relation;
 import org.oobium.persist.Text;
-import org.oobium.persist.migrate.AbstractMigration;
 import org.oobium.persist.migrate.Migrations;
+import org.oobium.persist.migrate.db.AbstractDbMigration;
 import org.oobium.persist.migrate.db.DbMigratorService;
 import org.oobium.utils.Config;
 import org.oobium.utils.StringUtils;
@@ -497,8 +497,8 @@ public class ProjectGenerator {
 		src = new SourceFile();
 		src.packageName = migration.getName().replace(File.separatorChar, '.') + ".migrations";
 		src.simpleName = "CreateDatabase";
-		src.superName = AbstractMigration.class.getSimpleName();
-		src.imports.add(AbstractMigration.class.getCanonicalName());
+		src.superName = AbstractDbMigration.class.getSimpleName();
+		src.imports.add(AbstractDbMigration.class.getCanonicalName());
 		src.imports.add(SQLException.class.getCanonicalName());
 
 		sb = new StringBuilder();
@@ -549,9 +549,9 @@ public class ProjectGenerator {
 		sb.append(" org.oobium.persist.db,\n");
 		sb.append(" org.oobium.persist.migrate,\n");
 		sb.append(" org.oobium.persist.migrate.db,\n");
-		sb.append(" org.oobium.persist.migrate.defs,\n");
-		sb.append(" org.oobium.persist.migrate.defs.changes,\n");
-		sb.append(" org.oobium.persist.migrate.defs.columns,\n");
+		sb.append(" org.oobium.persist.migrate.db.defs,\n");
+		sb.append(" org.oobium.persist.migrate.db.defs.changes,\n");
+		sb.append(" org.oobium.persist.migrate.db.defs.columns,\n");
 		sb.append(" org.oobium.utils,\n");
 		sb.append(" org.oobium.utils.coercion,\n");
 		sb.append(" org.oobium.utils.json"); // note that new line is prepended below - careful when adding lines here

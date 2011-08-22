@@ -19,7 +19,7 @@ import org.oobium.framework.tests.dyn.DynClasses;
 import org.oobium.framework.tests.dyn.DynModel;
 import org.oobium.framework.tests.dyn.SimpleDynClass;
 import org.oobium.persist.db.DbPersistService;
-import org.oobium.persist.migrate.AbstractMigration;
+import org.oobium.persist.migrate.Migration;
 import org.oobium.persist.migrate.MigrationService;
 import org.oobium.persist.migrate.db.derby.embedded.DerbyEmbeddedMigrationService;
 import org.oobium.persist.migrate.db.mysql.MySqlMigrationService;
@@ -72,7 +72,7 @@ public class MigrateTester {
 		gen.generate();
 		Class<?> clazz = SimpleDynClass.getClass(gen.getFullName(), gen.getSource());
 		System.out.println(gen.getSource());
-		AbstractMigration mig = (AbstractMigration) clazz.newInstance();
+		Migration mig = (Migration) clazz.newInstance();
 		mig.setService(migrationService);
 		mig.up();
 		return join(statements, '\n');

@@ -8,19 +8,17 @@
  * Contributors:
  *     Jeremy Dowdall <jeremy@oobium.com> - initial API and implementation
  ******************************************************************************/
-package org.oobium.persist.db.internal;
+package org.oobium.persist;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.oobium.persist.db.internal.DbCache.expireCache;
-import static org.oobium.persist.db.internal.DbCache.getCache;
-import static org.oobium.persist.db.internal.DbCache.setCache;
+import static org.oobium.persist.SessionCache.*;
 
 import org.junit.Test;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelDescription;
 
-public class DbCacheTests {
+public class SessionCacheTests {
 
 	@ModelDescription()
 	class TestModel extends Model{
@@ -33,11 +31,11 @@ public class DbCacheTests {
 
 		setCache(model);
 		
-		assertEquals(model, getCache(model.getClass(), model.getId(int.class)));
+		assertEquals(model, getCacheById(model.getClass(), model.getId()));
 		
 		expireCache();
 		
-		assertNull(getCache(model.getClass(), model.getId(int.class)));
+		assertNull(getCacheById(model.getClass(), model.getId()));
 	}
 	
 	@Test
@@ -47,11 +45,11 @@ public class DbCacheTests {
 		
 		setCache(model);
 		
-		assertEquals(model, getCache(model.getClass(), model.getId(int.class)));
+		assertEquals(model, getCacheById(model.getClass(), model.getId(int.class)));
 		
 		expireCache();
 		
-		assertNull(getCache(model.getClass(), model.getId(int.class)));
+		assertNull(getCacheById(model.getClass(), model.getId(int.class)));
 	}
 	
 }

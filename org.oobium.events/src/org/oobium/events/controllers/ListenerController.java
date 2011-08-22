@@ -15,7 +15,6 @@ import java.util.List;
 
 import org.oobium.app.http.Action;
 import org.oobium.events.models.Listener;
-import org.oobium.persist.PersistException;
 
 public class ListenerController extends ApplicationController {
 
@@ -25,7 +24,7 @@ public class ListenerController extends ApplicationController {
 	}
 
 	@Override // POST/URL/[models]
-	public void create() throws PersistException {
+	public void create() throws Exception {
 		Listener listener = param("listener", Listener.class);
 		listener.setHost(request.getHost() + ":" + request.getPort());
 		if(listener.save()) {
@@ -39,7 +38,7 @@ public class ListenerController extends ApplicationController {
 	}
 
 	@Override // DELETE/URL/[models]/id
-	public void destroy() throws PersistException {
+	public void destroy() throws Exception {
 		Listener listener = Listener.newInstance(getId(int.class));
 		if(listener.destroy()) {
 			renderDestroyed(listener);
@@ -49,7 +48,7 @@ public class ListenerController extends ApplicationController {
 	}
 
 	@Override // GET/URL/[models]/id
-	public void show() throws PersistException {
+	public void show() throws Exception {
 		Listener listener = Listener.find(getId(int.class));
 		if(listener != null) {
 			render(listener);
@@ -57,7 +56,7 @@ public class ListenerController extends ApplicationController {
 	}
 
 	@Override // GET/URL/[models]
-	public void showAll() throws PersistException {
+	public void showAll() throws Exception {
 		List<Listener> listeners = Listener.findAll();
 		if(!listeners.isEmpty()) {
 			String service = param("service", String.class);
@@ -73,7 +72,7 @@ public class ListenerController extends ApplicationController {
 	}
 
 	@Override // PUT/URL/[models]/id
-	public void update() throws PersistException {
+	public void update() throws Exception {
 		Listener listener = param("listener", Listener.class);
 		if(listener.save()) {
 			renderOK();

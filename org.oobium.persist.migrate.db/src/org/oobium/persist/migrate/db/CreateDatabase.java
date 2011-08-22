@@ -1,7 +1,5 @@
 package org.oobium.persist.migrate.db;
 
-import java.sql.SQLException;
-
 import org.oobium.logging.Logger;
 import org.oobium.persist.migrate.Migration;
 import org.oobium.persist.migrate.MigrationService;
@@ -13,13 +11,13 @@ public class CreateDatabase implements Migration {
 	private DbMigrationService service;
 	
 	@Override
-	public void up() throws SQLException {
-		service.createDatabase();
+	public void up() throws Exception {
+		service.createDatastore();
 	}
 
 	@Override
-	public void down() throws SQLException {
-		service.dropDatabase();
+	public void down() throws Exception {
+		service.dropDatastore();
 	}
 
 	@Override

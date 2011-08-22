@@ -39,7 +39,6 @@ import org.oobium.app.server.Websocket;
 import org.oobium.app.views.View;
 import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
-import org.oobium.persist.PersistException;
 import org.oobium.utils.Config;
 import org.oobium.utils.FileUtils;
 import org.oobium.utils.json.JsonUtils;
@@ -113,7 +112,7 @@ public class AppServerTests {
 	
 	public static class TestController extends HttpController {
 		@Override
-		public void handleRequest() throws PersistException {
+		public void handleRequest() throws Exception {
 			render(MimeType.HTML,
 					"<head>\n" +
 					"<link rel='stylesheet' type='text/css' href='/application.css' /n" +
@@ -245,7 +244,7 @@ public class AppServerTests {
 	
 	public static class ShowAllWebsocketsController extends HttpController {
 		@Override
-		public void handleRequest() throws PersistException {
+		public void handleRequest() throws Exception {
 			Set<Websocket> sockets = getRouter().getWebsockets("lcws");
 			if(sockets.isEmpty()) {
 				render("no sockets");
@@ -263,7 +262,7 @@ public class AppServerTests {
 	
 	public static class WriteToLowerCaseController extends HttpController {
 		@Override
-		public void handleRequest() throws PersistException {
+		public void handleRequest() throws Exception {
 			Websocket socket = getRouter().getWebsocket("android1");
 			if(socket == null) {
 				render("no socket");

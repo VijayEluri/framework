@@ -14,7 +14,6 @@ import java.util.List;
 
 import org.oobium.app.http.Action;
 import org.oobium.events.models.Event;
-import org.oobium.persist.PersistException;
 
 public class EventController extends ApplicationController {
 
@@ -24,7 +23,7 @@ public class EventController extends ApplicationController {
 	}
 
 	@Override // POST/URL/[models]
-	public void create() throws PersistException {
+	public void create() throws Exception {
 		Event event = param("event", Event.class);
 		if(event.save()) {
 			renderCreated(event);
@@ -34,7 +33,7 @@ public class EventController extends ApplicationController {
 	}
 
 	@Override // DELETE/URL/[models]/id
-	public void destroy() throws PersistException {
+	public void destroy() throws Exception {
 		Event event = Event.newInstance(getId(int.class));
 		if(event.destroy()) {
 			renderDestroyed(event);
@@ -44,7 +43,7 @@ public class EventController extends ApplicationController {
 	}
 
 	@Override // GET/URL/[models]/id
-	public void show() throws PersistException {
+	public void show() throws Exception {
 		Event event = Event.find(getId(int.class));
 		if(event != null) {
 			render(event);
@@ -52,13 +51,13 @@ public class EventController extends ApplicationController {
 	}
 
 	@Override // GET/URL/[models]
-	public void showAll() throws PersistException {
+	public void showAll() throws Exception {
 		List<Event> events = Event.findAll();
 		render(events);
 	}
 
 	@Override // PUT/URL/[models]/id
-	public void update() throws PersistException {
+	public void update() throws Exception {
 		Event event = param("event", Event.class);
 		if(event.save()) {
 			renderOK();

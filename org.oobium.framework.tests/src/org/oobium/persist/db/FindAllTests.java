@@ -23,11 +23,10 @@ import org.junit.Test;
 import org.oobium.framework.tests.dyn.DynClasses;
 import org.oobium.framework.tests.dyn.DynModel;
 import org.oobium.persist.Model;
-import org.oobium.persist.PersistException;
 
 public class FindAllTests extends BaseDbTestCase {
 
-	@Test(expected=PersistException.class)
+	@Test(expected=Exception.class)
 	public void testFindAllInvalidSQL() throws Exception {
 		DynModel am = DynClasses.getModel("AModel");
 		persistService.findAll(am.getModelClass(), "blah");

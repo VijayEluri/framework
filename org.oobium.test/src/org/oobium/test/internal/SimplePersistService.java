@@ -11,7 +11,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
-import org.oobium.persist.PersistException;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.ServiceInfo;
 
@@ -33,19 +32,19 @@ public class SimplePersistService implements PersistService {
 	}
 
 	@Override
-	public int count(Class<? extends Model> clazz) throws PersistException {
+	public int count(Class<? extends Model> clazz) throws Exception {
 		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
-	public int count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws PersistException {
+	public int count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws Exception {
 		// TODO Auto-generated method stub
 		return 0;
 	}
 	
 	@Override
-	public int count(Class<? extends Model> clazz, String where, Object... values) throws PersistException {
+	public int count(Class<? extends Model> clazz, String where, Object... values) throws Exception {
 		if(where == null) {
 			Map<Object, Map<String, Object>> models = db.get(clazz);
 			if(models != null) {
@@ -56,56 +55,56 @@ public class SimplePersistService implements PersistService {
 	}
 
 	@Override
-	public void create(Model... models) throws PersistException {
+	public void create(Model... models) throws Exception {
 		for(Model model : models) {
 			if(!model.isNew()) {
-				throw new PersistException("cannot create - model has already been created: " + model);
+				throw new Exception("cannot create - model has already been created: " + model);
 			}
 			model.setId(id.incrementAndGet());
 			store(model);
 		}
 	}
 
-	private void destroy(Model model) throws PersistException {
+	private void destroy(Model model) throws Exception {
 		Object removed = null;
 		Map<Object, ?> models = db.get(model.getClass());
 		if(models != null) {
 			removed = models.remove(model.getId());
 		}
 		if(removed == null) {
-			throw new PersistException("cannot destroy - model not found: " + model);
+			throw new Exception("cannot destroy - model not found: " + model);
 		}
 	}
 
 	@Override
-	public void destroy(Model... models) throws PersistException {
+	public void destroy(Model... models) throws Exception {
 		for(Model model : models) {
 			if(model.isNew()) {
-				throw new PersistException("cannot destroy - model has not been saved yet: " + model);
+				throw new Exception("cannot destroy - model has not been saved yet: " + model);
 			}
 			destroy(model);
 		}
 	}
 
 	@Override
-	public <T extends Model> T findById(Class<T> clazz, Object id) throws PersistException {
+	public <T extends Model> T findById(Class<T> clazz, Object id) throws Exception {
 		return get(clazz, id);
 	}
 	
 	@Override
-	public <T extends Model> T find(Class<T> clazz, Map<String, Object> query, Object... values) throws PersistException {
+	public <T extends Model> T find(Class<T> clazz, Map<String, Object> query, Object... values) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public <T extends Model> T findById(Class<T> clazz, Object id, String include) throws PersistException {
+	public <T extends Model> T findById(Class<T> clazz, Object id, String include) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public <T extends Model> T find(Class<T> clazz, String where, Object... values) throws PersistException {
+	public <T extends Model> T find(Class<T> clazz, String where, Object... values) throws Exception {
 		if("where id=? include:?".equals(where) && values.length == 2) {
 			return findById(clazz, (Integer) values[0]);
 		}
@@ -113,7 +112,7 @@ public class SimplePersistService implements PersistService {
 	}
 
 	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz) throws PersistException {
+	public <T extends Model> List<T> findAll(Class<T> clazz) throws Exception {
 		Map<Object, Map<String, Object>> models = db.get(clazz);
 		if(models != null) {
 			List<T> list = new ArrayList<T>();
@@ -126,13 +125,13 @@ public class SimplePersistService implements PersistService {
 	}
 
 	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz, Map<String, Object> query, Object... values) throws PersistException {
+	public <T extends Model> List<T> findAll(Class<T> clazz, Map<String, Object> query, Object... values) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz, String where, Object... values) throws PersistException {
+	public <T extends Model> List<T> findAll(Class<T> clazz, String where, Object... values) throws Exception {
 		throw new UnsupportedOperationException("Stub this method to use: when(persistor.findAll(anyClass(), anyString(), anyVararg()).thenReturn(...))");
 	}
 
@@ -196,26 +195,26 @@ public class SimplePersistService implements PersistService {
 		this.session = name;
 	}
 
-	private void retrieve(Model model) throws PersistException {
+	private void retrieve(Model model) throws Exception {
 		Model saved = get(model);
 		if(saved == null) {
-			throw new PersistException("cannot retrieve - model not found: " + model);
+			throw new Exception("cannot retrieve - model not found: " + model);
 		}
 		model.setAll(saved.getAll());
 	}
 
 	@Override
-	public void retrieve(Model... models) throws PersistException {
+	public void retrieve(Model... models) throws Exception {
 		for(Model model : models) {
 			if(model.isNew()) {
-				throw new PersistException("cannot retrieve - model has not been saved yet: " + model);
+				throw new Exception("cannot retrieve - model has not been saved yet: " + model);
 			}
 			retrieve(model);
 		}
 	}
 
 	@Override
-	public void retrieve(Model model, String hasMany) throws PersistException {
+	public void retrieve(Model model, String hasMany) throws Exception {
 		throw new UnsupportedOperationException("not yet implemented");
 	}
 
@@ -228,19 +227,19 @@ public class SimplePersistService implements PersistService {
 		models.put(model.getId(), getPersistentMap(model));
 	}
 
-	private void update(Model model) throws PersistException {
+	private void update(Model model) throws Exception {
 		Model saved = get(model);
 		if(saved == null) {
-			throw new PersistException("cannot update - model not found: " + model);
+			throw new Exception("cannot update - model not found: " + model);
 		}
 		saved.setAll(getPersistentMap(model));
 	}
 
 	@Override
-	public void update(Model... models) throws PersistException {
+	public void update(Model... models) throws Exception {
 		for(Model model : models) {
 			if(model.isNew()) {
-				throw new PersistException("cannot update - model has not been saved yet: " + model);
+				throw new Exception("cannot update - model has not been saved yet: " + model);
 			}
 			update(model);
 		}

@@ -1,25 +1,35 @@
-package org.oobium.persist.migrate.defs;
+package org.oobium.persist.migrate.db.defs;
 
-import static org.oobium.persist.migrate.defs.Column.*;
-import static org.oobium.persist.migrate.defs.Column.TIMESTAMP;
+import static org.oobium.persist.migrate.db.defs.Column.BINARY;
+import static org.oobium.persist.migrate.db.defs.Column.BOOLEAN;
+import static org.oobium.persist.migrate.db.defs.Column.DATE;
+import static org.oobium.persist.migrate.db.defs.Column.DATESTAMPS;
+import static org.oobium.persist.migrate.db.defs.Column.DECIMAL;
+import static org.oobium.persist.migrate.db.defs.Column.FLOAT;
+import static org.oobium.persist.migrate.db.defs.Column.INTEGER;
+import static org.oobium.persist.migrate.db.defs.Column.STRING;
+import static org.oobium.persist.migrate.db.defs.Column.TEXT;
+import static org.oobium.persist.migrate.db.defs.Column.TIME;
+import static org.oobium.persist.migrate.db.defs.Column.TIMESTAMP;
+import static org.oobium.persist.migrate.db.defs.Column.TIMESTAMPS;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.oobium.persist.migrate.MigrationService;
 import org.oobium.persist.migrate.Options;
-import org.oobium.persist.migrate.defs.Column.ColumnType;
-import org.oobium.persist.migrate.defs.changes.AddColumn;
-import org.oobium.persist.migrate.defs.changes.AddForeignKey;
-import org.oobium.persist.migrate.defs.changes.AddIndex;
-import org.oobium.persist.migrate.defs.changes.RemoveColumn;
-import org.oobium.persist.migrate.defs.changes.RemoveForeignKey;
-import org.oobium.persist.migrate.defs.changes.RemoveIndex;
-import org.oobium.persist.migrate.defs.changes.Rename;
-import org.oobium.persist.migrate.defs.columns.ForeignKey;
-import org.oobium.persist.migrate.defs.columns.PrimaryKey;
+import org.oobium.persist.migrate.db.DbMigrationService;
+import org.oobium.persist.migrate.db.defs.Column.ColumnType;
+import org.oobium.persist.migrate.db.defs.changes.AddColumn;
+import org.oobium.persist.migrate.db.defs.changes.AddForeignKey;
+import org.oobium.persist.migrate.db.defs.changes.AddIndex;
+import org.oobium.persist.migrate.db.defs.changes.RemoveColumn;
+import org.oobium.persist.migrate.db.defs.changes.RemoveForeignKey;
+import org.oobium.persist.migrate.db.defs.changes.RemoveIndex;
+import org.oobium.persist.migrate.db.defs.changes.Rename;
+import org.oobium.persist.migrate.db.defs.columns.ForeignKey;
+import org.oobium.persist.migrate.db.defs.columns.PrimaryKey;
 
 public class Table {
 
@@ -38,7 +48,7 @@ public class Table {
 		return sb.toString();
 	}
 	
-	private final MigrationService service;
+	private final DbMigrationService service;
 	public final String name;
 
 	public final Options options;
@@ -50,11 +60,11 @@ public class Table {
 	
 	private List<Change> changes;
 	
-	public Table(MigrationService service, String name) {
+	public Table(DbMigrationService service, String name) {
 		this(service, name, null);
 	}
 
-	public Table(MigrationService service, String name, Map<String, ? extends Object> options) {
+	public Table(DbMigrationService service, String name, Map<String, ? extends Object> options) {
 		this.service = service;
 		this.name = name;
 		this.options = new Options(options);

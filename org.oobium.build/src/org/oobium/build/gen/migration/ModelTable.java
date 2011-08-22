@@ -11,8 +11,8 @@
 package org.oobium.build.gen.migration;
 
 import static org.oobium.persist.Relation.*;
-import static org.oobium.persist.migrate.defs.Column.DATESTAMPS;
-import static org.oobium.persist.migrate.defs.Column.TIMESTAMPS;
+import static org.oobium.persist.migrate.db.defs.Column.DATESTAMPS;
+import static org.oobium.persist.migrate.db.defs.Column.TIMESTAMPS;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.columnName;
 import static org.oobium.utils.StringUtils.tableName;
@@ -27,9 +27,9 @@ import org.oobium.build.model.ModelDefinition;
 import org.oobium.build.model.ModelRelation;
 import org.oobium.build.util.SourceFile;
 import org.oobium.persist.Relation;
-import org.oobium.persist.migrate.defs.Column;
-import org.oobium.persist.migrate.defs.Index;
-import org.oobium.persist.migrate.defs.columns.ForeignKey;
+import org.oobium.persist.migrate.db.defs.Column;
+import org.oobium.persist.migrate.db.defs.Index;
+import org.oobium.persist.migrate.db.defs.columns.ForeignKey;
 
 
 public class ModelTable {
