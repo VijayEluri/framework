@@ -1,5 +1,7 @@
 package org.oobium.eclipse.designer.editor.models.commands;
 
+import static org.oobium.utils.StringUtils.blank;
+
 import org.eclipse.gef.commands.Command;
 import org.oobium.build.model.ModelRelation;
 import org.oobium.eclipse.designer.editor.models.Connection;
@@ -7,8 +9,7 @@ import org.oobium.eclipse.designer.editor.models.ModelElement;
 
 public class ConnectionCreateCommand extends Command {
 
-	private Connection sourceConnection;
-	private Connection targetConnection;
+	private Connection connection;
 	
 	private ModelElement sourceModel;
 	private ModelRelation oldSourceRelation;
@@ -40,7 +41,7 @@ public class ConnectionCreateCommand extends Command {
 
 	@Override
 	public boolean canUndo() {
-		return sourceConnection != null || targetConnection != null;
+		return connection != null;
 	}
 	
 	@Override
@@ -49,13 +50,9 @@ public class ConnectionCreateCommand extends Command {
 		oldTargetRelation = targetModel.getDefinition().getRelation(targetField);
 
 		newSourceRelation = sourceModel.setRelation(sourceField, targetModel.getType(), targetField, sourceHasMany);
+		newTargetRelation = blank(targetField) ? null : targetModel.setRelation(targetField, sourceModel.getType(), sourceField, targetHasMany);
 		
-		if(targetField != null && targetField.trim().length() > 0) {
-			newTargetRelation = targetModel.setRelation(targetField, sourceModel.getType(), sourceField, targetHasMany);
-			targetConnection = new Connection(targetModel, targetField, sourceModel, sourceField);
-		}
-
-		sourceConnection = new Connection(sourceModel, sourceField, targetModel, targetField);
+		connection = new Connection(sourceModel, sourceField, targetModel, targetField);
 	}
 	
 	public ModelElement getSourceModel() {
@@ -68,16 +65,11 @@ public class ConnectionCreateCommand extends Command {
 	
 	@Override
 	public void redo() {
-		if(sourceConnection != null) {
-			sourceModel.setRelation(newSourceRelation);
-			sourceConnection.reconnect();
+		sourceModel.setRelation(newSourceRelation);
+		if(newTargetRelation != null) {
+			targetModel.setRelation(newTargetRelation);
 		}
-		if(targetConnection != null) {
-			if(newTargetRelation != null) {
-				targetModel.setRelation(newTargetRelation);
-			}
-			targetConnection.reconnect();
-		}
+		connection.reconnect();
 	}
 	
 	public void setSourceField(String field) {
@@ -98,21 +90,18 @@ public class ConnectionCreateCommand extends Command {
 	
 	@Override
 	public void undo() {
-		if(sourceConnection != null) {
-			if(oldSourceRelation == null) {
-				sourceModel.remove(sourceConnection.getSourceField());
-			} else {
-				sourceModel.setRelation(oldSourceRelation);
-			}
-			sourceConnection.disconnect();
+		connection.disconnect();
+
+		if(oldSourceRelation == null) {
+			sourceModel.remove(connection.getSourceField());
+		} else {
+			sourceModel.setRelation(oldSourceRelation);
 		}
-		if(targetConnection != null) {
-			if(oldTargetRelation == null) {
-				targetModel.remove(targetConnection.getSourceField());
-			} else {
-				targetModel.setRelation(oldTargetRelation);
-			}
-			targetConnection.disconnect();
+
+		if(oldTargetRelation == null) {
+			targetModel.remove(connection.getTargetField());
+		} else {
+			targetModel.setRelation(oldTargetRelation);
 		}
 	}
 	

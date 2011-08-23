@@ -1,12 +1,16 @@
 package org.oobium.eclipse.designer.editor.parts;
 
+import static org.oobium.utils.StringUtils.blank;
+
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.draw2d.ColorConstants;
 import org.eclipse.draw2d.ConnectionLocator;
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.PolygonDecoration;
 import org.eclipse.draw2d.PolylineConnection;
+import org.eclipse.draw2d.geometry.PointList;
 import org.eclipse.gef.ConnectionEditPart;
 import org.eclipse.gef.EditPolicy;
 import org.eclipse.gef.commands.Command;
@@ -16,11 +20,15 @@ import org.eclipse.gef.editpolicies.ConnectionEndpointEditPolicy;
 import org.eclipse.gef.handles.ConnectionEndpointHandle;
 import org.eclipse.gef.requests.GroupRequest;
 import org.eclipse.swt.SWT;
+import org.oobium.build.model.ModelDefinition;
 import org.oobium.eclipse.designer.editor.models.Connection;
 import org.oobium.eclipse.designer.editor.models.commands.ConnectionDeleteCommand;
 import org.oobium.eclipse.designer.editor.tools.ConnectionTargetHandle;
 
 public class ConnectionPart extends AbstractConnectionEditPart {
+
+	private static final PointList DOUBLE_TRIANGLE_TIP = new PointList(new int[] { 0,0, -1,1, -1,0, -2,1, -2,-1, -1,0, -1,-1 });
+	
 
 	@Override
 	protected void createEditPolicies() {
@@ -50,11 +58,33 @@ public class ConnectionPart extends AbstractConnectionEditPart {
 		connection.setLineWidth(2);
 		connection.setAntialias(SWT.ON);
 
-		PolygonDecoration decoration = new PolygonDecoration();
-		decoration.setTemplate(PolygonDecoration.TRIANGLE_TIP);
-		decoration.setAntialias(SWT.ON);
+		if(!blank(getModel().getTargetField())) {
+			PolygonDecoration source = new PolygonDecoration();
+			ModelDefinition def = getModel().getTargetModel().getDefinition();
+			String field = getModel().getTargetField();
+			if(def.hasField(field)) {
+				if(def.hasMany(field)) {
+					source.setTemplate(DOUBLE_TRIANGLE_TIP);
+				} else {
+					source.setTemplate(PolygonDecoration.TRIANGLE_TIP);
+				}
+			} else {
+				source.setTemplate(new PointList(new int[] { 0,1, -1,1, -1,-1, 0,-1 }));
+				source.setBackgroundColor(ColorConstants.red);
+				source.setForegroundColor(ColorConstants.red);
+			}
+			source.setAntialias(SWT.ON);
+			connection.setSourceDecoration(source);
+		}
 		
-		connection.setTargetDecoration(decoration);
+		PolygonDecoration target = new PolygonDecoration();
+		if(getModel().getSourceModel().getDefinition().hasMany(getModel().getSourceField())) {
+			target.setTemplate(DOUBLE_TRIANGLE_TIP);
+		} else {
+			target.setTemplate(PolygonDecoration.TRIANGLE_TIP);
+		}
+		target.setAntialias(SWT.ON);
+		connection.setTargetDecoration(target);
 		
 //		Label label = new Label("hello");
 //		label.setBackgroundColor(ColorConstants.green);

@@ -49,7 +49,7 @@ public class SiteDiagramPart extends AbstractGraphicalEditPart implements Proper
 	@Override
 	public void propertyChange(PropertyChangeEvent evt) {
 		// TODO Auto-generated method stub
-
+		
 	}
 
 	@Override
@@ -70,4 +70,9 @@ public class SiteDiagramPart extends AbstractGraphicalEditPart implements Proper
 		installEditPolicy(EditPolicy.LAYOUT_ROLE, new SiteXYLayoutPolicy());
 	}
 
+	@Override
+	protected void refreshVisuals() {
+		
+	}
+	
 }

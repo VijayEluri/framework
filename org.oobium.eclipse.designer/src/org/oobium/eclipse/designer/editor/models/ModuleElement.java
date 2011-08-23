@@ -1,5 +1,7 @@
 package org.oobium.eclipse.designer.editor.models;
 
+import static org.oobium.utils.StringUtils.*;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -38,15 +40,17 @@ public class ModuleElement extends Element {
 		
 		for(ModelElement model : models.values()) {
 			for(ModelRelation relation : model.getDefinition().getRelations()) {
-				ModelElement sourceModel = model;
 				String sourceField = relation.name;
-				ModelElement targetModel = models.get(relation.type);
 				String targetField = relation.opposite;
-				try {
-					Connection connection = new Connection(sourceModel, sourceField, targetModel, targetField);
-					model.addConnection(connection);
-				} catch(IllegalArgumentException e) {
-					System.err.println("error creating connection: " + sourceModel + ", " + sourceField + ", " + targetModel + ", " + targetField);
+				if(blank(targetField) || sourceField.compareTo(targetField) < 0) {
+					ModelElement sourceModel = model;
+					ModelElement targetModel = models.get(relation.type);
+					try {
+						Connection connection = new Connection(sourceModel, sourceField, targetModel, targetField);
+						model.addConnection(connection);
+					} catch(IllegalArgumentException e) {
+						System.err.println("error creating connection: " + sourceModel + ", " + sourceField + ", " + targetModel + ", " + targetField);
+					}
 				}
 			}
 		}

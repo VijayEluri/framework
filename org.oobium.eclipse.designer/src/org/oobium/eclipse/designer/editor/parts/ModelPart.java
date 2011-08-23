@@ -15,9 +15,16 @@ import java.io.File;
 import java.util.List;
 
 import org.eclipse.draw2d.ChopboxAnchor;
+import org.eclipse.draw2d.ColorConstants;
 import org.eclipse.draw2d.ConnectionAnchor;
+import org.eclipse.draw2d.Figure;
+import org.eclipse.draw2d.Graphics;
 import org.eclipse.draw2d.IFigure;
+import org.eclipse.draw2d.LineBorder;
+import org.eclipse.draw2d.RoundedRectangle;
+import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
+import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.ConnectionEditPart;
 import org.eclipse.gef.EditPart;
 import org.eclipse.gef.EditPolicy;
@@ -34,6 +41,9 @@ import org.eclipse.gef.requests.GroupRequest;
 import org.eclipse.gef.requests.ReconnectRequest;
 import org.eclipse.gef.requests.SelectionRequest;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Pattern;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.ui.themes.ColorUtil;
 import org.oobium.build.console.Eclipse;
 import org.oobium.build.model.ModelAttribute;
 import org.oobium.build.model.ModelDefinition;
@@ -80,14 +90,14 @@ public class ModelPart extends AbstractGraphicalEditPart implements PropertyChan
 					ModelElement model = (ModelElement) part.getModel();
 					Point location = request.getLocation().getCopy();
 					getHostFigure().translateToRelative(location);
-					String field = ((ModelPart) part).getFigure().getRelation(location);
-					ConnectionReconnectCommand cmd = new ConnectionReconnectCommand(connection);
-					if(source) {
-						cmd.setSource(model, field);
-					} else {
-						cmd.setTarget(model, field);
-					}
-					return cmd;
+//					String field = ((ModelPart) part).getFigure().getRelation(location);
+//					ConnectionReconnectCommand cmd = new ConnectionReconnectCommand(connection);
+//					if(source) {
+//						cmd.setSource(model, field);
+//					} else {
+//						cmd.setTarget(model, field);
+//					}
+//					return cmd;
 				}
 				return null;
 			}
@@ -130,19 +140,13 @@ public class ModelPart extends AbstractGraphicalEditPart implements PropertyChan
 	protected IFigure createFigure() {
 		ModelElement model = getModel();
 		ModelFigure figure = new ModelFigure();
-		figure.setName(model.getName());
-//		for(ModelAttribute attr : model.getDefinition().getAttributes()) {
-//			figure.addAttribute(attr.name, attr.getSimpleType());
-//		}
-		for(ModelRelation rel : model.getDefinition().getRelations()) {
-			figure.addRelation(rel.name, rel.getSimpleType(), rel.hasMany);
-		}
+		figure.setText(model.getName());
 		return figure;
 	}
 	
 	@Override
 	public void deactivate() {
-		if (isActive()) {
+		if(isActive()) {
 			super.deactivate();
 			getModel().removeListener(this);
 		}
@@ -170,10 +174,10 @@ public class ModelPart extends AbstractGraphicalEditPart implements PropertyChan
 
 	@Override
 	public ConnectionAnchor getSourceConnectionAnchor(ConnectionEditPart conn) {
-		if(conn instanceof ConnectionPart) {
-			Connection connection = ((ConnectionPart) conn).getModel();
-			return getFigure().getAnchor(connection.getSourceField());
-		}
+//		if(conn instanceof ConnectionPart) {
+//			Connection connection = ((ConnectionPart) conn).getModel();
+//			return getFigure().getAnchor(connection.getSourceField());
+//		}
 		return new ChopboxAnchor(getFigure());
 	}
 	
@@ -184,10 +188,10 @@ public class ModelPart extends AbstractGraphicalEditPart implements PropertyChan
 
 	@Override
 	public ConnectionAnchor getTargetConnectionAnchor(ConnectionEditPart conn) {
-		if(conn instanceof ConnectionPart) {
-			Connection connection = ((ConnectionPart) conn).getModel();
-			return getFigure().getAnchor(connection.getTargetField());
-		}
+//		if(conn instanceof ConnectionPart) {
+//			Connection connection = ((ConnectionPart) conn).getModel();
+//			return getFigure().getAnchor(connection.getTargetField());
+//		}
 		return new ChopboxAnchor(getFigure());
 	}
 	
@@ -208,45 +212,45 @@ public class ModelPart extends AbstractGraphicalEditPart implements PropertyChan
 				Eclipse.openFile(project, file);
 			} else {
 				ModelDefinition definition = model.getDefinition();
-				ModelFigure fig = getFigure();
-				String relation = fig.getRelation(request.getLocation());
+//				ModelFigure fig = getFigure();
+//				String relation = fig.getRelation(request.getLocation());
 				
-				if(relation != null) {
-					Connection connection = Connection.getConnection(model, relation);
-					EndpointDialog dlg = new EndpointDialog();
-					dlg.setField(relation);
-					dlg.setHasMany(definition.getRelation(relation).hasMany);
-					if(dlg.open() == SWT.OK) {
-						SourceEditCommand cmd = new SourceEditCommand(connection);
-						cmd.setField(dlg.getField());
-						cmd.setHasMany(dlg.getHasMany());
-						if(cmd.canExecute()) {
-							getViewer().getEditDomain().getCommandStack().execute(cmd);
-						}
-					}
-					return;
-				}
-				else {
-					ModelDialog dlg = new ModelDialog(model.getName());
-					for(ModelAttribute attribute : definition.getAttributes(false)) {
-						dlg.addAttribute(attribute.name, attribute.type);
-					}
-					dlg.setAllowDelete(definition.allowDelete);
-					dlg.setAllowUpdate(definition.allowUpdate);
-					dlg.setDatestamps(definition.datestamps);
-					dlg.setTimestamps(definition.timestamps);
-					if(dlg.open() == SWT.OK) {
-						ModelEditCommand cmd = new ModelEditCommand(model);
-						cmd.setAttributes(dlg.getAttributes());
-						cmd.setAllowDelete(dlg.getAllowDelete());
-						cmd.setAllowUpdate(dlg.getAllowUpdate());
-						cmd.setDatestamps(dlg.getDatestamps());
-						cmd.setTimestamps(dlg.getTimestamps());
-						if(cmd.canExecute()) {
-							getViewer().getEditDomain().getCommandStack().execute(cmd);
-						}
-					}
-				}
+//				if(relation != null) {
+//					Connection connection = Connection.getConnection(model, relation);
+//					EndpointDialog dlg = new EndpointDialog();
+//					dlg.setField(relation);
+//					dlg.setHasMany(definition.getRelation(relation).hasMany);
+//					if(dlg.open() == SWT.OK) {
+//						SourceEditCommand cmd = new SourceEditCommand(connection);
+//						cmd.setField(dlg.getField());
+//						cmd.setHasMany(dlg.getHasMany());
+//						if(cmd.canExecute()) {
+//							getViewer().getEditDomain().getCommandStack().execute(cmd);
+//						}
+//					}
+//					return;
+//				}
+//				else {
+//					ModelDialog dlg = new ModelDialog(model.getName());
+//					for(ModelAttribute attribute : definition.getAttributes(false)) {
+//						dlg.addAttribute(attribute.name, attribute.type);
+//					}
+//					dlg.setAllowDelete(definition.allowDelete);
+//					dlg.setAllowUpdate(definition.allowUpdate);
+//					dlg.setDatestamps(definition.datestamps);
+//					dlg.setTimestamps(definition.timestamps);
+//					if(dlg.open() == SWT.OK) {
+//						ModelEditCommand cmd = new ModelEditCommand(model);
+//						cmd.setAttributes(dlg.getAttributes());
+//						cmd.setAllowDelete(dlg.getAllowDelete());
+//						cmd.setAllowUpdate(dlg.getAllowUpdate());
+//						cmd.setDatestamps(dlg.getDatestamps());
+//						cmd.setTimestamps(dlg.getTimestamps());
+//						if(cmd.canExecute()) {
+//							getViewer().getEditDomain().getCommandStack().execute(cmd);
+//						}
+//					}
+//				}
 			}
 		} else {
 			super.performRequest(req);
@@ -265,58 +269,43 @@ public class ModelPart extends AbstractGraphicalEditPart implements PropertyChan
 		if(PROP_CONN_TARGET.equals(prop)) {
 			refreshTargetConnections();
 		}
-		if(PROP_FIELD.equals(prop)) {
-			String field = (String) evt.getNewValue();
-			if(field != null) {
-				ModelRelation rel = getModel().getDefinition().getRelation(field);
-				if(rel != null) {
-					String oldName = (String) evt.getOldValue();
-					if(oldName != null) {
-						getFigure().updateRelation(oldName, rel.name, rel.getSimpleType(), rel.hasMany);
-					} else {
-						getFigure().updateRelation(field, rel.name, rel.getSimpleType(), rel.hasMany);
-					}
-				} else {
-					refreshAttributes();
-				}
-			}
-		}
-		if(PROP_FIELD_ADDED.equals(prop)) {
-			String field = (String) evt.getNewValue();
-			if(field != null) {
-				ModelRelation rel = getModel().getDefinition().getRelation(field);
-				if(rel != null) {
-					getFigure().addRelation(rel.name, rel.getSimpleType(), rel.hasMany);
-				} else {
-					refreshAttributes();
-				}
-			}
-		}
-		if(PROP_FIELD_REMOVED.equals(prop)) {
-			String field = (String) evt.getNewValue();
-			if(field != null) {
-				getFigure().remove(field);
-				refreshAttributes();
-			}
-		}
+//		if(PROP_FIELD.equals(prop)) {
+//			String field = (String) evt.getNewValue();
+//			if(field != null) {
+//				ModelRelation rel = getModel().getDefinition().getRelation(field);
+//				if(rel != null) {
+//					String oldName = (String) evt.getOldValue();
+//					if(oldName != null) {
+//						getFigure().updateRelation(oldName, rel.name, rel.getSimpleType(), rel.hasMany);
+//					} else {
+//						getFigure().updateRelation(field, rel.name, rel.getSimpleType(), rel.hasMany);
+//					}
+//				}
+//			}
+//		}
+//		if(PROP_FIELD_ADDED.equals(prop)) {
+//			String field = (String) evt.getNewValue();
+//			if(field != null) {
+//				ModelRelation rel = getModel().getDefinition().getRelation(field);
+//				if(rel != null) {
+//					getFigure().addRelation(rel.name, rel.getSimpleType(), rel.hasMany);
+//				}
+//			}
+//		}
+//		if(PROP_FIELD_REMOVED.equals(prop)) {
+//			String field = (String) evt.getNewValue();
+//			if(field != null) {
+//				getFigure().remove(field);
+//			}
+//		}
 	}
 
-	private void refreshAttributes() {
-		ModelElement model = getModel();
-		ModelFigure figure = getFigure();
-
-		figure.removeAttributes();
-		for(ModelAttribute attr : model.getDefinition().getAttributes()) {
-			figure.addAttribute(attr.name, attr.getSimpleType());
-		}
-	}
-	
 	@Override
 	protected void refreshVisuals() {
 		ModelElement model = getModel();
 		ModelFigure figure = getFigure();
 		
-		figure.setName(model.getName());
+		figure.setText(model.getName());
 		
 		((GraphicalEditPart) getParent()).setLayoutConstraint(this, figure, model.getBounds());
 	}
