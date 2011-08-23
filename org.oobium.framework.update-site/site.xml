@@ -3,5 +3,8 @@
    <feature url="features/org.oobium.framework_0.6.0.qualifier.jar" id="org.oobium.framework" version="0.6.0.qualifier">
       <category name="Oobium"/>
    </feature>
+   <feature url="features/org.oobium.thirdparty_0.6.0.qualifier.jar" id="org.oobium.thirdparty" version="0.6.0.qualifier">
+      <category name="Oobium"/>
+   </feature>
    <category-def name="Oobium" label="Oobium"/>
 </site>

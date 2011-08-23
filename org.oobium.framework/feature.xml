@@ -52,13 +52,6 @@ and web connected clients in Java and OSGi.
          unpack="false"/>
 
    <plugin
-         id="org.apache.derby"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
          id="org.oobium.eclipse.esp"
          download-size="0"
          install-size="0"
@@ -67,20 +60,6 @@ and web connected clients in Java and OSGi.
 
    <plugin
          id="org.oobium.logging"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="com.sun.mail"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="org.mockito"
          download-size="0"
          install-size="0"
          version="0.0.0"
@@ -206,21 +185,7 @@ and web connected clients in Java and OSGi.
          unpack="false"/>
 
    <plugin
-         id="org.jsoup"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
          id="org.oobium.persist.http"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="org.mysql.connector"
          download-size="0"
          install-size="0"
          version="0.0.0"
@@ -255,13 +220,6 @@ and web connected clients in Java and OSGi.
          unpack="false"/>
 
    <plugin
-         id="org.postgresql.jdbc4"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
          id="org.oobium.app.common"
          download-size="0"
          install-size="0"
@@ -269,7 +227,14 @@ and web connected clients in Java and OSGi.
          unpack="false"/>
 
    <plugin
-         id="org.jboss.netty"
+         id="org.oobium.persist.migrate.mongo"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.oobium.persist.mongo"
          download-size="0"
          install-size="0"
          version="0.0.0"
