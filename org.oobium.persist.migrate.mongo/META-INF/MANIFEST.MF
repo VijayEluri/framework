@@ -12,3 +12,4 @@ Import-Package: org.oobium.logging,
  org.oobium.persist.mongo,
  org.osgi.framework
 Export-Package: org.oobium.persist.migrate.mongo
+Oobium-Service: org.oobium.persist.migrate.MigrationService

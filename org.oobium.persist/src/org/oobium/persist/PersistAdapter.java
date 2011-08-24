@@ -24,19 +24,19 @@ public class PersistAdapter implements PersistService {
 	}
 
 	@Override
-	public int count(Class<? extends Model> clazz) throws Exception {
+	public long count(Class<? extends Model> clazz) throws Exception {
 		// subclasses to override if necessary
 		return 0;
 	}
 
 	@Override
-	public int count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws Exception {
+	public long count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws Exception {
 		// subclasses to override if necessary
 		return 0;
 	}
 	
 	@Override
-	public int count(Class<? extends Model> clazz, String where, Object... values) throws Exception {
+	public long count(Class<? extends Model> clazz, String where, Object... values) throws Exception {
 		// subclasses to override if necessary
 		return 0;
 	}

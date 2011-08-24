@@ -14,6 +14,14 @@ package org.oobium.persist;
 public interface ServiceInfo {
 
 	/**
+	 * For services that use a unique object identifier, get the class type used
+	 * for that identifier (int or long for most SQL databases, ObjectId for MongoDB, etc.)
+	 * @return the class type used for this service's unique object identifier, or Object.class
+	 * if a unique identifier is not used; never null
+	 */
+	public abstract Class<?> getIdType();
+	
+	/**
 	 * The Bundle-SymbolicName of the MigratorService to use for this PersistService, if one
 	 * exists. Typically taken from the "Oobium-MigrationService" manifest header.
 	 * @return the symbolic name of the appropriate migration service for this persist service.

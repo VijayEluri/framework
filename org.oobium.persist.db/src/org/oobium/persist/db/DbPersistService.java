@@ -155,18 +155,18 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	}
 	
 	@Override
-	public int count(Class<? extends Model> clazz) throws Exception {
+	public long count(Class<? extends Model> clazz) throws Exception {
 		return count(clazz, (String) null);
 	}
 	
 	@Override
-	public int count(Class<? extends Model> clazz, String query, Object... values) throws Exception {
+	public long count(Class<? extends Model> clazz, String query, Object... values) throws Exception {
 		Connection connection = getConnection();
 		return persistor.count(connection, clazz, query, values);
 	}
 
 	@Override
-	public int count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws Exception {
+	public long count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws Exception {
 		if(query != null && !query.isEmpty()) {
 			Conversion conversion = new Conversion(query, values);
 			conversion.setModelType(clazz);

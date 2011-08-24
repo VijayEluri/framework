@@ -51,11 +51,11 @@ public interface PersistService {
 	public abstract void destroy(Model...models) throws Exception;
 	
 	
-	public abstract int count(Class<? extends Model> clazz) throws Exception;
+	public abstract long count(Class<? extends Model> clazz) throws Exception;
 	
-	public abstract int count(Class<? extends Model> clazz, Map<String, Object> query, Object...values) throws Exception;
+	public abstract long count(Class<? extends Model> clazz, Map<String, Object> query, Object...values) throws Exception;
 	
-	public abstract int count(Class<? extends Model> clazz, String query, Object...values) throws Exception;
+	public abstract long count(Class<? extends Model> clazz, String query, Object...values) throws Exception;
 
 	
 	public abstract <T extends Model> T find(Class<T> clazz, Map<String, Object> query, Object...values) throws Exception;

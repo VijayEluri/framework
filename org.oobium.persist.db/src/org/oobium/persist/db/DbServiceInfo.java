@@ -11,6 +11,11 @@ public class DbServiceInfo implements ServiceInfo {
 	}
 	
 	@Override
+	public Class<?> getIdType() {
+		return int.class;
+	}
+	
+	@Override
 	public String getMigrationService() {
 		return (String) service.getBundle().getHeaders().get("Oobium-MigrationService");
 	}

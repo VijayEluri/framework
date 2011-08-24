@@ -13,13 +13,11 @@ package org.oobium.app;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.literal.Dictionary;
 
-import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.oobium.app.handlers.HttpRequest404Handler;
@@ -338,9 +336,7 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 	
 	@Override
 	public Object handleRequest(Request request) throws Exception {
-		if(logger.isLoggingDebug()) {
-			logger.debug("start handleRequest - " + getName() + ":" + request.getPath());
-		}
+		logger.debug("start handleRequest - {}: {}", getName(), request.getPath());
 		AppRouter router = getRouter();
 		final RouteHandler handler = router.getHandler(request);
 		if(handler != null) {
@@ -425,10 +421,8 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		}
 	}
 
-	private void registerPersistService(String service, Map<?, ?> options) throws Exception {
-		if(logger.isLoggingDebug()) {
-			logger.debug("registering for persist service: " + service);
-		}
+	private void registerForPersistService(String service, Map<?, ?> options) throws Exception {
+		logger.debug("registering for persist service: {}", service);
 		Hashtable<String, Object> properties = new Hashtable<String, Object>();
 		properties.put(PersistService.SERVICE, service);
 		properties.put(PersistService.CLIENT, getPersistClientName());
@@ -440,17 +434,17 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		getContext().registerService(PersistClient.class.getName(), this, properties);
 	}
 
-	private void registerPersistServices(Object persist) throws Exception {
+	private void registerForPersistServices(Object persist) throws Exception {
 		if(persist instanceof String) {
-			registerPersistService((String) persist, null);
+			registerForPersistService((String) persist, null);
 		} else if(persist instanceof List<?>) {
 			for(Object o : (List<?>) persist) {
-				registerPersistServices(o);
+				registerForPersistServices(o);
 			}
 		} else if(persist instanceof Map<?,?>) {
 			Map<?,?> options = (Map<?,?>) persist;
 			String service = (String) options.remove(PersistService.SERVICE);
-			registerPersistService(service, options);
+			registerForPersistService(service, options);
 		}
 	}
 	
@@ -464,7 +458,7 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 			if(services.isEmpty()) {
 				logger.debug("no presist services configured - skipping registration");
 			} else {
-				registerPersistServices(persist);
+				registerForPersistServices(persist);
 			}
 		}
 	}

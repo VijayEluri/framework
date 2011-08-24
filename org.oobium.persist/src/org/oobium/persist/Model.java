@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.oobium.persist;
 
+import static org.oobium.utils.literal.Map;
 import static org.oobium.persist.ModelAdapter.getAdapter;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.titleize;
@@ -547,15 +548,22 @@ public abstract class Model implements JsonModel {
 					if(hasContained(field)) {
 						// TODO include the requested field if it is a hasOne...?
 						load();
-					} else if(adapter.isOneToOne(field) && !adapter.hasKey(field)) {
+					} else if(hasMany(field) || (adapter.isOneToOne(field) && !adapter.hasKey(field))) {
 						try {
-							getPersistor().retrieve(this, field);
-						} catch(Exception e) {
-							logger.warn("failed to load relation " + field + " in " + asSimpleString(), e);
-						}
-					} else if(hasMany(field)) {
-						try {
-							getPersistor().retrieve(this, field);
+							Class<? extends Model> type = adapter.getRelationClass(field);
+							PersistService p = getPersistor();
+							PersistService fp = getPersistService(type);
+							if(p == fp) {
+								p.retrieve(this, field);
+							}
+							else if(adapter.isManyToOne(field)) {
+								Map<String, Object> query = Map(adapter.getOpposite(field), getId());
+								Object value = fp.findAll(type, query);
+								fields.put(field, value);
+							}
+							else {
+								throw new UnsupportedOperationException("only many to one is currently supported for mixed persist services");
+							}
 						} catch(Exception e) {
 							logger.warn("failed to load relation " + field + " in " + asSimpleString(), e);
 						}
@@ -696,14 +704,14 @@ public abstract class Model implements JsonModel {
 	}
 	
 	public final Object getId(boolean saveFirst) {
+		return getId(saveFirst, getPersistor().getInfo().getIdType());
+	}
+	
+	public final <T> T getId(boolean saveFirst, Class<T> clazz) {
 		if(saveFirst && isNew()) {
 			save();
 		}
-		return id;
-	}
-
-	public final <T> T getId(boolean saveFirst, Class<T> clazz) {
-		return coerce(getId(saveFirst), clazz);
+		return coerce(id, clazz);
 	}
 	
 	public final <T> T getId(Class<T> clazz) {

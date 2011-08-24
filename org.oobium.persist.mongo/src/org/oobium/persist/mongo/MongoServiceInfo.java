@@ -1,5 +1,6 @@
 package org.oobium.persist.mongo;
 
+import org.bson.types.ObjectId;
 import org.oobium.persist.ServiceInfo;
 
 public class MongoServiceInfo implements ServiceInfo {
@@ -8,6 +9,11 @@ public class MongoServiceInfo implements ServiceInfo {
 	
 	public MongoServiceInfo(MongoPersistService service) {
 		this.service = service;
+	}
+	
+	@Override
+	public Class<?> getIdType() {
+		return ObjectId.class;
 	}
 	
 	@Override

@@ -1,5 +1,6 @@
 package org.oobium.persist.mongo;
 
+import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.persist.SessionCache.expireCache;
 import static org.oobium.utils.StringUtils.parseUrl;
 import static org.oobium.utils.StringUtils.tableName;
@@ -12,9 +13,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.bson.types.ObjectId;
 import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
@@ -22,7 +25,9 @@ import org.oobium.persist.ModelAdapter;
 import org.oobium.persist.PersistClient;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.ServiceInfo;
+import org.oobium.persist.mongo.internal.ObjectIdCoercer;
 import org.oobium.utils.StringUtils;
+import org.oobium.utils.coercion.TypeCoercer;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
@@ -33,6 +38,7 @@ import org.osgi.util.tracker.ServiceTrackerCustomizer;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 
 /**
@@ -49,6 +55,9 @@ public class MongoPersistService implements BundleActivator, PersistService {
 	private static final ThreadLocal<String> threadClient = new ThreadLocal<String>();
 	private static final ThreadLocal<DB> threadDB = new ThreadLocal<DB>();
 
+	static {
+		TypeCoercer.addCoercer(new ObjectIdCoercer());
+	}
 	
 	protected final Logger logger;
 	private BundleContext context;
@@ -85,54 +94,6 @@ public class MongoPersistService implements BundleActivator, PersistService {
 		this(client, parseUrl(url));
 	}
 	
-	public Object insert(String collection, String json, Object...values) throws Exception {
-		DB db = getDB();
-		DBCollection c = db.getCollection(collection);
-		BasicDBObject dbo = new BasicDBObject(toMap(json, values));
-		c.insert(dbo);
-		return dbo.get("_id");
-	}
-	
-	public void dropDatabase(String client) throws Exception {
-		Database db = getDatabase(client);
-		db.dropDatabase();
-	}
-	
-	public DB getDB() throws Exception {
-		return getDB(true);
-	}
-	
-	private DB getDB(boolean create) throws Exception {
-		lock.readLock().lock();
-		try {
-			DB db = threadDB.get();
-			if(db == null && create) {
-				String client = threadClient.get();
-				if(client == null) {
-					throw new Exception(client + " is not a registered PersistClient");
-				}
-				Database database = getDatabase(client);
-				db = database.getDB();
-				threadDB.set(db);
-			}
-			return db;
-		} finally {
-			lock.readLock().unlock();
-		}
-	}
-	
-	private Database getDatabase(String client) throws Exception {
-		if(databases != null) {
-			Database db = databases.get(client);
-			if(db == null) {
-				throw new Exception("database for " + client + " has not been setup");
-			}
-			return db;
-		} else {
-			throw new Exception("no connection pool has been setup");
-		}
-	}
-	
 	private void addDatabase(String client, Map<String, Object> properties) {
 		lock.readLock().lock();
 		try {
@@ -155,12 +116,271 @@ public class MongoPersistService implements BundleActivator, PersistService {
 		}
 	}
 	
+	@Override
+	public void closeSession() {
+		threadClient.set(null);
+		expireCache();
+	}
+	
+	@Override
+	public long count(Class<? extends Model> clazz) throws Exception {
+		return count(clazz, (Map<String, Object>) null);
+	}
+	
+	@Override
+	public long count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws Exception {
+		if(query == null) query = new HashMap<String, Object>(0);
+
+		DB db = getDB();
+		DBCollection c = db.getCollection(tableName(clazz));
+		
+		if(values.length > 0) {
+			int i = 0;
+			for(String key : query.keySet()) {
+				if("?".equals(query.get(key))) {
+					query.put(key, values[i++]);
+				}
+			}
+		}
+		
+		// remove $limit and $order so the same query can be used for #find and #findAll
+		query.remove("$limit");
+		query.remove("$order");
+
+		return c.count(new BasicDBObject(query));
+	}
+	
+	@Override
+	public long count(Class<? extends Model> clazz, String query, Object... values) throws Exception {
+		return count(clazz, toMap(query, values), new Object[0]);
+	}
+	
+	@Override
+	public void create(Model... models) throws Exception {
+		DB db = getDB();
+		for(Model model : models) {
+			DBCollection c = db.getCollection(tableName(model));
+			BasicDBObject dbo = new BasicDBObject(model.getAll());
+			c.insert(dbo);
+			model.setId(dbo.get("_id"));
+		}
+	}
+	
+	@Override
+	public void destroy(Model... models) throws Exception {
+		DB db = getDB();
+		for(Model model : models) {
+			DBCollection c = db.getCollection(tableName(model));
+			BasicDBObject dbo = new BasicDBObject("_id", model.getId(ObjectId.class));
+			c.remove(dbo);
+		}
+	}
+	
+	public void dropDatabase(String client) throws Exception {
+		Database db = getDatabase(client);
+		db.dropDatabase();
+	}
+
+	@Override
+	public <T extends Model> T find(Class<T> clazz, Map<String, Object> query, Object... values) throws Exception {
+		if(query == null) query = new HashMap<String, Object>(0);
+
+		DB db = getDB();
+		DBCollection c = db.getCollection(tableName(clazz));
+		
+		if(values.length > 0) {
+			int i = 0;
+			for(String key : query.keySet()) {
+				if("?".equals(query.get(key))) {
+					query.put(key, values[i++]);
+				}
+			}
+		}
+		
+		Object order = query.remove("$order");
+		Object limit = query.remove("$limit");
+		
+		DBCursor cursor = query.isEmpty() ? c.find() : c.find(new BasicDBObject(query));
+
+		if(order != null) {
+			cursor.sort(new BasicDBObject(coerce(order, Map.class)));
+		}
+		
+		cursor.limit(1);
+		if(limit instanceof Map) {
+			Entry<?,?> e = (Entry<?,?>) ((Map<?,?>) limit).entrySet().iterator().next();
+			cursor.skip(coerce(e.getValue(), int.class));
+		}
+		else if(limit instanceof String && ((String) limit).contains(",")) {
+			String[] sa = ((String) limit).split(",");
+			cursor.skip(coerce(sa[1], int.class));
+		}
+		
+		if(cursor.hasNext()) {
+			return getModel(clazz, cursor.next().toMap());
+		}
+		return null;
+	}
+	
+	@Override
+	public <T extends Model> T find(Class<T> clazz, String query, Object... values) throws Exception {
+		return find(clazz, toMap(query, values), new Object[0]);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public Map<String, Object> find(String collection, Object id) throws Exception {
+		DB db = getDB();
+		DBCollection c = db.getCollection(collection);
+		DBObject dbo = c.findOne(coerce(id, ObjectId.class));
+		return (dbo != null) ? dbo.toMap() : null;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public Map<String, Object> find(String collection, String jsonQuery, Object...values) throws Exception {
+		DB db = getDB();
+		DBCollection c = db.getCollection(collection);
+		DBObject dbo = new BasicDBObject(toMap(jsonQuery, values));
+		dbo = c.findOne(dbo);
+		return (dbo != null) ? dbo.toMap() : null;
+	}
+	
+	@Override
+	public <T extends Model> List<T> findAll(Class<T> clazz) throws Exception {
+		return findAll(clazz, (Map<String, Object>) null);
+	}
+
+	
+	
+	@Override
+	public <T extends Model> List<T> findAll(Class<T> clazz, Map<String, Object> query, Object... values) throws Exception {
+		if(query == null) query = new HashMap<String, Object>(0);
+
+		DB db = getDB();
+		DBCollection c = db.getCollection(tableName(clazz));
+		
+		if(values.length > 0) {
+			int i = 0;
+			for(String key : query.keySet()) {
+				if("?".equals(query.get(key))) {
+					query.put(key, values[i++]);
+				}
+			}
+		}
+		
+		Object order = query.remove("$order");
+		Object limit = query.remove("$limit");
+		
+		DBCursor cursor = query.isEmpty() ? c.find() : c.find(new BasicDBObject(query));
+
+		if(order != null) {
+			cursor.sort(new BasicDBObject(coerce(order, Map.class)));
+		}
+		
+		if(limit != null) {
+			if(limit instanceof Map) {
+				Entry<?,?> e = (Entry<?,?>) ((Map<?,?>) limit).entrySet().iterator().next();
+				cursor.limit(coerce(e.getKey(), int.class)).skip(coerce(e.getValue(), int.class));
+			}
+			else if(limit instanceof String && ((String) limit).contains(",")) {
+				String[] sa = ((String) limit).split(",");
+				cursor.limit(coerce(sa[0], int.class)).skip(coerce(sa[1], int.class));
+			}
+			else {
+				cursor.limit(coerce(limit, int.class));
+			}
+		}
+
+		List<T> models = new ArrayList<T>();
+		while(cursor.hasNext()) {
+			models.add(getModel(clazz, cursor.next().toMap()));
+		}
+		return models;
+	}
+
+	@Override
+	public <T extends Model> List<T> findAll(Class<T> clazz, String query, Object... values) throws Exception {
+		return findAll(clazz, toMap(query, values), new Object[0]);
+	}
+
+	@Override
+	public <T extends Model> T findById(Class<T> clazz, Object id) throws Exception {
+		DB db = getDB();
+		DBCollection c = db.getCollection(tableName(clazz));
+		
+		DBObject o = c.findOne(coerce(id, ObjectId.class));
+		return (o != null) ? getModel(clazz, o.toMap()) : null;
+	}
+
+	@Override
+	public <T extends Model> T findById(Class<T> clazz, Object id, String include) throws Exception {
+		// TODO findById(Class<T> clazz, Object id, String include)
+		throw new UnsupportedOperationException("not yet implemented: MongoPersistService#findById(Class<T> clazz, Object id, String include)");
+	}
+
+	Bundle getBundle() {
+		return context.getBundle();
+	}
+
+	private Database getDatabase(String client) throws Exception {
+		if(databases != null) {
+			Database db = databases.get(client);
+			if(db == null) {
+				throw new Exception("database for " + client + " has not been setup");
+			}
+			return db;
+		} else {
+			throw new Exception("no connection pool has been setup");
+		}
+	}
+
+	public DB getDB() throws Exception {
+		return getDB(true);
+	}
+
+	private DB getDB(boolean create) throws Exception {
+		lock.readLock().lock();
+		try {
+			DB db = threadDB.get();
+			if(db == null && create) {
+				String client = threadClient.get();
+				if(client == null) {
+					throw new Exception(client + " is not a registered PersistClient");
+				}
+				Database database = getDatabase(client);
+				db = database.getDB();
+				threadDB.set(db);
+			}
+			return db;
+		} finally {
+			lock.readLock().unlock();
+		}
+	}
+
+	@Override
+	public ServiceInfo getInfo() {
+		return new MongoServiceInfo(this);
+	}
+
 	public String getMigrationServiceName() {
 		Object o = context.getBundle().getHeaders().get("Oobium-MigrationService");
 		if(o instanceof String) {
 			return (String) o;
 		}
 		return null;
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private <T> T getModel(Class<T> clazz, Map data) {
+		data.put("id", data.remove("_id"));
+		return coerce(data, clazz);
+	}
+
+	public Object insert(String collection, String json, Object...values) throws Exception {
+		DB db = getDB();
+		DBCollection c = db.getCollection(collection);
+		BasicDBObject dbo = new BasicDBObject(toMap(json, values));
+		c.insert(dbo);
+		return dbo.get("_id");
 	}
 	
 	@Override
@@ -173,7 +393,7 @@ public class MongoPersistService implements BundleActivator, PersistService {
 		threadClient.set(name);
 		expireCache();
 	}
-	
+
 	private void removeDatabase(String client) {
 		lock.writeLock().lock();
 		try {
@@ -186,9 +406,24 @@ public class MongoPersistService implements BundleActivator, PersistService {
 			lock.writeLock().unlock();
 		}
 	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public void retrieve(Model... models) throws Exception {
+		DB db = getDB();
+		for(Model model : models) {
+			DBCollection c = db.getCollection(tableName(model));
+			DBObject o = c.findOne(model.getId(ObjectId.class));
+			if(o != null) {
+				model.putAll(o.toMap());
+			}
+		}
+	}
 	
-	Bundle getBundle() {
-		return context.getBundle();
+	@Override
+	public void retrieve(Model model, String hasMany) throws Exception {
+		// TODO retrieve(Model model, String hasMany)
+		throw new UnsupportedOperationException("not yet implemented: MongoPersistService#retrieve(Model model, String hasMany)");
 	}
 	
 	public void start(BundleContext context) throws Exception {
@@ -234,7 +469,7 @@ public class MongoPersistService implements BundleActivator, PersistService {
 
 		logger.info("PersistService started");
 	}
-	
+
 	public void stop(BundleContext context) throws Exception {
 		appTracker.close();
 		appTracker = null;
@@ -243,55 +478,12 @@ public class MongoPersistService implements BundleActivator, PersistService {
 		logger.setTag(null);
 	}
 
-	
-	
-	@Override
-	public ServiceInfo getInfo() {
-		return new MongoServiceInfo(this);
-	}
-
-	@Override
-	public void closeSession() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void create(Model... models) throws Exception {
-		DB db = getDB();
-		for(Model model : models) {
-			DBCollection c = db.getCollection(tableName(model));
-			BasicDBObject dbo = new BasicDBObject(model.getAll());
-			c.insert(dbo);
-			model.setId(dbo.get("_id"));
-		}
-	}
-
-	@Override
-	@SuppressWarnings("unchecked")
-	public void retrieve(Model... models) throws Exception {
-		DB db = getDB();
-		for(Model model : models) {
-			DBCollection c = db.getCollection(tableName(model));
-			DBObject o = c.findOne(model.getId());
-			if(o != null) {
-				model.putAll(o.toMap());
-			}
-		}
-	}
-
-	@Override
-	public void retrieve(Model model, String hasMany) throws Exception {
-		// TODO Auto-generated method stub
-		
-	}
-
 	@Override
 	public void update(Model... models) throws Exception {
 		DB db = getDB();
 		for(Model model : models) {
 			DBCollection c = db.getCollection(tableName(model));
-			DBObject q = new BasicDBObject("_id", model.getId());
+			DBObject q = new BasicDBObject("_id", model.getId(ObjectId.class));
 			
 			ModelAdapter adapter = ModelAdapter.getAdapter(model);
 			Map<String, Object> data = model.getAll();
@@ -330,89 +522,6 @@ public class MongoPersistService implements BundleActivator, PersistService {
 			DBObject o = new BasicDBObject("$set", data);
 			c.update(q, o);
 		}
-	}
-
-	@Override
-	public void destroy(Model... models) throws Exception {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public int count(Class<? extends Model> clazz) throws Exception {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public int count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws Exception {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public int count(Class<? extends Model> clazz, String query, Object... values) throws Exception {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public <T extends Model> T find(Class<T> clazz, Map<String, Object> query, Object... values) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public <T extends Model> T find(Class<T> clazz, String query, Object... values) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	@SuppressWarnings("unchecked")
-	public Map<String, Object> find(String collection, String jsonQuery, Object...values) throws Exception {
-		DB db = getDB();
-		DBCollection c = db.getCollection(collection);
-		DBObject dbo = new BasicDBObject(toMap(jsonQuery, values));
-		dbo = c.findOne(dbo);
-		return (dbo != null) ? dbo.toMap() : null;
-	}
-
-	@SuppressWarnings("unchecked")
-	public Map<String, Object> find(String collection, Object id) throws Exception {
-		DB db = getDB();
-		DBCollection c = db.getCollection(collection);
-		DBObject dbo = c.findOne(id);
-		return (dbo != null) ? dbo.toMap() : null;
-	}
-
-	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz, Map<String, Object> query, Object... values) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz, String query, Object... values) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public <T extends Model> T findById(Class<T> clazz, Object id) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public <T extends Model> T findById(Class<T> clazz, Object id, String include) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 }

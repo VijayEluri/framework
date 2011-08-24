@@ -40,17 +40,17 @@ public class NullPersistService implements PersistService {
 	}
 	
 	@Override
-	public int count(Class<? extends Model> clazz) throws Exception {
+	public long count(Class<? extends Model> clazz) throws Exception {
 		throw new Exception(msg);
 	}
 	
 	@Override
-	public int count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws Exception {
+	public long count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws Exception {
 		throw new Exception(msg);
 	}
 
 	@Override
-	public int count(Class<? extends Model> clazz, String query, Object... values) throws Exception {
+	public long count(Class<? extends Model> clazz, String query, Object... values) throws Exception {
 		throw new Exception(msg);
 	}
 
@@ -102,6 +102,10 @@ public class NullPersistService implements PersistService {
 	@Override
 	public ServiceInfo getInfo() {
 		return new ServiceInfo() {
+			@Override
+			public Class<?> getIdType() {
+				return Object.class;
+			}
 			@Override
 			public String getMigrationService() {
 				return null;

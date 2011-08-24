@@ -1,7 +1,10 @@
 package org.oobium.build.eclipse;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -73,9 +76,15 @@ public class UpdateSiteBuilder {
 		
 		File feature = new File(featureProject.file, "feature.xml");
 		if(!feature.isFile()) {
-			throw new Exception("feature.xml not found in '" + featureProject);
+			throw new Exception("feature.xml not found in \"" + featureProject + "\"");
 		}
 
+		// load any library bundles
+		File lib = new File(featureProject.file, "lib");
+		if(lib.isDirectory()) {
+			site.workspace.addRepository(lib);
+		}
+		
 		DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
 		Document doc = docBuilder.parse(feature);
@@ -90,6 +99,8 @@ public class UpdateSiteBuilder {
 		String resolvedVersion = new Version(version).resolve(site.date).toString();
 		attr.setNodeValue(resolvedVersion);
 
+		List<Bundle> featureBundles = new ArrayList<Bundle>();
+		
 		NodeList list = doc.getElementsByTagName("plugin");
 		for(int i = 0; i < list.getLength(); i++) {
 			Node node = list.item(i);
@@ -103,6 +114,7 @@ public class UpdateSiteBuilder {
 					throw new Exception("no bundle: " + pluginId + "_" + version);
 				}
 				attr.setNodeValue(bundle.version.resolve(site.date).toString());
+				featureBundles.add(bundle);
 				site.plugins.add(bundle);
 			}
 		}
@@ -110,7 +122,7 @@ public class UpdateSiteBuilder {
 		String xml = getXML(doc);
 		site.features.put(featureId + "_" + resolvedVersion + ".jar", xml);
 		
-		if(includeSource) {
+		if(includeSource && hasSource(featureBundles)) {
 			Element element = (Element) doc.getElementsByTagName("feature").item(0);
 			element.setAttribute("id", element.getAttribute("id") + ".source");
 			element.setAttribute("label", element.getAttribute("label") + " Source");
@@ -133,6 +145,15 @@ public class UpdateSiteBuilder {
 		}
 		
 		return resolvedVersion;
+	}
+	
+	private boolean hasSource(List<Bundle> bundles) throws IOException {
+		for(Bundle bundle : bundles) {
+			if(bundle.hasSource()) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private void build() throws Exception {
@@ -164,12 +185,15 @@ public class UpdateSiteBuilder {
 				if(!url.contains("://")) {
 					String id = element.getAttribute("id");
 					String version = element.getAttribute("version");
+					
 					String resolvedVersion = addFeature(site, id, version);
+					
 					element.setAttribute("version", resolvedVersion);
 					if(url.endsWith(version + ".jar")) {
 						element.setAttribute("url", url.substring(0, url.length() - (version.length() + 4)) + resolvedVersion + ".jar");
 					}
-					if(includeSource) {
+					
+					if(includeSource && site.features.containsKey(id + ".source_" + resolvedVersion + ".jar")) {
 						Element source = doc.createElement("feature");
 						source.setAttribute("id", id + ".source");
 						source.setAttribute("version", resolvedVersion);

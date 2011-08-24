@@ -12,6 +12,7 @@ import org.oobium.build.workspace.Project;
 import org.oobium.build.workspace.Workspace;
 
 public class UpdateSite {
+	
 	final Workspace workspace;
 	final File file;
 	final Date date;
@@ -35,4 +36,5 @@ public class UpdateSite {
 		features = new LinkedHashMap<String, String>();
 		plugins = new ArrayList<Bundle>();
 	}
+	
 }

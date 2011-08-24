@@ -69,14 +69,14 @@ public abstract class PostModel extends Model {
 	/**
 	 * Get the count of all instances of Post
 	*/
-	public static int count() throws Exception {
+	public static long count() throws Exception {
 		return getPersistService().count(Post.class);
 	}
 
 	/**
 	 * Get the count of all instances of Post using the given sql query and values.
 	*/
-	public static int count(String sql, Object...values) throws Exception {
+	public static long count(String sql, Object...values) throws Exception {
 		return getPersistService().count(Post.class, sql, values);
 	}
 

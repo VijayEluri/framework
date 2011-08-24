@@ -596,15 +596,19 @@ public class Bundle extends Project {
 	 * @throws IOException
 	 */
 	public void createJar(File jar, Version version) throws IOException {
-		Map<String, File> files = getBuildFiles();
-
-		Manifest manifest = manifest(file);
-		manifest.getMainAttributes().putValue("Bundle-Version", version.toString());
-
-		if(jar.isDirectory()) {
-			jar = new File(jar, name + "_" + version + ".jar");
+		if(isJar) {
+			FileUtils.copy(file, jar);
+		} else {
+			Map<String, File> files = getBuildFiles();
+	
+			Manifest manifest = manifest(file);
+			manifest.getMainAttributes().putValue("Bundle-Version", version.toString());
+	
+			if(jar.isDirectory()) {
+				jar = new File(jar, name + "_" + version + ".jar");
+			}
+			FileUtils.createJar(jar, files, manifest);
 		}
-		FileUtils.createJar(jar, files, manifest);
 	}
 
 	/**
@@ -646,7 +650,7 @@ public class Bundle extends Project {
 					}
 				}
 			}
-		}		
+		}
 		return false;
 	}
 	

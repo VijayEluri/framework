@@ -28,7 +28,7 @@ public class Paginator<E extends Model> implements List<E> {
 	}
 	
 	public static <T extends Model> Paginator<T> paginate(Class<T> clazz, int page, int perPage, String query, Object...values) throws Exception {
-		int total = Model.getPersistService(clazz).count(clazz, query, values);
+		long total = Model.getPersistService(clazz).count(clazz, query, values);
 		Map<String, Object> paginatedQuery = (query != null) ? JsonUtils.toMap(query) : new HashMap<String, Object>();
 		paginatedQuery.put("$limit", limit(page, perPage));
 		List<T> models = Model.getPersistService(clazz).findAll(clazz, paginatedQuery, values);
@@ -44,14 +44,14 @@ public class Paginator<E extends Model> implements List<E> {
     
 	
 	private List<E> models;
-	private int total;
+	private long total;
 	private int page;
 	private int perPage;
 	
 	private String path;
 	private String pageKey;
 
-	private Paginator(List<E> models, int total, int page, int perPage) {
+	private Paginator(List<E> models, long total, int page, int perPage) {
 		this.models = models;
 		this.total = total;
 		this.page = (page < 1) ? 1 : page;
@@ -123,7 +123,7 @@ public class Paginator<E extends Model> implements List<E> {
 		return Math.max((page - 1), 1);
 	}
 
-	public int getTotal() {
+	public long getTotal() {
 		return total;
 	}
 

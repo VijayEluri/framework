@@ -32,19 +32,19 @@ public class SimplePersistService implements PersistService {
 	}
 
 	@Override
-	public int count(Class<? extends Model> clazz) throws Exception {
+	public long count(Class<? extends Model> clazz) throws Exception {
 		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
-	public int count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws Exception {
+	public long count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws Exception {
 		// TODO Auto-generated method stub
 		return 0;
 	}
 	
 	@Override
-	public int count(Class<? extends Model> clazz, String where, Object... values) throws Exception {
+	public long count(Class<? extends Model> clazz, String where, Object... values) throws Exception {
 		if(where == null) {
 			Map<Object, Map<String, Object>> models = db.get(clazz);
 			if(models != null) {
@@ -150,6 +150,10 @@ public class SimplePersistService implements PersistService {
 	@Override
 	public ServiceInfo getInfo() {
 		return new ServiceInfo() {
+			@Override
+			public Class<?> getIdType() {
+				return int.class;
+			}
 			@Override
 			public String getMigrationService() {
 				return null;

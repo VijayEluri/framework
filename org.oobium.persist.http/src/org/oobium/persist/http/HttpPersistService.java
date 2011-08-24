@@ -42,6 +42,35 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 	private final HttpApiService api;
 	private Websocket socket;
 	private WebsocketListener socketListener;
+	
+	private ServiceInfo info = new ServiceInfo() {
+		@Override
+		public Class<?> getIdType() {
+			// TODO HttpPersistService#getIdType
+			return Object.class;
+		}
+		@Override
+		public String getMigrationService() {
+			return null;
+		}
+		@Override
+		public String getName() {
+			return getClass().getSimpleName();
+		}
+		@Override
+		public String getProvider() {
+			return "oobium.org";
+		}
+		@Override
+		public String getSymbolicName() {
+			return getClass().getName();
+		}
+		@Override
+		public String getVersion() {
+			return "0.6.0";
+		}
+	};
+
 
 	public HttpPersistService() {
 		this(null, false);
@@ -137,19 +166,19 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 	}
 	
 	@Override
-	public int count(Class<? extends Model> clazz) throws Exception {
+	public long count(Class<? extends Model> clazz) throws Exception {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException("not yet implemented");
 	}
 	
 	@Override
-	public int count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws Exception {
+	public long count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws Exception {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException("not yet implemented");
 	}
 	
 	@Override
-	public int count(Class<? extends Model> clazz, String query, Object... values) throws Exception {
+	public long count(Class<? extends Model> clazz, String query, Object... values) throws Exception {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException("not yet implemented");
 	}
@@ -375,28 +404,7 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 	
 	@Override
 	public ServiceInfo getInfo() {
-		return new ServiceInfo() {
-			@Override
-			public String getMigrationService() {
-				return null;
-			}
-			@Override
-			public String getName() {
-				return getClass().getSimpleName();
-			}
-			@Override
-			public String getProvider() {
-				return "oobium.org";
-			}
-			@Override
-			public String getSymbolicName() {
-				return getClass().getName();
-			}
-			@Override
-			public String getVersion() {
-				return "0.6.0";
-			}
-		};
+		return info;
 	}
 	
 	private Model getModel(String text) {
