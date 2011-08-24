@@ -150,6 +150,9 @@ public class JsonUtilsTests {
 
 		assertEquals("{a:b=b, c:d=d, e:=f}", toMap("\"a:b\":b, \"c:d\":d, \"e:\":f", true).toString());
 		assertEquals("{a:b=b, c:d=d, e:=f}", toMap("'a:b':b, 'c:d':d, 'e:':f", true).toString());
+		
+		assertEquals(1, toMap("a:1").get("a"));
+		assertEquals(-1, toMap("a:-1").get("a"));
 	}
 	
 	@Test

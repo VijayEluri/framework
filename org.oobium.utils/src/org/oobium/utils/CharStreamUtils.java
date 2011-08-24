@@ -368,7 +368,7 @@ public class CharStreamUtils {
 		end = Math.min(end, ca.length);
 		for(int i = start; i < end; i++) {
 			if(ca[i] == '-') {
-				if(i != 0) {
+				if(i != start) {
 					return null;
 				}
 			} else if(!Character.isDigit(ca[i])) {
