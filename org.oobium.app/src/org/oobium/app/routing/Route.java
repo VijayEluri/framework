@@ -99,7 +99,7 @@ public abstract class Route {
 					}
 				} else if("id".equals(param)) {
 					params.add(new String[] { "id", null });
-					regex.append("(\\d+)");
+					regex.append("(\\w+)");
 				} else {
 					int istart = find(ca, '[', s1, s2);
 					if(istart != -1) {
@@ -108,7 +108,7 @@ public abstract class Route {
 						if(iend == s2 || ca[iend] != '=') {
 							if(isEqual(ca, istart+1, iend-1, 'i','d')) {
 								params.add(new String[] { new String(ca, s1, iend-s1), null });
-								regex.append("(\\d+)");
+								regex.append("(\\w+)");
 								s0 = s2 + 1;
 								s1 = find(ca, '{', s0);
 								continue;
