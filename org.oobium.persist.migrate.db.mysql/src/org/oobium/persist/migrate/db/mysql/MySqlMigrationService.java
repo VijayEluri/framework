@@ -7,6 +7,8 @@ import static org.oobium.persist.Relation.SET_DEFAULT;
 import static org.oobium.persist.Relation.SET_NULL;
 import static org.oobium.utils.SqlUtils.MYSQL;
 
+import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -80,7 +82,16 @@ public class MySqlMigrationService extends DbMigrationService {
 	
 	@Override
 	protected String getCreateTableOptionsSql(Table table) {
-		return "TYPE = INNODB CHARACTER SET UTF8";
+		String engine = (String) persistor.getDatabase().get("engine");
+		try {
+			DatabaseMetaData meta = persistor.getConnection().getMetaData();
+			if(meta.getDatabaseMajorVersion() >= 5 && meta.getDatabaseMinorVersion() >= 1) {
+				return "ENGINE = " + engine + " CHARACTER SET UTF8";
+			}
+			return "TYPE = " + engine + " CHARACTER SET UTF8";
+		} catch(SQLException e) {
+			throw new RuntimeException("can't get version of MySQL database", e);
+		}
 	}
 
 	@Override

@@ -31,6 +31,7 @@ import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
 import org.oobium.persist.PersistClient;
 import org.oobium.persist.PersistService;
+import org.oobium.persist.ServiceInfo;
 import org.oobium.persist.db.internal.Conversion;
 import org.oobium.persist.db.internal.DbPersistor;
 import org.oobium.persist.db.internal.LoggingConnection;
@@ -53,20 +54,24 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	private static final int UPDATE = 3;
 	
 	protected final Logger logger;
+	private final DbPersistor persistor;
+	private final Map<String, Database> databases;
+	private final ServiceInfo info;
 	private BundleContext context;
-	private DbPersistor persistor;
-	private Map<String, Database> databases;
 
 	private ServiceTracker appTracker;
 
 	private final ReadWriteLock lock;
 
+	private static String logPath;
+	private static FileWriter logWriter;
 
 	public DbPersistService() {
 		logger = LogProvider.getLogger(DbPersistService.class);
 		persistor = new DbPersistor();
 		databases = new HashMap<String, Database>();
 		lock = new ReentrantReadWriteLock();
+		info = new DbServiceInfo(this);
 	}
 
 	/**
@@ -275,9 +280,6 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		return getConnection(true);
 	}
 
-	private static String logPath;
-	private static FileWriter logWriter;
-
 	private void closeLogWriter() {
 		if(logWriter != null) {
 			try {
@@ -323,11 +325,7 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 				connection = null;
 			}
 			if(connection == null && create) {
-				String client = threadClient.get();
-				if(client == null) {
-					throw new SQLException(client + " is not a registered PersistClient");
-				}
-				Database db = getDatabase(client);
+				Database db = getDatabase();
 				connection = db.getConnection();
 				connection.setAutoCommit(getAutoCommit());
 				connection = checkLoggingConnection(connection);
@@ -339,16 +337,29 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		}
 	}
 	
-	private Database getDatabase(String client) throws SQLException {
+	public Database getDatabase() {
+		String client = threadClient.get();
+		if(client == null) {
+			throw new IllegalStateException("session is not open (cannot determine client)");
+		}
+		return getDatabase(client);
+	}
+	
+	private Database getDatabase(String client) {
 		if(databases != null) {
 			Database db = databases.get(client);
 			if(db == null) {
-				throw new SQLException("database for " + client + " has not been setup");
+				throw new IllegalStateException("database for " + client + " has not been setup");
 			}
 			return db;
 		} else {
-			throw new SQLException("no connection pool has been setup");
+			throw new IllegalStateException("no connection pool has been setup");
 		}
+	}
+	
+	@Override
+	public ServiceInfo getInfo() {
+		return info;
 	}
 	
 	public String getMigrationServiceName() {

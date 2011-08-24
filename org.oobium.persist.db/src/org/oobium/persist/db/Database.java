@@ -50,6 +50,10 @@ public abstract class Database {
 		return false;
 	}
 	
+	public Object get(String property) {
+		return properties.get(property);
+	}
+	
 	public Connection getConnection() throws SQLException {
 		checkConnectionPool();
 		return connectionPool.getConnection();

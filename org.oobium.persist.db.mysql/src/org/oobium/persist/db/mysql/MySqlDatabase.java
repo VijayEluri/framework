@@ -40,6 +40,9 @@ public class MySqlDatabase extends Database {
 		if(props.get("password") == null) {
 			props.put("password", "");
 		}
+		if(props.get("engine") == null) {
+			props.put("engine", "INNODB");
+		}
 		return props;
 	}
 
