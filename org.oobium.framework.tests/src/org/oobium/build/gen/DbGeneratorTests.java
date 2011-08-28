@@ -34,7 +34,10 @@ public class DbGeneratorTests {
 		while(s2 > s1 && schema.charAt(s2) != '}') {
 			s2--;
 		}
-		return schema.substring(s1, s2 - 2).replace("\n\t\t", "\n");
+		if(s2 > s1+2) {
+			return schema.substring(s1, s2 - 2).replace("\n\t\t", "\n");
+		}
+		return "";
 	}
 	
 	@Test
@@ -70,6 +73,11 @@ public class DbGeneratorTests {
 					"\tText(\"attr\")\n" +
 					");",
 				up("com.test", DynClasses.getModel("AModel").addAttr("attr", "org.oobium.persist.Text.class")));
+	}
+	
+	@Test
+	public void testEmbedded() throws Exception {
+		assertEquals("", up("com.test", DynClasses.getModel("AModel").addAttr("attr", "Boolean.class").embedded()));
 	}
 	
 	@Test

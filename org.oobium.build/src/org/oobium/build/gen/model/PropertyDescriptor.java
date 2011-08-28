@@ -41,7 +41,6 @@ public class PropertyDescriptor {
 	private boolean array;
 	private boolean primitive;
 	
-	private boolean required;
 	private boolean readOnly;
 	private boolean unique;
 	private boolean virtual;
@@ -83,7 +82,6 @@ public class PropertyDescriptor {
 		model = relation.model;
 		opposite = relation.getOpposite();
 		
-		required = relation.required;
 		readOnly = relation.readOnly;
 		unique = relation.unique;
 		virtual = relation.virtual;
@@ -165,10 +163,6 @@ public class PropertyDescriptor {
 	
 	public boolean isAttr() {
 		return isAttr;
-	}
-	
-	public boolean isRequired() {
-		return required;
 	}
 	
 	public boolean isReadOnly() {

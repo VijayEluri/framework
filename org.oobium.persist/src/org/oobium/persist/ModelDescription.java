@@ -54,4 +54,12 @@ public @interface ModelDescription {
 	boolean allowDelete() default true;
 	boolean allowUpdate() default true;
 
+	/**
+	 * If true, then this model type is <i>only</i> to be used as an embedded model - standard
+	 * finders and other functions that require a separate table/collection will not be generated
+	 * and the id field will always be null.
+	 * <p>Default is false</p>
+	 * @see Relation#embed()
+	 */
+	boolean embedded() default false;
 }

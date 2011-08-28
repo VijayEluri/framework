@@ -152,9 +152,6 @@ public class ModelTable {
 		// add the column
 		String type = Integer.class.getCanonicalName();
 		Map<String, Object> options = new LinkedHashMap<String, Object>();
-		if(relation.required) {
-			options.put("required", true);
-		}
 		columns.add(new Column(type, column, options.isEmpty() ? null : options));
 
 		// add the foreign key

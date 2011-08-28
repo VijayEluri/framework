@@ -840,6 +840,9 @@ public abstract class Model implements JsonModel {
 		if(id instanceof Number) {
 			return ((Number) id).intValue() <= 0;
 		}
+		if("0".equals(id)) {
+			return true;
+		}
 		return false;
 	}
 

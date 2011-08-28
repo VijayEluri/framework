@@ -10,7 +10,7 @@
  ******************************************************************************/
 package org.oobium.build.model;
 
-import static org.oobium.utils.StringUtils.simpleName;
+import static org.oobium.utils.StringUtils.*;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.build.model.ModelDefinition.*;
 
@@ -27,6 +27,7 @@ public class ModelAttribute {
 	public String check;
 	public String init;
 	public String name;
+	public boolean json;
 	public int precision;
 	public int scale;
 	public String type;
@@ -41,6 +42,7 @@ public class ModelAttribute {
 		if("createdOn".equals(annotation) || "updatedOn".equals(annotation)) {
 			this.name = annotation;
 			this.type = "java.sql.Date";
+			this.json = false;
 			this.check = "";
 			this.init = "";
 			this.precision = 0;
@@ -52,6 +54,7 @@ public class ModelAttribute {
 		} else if("createdAt".equals(annotation) || "updatedAt".equals(annotation)) {
 			this.name = annotation;
 			this.type = "java.util.Date";
+			this.json = false;
 			this.check = "";
 			this.init = "";
 			this.precision = 0;
@@ -68,6 +71,7 @@ public class ModelAttribute {
 			
 			this.name = getString(entries.get("name"));
 			this.type = model.getType(entries.get("type"));
+			this.json = coerce(entries.get("json"), false);
 			this.check = getString(entries.get("check"));
 			this.init = getString(entries.get("init"));
 			this.precision = coerce(entries.get("precision"), 8);
@@ -87,6 +91,7 @@ public class ModelAttribute {
 		this.precision = original.precision;
 		this.scale = original.scale;
 		this.type = original.type;
+		this.json = original.json;
 		this.indexed = original.indexed;
 		this.readOnly = original.readOnly;
 		this.unique = original.unique;
@@ -125,6 +130,32 @@ public class ModelAttribute {
 		sb.append('@').append(Attribute.class.getSimpleName()).append('(');
 		sb.append("name=\"").append(name).append("\"");
 		sb.append(", type=").append(getSimpleType()).append(".class");
+
+		if(!blank(check)) {
+			sb.append(", check=\"").append(check).append("\"");
+		}
+		if(!blank(init)) {
+			sb.append(", init=\"").append(init).append("\"");
+		}
+		if(precision != 8) {
+			sb.append(", precision=").append(precision);
+		}
+		if(scale != 2) {
+			sb.append(", scale=").append(scale);
+		}
+		if(indexed) {
+			sb.append(", indexed=true");
+		}
+		if(readOnly) {
+			sb.append(", readOnly=true");
+		}
+		if(unique) {
+			sb.append(", unique=true");
+		}
+		if(virtual) {
+			sb.append(", virtual=true");
+		}
+
 		sb.append(')');
 		return sb.toString();
 	}

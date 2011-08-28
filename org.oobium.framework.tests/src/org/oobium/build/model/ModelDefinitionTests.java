@@ -126,4 +126,49 @@ public class ModelDefinitionTests {
 		assertEquals(description, new ModelDefinition(file).getDescription());
 	}
 
+	@Test
+	public void testEmbed() throws Exception {
+		String description = 
+			"@ModelDescription(\n" +
+			"\thasOne = {\n" +
+			"\t\t@Relation(name=\"other\", type=Other.class, embed=\"name\")\n" +
+			"\t},\n" +
+			"\thasMany = {\n" +
+			"\t\t@Relation(name=\"others\", type=Other.class, embed=\"name\")\n" +
+			"\t}\n" +
+			")";
+		
+		String source = description + "\npublic class TestModel {\n\n}";
+		
+		File file = writeFile(File.createTempFile("test", null), source);
+		
+		ModelDefinition definition = new ModelDefinition(file);
+		System.out.println(definition.getDescription());
+		assertEquals(description, definition.getDescription());
+
+		definition.save();
+		System.out.println(readFile(file));
+		assertEquals(description, new ModelDefinition(file).getDescription());
+	}
+	
+	@Test
+	public void testEmbedded() throws Exception {
+		String description = 
+			"@ModelDescription(\n" +
+			"\tembedded = true\n" +
+			")";
+		
+		String source = description + "\npublic class TestModel {\n\n}";
+		
+		File file = writeFile(File.createTempFile("test", null), source);
+		
+		ModelDefinition definition = new ModelDefinition(file);
+		System.out.println(definition.getDescription());
+		assertEquals(description, definition.getDescription());
+
+		definition.save();
+		System.out.println(readFile(file));
+		assertEquals(description, new ModelDefinition(file).getDescription());
+	}
+	
 }

@@ -115,9 +115,23 @@ public @interface Relation {
 	int dependent() default UNDEFINED;
 
 	/**
-	 * If set true, then the related Model will be embedded within this Model, rather than being in a
-	 * separate table / collection / etc.
-	 * <p>PersistService implementation specific.</p>
+	 * A comma separated list of the fields from the related Model to embed.
+	 * If this property is not an empty string (indicates one or more fields),
+	 * and if the related Model is not an embedded Model, then its id will also be included, whether it is
+	 * in the provided list or not. Default is an empty string.
+	 * <p>This setting will be overridden by {@link #embedded()}.</p>
+	 * <p>Option and PersistService implementation specific.</p>
+	 * @see #embedded()
+	 * @see ModelDescription#embedded()
+	 */
+	String embed() default "";
+
+	/**
+	 * If set true, then the entire related Model will be embedded within this Model.
+	 * <p>This setting will override {@link #embed()}.</p>
+	 * <p>Option and PersistService implementation specific.</p>
+	 * @see #embed()
+	 * @see ModelDescription#embedded()
 	 */
 	boolean embedded() default false;
 	

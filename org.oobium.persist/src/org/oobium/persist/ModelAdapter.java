@@ -112,6 +112,28 @@ public class ModelAdapter {
 		}
 	}
 	
+	public String[] getEmbedded(String field) {
+		if(hasOne.containsKey(field)) {
+			if(hasOne.get(field).embedded()) {
+				return null;
+			}
+			String embed = hasOne.get(field).embed();
+			if(!blank(embed)) {
+				return embed.split("\\s*,\\s*");
+			}
+		}
+		if(hasMany.containsKey(field)) {
+			if(hasMany.get(field).embedded()) {
+				return null;
+			}
+			String embed = hasMany.get(field).embed();
+			if(!blank(embed)) {
+				return embed.split("\\s*,\\s*");
+			}
+		}
+		return null;
+	}
+
 	public String[] getFields() {
 		return fields.toArray(new String[fields.size()]);
 	}
@@ -417,10 +439,10 @@ public class ModelAdapter {
 
 	public boolean isEmbedded(String field) {
 		if(hasOne.containsKey(field)) {
-			return hasOne.get(field).embedded();
+			return hasOne.get(field).embedded() || !blank(hasOne.get(field).embed());
 		}
 		if(hasMany.containsKey(field)) {
-			return hasMany.get(field).embedded();
+			return hasMany.get(field).embedded() || !blank(hasMany.get(field).embed());
 		}
 		return false;
 	}

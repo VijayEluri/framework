@@ -32,11 +32,12 @@ public class ModelRelation {
 	public String opposite;
 	public String through;
 	public boolean readOnly;
-	public boolean required;
 	public boolean unique;
 	public boolean virtual;
 	public int onDelete;
 	public int onUpdate;
+	public String embed;
+	public boolean embedded;
 	private ModelRelation oppositeRelation;
 	
 	public ModelRelation(ModelDefinition model, String annotation, boolean hasMany) {
@@ -54,11 +55,12 @@ public class ModelRelation {
 		this.opposite = getString(entries.get("opposite"));
 		this.through = getString(entries.get("through"));
 		this.readOnly = coerce(entries.get("readOnly"), false);
-		this.required = coerce(entries.get("required"), false);
 		this.unique = coerce(entries.get("unique"), false);
 		this.virtual = coerce(entries.get("virtual"), false);
 		this.onDelete = getReferential(entries.get("onDelete"));
 		this.onUpdate = getReferential(entries.get("onUpdate"));
+		this.embed = getString(entries.get("embed"));
+		this.embedded = coerce(entries.get("embedded"), false);
 	}
 
 	private ModelRelation(ModelRelation original, ModelDefinition model, boolean hasMany) {
@@ -70,11 +72,12 @@ public class ModelRelation {
 		this.opposite = original.opposite;
 		this.through = original.through;
 		this.readOnly = original.readOnly;
-		this.required = original.required;
 		this.unique = original.unique;
 		this.virtual = original.virtual;
 		this.onDelete = original.onDelete;
 		this.onUpdate = original.onUpdate;
+		this.embed = original.embed;
+		this.embedded = original.embedded;
 	}
 	
 	public ModelRelation getCopy() {
@@ -160,11 +163,35 @@ public class ModelRelation {
 		sb.append('@').append(Relation.class.getSimpleName()).append('(');
 		sb.append("name=\"").append(name).append("\"");
 		sb.append(", type=").append(getSimpleType()).append(".class");
-		if(hasOpposite()) {
-			sb.append(", opposite=\"").append(opposite).append('"');
-		}
 		if(isThrough()) {
 			sb.append(", through=\"").append(through).append('"');
+		} else {
+			if(hasOpposite()) {
+				sb.append(", opposite=\"").append(opposite).append('"');
+			}
+			if(embedded) {
+				sb.append(", embedded=true");
+			} else if(!blank(embed)) {
+				sb.append(", embed=\"").append(embed).append('"');
+			}
+			if(readOnly) {
+				sb.append(", readOnly=true");
+			}
+		}
+		if(limit != -1) {
+			sb.append(", limit=").append(limit);
+		}
+		if(unique) {
+			sb.append(", unique=true");
+		}
+		if(virtual) {
+			sb.append(", virtual=true");
+		}
+		if(onDelete != -1) {
+			sb.append(", onDelete=").append(onDelete);
+		}
+		if(onUpdate != -1) {
+			sb.append(", onUpdate=").append(onUpdate);
 		}
 		sb.append(')');
 		return sb.toString();

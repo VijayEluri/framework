@@ -51,6 +51,11 @@ public class DynModel extends DynClass {
 		return (Model) super.newInstance();
 	}
 	
+	public DynModel embedded() {
+		def.embedded = true;
+		return this;
+	}
+	
 	public DynModel datestamps() {
 		def.datestamps = true;
 		return this;

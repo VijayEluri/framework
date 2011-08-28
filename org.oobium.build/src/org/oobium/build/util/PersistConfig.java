@@ -127,23 +127,16 @@ public class PersistConfig {
 	
 	private void init(Object obj) {
 		if(obj instanceof String) {
-			service = (String) obj;
-			services = new ArrayList<PersistConfig.Service>(0);
+			if(service == null) service = (String) obj;
+			if(services == null) services = new ArrayList<PersistConfig.Service>(0);
 		} else if(obj instanceof List<?>) {
-			services = new ArrayList<PersistConfig.Service>();
 			for(Object o : (List<?>) obj) {
-				if(o instanceof String) {
-					service = (String) o;
-				} else if(o instanceof Map<?,?>) {
-					services.add(new Service((Map<?,?>) o));
-				} else {
-					throw new IllegalArgumentException();
-				}
+				init(o);
 			}
 		} else if(obj instanceof Map<?,?>) {
 			Service s = new Service((Map<?,?>) obj);
-			service = s.getName();
-			services = new ArrayList<PersistConfig.Service>();
+			if(service == null) service = s.getName();
+			if(services == null) services = new ArrayList<PersistConfig.Service>();
 			services.add(s);
 		} else {
 			throw new IllegalArgumentException();

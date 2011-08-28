@@ -159,11 +159,67 @@ public class MongoPersistService implements BundleActivator, PersistService {
 	public void create(Model... models) throws Exception {
 		DB db = getDB();
 		for(Model model : models) {
-			DBCollection c = db.getCollection(tableName(model));
-			BasicDBObject dbo = new BasicDBObject(model.getAll());
+			ModelAdapter adapter = ModelAdapter.getAdapter(model);
+			DBCollection c = db.getCollection(tableName(adapter.getModelClass()));
+			Map<String, Object> data = getData(model, false);
+			DBObject dbo = new BasicDBObject(data);
 			c.insert(dbo);
 			model.setId(dbo.get("_id"));
 		}
+	}
+
+	private Map<String, Object> getData(Model model, boolean includeId) {
+		ModelAdapter adapter = ModelAdapter.getAdapter(model);
+		Map<String, Object> data = model.getAll();
+		for(Iterator<String> iter = data.keySet().iterator(); iter.hasNext(); ) {
+			String field = iter.next();
+			if(adapter.hasAttribute(field)) {
+				continue;
+			}
+			if(adapter.hasOne(field) && adapter.hasKey(field)) {
+				Model m = (Model) model.get(field);
+				if(m != null) {
+					if(adapter.isEmbedded(field)) {
+						data.put(field, getData(m, true));
+					} else {
+						if(m.isNew()) m.create();
+						data.put(field, m.getId());
+					}
+				}
+				continue;
+			}
+			if(adapter.hasMany(field) && adapter.isEmbedded(field)) {
+				Collection<?> collection = (Collection<?>) model.get(field);
+				if(!collection.isEmpty()) {
+					List<Object> list = new ArrayList<Object>();
+					for(Object o : collection) {
+						Model m = (Model) o;
+						Map<String, Object> map;
+						String[] fields = adapter.getEmbedded(field);
+						if(fields == null) {
+							map = getData(m, true);
+						} else {
+							map = new HashMap<String, Object>();
+							for(String f : fields) {
+								map.put(f, m.get(f));
+							}
+							if(!m.isNew()) {
+								map.put("id", m.getId());
+							}
+						}
+						list.add(map);
+					}
+					data.put(field, list);
+				}
+				continue;
+			}
+			// if didn't hit a continue, fall through and remove this field
+			iter.remove();
+		}
+		if(includeId && !model.isNew()) {
+			data.put("id", model.getId());
+		}
+		return data;
 	}
 	
 	@Override
@@ -484,43 +540,9 @@ public class MongoPersistService implements BundleActivator, PersistService {
 		for(Model model : models) {
 			DBCollection c = db.getCollection(tableName(model));
 			DBObject q = new BasicDBObject("_id", model.getId(ObjectId.class));
-			
-			ModelAdapter adapter = ModelAdapter.getAdapter(model);
-			Map<String, Object> data = model.getAll();
-			for(Iterator<String> iter = data.keySet().iterator(); iter.hasNext(); ) {
-				String field = iter.next();
-				if(adapter.hasAttribute(field)) {
-					continue;
-				}
-				if(adapter.hasOne(field) && adapter.hasKey(field)) {
-					Model m = (Model) model.get(field);
-					if(m != null) {
-						if(adapter.isEmbedded(field)) {
-							data.put(field, m.getAll());
-						} else {
-							if(m.isNew()) m.create();
-							data.put(field, m.getId());
-						}
-					}
-					continue;
-				}
-				if(adapter.hasMany(field) && adapter.isEmbedded(field)) {
-					Collection<?> collection = (Collection<?>) model.get(field);
-					if(!collection.isEmpty()) {
-						List<Object> list = new ArrayList<Object>();
-						for(Object o : collection) {
-							list.add(((Model) o).getAll());
-						}
-						data.put(field, list);
-					}
-					continue;
-				}
-				// if didn't hit a continue, fall through and remove this field
-				iter.remove();
-			}
-			
-			DBObject o = new BasicDBObject("$set", data);
-			c.update(q, o);
+			Map<String, Object> data = getData(model, false);
+			DBObject dbo = new BasicDBObject("$set", data);
+			c.update(q, dbo);
 		}
 	}
 

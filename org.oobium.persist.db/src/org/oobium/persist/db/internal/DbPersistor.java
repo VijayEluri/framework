@@ -387,7 +387,7 @@ public class DbPersistor {
 			
 			List<Cell> cells = new ArrayList<Cell>();
 			for(String field : adapter.getAttributeFields()) {
-				if(!adapter.isVirtual(field) && model.isSet(field)) {
+				if(model.isSet(field) && !adapter.isVirtual(field) && !adapter.isThrough(field)) {
 					String name = columnName(field);
 					if(needsCreatedAt && name.equals(createdAt.column)) needsCreatedAt = false;
 					if(needsCreatedOn && name.equals(createdOn.column)) needsCreatedOn = false;
@@ -528,7 +528,7 @@ public class DbPersistor {
 			List<Cell> cells = new ArrayList<Cell>();
 			
 			for(String field : adapter.getFields()) {
-				if(model.isSet(field) && !adapter.isVirtual(field)) {
+				if(model.isSet(field) && !adapter.isVirtual(field) && !adapter.isThrough(field)) {
 					if(adapter.hasOne(field)) {
 						Model fModel = (Model) model.get(field);
 						Integer fId = (fModel != null) ? fModel.getId(Integer.class) : null;

@@ -1,11 +1,13 @@
 package org.oobium.persist.mongo;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.Set;
 
+import org.bson.types.ObjectId;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.oobium.framework.tests.dyn.DynClasses;
@@ -77,5 +79,36 @@ public class RetrieveTests extends BaseMongoTestCase {
 		assertNotNull(b.get("aModel"));
 		assertEquals(b, ((Model) b.get("aModel")).get("bModel"));
 	}
-	
+
+	@Test
+	public void testHasMany_EmbedWithId() throws Exception {
+		DynModel am = DynClasses.getModel(pkg, "AModel").addHasMany("bModels", "BModel.class", "embed=\"name\"");
+		DynClasses.getModel(pkg, "BModel").addAttr("name", "String.class").addAttr("age", "int.class");
+
+		Object aId = persistService.insert("a_models", "bModels:[{id:?,name:\"bob\"},{_id:?,name:\"joe\"}]", new ObjectId(), new ObjectId());
+		
+		Model a = am.newInstance();
+		a.setId(aId);
+		a.load();
+		
+		assertNoErrors(a);
+		
+		Set<?> set = (Set<?>) a.get("bModels");
+		Iterator<?> iter = set.iterator();
+		
+		assertNotNull(set);
+		assertEquals(2, set.size());
+
+		Model m1 = (Model) iter.next();
+		assertFalse(m1.isNew());
+		assertTrue(m1.isSet("name"));
+
+		Model m2 = (Model) iter.next();
+		assertFalse(m2.isNew());
+		assertTrue(m2.isSet("name"));
+
+		assertEquals("bob", m1.get("name"));
+		assertEquals("joe", m2.get("name"));
+	}
+
 }

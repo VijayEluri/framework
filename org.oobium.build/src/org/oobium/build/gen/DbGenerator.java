@@ -125,10 +125,10 @@ public class DbGenerator {
 			sf.staticImports.add(literal.class.getCanonicalName() + ".e");
 			for(Iterator<String> iter = options.getKeys().iterator(); iter.hasNext(); ) {
 				String key = iter.next();
-				sb.append("\n\t\t\t\te(\"").append(key).append("\", ").append(options.get(key)).append(')');
+				sb.append("\n\t\t\te(\"").append(key).append("\", ").append(options.get(key)).append(')');
 				if(iter.hasNext()) sb.append(", ");
 			}
-			sb.append("\n\t\t\t)");
+			sb.append("\n\t\t)");
 		}
 	}
 
@@ -144,7 +144,9 @@ public class DbGenerator {
 		Set<ModelTable> joinedModels = new HashSet<ModelTable>();
 		
 		for(ModelDefinition model : models) {
-			tables.put(model.getSimpleName(), new ModelTable(sf, model, models));
+			if(!model.embedded) {
+				tables.put(model.getSimpleName(), new ModelTable(sf, model, models));
+			}
 		}
 		
 		for(ModelDefinition model : models) {
@@ -154,11 +156,13 @@ public class DbGenerator {
 					if(opposite == null || opposite.hasMany) {
 						ModelTable table1 = tables.get(model.getSimpleName());
 						ModelTable table2 = tables.get(relation.getSimpleType());
-						JoinTable joinTable = new JoinTable(table1.name, columnName(relation.name), table2.name, columnName(relation.opposite));
-						if(!joins.containsKey(joinTable.name)) {
-							joins.put(joinTable.name, joinTable);
-							joinedModels.add(table1);
-							joinedModels.add(table2);
+						if(table1 != null && table2 != null) {
+							JoinTable joinTable = new JoinTable(table1.name, columnName(relation.name), table2.name, columnName(relation.opposite));
+							if(!joins.containsKey(joinTable.name)) {
+								joins.put(joinTable.name, joinTable);
+								joinedModels.add(table1);
+								joinedModels.add(table2);
+							}
 						}
 					}
 				}
@@ -251,12 +255,15 @@ public class DbGenerator {
 			}
 		}
 
-		sb.append("}");
+		if(sb.charAt(sb.length()-1) == '{') {
+			sb.append('\n');
+		}
+		sb.append('}');
 		sf.methods.put("2", sb.toString());
 
 		
 		sb = new StringBuilder();
-		sb.append("@Override\n\tpublic void down() throws SQLException {\n");
+		sb.append("@Override\npublic void down() throws SQLException {\n");
 
 		boolean first = true;
 		for(ModelTable table : tables.values()) {

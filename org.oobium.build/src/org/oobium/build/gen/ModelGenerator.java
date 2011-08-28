@@ -134,23 +134,30 @@ public class ModelGenerator {
 		sb.append("}");
 		src.staticMethods.put(String.valueOf(i++), sb.toString());
 		
+		if(model.embedded) {
+			return; // that's it! just the getPersistService() method
+		}
+
+		src.imports.add(List.class.getCanonicalName());
+		src.imports.add(Paginator.class.getCanonicalName());
+
 		sb = new StringBuilder();
 		appendDoc(sb, "Get the count of all instances of ?", type);
-		sb.append("public static int count() throws Exception {\n");
+		sb.append("public static long count() throws Exception {\n");
 		sb.append("\treturn getPersistService().count(").append(type).append(".class);\n");
 		sb.append("}");
 		src.staticMethods.put(String.valueOf(i++), sb.toString());
 		
 		sb = new StringBuilder();
 		appendDoc(sb, "Get the count of all instances of ?", type);
-		sb.append("public static int count(Map<String, Object> query, Object...values) throws Exception {\n");
+		sb.append("public static long count(Map<String, Object> query, Object...values) throws Exception {\n");
 		sb.append("\treturn getPersistService().count(").append(type).append(".class, query, values);\n");
 		sb.append("}");
 		src.staticMethods.put(String.valueOf(i++), sb.toString());
 
 		sb = new StringBuilder();
 		appendDoc(sb, "Get the count of all instances of ?", type);
-		sb.append("public static int count(String query, Object...values) throws Exception {\n");
+		sb.append("public static long count(String query, Object...values) throws Exception {\n");
 		sb.append("\treturn getPersistService().count(").append(type).append(".class, query, values);\n");
 		sb.append("}");
 		src.staticMethods.put(String.valueOf(i++), sb.toString());
@@ -214,6 +221,7 @@ public class ModelGenerator {
 		sb.append("public static Paginator<").append(type).append("> paginate(int page, int perPage, String query, Object...values) throws Exception {\n");
 		sb.append("\treturn Paginator.paginate(").append(type).append(".class, page, perPage, query, values);\n");
 		sb.append("}");
+		src.staticMethods.put(String.valueOf(i++), sb.toString());
 	}
 	
 	public static File[] generate(Workspace workspace, Module module, File...models) {
@@ -251,7 +259,8 @@ public class ModelGenerator {
 				for(Service service : modConfig.getServices()) {
 					if(!service.isDb()) {
 						for(String model : service.getModels()) {
-							models.remove(module.getModel(model));
+							String name = StringUtils.simpleName(model);
+							models.remove(module.getModel(name));
 						}
 					}
 				}
@@ -328,9 +337,7 @@ public class ModelGenerator {
 
 		src.imports.add(JsonModel.class.getCanonicalName());
 		src.imports.add(Model.class.getCanonicalName());
-		src.imports.add(List.class.getCanonicalName());
 		src.imports.add(Map.class.getCanonicalName());
-		src.imports.add(Paginator.class.getCanonicalName());
 		src.imports.add(PersistService.class.getCanonicalName());
 
 		List<String> inits = new ArrayList<String>();

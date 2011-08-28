@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.oobium.build.model;
 
+import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.build.util.SourceFile.ensureImports;
 import static org.oobium.utils.CharStreamUtils.closer;
 import static org.oobium.utils.CharStreamUtils.find;
@@ -18,7 +19,7 @@ import static org.oobium.utils.CharStreamUtils.findEOL;
 import static org.oobium.utils.FileUtils.readFile;
 import static org.oobium.utils.FileUtils.writeFile;
 import static org.oobium.utils.StringUtils.controllerSimpleName;
-import static org.oobium.utils.StringUtils.simpleName;
+import static org.oobium.utils.StringUtils.*;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -238,9 +239,11 @@ public class ModelDefinition {
 	private final Map<String, ModelRelation> hasMany;
 	private final List<String> indexes;
 	public boolean datestamps;
-	public boolean timestamps = true;
+	public boolean timestamps;
 	public boolean allowUpdate = true; // TODO
 	public boolean allowDelete = true; // TODO
+	public boolean embedded;
+	public boolean activation;
 
 	public String[] siblings;
 
@@ -277,7 +280,7 @@ public class ModelDefinition {
 		parse();
 	}
 
-	public ModelDefinition(String simpleName, String source, String[] siblings) {
+	public ModelDefinition(String simpleName, String source, String...siblings) {
 		this(simpleName, source, null, siblings);
 	}
 
@@ -292,10 +295,28 @@ public class ModelDefinition {
 		attributes.put(attr.name, attr);
 		return attr;
 	}
-	
-	public ModelAttribute addAttribute(String name, String type) {
+
+	private String build(String name, String type, String...options) {
 		if(!type.endsWith(".class")) type = type + ".class";
-		return addAttribute("(name=\"" + name + "\",type=" + type + ")");
+		StringBuilder sb = new StringBuilder();
+		sb.append("(name=\"").append(name).append("\",type=").append(type);
+		for(String option : options) {
+			sb.append(',').append(option);
+		}
+		sb.append(')');
+		return sb.toString();
+	}
+	
+	public ModelAttribute addAttribute(String name, String type, String...options) {
+		return addAttribute(build(name, type, options));
+	}
+
+	public ModelRelation addHasOne(String name, String type, String...options) {
+		return addRelation(build(name, type, options), false);
+	}
+	
+	public ModelRelation addHasMany(String name, String type, String...options) {
+		return addRelation(build(name, type, options), true);
 	}
 	
 	public ModelRelation addRelation(ModelRelation relation) {
@@ -428,6 +449,42 @@ public class ModelDefinition {
 				sb.append(",\n");
 			}
 			sb.append("\ttimestamps = true");
+		}
+		if(!allowUpdate) {
+			if(first) {
+				first = false;
+				sb.append("\n");
+			} else {
+				sb.append(",\n");
+			}
+			sb.append("\tallowUpdate = false");
+		}
+		if(!allowDelete) {
+			if(first) {
+				first = false;
+				sb.append("\n");
+			} else {
+				sb.append(",\n");
+			}
+			sb.append("\tallowDelete = true");
+		}
+		if(embedded) {
+			if(first) {
+				first = false;
+				sb.append("\n");
+			} else {
+				sb.append(",\n");
+			}
+			sb.append("\tembedded = true");
+		}
+		if(activation) {
+			if(first) {
+				first = false;
+				sb.append("\n");
+			} else {
+				sb.append(",\n");
+			}
+			sb.append("\tactivation = true");
 		}
 		if(!first) {
 			sb.append('\n');
@@ -572,8 +629,13 @@ public class ModelDefinition {
 		
 		int ix = name.indexOf('.');
 		if(ix != -1) {
+			String seg1 = name.substring(0, ix);
+//			if(seg1.equals("com") || seg1.equals("org") || seg1.equals("java") || seg1.equals("javax")) {
+//				// assume it is fully qualified and exit
+//				return name;
+//			}
 			// handle inner classes
-			name = getType(name.substring(0, ix)) + name.substring(ix);
+			name = getType(seg1) + name.substring(ix);
 			if(name.startsWith("java.lang.")) {
 				name = name.substring(10);
 			}
@@ -732,8 +794,12 @@ public class ModelDefinition {
 			parseRelations(v, true);
 		}
 		
-		datestamps = "true".equals(parameters.get("datestamps"));
-		timestamps = "true".equals(parameters.get("timestamps"));
+		datestamps = coerce(parameters.get("datestamps"), false);
+		timestamps = coerce(parameters.get("timestamps"), false);
+		allowUpdate = coerce(parameters.get("allowUpdate"), true);
+		allowDelete = coerce(parameters.get("allowDelete"), true);
+		embedded = coerce(parameters.get("embedded"), false);
+		activation = coerce(parameters.get("activation"), false);
 	}
 
 	private void parseIndexes(char[] ca, int start, int end) {
@@ -804,6 +870,10 @@ public class ModelDefinition {
 		}
 	}
 
+	public void setSiblings(String...siblings) {
+		this.siblings = siblings;
+	}
+	
 	@Override
 	public String toString() {
 		return type + " => {" + "}";
