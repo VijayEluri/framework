@@ -737,6 +737,14 @@ public class Bundle extends Project {
 		return (exportedPackages == null) ? new HashSet<ExportedPackage>(0) : new TreeSet<ExportedPackage>(exportedPackages);
 	}
 
+	/**
+	 * Get the full name of this bundle, including the qualifier: "com.test.blog_1.0.0.123"
+	 * @return the full name of this bundle, including the qualifier
+	 */
+	public String getFullName() {
+		return name + "_" + version;
+	}
+
 	public Set<ImportedPackage> getImportedPackages() {
 		return (importedPackages == null) ? new HashSet<ImportedPackage>(0) : new TreeSet<ImportedPackage>(importedPackages);
 	}
@@ -751,6 +759,14 @@ public class Bundle extends Project {
 
 	public List<RequiredBundle> getRequiredBundles() {
 		return (requiredBundles == null) ? new ArrayList<RequiredBundle>(0) : new ArrayList<RequiredBundle>(requiredBundles);
+	}
+
+	/**
+	 * Get the full name of the source bundle, including the qualifier, for this bundle: "com.test.blog.source_1.0.0.123.zip"
+	 * @return the full name of the source bundle, including the qualifier
+	 */
+	public String getSourceName() {
+		return name + ".source_" + version;
 	}
 
 	public boolean imports(String regex) {

@@ -237,12 +237,15 @@ public class EspCompiler {
 
 	private void appendEntryValueWithoutQuotes(MarkupElement element, String key) {
 		JavaSourcePart part = (JavaSourcePart) element.getEntryValue(key);
-		if(part.isSimple()) {
-			String text = part.getText();
-			body.append(text.substring(1, text.length()-1));
-		} else {
+		int start = body.length();
+//		if(part.isSimple()) {
+//			String text = part.getText();
+//			body.append(text.substring(1, text.length()-1));
+//		} else {
 			build(part, body, true);
-		}
+//		}
+		body.deleteCharAt(start);
+		body.deleteCharAt(body.length()-2);
 	}
 	
 	private void appendFieldError(String model, List<JavaSourcePart> fields, String str) {
@@ -1855,20 +1858,20 @@ public class EspCompiler {
 						body.append(")).append(\"\\\" value=\\\"\").append(f(");
 					} else {
 						indent(body);
-						body.append('\t').append(sbName).append(".append(\"<option value=\\\"\").append(f(");
+						body.append('\t').append(sbName).append(".append(\"<option value=\\\"\").append(");
 					}
 					if(element.hasEntryValue("value")) {
 						appendEntryValueWithoutQuotes(element, "value");
 					} else {
-						body.append(var);
+						body.append("f(").append(var).append(")");
 					}
-					body.append(")).append(\"\\\" \").append(").append(selectedVar).append(" ? \"selected >\" : \">\").append(h(");
+					body.append(").append(\"\\\" \").append(").append(selectedVar).append(" ? \"selected >\" : \">\").append(");
 					if(element.hasEntryValue("text")) {
 						appendEntryValueWithoutQuotes(element, "text");
 					} else {
-						body.append("String.valueOf(").append(var).append(")");
+						body.append("h(String.valueOf(").append(var).append("))");
 					}
-					body.append(")).append(\"</option>\");\n");
+					body.append(").append(\"</option>\");\n");
 					indent(body);
 					body.append("}\n");
 				}

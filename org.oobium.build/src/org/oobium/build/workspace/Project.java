@@ -250,8 +250,14 @@ public class Project implements Comparable<Project> {
 		this.type = type;
 		this.manifest = setManifest();
 
-		if(isJar) {
-			this.name = parseName(manifest);
+		if(file.isFile()) {
+			if(isJar) {
+				this.name = parseName(manifest);
+			} else {
+				String s = file.getName();
+				int ix = s.lastIndexOf('.');
+				this.name = (ix == -1) ? s : s.substring(0, ix);
+			}
 			this.bin = null;
 			this.src = null;
 			this.main = null;

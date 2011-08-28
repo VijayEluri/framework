@@ -92,6 +92,8 @@ public class ProjectCommand extends ApplicationCommand {
 					console.release();
 				}
 			}
+		} else {
+			console.err.print("unsupported project type: " + project);
 		}
 	}
 	

@@ -15,7 +15,6 @@ import static org.oobium.utils.Config.PERSIST;
 import static org.oobium.utils.StringUtils.blank;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,8 +31,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.oobium.build.BuildBundle;
 import org.oobium.build.gen.ProjectGenerator;
 import org.oobium.build.workspace.Project.Type;
-import org.oobium.logging.Logger;
 import org.oobium.logging.LogProvider;
+import org.oobium.logging.Logger;
 import org.oobium.persist.PersistService;
 import org.oobium.utils.Config;
 import org.oobium.utils.Config.Mode;
@@ -883,7 +882,7 @@ public class Workspace {
 	
 	private File[] getProjects(File repo) {
 		if(repo.isDirectory()) {
-			File[] files = repo.listFiles(new FileFilter() {
+			File[] files = repo.listFiles(/*new FileFilter() {
 				@Override
 				public boolean accept(File file) {
 					if(file.isFile() && file.getName().endsWith(".jar")) {
@@ -894,7 +893,7 @@ public class Workspace {
 					}
 					return false;
 				}
-			});
+			}*/);
 			return files;
 		}
 		return new File[0];

@@ -48,6 +48,7 @@ public class UpdateSiteBuilder {
 		UpdateSiteBuilder builder = new UpdateSiteBuilder(workspace, "org.oobium.framework.update-site");
 		builder.setClean(true);
 		builder.setIncludeSource(true);
+		builder.setEclipse(new File("../../../eclipse"));
 		builder.setSiteDirectory(new File("../../website/org.oobium.www.update_site/assets/updates"));
 		builder.build();
 		
@@ -56,6 +57,7 @@ public class UpdateSiteBuilder {
 	
 	
 	private final UpdateSite site;
+	private File eclipse;
 	private File siteDirectory;
 	private boolean clean;
 	private boolean includeSource;
@@ -85,6 +87,14 @@ public class UpdateSiteBuilder {
 			site.workspace.addRepository(lib);
 		}
 		
+		if(includeSource) {
+			// load any library-source bundles
+			File libsrc = new File(featureProject.file, "lib-src");
+			if(libsrc.isDirectory()) {
+				site.workspace.addRepository(libsrc);
+			}
+		}
+		
 		DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
 		Document doc = docBuilder.parse(feature);
@@ -99,7 +109,7 @@ public class UpdateSiteBuilder {
 		String resolvedVersion = new Version(version).resolve(site.date).toString();
 		attr.setNodeValue(resolvedVersion);
 
-		List<Bundle> featureBundles = new ArrayList<Bundle>();
+		List<Bundle> bundles = new ArrayList<Bundle>();
 		
 		NodeList list = doc.getElementsByTagName("plugin");
 		for(int i = 0; i < list.getLength(); i++) {
@@ -114,7 +124,7 @@ public class UpdateSiteBuilder {
 					throw new Exception("no bundle: " + pluginId + "_" + version);
 				}
 				attr.setNodeValue(bundle.version.resolve(site.date).toString());
-				featureBundles.add(bundle);
+				bundles.add(bundle);
 				site.plugins.add(bundle);
 			}
 		}
@@ -122,22 +132,28 @@ public class UpdateSiteBuilder {
 		String xml = getXML(doc);
 		site.features.put(featureId + "_" + resolvedVersion + ".jar", xml);
 		
-		if(includeSource && hasSource(featureBundles)) {
+		if(includeSource && hasSource(site.workspace, bundles)) {
 			Element element = (Element) doc.getElementsByTagName("feature").item(0);
 			element.setAttribute("id", element.getAttribute("id") + ".source");
 			element.setAttribute("label", element.getAttribute("label") + " Source");
+
+			List<Element> children = new ArrayList<Element>();
 			for(int i = 0; i < list.getLength(); i++) {
 				Node node = list.item(i);
 				if(node.getNodeType() == Node.ELEMENT_NODE) {
 					element = (Element) node;
 					String id = element.getAttribute("id");
 					Bundle bundle = site.workspace.getBundle(id);
-					if(bundle != null && bundle.hasSource()) {
+					if(bundle != null && hasSource(site.workspace, bundle)) {
 						element.setAttribute("id", id + ".source");
 					} else {
-						element.getParentNode().removeChild(element);
+						children.add(element);
 					}
 				}
+			}
+			
+			for(Element child : children) {
+				child.getParentNode().removeChild(child);
 			}
 			
 			xml = getXML(doc);
@@ -147,11 +163,22 @@ public class UpdateSiteBuilder {
 		return resolvedVersion;
 	}
 	
-	private boolean hasSource(List<Bundle> bundles) throws IOException {
+	private boolean hasSource(Workspace workspace, List<Bundle> bundles) throws IOException {
 		for(Bundle bundle : bundles) {
-			if(bundle.hasSource()) {
+			if(hasSource(workspace, bundle)) {
 				return true;
 			}
+		}
+		return false;
+	}
+
+	private boolean hasSource(Workspace workspace, Bundle bundle) throws IOException {
+		if(bundle.hasSource()) {
+			return true;
+		}
+		Project src = workspace.getProject(bundle.getSourceName());
+		if(src != null) {
+			return true;
 		}
 		return false;
 	}
@@ -169,7 +196,7 @@ public class UpdateSiteBuilder {
 		} else {
 			siteDirectory.mkdirs();
 		}
-		
+
 		DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
 		Document doc = docBuilder.parse(site.file);
@@ -245,8 +272,41 @@ public class UpdateSiteBuilder {
 				if(includeSource) {
 					if(plugin.hasSource()) {
 						plugin.createSourceJar(plugins, version);
+					} else {
+						Project src = site.workspace.getProject(plugin.getSourceName());
+						if(src != null) {
+							FileUtils.copy(src.file, plugins);
+						}
 					}
 				}
+			}
+		}
+		
+		if(eclipse != null && eclipse.isDirectory()) {
+			String publisher = eclipse.getCanonicalPath() + File.separator + "plugins" + File.separator + "org.eclipse.equinox.launcher_*.jar";
+			String repo = siteDirectory.getCanonicalPath();
+			File tmp = FileUtils.writeFile(site.workspace.getWorkingDirectory(), "build.sh",
+					"java -jar " + publisher +
+						" -application org.eclipse.equinox.p2.publisher.UpdateSitePublisher" +
+						" -metadataRepository file:" + repo +
+						" -artifactRepository file:" + repo +
+						" -source " + repo +
+						" -configs ALL" +
+						" -compress",
+					FileUtils.EXECUTABLE
+				);
+			ProcessBuilder pb = new ProcessBuilder(tmp.getCanonicalPath());
+			try {
+				Process process = pb.start();
+				new StreamGobbler(process.getInputStream());
+				new StreamGobbler(process.getErrorStream());
+				if(process.waitFor() == 0) {
+					System.out.println("exported p2 data successfully");
+				} else {
+					System.out.println("error exporting p2 data");
+				}
+			} finally {
+				tmp.delete();
 			}
 		}
 	}
@@ -273,6 +333,10 @@ public class UpdateSiteBuilder {
 		this.clean = clean;
 	}
 
+	public void setEclipse(File directory) {
+		this.eclipse = directory;
+	}
+	
 	public void setIncludeSource(boolean include) {
 		this.includeSource = include;
 	}
