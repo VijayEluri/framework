@@ -939,6 +939,14 @@ public class FileUtils {
 		return readFile(path, canonicalClassName.replace('.', File.separatorChar)+".java");
 	}
 	
+	public static File toFile(String path) {
+		if(File.separatorChar == '/') {
+			return new File(path.replace('\\', '/'));
+		} else {
+			return new File(path.replace('/', '\\'));
+		}
+	}
+	
 	public static File writeFile(File dst, InputStream in) throws IOException {
 		return writeFile(dst, in, -1);
 	}

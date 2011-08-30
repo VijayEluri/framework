@@ -1,5 +1,7 @@
 package org.oobium.build.eclipse;
 
+import static org.oobium.utils.FileUtils.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -18,7 +20,6 @@ import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Project;
 import org.oobium.build.workspace.Version;
 import org.oobium.build.workspace.Workspace;
-import org.oobium.utils.FileUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -29,8 +30,8 @@ import org.w3c.dom.NodeList;
 public class UpdateSiteBuilder {
 
 	private static Workspace loadWorkspace() {
-		File projectDirectory = new File("..");
-		File workingDirectory = new File("../../studio");
+		File projectDirectory = toFile("..");
+		File workingDirectory = toFile("../../studio");
 		
 		Workspace ws = new Workspace(workingDirectory);
 		for(File file : projectDirectory.listFiles()) {
@@ -48,8 +49,8 @@ public class UpdateSiteBuilder {
 		UpdateSiteBuilder builder = new UpdateSiteBuilder(workspace, "org.oobium.framework.update-site");
 		builder.setClean(true);
 		builder.setIncludeSource(true);
-		builder.setEclipse(new File("../../../eclipse"));
-		builder.setSiteDirectory(new File("../../website/org.oobium.www.update_site/assets/updates"));
+		builder.setEclipse("../../../eclipse/eclipse");
+		builder.setSiteDirectory("../../website/org.oobium.www.update_site/assets/updates");
 		builder.build();
 		
 		System.out.println("update-site created in " + builder.getSiteDirectory().getCanonicalPath());
@@ -197,7 +198,7 @@ public class UpdateSiteBuilder {
 		}
 		if(siteDirectory.exists()) {
 			if(clean) {
-				FileUtils.deleteContents(siteDirectory);
+				deleteContents(siteDirectory);
 			} else {
 				throw new IllegalStateException("site directory already exists");
 			}
@@ -254,13 +255,13 @@ public class UpdateSiteBuilder {
 		}
 
 		File siteFile = new File(siteDirectory, "site.xml");
-		FileUtils.writeFile(siteFile, getXML(doc));
+		writeFile(siteFile, getXML(doc));
 
 		if(!site.features.isEmpty() && !site.plugins.isEmpty()) {
 			File features = new File(siteDirectory, "features");
 			for(String feature : site.features.keySet()) {
 				File jar = new File(features, feature);
-				FileUtils.createJar(jar, site.date.getTime(), new String[][] {
+				createJar(jar, site.date.getTime(), new String[][] {
 					new String[] {
 							"feature.xml",
 							site.features.get(feature)
@@ -283,7 +284,7 @@ public class UpdateSiteBuilder {
 					} else {
 						Project src = site.workspace.getProject(plugin.getSourceName());
 						if(src != null) {
-							FileUtils.copy(src.file, plugins);
+							copy(src.file, plugins);
 						}
 					}
 				}
@@ -293,7 +294,9 @@ public class UpdateSiteBuilder {
 		if(eclipse != null && eclipse.isDirectory()) {
 			String publisher = eclipse.getCanonicalPath() + File.separator + "plugins" + File.separator + "org.eclipse.equinox.launcher_*.jar";
 			String repo = siteDirectory.getCanonicalPath();
-			File tmp = FileUtils.writeFile(site.workspace.getWorkingDirectory(), "build.sh",
+			File tmp = writeFile(
+					site.workspace.getWorkingDirectory(),
+					"build." + ((File.separatorChar == '\\') ? "bat" : "sh"),
 					"java -jar " + publisher +
 						" -application org.eclipse.equinox.p2.publisher.UpdateSitePublisher" +
 						" -metadataRepository file:" + repo +
@@ -301,13 +304,14 @@ public class UpdateSiteBuilder {
 						" -source " + repo +
 						" -configs ALL" +
 						" -compress",
-					FileUtils.EXECUTABLE
+					EXECUTABLE
 				);
+			System.out.print("generating p2 repository data...");
 			ProcessBuilder pb = new ProcessBuilder(tmp.getCanonicalPath());
 			try {
 				Process process = pb.start();
-				new StreamGobbler(process.getInputStream());
-				new StreamGobbler(process.getErrorStream());
+				new StreamGobbler(process.getInputStream()).start();
+				new StreamGobbler(process.getErrorStream()).start();
 				if(process.waitFor() == 0) {
 					System.out.println("exported p2 data successfully");
 				} else {
@@ -341,16 +345,16 @@ public class UpdateSiteBuilder {
 		this.clean = clean;
 	}
 
-	public void setEclipse(File directory) {
-		this.eclipse = directory;
+	public void setEclipse(String path) {
+		this.eclipse = toFile(path);
 	}
 	
 	public void setIncludeSource(boolean include) {
 		this.includeSource = include;
 	}
 
-	public void setSiteDirectory(File directory) {
-		this.siteDirectory = directory;
+	public void setSiteDirectory(String path) {
+		this.siteDirectory = toFile(path);
 	}
 	
 }
