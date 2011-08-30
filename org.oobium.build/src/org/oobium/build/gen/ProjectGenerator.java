@@ -474,7 +474,6 @@ public class ProjectGenerator {
 		createFolder(srcFolder(migrator));
 		createFolder(binFolder(migrator));
 		createFolder(mainFolder(migrator));
-		createFolder(libFolder(migrator));
 
 		createProjectFile(migrator, PTYPE_MIG, false);
 		createClasspathFile(migrator, PTYPE_MIG);
@@ -982,7 +981,6 @@ public class ProjectGenerator {
 	}
 	
 	private static File genFolder(File project)			{ return new File(project, "generated"); }
-	private static File libFolder(File project)			{ return new File(project, "lib"); }
 	private static File funcFolder(File project)			{ return new File(project, "src-functional"); }
 	private static File intgFolder(File project)			{ return new File(project, "src-integration"); }
 	private static File unitFolder(File project)			{ return new File(project, "src-unit"); }
