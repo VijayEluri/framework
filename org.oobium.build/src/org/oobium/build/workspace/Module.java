@@ -924,9 +924,9 @@ public class Module extends Bundle {
 			//   this file contains the name of the realm that is allowed access to the files in the folder
 			for(File file : findFiles(assets)) {
 				if(file.getName().equals("authentication.realm")) {
-					realms.add(file.getParent().substring(len) + File.separator + "|" + readFile(file));
+					realms.add(file.getParent().substring(len).replace('\\', '/') + File.separator + "|" + readFile(file));
 				} else {
-					paths.add(file.getPath().substring(len) + "|" + file.length() + "|" + httpDate(file.lastModified()));
+					paths.add(file.getPath().substring(len).replace('\\', '/') + "|" + file.length() + "|" + httpDate(file.lastModified()));
 				}
 			}
 
