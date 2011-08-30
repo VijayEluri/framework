@@ -1,11 +1,13 @@
 package org.oobium.build.eclipse;
 
 import static org.oobium.utils.FileUtils.*;
+import static org.oobium.utils.StringUtils.*;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -48,9 +50,11 @@ public class UpdateSiteBuilder {
 		Workspace workspace = loadWorkspace();
 		UpdateSiteBuilder builder = new UpdateSiteBuilder(workspace, "org.oobium.framework.update-site");
 		builder.setClean(true);
+		builder.setName("Oobium Project Site");
 		builder.setIncludeSource(true);
 		builder.setEclipse("../../../eclipse/eclipse");
 		builder.setSiteDirectory("../../website/org.oobium.www.update_site/assets/updates");
+		builder.setChildren("http://download.eclipse.org/releases/helios");
 		builder.build();
 		
 		System.out.println("update-site created in " + builder.getSiteDirectory().getCanonicalPath());
@@ -60,6 +64,10 @@ public class UpdateSiteBuilder {
 	private final UpdateSite site;
 	private File eclipse;
 	private File siteDirectory;
+
+	private String name;
+	private String[] children;
+	
 	private boolean clean;
 	private boolean includeSource;
 	
@@ -90,10 +98,11 @@ public class UpdateSiteBuilder {
 		
 		if(includeSource) {
 			// load any library-source bundles
-			File libsrc = new File(featureProject.file, "lib-src");
-			if(libsrc.isDirectory()) {
-				site.workspace.addRepository(libsrc);
-			}
+//			TODO fix mongo src bundle
+//			File libsrc = new File(featureProject.file, "lib-src");
+//			if(libsrc.isDirectory()) {
+//				site.workspace.addRepository(libsrc);
+//			}
 		}
 		
 		DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
@@ -321,6 +330,49 @@ public class UpdateSiteBuilder {
 				tmp.delete();
 			}
 		}
+		
+		if(children != null && children.length > 0) {
+			StringBuilder sb = new StringBuilder();
+			for(int i = 0; i < children.length; i++) {
+				sb.append("  ").append("<child location='").append(children[i]).append("'/>");
+				if(i != children.length-1) {
+					sb.append('\n');
+				}
+			}
+
+			String time = String.valueOf(site.date.getTime());
+			String size = String.valueOf(children.length);
+
+			writeFile(siteDirectory, "compositeContent.xml", source(
+					"<?xml version='1.0' encoding='UTF-8'?>",
+					"<?compositeMetadataRepository  version='1.0.0'?>",
+					"<repository name='&quot;{name}&quot;'",
+					" type='org.eclipse.equinox.internal.p2.artifact.repository.CompositeMetadataRepository' version='1.0.0'>",
+					" <properties size='1'>",
+					"  <property name='p2.timestamp' value='1243822502499'/>",
+					" </properties>",
+					" <children size='{size}'>",
+					sb.toString(),
+					" </children>",
+					"</repository>"
+				).replace("{name}", name).replace("{timestamp}", time).replace("{size}", size)
+			);
+
+			writeFile(siteDirectory, "compositeArtifacts.xml", source(
+					"<?xml version='1.0' encoding='UTF-8'?>",
+					"<?compositeArtifactRepository version='1.0.0'?>",
+					"<repository name='&quot;{name}&quot;'",
+					" type='org.eclipse.equinox.internal.p2.artifact.repository.CompositeArtifactRepository' version='1.0.0'>",
+					" <properties size='1'>",
+					"  <property name='p2.timestamp' value='1243822502440'/>",
+					" </properties>",
+					" <children size='{size}'>",
+					sb.toString(),
+					" </children>",
+					"</repository>"
+				).replace("{name}", name).replace("{timestamp}", time).replace("{size}", size)
+			);
+		}
 	}
 	
 	public File getSiteDirectory() {
@@ -345,6 +397,10 @@ public class UpdateSiteBuilder {
 		this.clean = clean;
 	}
 
+	public void setChildren(String...children) {
+		this.children = children;
+	}
+	
 	public void setEclipse(String path) {
 		this.eclipse = toFile(path);
 	}
@@ -353,6 +409,10 @@ public class UpdateSiteBuilder {
 		this.includeSource = include;
 	}
 
+	public void setName(String name) {
+		this.name = name;
+	}
+	
 	public void setSiteDirectory(String path) {
 		this.siteDirectory = toFile(path);
 	}
