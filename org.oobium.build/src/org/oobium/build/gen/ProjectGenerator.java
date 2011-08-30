@@ -265,27 +265,44 @@ public class ProjectGenerator {
 	}
 	
 	private static void createBuildFile(File project, int type) {
-		StringBuilder sb = new StringBuilder();
-		if(PTYPE_MIG == type) {
-			sb.append("source.. = src/,\\\n           generated/\n");
-		} else if(PTYPE_TEST == type) {
-			sb.append("source.. = src-functional/,\\\n");
-			sb.append("           src-integration/,\\\n");
-			sb.append("           src-unit/\n");
-		} else if(type >= 0) {
-			sb.append("source.. = src/,\\\n");
-			if(type != PTYPE_APP_WS && type != PTYPE_MOD_WS) {
-				sb.append("           assets/,\\\n");
-			}
-			sb.append("           generated/\n");
+		switch(type) {
+		case PTYPE_APP:
+		case PTYPE_MOD:
+			writeFile(project, "build.properties",
+					"source.. = src/,\\\n" +
+					"           assets/,\\\n" +
+					"           generated/\n" +
+					"output.. = bin/\n" +
+					"bin.includes = META-INF/,\\\n" +
+					"               .\n");
+			break;
+		case PTYPE_APP_WS:
+		case PTYPE_MOD_WS:
+			writeFile(project, "build.properties",
+					"source.. = src/,\\\n" +
+					"           generated/\n" +
+					"output.. = bin/\n" +
+					"bin.includes = META-INF/,\\\n" +
+					"               .\n");
+			break;
+		case PTYPE_TEST:
+			writeFile(project, "build.properties",
+					"source.. = src-functional/,\\\n" +
+					"           src-integration/,\\\n" +
+					"           src-unit/\n" +
+					"output.. = bin/\n" +
+					"bin.includes = META-INF/,\\\n" +
+					"               .\n" +
+					"additional.bundles = org.oobium.cache\n");
+			break;
+		case PTYPE_MIG:
+			writeFile(project, "build.properties",
+					"source.. = src/\n" +
+					"output.. = bin/\n" +
+					"bin.includes = META-INF/,\\\n" +
+					"               .\n");
+			break;
 		}
-		sb.append("output.. = bin/\n");
-		sb.append("bin.includes = META-INF/,\\\n");
-		sb.append(".\n");
-		if(PTYPE_TEST == type) {
-			sb.append("additional.bundles = org.oobium.cache\n");
-		}
-		writeFile(project, "build.properties", sb.toString());
 	}
 	
 	private static void createClasspathFile(File project, int type) {
@@ -302,8 +319,6 @@ public class ProjectGenerator {
 				if(type != PTYPE_APP_WS && type != PTYPE_MOD_WS) {
 					sb.append("	<classpathentry kind=\"src\" path=\"assets\"/>\n");
 				}
-				sb.append("	<classpathentry kind=\"src\" path=\"generated\"/>\n");
-			} else if(type == PTYPE_MIG) {
 				sb.append("	<classpathentry kind=\"src\" path=\"generated\"/>\n");
 			}
 		}
@@ -460,7 +475,6 @@ public class ProjectGenerator {
 		createFolder(binFolder(migrator));
 		createFolder(mainFolder(migrator));
 		createFolder(libFolder(migrator));
-		createFolder(genFolder(migrator));
 
 		createProjectFile(migrator, PTYPE_MIG, false);
 		createClasspathFile(migrator, PTYPE_MIG);
