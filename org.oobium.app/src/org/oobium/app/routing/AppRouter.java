@@ -128,9 +128,21 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		return sb.toString();
 	}
 	
+	/**
+	 * substitute GET for HEAD when resolving routes;
+	 * other methods are untouched
+	 */
+	private HttpMethod getMethod(Request request) {
+		HttpMethod method = request.getMethod();
+		if(HttpMethod.HEAD == method) {
+			return HttpMethod.GET;
+		}
+		return method;
+	}
+	
 	private RouteHandler checkAuthorization(Request request, Router router) {
 		if(router.authentications != null) {
-			Map<String, Realm> auths = router.authentications.get(request.getMethod());
+			Map<String, Realm> auths = router.authentications.get(getMethod(request));
 			if(auths != null) {
 				Realm realm = auths.get(request.getUri());
 				if(realm == null) {
@@ -180,7 +192,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 	
 	private RouteHandler getFixedRouteHandler(Request request, Router router) {
 		if(router.fixedRoutes != null) {
-			Map<String, Route> fixedRoutes = router.fixedRoutes.get(request.getMethod());
+			Map<String, Route> fixedRoutes = router.fixedRoutes.get(getMethod(request));
 			if(fixedRoutes != null) {
 				Route fixedRoute = fixedRoutes.get(request.getUri());
 				if(fixedRoute == null) {
@@ -402,7 +414,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 	
 	private RouteHandler getPatternRouteHandler(Request request, Router router) {
 		if(router.patternRoutes != null) {
-			HttpMethod method = request.getMethod();
+			HttpMethod method = getMethod(request);
 			for(Route route : router.patternRoutes) {
 				if(route.httpMethod == method) {
 					Matcher matcher = route.matcher(route.matchOnFullPath ? request.getUri() : request.getPath());
