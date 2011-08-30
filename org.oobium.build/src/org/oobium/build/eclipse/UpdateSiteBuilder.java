@@ -156,6 +156,14 @@ public class UpdateSiteBuilder {
 				child.getParentNode().removeChild(child);
 			}
 			
+			list = doc.getElementsByTagName("required");
+			for(int i = 0; i < list.getLength(); i++) {
+				Node node = list.item(i);
+				if(node.getNodeType() == Node.ELEMENT_NODE) {
+					node.getParentNode().removeChild(node);
+				}
+			}
+			
 			xml = getXML(doc);
 			site.features.put(featureId + ".source_" + resolvedVersion + ".jar", xml);
 		}

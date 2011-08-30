@@ -35,6 +35,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -624,9 +625,20 @@ public class Bundle extends Project {
 		String sourceName = name + ".source";
 		
 		Manifest manifest = manifest(file);
-		manifest.getMainAttributes().putValue("Bundle-SymbolicName", sourceName);
-		manifest.getMainAttributes().putValue("Bundle-Version", version.toString());
-		manifest.getMainAttributes().putValue("Eclipse-SourceBundle", name + ";version=\"" + version.toString() + "\"");
+		Attributes attrs = manifest.getMainAttributes();
+		
+		String vendor = attrs.getValue("Bundle-Vendor");
+		String name = attrs.getValue("Bundle-Name");
+		
+		attrs.clear();
+		
+		attrs.putValue("Manifest-Version", "1.0");
+		attrs.putValue("Bundle-Vendor", vendor);
+		attrs.putValue("Eclipse-SourceBundle", name + ";version=\"" + version.toString() + "\"");
+		attrs.putValue("Bundle-Name", name);
+		attrs.putValue("Bundle-SymbolicName", sourceName);
+		attrs.putValue("Bundle-Version", version.toString());
+		attrs.putValue("Bundle-ManifestVersion", "2");
 
 		if(jar.isDirectory()) {
 			jar = new File(jar, sourceName + "_" + version + ".jar");
