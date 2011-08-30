@@ -628,14 +628,14 @@ public class Bundle extends Project {
 		Attributes attrs = manifest.getMainAttributes();
 		
 		String vendor = attrs.getValue("Bundle-Vendor");
-		String name = attrs.getValue("Bundle-Name");
+		String bname = attrs.getValue("Bundle-Name");
 		
 		attrs.clear();
 		
 		attrs.putValue("Manifest-Version", "1.0");
 		attrs.putValue("Bundle-Vendor", vendor);
 		attrs.putValue("Eclipse-SourceBundle", name + ";version=\"" + version.toString() + "\"");
-		attrs.putValue("Bundle-Name", name);
+		attrs.putValue("Bundle-Name", bname);
 		attrs.putValue("Bundle-SymbolicName", sourceName);
 		attrs.putValue("Bundle-Version", version.toString());
 		attrs.putValue("Bundle-ManifestVersion", "2");
