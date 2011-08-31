@@ -648,10 +648,9 @@ public class Bundle extends Project {
 
 	public boolean hasSource() throws IOException {
 		if(!isJar) {
-			File buildFile = new File(file, "build.properties");
-			if(buildFile.isFile()) {
+			if(build != null && build.isFile()) {
 				Properties props = new Properties();
-				props.load(new FileReader(buildFile));
+				props.load(new FileReader(build));
 				String prop = props.getProperty("source..");
 				if(prop != null && prop.length() > 0) {
 					return true;

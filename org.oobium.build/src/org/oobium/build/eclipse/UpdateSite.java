@@ -3,7 +3,6 @@ package org.oobium.build.eclipse;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -16,7 +15,7 @@ public class UpdateSite {
 	final Workspace workspace;
 	final File file;
 	final Date date;
-	final Map<String, String> features;
+	final List<Map<String, String>> features;
 	final List<Bundle> plugins;
 
 	UpdateSite(Workspace workspace, String name) {
@@ -33,7 +32,7 @@ public class UpdateSite {
 		}
 
 		date = new Date();
-		features = new LinkedHashMap<String, String>();
+		features = new ArrayList<Map<String, String>>();
 		plugins = new ArrayList<Bundle>();
 	}
 	

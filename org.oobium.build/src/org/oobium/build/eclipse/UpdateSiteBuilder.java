@@ -1,14 +1,23 @@
 package org.oobium.build.eclipse;
 
+import static org.oobium.utils.FileUtils.EXECUTABLE;
+import static org.oobium.utils.FileUtils.copy;
+import static org.oobium.utils.FileUtils.createJar;
+import static org.oobium.utils.FileUtils.deleteContents;
+import static org.oobium.utils.FileUtils.readFile;
+import static org.oobium.utils.FileUtils.toFile;
 import static org.oobium.utils.FileUtils.*;
-import static org.oobium.utils.StringUtils.*;
+import static org.oobium.utils.StringUtils.source;
+import static org.oobium.utils.literal.Map;
+import static org.oobium.utils.literal.e;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -50,11 +59,10 @@ public class UpdateSiteBuilder {
 		Workspace workspace = loadWorkspace();
 		UpdateSiteBuilder builder = new UpdateSiteBuilder(workspace, "org.oobium.framework.update-site");
 		builder.setClean(true);
-		builder.setName("Oobium Project Site");
 		builder.setIncludeSource(true);
-		builder.setEclipse("../../../eclipse/eclipse");
+		builder.setEclipse("../../../eclipse");
 		builder.setSiteDirectory("../../website/org.oobium.www.update_site/assets/updates");
-		builder.setChildren("http://download.eclipse.org/releases/helios");
+		builder.setAssociatedSites("http://download.eclipse.org/releases/helios");
 		builder.build();
 		
 		System.out.println("update-site created in " + builder.getSiteDirectory().getCanonicalPath());
@@ -67,6 +75,7 @@ public class UpdateSiteBuilder {
 
 	private String name;
 	private String[] children;
+	private String[] associatedSites;
 	
 	private boolean clean;
 	private boolean includeSource;
@@ -139,8 +148,11 @@ public class UpdateSiteBuilder {
 			}
 		}
 
-		String xml = getXML(doc);
-		site.features.put(featureId + "_" + resolvedVersion + ".jar", xml);
+		site.features.add(Map(
+				e("id", featureId),
+				e("version", resolvedVersion),
+				e("feature.xml", getXML(doc))
+			));
 		
 		if(includeSource && hasSource(site.workspace, bundles)) {
 			Element element = (Element) doc.getElementsByTagName("feature").item(0);
@@ -166,7 +178,7 @@ public class UpdateSiteBuilder {
 				child.getParentNode().removeChild(child);
 			}
 			
-			list = doc.getElementsByTagName("required");
+			list = doc.getElementsByTagName("requires");
 			for(int i = 0; i < list.getLength(); i++) {
 				Node node = list.item(i);
 				if(node.getNodeType() == Node.ELEMENT_NODE) {
@@ -174,8 +186,12 @@ public class UpdateSiteBuilder {
 				}
 			}
 			
-			xml = getXML(doc);
-			site.features.put(featureId + ".source_" + resolvedVersion + ".jar", xml);
+			site.features.add(Map(
+					e("id", featureId),
+					e("version", resolvedVersion),
+					e("feature.xml", getXML(doc)),
+					e("source", "true")
+				));
 		}
 		
 		return resolvedVersion;
@@ -238,7 +254,7 @@ public class UpdateSiteBuilder {
 						element.setAttribute("url", url.substring(0, url.length() - (version.length() + 4)) + resolvedVersion + ".jar");
 					}
 					
-					if(includeSource && site.features.containsKey(id + ".source_" + resolvedVersion + ".jar")) {
+					if(includeSource && hasSourceFeature(id, resolvedVersion)) {
 						Element source = doc.createElement("feature");
 						source.setAttribute("id", id + ".source");
 						source.setAttribute("version", resolvedVersion);
@@ -268,14 +284,32 @@ public class UpdateSiteBuilder {
 
 		if(!site.features.isEmpty() && !site.plugins.isEmpty()) {
 			File features = new File(siteDirectory, "features");
-			for(String feature : site.features.keySet()) {
-				File jar = new File(features, feature);
-				createJar(jar, site.date.getTime(), new String[][] {
-					new String[] {
-							"feature.xml",
-							site.features.get(feature)
+			for(Map<String, String> feature : site.features) {
+				if(feature.containsKey("source")) {
+					String name = feature.get("id") + ".source_" + feature.get("version") + ".jar";
+					createJar(new File(features, name), site.date.getTime(), new String[][] {
+						new String[] {
+								"feature.xml",
+								feature.get("feature.xml")
+						}
+					});
+				} else {
+					Project project = site.workspace.getProject(feature.get("id"));
+					Map<String, File> files = project.getBuildFiles();
+					String[][] srcs = new String[files.size()][2];
+					int i = 0;
+					for(Entry<String, File> entry : files.entrySet()) {
+						srcs[i][0] = entry.getKey();
+						if("feature.xml".equals(srcs[i][0])) {
+							srcs[i][1] = feature.get("feature.xml");
+						} else {
+							srcs[i][1] = readFile(entry.getValue()).toString();
+						}
+						i++;
 					}
-				});
+					String name = project.name + "_" + feature.get("version") + ".jar";
+					createJar(new File(features, name), site.date.getTime(), srcs);
+				}
 			}
 
 			// Compiler compiler = new Compiler(workspace, site.plugins);
@@ -322,12 +356,14 @@ public class UpdateSiteBuilder {
 				new StreamGobbler(process.getInputStream()).start();
 				new StreamGobbler(process.getErrorStream()).start();
 				if(process.waitFor() == 0) {
+					handleAssociatedSites();
 					System.out.println("exported p2 data successfully");
 				} else {
 					System.out.println("error exporting p2 data");
 				}
 			} finally {
 				tmp.delete();
+				siteFile.delete();
 			}
 		}
 		
@@ -346,10 +382,10 @@ public class UpdateSiteBuilder {
 			writeFile(siteDirectory, "compositeContent.xml", source(
 					"<?xml version='1.0' encoding='UTF-8'?>",
 					"<?compositeMetadataRepository  version='1.0.0'?>",
-					"<repository name='&quot;{name}&quot;'",
+					"<repository name='{name}'",
 					" type='org.eclipse.equinox.internal.p2.artifact.repository.CompositeMetadataRepository' version='1.0.0'>",
 					" <properties size='1'>",
-					"  <property name='p2.timestamp' value='1243822502499'/>",
+					"  <property name='p2.timestamp' value='{timestamp}'/>",
 					" </properties>",
 					" <children size='{size}'>",
 					sb.toString(),
@@ -361,10 +397,10 @@ public class UpdateSiteBuilder {
 			writeFile(siteDirectory, "compositeArtifacts.xml", source(
 					"<?xml version='1.0' encoding='UTF-8'?>",
 					"<?compositeArtifactRepository version='1.0.0'?>",
-					"<repository name='&quot;{name}&quot;'",
+					"<repository name='{name}'",
 					" type='org.eclipse.equinox.internal.p2.artifact.repository.CompositeArtifactRepository' version='1.0.0'>",
 					" <properties size='1'>",
-					"  <property name='p2.timestamp' value='1243822502440'/>",
+					"  <property name='p2.timestamp' value='{timestamp}'/>",
 					" </properties>",
 					" <children size='{size}'>",
 					sb.toString(),
@@ -373,6 +409,39 @@ public class UpdateSiteBuilder {
 				).replace("{name}", name).replace("{timestamp}", time).replace("{size}", size)
 			);
 		}
+	}
+
+	private boolean hasSourceFeature(String id, String version) {
+		for(Map<String, String> feature : site.features) {
+			if(feature.containsKey("source") && id.equals(feature.get("id")) && version.equals(feature.get("version"))) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	private void handleAssociatedSites() throws Exception {
+		if(associatedSites != null && associatedSites.length > 0) {
+			StringBuilder sb = new StringBuilder();
+			for(int i = 0; i < associatedSites.length; i++) {
+				if(i != 0) sb.append("\n");
+				sb.append("    <repository uri='{site}' url='{site}' type='0' options='1'/>".replace("{site}", associatedSites[i]));
+				sb.append("\n    <repository uri='{site}' url='{site}' type='1' options='1'/>".replace("{site}", associatedSites[i]));
+			}
+
+			File contentJar = new File(siteDirectory, "content.jar");
+			String content = readJarEntry(contentJar, "content.xml");
+			if(content.contains("</references>")) {
+				sb.append("\n  </references>");
+				content = content.replace("  </references>", sb.toString());
+			}
+			else if(content.contains("<units ")){
+				sb.append("\n  <units ");
+				content = content.replace("  <units ", sb.toString());
+			}
+
+			createJar(contentJar, contentJar.lastModified(), new String[] { "content.xml", content } );
+		}		
 	}
 	
 	public File getSiteDirectory() {
@@ -393,6 +462,10 @@ public class UpdateSiteBuilder {
 		return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + sw.toString();
 	}
 
+	public void setAssociatedSites(String...associatedSites) {
+		this.associatedSites = associatedSites;
+	}
+	
 	public void setClean(boolean clean) {
 		this.clean = clean;
 	}

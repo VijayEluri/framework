@@ -209,6 +209,11 @@ public class Project implements Comparable<Project> {
 	public final File manifest;
 
 	/**
+	 * This project's "build.properties" file
+	 */
+	public final File build;
+	
+	/**
 	 * this project's "bin" directory<br>
 	 * The value is obtained from the project's "build.properties" file, if it
 	 * exists; otherwise it defaults to simply "bin";
@@ -258,18 +263,19 @@ public class Project implements Comparable<Project> {
 				int ix = s.lastIndexOf('.');
 				this.name = (ix == -1) ? s : s.substring(0, ix);
 			}
+			this.build = null;
 			this.bin = null;
 			this.src = null;
 			this.main = null;
 			this.classpath = null;
 			this.project = null;
 		} else {
-			File buildFile = new File(file, "build.properties");
+			this.build = new File(file, "build.properties");
 			String binPath = null;
-			if(buildFile.isFile()) {
+			if(build.isFile()) {
 				Properties props = new Properties();
 				try {
-					props.load(new FileReader(buildFile));
+					props.load(new FileReader(build));
 					binPath = props.getProperty("output..", "bin");
 				} catch(Exception e) {
 					binPath = "bin";
@@ -474,10 +480,9 @@ public class Project implements Comparable<Project> {
 			buildFiles.put(relativePath, file);
 		}
 
-		File buildFile = new File(file, "build.properties");
-		if(buildFile.isFile()) {
+		if(build != null && build.isFile()) {
 			Properties props = new Properties();
-			props.load(new FileReader(buildFile));
+			props.load(new FileReader(build));
 			String prop = props.getProperty("bin.includes");
 			if(prop != null && prop.length() > 0) {
 				String[] includes = prop.split("\\s*,\\s*");
@@ -491,8 +496,8 @@ public class Project implements Comparable<Project> {
 							}
 						});
 					} else {
-						File folder = new File(file, include);
-						files = findFiles(folder);
+						File file = new File(this.file, include);
+						files = file.isFile() ? new File[] { file } : findFiles(file);
 					}
 					for(File file : files) {
 						String relativePath = file.getAbsolutePath().substring(len);
@@ -585,10 +590,9 @@ public class Project implements Comparable<Project> {
 					}
 				}
 
-				File buildFile = new File(file, "build.properties");
-				if(buildFile.isFile()) {
+				if(build != null && build.isFile()) {
 					Properties props = new Properties();
-					props.load(new FileReader(buildFile));
+					props.load(new FileReader(build));
 					String prop = props.getProperty("src.includes");
 					if(prop != null && prop.length() > 0) {
 						String[] includes = prop.split("\\s*,\\s*");
