@@ -147,7 +147,7 @@ public abstract class MigratorService extends AppService {
 		MigrationService service = (MigrationService) msTracker.getService();
 		if(service != null) {
 			service.setClient(getPersistClientName());
-			service.setPersistService(getPersistService());
+			service.setPersistServices(getPersistServices());
 			return service;
 		}
 		throw new IllegalStateException("MigrationService is not present - Migration cannot proceed");

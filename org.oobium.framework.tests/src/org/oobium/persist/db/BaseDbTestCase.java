@@ -85,7 +85,7 @@ public class BaseDbTestCase {
 		DynClasses.reset();
 		pkg = "test" + count++;
 		createPersistence();
-		migrationService.setPersistService(persistService);
+		migrationService.setPersistServices(new SimplePersistServiceProvider(persistService));
 		migrationService.createDatastore();
 		Model.setLogger(logger);
 		Model.setPersistServiceProvider(new SimplePersistServiceProvider(persistService));

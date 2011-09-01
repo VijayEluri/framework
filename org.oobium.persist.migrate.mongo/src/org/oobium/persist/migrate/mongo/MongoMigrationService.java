@@ -2,6 +2,7 @@ package org.oobium.persist.migrate.mongo;
 
 import org.oobium.logging.Logger;
 import org.oobium.persist.PersistService;
+import org.oobium.persist.PersistServiceProvider;
 import org.oobium.persist.migrate.AbstractMigrationService;
 import org.oobium.persist.mongo.MongoPersistService;
 
@@ -29,13 +30,13 @@ public class MongoMigrationService extends AbstractMigrationService {
 	}
 
 	@Override
-	public void setPersistService(PersistService service) {
+	public void setPersistServices(PersistServiceProvider provider) {
+		PersistService service = provider.get("org.oobium.persist.mongo");
 		if(service instanceof MongoPersistService) {
 			this.persistor = (MongoPersistService) service;
 		} else {
 			throw new IllegalStateException("Migration cannot run without a MongoPersistService: " + service);
 		}
-		
 	}
-
+	
 }

@@ -29,6 +29,11 @@ public class SimplePersistServiceProvider implements PersistServiceProvider {
 	}
 	
 	@Override
+	public PersistService get(String serviceName) {
+		return service;
+	}
+	
+	@Override
 	public PersistService getFor(Class<? extends Model> clazz) {
 		return service;
 	}

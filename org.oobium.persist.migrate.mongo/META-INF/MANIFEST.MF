@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Mongo
 Bundle-SymbolicName: org.oobium.persist.migrate.mongo
 Bundle-Version: 1.0.0.qualifier
-Bundle-Activator: org.oobium.persist.migrate.mongo.Activator
+Bundle-Activator: org.oobium.persist.migrate.mongo.MongoMigrationService
 Bundle-Vendor: oobium.org
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: org.oobium.logging,

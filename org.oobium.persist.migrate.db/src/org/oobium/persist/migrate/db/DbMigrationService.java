@@ -27,6 +27,7 @@ import java.util.Map;
 
 import org.oobium.logging.Logger;
 import org.oobium.persist.PersistService;
+import org.oobium.persist.PersistServiceProvider;
 import org.oobium.persist.db.DbPersistService;
 import org.oobium.persist.migrate.AbstractMigrationService;
 import org.oobium.persist.migrate.db.defs.Change;
@@ -46,6 +47,7 @@ import org.oobium.persist.migrate.db.defs.columns.PrimaryKey;
 public abstract class DbMigrationService extends AbstractMigrationService {
 
 	protected DbPersistService persistor;
+	protected PersistServiceProvider provider;
 
 	public DbMigrationService() {
 		super();
@@ -340,12 +342,16 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 			);
 	}
 
+	protected abstract PersistService getPersistService(PersistServiceProvider provider);
+	
 	@Override
-	public void setPersistService(PersistService service) {
+	public void setPersistServices(PersistServiceProvider provider) {
+		this.provider = provider;
+		PersistService service = getPersistService(provider);
 		if(service instanceof DbPersistService) {
 			this.persistor = (DbPersistService) service;
 		} else {
-			throw new IllegalStateException("Migration cannot run without a DbPersistService: " + service);
+			throw new IllegalStateException("Migration cannot run without a DbPersistService: " + provider);
 		}
 	}
 

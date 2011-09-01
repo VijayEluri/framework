@@ -14,6 +14,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.oobium.logging.Logger;
+import org.oobium.persist.PersistService;
+import org.oobium.persist.PersistServiceProvider;
 import org.oobium.persist.migrate.db.DbMigrationService;
 import org.oobium.persist.migrate.db.defs.Index;
 import org.oobium.persist.migrate.db.defs.Table;
@@ -147,6 +149,11 @@ public class DerbyEmbeddedMigrationService extends DbMigrationService {
 			return type;
 		}
 		return migrationType;
+	}
+
+	@Override
+	protected PersistService getPersistService(PersistServiceProvider provider) {
+		return provider.get("org.oobium.persist.db.derby.embedded");
 	}
 
 }

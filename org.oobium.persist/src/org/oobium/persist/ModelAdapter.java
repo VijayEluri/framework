@@ -150,8 +150,6 @@ public class ModelAdapter {
 		if(hasMany.containsKey(field)) {
 			if(isThrough(field) || isManyToNone(field)) {
 				return LinkedHashSet.class;
-			} else if(isOppositeRequired(field)) {
-				return RequiredSet.class;
 			} else {
 				return ActiveSet.class;
 			}
@@ -213,6 +211,15 @@ public class ModelAdapter {
 		if(relation != null) {
 			String opposite = relation.opposite();
 			if(!blank(opposite)) return opposite;
+		}
+		return null;
+	}
+	
+	public PersistService getOppositePersistService(String field) {
+		PersistService p1 = Model.getPersistService(clazz);
+		PersistService p2 = Model.getPersistService(getOppositeType(field));
+		if(p1 != p2) {
+			return p2;
 		}
 		return null;
 	}
@@ -543,32 +550,6 @@ public class ModelAdapter {
 		return new ArrayList<String>(0);
 	}
 	
-	public boolean isOppositeRequired(String field) {
-//		TODO the required property has been removed - clean this up
-//		Relation relation = hasMany.get(field);
-//		if(relation == null) {
-//			relation = hasOne.get(field);
-//		}
-//		if(relation != null) {
-//			String opposite = relation.opposite();
-//			if(opposite != null) {
-//				ModelDescription md = relation.type().getAnnotation(ModelDescription.class);
-//				if(md != null) {
-//					for(Relation r : md.hasOne()) {
-//						if(r.name().equals(opposite)) {
-//							if(r.type().isAssignableFrom(this.clazz) && r.opposite().equals(field)) {
-//								return r.required();
-//							} else {
-//								return false;
-//							}
-//						}
-//					}
-//				}
-//			}
-//		}
-		return false;
-	}
-
 	public boolean isReadOnly(String field) {
 		if(attribute.containsKey(field)) {
 			return attribute.get(field).readOnly();

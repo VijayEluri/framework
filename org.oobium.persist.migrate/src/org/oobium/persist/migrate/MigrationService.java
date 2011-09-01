@@ -1,6 +1,6 @@
 package org.oobium.persist.migrate;
 
-import org.oobium.persist.PersistService;
+import org.oobium.persist.PersistServiceProvider;
 
 public interface MigrationService {
 	
@@ -37,6 +37,6 @@ public interface MigrationService {
 	
 	public abstract void setClient(String client);
 	
-	public abstract void setPersistService(PersistService persistor);
+	public abstract void setPersistServices(PersistServiceProvider provider);
 	
 }

@@ -38,7 +38,7 @@ public class BaseMongoTestCase {
 		pkg = "test" + count++;
 		persistService = new MongoPersistService(client, "postgres:password@localhost/testDatabase");
 		migrationService = new MongoMigrationService(client, logger);
-		migrationService.setPersistService(persistService);
+		migrationService.setPersistServices(new SimplePersistServiceProvider(persistService));
 		migrationService.createDatastore();
 		Model.setLogger(logger);
 		Model.setPersistServiceProvider(new SimplePersistServiceProvider(persistService));

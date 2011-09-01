@@ -18,6 +18,7 @@ import org.oobium.build.model.ModelDefinition;
 import org.oobium.framework.tests.dyn.DynClasses;
 import org.oobium.framework.tests.dyn.DynModel;
 import org.oobium.framework.tests.dyn.SimpleDynClass;
+import org.oobium.persist.SimplePersistServiceProvider;
 import org.oobium.persist.db.DbPersistService;
 import org.oobium.persist.migrate.Migration;
 import org.oobium.persist.migrate.MigrationService;
@@ -60,7 +61,7 @@ public class MigrateTester {
 		case SqlUtils.MYSQL:		migrationService = new MySqlMigrationService(); break;
 		case SqlUtils.POSTGRESQL:	migrationService = new PostgreSqlMigrationService(); break;
 		}
-		migrationService.setPersistService(persistor);
+		migrationService.setPersistServices(new SimplePersistServiceProvider(persistor));
 	}
 	
 	protected String migrateUp(DynModel...models) throws Exception {

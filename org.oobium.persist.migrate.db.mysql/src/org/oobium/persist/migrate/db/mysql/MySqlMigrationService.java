@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.oobium.logging.Logger;
+import org.oobium.persist.PersistService;
+import org.oobium.persist.PersistServiceProvider;
 import org.oobium.persist.migrate.db.DbMigrationService;
 import org.oobium.persist.migrate.db.defs.Table;
 import org.oobium.persist.migrate.db.defs.columns.ForeignKey;
@@ -108,4 +110,9 @@ public class MySqlMigrationService extends DbMigrationService {
 		return migrationType;
 	}
 
+	@Override
+	protected PersistService getPersistService(PersistServiceProvider provider) {
+		return provider.get("org.oobium.persist.db.mysql");
+	}
+	
 }

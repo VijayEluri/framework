@@ -4,6 +4,8 @@ public interface PersistServiceProvider {
 
 	public abstract void closeSession();
 
+	public abstract PersistService get(String serviceName);
+	
 	/**
 	 * Get the PersistService for the given class, or the primary PersistService
 	 * if the given class does not map to any PersistService.<br>

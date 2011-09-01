@@ -576,8 +576,6 @@ public abstract class Model implements JsonModel {
 							set = new LinkedHashSet<Model>();
 						} else if(isManyToNone(field)) {
 							set = new LinkedHashSet<Model>();
-						} else if(isOppositeRequired(field)) {
-							set = new RequiredSet<Model>(this, field, getOpposite(field));
 						} else {
 							set = new ActiveSet<Model>(this, field);
 						}
@@ -844,10 +842,6 @@ public abstract class Model implements JsonModel {
 			return true;
 		}
 		return false;
-	}
-
-	private boolean isOppositeRequired(String field) {
-		return getAdapter(getClass()).isOppositeRequired(field);
 	}
 
 	/**
@@ -1301,13 +1295,8 @@ public abstract class Model implements JsonModel {
 			ModelAdapter adapter = getAdapter(this);
 			Class<? extends Model> mtype = adapter.getHasManyMemberClass(field);
 			Model[] models = (Model[]) coerce(value, Array.newInstance(mtype, 0).getClass());
-			if(type == ActiveSet.class || type == RequiredSet.class) {
-				Set<Model> set;
-				if(type == ActiveSet.class) {
-					set = new ActiveSet<Model>(this, field, models);
-				} else {
-					set = new RequiredSet<Model>(this, field, getOpposite(field), models);
-				}
+			if(type == ActiveSet.class) {
+				Set<Model> set = new ActiveSet<Model>(this, field, models);
 				if(adapter.isManyToOne(field)) {
 					String opposite = adapter.getOpposite(field);
 					for(Model model : set) {
@@ -1344,16 +1333,12 @@ public abstract class Model implements JsonModel {
 						Object o = oldModel.get(opposite);
 						if(o instanceof ActiveSet<?>) {
 							((ActiveSet<?>) oldModel.get(opposite)).doRemove(this);
-						} else if(o instanceof RequiredSet<?>) {
-							((RequiredSet<?>) oldModel.get(opposite)).doRemove(this);
 						}
 					}
 					if(newModel != null && !newModel.equals(oldModel)) {
 						Object o = newModel.get(opposite);
 						if(o instanceof ActiveSet<?>) {
 							((ActiveSet<?>) o).doAdd(this);
-						} else if(o instanceof RequiredSet<?>) {
-							((RequiredSet<?>) o).doAdd(this);
 						}
 					}
 				}

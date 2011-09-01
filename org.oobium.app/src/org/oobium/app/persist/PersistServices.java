@@ -12,6 +12,7 @@ package org.oobium.app.persist;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -33,11 +34,6 @@ public class PersistServices implements PersistServiceProvider {
 	private final ThreadLocal<List<PersistService>> threadOpenServices = new ThreadLocal<List<PersistService>>();
 
 	/**
-	 * a list of the names of services being tracked
-	 */
-	private List<String> serviceNames;
-	
-	/**
 	 * The primary service or service tracker.<br>
 	 * This is either the actual service, or a tracker for the service...<br>
 	 * may be null
@@ -51,6 +47,7 @@ public class PersistServices implements PersistServiceProvider {
 	 */
 	private Map<String, Object> classServices; // class name -> persistor
 	
+	private Map<String, Object> services; // persist service class name -> persistor
 	
 	
 	public PersistServices() {
@@ -67,7 +64,7 @@ public class PersistServices implements PersistServiceProvider {
 	public PersistServices(BundleContext context, Object obj) throws IllegalArgumentException {
 		if(obj == null) {
 			primaryService = new NullPersistService();
-			addService(primaryService.getClass().getName());
+			addService(primaryService.getClass().getName(), primaryService);
 		} else if(obj instanceof String) {
 			init(context, (String) obj);
 		} else if(obj instanceof List<?>) {
@@ -81,11 +78,11 @@ public class PersistServices implements PersistServiceProvider {
 		this.primaryService = service;
 	}
 
-	private void addService(String service) {
-		if(serviceNames == null) {
-			serviceNames = new  ArrayList<String>();
+	private void addService(String className, Object service) {
+		if(services == null) {
+			services = new LinkedHashMap<String, Object>();
 		}
-		serviceNames.add(service);
+		services.put(className, service);
 	}
 	
 	public void close() {
@@ -116,6 +113,17 @@ public class PersistServices implements PersistServiceProvider {
 			openServices.clear();
 			threadOpenServices.set(null);
 		}
+	}
+	
+	@Override
+	public PersistService get(String serviceName) {
+		if(services != null) {
+			Object service = services.get(serviceName);
+			if(service != null) {
+				return getService(service);
+			}
+		}
+		return null;
 	}
 	
 	@Override
@@ -166,10 +174,10 @@ public class PersistServices implements PersistServiceProvider {
 	}
 
 	public List<String> getServiceNames() {
-		if(serviceNames == null) {
+		if(services == null) {
 			return new ArrayList<String>(0);
 		} else {
-			return new ArrayList<String>(serviceNames);
+			return new ArrayList<String>(services.keySet());
 		}
 	}
 
@@ -229,7 +237,7 @@ public class PersistServices implements PersistServiceProvider {
 			}
 		}
 
-		addService(serviceName);
+		addService(serviceName, tracker);
 		tracker.open();
 	}
 	
@@ -249,7 +257,7 @@ public class PersistServices implements PersistServiceProvider {
 		ServiceTracker tracker = new ServiceTracker(context, filter, null);
 		primaryService = tracker;
 		
-		addService(serviceName);
+		addService(serviceName, tracker);
 		tracker.open();
 	}
 

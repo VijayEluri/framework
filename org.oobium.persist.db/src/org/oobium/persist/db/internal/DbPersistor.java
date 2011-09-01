@@ -53,8 +53,8 @@ import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
+import org.oobium.persist.PersistService;
 import org.oobium.persist.Relation;
-import org.oobium.persist.RequiredSet;
 import org.oobium.persist.db.DbPersistService;
 import org.oobium.utils.SqlUtils;
 import org.oobium.utils.StringUtils;
@@ -100,7 +100,7 @@ public class DbPersistor {
 			}
 		}
 		for(String field : adapter.getHasManyFields()) {
-			if(adapter.isManyToOne(field)) {
+			if(adapter.isManyToOne(field) && !adapter.isEmbedded(field)) {
 				Collection<?> collection = (Collection<?>) model.get(field);
 				if(!collection.isEmpty()) {
 					for(Object object : collection) {
@@ -277,7 +277,18 @@ public class DbPersistor {
 		}
 
 		for(int i = models.size() - 1; i >= 0; i--) {
-			doCreateModel(connection, models.get(i));
+			Model next = models.get(i);
+			PersistService p1 = model.getPersistor();
+			PersistService p2 = next.getPersistor();
+			if(p1 == p2) {
+				doCreateModel(connection, next);
+			} else {
+				try {
+					p2.create(next);
+				} catch(Exception e) {
+					throw new SQLException(e);
+				}
+			}
 		}
 
 		for(Entry<Model, List<String>> entry : deferredMap.entrySet()) {
@@ -518,8 +529,6 @@ public class DbPersistor {
 		if(!model.isEmpty()) {
 			ModelAdapter adapter = ModelAdapter.getAdapter(model.getClass());
 			
-			List<RequiredSet<?>> removedSets = new ArrayList<RequiredSet<?>>();
-	
 			boolean needsUpdatedAt, needsUpdatedOn;
 			needsUpdatedAt = adapter.isTimeStamped();
 			needsUpdatedOn = adapter.isDateStamped();
@@ -550,37 +559,14 @@ public class DbPersistor {
 					} else if(adapter.hasMany(field)) {
 						Collection<?> collection = (Collection<?>) model.get(field);
 						if(adapter.isManyToOne(field)) {
-							String table = tableName(adapter.getHasManyMemberClass(field));
-							String column = columnName(adapter.getOpposite(field));
-							if(adapter.isOppositeRequired(field)) {
-								List<Integer> dIds = new ArrayList<Integer>();
-								for(Object object : collection) {
-									Model m = (Model) object;
-									int dId = m.getId(int.class);
-									if(dId < 1) {
-										dId = doCreate(connection, m);
-									} else {
-										dIds.add(dId);
-									}
-								}
-								List<Integer[]> ids = new ArrayList<Integer[]>();
-								for(Integer i : dIds) {
-									ids.add(new Integer[] { i, id });
-								}
-								if(collection instanceof RequiredSet) { // removed items will be missed...
-									RequiredSet<?> set = (RequiredSet<?>) collection;
-									removedSets.add(set);
-									for(Object object : set.getRemoved()) {
-										Model m = (Model) object;
-										Integer mId = m.getId(Integer.class);
-										Model o = (Model) (m.isSet(field) ? m.get(field) : null);
-										Integer oId = (o != null) ? o.getId(Integer.class) : null;
-										ids.add(new Integer[] { mId, oId });
-									}
-								}
-								doUpdateManyToOne(connection, table, column, ids);
-							} else {
+							Class<? extends Model> type = adapter.getHasManyMemberClass(field);
+							PersistService p = adapter.getOppositePersistService(field);
+							if(p == null) {
+								String table = tableName(type);
+								String column = columnName(adapter.getOpposite(field));
 								doUpdateManyToOne(connection, table, column, id, collection);
+							} else {
+								// what now? TODO mixed persist services
 							}
 						} else {
 							List<Integer> dIds = new ArrayList<Integer>();
@@ -614,12 +600,6 @@ public class DbPersistor {
 				long now = System.currentTimeMillis();
 				if(needsUpdatedAt) cells.add(updatedAt.withValue(now));
 				if(needsUpdatedOn) cells.add(updatedOn.withValue(now));
-			}
-			
-			if(!removedSets.isEmpty()) {
-				for(RequiredSet<?> set : removedSets) {
-					set.clearRemoved();
-				}
 			}
 			
 			if(!cells.isEmpty()) {
@@ -758,40 +738,6 @@ public class DbPersistor {
 			}
 		} finally {
 			s.close();
-		}
-	}
-
-	/**
-	 * Update a Many to One (opposite is required) collection
-	 */
-	private void doUpdateManyToOne(Connection connection, String table, String column, List<Integer[]> ids) throws SQLException {
-		if(ids.isEmpty()) {
-			return;
-		}
-
-		PreparedStatement ps = null;
-		try {
-			String sql = "UPDATE " + table + " SET " + column + "=? WHERE id=?";
-			logger.trace(sql);
-			ps = connection.prepareStatement(sql);
-			for(Integer[] ia : ids) {
-				ps.clearParameters();
-				if(ia[1] == null) {
-					ps.setNull(1, Types.INTEGER);
-				} else {
-					ps.setInt(1, ia[1]);
-				}
-				ps.setInt(2, ia[0]);
-				if(logger.isLoggingTrace()) {
-					logger.trace("  " + ia[1] + " <- " + ia[0]);
-				}
-				ps.addBatch();
-			}
-			ps.executeBatch();
-		} finally {
-			if(ps != null) {
-				ps.close();
-			}
 		}
 	}
 
