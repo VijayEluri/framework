@@ -237,24 +237,28 @@ public class BlazeProjectGenerator {
 		
 		sf.methods.put("find(int id)", source(
 				"public {type} find(int id) throws Exception {",
+				" {type}.getPersistService().closeSession();",
 				" return {type}.find(id);",
 				"}"
 			).replace("{type}", mType));
 		
 		sf.methods.put("find(String where)", source(
 				"public {type} find(String where) throws Exception {",
+				" {type}.getPersistService().closeSession();",
 				" return {type}.find(where);",
 				"}"
 			).replace("{type}", mType));
 		
 		sf.methods.put("findAll", source(
 				"public List<{type}> findAll() throws Exception {",
+				" {type}.getPersistService().closeSession();",
 				" return {type}.findAll();",
 				"}"
 			).replace("{type}", mType));
 		
 		sf.methods.put("findAll(String where)", source(
 				"public List<{type}> findAll(String where) throws Exception {",
+				" {type}.getPersistService().closeSession();",
 				" return {type}.findAll(where);",
 				"}"
 			).replace("{type}", mType));
