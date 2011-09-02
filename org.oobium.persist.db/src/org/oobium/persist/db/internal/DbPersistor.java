@@ -260,9 +260,7 @@ public class DbPersistor {
 	}
 
 	private int doCreate(Connection connection, Model model) throws SQLException, NoSuchFieldException {
-		if(logger.isLoggingDebug()) {
-			logger.debug("start doCreate " + model.asSimpleString());
-		}
+		logger.debug("start doCreate {}", model.asSimpleString());
 
 		if(!model.isNew()) {
 			throw new SQLException("model has already been created");
@@ -336,18 +334,14 @@ public class DbPersistor {
 			ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
 			for(int i = 0; i < cells.size(); i++) {
 				Cell cell = cells.get(i);
-				if(logger.isLoggingTrace()) {
-					logger.trace("  " + safeSqlWord(dbType, cell.column) + " -> " + cell.value);
-				}
+				logger.trace("  {} -> {}", safeSqlWord(dbType, cell.column), cell.value);
 				setObject(ps, i + 1, cell.value, cell.type);
 			}
 			ps.executeUpdate();
 
 			rs = ps.getGeneratedKeys();
 			int id = (rs.next()) ? rs.getInt(1) : -1;
-			if(logger.isLoggingTrace()) {
-				logger.trace("  " + ID + " <- " + id);
-			}
+			logger.trace("  {} <- {}", ID, id);
 			return id;
 		} finally {
 			if(ps != null) {
@@ -458,9 +452,7 @@ public class DbPersistor {
 	}
 	
 	private void doDestroy(Connection connection, Model model) throws SQLException {
-		if(logger.isLoggingDebug()) {
-			logger.debug("start doDestroy " + model.asSimpleString());
-		}
+		logger.debug("start doDestroy {}", model.asSimpleString());
 
 		ModelAdapter adapter = ModelAdapter.getAdapter(model);
 		
@@ -517,9 +509,7 @@ public class DbPersistor {
 	 * @throws SQLException if record does not exist in the database (its relations may have already been saved though)
 	 */
 	private void doUpdate(Connection connection, Model model) throws SQLException, NoSuchFieldException {
-		if(logger.isLoggingDebug()) {
-			logger.debug("start doUpdate: " + model.asSimpleString());
-		}
+		logger.debug("start doUpdate: {}", model.asSimpleString());
 
 		int id = model.getId(int.class);
 		if(id < 1) {
@@ -971,9 +961,7 @@ public class DbPersistor {
 				int id = model.getId(int.class);
 				Model cache = getCacheById(clazz, id);
 				if(cache != null) {
-					if(logger.isLoggingDebug()) {
-						logger.debug("retrieving data from cache: " + cache.asSimpleString());
-					}
+					logger.debug("retrieving data from cache: {}", cache.asSimpleString());
 					setFields(model, cache.getAll());
 					iter.remove();
 				} else {

@@ -53,17 +53,69 @@ public class FindTests extends BaseMongoTestCase {
 	}
 	
 	@Test
+	public void testFindAllWithOrder_Map() throws Exception {
+		DynModel am = DynClasses.getModel(pkg, "AModel").addAttr("name", "String.class");
+
+		persistService.insert("a_models", "name:?", "b");
+		persistService.insert("a_models", "name:?", "a");
+		persistService.insert("a_models", "name:?", "c");
+		persistService.insert("a_models", "name:?", "e");
+		persistService.insert("a_models", "name:?", "d");
+
+		Model model;
+		
+		model = persistService.find(am.getModelClass(), Map("$order", (Object) "name:-1"));
+		
+		assertNotNull(model);
+		assertEquals("e", model.get("name"));
+
+		model = persistService.find(am.getModelClass(), Map("$order", (Object) "name:1"));
+		
+		assertNotNull(model);
+		assertEquals("a", model.get("name"));
+
+		model = persistService.find(am.getModelClass(), Map("$order", (Object) "_id:-1"));
+		
+		assertNotNull(model);
+		assertEquals("d", model.get("name"));
+
+		model = persistService.find(am.getModelClass(), Map("$order", (Object) "_id:1"));
+		
+		assertNotNull(model);
+		assertEquals("b", model.get("name"));
+	}
+	
+	@Test
 	public void testFindAllWithOrder() throws Exception {
 		DynModel am = DynClasses.getModel(pkg, "AModel").addAttr("name", "String.class");
 
-		persistService.insert("a_models", "name:?", "bob");
-		persistService.insert("a_models", "name:?", "joe");
-		persistService.insert("a_models", "name:?", "dan");
+		persistService.insert("a_models", "name:?", "b");
+		persistService.insert("a_models", "name:?", "a");
+		persistService.insert("a_models", "name:?", "c");
+		persistService.insert("a_models", "name:?", "e");
+		persistService.insert("a_models", "name:?", "d");
 
-		Model model = persistService.find(am.getModelClass(), Map("$order", (Object) "name:-1"));
+		Model model;
+		
+		model = persistService.find(am.getModelClass(), "{$order:{name:-1}}");
 		
 		assertNotNull(model);
-		assertEquals("joe", model.get("name"));
+		assertEquals("e", model.get("name"));
+
+		model = persistService.find(am.getModelClass(), "{$order:{name:1}}");
+		
+		assertNotNull(model);
+		assertEquals("a", model.get("name"));
+
+		model = persistService.find(am.getModelClass(), "{$order:{_id:-1}}");
+		
+		assertNotNull(model);
+		assertEquals("d", model.get("name"));
+
+		model = persistService.find(am.getModelClass(), "{$order:{_id:1}}");
+		
+		assertNotNull(model);
+		assertEquals("b", model.get("name"));
 	}
 	
 	@Test
@@ -88,7 +140,7 @@ public class FindTests extends BaseMongoTestCase {
 		persistService.insert("a_models", "name:?", "joe");
 		persistService.insert("a_models", "name:?", "dan");
 
-		Model model = persistService.find(am.getModelClass(), "$limit:{2:1}");
+		Model model = persistService.find(am.getModelClass(), "$limit:{1:2}");
 		
 		assertNotNull(model);
 		assertEquals("joe", model.get("name"));
@@ -102,7 +154,7 @@ public class FindTests extends BaseMongoTestCase {
 		persistService.insert("a_models", "name:?", "joe");
 		persistService.insert("a_models", "name:?", "dan");
 
-		Model model = persistService.find(am.getModelClass(), "$limit:'2,1'");
+		Model model = persistService.find(am.getModelClass(), "$limit:'1,2'");
 		
 		assertNotNull(model);
 		assertEquals("joe", model.get("name"));

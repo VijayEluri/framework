@@ -52,6 +52,11 @@ import com.mongodb.DBObject;
  */
 public class MongoPersistService implements BundleActivator, PersistService {
 
+	private static final String createdAt = "createdAt";
+	private static final String updatedAt = "updatedAt";
+	private static final String createdOn = "createdOn";
+	private static final String updatedOn = "updatedOn";
+	
 	private static final ThreadLocal<String> threadClient = new ThreadLocal<String>();
 	private static final ThreadLocal<DB> threadDB = new ThreadLocal<DB>();
 
@@ -159,16 +164,19 @@ public class MongoPersistService implements BundleActivator, PersistService {
 	public void create(Model... models) throws Exception {
 		DB db = getDB();
 		for(Model model : models) {
+			logger.debug("start doCreate {}", model.asSimpleString());
 			ModelAdapter adapter = ModelAdapter.getAdapter(model);
 			DBCollection c = db.getCollection(tableName(adapter.getModelClass()));
-			Map<String, Object> data = getData(model, false);
+			Map<String, Object> data = getData(model, false, true);
+			logger.trace(String.valueOf(data));
 			DBObject dbo = new BasicDBObject(data);
 			c.insert(dbo);
 			model.setId(dbo.get("_id"));
+			logger.debug("end doCreate");
 		}
 	}
 
-	private Map<String, Object> getData(Model model, boolean includeId) {
+	private Map<String, Object> getData(Model model, boolean includeId, boolean isCreate) {
 		ModelAdapter adapter = ModelAdapter.getAdapter(model);
 		Map<String, Object> data = model.getAll();
 		for(Iterator<String> iter = data.keySet().iterator(); iter.hasNext(); ) {
@@ -180,7 +188,7 @@ public class MongoPersistService implements BundleActivator, PersistService {
 				Model m = (Model) model.get(field);
 				if(m != null) {
 					if(adapter.isEmbedded(field)) {
-						data.put(field, getData(m, true));
+						data.put(field, getData(m, true, isCreate));
 					} else {
 						if(m.isNew()) m.create();
 						data.put(field, m.getId());
@@ -197,7 +205,7 @@ public class MongoPersistService implements BundleActivator, PersistService {
 						Map<String, Object> map;
 						String[] fields = adapter.getEmbedded(field);
 						if(fields == null) {
-							map = getData(m, true);
+							map = getData(m, true, isCreate);
 						} else {
 							map = new HashMap<String, Object>();
 							for(String f : fields) {
@@ -219,6 +227,37 @@ public class MongoPersistService implements BundleActivator, PersistService {
 		if(includeId && !model.isNew()) {
 			data.put("id", model.getId());
 		}
+		if(adapter.isTimeStamped() || adapter.isDateStamped()) {
+			long date = System.currentTimeMillis();
+			if(adapter.isDateStamped()) {
+				if(isCreate) {
+					if(data.get(createdOn) == null) {
+						data.put(createdOn, date);
+					}
+					if(data.get(updatedOn) == null) {
+						data.put(updatedOn, date);
+					}
+				} else {
+					if(data.get(updatedOn) == null) {
+						data.put(updatedOn, date);
+					}
+				}
+			}
+			if(adapter.isTimeStamped()) {
+				if(isCreate) {
+					if(data.get(createdAt) == null) {
+						data.put(createdAt, date);
+					}
+					if(data.get(updatedAt) == null) {
+						data.put(updatedAt, date);
+					}
+				} else {
+					if(data.get(updatedAt) == null) {
+						data.put(updatedAt, date);
+					}
+				}
+			}
+		}
 		return data;
 	}
 	
@@ -226,9 +265,11 @@ public class MongoPersistService implements BundleActivator, PersistService {
 	public void destroy(Model... models) throws Exception {
 		DB db = getDB();
 		for(Model model : models) {
+			logger.debug("start doDestroy {}", model.asSimpleString());
 			DBCollection c = db.getCollection(tableName(model));
 			BasicDBObject dbo = new BasicDBObject("_id", model.getId(ObjectId.class));
 			c.remove(dbo);
+			logger.debug("end doDestroy");
 		}
 	}
 	
@@ -262,16 +303,19 @@ public class MongoPersistService implements BundleActivator, PersistService {
 			cursor.sort(new BasicDBObject(coerce(order, Map.class)));
 		}
 		
-		cursor.limit(1);
+		// follow MySQL LIMIT convention: http://dev.mysql.com/doc/refman/5.1/en/select.html
+		//   LIMIT {[offset,] row_count}
 		if(limit instanceof Map) {
 			Entry<?,?> e = (Entry<?,?>) ((Map<?,?>) limit).entrySet().iterator().next();
-			cursor.skip(coerce(e.getValue(), int.class));
+			cursor.skip(coerce(e.getKey(), int.class));
 		}
 		else if(limit instanceof String && ((String) limit).contains(",")) {
 			String[] sa = ((String) limit).split(",");
-			cursor.skip(coerce(sa[1], int.class));
+			cursor.skip(coerce(sa[0], int.class));
 		}
 		
+		cursor.limit(1);
+
 		if(cursor.hasNext()) {
 			return getModel(clazz, cursor.next().toMap());
 		}
@@ -304,8 +348,6 @@ public class MongoPersistService implements BundleActivator, PersistService {
 	public <T extends Model> List<T> findAll(Class<T> clazz) throws Exception {
 		return findAll(clazz, (Map<String, Object>) null);
 	}
-
-	
 	
 	@Override
 	public <T extends Model> List<T> findAll(Class<T> clazz, Map<String, Object> query, Object... values) throws Exception {
@@ -333,13 +375,15 @@ public class MongoPersistService implements BundleActivator, PersistService {
 		}
 		
 		if(limit != null) {
+			// follow MySQL LIMIT convention: http://dev.mysql.com/doc/refman/5.1/en/select.html
+			//   LIMIT {[offset,] row_count}
 			if(limit instanceof Map) {
 				Entry<?,?> e = (Entry<?,?>) ((Map<?,?>) limit).entrySet().iterator().next();
-				cursor.limit(coerce(e.getKey(), int.class)).skip(coerce(e.getValue(), int.class));
+				cursor.skip(coerce(e.getKey(), int.class)).limit(coerce(e.getValue(), int.class));
 			}
 			else if(limit instanceof String && ((String) limit).contains(",")) {
 				String[] sa = ((String) limit).split(",");
-				cursor.limit(coerce(sa[0], int.class)).skip(coerce(sa[1], int.class));
+				cursor.skip(coerce(sa[0], int.class)).limit(coerce(sa[1], int.class));
 			}
 			else {
 				cursor.limit(coerce(limit, int.class));
@@ -538,11 +582,14 @@ public class MongoPersistService implements BundleActivator, PersistService {
 	public void update(Model... models) throws Exception {
 		DB db = getDB();
 		for(Model model : models) {
+			logger.debug("start doUpdate: {}", model.asSimpleString());
 			DBCollection c = db.getCollection(tableName(model));
 			DBObject q = new BasicDBObject("_id", model.getId(ObjectId.class));
-			Map<String, Object> data = getData(model, false);
+			Map<String, Object> data = getData(model, false, false);
+			logger.trace(String.valueOf(data));
 			DBObject dbo = new BasicDBObject("$set", data);
 			c.update(q, dbo);
+			logger.debug("end doUpdate");
 		}
 	}
 
