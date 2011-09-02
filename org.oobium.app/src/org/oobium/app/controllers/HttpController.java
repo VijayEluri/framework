@@ -662,6 +662,11 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		return !params.isEmpty();
 	}
 
+	public boolean hasQuery() {
+		Map<String, Object> query = getQuery();
+		return query != null && !query.isEmpty();
+	}
+	
 	@Override
 	public boolean hasSession() {
 		resolveSession(false);
