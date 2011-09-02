@@ -57,6 +57,7 @@ import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Slider;
 import org.oobium.console.commands.ClearCommand;
+import org.oobium.console.functions.CancelFunction;
 import org.oobium.console.functions.ClearSelectionFunction;
 import org.oobium.console.functions.CopyFunction;
 import org.oobium.console.functions.PasteFunction;
@@ -319,16 +320,18 @@ public class Console extends Composite {
 	
 	private void addFunctions() {
 		if(readOnly) {
-			functions = new Function[3];
-			functions[0] = new ClearSelectionFunction();
-			functions[1] = new CopyFunction();
-			functions[2] = new SelectAllFunction();
-		} else {
 			functions = new Function[4];
-			functions[0] = new ClearSelectionFunction();
-			functions[1] = new CopyFunction();
-			functions[2] = new PasteFunction();
+			functions[0] = new CancelFunction();
+			functions[1] = new ClearSelectionFunction();
+			functions[2] = new CopyFunction();
 			functions[3] = new SelectAllFunction();
+		} else {
+			functions = new Function[5];
+			functions[0] = new CancelFunction();
+			functions[1] = new ClearSelectionFunction();
+			functions[2] = new CopyFunction();
+			functions[3] = new PasteFunction();
+			functions[4] = new SelectAllFunction();
 		}
 		for(Function f : functions) {
 			f.console = this;
@@ -341,6 +344,13 @@ public class Console extends Composite {
 	
 	public void addResourceStrings(String bundleName, ClassLoader classLoader) {
 		resources.putStrings(bundleName, classLoader);
+	}
+	
+	public void cancel() {
+		if(commandRunner != null) {
+			commandRunner.cancel(true);
+			commandRunner = null;
+		}
 	}
 	
 	public void capture() {
