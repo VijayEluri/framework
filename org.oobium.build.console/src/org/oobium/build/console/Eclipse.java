@@ -54,22 +54,15 @@ public class Eclipse {
 	}
 	
 	public static void open(final File file) {
-		if(file.isFile()) {
-			Display.getDefault().syncExec(new Runnable() {
-				@Override
-				public void run() {
-					Program.launch(file.getAbsolutePath());
-				}
-			});
-		} else if(file.isDirectory()) {
+		if(!Program.launch(file.getAbsolutePath())) {
+			// fall back on the Desktop API - it may not be present though...
 			Display.getDefault().syncExec(new Runnable() {
 				@Override
 				public void run() {
 					try {
 						Desktop.getDesktop().open(file);
 					} catch(IOException e) {
-						e.printStackTrace();
-						// oh well...
+						// discard...
 					}
 				}
 			});
