@@ -89,6 +89,7 @@ public class ConsolePage extends Composite {
 	
 	private void createFinder() {
 		finder = new ToolBar(this, SWT.FLAT | SWT.HORIZONTAL);
+		finder.setBackground(getBackground());
 		finder.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 		
 		ToolItem item = new ToolItem(finder, SWT.PUSH);
