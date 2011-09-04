@@ -72,9 +72,17 @@
 			private function observerCallback({var}:{type}):void {
 				Alert.show("{type}: " + {var});
 			}
-
+			
+			private function observerIntCallback(id:int):void {
+				Alert.show("{type} id: " + id);
+			}
+			
 			private function addObserver(method:String):void {
-				{type}.addObserver(method, observerCallback);
+				if("afterUpdate" == method || "afterDestroy" == method) {
+					{type}.addObserver(method, observerIntCallback);
+				} else {
+					{type}.addObserver(method, observerCallback);
+				}
 				Alert.show("observing {type} for " + method);
 			}
 			
