@@ -1,2 +1,4 @@
 /bin
 /generated/*
+*.launch
+!oobium.launch
