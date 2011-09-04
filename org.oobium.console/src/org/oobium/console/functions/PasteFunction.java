@@ -10,13 +10,12 @@
  ******************************************************************************/
 package org.oobium.console.functions;
 
-import org.eclipse.swt.SWT;
 import org.oobium.console.Function;
 
 public class PasteFunction extends Function {
 
 	public PasteFunction() {
-		super(SWT.CONTROL, 'v');
+		super(COMMAND, 'v');
 	}
 
 	public void execute() {

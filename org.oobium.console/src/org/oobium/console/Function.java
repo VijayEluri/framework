@@ -14,6 +14,21 @@ import org.eclipse.swt.SWT;
 
 public abstract class Function {
 
+	/**
+	 * The value of this property will be SWT.COMMAND on OSX (carbon and cocoa), and SWT.CONTROL on other platforms.
+	 * Use this rather than SWT.CONTROL or SWT.COMMAND unless you really need to differentiate.
+	 */
+	public static final int COMMAND;
+	static {
+		String platform = SWT.getPlatform();
+		if(platform.equals("cocoa") || platform.equals("carbon")) {
+			COMMAND = SWT.COMMAND;
+		} else {
+			COMMAND = SWT.CONTROL;
+		}
+	}
+	
+	
 	protected Console console;
 	public final int stateMask;
 	public final int keyCode;

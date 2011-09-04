@@ -69,7 +69,7 @@ public class ConsolePage extends Composite {
 		console = new Console(this, consoleStyle);
 		console.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 		
-		console.addFunction(new Function(SWT.CONTROL, 'f') {
+		console.addFunction(new Function(Function.COMMAND, 'f') {
 			@Override
 			public void execute() {
 				setFinderVisible(true);

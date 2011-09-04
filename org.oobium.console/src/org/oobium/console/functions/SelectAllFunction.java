@@ -10,13 +10,12 @@
  ******************************************************************************/
 package org.oobium.console.functions;
 
-import org.eclipse.swt.SWT;
 import org.oobium.console.Function;
 
 public class SelectAllFunction extends Function {
 
 	public SelectAllFunction() {
-		super(SWT.CONTROL, 'a');
+		super(COMMAND, 'a');
 	}
 
 	public void execute() {

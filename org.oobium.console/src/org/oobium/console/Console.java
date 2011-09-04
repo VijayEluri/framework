@@ -1651,6 +1651,7 @@ public class Console extends Composite {
 		case SWT.ARROW_UP:
 		case SWT.BREAK:
 		case SWT.CTRL:
+		case SWT.COMMAND:
 		case SWT.END:
 		case SWT.HOME:
 		case SWT.INSERT:

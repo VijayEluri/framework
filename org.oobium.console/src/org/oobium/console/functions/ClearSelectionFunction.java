@@ -16,7 +16,7 @@ import org.oobium.console.Function;
 public class ClearSelectionFunction extends Function {
 
 	public ClearSelectionFunction() {
-		super(SWT.CONTROL | SWT.SHIFT, 'a');
+		super(COMMAND | SWT.SHIFT, 'a');
 	}
 
 	public void execute() {
