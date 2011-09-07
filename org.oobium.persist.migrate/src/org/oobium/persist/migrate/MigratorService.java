@@ -13,6 +13,7 @@ package org.oobium.persist.migrate;
 import static org.jboss.netty.handler.codec.http.HttpMethod.POST;
 import static org.oobium.utils.literal.Map;
 import static org.oobium.utils.literal.e;
+import static org.oobium.utils.coercion.TypeCoercer.coerce;
 
 import java.util.List;
 
@@ -40,8 +41,10 @@ import org.osgi.util.tracker.ServiceTrackerCustomizer;
 public abstract class MigratorService extends AppService {
 
 	public static final String SYS_PROP_MODE = "org.oobium.persist.migrate";
+	public static final String SYS_PROP_ACTION = "org.oobium.persist.migrate.action";
 	public static final String ACTIVE = "active";
 	public static final String DONE = "Migrate complete";
+
 	
 	private static MigratorService instance;
 	
@@ -383,19 +386,67 @@ public abstract class MigratorService extends AppService {
 	@Override
 	public void startWorkers() {
 		if(isActive()) {
+			
+			// we're using the tracker to make sure the migration service is loaded before starting...
+			//   this assumes only one migration service, which is no longer always the case...
+			
+			// instead - get list of migration services necessary, do a count down on them, and start when they're all active
+			//   can use package manager to make sure they're all installed first...
+			
+			@SuppressWarnings({ "rawtypes", "unchecked" })
 			final ServiceTracker tmp = new ServiceTracker(getContext(), MigrationService.class.getName(), new ServiceTrackerCustomizer() {
 				public Object addingService(ServiceReference reference) {
 					Worker worker = new Worker() {
 						protected void run() {
-							String action = System.getProperty("org.oobium.persist.migrate.action", "migrate");
-							try {
-								if("migrate".equals(action)) {
-									migrate();
-								} else if("rollback".equals(action)) {
-									migrateRollback();
+							String action = System.getProperty(SYS_PROP_ACTION, "migrate");
+							String[] sa = action.split("/");
+							if("migrate".equals(sa[0])) {
+								try {
+									if(sa.length == 1) {
+										migrate();
+									} else {
+										if("purge".equals(sa[1])) {
+											migratePurge();
+										}
+										else if("redo".equals(sa[1])) {
+											if(sa.length == 2) {
+												migrateRedo(-1);
+											} else {
+												migrateRedo("all".equals(sa[2]) ? -1 : coerce(sa[2], 1));
+											}
+										}
+										else if("rollback".equals(sa[1])) {
+											if(sa.length == 2) {
+												migrateRollback();
+											} else {
+												migrateRollback("all".equals(sa[2]) ? -1 : coerce(sa[2], 1));
+											}
+										}
+										else if("to".equals(sa[1])) {
+											if(sa.length == 3) {
+												migrate(sa[2]);
+											} else {
+												throw new Exception();
+											}
+										}
+										else if(sa.length == 3) {
+											if("up".equals(sa[2])) {
+												migrate(sa[1], true);
+											}
+											else if("down".equals(sa[2])) {
+												migrate(sa[1], false);
+											}
+											else {
+												throw new Exception();
+											}
+										}
+										else {
+											throw new Exception();
+										}
+									}
+								} catch(Exception e) {
+									logger.error(e);
 								}
-							} catch(Exception e) {
-								logger.error(e);
 							}
 							logger.info(DONE);
 							try {
