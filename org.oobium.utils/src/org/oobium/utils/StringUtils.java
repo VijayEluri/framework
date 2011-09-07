@@ -24,6 +24,7 @@ import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
@@ -53,7 +54,32 @@ public class StringUtils {
 			return asString(((Collection<?>) object).toArray());
 		}
 		if(object.getClass().isArray()) {
-			return asString((Object[]) object);
+			Class<?> ctype = object.getClass().getComponentType();
+			if(ctype.isPrimitive()) {
+				if(ctype == int.class) {
+					return Arrays.toString((int[]) object);
+				}
+				else if(ctype == boolean.class) {
+					return Arrays.toString((boolean[]) object);
+				}
+				else if(ctype == byte.class) {
+					return Arrays.toString((byte[]) object);
+				}
+				else if(ctype == char.class) {
+					return Arrays.toString((char[]) object);
+				}
+				else if(ctype == double.class) {
+					return Arrays.toString((double[]) object);
+				}
+				else if(ctype == float.class) {
+					return Arrays.toString((float[]) object);
+				}
+				else if(ctype == long.class) {
+					return Arrays.toString((long[]) object);
+				}
+			} else {
+				return asString((Object[]) object);
+			}
 		}
 		return object.toString();
 	}
@@ -962,7 +988,7 @@ public class StringUtils {
 		}
 		StringBuilder sb = new StringBuilder(length);
 		sb.append(string);
-		for(int i = 0; sb.length() < length; i++) {
+		while(sb.length() < length) {
 			sb.append(' ');
 		}
 		return sb.toString();
