@@ -17,32 +17,35 @@ public class RequestHandlers {
 	private RequestHandlerMap<HttpRequest404Handler> request404Handlers;
 	private RequestHandlerMap<HttpRequest500Handler> request500Handlers;
 
-	public Object addHandler(Object handler, int port) {
-		if(handler instanceof ChannelUpstreamHandler) {
-			if(channelHandlers == null) {
-				channelHandlers = new RequestHandlerMap<ChannelUpstreamHandler>();
-			}
-			channelHandlers.add((ChannelUpstreamHandler) handler, port);
+	public Object addChannelHandler(ChannelUpstreamHandler handler, int port) {
+		if(channelHandlers == null) {
+			channelHandlers = new RequestHandlerMap<ChannelUpstreamHandler>();
 		}
-		if(handler instanceof HttpRequestHandler) {
-			if(requestHandlers == null) {
-				requestHandlers = new RequestHandlerMap<HttpRequestHandler>();
-			}
-			requestHandlers.add((HttpRequestHandler) handler, port);
+		channelHandlers.add((ChannelUpstreamHandler) handler, port);
+		return handler;
+	}
+
+	public Object addRequestHandler(HttpRequestHandler handler, int port) {
+		if(requestHandlers == null) {
+			requestHandlers = new RequestHandlerMap<HttpRequestHandler>();
 		}
-		if(handler instanceof HttpRequest404Handler) {
-			if(request404Handlers == null) {
-				request404Handlers = new RequestHandlerMap<HttpRequest404Handler>();
-			}
-			request404Handlers.add((HttpRequest404Handler) handler, port);
+		requestHandlers.add((HttpRequestHandler) handler, port);
+		return handler;
+	}
+	
+	public Object add404Handler(HttpRequest404Handler handler, int port) {
+		if(request404Handlers == null) {
+			request404Handlers = new RequestHandlerMap<HttpRequest404Handler>();
 		}
-		if(handler instanceof HttpRequest500Handler) {
-			if(request500Handlers == null) {
-				request500Handlers = new RequestHandlerMap<HttpRequest500Handler>();
-			}
-			request500Handlers.add((HttpRequest500Handler) handler, port);
+		request404Handlers.add((HttpRequest404Handler) handler, port);
+		return handler;
+	}
+	
+	public Object add500Handler(HttpRequest500Handler handler, int port) {
+		if(request500Handlers == null) {
+			request500Handlers = new RequestHandlerMap<HttpRequest500Handler>();
 		}
-		
+		request500Handlers.add((HttpRequest500Handler) handler, port);
 		return handler;
 	}
 
@@ -126,31 +129,11 @@ public class RequestHandlers {
 		return (requestHandlers != null) ? requestHandlers.hasPorts() : ((channelHandlers != null) ? channelHandlers.hasPorts() : false);
 	}
 
-	public boolean removeHandler(Object handler, int port) {
-		RequestHandlerMap<?> map = null;
-		if(handler instanceof ChannelUpstreamHandler) {
-			map = channelHandlers;
-		} else if(handler instanceof HttpRequestHandler) {
-			map = requestHandlers;
-		} else if(handler instanceof HttpRequest404Handler) {
-			map = request404Handlers;
-		} else if(handler instanceof HttpRequest500Handler) {
-			map = request500Handlers;
-		} else {
-			throw new IllegalArgumentException();
-		}
-		if(map != null) {
-			if(map.remove(handler, port)) {
-				if(map.isEmpty()) {
-					if(handler instanceof ChannelUpstreamHandler) {
-						channelHandlers = null;
-					} else if(handler instanceof HttpRequestHandler) {
-						requestHandlers = null;
-					} else if(handler instanceof HttpRequest404Handler) {
-						request404Handlers = null;
-					} else if(handler instanceof HttpRequest500Handler) {
-						request500Handlers = null;
-					}
+	public boolean removeChannelHandler(ChannelUpstreamHandler handler, int port) {
+		if(channelHandlers != null) {
+			if(channelHandlers.remove(handler, port)) {
+				if(channelHandlers.isEmpty()) {
+					channelHandlers = null;
 				}
 				return true;
 			}
@@ -158,6 +141,42 @@ public class RequestHandlers {
 		return false;
 	}
 	
+	public boolean removeRequestHandler(HttpRequestHandler handler, int port) {
+		if(requestHandlers != null) {
+			if(requestHandlers.remove(handler, port)) {
+				if(requestHandlers.isEmpty()) {
+					requestHandlers = null;
+				}
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public boolean remove404Handler(HttpRequest404Handler handler, int port) {
+		if(request404Handlers != null) {
+			if(request404Handlers.remove(handler, port)) {
+				if(request404Handlers.isEmpty()) {
+					request404Handlers = null;
+				}
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public boolean remove500Handler(HttpRequest500Handler handler, int port) {
+		if(request500Handlers != null) {
+			if(request500Handlers.remove(handler, port)) {
+				if(request500Handlers.isEmpty()) {
+					request500Handlers = null;
+				}
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public int size(int port) {
 		int cports = (channelHandlers != null) ? channelHandlers.size(port) : 0;
 		int rports = (requestHandlers != null) ? requestHandlers.size(port) : 0;

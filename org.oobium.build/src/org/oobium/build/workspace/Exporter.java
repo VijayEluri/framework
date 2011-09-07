@@ -43,22 +43,10 @@ import org.oobium.utils.FileUtils;
 public class Exporter {
 
 	/**
-	 * Export an individual bundle
-	 * @param mode
-	 * @param bundle
-	 * @return the exported Bundle (note that this bundle will not be available to Workspace.getBundle())
-	 * @throws IOException
-	 */
-	public static Bundle export(Workspace workspace, Bundle bundle) throws IOException {
-		Exporter exporter = new Exporter(workspace, null);
-		return exporter.export(bundle);
-	}
-
-	
-	/**
 	 * Bundles that are Applications only
 	 */
 	public static final int APP			= 1 << 0;
+
 	
 	/**
 	 * Bundles that are either Applications or Modules (application extends module)
@@ -69,13 +57,12 @@ public class Exporter {
 	 * Bundles that are Migrations
 	 */
 	public static final int MIGRATION	= 1 << 2;
-
+	
 	/**
 	 * Bundles that export a Service
 	 */
 	public static final int SERVICE		= 1 << 3;
 
-	
 	private static final String START_SCRIPT = 	"#!/bin/bash\n" +
 												"pidfile=../<APP_NAME>.pid\n" +
 												"if [ -e $pidfile ]; then\n" +
@@ -86,6 +73,7 @@ public class Exporter {
 												"  echo $! > $pidfile\n" +
 												"fi";
 
+	
 	private static final String STOP_SCRIPT = 	"#!/bin/bash\n" +
 												"pidfile=../<APP_NAME>.pid\n" +
 												"if [ -e $pidfile ]; then\n" +
@@ -98,6 +86,18 @@ public class Exporter {
 												"  echo \"Cannot find $pidfile file - is process actually running?\"\n" +
 												"  exit 1\n" +
 												"fi";
+
+	/**
+	 * Export an individual bundle
+	 * @param mode
+	 * @param bundle
+	 * @return the exported Bundle (note that this bundle will not be available to Workspace.getBundle())
+	 * @throws IOException
+	 */
+	public static Bundle export(Workspace workspace, Application application, Bundle bundle) throws IOException {
+		Exporter exporter = new Exporter(workspace, application);
+		return exporter.export(bundle);
+	}
 
 
 	private final Logger logger;
@@ -115,6 +115,7 @@ public class Exporter {
 	private Mode mode;
 	private Map<String, String> properties;
 	
+	private Set<Bundle> bundles;
 	private Set<Bundle> exportedBundles;
 	private Set<Bundle> exportedStart;
 	
@@ -129,7 +130,7 @@ public class Exporter {
 		this.application = application;
 		this.start = new LinkedHashSet<Bundle>();
 		this.includes = new LinkedHashSet<Bundle>();
-		this.exportDir = workspace.getExportDir();
+		this.exportDir = new File(workspace.getExportDir(), application.name);
 		this.binDir = new File(exportDir, "bin");
 		this.bundleDir = new File(exportDir, "bundles");
 
@@ -141,20 +142,34 @@ public class Exporter {
 		setStartTypes(MODULE | SERVICE);
 	}
 	
-	public void setIncludeMigrator(boolean include) {
-		this.includeMigrator = include;
-	}
-	
-	public void setMigrator(boolean migrator) {
-		this.isMigrator = migrator;
-	}
-
 	public void add(Bundle...bundles) {
 		add(Arrays.asList(bundles));
 	}
 	
 	public void add(Collection<? extends Bundle> bundles) {
 		includes.addAll(bundles);
+	}
+
+	private void addExported(Bundle bundle, Bundle exportedBundle) {
+		if(start.contains(bundle)) {
+			exportedStart.add(exportedBundle);
+		} else {
+			if(!isMigrator) {
+				if((startTypes & APP) != 0 && exportedBundle.isApplication()) {
+					exportedStart.add(exportedBundle);
+				}
+				if((startTypes & MODULE) != 0 && exportedBundle.isModule()) {
+					exportedStart.add(exportedBundle);
+				}
+				if((startTypes & MIGRATION) != 0 && exportedBundle.isMigration()) {
+					exportedStart.add(exportedBundle);
+				}
+			}
+			if((startTypes & SERVICE) != 0 && exportedBundle.isService()) {
+				exportedStart.add(exportedBundle);
+			}
+		}
+		exportedBundles.add(exportedBundle);
 	}
 	
 	public void addStart(Bundle...bundles) {
@@ -174,7 +189,7 @@ public class Exporter {
 	public void clearStartBundles() {
 		start.clear();
 	}
-
+	
 	/**
 	 * Only good for Apache Felix - will need to modify if supporting
 	 * additional runtimes in the future...
@@ -223,7 +238,7 @@ public class Exporter {
 
 		writeFile(config, sb.toString());
 	}
-	
+
 	private void createScripts() {
 		File startScript = new File(exportDir, "start.sh");
 		if(startScript.exists()) {
@@ -267,28 +282,6 @@ public class Exporter {
 		
 		return (Bundle) Project.load(jar);
 	}
-
-	private void addExported(Bundle bundle, Bundle exportedBundle) {
-		if(start.contains(bundle)) {
-			exportedStart.add(exportedBundle);
-		} else {
-			if(!isMigrator) {
-				if((startTypes & APP) != 0 && exportedBundle.isApplication()) {
-					exportedStart.add(exportedBundle);
-				}
-				if((startTypes & MODULE) != 0 && exportedBundle.isModule()) {
-					exportedStart.add(exportedBundle);
-				}
-				if((startTypes & MIGRATION) != 0 && exportedBundle.isMigration()) {
-					exportedStart.add(exportedBundle);
-				}
-			}
-			if((startTypes & SERVICE) != 0 && exportedBundle.isService()) {
-				exportedStart.add(exportedBundle);
-			}
-		}
-		exportedBundles.add(exportedBundle);
-	}
 	
 	/**
 	 * Export the application, configured for the given mode.
@@ -326,7 +319,7 @@ public class Exporter {
 		}
 		
 		logger.info("determining required bundles");
-		Set<Bundle> bundles = new TreeSet<Bundle>();
+		bundles = new TreeSet<Bundle>();
 		for(Application application : applications) {
 			if(!bundles.contains(application)) {
 				Map<Bundle, List<Bundle>> deps = application.getDependencies(workspace, mode);
@@ -370,18 +363,6 @@ public class Exporter {
 		return exportDir;
 	}
 
-	private void printDependencies(Map<Bundle, List<Bundle>> deps) {
-		if(logger.isLoggingDebug()) {
-			logger.debug("dependencies:");
-			for(Entry<Bundle, List<Bundle>> entry : deps.entrySet()) {
-				logger.debug("  " + entry.getKey().name);
-				for(Bundle bundle : entry.getValue()) {
-					logger.debug("    " + bundle.name);
-				}
-			}
-		}
-	}
-
 	private Bundle export(Bundle bundle) throws IOException {
 		if(exportDir.exists()) {
 			if(clean) {
@@ -399,10 +380,14 @@ public class Exporter {
 		return doExport(bundle);
 	}
 	
+	public List<Bundle> getBundles() {
+		return new ArrayList<Bundle>(bundles);
+	}
+	
 	public boolean getClean() {
 		return clean;
 	}
-	
+
 	public boolean getCleanCache() {
 		return cleanCache;
 	}
@@ -410,7 +395,11 @@ public class Exporter {
 	public File getExportDir() {
 		return exportDir;
 	}
-
+	
+	public List<Bundle> getExportedBundles() {
+		return new ArrayList<Bundle>(exportedBundles);
+	}
+	
 	public File getExportedJar(Bundle bundle) {
 		if(!exportDir.exists()) {
 			return null;
@@ -473,9 +462,21 @@ public class Exporter {
 		}
 		return properties;
 	}
-	
+
 	public Mode getMode() {
 		return mode;
+	}
+
+	private void printDependencies(Map<Bundle, List<Bundle>> deps) {
+		if(logger.isLoggingDebug()) {
+			logger.debug("dependencies:");
+			for(Entry<Bundle, List<Bundle>> entry : deps.entrySet()) {
+				logger.debug("  " + entry.getKey().name);
+				for(Bundle bundle : entry.getValue()) {
+					logger.debug("    " + bundle.name);
+				}
+			}
+		}
 	}
 	
 	public void setClean(boolean clean) {
@@ -484,6 +485,14 @@ public class Exporter {
 	
 	public void setCleanCache(boolean cleanCache) {
 		this.cleanCache = cleanCache;
+	}
+	
+	public void setIncludeMigrator(boolean include) {
+		this.includeMigrator = include;
+	}
+	
+	public void setMigrator(boolean migrator) {
+		this.isMigrator = migrator;
 	}
 	
 	public void setMode(Mode mode) {

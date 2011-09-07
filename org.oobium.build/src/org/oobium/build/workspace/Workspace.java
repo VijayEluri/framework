@@ -274,19 +274,8 @@ public class Workspace {
 		return new ArrayList<File>(0);
 	}
 	
-	public File export(Application application, Mode mode) throws IOException {
-		return export(application, mode, new HashMap<String, String>(0));
-	}
-	
-	public File export(Application application, Mode mode, Map<String, String> properties) throws IOException {
-		Exporter exporter = new Exporter(this, application);
-		exporter.setMode(mode);
-		exporter.setProperties(properties);
-		return exporter.export();
-	}
-	
-	public Bundle export(Bundle bundle) throws IOException {
-		return Exporter.export(this, bundle);
+	public Bundle export(Application application, Bundle bundle) throws IOException {
+		return Exporter.export(this, application, bundle);
 	}
 	
 	public File exportMigrator(Application application, Mode mode) throws IOException {
@@ -298,18 +287,6 @@ public class Workspace {
 		exporter.setMode(mode);
 		exporter.setProperties(properties);
 		exporter.setMigrator(true);
-		return exporter.export();
-	}
-	
-	public File exportWithMigrators(Application application, Mode mode) throws IOException {
-		return exportWithMigrators(application, mode, new HashMap<String, String>(0));
-	}
-	
-	public File exportWithMigrators(Application application, Mode mode, Map<String, String> properties) throws IOException {
-		Exporter exporter = new Exporter(this, application);
-		exporter.setMode(mode);
-		exporter.setProperties(properties);
-		exporter.setIncludeMigrator(true);
 		return exporter.export();
 	}
 	

@@ -11,6 +11,8 @@
 package org.oobium.build.console.commands.remote;
 
 import static org.oobium.build.console.commands.RemoteCommand.getInstallations;
+import static org.oobium.persist.migrate.MigratorService.SYS_PROP_ACTION;
+import static org.oobium.utils.literal.Map;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,9 +24,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.oobium.build.console.commands.remote.migrate.PurgeCommand;
+import org.oobium.build.console.commands.remote.migrate.RedoCommand;
+import org.oobium.build.console.commands.remote.migrate.RollbackCommand;
+import org.oobium.build.console.commands.remote.migrate.ToCommand;
 import org.oobium.build.exceptions.OobiumException;
 import org.oobium.build.util.SSH;
 import org.oobium.build.workspace.Application;
+import org.oobium.build.workspace.Exporter;
 import org.oobium.build.workspace.Workspace;
 import org.oobium.console.ConsolePrintStream;
 import org.oobium.utils.Config.Mode;
@@ -36,6 +43,27 @@ public class MigrateCommand extends RemoteCommand {
 	@Override
 	public void configure() {
 		applicationRequired = true;
+		maxParams = 2;
+		
+		add(new PurgeCommand());
+		add(new RedoCommand());
+		add(new RollbackCommand());
+		add(new ToCommand());
+	}
+
+	@Override
+	protected boolean canExecute() {
+		return hasApplication() && (
+				(paramCount() == 0) ||
+				((paramCount() == 2) && ("up".equals(param(1)) || "down".equals(param(1))))
+			);
+	}
+	
+	protected String getAction() {
+		if(paramCount() == 2) {
+			return "migrate/" + param(0) + "/" + param(1);
+		}
+		return "migrate";
 	}
 
 	private void deploy(Workspace ws, Application app, File exportDir) throws OobiumException, IOException {
@@ -117,8 +145,11 @@ public class MigrateCommand extends RemoteCommand {
 		try {
 			long start = System.currentTimeMillis();
 
-			ws.cleanExport();
-			File exportDir = ws.exportMigrator(app, mode);
+			Exporter exporter = new Exporter(ws, app);
+			exporter.setMode(mode);
+			exporter.setClean(true);
+			exporter.setProperties(Map(SYS_PROP_ACTION, getAction()));
+			File exportDir = exporter.export();
 			
 			String msg = "exported <a href=\"open file " + exportDir + "\">" + app.name() + "</a>";
 			if(flag('v')) {

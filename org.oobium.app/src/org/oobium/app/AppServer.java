@@ -1,11 +1,14 @@
 package org.oobium.app;
 
 import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.ChannelGroupFuture;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
@@ -35,7 +38,8 @@ public class AppServer implements BundleActivator {
 	private RequestHandlerTrackers trackers;
 	
 	private ServerBootstrap server;
-	private ChannelGroup channels;
+	private ChannelGroup channelGroup;
+	private Map<Integer, Channel> channels;
 	private ExecutorService executors;
 
 	private Thread shutdownHook;
@@ -78,7 +82,8 @@ public class AppServer implements BundleActivator {
 	}
 	
 	private ServerBootstrap createServer() {
-		channels = new DefaultChannelGroup();
+		channelGroup = new DefaultChannelGroup();
+		channels = new HashMap<Integer, Channel>();
 
 		server = new ServerBootstrap(
 				new NioServerSocketChannelFactory(
@@ -103,13 +108,15 @@ public class AppServer implements BundleActivator {
 		if(server != null) {
 			removeShutdownHook();
 			
-			ChannelGroupFuture future = channels.close();
+			ChannelGroupFuture future = channelGroup.close();
 			future.awaitUninterruptibly();
 
 			server.releaseExternalResources();
 			
 			server = null;
-			channels = null;
+			channelGroup = null;
+			
+			logger.error("disposed server");
 		}
 	}
 	
@@ -121,28 +128,41 @@ public class AppServer implements BundleActivator {
 		}
 		
 		Channel channel = server.bind(new InetSocketAddress(port));
-		channels.add(channel);
+		channelGroup.add(channel);
+		channels.put(port, channel);
 	}
 	
 	private void stopServer(int port) {
 		if(server != null) {
-			logger.info("server stopped on port " + port);
-			if(!handlers.hasPorts()) {
-				disposeServer();
+			Channel channel = channels.get(port);
+			if(channel == null) {
+				logger.error("no channel for port {}", port);
+			} else {
+				channels.remove(port);
+				ChannelFuture future = channel.close();
+				try {
+					while(!future.await(100));
+					logger.info("closed channel for port {}", port);
+				} catch (InterruptedException e) {
+					logger.info("interrupted while waiting for channel to close on port {}", port);
+				}
 			}
 		}
 	}
 	
 	public HttpRequestHandler addHandler(HttpRequestHandler handler) {
-		return (HttpRequestHandler) addHandler(handler, handler.getPort());
+		int port = handler.getPort();
+		handlers.addRequestHandler(handler, port);
+		return (HttpRequestHandler) addedHandler(handler, port);
 	}
 	
 	public Gateway addHandler(Gateway handler) {
-		return (Gateway) addHandler(handler, handler.getPort());
+		int port = handler.getPort();
+		handlers.addChannelHandler(handler, port);
+		return (Gateway) addedHandler(handler, port);
 	}
 	
-	public Object addHandler(Object handler, int port) {
-		handlers.addHandler(handler, port);
+	private <T> T addedHandler(T handler, int port) {
 		int count = handlers.size(port);
 		if(count == 1) {
 			startServer(port);
@@ -154,13 +174,17 @@ public class AppServer implements BundleActivator {
 	
 	public void removeHandler(HttpRequestHandler handler) {
 		int port = handler.getPort();
-		if(handlers.removeHandler(handler, port)) {
+		if(handlers.removeRequestHandler(handler, port)) {
 			int count = handlers.size(port);
 			if(count == 0) {
+				logger.info("stopping server on port {}", handler.getPort());
 				stopServer(port);
+				logger.info("stopped serving port {}", handler.getPort());
 			} else {
 				logger.info("decremented count of port " + handler.getPort() + " to " + count);
 			}
+		} else {
+			logger.warn("handler not found: {}", handler);
 		}
 	}
 	

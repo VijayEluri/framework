@@ -20,8 +20,8 @@ import java.util.Map;
 import org.oobium.build.runner.RunEvent.Type;
 import org.oobium.build.workspace.Application;
 import org.oobium.build.workspace.Bundle;
+import org.oobium.build.workspace.Exporter;
 import org.oobium.build.workspace.Workspace;
-import org.oobium.utils.FileUtils;
 import org.oobium.utils.Config.Mode;
 
 public class Runner {
@@ -107,16 +107,19 @@ public class Runner {
 	public boolean start() {
 		if(process == null) {
 			File exportDir = null;
+			Exporter exporter = null;
 			try {
-				exportDir = workspace.exportWithMigrators(application, mode, properties);
+				exporter = new Exporter(workspace, application);
+				exporter.setMode(mode);
+				exporter.setClean(true);
+				exporter.setProperties(properties);
+				exporter.setIncludeMigrator(true);
+				exporter.export();
 			} catch(IOException e) {
 				return false;
 			}
-
-			File felixCache = new File(exportDir, "felix-cache");
-			if(felixCache.exists()) {
-				FileUtils.delete(felixCache);
-			}
+			
+			exportDir = exporter.getExportDir();
 
 			ProcessBuilder builder = new ProcessBuilder();
 			builder.command("java", "-jar", "bin/felix.jar");
@@ -140,7 +143,7 @@ public class Runner {
 			};
 			Runtime.getRuntime().addShutdownHook(shutdownHook);
 			
-			updater = new UpdaterThread(workspace, application, mode);
+			updater = new UpdaterThread(workspace, application, exporter.getBundles());
 			updater.start();
 		}
 		return true;

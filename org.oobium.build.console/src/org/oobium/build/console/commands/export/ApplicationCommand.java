@@ -16,6 +16,7 @@ import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.workspace.Application;
+import org.oobium.build.workspace.Exporter;
 import org.oobium.build.workspace.Workspace;
 import org.oobium.utils.Config.Mode;
 
@@ -47,8 +48,11 @@ public class ApplicationCommand extends BuilderCommand {
 		try {
 			long start = System.currentTimeMillis();
 
-			ws.cleanExport();
-			File exportDir = ws.exportWithMigrators(app, mode);
+			Exporter exporter = new Exporter(ws, app);
+			exporter.setMode(mode);
+			exporter.setClean(true);
+			exporter.setIncludeMigrator(true);
+			File exportDir = exporter.export();
 			
 			String msg = "exported <a href=\"open file " + exportDir + "\">" + app.name() + "</a>";
 			if(flag('v')) {

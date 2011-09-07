@@ -45,10 +45,9 @@ public class ProjectCommand extends ApplicationCommand {
 			try {
 				long start = System.currentTimeMillis();
 
-				ws.cleanExport();
-
 				File wd = new File(ws.getExportDir(), "blaze-server");
-	
+				FileUtils.deleteContents(wd);
+
 				FileUtils.extract(turnkeyZip, wd);
 				
 				File tomcat = new File(wd, "tomcat");

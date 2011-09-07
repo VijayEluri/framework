@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -28,7 +29,6 @@ import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.Workspace;
 import org.oobium.utils.FileUtils;
-import org.oobium.utils.Config.Mode;
 
 class UpdaterThread extends Thread {
 
@@ -47,8 +47,8 @@ class UpdaterThread extends Thread {
 	private Map<Bundle, Set<File>> waitFor;
 	
 
-	UpdaterThread(Workspace workspace, Application application, Mode mode) {
-		super(application + ":" + mode + " updater");
+	UpdaterThread(Workspace workspace, Application application, List<Bundle> bundles) {
+		super(application + " updater");
 		setDaemon(true);
 		this.waitLock = new Object();
 		this.workspace = workspace;
@@ -58,7 +58,8 @@ class UpdaterThread extends Thread {
 		this.bundles = new HashMap<Bundle, Long>();
 		this.exported = new HashMap<Bundle, Bundle>();
 		this.bundles.put(application, getLastModified(application));
-		for(Bundle bundle : application.getDependencies(workspace, mode).keySet()) {
+		for(Bundle bundle : bundles) {
+			System.out.println(bundle);
 			this.bundles.put(bundle, getLastModified(bundle));
 		}
 	}
@@ -151,7 +152,7 @@ class UpdaterThread extends Thread {
 			long lastModified = getLastModified(bundle);
 			if(modified < lastModified) {
 				try {
-					Bundle update = workspace.export(bundle);
+					Bundle update = workspace.export(application, bundle);
 					bundles.put(bundle, lastModified);
 					update(domain, port, bundle, "file:" + update.file.getAbsolutePath());
 					RunnerService.notifyListeners(Type.Update, application, update);

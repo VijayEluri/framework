@@ -556,7 +556,8 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	}
 
 	public Object[] getValues() {
-		return param("values", Object[].class);
+		Object[] values = param("values", Object[].class);
+		return (values != null) ? values : new Object[0];
 	}
 	
 	public Logger getLogger() {

@@ -11,6 +11,7 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
+@SuppressWarnings({"unchecked","rawtypes"})
 public class RequestHandlerTrackers {
 
 	private ServiceTracker requestHandlerTracker;
@@ -43,14 +44,14 @@ public class RequestHandlerTrackers {
 		request404HandlerTracker = new ServiceTracker(context, HttpRequest404Handler.class.getName(), new ServiceTrackerCustomizer() {
 			public Object addingService(ServiceReference reference) {
 				int port = coerce(reference.getProperty("port"), -1);
-				return handlers.addHandler((HttpRequest404Handler) context.getService(reference), port);
+				return handlers.add404Handler((HttpRequest404Handler) context.getService(reference), port);
 			}
 			public void modifiedService(ServiceReference reference, Object service) {
 				// nothing to do
 			}
 			public void removedService(ServiceReference reference, Object service) {
 				int port = coerce(reference.getProperty("port"), -1);
-				handlers.removeHandler((HttpRequest404Handler) service, port);
+				handlers.remove404Handler((HttpRequest404Handler) service, port);
 			}
 		});
 		request404HandlerTracker.open();
@@ -58,14 +59,14 @@ public class RequestHandlerTrackers {
 		request500HandlerTracker = new ServiceTracker(context, HttpRequest500Handler.class.getName(), new ServiceTrackerCustomizer() {
 			public Object addingService(ServiceReference reference) {
 				int port = coerce(reference.getProperty("port"), -1);
-				return handlers.addHandler((HttpRequest500Handler) context.getService(reference), port);
+				return handlers.add500Handler((HttpRequest500Handler) context.getService(reference), port);
 			}
 			public void modifiedService(ServiceReference reference, Object service) {
 				// nothing to do
 			}
 			public void removedService(ServiceReference reference, Object service) {
 				int port = coerce(reference.getProperty("port"), -1);
-				handlers.removeHandler((HttpRequest500Handler) service, port);
+				handlers.remove500Handler((HttpRequest500Handler) service, port);
 			}
 		});
 		request500HandlerTracker.open();

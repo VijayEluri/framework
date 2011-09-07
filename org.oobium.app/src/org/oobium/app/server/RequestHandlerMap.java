@@ -2,6 +2,8 @@ package org.oobium.app.server;
 
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,13 +17,21 @@ public class RequestHandlerMap<T> {
 	public void add(T handler, int port) {
 		if(handlers == null) {
 			handlers = new HashMap<Integer, List<T>>();
-		}
-		List<T> portHandlers = handlers.get(port);
-		if(portHandlers == null) {
-			portHandlers = new ArrayList<T>();
+			List<T> portHandlers = new ArrayList<T>();
+			portHandlers.add(handler);
 			handlers.put(port, portHandlers);
+		} else {
+			List<T> portHandlers = handlers.get(port);
+			if(portHandlers == null) {
+				portHandlers = new ArrayList<T>();
+				portHandlers.add(handler);
+				handlers.put(port, portHandlers);
+			} else {
+				if(!portHandlers.contains(handler)) { // don't add duplicates
+					portHandlers.add(handler);
+				}
+			}
 		}
-		portHandlers.add(handler);
 	}
 
 	public void clear() {
@@ -52,10 +62,12 @@ public class RequestHandlerMap<T> {
 	public boolean remove(Object handler, int port) {
 		if(handlers != null) {
 			List<?> portHandlers = handlers.get(port);
+			if(portHandlers == null) {
+			}
 			if(portHandlers != null) {
 				boolean removed = portHandlers.remove(handler);
 				if(portHandlers.isEmpty()) {
-					handlers.remove(portHandlers);
+					handlers.remove(port);
 					if(handlers.isEmpty()) {
 						handlers = null;
 					}
@@ -69,9 +81,23 @@ public class RequestHandlerMap<T> {
 	public int size(int port) {
 		if(handlers != null) {
 			List<?> list = handlers.get(port);
-			return (list != null) ? list.size() : 0;
+			if(list != null) {
+				return list.size();
+			}
 		}
 		return 0;
+	}
+	
+	@Override
+	public String toString() {
+		Type type = getClass().getGenericSuperclass();
+		if(type instanceof ParameterizedType) {
+			ParameterizedType pt = (ParameterizedType) type;
+			type = pt.getActualTypeArguments()[0];
+			return type + " " + handlers;
+		} else {
+			return "raw " + handlers;
+		}
 	}
 	
 }

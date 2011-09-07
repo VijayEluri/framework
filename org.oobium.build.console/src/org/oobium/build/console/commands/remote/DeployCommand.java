@@ -29,6 +29,7 @@ import org.oobium.build.util.SSH;
 import org.oobium.build.util.SSHEvent;
 import org.oobium.build.util.SSHListener;
 import org.oobium.build.workspace.Application;
+import org.oobium.build.workspace.Exporter;
 import org.oobium.build.workspace.Workspace;
 import org.oobium.utils.Config.Mode;
 import org.oobium.utils.FileUtils;
@@ -166,8 +167,10 @@ public class DeployCommand extends RemoteCommand {
 		try {
 			long start = System.currentTimeMillis();
 
-			ws.cleanExport();
-			File exportDir = ws.export(app, mode);
+			Exporter exporter = new Exporter(ws, app);
+			exporter.setMode(mode);
+			exporter.setClean(true);
+			File exportDir = exporter.export();
 			
 			String msg = "exported <a href=\"open file " + exportDir + "\">" + app.name() + "</a>";
 			if(flag('v')) {
