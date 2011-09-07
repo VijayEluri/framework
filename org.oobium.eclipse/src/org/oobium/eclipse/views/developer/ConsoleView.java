@@ -22,7 +22,6 @@ import java.io.File;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences.IPreferenceChangeListener;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences.PreferenceChangeEvent;
@@ -68,7 +67,6 @@ import org.oobium.console.CommandEvent;
 import org.oobium.console.CommandListener;
 import org.oobium.console.Console;
 import org.oobium.console.ConsolePage;
-import org.oobium.eclipse.OobiumNature;
 import org.oobium.eclipse.OobiumPlugin;
 import org.oobium.eclipse.views.actions.ClearAction;
 import org.oobium.eclipse.views.actions.ScrollLockAction;
@@ -289,7 +287,7 @@ public class ConsoleView extends ViewPart {
 			}
 		});
 		
-		new InstanceScope().getNode(WORKBENCH_PREFERENCES).addPreferenceChangeListener(preferenceListener = new IPreferenceChangeListener() {
+		InstanceScope.INSTANCE.getNode(WORKBENCH_PREFERENCES).addPreferenceChangeListener(preferenceListener = new IPreferenceChangeListener() {
 			@Override
 			public void preferenceChange(PreferenceChangeEvent event) {
 				if(TEXTFONT_KEY.equals(event.getKey())) {
@@ -323,7 +321,7 @@ public class ConsoleView extends ViewPart {
 			workspaceListener = null;
 		}
 		if(preferenceListener != null) {
-			new InstanceScope().getNode(WORKBENCH_PREFERENCES).removePreferenceChangeListener(preferenceListener);
+			InstanceScope.INSTANCE.getNode(WORKBENCH_PREFERENCES).removePreferenceChangeListener(preferenceListener);
 		}
 		if(tracker != null) {
 			tracker.close();
