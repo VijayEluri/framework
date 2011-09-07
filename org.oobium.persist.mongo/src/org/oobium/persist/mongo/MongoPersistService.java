@@ -346,7 +346,7 @@ public class MongoPersistService implements BundleActivator, PersistService {
 	
 	@Override
 	public <T extends Model> List<T> findAll(Class<T> clazz) throws Exception {
-		return findAll(clazz, (Map<String, Object>) null);
+		return findAll(clazz, (Map<String, Object>) null, new Object[0]);
 	}
 	
 	@Override
