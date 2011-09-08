@@ -287,7 +287,7 @@ public class ConsoleView extends ViewPart {
 			}
 		});
 		
-		InstanceScope.INSTANCE.getNode(WORKBENCH_PREFERENCES).addPreferenceChangeListener(preferenceListener = new IPreferenceChangeListener() {
+		new InstanceScope().getNode(WORKBENCH_PREFERENCES).addPreferenceChangeListener(preferenceListener = new IPreferenceChangeListener() {
 			@Override
 			public void preferenceChange(PreferenceChangeEvent event) {
 				if(TEXTFONT_KEY.equals(event.getKey())) {
@@ -321,7 +321,7 @@ public class ConsoleView extends ViewPart {
 			workspaceListener = null;
 		}
 		if(preferenceListener != null) {
-			InstanceScope.INSTANCE.getNode(WORKBENCH_PREFERENCES).removePreferenceChangeListener(preferenceListener);
+			new InstanceScope().getNode(WORKBENCH_PREFERENCES).removePreferenceChangeListener(preferenceListener);
 		}
 		if(tracker != null) {
 			tracker.close();
