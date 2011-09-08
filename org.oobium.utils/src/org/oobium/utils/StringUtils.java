@@ -459,6 +459,10 @@ public class StringUtils {
 		return new SimpleDateFormat(pattern).format(date);
 	}
 
+	public static String format(long dateInMillis, String pattern) {
+		return new SimpleDateFormat(pattern).format(new Date(dateInMillis));
+	}
+
 	/**
 	 * If the given object is a JsonModel, then return its id.
 	 * If it is a Map, then return its JSON representation.
