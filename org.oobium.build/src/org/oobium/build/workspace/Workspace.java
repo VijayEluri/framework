@@ -278,18 +278,6 @@ public class Workspace {
 		return Exporter.export(this, application, bundle);
 	}
 	
-	public File exportMigrator(Application application, Mode mode) throws IOException {
-		return exportMigrator(application, mode, new HashMap<String, String>(0));
-	}
-
-	public File exportMigrator(Application application, Mode mode, Map<String, String> properties) throws IOException {
-		Exporter exporter = new Exporter(this, application);
-		exporter.setMode(mode);
-		exporter.setProperties(properties);
-		exporter.setMigrator(true);
-		return exporter.export();
-	}
-	
 	void fireEvent(EventType eventType, Object oldValue, Object newValue) {
 		WorkspaceEvent event = new WorkspaceEvent(eventType, oldValue, newValue);
 		for(WorkspaceListener listener : Arrays.copyOf(this.listeners, this.listeners.length)) {

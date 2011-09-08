@@ -145,7 +145,7 @@ public class MigrateCommand extends RemoteCommand {
 		try {
 			long start = System.currentTimeMillis();
 
-			Exporter exporter = new Exporter(ws, app);
+			Exporter exporter = new Exporter(ws, app, true);
 			exporter.setMode(mode);
 			exporter.setClean(true);
 			exporter.setProperties(Map(SYS_PROP_ACTION, getAction()));

@@ -125,9 +125,14 @@ public class Exporter {
 	private boolean isMigrator;
 	
 	public Exporter(Workspace workspace, Application application) {
+		this(workspace, application, false);
+	}
+	
+	public Exporter(Workspace workspace, Application application, boolean asMigrator) {
 		this.logger = LogProvider.getLogger(BuildBundle.class);
 		this.workspace = workspace;
 		this.application = application;
+		this.isMigrator = asMigrator;
 		this.start = new LinkedHashSet<Bundle>();
 		this.includes = new LinkedHashSet<Bundle>();
 		this.exportDir = new File(workspace.getExportDir(), application.name);
@@ -489,10 +494,6 @@ public class Exporter {
 	
 	public void setIncludeMigrator(boolean include) {
 		this.includeMigrator = include;
-	}
-	
-	public void setMigrator(boolean migrator) {
-		this.isMigrator = migrator;
 	}
 	
 	public void setMode(Mode mode) {
