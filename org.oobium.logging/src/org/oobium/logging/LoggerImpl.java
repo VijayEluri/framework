@@ -100,6 +100,48 @@ public class LoggerImpl implements Logger {
 		return defaultLevel;
 	}
 	
+	public static String replace(String string, Object[] values) {
+		if(values == null || values.length == 0) {
+			return string;
+		}
+		int len = string.length();
+		String[] sa = new String[values.length];
+		for(int i = 0; i < sa.length; i++) {
+			sa[i] = String.valueOf(values[i]);
+			len += sa[i].length();
+		}
+		StringBuilder sb = new StringBuilder(len);
+		int i = 0;
+		int pos = 0;
+		int ix = string.indexOf("{}");
+		while(ix != -1) {
+			if(ix > 0) {
+				if(string.charAt(ix-1) == '\\') {
+					if(ix > 1 && string.charAt(ix-2) == '\\') {
+						// escape is escaped :)
+						sb.append(string.substring(pos, ix-1)); // skip one of the escape characters
+						sb.append(sa[i++]); // print the anchor
+					} else {
+						// anchor is escaped
+						sb.append(string.substring(pos, ix-1)); // skip the escape character
+						sb.append("{}"); // print the escaped braces
+					}
+				} else {
+					sb.append(string.substring(pos, ix));
+					sb.append(sa[i++]);
+				}
+			} else {
+				sb.append(sa[i++]);
+			}
+			pos = ix + 2;
+			ix = string.indexOf("{}", pos);
+		}
+		if(pos < string.length()) {
+			sb.append(string.substring(pos));
+		}
+		return sb.toString();
+	}
+
 
 	private String tag;
 	private int consoleLevel;
@@ -279,7 +321,7 @@ public class LoggerImpl implements Logger {
 			if(hasLogTracker()) {
 				LogService service = getLogService();
 				if(service != null) {
-					message = resolveMessage(message, values);
+					message = replace(message, values);
 					service.log(encode(level), format(tag, message), exception);
 					return;
 				}
@@ -287,7 +329,7 @@ public class LoggerImpl implements Logger {
 			
 			// not logging else where, make sure to log to console if correct level
 			if(isLoggingToConsole(level)) {
-				message = resolveMessage(message, values);
+				message = replace(message, values);
 				if(level <= WARNING) {
 					System.err.print(format(tag, level, message, exception));
 				} else {
@@ -300,48 +342,6 @@ public class LoggerImpl implements Logger {
 	@Override
 	public void log(int level, Throwable exception) {
 		log(level, null, exception) ;
-	}
-	
-	private String resolveMessage(String message, Object[] values) {
-		if(values == null || values.length == 0) {
-			return message;
-		}
-		int len = message.length();
-		String[] sa = new String[values.length];
-		for(int i = 0; i < sa.length; i++) {
-			sa[i] = String.valueOf(values[i]);
-			len += sa[i].length();
-		}
-		StringBuilder sb = new StringBuilder(len);
-		int i = 0;
-		int pos = 0;
-		int ix = message.indexOf("{}");
-		while(ix != -1) {
-			if(ix > 0) {
-				if(message.charAt(ix-1) == '\\') {
-					if(ix > 1 && message.charAt(ix-2) == '\\') {
-						// escape is escaped :)
-						sb.append(message.substring(pos, ix-1)); // skip one of the escape characters
-						sb.append(sa[i++]); // print the anchor
-					} else {
-						// anchor is escaped
-						sb.append(message.substring(pos, ix-1)); // skip the escape character
-						sb.append("{}"); // print the escaped braces
-					}
-				} else {
-					sb.append(message.substring(pos, ix));
-					sb.append(sa[i++]);
-				}
-			} else {
-				sb.append(sa[i++]);
-			}
-			pos = ix + 2;
-			ix = message.indexOf("{}", pos);
-		}
-		if(pos < message.length()) {
-			sb.append(message.substring(pos));
-		}
-		return sb.toString();
 	}
 	
 	@Override

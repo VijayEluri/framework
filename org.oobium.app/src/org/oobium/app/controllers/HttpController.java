@@ -24,8 +24,10 @@ import static org.oobium.utils.json.JsonUtils.format;
 import static org.oobium.utils.json.JsonUtils.toJson;
 import static org.oobium.utils.json.JsonUtils.toMap;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Timestamp;
@@ -70,6 +72,8 @@ import org.oobium.cache.CacheService;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.utils.Base64;
+import org.oobium.utils.FileUtils;
+import org.oobium.utils.StringUtils;
 
 public class HttpController implements IFlash, IParams, IPathRouting, IUrlRouting, ISessions, IHttp {
 
@@ -1009,15 +1013,24 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 			render(body, values.toArray());
 		}
 	}
-	
+
+	/**
+	 * Render the given body String.<br/>
+	 * Body can contain keyed anchors, similar to log messages only with a key between the braces - {key} -
+	 * the whole of which will be replaced with the corresponding value from the given values Map.
+	 * <p>For example: render("first name: {fname}", values) will render the String
+	 * "first name: Joe" if the given values map contains an Entry: "fname" -> "Joe"</p>
+	 * @param body
+	 * @param values
+	 */
 	public void render(String body, Map<String, Object> values) {
 		if(values == null || values.isEmpty()) {
 			render(body);
 		} else {
 			StringBuilder sb = new StringBuilder(body);
-			Pattern pattern = Pattern.compile("#\\{(\\w+)}");
+			Pattern pattern = Pattern.compile("$\\{(\\w+)}");
 			Matcher matcher = pattern.matcher(sb);
-			for(int i = 0, start = 0; matcher.find(start); i++) {
+			for(int start = 0; matcher.find(start); ) {
 				String key = matcher.group(1);
 				Object val = values.containsKey(key) ? values.get(key) : ("#{" + key + ": *** UNKNOWN ***}");
 				sb.replace(matcher.start(), matcher.end(), String.valueOf(val));
@@ -1027,20 +1040,20 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 			render(sb);
 		}
 	}
-	
+
+	/**
+	 * Render the given body String.<br/>
+	 * Body can contain anchors, just like in log messages, denoted by an opening brace immediately followed by a closing brace - {},
+	 * which will be replaced by the String representation of the corresponding value in the given values.
+	 * See <a href="http://www.slf4j.org/faq.html#logging_performance">SLF4J FAQ</a> for more information.
+	 * @param body
+	 * @param values
+	 */
 	public void render(String body, Object...values) {
 		if(values.length == 0) {
 			render(body);
 		} else {
-			StringBuilder sb = new StringBuilder(body);
-			Pattern pattern = Pattern.compile("#\\{\\?}");
-			Matcher matcher = pattern.matcher(sb);
-			for(int i = 0, start = 0; matcher.find(start); i++) {
-				sb.replace(matcher.start(), matcher.end(), String.valueOf(values[i]));
-				start = matcher.end();
-				matcher = pattern.matcher(sb);
-			}
-			render(sb);
+			render(StringUtils.replace(body, values));
 		}
 	}
 	
@@ -1494,6 +1507,23 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	protected boolean wantsJS() {
 		MimeType wants = wants();
 		return wants.resolves(MimeType.JS) || wants.resolves(MimeType.JSON);
+	}
+
+	protected File writeFile(File folder, String param) {
+		if(hasParam(param)) {
+			InputStream is = new ByteArrayInputStream((byte[]) getParam(param)); 
+			String name = param("filename");
+			return FileUtils.writeFile(folder, name, is);
+		}
+		return null;
+	}
+	
+	protected File writeFile(File folder, String name, String param) {
+		if(hasParam(param)) {
+			InputStream is = new ByteArrayInputStream((byte[]) getParam(param)); 
+			return FileUtils.writeFile(folder, name, is);
+		}
+		return null;
 	}
 	
 }
