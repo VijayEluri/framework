@@ -42,6 +42,7 @@ import java.util.regex.Pattern;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.codec.http.Cookie;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.oobium.app.AppService;
 import org.oobium.app.http.Action;
@@ -355,6 +356,13 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 					render(wants(), cache);
 				} else {
 					if(action == null) {
+						HttpMethod method = request.getMethod();
+						if(method == HttpMethod.GET) {
+							handleGet();
+						}
+						else if(method == HttpMethod.POST) {
+							handlePost();
+						}
 						handleRequest();
 					} else {
 						switch(action) {
@@ -611,6 +619,24 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		return session;
 	}
 	
+	/**
+	 * Implemented by subclasses, if necessary, to handle non-RESTful GET routes.
+	 * @throws Exception
+	 * @see {@link Router#}
+	 */
+	public void handleGet() throws Exception {
+		// to be implemented by subclasses if needed
+	}
+
+	/**
+	 * Implemented by subclasses, if necessary, to handle non-RESTful POST routes.
+	 * @throws Exception
+	 * @see {@link Router#}
+	 */
+	public void handlePost() throws Exception {
+		// to be implemented by subclasses if needed
+	}
+
 	/**
 	 * Implemented by subclasses, if necessary, to handle non-RESTful routes.
 	 * @throws Exception
