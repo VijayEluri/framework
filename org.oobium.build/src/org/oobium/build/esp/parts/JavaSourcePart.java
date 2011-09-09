@@ -12,6 +12,12 @@ public class JavaSourcePart extends EspPart {
 		super(parent, type, start, end, true);
 		parse();
 	}
+	
+	public JavaSourcePart(JavaSourcePart part) {
+		super(part.parent, part.type, part.start+1, part.end-1, true);
+		this.simple = part.simple;
+		this.parts = part.parts;
+	}
 
 	public boolean isSimple() {
 		return simple;

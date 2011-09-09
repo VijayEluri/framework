@@ -889,11 +889,11 @@ public class EspCompilerTests {
 						"}\n" +
 						"__sb__.append(\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\">\");\n" +
 						"Object selection$43 = member.getFirstName();\nfor(Member member : members) {\n" +
-						"\tboolean selected$43 = isEqual(member.getId(), selection$43);\n" +
-						"\t__sb__.append(\"<option value=\\\"\").append(f(member.getId())).append(\"\\\" \").append(selected$43 ? \"selected >\" : \">\").append(h(member.getNameLF())).append(\"</option>\");\n" +
+						"\tboolean selected$43 = isEqual(h(member.getId()), selection$43);\n" + // don't really like the h(...) here...
+						"\t__sb__.append(\"<option value=\\\"\").append(h(member.getId())).append(\"\\\" \").append(selected$43 ? \"selected >\" : \">\").append(h(member.getNameLF())).append(\"</option>\");\n" +
 						"}\n" +
 						"__sb__.append(\"</select></form>\");",
-				html("form(member, create)\n\tselect(\"firstName\")<-options<Member>(members, text:\"member.getNameLF()\", value:\"member.getId()\", sort:\"member.getNameLF()\")"));
+				html("form(member, create)\n\tselect(\"firstName\")<-options<Member>(members, text:\"${member.getNameLF()}\", value:\"${member.getId()}\", sort:\"${member.getNameLF()}\")"));
 	}
 	
 	@Test

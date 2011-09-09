@@ -70,17 +70,21 @@ public class EspCompiler {
 	private static final String SBNAME = "__sb__";
 
 	
-	private static void appendEscaped(StringBuilder sb, String text) {
+	private void appendEscaped(StringBuilder sb, String text) {
 		appendEscaped(sb, text, 0, text.length());
 	}
 	
-	private static void appendEscaped(StringBuilder sb, String text, int start, int end) {
-		for(int j = start; j < end; j++) {
-			char c = text.charAt(j);
-			switch(c) {
-			case '"':	if(j == 0 || text.charAt(j-1) != '\\') { sb.append("\\\""); } break;
-			case '\t':	if(j == 0 || text.charAt(j-1) != '\\') { sb.append("\\t"); } break;
-			default:	sb.append(c); break;
+	private void appendEscaped(StringBuilder sb, String text, int start, int end) {
+		if(lastIsJava(sb)) {
+			sb.append(text, start, end);
+		} else {
+			for(int i = start; i < end; i++) {
+				char c = text.charAt(i);
+				switch(c) {
+				case '"':	if(i == 0 || text.charAt(i-1) != '\\') { sb.append("\\\""); } break;
+				case '\t':	if(i == 0 || text.charAt(i-1) != '\\') { sb.append("\\t"); } break;
+				default:	sb.append(c); break;
+				}
 			}
 		}
 	}
@@ -237,15 +241,12 @@ public class EspCompiler {
 
 	private void appendEntryValueWithoutQuotes(MarkupElement element, String key) {
 		JavaSourcePart part = (JavaSourcePart) element.getEntryValue(key);
-		int start = body.length();
-//		if(part.isSimple()) {
-//			String text = part.getText();
-//			body.append(text.substring(1, text.length()-1));
-//		} else {
+		if(part.isSimple()) {
 			build(part, body, true);
-//		}
-		body.deleteCharAt(start);
-		body.deleteCharAt(body.length()-2);
+		} else {
+			JavaSourcePart part2 = new JavaSourcePart(part);
+			build(part2, body, true);
+		}
 	}
 	
 	private void appendFieldError(String model, List<JavaSourcePart> fields, String str) {
@@ -468,29 +469,43 @@ public class EspCompiler {
 				for(int i = 0; i < parts.size(); i++) {
 					EspPart sub = parts.get(i);
 					if(sub instanceof EmbeddedJavaPart) {
+						boolean instring = false;
 						EmbeddedJavaPart jsspart = (EmbeddedJavaPart) sub;
 						int s1 = jsspart.getStart() - jpart.getStart();
 						int s2 = s1 + jsspart.getLength();
 						if(i == 0) {
 							if(s1 > 0) {
+								if(forceLastIsJava || lastIsJava(sb)) {
+									sb.append('"');
+								}
 								appendEscaped(sb, text, 0, s1);
+								instring = true;
 							}
 						} else {
 							int s0 = parts.get(i-1).getEnd() - jpart.getStart();
 							if(s0 < s1) {
+								sb.append(").append(\"");
 								appendEscaped(sb, text, s0, s1);
+								instring = true;
 							}
 						}
-						sb.append("\").append(h(");
+						if(instring) {
+							sb.append("\").append(");
+						}
+						sb.append("h(");
 						EspPart spart = jsspart.getSourcePart();
 						if(spart != null) {
 							bodyLocations.add(new EspLocation(sb.length(), spart));
 						}
 						sb.append(jsspart.getSource());
-						sb.append(")).append(\"");
+						sb.append(")");
 						if(i == parts.size() - 1) {
 							if(s2 < text.length()) {
+								sb.append(").append(\"");
 								appendEscaped(sb, text, s2, text.length());
+								if(forceLastIsJava || lastIsJava(sb)) {
+									sb.append('"');
+								}
 							}
 						}
 					} else {
@@ -1809,27 +1824,26 @@ public class EspCompiler {
 					body.append(" ").append(var).append(" : ");
 					build(options, body, true);
 					body.append(") {\n");
+					indent(body);
 					if(element.hasEntryValue("title")) {
-						indent(body);
-						body.append('\t').append(sbName).append(".append(\"<option title=\\\"\").append(h(");
+						body.append('\t').append(sbName).append(".append(\"<option title=\\\"\").append(");
 						appendEntryValueWithoutQuotes(element, "title");
-						body.append(")).append(\"\\\" value=\\\"\").append(f(");
+						body.append(").append(\"\\\" value=\\\"\").append(");
 					} else {
-						indent(body);
-						body.append('\t').append(sbName).append(".append(\"<option value=\\\"\").append(f(");
+						body.append('\t').append(sbName).append(".append(\"<option value=\\\"\").append(");
 					}
 					if(element.hasEntryValue("value")) {
 						appendEntryValueWithoutQuotes(element, "value");
 					} else {
-						body.append(var);
+						body.append("f(").append(var).append(')');
 					}
-					body.append(")).append(\"\\\" >\").append(h(");
+					body.append(").append(\"\\\" >\").append(");
 					if(element.hasEntryValue("text")) {
 						appendEntryValueWithoutQuotes(element, "text");
 					} else {
-						body.append("String.valueOf(").append(var).append(")");
+						body.append("h(String.valueOf(").append(var).append("))");
 					}
-					body.append(")).append(\"</option>\");\n");
+					body.append(").append(\"</option>\");\n");
 					indent(body);
 					body.append("}\n");
 				} else {
@@ -1853,9 +1867,9 @@ public class EspCompiler {
 					body.append(", ").append(selectionVar).append(");\n");
 					if(element.hasEntryValue("title")) {
 						indent(body);
-						body.append('\t').append(sbName).append(".append(\"<option title=\\\"\").append(h(");
+						body.append('\t').append(sbName).append(".append(\"<option title=\\\"\").append(");
 						appendEntryValueWithoutQuotes(element, "title");
-						body.append(")).append(\"\\\" value=\\\"\").append(f(");
+						body.append(").append(\"\\\" value=\\\"\").append(f(");
 					} else {
 						indent(body);
 						body.append('\t').append(sbName).append(".append(\"<option value=\\\"\").append(");
