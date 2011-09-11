@@ -589,15 +589,13 @@ public class StringUtils {
 	 * <p>
 	 * convert the given type implication to the closest real
 	 * type available.  only works for basic java types, otherwise
-	 * the original string is returned. it does not return primitives,
-	 * though arrays of primitives will not be converted to arrays
-	 * of objects.
+	 * the original string is returned. It does return primitives.
 	 * </p>
 	 * <p>
 	 * Example 1: "string" => "String"
 	 * </p>
 	 * <p>
-	 * Example 2: "int" => "Integer"
+	 * Example 2: "int" => "int"
 	 * </p>
 	 * @param type
 	 * @return
@@ -610,39 +608,38 @@ public class StringUtils {
 			String base = type.substring(0, type.length()-2);
 			return impliedType(base) + "[]";
 		}
-		if("string".equalsIgnoreCase(type)) {
-			return "String";
+		if("int".equals(type)) {
+			return "int";
 		}
-		if("text".equalsIgnoreCase(type)) {
-			return "Text";
-		}
-		if("int".equalsIgnoreCase(type) || "integer".equalsIgnoreCase(type)) {
+		if("int".equalsIgnoreCase(type)) {
 			return "Integer";
 		}
-		if("bool".equalsIgnoreCase(type) || "boolean".equalsIgnoreCase(type)) {
-			return "Boolean";
+		if("integer".equalsIgnoreCase(type)) {
+			return "Integer";
 		}
-		if("char".equalsIgnoreCase(type) || "character".equalsIgnoreCase(type)) {
+		if("bool".equalsIgnoreCase(type) || "boolean".equals(type)) {
+			return "boolean";
+		}
+		if("char".equals(type)) {
+			return "char";
+		}
+		if("char".equalsIgnoreCase(type)) {
 			return "Character";
 		}
-		if("byte".equalsIgnoreCase(type)) {
-			return "Byte";
+		if("byte".equals(type)) {
+			return "byte";
 		}
-		if("long".equalsIgnoreCase(type)) {
-			return "Long";
+		if("long".equals(type)) {
+			return "long";
 		}
-		if("short".equalsIgnoreCase(type)) {
-			return "Short";
+		if("short".equals(type)) {
+			return "short";
 		}
-		if("float".equalsIgnoreCase(type)) {
-			return "Float";
+		if("float".equals(type)) {
+			return "float";
 		}
-		if("double".equalsIgnoreCase(type)) {
-			return "Double";
-		}
-		
-		if("binary".equalsIgnoreCase(type)) {
-			return "byte[]";
+		if("double".equals(type)) {
+			return "double";
 		}
 		
 		if("one".equalsIgnoreCase(type)) {

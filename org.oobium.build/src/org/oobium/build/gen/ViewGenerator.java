@@ -66,10 +66,20 @@ public class ViewGenerator {
 
 	private void generateLabelAndField(StringBuilder sb, PropertyDescriptor property, String var) {
 		String ftype = property.fullType();
-		if(is(ftype, boolean.class, Boolean.class)) {
-			sb.append("\t\tcheck(").append(var).append(")\n");
-			sb.append("\t\tlabel(").append(var).append(")\n");
-		} else {
+		if(is(ftype, boolean.class)) {
+			sb.append("\t\tcheck(\"").append(var).append("\")\n");
+			sb.append("\t\tlabel(\"").append(var).append("\")\n");
+		}
+		else if(is(ftype, Boolean.class)) {
+			sb.append("\t\tlabel(\"").append(var).append("\")\n");
+			sb.append("\t\tselect(\"").append(var).append("\")" +
+					" <- options(new String[][] { " +
+									"{\"<none>\",null}, " +
+									"{\"True\",1}, " +
+									"{\"False\",0}" +
+								" })\n");
+		}
+		else {
 			sb.append("\t\tdiv <- label(\"").append(var).append("\")\n");
 			sb.append("\t\tdiv <- ");
 			if(is(ftype, String.class)) {
