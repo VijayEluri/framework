@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.oobium.utils.coercion.coercers.ArrayCoercer;
+import org.oobium.utils.coercion.coercers.BigDecimalCoercer;
 import org.oobium.utils.coercion.coercers.BooleanCoercer;
 import org.oobium.utils.coercion.coercers.CalendarCoercer;
 import org.oobium.utils.coercion.coercers.CollectionCoercer;
@@ -59,6 +60,7 @@ public class TypeCoercer {
 		assignables = new ArrayList<Class<?>>();
 
 		addCoercer(new ArrayCoercer());
+		addCoercer(new BigDecimalCoercer());
 		addCoercer(new BooleanCoercer());
 		addCoercer(new CalendarCoercer());
 		addCoercer(new CollectionCoercer());

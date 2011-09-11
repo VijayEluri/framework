@@ -17,6 +17,7 @@ import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.utils.json.JsonUtils.SERIALIZATION_TYPE_KEY;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Collection;
 import java.util.Collections;
@@ -56,6 +57,16 @@ public class TypeCoercerTests {
 		public JsonModel setAll(String json) { return putAll(json); }
 		public JsonModel setId(Object id) { this.id = id; return this; }
 		public String toJson() { return data.toString(); }
+	}
+	
+	@Test
+	public void testBigDecimal() throws Exception {
+		assertEquals(new BigDecimal(100.00d), coerce(100.00d, BigDecimal.class));
+		assertEquals(new BigDecimal(100.00f), coerce(100.00f, BigDecimal.class));
+		assertEquals(new BigDecimal(100l), coerce(100l, BigDecimal.class));
+		assertEquals(new BigDecimal(100), coerce(100, BigDecimal.class));
+		assertEquals(new BigDecimal("100.00"), coerce("100.00", BigDecimal.class));
+		assertFalse(new BigDecimal("100.000").equals(coerce("100.00", BigDecimal.class)));
 	}
 	
 	@Test
