@@ -233,7 +233,12 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 
 	@Override
 	public <T extends Model> T findById(Class<T> clazz, Object id, String include) throws Exception {
-		// TODO
+		if(include == null) {
+			return findById(clazz, id);
+		}
+		if(include.startsWith("include:")) {
+			include = include.substring(8);
+		}
 		return find(clazz, "where id=? include:?", id, include);
 	}
 	
