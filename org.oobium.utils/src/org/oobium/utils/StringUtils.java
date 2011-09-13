@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
+import java.math.BigDecimal;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.text.DateFormat;
@@ -178,6 +179,15 @@ public class StringUtils {
 			return true;
 		}
 		
+		if(obj instanceof BigDecimal) {
+			return ((BigDecimal) obj).signum() == 0;
+		}
+		if(obj instanceof Double) {
+			return ((Double) obj).doubleValue() == 0d;
+		}
+		if(obj instanceof Float) {
+			return ((Double) obj).floatValue() == 0f;
+		}
 		if(obj instanceof Number) {
 			return ((Number) obj).intValue() == 0;
 		}
