@@ -189,7 +189,7 @@ public class Router {
 		addRoute(name, route);
 		return new Routed(this, route);
 	}
-	
+
 	public Routed addAssetRoutes() {
 		List<String> paths = service.getAssetList();
 		List<Route> routes = new ArrayList<Route>();
@@ -364,10 +364,15 @@ public class Router {
 	 * The given path may contain any number of variables ("{name:regex}") and constants ("{name=value}"), 
 	 * and they may be in any order, however it <b>must</b> contain the models variable ("{models}") and, 
 	 * for the model specific routes (update, destroy, show, showEdit), must also contain the id variable ("{id}").
+	 * <p>Note that this method is not like {@link #addResource(String, Class, Action)} in that the path here
+	 * <b>must</b> contain certain variables for certain actions, and they will be added if left out.
+	 * The {@link #addResource(String, Class, Action)} method, on the other hand, will leave the exact given
+	 * path untouched - use multiple calls to it if that is what is truly desired.</p>
 	 * @param the custom resource path
 	 * @param clazz the model class to use as a resource route
 	 * @return a Routed object
 	 * @see Action
+	 * @see #addResource(String, Class, Action)
 	 */
 	public Routes addResources(String path, Class<? extends Model> clazz) {
 		return addResources(path, clazz, new Action[0]);
@@ -379,11 +384,16 @@ public class Router {
 	 * The given path may contain any number of variables ("{name:regex}") and constants ("{name=value}"), 
 	 * and they may be in any order, however it <b>must</b> contain the models variable ("{models}") and, 
 	 * for the model specific routes (update, destroy, show, showEdit), must also contain the id variable ("{id}").
+	 * <p>Note that this method is not like {@link #addResource(String, Class, Action)} in that the path here
+	 * <b>must</b> contain certain variables for certain actions, and they will be added if left out.
+	 * The {@link #addResource(String, Class, Action)} method, on the other hand, will leave the exact given
+	 * path untouched - use multiple calls to it if that is what is truly desired.</p>
 	 * @param the custom resource path
 	 * @param clazz the model class to use as a resource route
 	 * @param actions the specific actions for which to add resource routes
 	 * @return a Routed object
 	 * @see Action
+	 * @see #addResource(String, Class, Action)
 	 */
 	public Routes addResources(String path, Class<? extends Model> clazz, Action...actions) {
 		String[] parsedRules = parseRules(path, clazz);
