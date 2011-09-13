@@ -628,7 +628,8 @@ public class BlazeProjectGenerator {
 	
 	private void createRemotingConfigFile(File flex) {
 		StringBuilder sb = new StringBuilder();
-		for(File file : module.findControllers()) {
+		for(File model : module.findModels()) {
+			File file = module.getControllerFor(model);
 			String name = module.getControllerName(file);
 			String type = module.getControllerType(file);
 			sb.append('\n');
