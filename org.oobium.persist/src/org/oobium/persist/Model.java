@@ -348,6 +348,19 @@ public abstract class Model implements JsonModel {
 		}
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private int compare(Object value, String validator, String field) {
+		if(value == null) {
+			return -1;
+		}
+		ModelAdapter adapter = ModelAdapter.getAdapter(this);
+		Object v2 = coerce(validator, adapter.getClass(field));
+		if(value instanceof Comparable) {
+			return ((Comparable) value).compareTo(v2);
+		}
+		throw new IllegalArgumentException("value is not comparable");
+	}
+	
 	public boolean create() {
 		if(!isNew()) {
 			addError("model has already been created");
@@ -1200,6 +1213,14 @@ public abstract class Model implements JsonModel {
 			}
 			if(!blank(validate.matches()) && !((value == null) ? "" : value.toString()).matches(validate.matches())) {
 				addError(field, msg("must be of format \"" + validate.matches() + "\"", validate));
+				continue;
+			}
+			if(!blank(validate.max()) && compare(value, validate.max(), field) > 0) {
+				addError(field, msg("cannot be more than " + validate.max(), validate));
+				continue;
+			}
+			if(!blank(validate.min()) && compare(value, validate.min(), field) < 0) {
+				addError(field, msg("cannot be less than " + validate.min(), validate));
 				continue;
 			}
 			if(validate.maxLength() >= 0 && getLength(value, validate.tokenizer()) > validate.maxLength()) {

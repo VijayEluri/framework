@@ -56,7 +56,8 @@ public @interface Validate {
 	boolean isUnique() default false;
 
 	/**
-	 * Validate that the value of the given field is equal to the provided number. 
+	 * Validate that the length of the given field is equal to the provided number. 
+	 * @see Validate#tokenizer()
 	 */
 	int lengthIs() default -1;
 
@@ -67,7 +68,15 @@ public @interface Validate {
 	String matches() default "";
 
 	/**
-	 * Validate that the value of the given field is not greater than the provided number. 
+	 * Validate that the value of the given field is not greater than the provided number (the maximum value).
+	 * The value is provided in String form and is coerced into the same type of the field to which it is
+	 * being compared - whether that be a number, another String, a Date, etc.
+	 */
+	String max() default "";
+	
+	/**
+	 * Validate that the length of the given field is not greater than the provided number.
+	 * @see Validate#tokenizer()
 	 */
 	int maxLength() default -1;
 	
@@ -77,7 +86,15 @@ public @interface Validate {
 	String message() default "";
 	
 	/**
-	 * Validate that the value of the given field is not less than the provided number. 
+	 * Validate that the value of the given field is not less than the provided value (the minimum value).
+	 * The value is provided in String form and is coerced into the same type of the field to which it is
+	 * being compared - whether that be a number, another String, a Date, etc.
+	 */
+	String min() default "";
+
+	/**
+	 * Validate that the length of the given field is not less than the provided number.
+	 * @see Validate#tokenizer()
 	 */
 	int minLength() default -1;
 	
