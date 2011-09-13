@@ -643,7 +643,7 @@ public class BlazeProjectGenerator {
 			).replace("{name}", name).replace("{type}", type));
 		}
 		sb.append('\n');
-		
+
 		writeFile(flex, "remoting-config.xml", source(
 				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
 				"<service id=\"remoting-service\"",
