@@ -29,8 +29,9 @@ public class PurgeCommand extends MigrateCommand {
 		String r = flag('f') ? "Y" : ask("All data will be lost!!! Continue anyway? [Y/N] ");
 		if(!"Y".equalsIgnoreCase(r)) {
 			console.out.println("operation cancelled");
+		} else {
+			super.run();
 		}
-		super.run();
 	}
 	
 }
