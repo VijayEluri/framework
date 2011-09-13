@@ -628,8 +628,7 @@ public class BlazeProjectGenerator {
 	
 	private void createRemotingConfigFile(File flex) {
 		StringBuilder sb = new StringBuilder();
-		for(File model : module.findModels()) {
-			File file = module.getControllerFor(model);
+		for(File file : module.findControllers()) {
 			String name = module.getControllerName(file);
 			String type = module.getControllerType(file);
 			sb.append('\n');
@@ -643,7 +642,7 @@ public class BlazeProjectGenerator {
 			).replace("{name}", name).replace("{type}", type));
 		}
 		sb.append('\n');
-
+		
 		writeFile(flex, "remoting-config.xml", source(
 				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
 				"<service id=\"remoting-service\"",
