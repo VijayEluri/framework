@@ -159,6 +159,14 @@ public class DeployCommand extends RemoteCommand {
 
 		Mode mode = hasParam("mode") ? Mode.parse(param("mode")) : Mode.PROD;
 
+		if(mode == Mode.PROD) {
+			String r = flag('f') ? "Y" : ask("Mode is set to PROD!!! Continue anyway? [Y/N] ");
+			if(!"Y".equalsIgnoreCase(r)) {
+				console.out.println("operation cancelled");
+				return;
+			}
+		}
+		
 		if(flag('v')) {
 			console.out.println("deploying in " + mode + " mode");
 			console.capture();
