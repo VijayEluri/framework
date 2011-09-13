@@ -40,9 +40,10 @@ public class BigDecimalCoercer extends AbstractCoercer {
 	}
 	
 	public BigDecimal coerce(String string, Class<?> toType) {
-		return new BigDecimal(string);
+		String value = string.trim();
+		return "".equals(value) ? null : new BigDecimal(value);
 	}
-	
+
 	@Override
 	public Class<?> getType() {
 		return BigDecimal.class;
