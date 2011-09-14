@@ -116,7 +116,7 @@ public class AppServer implements BundleActivator {
 			server = null;
 			channelGroup = null;
 			
-			logger.error("disposed server");
+			logger.debug("disposed server");
 		}
 	}
 	
