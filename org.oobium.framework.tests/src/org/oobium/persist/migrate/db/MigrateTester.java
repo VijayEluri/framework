@@ -7,6 +7,7 @@ import static org.oobium.utils.StringUtils.join;
 import static org.oobium.utils.StringUtils.simpleName;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +20,7 @@ import org.oobium.framework.tests.dyn.DynClasses;
 import org.oobium.framework.tests.dyn.DynModel;
 import org.oobium.framework.tests.dyn.SimpleDynClass;
 import org.oobium.persist.SimplePersistServiceProvider;
+import org.oobium.persist.db.Database;
 import org.oobium.persist.db.DbPersistService;
 import org.oobium.persist.migrate.Migration;
 import org.oobium.persist.migrate.MigrationService;
@@ -50,11 +52,20 @@ public class MigrateTester {
 			}
 		});
 		
+		DatabaseMetaData metadata = mock(DatabaseMetaData.class);
+		when(metadata.getDatabaseMajorVersion()).thenReturn(5);
+		when(metadata.getDatabaseMinorVersion()).thenReturn(1);
+		
 		Connection connection = mock(Connection.class);
 		when(connection.createStatement()).thenReturn(statement);
+		when(connection.getMetaData()).thenReturn(metadata);
+		
+		Database database = mock(Database.class);
+		when(database.get("engine")).thenReturn("INNODB");
 		
 		DbPersistService persistor = mock(DbPersistService.class);
 		when(persistor.getConnection()).thenReturn(connection);
+		when(persistor.getDatabase()).thenReturn(database);
 		
 		switch(dbType) {
 		case SqlUtils.DERBY:		migrationService = new DerbyEmbeddedMigrationService(); break;
