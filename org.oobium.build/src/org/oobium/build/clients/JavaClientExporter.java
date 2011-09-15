@@ -134,34 +134,7 @@ public class JavaClientExporter {
 		
 
 		// export application jar
-		Set<Bundle> bundles = new TreeSet<Bundle>();
-		Map<Bundle, List<Bundle>> deps = module.getDependencies(workspace, mode);
-		bundles.addAll(deps.keySet());
-		bundles.add(module);
-		
-		Map<String, File> applicationFiles = new HashMap<String, File>();
-		int len = module.bin.getAbsolutePath().length() + 1;
-		if(full) {
-			addFiles(module.name, applicationFiles);
-		} else {
-			for(File model : module.findModels()) {
-				File genModel = module.getGenModel(model);
-				File[] modelClasses = module.getBinFiles(model);
-				File[] genModelClasses = module.getBinFiles(genModel);
-				for(File modelClass : modelClasses) {
-					applicationFiles.put(relativePath(modelClass, len), modelClass);
-				}
-				for(File genModelClass : genModelClasses) {
-					applicationFiles.put(relativePath(genModelClass, len), genModelClass);
-				}
-				if(includeSource) {
-					applicationFiles.put(relativeSrcPath(model, modelClasses[0], len), model);
-					applicationFiles.put(relativeSrcPath(genModel, genModelClasses[0], len), genModel);
-				}
-			}
-		}
-		
-		File applicationJar = createJar(targetDir, module.name + (full ? ".android.jar" : ".models.android.jar"), applicationFiles);
+		File applicationJar = createJar(targetDir, module.name + (full ? ".android.jar" : ".models.android.jar"), getApplicationFiles());
 
 		
 		if(target != null) {
@@ -194,6 +167,19 @@ public class JavaClientExporter {
 		
 
 		// export application jar
+		File applicationJar = createJar(targetDir, module.name + (full ? ".jar" : ".models.jar"), getApplicationFiles());
+
+		
+		if(target != null) {
+			target.addBuildPath("oobium/" + nettyJar.getName(), "lib");
+			target.addBuildPath("oobium/" + applicationJar.getName(), "lib");
+			target.addBuildPath("oobium/" + oobiumJar.getName(), "lib");
+		}
+		
+		return new File[] { nettyJar, oobiumJar, applicationJar };
+	}
+	
+	private Map<String, File> getApplicationFiles() throws IOException {
 		Set<Bundle> bundles = new TreeSet<Bundle>();
 		Map<Bundle, List<Bundle>> deps = module.getDependencies(workspace, mode);
 		bundles.addAll(deps.keySet());
@@ -219,33 +205,28 @@ public class JavaClientExporter {
 			}
 		}
 
-		File applicationJar = createJar(targetDir, module.name + (full ? ".jar" : ".models.jar"), applicationFiles);
-
-		
-		if(target != null) {
-			target.addBuildPath("oobium/" + nettyJar.getName(), "lib");
-			target.addBuildPath("oobium/" + applicationJar.getName(), "lib");
-			target.addBuildPath("oobium/" + oobiumJar.getName(), "lib");
-		}
-		
-		return new File[] { nettyJar, oobiumJar, applicationJar };
+		return applicationFiles;
 	}
 	
 	private void createClientModel(File model) {
 		if(target != null) {
-			String pkg = module.packageName(model);
-			String name = module.getModelName(model);
-			String sname = name + "Model";
-
-			String src = 
-				"package " + pkg + ";\n" +
-				"\n" +
-				"public class " + name + " extends " + sname + " {\n" +
-				"\n" +
-				"}";
-
 			String path = model.getAbsolutePath().substring(module.src.getAbsolutePath().length());
-			writeFile(target.src, path, src);
+			File clientModel = new File(target.src, path);
+			
+			if(!clientModel.exists()) {
+				String pkg = module.packageName(model);
+				String name = module.getModelName(model);
+				String sname = name + "Model";
+	
+				String src = 
+					"package " + pkg + ";\n" +
+					"\n" +
+					"public class " + name + " extends " + sname + " {\n" +
+					"\n" +
+					"}";
+	
+				writeFile(clientModel, src);
+			}
 		}
 	}
 	
