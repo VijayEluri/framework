@@ -15,6 +15,12 @@ public class MySqlMigrateTester extends MigrateTester {
 	}
 	
 	@Test
+	public void testAttrBigDecimal() throws Exception {
+		assertEquals("CREATE TABLE a_models(id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,attr DECIMAL(8,2)) ENGINE = INNODB CHARACTER SET UTF8",
+				migrateUp(DynClasses.getModel("AModel").addAttr("attr", "java.math.BigDecimal.class")));
+	}
+	
+	@Test
 	public void testAttrBoolean() throws Exception {
 		assertEquals("CREATE TABLE a_models(id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,attr BOOLEAN) ENGINE = INNODB CHARACTER SET UTF8",
 				migrateUp(DynClasses.getModel("AModel").addAttr("attr", "Boolean.class")));

@@ -41,6 +41,17 @@ public class DbGeneratorTests {
 	}
 	
 	@Test
+	public void testAttrBigDecimal() throws Exception {
+		assertEquals("createTable(\"a_models\",\n" +
+					"\tDecimal(\"attr\", Map(\n" +
+					"\t\te(\"precision\", 8), \n" +
+					"\t\te(\"scale\", 2)\n" +
+					"\t))\n" +
+					");",
+				up("com.test", DynClasses.getModel("AModel").addAttr("attr", "java.math.BigDecimal.class")));
+	}
+	
+	@Test
 	public void testAttrBoolean() throws Exception {
 		assertEquals("createTable(\"a_models\",\n" +
 					"\tBoolean(\"attr\")\n" +

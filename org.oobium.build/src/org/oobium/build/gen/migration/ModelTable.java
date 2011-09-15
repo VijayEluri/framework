@@ -90,7 +90,7 @@ public class ModelTable {
 		if(attribute.isPrimitive()) {
 			options.put("required", true);
 		}
-		if("BigDecimal".equals(attribute.type)) {
+		if("java.math.BigDecimal".equals(attribute.type)) {
 			options.put("precision", attribute.precision);
 			options.put("scale", attribute.scale);
 		}

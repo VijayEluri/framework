@@ -168,10 +168,16 @@ public abstract class DbMigrationService extends AbstractMigrationService {
 		sb.append(getSqlSafe(column.name));
 		sb.append(' ');
 		sb.append(getSqlType(column.type));
-		if(DECIMAL.equals(getSqlType(column.type))) {
-			String precision = column.options.get("precision", 2).toString();
-			String scale = column.options.get("scale", 8).toString();
-			sb.append("(").append(precision).append(",").append(scale).append(")");
+		if(DECIMAL.equals(column.type)) {
+			Object precision = column.options.get("precision");
+			if(precision != null) {
+				Object scale = column.options.get("scale");
+				if(scale == null) {
+					sb.append("(").append(precision).append(")");
+				} else {
+					sb.append("(").append(precision).append(",").append(scale).append(")");
+				}
+			}
 		}
 		if(column.options.get("unique", false)) {
 			sb.append(" UNIQUE");
