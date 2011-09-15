@@ -507,11 +507,23 @@ public abstract class Model implements JsonModel {
 	@Override
 	public boolean equals(Object obj) {
 		// TODO what about comparing to JSON strings and Maps?
+		if(obj == null) {
+			return false;
+		}
 		if(obj == this) {
 			return true;
 		}
-		if(obj != null && obj.getClass() == getClass()) {
-			return (id != null) && id.equals(((Model) obj).getId());
+		if(isNew()) {
+			return false;
+		}
+		if(obj.getClass() == getClass()) {
+			Object oid = ((Model) obj).getId();
+			if(id.getClass() != oid.getClass()) {
+				try {
+					oid = coerce(oid, id.getClass());
+				} catch(Exception e) { /* discard */ }
+			}
+			return id.equals(oid);
 		}
 		return false;
 	}
@@ -1006,7 +1018,13 @@ public abstract class Model implements JsonModel {
 	 */
 	@Override
 	public Model putAll(String json) {
-		return putAll(JsonUtils.toMap(json));
+		Map<String, String> fields = JsonUtils.toStringMap(json);
+		if(fields.containsKey("id")) {
+			Object id = fields.remove("id");
+			setId(id);
+		}
+		this.fields.putAll(fields);
+		return this;
 	}
 	
 	/**
