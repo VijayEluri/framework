@@ -36,6 +36,7 @@ import org.oobium.persist.PersistService;
 import org.oobium.persist.RemotePersistService;
 import org.oobium.persist.ServiceInfo;
 import org.oobium.persist.http.HttpApiService.Route;
+import org.oobium.utils.json.JsonUtils;
 
 public class HttpPersistService extends RemotePersistService implements PersistService {
 
@@ -205,7 +206,11 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 				int id = coerce(response.getHeader("id"), int.class);
 				model.setId(id);
 				setCache(model);
-			} else if(response.exceptionThrown()) {
+			}
+			else if(response.isConflict()) {
+				setErrors(model, response);
+			}
+			else if(response.exceptionThrown()) {
 				throw new Exception(response.getException().getLocalizedMessage());
 			}
 		} catch(MalformedURLException e) {
@@ -244,7 +249,11 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 					cache.setId(0);
 					cache.clear();
 				}
-			} else if(response.exceptionThrown()) {
+			}
+			else if(response.isConflict()) {
+				setErrors(model, response);
+			}
+			else if(response.exceptionThrown()) {
 				throw new Exception(response.getException().getLocalizedMessage());
 			}
 		} catch(MalformedURLException e) {
@@ -546,6 +555,17 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 	public void setDiscoveryUrl(String url) {
 		api.setDiscoveryUrl(url);
 	}
+
+	private void setErrors(Model model, ClientResponse response) {
+		Map<String, String> errors = JsonUtils.toStringMap(response.getBody());
+		for(Entry<String, String> error : errors.entrySet()) {
+			String subject = error.getKey();
+			List<String> causes = JsonUtils.toStringList(error.getValue());
+			for(String cause : causes) {
+				model.addError(subject, cause);
+			}
+		}
+	}
 	
 	private void update(Model model) throws Exception {
 		if(model == null) {
@@ -573,7 +593,11 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 					cache.putAll(model);
 					model.putAll(cache);
 				}
-			} else if(response.exceptionThrown()) {
+			}
+			else if(response.isConflict()) {
+				setErrors(model, response);
+			}
+			else if(response.exceptionThrown()) {
 				throw new Exception(response.getException().getLocalizedMessage());
 			}
 		} catch(MalformedURLException e) {

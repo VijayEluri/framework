@@ -175,6 +175,20 @@ public class ClientResponse {
 		return content != null && content.length > 0;
 	}
 
+	/**
+	 * 409 - Conflict is return by an Oobium server when using
+	 * renderErrors(models). The body is filled with the errors
+	 * causing the conflict.
+	 * @return true if this status code is equal to 409; false otherwise
+	 */
+	public boolean isConflict() {
+		HttpResponseStatus status = getStatus();
+		if(status != null) {
+			return status.getCode() == 409;
+		}
+		return false;
+	}
+
 	public boolean isNotFound() {
 		HttpResponseStatus status = getStatus();
 		if(status != null) {

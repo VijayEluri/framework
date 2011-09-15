@@ -1142,9 +1142,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 			response.setContent("[]");
 		} else if(models.length == 1) {
 			if(models[0] != null) {
-				Map<String, Object> errors = new HashMap<String, Object>();
-				errors.put("errors", models[0].getErrorsList());
-				response.setContent(toJson(errors));
+				response.setContent(toJson(models[0].getErrors()));
 			}
 		} else {
 			List<String> list = new ArrayList<String>();
