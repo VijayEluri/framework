@@ -299,7 +299,7 @@ public class JsonParser {
 
 			s1 = forward(ca, s+1, e);
 			if(stringsOnly) {
-				s2 = findOutside(ca, ',', s1, e, '\'', '"');
+				s2 = findOutside(ca, ',', s1, e, '\'', '"', '[', '{');
 				if(s2 < 0 || s2 >= e) {
 					s2 = reverse(ca, e-1);
 				} else {
