@@ -55,6 +55,7 @@ import org.oobium.app.http.Action;
 import org.oobium.app.http.MimeType;
 import org.oobium.app.request.Request;
 import org.oobium.app.routing.routes.DynamicAssetRoute;
+import org.oobium.app.routing.routes.FileDirectoryRoute;
 import org.oobium.app.routing.routes.HasManyRoute;
 import org.oobium.app.routing.routes.HttpRoute;
 import org.oobium.app.routing.routes.RedirectRoute;
@@ -142,6 +143,24 @@ public class Router {
 	public NamedRoute add(String name) {
 		checkName(name);
 		return new NamedRoute(this, name);
+	}
+	
+	/**
+	 * Add a dynamic route to the file system directory for the given path.
+	 * The given path can be relative or absolute.
+	 * <p>This is considered a dynamic route because it will serve any file
+	 * that is within or below the given directory if it exists at the time of the request.
+	 * If it does not exist then a 404-Not Found error will occur. If the request is for a file
+	 * that is in a directory above the give directory (as would happen by putting "/../"
+	 * in the request) then a 403-Forbidden error is returned.</p>
+	 * @param directory the path of the directory from which to server files
+	 * @return a Routed object
+	 */
+	public Routed addFiles(String directory) {
+		String name = directory + "::FILES";
+		Route route = new FileDirectoryRoute(directory);
+		addRoute(name, route);
+		return new Routed(this, route);
 	}
 	
 	public void addFromJson(String json) {

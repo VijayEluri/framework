@@ -33,6 +33,7 @@ public abstract class Route {
 	public static final int REDIRECT = 5;
 	public static final int WEBSOCKET = 6;
 	public static final int RTSP_CONTROLLER = 7;
+	public static final int FILE_DIRECTORY = 8;
 	
 	
 	protected final int type;

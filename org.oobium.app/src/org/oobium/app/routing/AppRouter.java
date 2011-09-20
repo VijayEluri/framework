@@ -39,12 +39,14 @@ import org.oobium.app.response.Response;
 import org.oobium.app.routing.handlers.AssetHandler;
 import org.oobium.app.routing.handlers.AuthorizationHandler;
 import org.oobium.app.routing.handlers.DynamicAssetHandler;
+import org.oobium.app.routing.handlers.FileDirectoryHandler;
 import org.oobium.app.routing.handlers.HttpHandler;
 import org.oobium.app.routing.handlers.RedirectHandler;
 import org.oobium.app.routing.handlers.RtspHandler;
 import org.oobium.app.routing.handlers.ViewHandler;
 import org.oobium.app.routing.handlers.WebsocketHandler;
 import org.oobium.app.routing.routes.DynamicAssetRoute;
+import org.oobium.app.routing.routes.FileDirectoryRoute;
 import org.oobium.app.routing.routes.HttpRoute;
 import org.oobium.app.routing.routes.RedirectRoute;
 import org.oobium.app.routing.routes.RtspRoute;
@@ -423,6 +425,9 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 						case Route.ASSET:
 						case Route.AUTHORIZATION:
 							throw new UnsupportedOperationException();
+						case Route.FILE_DIRECTORY:
+							FileDirectoryRoute fr = (FileDirectoryRoute) route;
+							return new FileDirectoryHandler(router, fr.basePath, matcher.group(1));
 						case Route.HTTP_CONTROLLER:
 							HttpRoute cr = (HttpRoute) route;
 							RouteHandler unauth = checkAuthorization(request, router, cr);
