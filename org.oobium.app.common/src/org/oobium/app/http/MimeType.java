@@ -73,7 +73,7 @@ public class MimeType {
 	public static final MimeType JSON = new MimeType("application", "json");
 	public static final MimeType HTML = new MimeType("text", "html");
 	public static final MimeType MULTIPART = new MimeType("multipart", "form-data");
-	public static final MimeType OCTET_STREAM = new MimeType("application", "octet-stream", true);
+	public static final MimeType OCTET_STREAM = new MimeType("application", "octet-stream", "apk", true);
 	public static final MimeType PDF = new MimeType("application", "pdf", true);
 	public static final MimeType PLAIN = new MimeType("text", "plain", "txt");
 	public static final MimeType RSS = new MimeType("application", "xhtml+xml", "rss");
