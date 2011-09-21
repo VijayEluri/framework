@@ -79,7 +79,8 @@ public class Websocket {
 	}
 	
 	public int getPort() {
-		return uri.getPort();
+		int port = uri.getPort();
+		return (port == -1) ? 80 : port;
 	}
 
 	public State getState() {
