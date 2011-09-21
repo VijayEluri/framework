@@ -28,6 +28,7 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
@@ -60,6 +61,42 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 		this.executors = executors;
 	}
 
+	@Override
+	public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+		logger.trace("channel closed");
+		super.channelClosed(ctx, e);
+	}
+
+	@Override
+	public void channelBound(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+		logger.trace("channel bound");
+		super.channelBound(ctx, e);
+	}
+	
+	@Override
+	public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+		logger.trace("channel open");
+		super.channelOpen(ctx, e);
+	}
+
+	@Override
+	public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+		logger.trace("channel connected");
+		super.channelConnected(ctx, e);
+	}
+
+	@Override
+	public void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+		logger.trace("channel disconnected");
+		super.channelDisconnected(ctx, e);
+	}
+
+	@Override
+	public void channelUnbound(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+		logger.trace("channel unbound");
+		super.channelUnbound(ctx, e);
+	}
+	
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
 		if(logger.isLoggingDebug()) {
@@ -208,10 +245,12 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 			task.setListener(new HandlerTaskListener() {
 				@Override
 				public void onComplete(HandlerTask task) {
+					logger.trace("task complete");
 					HttpResponse httpResponse = task.isSuccess() ? task.getResponse() : get500Response(request, task.getCause());
 					writeResponse(ctx, request, httpResponse);
 				}
 			});
+			logger.trace("submitting task");
 			executors.submit(task);
 		}
 		else {
@@ -382,10 +421,20 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 		}
 		
 		if(!isKeepAlive(request)) {
+			logger.trace("not keepalive - adding close listener");
 			future.addListener(ChannelFutureListener.CLOSE);
 		}
 		future.addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
-		
+
+		if(logger.isLoggingTrace()) {
+			future.addListener(new ChannelFutureListener() {
+				@Override
+				public void operationComplete(ChannelFuture arg0) throws Exception {
+					logger.trace("write complete");
+				}
+			});
+		}
+
 		request.dispose(); // release any temporary files in the parameters
 	}
 	
