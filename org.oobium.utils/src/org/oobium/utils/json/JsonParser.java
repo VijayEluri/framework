@@ -183,6 +183,24 @@ public class JsonParser {
 		return (List<Object>) toList(json.toCharArray(), 0, json.length());
 	}
 	
+	/**
+	 * @throws IllegalStateException if any non-null element of the converted list
+	 * cannot be cast into the given elementType.
+	 */
+	@SuppressWarnings("unchecked")
+	public <T> List<T> toList(String json, Class<T> elementType) {
+		if(json == null || json.length() == 0) {
+			return new ArrayList<T>(0);
+		}
+		List<?> list = toList(json.toCharArray(), 0, json.length());
+		for(Object element : list) {
+			if(element != null && !elementType.isAssignableFrom(element.getClass())) {
+				throw new IllegalStateException("cannot cast " + element.getClass() + " to type " + elementType);
+			}
+		}
+		return (List<T>) list;
+	}
+	
 	private List<?> toList(char[] ca, int start, int end) {
 		int s = forward(ca, start, end);
 		

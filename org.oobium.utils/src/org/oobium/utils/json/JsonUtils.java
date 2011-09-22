@@ -177,6 +177,10 @@ public class JsonUtils {
 		return new JsonParser().toList(json);
 	}
 
+	public static <T> List<T> toList(String json, Class<T> elementType) {
+		return new JsonParser().toList(json, elementType);
+	}
+
 	public static Map<String, Object> toMap(String json) {
 		return new JsonParser().toMap(json);
 	}

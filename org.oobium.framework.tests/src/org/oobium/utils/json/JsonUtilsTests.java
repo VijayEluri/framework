@@ -173,7 +173,18 @@ public class JsonUtilsTests {
 		
 		assertEquals("[/scripts/jquery-1.4.4.js]", asString(toList("([\n\"/scripts/jquery-1.4.4.js\"\n]);")));
 	}
-	
+
+	@Test
+	public void testToListWithType() throws Exception {
+		List<Integer> list = toList("[1,2]", Integer.class);
+		assertEquals("[1, 2]", asString(list));
+	}
+
+	@Test(expected=IllegalStateException.class)
+	public void testToListWithWrongType() throws Exception {
+		toList("[{}]", Integer.class);
+	}
+
 	@Test
 	public void testToStringList() throws Exception {
 		assertEquals("[]", asString(toStringList(null)));
