@@ -20,12 +20,14 @@ import java.util.Map;
 
 import org.oobium.app.AppService;
 import org.oobium.app.persist.MemoryPersistService;
+import org.oobium.app.routing.AppRouter;
 import org.oobium.build.runner.RunEvent.Type;
 import org.oobium.build.workspace.Application;
 import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Workspace;
 import org.oobium.client.Client;
 import org.oobium.client.ClientResponse;
+import org.oobium.utils.Config;
 import org.oobium.utils.Config.Mode;
 import org.oobium.utils.json.JsonUtils;
 
@@ -70,14 +72,38 @@ public class RunnerService extends AppService {
 		}
 	}
 
+	public static Application getRunningApp(String appName) {
+		synchronized(instance.runners) {
+			return instance.apps.get(appName);
+		}
+	}
+
 	public static Runner getRunner(Application app) {
 		synchronized(instance.runners) {
 			return instance.runners.get(app);
 		}
 	}
 	
+	public static Runner getRunner(String appName) {
+		synchronized(instance.runners) {
+			Application app = instance.apps.get(appName);
+			return instance.runners.get(app);
+		}
+	}
+	
 	public static boolean isRunning(Application app) {
 		synchronized(instance.runners) {
+			Runner runner = instance.runners.get(app);
+			if(runner != null) {
+				return runner.isRunning();
+			}
+			return false;
+		}
+	}
+	
+	public static boolean isRunning(String appName) {
+		synchronized(instance.runners) {
+			Application app = instance.apps.get(appName);
 			Runner runner = instance.runners.get(app);
 			if(runner != null) {
 				return runner.isRunning();
@@ -135,6 +161,7 @@ public class RunnerService extends AppService {
 			if(runner == null) {
 				runner = new Runner(workspace, app, mode, properties);
 				if(runner.start()) {
+					instance.apps.put(app.name, app);
 					instance.runners.put(app, runner);
 					notifyListeners(Type.Start, app);
 				}
@@ -147,6 +174,7 @@ public class RunnerService extends AppService {
 		synchronized(instance.runners) {
 			Runner runner = instance.runners.remove(app);
 			if(runner != null) {
+				instance.apps.remove(app.getName());
 				runner.stop();
 				notifyListeners(Type.Stop, app);
 			}
@@ -162,14 +190,21 @@ public class RunnerService extends AppService {
 	}
 
 	
+	private final Map<String, Application> apps;
 	private final Map<Application, Runner> runners;
 	private final List<RunListener> listeners;
 	
 	public RunnerService() {
 		instance = this;
+		apps = new HashMap<String, Application>();
 		runners = new HashMap<Application, Runner>();
 		listeners = new ArrayList<RunListener>();
 		setPersistService(new MemoryPersistService());
 	}
 
+	@Override
+	public void addRoutes(Config config, AppRouter router) {
+		router.addWebsocket("/tether/{application:[\\w\\.]+}", RunnerController.class);
+	}
+	
 }

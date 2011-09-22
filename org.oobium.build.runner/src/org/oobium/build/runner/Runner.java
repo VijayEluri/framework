@@ -43,6 +43,9 @@ public class Runner {
 		this.application = application;
 		this.mode = mode;
 		this.properties = properties;
+		
+		this.properties.put("org.oobium.manager.url", "localhost:3030/tether/" + application.name);
+		
 		startString = "(INFO)  " + application.name + ": Application " + application.getName() + " started";
 	}
 
@@ -64,12 +67,6 @@ public class Runner {
 	void handleStarted() {
 		RunnerService.notifyListeners(Type.Started, application);
 		startString = null;
-//		Listener.create("localhost:5050/listeners", "org.oobium.manager", "updated", RunnerService.class, new EventHandler() {
-//			@Override
-//			public void handleEvent(Event event) {
-//				RunnerService.notifyListeners(Type.Updated, application);
-//			}
-//		});
 	}
 	
 	public boolean isRunning() {

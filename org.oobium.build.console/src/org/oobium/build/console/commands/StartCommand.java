@@ -51,25 +51,6 @@ public class StartCommand extends BuilderCommand {
 		
 		Application app = getApplication();
 		RunnerService.start(getWorkspace(), app, mode, properties);
-		
-//		if(runner.isRunning() && mode == Mode.DEV) {
-//			new Thread("test") {
-//				public void run() {
-//					try {
-//						sleep(5000);
-//						Listener.create("localhost:5050/listeners", AppDevActivator.ID, "openType", RunnerService.class, new EventHandler() {
-//							@Override
-//							public void handleEvent(Event event) {
-//								Map<String, String> map = JsonUtils.toStringMap(event.getData());
-//								BuilderConsoleActivator.sendOpenType(map.get("type"), map.get("line"));
-//							}
-//						});
-//					} catch(InterruptedException e) {
-//						e.printStackTrace();
-//					}
-//				};
-//			}.start();
-//		}
 	}
 	
 }

@@ -6,8 +6,11 @@ Bundle-Version: 0.6.0.qualifier
 Bundle-Activator: org.oobium.build.runner.RunnerService
 Bundle-Vendor: oobium.org
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Import-Package: org.oobium.app,
+Import-Package: org.jboss.netty.handler.codec.http.websocket,
+ org.oobium.app,
+ org.oobium.app.controllers,
  org.oobium.app.persist,
+ org.oobium.app.routing,
  org.oobium.build.workspace,
  org.oobium.client,
  org.oobium.persist,

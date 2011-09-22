@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.oobium.app.controllers.HttpController;
-import org.oobium.events.models.Event;
 import org.oobium.manager.ManagerService;
 import org.oobium.manager.controllers.workers.InstallWorker;
 import org.oobium.manager.controllers.workers.StartWorker;
@@ -49,7 +48,8 @@ public class BundleController extends HttpController {
 		if(ids != null) {
 			map.put("id", ids);
 		}
-		Event.create(ManagerService.class, eventName, toJson(map));
+		ManagerService.send(eventName, toJson(map));
+//		Event.create(ManagerService.class, eventName, toJson(map));
 	}
 
 	

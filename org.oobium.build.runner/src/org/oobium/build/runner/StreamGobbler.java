@@ -50,7 +50,7 @@ public class StreamGobbler extends Thread {
 			String line;
 			while((line = in.readLine()) != null) {
 				if(runner != null) {
-					if(!serverStarted && line.endsWith("(INFO)  org.oobium.server: Server started")) {
+					if(!serverStarted && line.endsWith("(INFO)  org.oobium.app: Server started")) {
 						serverStarted = true;
 					}
 					if(!appStarted && line.endsWith(runner.startString)) {
@@ -61,7 +61,7 @@ public class StreamGobbler extends Thread {
 						runner = null;
 						tmp.handleStarted();
 					}
-					if(runner != null && line.contains("(ERROR) org.oobium.server: could not listen on port ")) {
+					if(runner != null && line.contains("(ERROR) org.oobium.app: could not listen on port ")) {
 						RunnerService.notifyListeners(Type.Error, runner.getApplication(), line);
 					}
 				}

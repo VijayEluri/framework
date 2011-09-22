@@ -438,6 +438,9 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 						case Route.VIEW:
 							ViewRoute vr = (ViewRoute) route;
 							return new ViewHandler(router, vr.viewClass, vr.params);
+						case Route.WEBSOCKET:
+							WebsocketRoute wr = (WebsocketRoute) route;
+							return new WebsocketHandler(router, wr.controllerClass, wr.group, getParams(wr, matcher));
 						default:
 							throw new IllegalStateException("unknown route type: " + route.type);
 						}

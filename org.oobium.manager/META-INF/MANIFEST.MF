@@ -4,6 +4,7 @@ Bundle-Name: Oobium Manager Bundle
 Bundle-SymbolicName: org.oobium.manager;singleton:=true
 Bundle-Version: 0.6.0.qualifier
 Import-Package: org.jboss.netty.handler.codec.http,
+ org.jboss.netty.handler.codec.http.websocket,
  org.oobium.app,
  org.oobium.app.controllers,
  org.oobium.app.http,
@@ -11,7 +12,7 @@ Import-Package: org.jboss.netty.handler.codec.http,
  org.oobium.app.routing,
  org.oobium.app.views,
  org.oobium.app.workers,
- org.oobium.events.models,
+ org.oobium.client.websockets,
  org.oobium.logging,
  org.oobium.persist,
  org.oobium.utils,

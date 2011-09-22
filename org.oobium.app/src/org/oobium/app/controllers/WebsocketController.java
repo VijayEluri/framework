@@ -1,13 +1,14 @@
 package org.oobium.app.controllers;
 
 import java.util.Map;
+import java.util.Set;
 
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.oobium.app.request.Request;
 import org.oobium.app.server.Websocket;
 import org.oobium.logging.Logger;
 
-public abstract class WebsocketController {
+public abstract class WebsocketController implements IParams {
 
 	protected Logger logger;
 	protected Request request;
@@ -49,6 +50,56 @@ public abstract class WebsocketController {
 		this.logger = logger;
 		this.request = request;
 		this.websocket = websocket;
+	}
+
+	@Override
+	public Object getParam(String name) {
+		return websocket.getParam(name);
+	}
+
+	@Override
+	public <T> T getParam(String name, Class<T> clazz) {
+		return websocket.getParam(name, clazz);
+	}
+
+	@Override
+	public <T> T getParam(String name, T defaultValue) {
+		return websocket.getParam(name, defaultValue);
+	}
+
+	@Override
+	public Set<String> getParams() {
+		return websocket.getParams();
+	}
+
+	@Override
+	public boolean hasParam(String name) {
+		return websocket.hasParam(name);
+	}
+
+	@Override
+	public boolean hasParams() {
+		return websocket.hasParams();
+	}
+
+	@Override
+	public String param(String name) {
+		return websocket.param(name);
+	}
+
+	@Override
+	public <T> T param(String name, Class<T> clazz) {
+		return websocket.param(name, clazz);
+	}
+
+	@Override
+	public <T> T param(String name, T defaultValue) {
+		return websocket.param(name, defaultValue);
+	}
+
+	@Override
+	public Set<String> params() {
+		return websocket.params();
 	}
 
 }

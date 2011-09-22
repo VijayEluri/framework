@@ -16,9 +16,13 @@ import static org.oobium.app.http.Action.show;
 import static org.oobium.app.http.Action.showAll;
 import static org.oobium.app.http.Action.update;
 
+import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.oobium.app.AppService;
 import org.oobium.app.persist.MemoryPersistService;
 import org.oobium.app.routing.Router;
+import org.oobium.client.websockets.Websocket;
+import org.oobium.client.websockets.WebsocketListener;
+import org.oobium.client.websockets.Websockets;
 import org.oobium.manager.controllers.BundleController;
 import org.oobium.manager.models.Bundle;
 import org.oobium.utils.Config;
@@ -54,4 +58,40 @@ public class ManagerService extends AppService {
 		router.add("refresh").asRoute(POST, BundleController.class);
 	}
 
+	private static Websocket websocket;
+	
+	public static void send(String eventName, String message) {
+		if(websocket != null) {
+			websocket.send(eventName + ":" + message);
+		}
+	}
+	
+	@Override
+	public void startWorkers() {
+		System.out.println("url: " + System.getProperty("org.oobium.manager.url"));
+		websocket = Websockets.connect(System.getProperty("org.oobium.manager.url"), new WebsocketListener() {
+			@Override
+			public void onMessage(Websocket websocket, WebSocketFrame frame) {
+				// TODO
+			}
+			@Override
+			public void onError(Websocket websocket, Throwable t) {
+				logger.warn(t);
+			}
+			@Override
+			public void onDisconnect(Websocket websocket) {
+				logger.warn("manager websocket has disconnected");
+			}
+			@Override
+			public void onConnect(Websocket websocket) {
+				logger.info("manager websocket has disconnected");
+			}
+		});
+	}
+
+	@Override
+	protected void teardown() {
+		websocket.disconnect();
+	}
+	
 }
