@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IStatusLineManager;
 import org.eclipse.jface.action.IToolBarManager;
@@ -26,12 +27,12 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.ui.IMemento;
 import org.eclipse.ui.IViewSite;
 import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.part.ViewPart;
+import org.eclipse.ui.statushandlers.StatusManager;
 import org.oobium.build.runner.RunEvent;
 import org.oobium.build.runner.RunListener;
 import org.oobium.build.runner.Runner;
@@ -45,6 +46,7 @@ import org.oobium.eclipse.views.server.actions.AutoUpdateAction;
 import org.oobium.eclipse.views.server.actions.Migrate;
 import org.oobium.eclipse.views.server.actions.MigratePurge;
 import org.oobium.eclipse.views.server.actions.MigrateRedo;
+import org.oobium.eclipse.views.server.actions.MigrateSync;
 import org.oobium.eclipse.views.server.actions.ShowBrowserAction;
 import org.oobium.eclipse.views.server.actions.ShowConsoleAction;
 import org.oobium.eclipse.views.server.actions.StartAction;
@@ -72,6 +74,7 @@ public class ServerView extends ViewPart {
 	private Migrate migrateAction;
 	private MigrateRedo redoAction;
 	private MigratePurge purgeAction;
+	private MigrateSync msyncAction;
 	
 	private ClearAction clearAction;
 	private ScrollLockAction scrollLockAction;
@@ -102,18 +105,15 @@ public class ServerView extends ViewPart {
 				if(event.application == application) {
 					switch(event.type) {
 					case Error:
-						final String message = event.getMessage();
-						if(message != null) {
-							Display.getDefault().syncExec(new Runnable() {
-								@Override
-								public void run() {
-									MessageBox msg = new MessageBox(getSite().getShell(), SWT.OK);
-									msg.setMessage(message);
-									msg.setText("Error");
-									msg.open();
-								}
-							});
+						String message = event.getMessage();
+						if(message.contains("(ERROR)")) {
+							int ix = message.indexOf("(ERROR)");
+							ix = message.indexOf(':', ix);
+							message = message.substring(ix+1).trim();
 						}
+						Status status = new Status(Status.ERROR, applicationName, message);
+						StatusManager.getManager().handle(status, StatusManager.SHOW);
+						break;
 					case Start:
 						properties = JsonUtils.toJson(RunnerService.getRunner(application).getProperties());
 						start();
@@ -146,6 +146,7 @@ public class ServerView extends ViewPart {
 		migrateAction = new Migrate();
 		redoAction = new MigrateRedo();
 		purgeAction = new MigratePurge();
+		msyncAction = new MigrateSync(this);
 	}
 	
 	private void createMenu() {
@@ -190,6 +191,7 @@ public class ServerView extends ViewPart {
 		manager.add(new Separator());
 		manager.add(migrateAction);
 		manager.add(redoAction);
+		manager.add(msyncAction);
 		manager.add(new Separator());
 		manager.add(showBrowserAction);
 		manager.add(showConsoleAction);
@@ -286,22 +288,29 @@ public class ServerView extends ViewPart {
 						runner.setOut(new ConsolePrintStream(consolePanel.getConsole().out));
 						startAction.setEnabled(false);
 						stopAction.setEnabled(true);
-						migrateAction.setEnabled(true);
-						redoAction.setEnabled(true);
-						purgeAction.setEnabled(true);
+						updateAction.setEnabled(true);
+						boolean b = updateAction.isChecked();
+						migrateAction.setEnabled(b);
+						redoAction.setEnabled(b);
+						purgeAction.setEnabled(b);
+						msyncAction.setEnabled(b);
 					} else {
 						startAction.setEnabled(true);
 						stopAction.setEnabled(false);
+						updateAction.setEnabled(false);
 						migrateAction.setEnabled(false);
 						redoAction.setEnabled(false);
 						purgeAction.setEnabled(false);
+						msyncAction.setEnabled(false);
 					}
 				} else {
 					startAction.setEnabled(false);
 					stopAction.setEnabled(false);
+					updateAction.setEnabled(false);
 					migrateAction.setEnabled(false);
 					redoAction.setEnabled(false);
 					purgeAction.setEnabled(false);
+					msyncAction.setEnabled(false);
 				}
 			}
 		});
@@ -377,12 +386,18 @@ public class ServerView extends ViewPart {
 			runner.setOut(new ConsolePrintStream(consolePanel.getConsole().out));
 			startAction.setEnabled(false);
 			stopAction.setEnabled(true);
-			migrateAction.setEnabled(true);
-			redoAction.setEnabled(true);
+			updateAction.setEnabled(true);
 			purgeAction.setEnabled(true);
 			if(updateAction.isChecked()) {
+				boolean b = isRunning();
+				migrateAction.setEnabled(b);
+				redoAction.setEnabled(b);
+				msyncAction.setEnabled(b);
 				RunnerService.unpauseUpdaters();
 			} else {
+				migrateAction.setEnabled(false);
+				redoAction.setEnabled(false);
+				msyncAction.setEnabled(false);
 				RunnerService.pauseUpdaters();
 			}
 		}
@@ -390,11 +405,26 @@ public class ServerView extends ViewPart {
 
 	public void setAutoUpdate(boolean update) {
 		updateAction.setChecked(update);
+		boolean b = isRunning() && update;
+		migrateAction.setEnabled(b);
+		redoAction.setEnabled(b);
+		msyncAction.setEnabled(b);
 		if(application != null) {
 			if(update) {
 				RunnerService.unpauseUpdaters();
 			} else {
 				RunnerService.pauseUpdaters();
+			}
+		}
+	}
+	
+	public void setAutoMigrate(boolean auto) {
+		msyncAction.setChecked(auto);
+		if(application != null) {
+			if(auto) {
+				// TODO
+			} else {
+				// TODO
 			}
 		}
 	}
@@ -405,9 +435,11 @@ public class ServerView extends ViewPart {
 			RunnerService.stop(application);
 			startAction.setEnabled(true);
 			stopAction.setEnabled(false);
+			updateAction.setEnabled(false);
 			migrateAction.setEnabled(false);
 			redoAction.setEnabled(false);
 			purgeAction.setEnabled(false);
+			msyncAction.setEnabled(false);
 			browserPanel.updateAppState(false);
 			consolePanel.getConsole().out.println(application + " stopped");
 			RunnerService.addListener(runListener);

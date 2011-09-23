@@ -87,7 +87,7 @@ public class Runner {
 	
 	public boolean setError(PrintStream err) {
 		if(errGobbler != null) {
-			errGobbler.setOut(err);
+			errGobbler.setError(err);
 			return true;
 		}
 		return false;
@@ -128,7 +128,7 @@ public class Runner {
 				return false;
 			}
 			
-			errGobbler = new StreamGobbler(process.getErrorStream()).activate();
+			errGobbler = new StreamGobbler(this, process.getErrorStream()).activate();
 			outGobbler = new StreamGobbler(this, process.getInputStream()).activate();
 
 			shutdownHook = new Thread(application + " process shutdown hook") {

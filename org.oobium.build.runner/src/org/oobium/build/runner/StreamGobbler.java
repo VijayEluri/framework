@@ -20,18 +20,16 @@ import org.oobium.build.runner.RunEvent.Type;
 
 public class StreamGobbler extends Thread {
 
-	private Runner runner;
+	private final Runner runner;
 	private final InputStream inputStream;
 	private PrintStream outputStream;
+	private boolean error;
 	
-	StreamGobbler(InputStream in) {
-		this.setDaemon(true);
-		this.inputStream = in;
-	}
 	
 	StreamGobbler(Runner runner, InputStream in) {
-		this(in);
 		this.runner = runner;
+		this.inputStream = in;
+		this.setDaemon(true);
 	}
 	
 	public StreamGobbler activate() {
@@ -49,20 +47,21 @@ public class StreamGobbler extends Thread {
 			in = new BufferedReader(new InputStreamReader(inputStream));
 			String line;
 			while((line = in.readLine()) != null) {
-				if(runner != null) {
-					if(!serverStarted && line.endsWith("(INFO)  org.oobium.app: Server started")) {
-						serverStarted = true;
-					}
-					if(!appStarted && line.endsWith(runner.startString)) {
-						appStarted = true;
-					}
-					if(serverStarted && appStarted) {
-						Runner tmp = runner;
-						runner = null;
-						tmp.handleStarted();
-					}
-					if(runner != null && line.contains("(ERROR) org.oobium.app: could not listen on port ")) {
+				if(error) {
+					if(line.contains("(ERROR)")) {
 						RunnerService.notifyListeners(Type.Error, runner.getApplication(), line);
+					}
+				} else {
+					if(!appStarted || !serverStarted) {
+						if(!serverStarted && line.endsWith("(INFO)  org.oobium.app: Server started")) {
+							serverStarted = true;
+						}
+						if(!appStarted && line.endsWith(runner.startString)) {
+							appStarted = true;
+						}
+						if(serverStarted && appStarted) {
+							runner.handleStarted();
+						}
 					}
 				}
 				if(outputStream != null) {
@@ -82,7 +81,14 @@ public class StreamGobbler extends Thread {
 		}
 	}
 	
+	public void setError(PrintStream err) {
+		this.error = true;
+		this.outputStream = err;
+	}
+
 	public void setOut(PrintStream out) {
+		this.error = false;
 		this.outputStream = out;
 	}
+
 }
