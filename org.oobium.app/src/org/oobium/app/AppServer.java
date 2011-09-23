@@ -8,6 +8,7 @@ import java.util.concurrent.Executors;
 
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelException;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.ChannelGroupFuture;
@@ -153,23 +154,43 @@ public class AppServer implements BundleActivator {
 	public HttpRequestHandler addHandler(HttpRequestHandler handler) {
 		int port = handler.getPort();
 		handlers.addRequestHandler(handler, port);
-		return (HttpRequestHandler) addedHandler(handler, port);
+		HttpRequestHandler rh = (HttpRequestHandler) addedHandler(handler, port);
+		if(rh == null) {
+			handlers.removeRequestHandler(handler, port);
+		}
+		return rh;
 	}
 	
 	public Gateway addHandler(Gateway handler) {
 		int port = handler.getPort();
 		handlers.addChannelHandler(handler, port);
-		return (Gateway) addedHandler(handler, port);
+		Gateway gateway = (Gateway) addedHandler(handler, port);
+		if(gateway == null) {
+			handlers.removeChannelHandler(handler, port);
+		}
+		return gateway;
 	}
 	
 	private <T> T addedHandler(T handler, int port) {
 		int count = handlers.size(port);
 		if(count == 1) {
-			startServer(port);
+			try {
+				startServer(port);
+				return handler;
+			} catch(ChannelException e) {
+				logger.error(e.getMessage());
+			} catch(Exception e) {
+				if(logger.isLoggingDebug()) {
+					logger.error(e);
+				} else {
+					logger.error(e.getMessage());
+				}
+			}
+			return null;
 		} else {
 			logger.info("incremented count of port " + port + " to " + count);
+			return handler;
 		}
-		return handler;
 	}
 	
 	public void removeHandler(HttpRequestHandler handler) {
