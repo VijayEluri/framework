@@ -68,7 +68,13 @@ public class ManagerService extends AppService {
 	
 	@Override
 	public void startWorkers() {
-		System.out.println("url: " + System.getProperty("org.oobium.manager.url"));
+		String url = System.getProperty("org.oobium.manager.url");
+		if(url == null) {
+			logger.error("manager websocket url not provided");
+			return;
+		}
+		
+		logger.info("url: " + url);
 		websocket = Websockets.connect(System.getProperty("org.oobium.manager.url"), new WebsocketListener() {
 			@Override
 			public void onMessage(Websocket websocket, WebSocketFrame frame) {
@@ -80,7 +86,7 @@ public class ManagerService extends AppService {
 			}
 			@Override
 			public void onDisconnect(Websocket websocket) {
-				logger.warn("manager websocket has disconnected");
+				logger.info("manager websocket has disconnected");
 			}
 			@Override
 			public void onConnect(Websocket websocket) {
