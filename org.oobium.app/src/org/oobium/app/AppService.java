@@ -162,7 +162,8 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 	}
 	
 	public final void startApp() throws Exception {
-		logger.info("configuring in " + Mode.getSystemMode().name() + " mode");
+		logger.debug("working directory: {}", System.getProperty("user.dir"));
+		logger.info("configuring in {} mode", Mode.getSystemMode().name());
 		
 		Config config = loadConfiguration();
 		
