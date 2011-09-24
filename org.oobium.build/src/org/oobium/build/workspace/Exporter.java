@@ -46,7 +46,6 @@ public class Exporter {
 	 * Bundles that are Applications only
 	 */
 	public static final int APP			= 1 << 0;
-
 	
 	/**
 	 * Bundles that are either Applications or Modules (application extends module)
@@ -119,8 +118,6 @@ public class Exporter {
 	private Set<Bundle> exportedBundles;
 	private Set<Bundle> exportedStart;
 	
-	private int startTypes;
-	
 	private boolean includeMigrator;
 	private boolean isMigrator;
 	
@@ -143,8 +140,6 @@ public class Exporter {
 
 		this.exportedBundles = new LinkedHashSet<Bundle>();
 		this.exportedStart = new LinkedHashSet<Bundle>();
-
-		setStartTypes(MODULE | SERVICE);
 	}
 	
 	public void add(Bundle...bundles) {
@@ -158,21 +153,6 @@ public class Exporter {
 	private void addExported(Bundle bundle, Bundle exportedBundle) {
 		if(start.contains(bundle)) {
 			exportedStart.add(exportedBundle);
-		} else {
-			if(!isMigrator) {
-				if((startTypes & APP) != 0 && exportedBundle.isApplication()) {
-					exportedStart.add(exportedBundle);
-				}
-				if((startTypes & MODULE) != 0 && exportedBundle.isModule()) {
-					exportedStart.add(exportedBundle);
-				}
-				if((startTypes & MIGRATION) != 0 && exportedBundle.isMigration()) {
-					exportedStart.add(exportedBundle);
-				}
-			}
-			if((startTypes & SERVICE) != 0 && exportedBundle.isService()) {
-				exportedStart.add(exportedBundle);
-			}
 		}
 		exportedBundles.add(exportedBundle);
 	}
@@ -214,12 +194,15 @@ public class Exporter {
 		List<Bundle> installed = new ArrayList<Bundle>();
 		List<Bundle> started1 = new ArrayList<Bundle>();
 		List<Bundle> started2 = new ArrayList<Bundle>();
+		List<Bundle> started3 = new ArrayList<Bundle>();
 		for(Bundle bundle : exportedBundles) {
 			if(!bundle.isFramework()) {
 				if(bundle.name.equals("org.oobium.logging") || bundle.name.equals("org.apache.felix.log")) {
 					started1.add(bundle);
-				} else if(exportedStart.contains(bundle)) {
+				} else if(bundle.isService()) {
 					started2.add(bundle);
+				} else if(bundle.isModule() || bundle.isMigration() || exportedStart.contains(bundle)) {
+					started3.add(bundle);
 				} else {
 					installed.add(bundle);
 				}
@@ -239,7 +222,11 @@ public class Exporter {
 		for(Bundle bundle : started2) {
 			sb.append(" \\\n file:bundles/").append(bundle.file.getName());
 		}
-		sb.append("\n\norg.osgi.framework.startlevel.beginning=2");
+		sb.append("\n\nfelix.auto.start.3=");
+		for(Bundle bundle : started3) {
+			sb.append(" \\\n file:bundles/").append(bundle.file.getName());
+		}
+		sb.append("\n\norg.osgi.framework.startlevel.beginning=3");
 
 		writeFile(config, sb.toString());
 	}
@@ -512,8 +499,4 @@ public class Exporter {
 		}
 	}
 	
-	public void setStartTypes(int startTypes) {
-		this.startTypes = startTypes;
-	}
-
 }
