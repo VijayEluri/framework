@@ -659,8 +659,7 @@ public class Project implements Comparable<Project> {
 	}
 
 	/**
-	 * @return true if this is a Oobium Module or Application (Application
-	 *         extends Module).
+	 * @return true if this is a Oobium Module or Application (Application extends Module).
 	 */
 	public boolean isModule() {
 		return type == Type.Module || type == Type.Application;
