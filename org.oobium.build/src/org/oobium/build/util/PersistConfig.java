@@ -102,7 +102,7 @@ public class PersistConfig {
 				if(o instanceof Map<?,?>) {
 					modConfigs.add(new PersistConfig((Map<?,?>) o));
 				} else {
-					System.out.println("skipping " + o + " (only maps are added to PersistConfig becuase a persistor must be specified)");
+					System.out.println("skipping " + o + " (only maps are added to PersistConfig because a persistor must be specified)");
 				}
 			}
 		} else if(modules instanceof Map<?,?>) {
