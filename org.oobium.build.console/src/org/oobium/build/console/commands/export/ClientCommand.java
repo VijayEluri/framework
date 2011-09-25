@@ -25,13 +25,16 @@ public class ClientCommand extends BuilderCommand {
 
 	@Override
 	protected void configure() {
-		moduleRequired = true;
+		applicationRequired = true;
 	}
 	
 	@Override
 	protected void run() {
 		Workspace workspace = getWorkspace();
 		Module module = getModule();
+		if(module == null) {
+			module = getApplication();
+		}
 		
 		Project target = null;
 		if(hasParam("target")) {
