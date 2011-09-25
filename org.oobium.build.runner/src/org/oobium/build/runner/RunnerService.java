@@ -15,8 +15,10 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.oobium.app.AppService;
 import org.oobium.app.persist.MemoryPersistService;
@@ -34,6 +36,15 @@ import org.oobium.utils.json.JsonUtils;
 
 public class RunnerService extends AppService {
 
+	private static class Editor {
+		File project;
+		File file;
+		public Editor(File project, File file) { this.project = project; this.file = file; }
+		@Override public boolean equals(Object arg0) { return file.equals(arg0); }
+		@Override public int hashCode() { return file.hashCode(); }
+	}
+
+	
 	public static final String ID = RunnerService.class.getPackage().getName();
 
 	private static RunnerService instance;
@@ -48,6 +59,9 @@ public class RunnerService extends AppService {
 
 	public static void editing(File project, File file, boolean editing) {
 		synchronized(instance.runners) {
+			Editor editor = new Editor(project, file);
+			if(editing) instance.editors.add(editor);
+			else instance.editors.remove(editor);
 			for(Runner runner : instance.runners.values()) {
 				runner.editing(project, file, editing);
 			}
@@ -184,6 +198,9 @@ public class RunnerService extends AppService {
 			Runner runner = instance.runners.get(app);
 			if(runner == null) {
 				runner = new Runner(workspace, app, mode, properties);
+				for(Editor editor : instance.editors) {
+					runner.editing(editor.project, editor.file, true);
+				}
 				if(runner.start()) {
 					instance.apps.put(app.name, app);
 					instance.runners.put(app, runner);
@@ -226,12 +243,14 @@ public class RunnerService extends AppService {
 	private final Map<String, Application> apps;
 	private final Map<Application, Runner> runners;
 	private final List<RunListener> listeners;
+	private final Set<Editor> editors;
 	
 	public RunnerService() {
 		instance = this;
 		apps = new HashMap<String, Application>();
 		runners = new HashMap<Application, Runner>();
 		listeners = new ArrayList<RunListener>();
+		editors = new HashSet<Editor>();
 		setPersistService(new MemoryPersistService());
 	}
 
