@@ -637,7 +637,6 @@ public class Console extends Composite {
 			menu.addMenuListener(new MenuAdapter() {
 				@Override
 				public void menuShown(MenuEvent e) {
-					// copy
 					copy.setEnabled(hasCommandSelection() || hasLineSelection());
 				}
 			});
@@ -858,6 +857,10 @@ public class Console extends Composite {
 
 	public Locale getLocale() {
 		return resources.getLocale();
+	}
+	
+	public Menu getMenu() {
+		return canvas.getMenu();
 	}
 	
 	public Region getRegion(int style) {
@@ -1139,16 +1142,11 @@ public class Console extends Composite {
 			}
 		}
 		else if(e.button == 2) {
-			Clipboard cb = new Clipboard(getDisplay());
 			TextTransfer tt = TextTransfer.getInstance();
-			try {
-				String data = (String) cb.getContents(tt, DND.SELECTION_CLIPBOARD);
-				if(!blank(data)) {
-					commandInsert(data);
-					canvas.redraw();
-				}
-			} finally {
-				cb.dispose();
+			String data = (String) clipboard.getContents(tt, DND.SELECTION_CLIPBOARD);
+			if(!blank(data)) {
+				commandInsert(data);
+				canvas.redraw();
 			}
 		}
 	}
@@ -1993,13 +1991,8 @@ public class Console extends Composite {
 	
 	private void setSelectionClipboard(String text) {
 		if(!blank(text)) {
-			Clipboard cb = new Clipboard(getDisplay());
 			TextTransfer tt = TextTransfer.getInstance();
-			try {
-				cb.setContents(new Object[] { text }, new Transfer[] { tt }, DND.SELECTION_CLIPBOARD);
-			} finally {
-				cb.dispose();
-			}
+			clipboard.setContents(new Object[] { text }, new Transfer[] { tt }, DND.SELECTION_CLIPBOARD);
 		}
 	}
 	
