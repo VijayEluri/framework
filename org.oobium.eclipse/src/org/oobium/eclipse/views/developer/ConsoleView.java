@@ -36,6 +36,8 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
@@ -46,6 +48,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.ui.IMemento;
 import org.eclipse.ui.ISelectionListener;
 import org.eclipse.ui.IViewSite;
@@ -99,8 +102,8 @@ public class ConsoleView extends ViewPart {
 	
 	private ClearAction clearAction;
 	private ScrollLockAction scrollLockAction;
-	
 	private LinkedAction linkedAction;
+	
 	private ISelectionListener explorerListener;
 	private WorkspaceListener workspaceListener;
 	private IPreferenceChangeListener preferenceListener;
@@ -230,6 +233,17 @@ public class ConsoleView extends ViewPart {
 		if(commandHistory != null) {
 			consolePage.getConsole().setCommandHistory(commandHistory);
 		}
+		MenuItem item;
+		item = new MenuItem(consolePage.getConsole().getMenu(), SWT.SEPARATOR);
+		item = new MenuItem(consolePage.getConsole().getMenu(), SWT.PUSH);
+		item.setText("Run Command");
+		item.setImage(OobiumPlugin.getImage("/icons/start.gif"));
+		item.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				consolePage.getConsole().execute();
+			}
+		});
 
 		updateConsoleFont();
 		
