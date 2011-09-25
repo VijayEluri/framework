@@ -43,12 +43,12 @@ import org.oobium.console.ConsolePrintStream;
 import org.oobium.eclipse.OobiumPlugin;
 import org.oobium.eclipse.views.actions.ClearAction;
 import org.oobium.eclipse.views.actions.ScrollLockAction;
+import org.oobium.eclipse.views.server.actions.AutoMigrateAction;
 import org.oobium.eclipse.views.server.actions.AutoUpdateAction;
 import org.oobium.eclipse.views.server.actions.LayoutAction;
 import org.oobium.eclipse.views.server.actions.MigrateAction;
 import org.oobium.eclipse.views.server.actions.MigratePurgeAction;
 import org.oobium.eclipse.views.server.actions.MigrateRedoAction;
-import org.oobium.eclipse.views.server.actions.AutoMigrateAction;
 import org.oobium.eclipse.views.server.actions.ShowBrowserAction;
 import org.oobium.eclipse.views.server.actions.ShowConsoleAction;
 import org.oobium.eclipse.views.server.actions.StartAction;
@@ -58,7 +58,17 @@ import org.oobium.utils.json.JsonUtils;
 
 public class ServerView extends ViewPart {
 
-	public enum Layout { Horizontal, Vertical }
+	public enum Layout {
+		Horizontal,
+		Vertical;
+		public static Layout coerce(Object value) {
+			try {
+				return Layout.valueOf(String.valueOf(value));
+			} catch(Exception e) {
+				return Horizontal;
+			}
+		}
+	}
 	
 	public static final String ID = ServerView.class.getCanonicalName();
 	
@@ -287,7 +297,7 @@ public class ServerView extends ViewPart {
 		browserWeight = (memento != null) ? coerce(memento.getInteger("browserWeight"), 75) : 75;
 		browserVisible = (memento != null) ? coerce(memento.getBoolean("browserVisible"), true) : true;
 		consoleVisible = (memento != null) ? coerce(memento.getBoolean("consoleVisible"), true) : true;
-		layout = (memento != null) ? Layout.valueOf(memento.getString("layout")) : Layout.Vertical;
+		layout = (memento != null) ? Layout.coerce(memento.getString("layout")) : Layout.Vertical;
 		super.init(site, memento);
 	}
 
