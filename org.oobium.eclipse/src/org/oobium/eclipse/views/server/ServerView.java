@@ -44,10 +44,11 @@ import org.oobium.eclipse.OobiumPlugin;
 import org.oobium.eclipse.views.actions.ClearAction;
 import org.oobium.eclipse.views.actions.ScrollLockAction;
 import org.oobium.eclipse.views.server.actions.AutoUpdateAction;
-import org.oobium.eclipse.views.server.actions.Migrate;
-import org.oobium.eclipse.views.server.actions.MigratePurge;
-import org.oobium.eclipse.views.server.actions.MigrateRedo;
-import org.oobium.eclipse.views.server.actions.MigrateSync;
+import org.oobium.eclipse.views.server.actions.LayoutAction;
+import org.oobium.eclipse.views.server.actions.MigrateAction;
+import org.oobium.eclipse.views.server.actions.MigratePurgeAction;
+import org.oobium.eclipse.views.server.actions.MigrateRedoAction;
+import org.oobium.eclipse.views.server.actions.AutoMigrateAction;
 import org.oobium.eclipse.views.server.actions.ShowBrowserAction;
 import org.oobium.eclipse.views.server.actions.ShowConsoleAction;
 import org.oobium.eclipse.views.server.actions.StartAction;
@@ -57,6 +58,8 @@ import org.oobium.utils.json.JsonUtils;
 
 public class ServerView extends ViewPart {
 
+	public enum Layout { Horizontal, Vertical }
+	
 	public static final String ID = ServerView.class.getCanonicalName();
 	
 	
@@ -71,20 +74,22 @@ public class ServerView extends ViewPart {
 	
 	private StartAction startAction;
 	private StopAction stopAction;
-	private AutoUpdateAction updateAction;
-	private Migrate migrateAction;
-	private MigrateRedo redoAction;
-	private MigratePurge purgeAction;
-	private MigrateSync msyncAction;
+	private AutoUpdateAction autoUpAction;
+	private MigrateAction migrateAction;
+	private MigrateRedoAction redoAction;
+	private MigratePurgeAction purgeAction;
+	private AutoMigrateAction autoMigAction;
 	
 	private ClearAction clearAction;
 	private ScrollLockAction scrollLockAction;
 	private ShowBrowserAction showBrowserAction;
 	private ShowConsoleAction showConsoleAction;
+	private LayoutAction layoutAction;
 	
 	private int browserWeight;
 	private boolean browserVisible;
 	private boolean consoleVisible;
+	private Layout layout;
 	
 
 	public ServerView() {
@@ -138,13 +143,14 @@ public class ServerView extends ViewPart {
 		scrollLockAction = new ScrollLockAction(consolePanel.getConsole());
 		showBrowserAction = new ShowBrowserAction(this, browserVisible);
 		showConsoleAction = new ShowConsoleAction(this, consoleVisible);
+		layoutAction = new LayoutAction(this);
 		startAction = new StartAction(this);
 		stopAction = new StopAction(this);
-		updateAction = new AutoUpdateAction(this);
-		migrateAction = new Migrate();
-		redoAction = new MigrateRedo();
-		purgeAction = new MigratePurge();
-		msyncAction = new MigrateSync(this);
+		autoUpAction = new AutoUpdateAction(this);
+		migrateAction = new MigrateAction();
+		redoAction = new MigrateRedoAction();
+		purgeAction = new MigratePurgeAction();
+		autoMigAction = new AutoMigrateAction(this);
 	}
 	
 	private void createMenu() {
@@ -155,6 +161,7 @@ public class ServerView extends ViewPart {
 		manager.add(new Separator());
 		manager.add(showBrowserAction);
 		manager.add(showConsoleAction);
+		manager.add(layoutAction);
 		manager.add(new Separator());
 		manager.add(purgeAction);
 		
@@ -185,11 +192,11 @@ public class ServerView extends ViewPart {
 
 		manager.add(startAction);
 		manager.add(stopAction);
-		manager.add(updateAction);
+		manager.add(autoUpAction);
 		manager.add(new Separator());
 		manager.add(migrateAction);
 		manager.add(redoAction);
-		manager.add(msyncAction);
+		manager.add(autoMigAction);
 		manager.add(new Separator());
 		manager.add(showBrowserAction);
 		manager.add(showConsoleAction);
@@ -225,6 +232,10 @@ public class ServerView extends ViewPart {
 		return consolePanel;
 	}
 
+	public Layout getLayout() {
+		return layout;
+	}
+	
 	List<String> getPaths() {
 		if(application != null) {
 			return RunnerService.getPaths(application);
@@ -276,6 +287,7 @@ public class ServerView extends ViewPart {
 		browserWeight = (memento != null) ? coerce(memento.getInteger("browserWeight"), 75) : 75;
 		browserVisible = (memento != null) ? coerce(memento.getBoolean("browserVisible"), true) : true;
 		consoleVisible = (memento != null) ? coerce(memento.getBoolean("consoleVisible"), true) : true;
+		layout = (memento != null) ? Layout.valueOf(memento.getString("layout")) : Layout.Vertical;
 		super.init(site, memento);
 	}
 
@@ -295,6 +307,7 @@ public class ServerView extends ViewPart {
 		
 		memento.putBoolean("browserVisible", browserVisible);
 		memento.putBoolean("consoleVisible", consoleVisible);
+		memento.putString("layout", layout.name());
 	}
 	
 	public void setApplication(String name) {
@@ -310,29 +323,29 @@ public class ServerView extends ViewPart {
 						runner.setOut(new ConsolePrintStream(consolePanel.getConsole().out));
 						startAction.setEnabled(false);
 						stopAction.setEnabled(true);
-						updateAction.setEnabled(true);
-						boolean b = updateAction.isChecked();
+						autoUpAction.setEnabled(true);
+						boolean b = autoUpAction.isChecked();
 						migrateAction.setEnabled(b);
 						redoAction.setEnabled(b);
 						purgeAction.setEnabled(b);
-						msyncAction.setEnabled(b);
+						autoMigAction.setEnabled(b);
 					} else {
 						startAction.setEnabled(true);
 						stopAction.setEnabled(false);
-						updateAction.setEnabled(false);
+						autoUpAction.setEnabled(false);
 						migrateAction.setEnabled(false);
 						redoAction.setEnabled(false);
 						purgeAction.setEnabled(false);
-						msyncAction.setEnabled(false);
+						autoMigAction.setEnabled(false);
 					}
 				} else {
 					startAction.setEnabled(false);
 					stopAction.setEnabled(false);
-					updateAction.setEnabled(false);
+					autoUpAction.setEnabled(false);
 					migrateAction.setEnabled(false);
 					redoAction.setEnabled(false);
 					purgeAction.setEnabled(false);
-					msyncAction.setEnabled(false);
+					autoMigAction.setEnabled(false);
 				}
 			}
 		});
@@ -384,6 +397,28 @@ public class ServerView extends ViewPart {
 		}
 	}
 	
+	public void setLayout(final Layout layout) {
+		Display.getDefault().asyncExec(new Runnable() {
+			@Override
+			public void run() {
+				switch(layout) {
+				case Horizontal:
+					if(sf.getOrientation() != SWT.HORIZONTAL) {
+						sf.setOrientation(SWT.HORIZONTAL);
+					}
+					break;
+				case Vertical:
+					if(sf.getOrientation() != SWT.VERTICAL) {
+						sf.setOrientation(SWT.VERTICAL);
+					}
+					break;
+				default:
+					throw new IllegalArgumentException("don't know how to handle " + layout);
+				}
+			}
+		});
+	}
+	
 	void setStatus(final Image image, final String message) {
 		getSite().getShell().getDisplay().syncExec(new Runnable() {
 			@Override
@@ -408,29 +443,29 @@ public class ServerView extends ViewPart {
 			runner.setOut(new ConsolePrintStream(consolePanel.getConsole().out));
 			startAction.setEnabled(false);
 			stopAction.setEnabled(true);
-			updateAction.setEnabled(true);
+			autoUpAction.setEnabled(true);
 			purgeAction.setEnabled(true);
-			if(updateAction.isChecked()) {
+			if(autoUpAction.isChecked()) {
 				boolean b = isRunning();
 				migrateAction.setEnabled(b);
 				redoAction.setEnabled(b);
-				msyncAction.setEnabled(b);
+				autoMigAction.setEnabled(b);
 				RunnerService.unpauseUpdaters();
 			} else {
 				migrateAction.setEnabled(false);
 				redoAction.setEnabled(false);
-				msyncAction.setEnabled(false);
+				autoMigAction.setEnabled(false);
 				RunnerService.pauseUpdaters();
 			}
 		}
 	}
 
 	public void setAutoUpdate(boolean update) {
-		updateAction.setChecked(update);
+		autoUpAction.setChecked(update);
 		boolean b = isRunning() && update;
 		migrateAction.setEnabled(b);
 		redoAction.setEnabled(b);
-		msyncAction.setEnabled(b);
+		autoMigAction.setEnabled(b);
 		if(application != null) {
 			if(update) {
 				RunnerService.unpauseUpdaters();
@@ -441,7 +476,7 @@ public class ServerView extends ViewPart {
 	}
 	
 	public void setAutoMigrate(boolean auto) {
-		msyncAction.setChecked(auto);
+		autoMigAction.setChecked(auto);
 		if(application != null) {
 			if(auto) {
 				RunnerService.unpauseMigratorUpdaters();
@@ -457,11 +492,11 @@ public class ServerView extends ViewPart {
 			RunnerService.stop(application);
 			startAction.setEnabled(true);
 			stopAction.setEnabled(false);
-			updateAction.setEnabled(false);
+			autoUpAction.setEnabled(false);
 			migrateAction.setEnabled(false);
 			redoAction.setEnabled(false);
 			purgeAction.setEnabled(false);
-			msyncAction.setEnabled(false);
+			autoMigAction.setEnabled(false);
 			browserPanel.updateAppState(false);
 			RunnerService.addListener(runListener);
 		}

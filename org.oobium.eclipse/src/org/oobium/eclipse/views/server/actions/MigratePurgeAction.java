@@ -8,9 +8,9 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.MessageBox;
 import org.oobium.eclipse.OobiumPlugin;
 
-public class MigratePurge extends Action {
+public class MigratePurgeAction extends Action {
 
-	public MigratePurge() {
+	public MigratePurgeAction() {
 		super("Purge Database", AS_PUSH_BUTTON);
 		setToolTipText("Purge / Drop the Database");
 		setImageDescriptor(OobiumPlugin.getImageDescriptor("/icons/database_lightning.png"));

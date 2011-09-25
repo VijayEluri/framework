@@ -5,9 +5,9 @@ import static org.oobium.client.Client.client;
 import org.eclipse.jface.action.Action;
 import org.oobium.eclipse.OobiumPlugin;
 
-public class MigrateRedo extends Action {
+public class MigrateRedoAction extends Action {
 
-	public MigrateRedo() {
+	public MigrateRedoAction() {
 		super("Redo Migration", AS_PUSH_BUTTON);
 		setToolTipText("Redo the current migration (migrate down 1, and then back up 1)");
 		setImageDescriptor(OobiumPlugin.getImageDescriptor("/icons/database_refresh.png"));

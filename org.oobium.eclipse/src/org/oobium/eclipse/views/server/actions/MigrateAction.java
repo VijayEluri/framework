@@ -5,9 +5,9 @@ import static org.oobium.client.Client.client;
 import org.eclipse.jface.action.Action;
 import org.oobium.eclipse.OobiumPlugin;
 
-public class Migrate extends Action {
+public class MigrateAction extends Action {
 
-	public Migrate() {
+	public MigrateAction() {
 		super("Migrate", AS_PUSH_BUTTON);
 		setToolTipText("Migrate the database");
 		setImageDescriptor(OobiumPlugin.getImageDescriptor("/icons/database_go.png"));

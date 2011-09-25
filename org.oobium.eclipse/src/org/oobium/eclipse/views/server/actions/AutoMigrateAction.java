@@ -4,11 +4,11 @@ import org.eclipse.jface.action.Action;
 import org.oobium.eclipse.OobiumPlugin;
 import org.oobium.eclipse.views.server.ServerView;
 
-public class MigrateSync extends Action {
+public class AutoMigrateAction extends Action {
 
 	private ServerView view;
 	
-	public MigrateSync(ServerView view) {
+	public AutoMigrateAction(ServerView view) {
 		super("AutoMigrate", AS_CHECK_BOX);
 		setToolTipText("Link with migration changes to update the database automatically");
 		setImageDescriptor(OobiumPlugin.getImageDescriptor("/icons/database_synced.png"));
