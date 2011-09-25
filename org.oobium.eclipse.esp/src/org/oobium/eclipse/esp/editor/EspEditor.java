@@ -221,6 +221,7 @@ public class EspEditor extends TextEditor {
 		});
 		
 		IFile file = getEResource();
+		OobiumCore.editing(file, true);
 		if(OobiumCore.isEFile(file)) {
 			buildListener = new IResourceChangeListener() {
 				@Override
@@ -255,6 +256,7 @@ public class EspEditor extends TextEditor {
 	}
 
 	public void dispose() {
+		OobiumCore.editing(getEResource(), false);
 		if(buildListener != null) {
 			ResourcesPlugin.getWorkspace().removeResourceChangeListener(buildListener);
 		}

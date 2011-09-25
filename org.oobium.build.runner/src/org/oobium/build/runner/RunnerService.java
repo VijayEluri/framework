@@ -46,6 +46,14 @@ public class RunnerService extends AppService {
 		}
 	}
 
+	public static void editing(File project, File file, boolean editing) {
+		synchronized(instance.runners) {
+			for(Runner runner : instance.runners.values()) {
+				runner.editing(project, file, editing);
+			}
+		}
+	}
+	
 	public static RunnerService getInstance() {
 		return instance;
 	}
@@ -141,6 +149,14 @@ public class RunnerService extends AppService {
 		notifyListeners(event);
 	}
 	
+	public static void pauseMigratorUpdaters() {
+		synchronized(instance.runners) {
+			for(Runner runner : instance.runners.values()) {
+				runner.pauseMigratorUpdater();
+			}
+		}
+	}
+	
 	public static void pauseUpdaters() {
 		synchronized(instance.runners) {
 			for(Runner runner : instance.runners.values()) {
@@ -186,6 +202,14 @@ public class RunnerService extends AppService {
 				Websocket ws = instance.getRouter().getWebsocket(app.name);
 				runner.stop(ws);
 				notifyListeners(Type.Stop, app);
+			}
+		}
+	}
+
+	public static void unpauseMigratorUpdaters() {
+		synchronized(instance.runners) {
+			for(Runner runner : instance.runners.values()) {
+				runner.unpauseMigratorUpdater();
 			}
 		}
 	}

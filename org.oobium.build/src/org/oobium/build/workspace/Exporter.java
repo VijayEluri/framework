@@ -201,7 +201,7 @@ public class Exporter {
 					started1.add(bundle);
 				} else if(bundle.isService()) {
 					started2.add(bundle);
-				} else if(bundle.isApplication() || bundle.isMigration() || exportedStart.contains(bundle)) {
+				} else if(bundle.isApplication() || bundle.isMigrator() || exportedStart.contains(bundle)) {
 					started3.add(bundle);
 				} else {
 					// TODO modules no longer started... working well with changes to AppService initModTrackers

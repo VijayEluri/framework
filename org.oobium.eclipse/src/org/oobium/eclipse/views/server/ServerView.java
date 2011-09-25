@@ -118,6 +118,7 @@ public class ServerView extends ViewPart {
 						break;
 					case Started:
 						browserPanel.refreshPaths(true);
+						migrateAction.run();
 						break;
 					case Stop:
 						stop();
@@ -443,9 +444,9 @@ public class ServerView extends ViewPart {
 		msyncAction.setChecked(auto);
 		if(application != null) {
 			if(auto) {
-				// TODO
+				RunnerService.unpauseMigratorUpdaters();
 			} else {
-				// TODO
+				RunnerService.pauseMigratorUpdaters();
 			}
 		}
 	}

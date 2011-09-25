@@ -30,11 +30,6 @@ public class DerbyEmbeddedDatabase extends Database {
 	protected Map<String, Object> initProperties(Map<String, Object> properties) {
 		Map<String, Object> props = new HashMap<String, Object>(properties);
 
-		// default "memory" to true: derby is for testing unless otherwise specified
-		if(props.get("memory") == null) {
-			props.put("memory", true);
-		}
-
 		if(coerce(props.get("memory"), false)) {
 			if(props.get("database") == null) {
 				props.put("database", client);

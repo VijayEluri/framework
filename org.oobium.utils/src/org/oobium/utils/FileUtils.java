@@ -773,23 +773,30 @@ public class FileUtils {
 	
 	public static long getLastModified(File...files) {
 		if(files.length == 1) {
-			return getLastModified(files[0], 0);
+			return getLastModified(files[0], null, 0);
 		} else {
 			long lastModified = 0;
 			for(File file : files) {
-				lastModified = Math.max(lastModified, getLastModified(file, lastModified));
+				lastModified = Math.max(lastModified, getLastModified(file, null, lastModified));
 			}
 			return lastModified;
 		}
 	}
 
-	private static long getLastModified(File file, long lastModified) {
+	private static long getLastModified(File file, File[] skip, long lastModified) {
 		if(file.isDirectory()) {
 			File[] files = file.listFiles();
 			for(File f : files) {
-				lastModified = getLastModified(f, lastModified);
+				lastModified = getLastModified(f, skip, lastModified);
 			}
 		} else {
+			if(skip != null) {
+				for(File f : skip) {
+					if(f.equals(file)) {
+						return lastModified;
+					}
+				}
+			}
 			lastModified = Math.max(file.lastModified(), lastModified);
 		}
 		return lastModified;
@@ -807,7 +814,7 @@ public class FileUtils {
 		if(file.isDirectory()) {
 			File[] files = file.listFiles();
 			for(File f : files) {
-				lastModified = getLastModified(f, lastModified);
+				lastModified = getLastModified(f, null, lastModified);
 			}
 		} else {
 			boolean match = file.getName().endsWith(endsWith);
@@ -816,6 +823,10 @@ public class FileUtils {
 			}
 		}
 		return lastModified;
+	}
+
+	public static long getLastModifiedExcluding(File folder, File...exclude) {
+		return getLastModified(folder, exclude, 0);
 	}
 	
 	public static boolean javaFileExists(String path, String canonicalClassName) {

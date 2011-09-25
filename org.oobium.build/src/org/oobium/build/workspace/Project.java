@@ -652,9 +652,9 @@ public class Project implements Comparable<Project> {
 	}
 
 	/**
-	 * @return true if this is a Oobium Migration.
+	 * @return true if this is a Oobium Migrator.
 	 */
-	public boolean isMigration() {
+	public boolean isMigrator() {
 		return type == Type.Migrator;
 	}
 

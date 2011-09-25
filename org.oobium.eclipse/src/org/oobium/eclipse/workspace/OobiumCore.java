@@ -45,6 +45,7 @@ import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
 import org.oobium.build.esp.ESourceFile;
 import org.oobium.build.esp.EspDom;
+import org.oobium.build.runner.RunnerService;
 import org.oobium.build.workspace.Application;
 import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Module;
@@ -62,6 +63,14 @@ public class OobiumCore {
 	private static final Logger logger = LogProvider.getLogger(OobiumPlugin.class);
 	private static final Map<String, String> formatterOptions = createFormatterOptions();
 	private static final OobiumCore instance = new OobiumCore();
+
+	public static void editing(IFile ifile, boolean editing) {
+		if(isEFile(ifile)) {
+			File project = new File(ifile.getProject().getLocationURI().getPath());
+			File file = new File(ifile.getLocationURI().getPath());
+			RunnerService.editing(project, file, editing);
+		}
+	}
 	
 	public static void generateAssetList(IProject project, IProgressMonitor monitor) {
 		logger.debug("generating asset list");

@@ -208,6 +208,7 @@ public class ProjectGenerator {
 	}
 	
 	private static void createApplicationConfigFile(File project, boolean webservice) {
+		String name = underscored(project.getName()).replace('.', '_');
 		StringBuilder sb = new StringBuilder();
 
 		sb.append("({\n");
@@ -215,25 +216,40 @@ public class ProjectGenerator {
 		if(!webservice) {
 			sb.append("cache:   \"org.oobium.cache.file\",\n");
 		}
-		sb.append("persist: \"org.oobium.persist.db.derby.embedded\",\n");
 		sb.append('\n');
 		sb.append("dev: {\n");
 		sb.append("\thost: \"localhost\",\n");
 		sb.append("\tport: 5000,\n");
+		sb.append("\tpersist: {\n");
+		sb.append("\t\tservice: \"org.oobium.persist.db.derby.embedded\",\n");
+		sb.append("\t\tmemory:  true\n");
+		sb.append("\t},\n");
 		sb.append("\tmodules: [\n");
-		sb.append("\t\t\"org.oobium.app.dev_0.6.0\",\n");
-		sb.append("\t\t\"org.oobium.manager_0.6.0\"\n");
+		sb.append("\t\t\"org.oobium.manager_0.6.0\",\n");
+		sb.append("\t\t\"org.oobium.app.dev_0.6.0\"\n");
 		sb.append("\t],\n");
 		sb.append("},\n");
 		sb.append('\n');
 		sb.append("test: {\n");
 		sb.append("\thost: \"localhost\",\n");
 		sb.append("\tport: 5001,\n");
+		sb.append("\tpersist: {\n");
+		sb.append("\t\tservice:  \"org.oobium.persist.db.mysql\",\n");
+		sb.append("\t\tdatabase: \"" + name + "_test\",\n");
+		sb.append("\t\tusername: \"root\",\n");
+		sb.append("\t\tpassword: \"\"\n");
+		sb.append("\t},\n");
 		sb.append("},\n");
 		sb.append('\n');
 		sb.append("prod: {\n");
 		sb.append("\thost: \"my.domain.com\",\n");
 		sb.append("\tport: 80,\n");
+		sb.append("\tpersist: {\n");
+		sb.append("\t\tservice:  \"org.oobium.persist.db.mysql\",\n");
+		sb.append("\t\tdatabase: \"" + name + "\",\n");
+		sb.append("\t\tusername: \"root\",\n");
+		sb.append("\t\tpassword: \"\"\n");
+		sb.append("\t},\n");
 		sb.append("}\n");
 		sb.append('\n');
 		sb.append("});");

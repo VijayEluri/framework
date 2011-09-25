@@ -22,7 +22,7 @@ public class MigrationsCommand extends BuilderCommand {
 		Bundle[] bundles = getWorkspace().getBundles();
 		Arrays.sort(bundles);
 		for(Bundle bundle : bundles) {
-			if(bundle.isMigration()) {
+			if(bundle.isMigrator()) {
 				console.out.println(bundle.name, "set project " + bundle.name);
 			}
 		}

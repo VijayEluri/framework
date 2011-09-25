@@ -54,6 +54,12 @@ public class Runner {
 		startString = "(INFO)  " + application.name + ": Application " + application.getName() + " started";
 	}
 
+	public void editing(File project, File file, boolean editing) {
+		if(updater != null) {
+			updater.editing(project, file, editing);
+		}
+	}
+	
 	public Application getApplication() {
 		return application;
 	}
@@ -76,6 +82,12 @@ public class Runner {
 	
 	public boolean isRunning() {
 		return process != null;
+	}
+	
+	public void pauseMigratorUpdater() {
+		if(updater != null) {
+			updater.paused(true, true);
+		}
 	}
 	
 	public void pauseUpdater() {
@@ -223,6 +235,12 @@ public class Runner {
 	public void unpauseUpdater() {
 		if(updater != null) {
 			updater.paused(false);
+		}
+	}
+
+	public void unpauseMigratorUpdater() {
+		if(updater != null) {
+			updater.paused(false, true);
 		}
 	}
 

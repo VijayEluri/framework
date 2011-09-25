@@ -511,7 +511,7 @@ public class ConsoleView extends ViewPart {
 				if(project != null) {
 					if(project.isApplication()) {
 						setApplication(file);
-					} else if(project.isMigration()) {
+					} else if(project.isMigrator()) {
 						Migrator migrator = (Migrator) project;
 						Module module = OobiumPlugin.getWorkspace().getModule(migrator.moduleName);
 						if(module != null && module.isApplication()) {
