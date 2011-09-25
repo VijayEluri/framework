@@ -35,7 +35,10 @@ public class WebsocketServerHandler extends SimpleChannelUpstreamHandler {
 		this.controllerClass = upgrade.controllerClass;
 		this.params = upgrade.params;
 
-		websocket = new Websocket(this, (String) params.get("id"), upgrade.group);
+		String id = (params == null) ? null : String.valueOf(params.get("id"));
+		String gp = upgrade.group;
+		
+		websocket = new Websocket(this, id, gp);
 		router.registerWebsocket(websocket);
 
 		WebsocketController controller = getController(request);
