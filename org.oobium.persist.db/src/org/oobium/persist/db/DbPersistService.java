@@ -536,8 +536,12 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 						for(String key : reference.getPropertyKeys()) {
 							properties.put(key, reference.getProperty(key));
 						}
-						addDatabase(clientName, properties);
-						return clientName;
+						try {
+							addDatabase(clientName, properties);
+							return clientName;
+						} catch(Exception e) {
+							logger.warn("failed to add data: {} - {}", clientName, e.getLocalizedMessage());
+						}
 					}
 				}
 				return null;
