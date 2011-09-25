@@ -17,15 +17,19 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.oobium.app.server.Websocket;
 import org.oobium.build.runner.RunEvent.Type;
 import org.oobium.build.workspace.Application;
 import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Exporter;
 import org.oobium.build.workspace.Workspace;
+import org.oobium.logging.LogProvider;
+import org.oobium.logging.Logger;
 import org.oobium.utils.Config.Mode;
 
 public class Runner {
 
+	private final Logger logger;
 	private final Workspace workspace;
 	private final Application application;
 	private final Mode mode;
@@ -39,6 +43,7 @@ public class Runner {
 	String startString;
 	
 	Runner(Workspace workspace, Application application, Mode mode, Map<String, String> properties) {
+		this.logger = LogProvider.getLogger(RunnerService.class);
 		this.workspace = workspace;
 		this.application = application;
 		this.mode = mode;
@@ -146,7 +151,16 @@ public class Runner {
 		return true;
 	}
 	
-	public void stop() {
+	public void stop(Websocket socket) {
+		if(socket == null) {
+			stop(true);
+		} else {
+			socket.write("shutdown");
+			stop(false);
+		}
+	}
+	
+	private void stop(boolean now) {
 		if(process != null) {
 			Runtime.getRuntime().removeShutdownHook(shutdownHook);
 			shutdownHook = null;
@@ -154,25 +168,58 @@ public class Runner {
 			updater.cancel();
 			updater = null;
 			
-			Process p = process;
+			final Process p = process;
 			process = null;
-			
-			try {
-				p.destroy();
-			} finally {
-				try {
-					p.getErrorStream().close();
-				} catch(IOException e) { /*discard*/ }
-				try {
-					p.getInputStream().close();
-				} catch(IOException e) { /*discard*/ }
-				try {
-					p.getOutputStream().close();
-				} catch(IOException e) { /*discard*/ }
+
+			if(now) {
+				terminate(p, -1);
+			} else {
+				new Thread("stopper") {
+					public void run() {
+						int exitValue = -1;
+						for(int i = 0; i < 100; i++) { // 1/100 second intervals
+							try {
+								logger.debug("waiting for exit: {}", i);
+								exitValue = p.exitValue();
+								break;
+							} catch(IllegalThreadStateException e) {
+								try {
+									Thread.sleep(100);
+								} catch(InterruptedException e1) {
+									// discard
+								}
+							}
+						}
+						terminate(p, exitValue);
+					};
+				}.start();
 			}
 		}
 	}
 
+	private void terminate(Process process, int exitValue) {
+		try {
+			if(exitValue == -1) {
+				logger.info("terminating process");
+				process.destroy();
+				// TODO implement a check and display exitValue?
+			}
+			String msg = "process terminated (" + exitValue + ")";
+			outGobbler.println(msg);
+			logger.info(msg);
+		} finally {
+			try {
+				process.getErrorStream().close();
+			} catch(IOException e) { /*discard*/ }
+			try {
+				process.getInputStream().close();
+			} catch(IOException e) { /*discard*/ }
+			try {
+				process.getOutputStream().close();
+			} catch(IOException e) { /*discard*/ }
+		}
+	}
+	
 	public void unpauseUpdater() {
 		if(updater != null) {
 			updater.paused(false);

@@ -4,6 +4,7 @@ import static org.oobium.utils.coercion.TypeCoercer.coerce;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -19,6 +20,8 @@ import org.oobium.utils.FileUtils;
 
 public class DerbyEmbeddedDatabase extends Database {
 
+	private boolean memoryDbCreated;
+	
 	public DerbyEmbeddedDatabase(String client, Map<String, Object> properties) {
 		super(client, properties);
 	}
@@ -26,25 +29,24 @@ public class DerbyEmbeddedDatabase extends Database {
 	@Override
 	protected Map<String, Object> initProperties(Map<String, Object> properties) {
 		Map<String, Object> props = new HashMap<String, Object>(properties);
-		
-		if(coerce(properties.get("memory"), boolean .class)) {
+
+		// default "memory" to true: derby is for testing unless otherwise specified
+		if(props.get("memory") == null) {
+			props.put("memory", true);
+		}
+
+		if(coerce(props.get("memory"), false)) {
 			if(props.get("database") == null) {
 				props.put("database", client);
 			}
+			if(coerce(props.get("backup"), false)) {
+				// only valid for an in-memory DB (needs another name...)
+				String location = getCanonicalPath(null);
+				props.put("location", location);
+				logger.debug("backup location: {}", location);
+			}
 		} else {
-			Object o = properties.get("database");
-			if(!(o instanceof String)) {
-				o = ".." + File.separator + "data" + File.separator + client;
-			}
-			File file = new File((String) o);
-			if(!file.isAbsolute()) {
-				file = new File(System.getProperty("user.dir"), (String) o);
-			}
-			try {
-				props.put("database", file.getCanonicalPath());
-			} catch(IOException e) {
-				logger.error(e);
-			}
+			props.put("database", getCanonicalPath(properties.get("database")));
 		}
 
 		if(props.get("username") == null) {
@@ -59,20 +61,29 @@ public class DerbyEmbeddedDatabase extends Database {
 	@Override
 	protected ConnectionPoolDataSource createDataSource() {
 		EmbeddedConnectionPoolDataSource ds = new EmbeddedConnectionPoolDataSource();
+		String databaseName;
 		if(inMemory()) {
-			ds.setDatabaseName("memory:" + properties.get("database"));
+			StringBuilder sb = new StringBuilder();
+			sb.append("memory:").append(properties.get("database"));
+			if(wantsBackup()) {
+				File file = new File((String) properties.get("location"));
+				if(file.exists()) {
+					Object location = properties.get("location");
+					logger.debug("restoring database from: {}", location);
+					sb.append(";createFrom=").append(location).append(';');
+					memoryDbCreated = true;
+				}
+			}
+			databaseName = sb.toString();
 		} else {
-			ds.setDatabaseName((String) properties.get("database"));
+			databaseName = (String) properties.get("database");
 		}
+		ds.setDatabaseName(databaseName);
 		ds.setUser((String) properties.get("username"));
 		ds.setPassword((String) properties.get("password"));
 		return ds;
 	}
 
-	public boolean inMemory() {
-		return coerce(properties.get("memory"), false);
-	}
-	
 	@Override
 	protected void createDatabase() throws SQLException {
         try {
@@ -81,21 +92,32 @@ public class DerbyEmbeddedDatabase extends Database {
 			logger.error(e);
 		}
 
-		String database = (String) properties.get("database");
-		
 		StringBuilder sb = new StringBuilder();
 		sb.append("jdbc:derby:");
 		if(inMemory()) {
+			memoryDbCreated = true;
 			sb.append("memory:");
+			sb.append(properties.get("database"));
+			if(wantsBackup()) {
+				File file = new File((String) properties.get("location"));
+				if(file.exists()) {
+					Object location = properties.get("location");
+					logger.debug("restoring database from: {}", location);
+					sb.append(";createFrom=").append(location).append(';');
+				} else {
+					sb.append(";create=true;");
+				}
+			} else {
+				sb.append(";create=true;");
+			}
+		} else {
+			sb.append(properties.get("database"));
+			sb.append(";create=true;");
 		}
-		sb.append(database);
-		sb.append(";create=true;");
 		sb.append("user=\"").append(properties.get("username")).append("\";password=\"").append(properties.get("password")).append('"');
 
 		String dbURL = sb.toString();
-		if(logger.isLoggingDebug()) {
-			logger.debug("create connection: " + dbURL);
-		}
+		logger.debug("create connection: {}", dbURL);
 		
     	Connection connection = DriverManager.getConnection(dbURL);
         Statement s = connection.createStatement();
@@ -122,7 +144,16 @@ public class DerbyEmbeddedDatabase extends Database {
 
 	@Override
 	protected void dropDatabase() throws SQLException {
+		memoryDbCreated = false;
 		if(inMemory()) {
+			if(wantsBackup()) {
+				File file = new File((String) properties.get("location"));
+				if(file.exists()) {
+					logger.debug("removing backup at: {}", file); // TODO not really a backup...
+					FileUtils.delete(file);
+				}
+			}
+
 			StringBuilder sb = new StringBuilder();
 			sb.append("jdbc:derby:memory:");
 			sb.append(properties.get("database"));
@@ -130,9 +161,7 @@ public class DerbyEmbeddedDatabase extends Database {
 			sb.append("user=\"").append(properties.get("username")).append("\";password=\"").append(properties.get("password")).append('"');
 
 			String dbURL = sb.toString();
-			if(logger.isLoggingDebug()) {
-				logger.debug("drop database: " + dbURL);
-			}
+			logger.debug("drop database: {}", dbURL);
 
 			try {
 				DriverManager.getConnection(dbURL);
@@ -143,9 +172,7 @@ public class DerbyEmbeddedDatabase extends Database {
 			}
 		} else {
 			File db = new File(File.separator + properties.get("database"));
-			if(logger.isLoggingDebug()) {
-				logger.debug("drop database: " + db);
-			}
+			logger.debug("drop database: {}", db);
 			dispose();
 			if(db.exists()) {
 				FileUtils.delete(db);
@@ -165,4 +192,58 @@ public class DerbyEmbeddedDatabase extends Database {
 		}
 	}
 
+	@Override
+	protected void preRemove() {
+		if(memoryDbCreated && wantsBackup()) {
+			File location = new File((String) properties.get("location"));
+			logger.debug("backing up database to: {}", location);
+			Connection connection = null;
+			CallableStatement statement = null;
+			try {
+				connection = getConnection();
+				statement = connection.prepareCall("CALL SYSCS_UTIL.SYSCS_BACKUP_DATABASE(?)");
+				statement.setString(1, location.getParent());
+				statement.execute();
+				logger.debug("database backed up");
+			} catch(SQLException e) {
+				logger.warn("failed to backup database: {}", e, e.getLocalizedMessage());
+			} finally {
+				if(statement != null) {
+					try {
+						statement.close();
+					} catch(SQLException e) { /* discard */ }
+				}
+				if(connection != null) {
+					try {
+						connection.close();
+					} catch(SQLException e) { /* discard */ }
+				}
+			}
+		}
+	}
+	
+	public boolean inMemory() {
+		return coerce(properties.get("memory"), false);
+	}
+	
+	private String getCanonicalPath(Object o) {
+		if(!(o instanceof String)) {
+			o = ".." + File.separator + "data" + File.separator + client;
+		}
+		File file = new File((String) o);
+		if(!file.isAbsolute()) {
+			file = new File(System.getProperty("user.dir"), (String) o);
+		}
+		try {
+			return file.getCanonicalPath();
+		} catch(IOException e) {
+			logger.error(e);
+		}
+		return null;
+	}
+
+	private boolean wantsBackup() {
+		return coerce(properties.get("backup"), false) && (properties.get("location") != null);
+	}
+	
 }

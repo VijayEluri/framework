@@ -13,6 +13,7 @@ package org.oobium.eclipse;
 import static org.eclipse.ui.IWorkbenchPage.VIEW_ACTIVATE;
 import static org.oobium.build.workspace.Workspace.BUNDLE_REPOS;
 import static org.oobium.build.workspace.Workspace.WORKING_DIR;
+import static org.oobium.utils.coercion.TypeCoercer.coerce;
 
 import java.io.File;
 import java.util.Map;
@@ -29,8 +30,8 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
+import org.oobium.build.console.Eclipse;
 import org.oobium.build.runner.RunEvent;
-import org.oobium.build.runner.RunEvent.Type;
 import org.oobium.build.runner.RunListener;
 import org.oobium.build.runner.RunnerService;
 import org.oobium.build.workspace.Bundle;
@@ -224,7 +225,20 @@ public class OobiumPlugin extends AbstractUIPlugin {
 		RunnerService.addListener(new RunListener() {
 			@Override
 			public void handleEvent(final RunEvent event) {
-				if(event.type == Type.Start) {
+				switch(event.type) {
+				case Open:
+					Display.getDefault().asyncExec(new Runnable() {
+						@Override
+						public void run() {
+							try {
+								Eclipse.openType(event.getMessage(), coerce(event.getDetails(), int.class));
+							} catch(Exception e) {
+								logger.warn(e);
+							}
+						}
+					});
+					break;
+				case Start:
 					Display.getDefault().asyncExec(new Runnable() {
 						@Override
 						public void run() {
@@ -236,6 +250,7 @@ public class OobiumPlugin extends AbstractUIPlugin {
 							}
 						}
 					});
+					break;
 				}
 			}
 		});

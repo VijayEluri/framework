@@ -15,6 +15,9 @@ import static org.oobium.app.http.Action.destroy;
 import static org.oobium.app.http.Action.show;
 import static org.oobium.app.http.Action.showAll;
 import static org.oobium.app.http.Action.update;
+import static org.oobium.utils.json.JsonUtils.toJson;
+import static org.oobium.utils.literal.Map;
+import static org.oobium.utils.literal.e;
 
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame;
 import org.oobium.app.AppService;
@@ -27,7 +30,8 @@ import org.oobium.manager.controllers.BundleController;
 import org.oobium.manager.models.Bundle;
 import org.oobium.utils.Config;
 import org.osgi.framework.BundleContext;
-
+import org.osgi.framework.BundleException;
+;
 public class ManagerService extends AppService {
 
 	public static BundleContext context() {
@@ -58,11 +62,11 @@ public class ManagerService extends AppService {
 		router.add("refresh").asRoute(POST, BundleController.class);
 	}
 
-	private static Websocket websocket;
+	private Websocket websocket;
 	
-	public static void send(String eventName, String message) {
+	public void send(String eventName, Object data, Object error) {
 		if(websocket != null) {
-			websocket.send(eventName + ":" + message);
+			websocket.send(toJson(Map(e("event", eventName), e("data", data), e("error", error))));
 		}
 	}
 	
@@ -78,7 +82,20 @@ public class ManagerService extends AppService {
 		websocket = Websockets.connect(System.getProperty("org.oobium.manager.url"), new WebsocketListener() {
 			@Override
 			public void onMessage(Websocket websocket, WebSocketFrame frame) {
-				// TODO
+				String message = frame.getTextData();
+				if("shutdown".equals(message)) {
+					logger.info("shutdown signal received");
+					new Thread("system shutdown") {
+						public void run() {
+							try {
+								logger.info("shutting down...");
+								context.getBundle(0).stop();
+							} catch(BundleException e) {
+								logger.warn(e);
+							}
+						};
+					}.start();
+				}
 			}
 			@Override
 			public void onError(Websocket websocket, Throwable t) {
@@ -90,14 +107,16 @@ public class ManagerService extends AppService {
 			}
 			@Override
 			public void onConnect(Websocket websocket) {
-				logger.info("manager websocket has disconnected");
+				logger.info("manager websocket has connected");
 			}
 		});
 	}
 
 	@Override
 	protected void teardown() {
-		websocket.disconnect();
+		if(websocket != null) {
+			websocket.disconnect();
+		}
 	}
 	
 }

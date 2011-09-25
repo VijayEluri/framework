@@ -22,8 +22,6 @@ import org.oobium.persist.db.DbServiceInfo;
 
 public class DerbyEmbeddedPersistService extends DbPersistService {
 
-	
-	
 	public DerbyEmbeddedPersistService() {
 		super();
 	}
@@ -34,6 +32,7 @@ public class DerbyEmbeddedPersistService extends DbPersistService {
 							{
 								put("database", database);
 								put("memory", inMemory);
+								put("backup", false);
 							}
 						});
 	}
@@ -76,5 +75,5 @@ public class DerbyEmbeddedPersistService extends DbPersistService {
 	public ServiceInfo getInfo() {
 		return new DbServiceInfo(this);
 	}
-
+	
 }

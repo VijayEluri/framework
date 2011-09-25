@@ -15,12 +15,13 @@ import org.oobium.build.workspace.Bundle;
 
 public class RunEvent {
 
-	public enum Type { Start, Started, Stop, Update, Updated, Error }
+	public enum Type { Open, Start, Started, Stop, Stopped, Update, Updated, Error, Warning }
 	
 	public final Type type;
 	public final Application application;
 	public final Bundle[] bundles;
 	private String message;
+	private Object details;
 	
 	public RunEvent(Type type, Application app, Bundle...bundles) {
 		this.type = type;
@@ -28,8 +29,16 @@ public class RunEvent {
 		this.bundles = bundles;
 	}
 
+	public Object getDetails() {
+		return details;
+	}
+	
 	public String getMessage() {
 		return message;
+	}
+
+	void setDetails(Object details) {
+		this.details = details;
 	}
 	
 	void setMessage(String message) {

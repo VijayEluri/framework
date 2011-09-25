@@ -66,6 +66,10 @@ public abstract class Database {
 		return connectionPool.getDataSource();
 	}
 
+	protected void preRemove() {
+		// subclasses to implement
+	}
+	
 	@Override
 	public int hashCode() {
 		return getDatabaseIdentifier().hashCode();

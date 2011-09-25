@@ -10,12 +10,13 @@
  ******************************************************************************/
 package org.oobium.manager.controllers.workers;
 
-import static org.oobium.manager.controllers.BundleController.createEvent;
+import static org.oobium.utils.literal.Map;
+import static org.oobium.utils.literal.e;
 
+import org.oobium.app.AppService;
 import org.oobium.app.workers.Worker;
 import org.oobium.manager.ManagerService;
 import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 
 public abstract class BundleWorker extends Worker {
@@ -36,24 +37,25 @@ public abstract class BundleWorker extends Worker {
 	
 	@Override
 	protected void run() {
-		BundleContext context = ManagerService.context();
+		ManagerService manager = AppService.getActivator(ManagerService.class);
 		for(int i = 0; i < ids.length; i++) {
 			long id = ids[i];
-			Bundle bundle = context.getBundle(id);
+			Bundle bundle = manager.getContext().getBundle(id);
 			if(bundle == null) {
-				createEvent(getEventName(), names, ids, "bundle does not exist for id: " + id);
+				manager.send(getEventName(), Map(e("names", names), e("ids", ids)), "bundle does not exist for id: " + id);
 				return;
 			} else {
 				// TODO verify the name is still the same?
 				try {
 					run(i, bundle);
 				} catch(BundleException e) {
-					createEvent(getEventName(), names, ids, e.getLocalizedMessage());
+					manager.send(getEventName(), Map(e("names", names), e("ids", ids)), e.getLocalizedMessage());
 					return;
 				}
 			}
 		}
-		createEvent(getEventName(), names, ids, null);
+		
+		manager.send(getEventName(), Map(e("names", names), e("ids", ids)), null);
 	}
 
 	protected abstract void run(int i, Bundle bundle) throws BundleException;

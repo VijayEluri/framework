@@ -90,7 +90,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 	}
 	
 	public void applyHeaders(Request request, Response response) {
-		if(request.isHome()) {
+		if(response != null && request.isHome()) {
 			if(apiHeader != null) {
 				response.setApiLocation(apiHeader);
 			}

@@ -28,10 +28,13 @@ import org.oobium.build.workspace.Application;
 import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.Workspace;
+import org.oobium.logging.LogProvider;
+import org.oobium.logging.Logger;
 import org.oobium.utils.FileUtils;
 
 class UpdaterThread extends Thread {
 
+	private final Logger logger;
 	private final Workspace workspace;
 	private final Application application;
 	private final String domain;
@@ -43,13 +46,14 @@ class UpdaterThread extends Thread {
 	private volatile boolean running;
 	private volatile boolean paused;
 
-	private Object waitLock;
+	private final Object waitLock;
 	private Map<Bundle, Set<File>> waitFor;
 	
 
 	UpdaterThread(Workspace workspace, Application application, List<Bundle> bundles) {
 		super(application + " updater");
 		setDaemon(true);
+		this.logger = LogProvider.getLogger(RunnerService.class);
 		this.waitLock = new Object();
 		this.workspace = workspace;
 		this.application = application;
@@ -59,7 +63,7 @@ class UpdaterThread extends Thread {
 		this.exported = new HashMap<Bundle, Bundle>();
 		this.bundles.put(application, getLastModified(application));
 		for(Bundle bundle : bundles) {
-			System.out.println(bundle);
+			logger.debug("updater monitoring: {}", bundle);
 			this.bundles.put(bundle, getLastModified(bundle));
 		}
 	}

@@ -14,7 +14,6 @@ Import-Package: org.jboss.netty.handler.codec.http,
  org.oobium.app.response,
  org.oobium.app.routing,
  org.oobium.app.views,
- org.oobium.events.models,
  org.oobium.logging,
  org.oobium.manager,
  org.oobium.persist,
@@ -23,7 +22,6 @@ Import-Package: org.jboss.netty.handler.codec.http,
  org.osgi.framework;version="1.4.0"
 Bundle-Activator: org.oobium.app.dev.AppDevActivator
 Export-Package: org.oobium.app.dev,
- org.oobium.app.dev.views.application,
  org.oobium.app.dev.views.persist_services
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

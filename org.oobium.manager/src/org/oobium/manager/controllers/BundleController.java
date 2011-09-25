@@ -11,7 +11,6 @@
 package org.oobium.manager.controllers;
 
 import static org.oobium.utils.StringUtils.blank;
-import static org.oobium.utils.json.JsonUtils.toJson;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,23 +35,6 @@ import org.osgi.service.packageadmin.PackageAdmin;
 
 public class BundleController extends HttpController {
 
-	public static void createEvent(String eventName, String[] names, long[] ids, String error) {
-		Map<String, Object> map = new HashMap<String, Object>();
-		if(error == null) {
-			map.put("status", "success");
-		} else {
-			map.put("status", "failed");
-			map.put("message", error);
-		}
-		map.put("name", names);
-		if(ids != null) {
-			map.put("id", ids);
-		}
-		ManagerService.send(eventName, toJson(map));
-//		Event.create(ManagerService.class, eventName, toJson(map));
-	}
-
-	
 	@Override // POST/URL/[models]
 	public void create() throws Exception {
 		String location = param("location");

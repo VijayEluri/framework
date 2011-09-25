@@ -62,7 +62,11 @@ public class AppServer implements BundleActivator {
 				disposeServer();
 			}
 		};
-		Runtime.getRuntime().addShutdownHook(shutdownHook);
+		try {
+			Runtime.getRuntime().addShutdownHook(shutdownHook);
+		} catch(IllegalStateException e) {
+			// discard - virtual machine is shutting down (yes, this can happen...)
+		}
 	}
 
 	private void removeShutdownHook() {
@@ -112,7 +116,21 @@ public class AppServer implements BundleActivator {
 			ChannelGroupFuture future = channelGroup.close();
 			future.awaitUninterruptibly();
 
-			server.releaseExternalResources();
+			final ServerBootstrap tmp = server;
+			server = null;
+			new Thread() {
+				public void run() {
+					// TODO doesn't this indicate an arch problem?
+					//        we shouldn't be calling this in a Netty thread anyway!
+					try {
+						tmp.releaseExternalResources();
+					} catch(Throwable t) {
+						if(logger != null) {
+							logger.trace(t);
+						}
+					}
+				};
+			}.start();
 			
 			server = null;
 			channelGroup = null;

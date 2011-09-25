@@ -28,8 +28,8 @@ import org.oobium.utils.SqlUtils;
 
 public class BaseDbTestCase {
 
-//	protected final int dbType = SqlUtils.DERBY;
-	protected final int dbType = SqlUtils.MYSQL;
+	protected final int dbType = SqlUtils.DERBY;
+//	protected final int dbType = SqlUtils.MYSQL;
 //	protected final int dbType = SqlUtils.POSTGRESQL;
 
 	protected static final Logger logger = LogProvider.getLogger(DbPersistService.class);

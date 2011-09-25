@@ -10,16 +10,14 @@
  ******************************************************************************/
 package org.oobium.manager.controllers.workers;
 
-import static org.oobium.manager.controllers.BundleController.createEvent;
-
 import java.util.ArrayList;
 import java.util.List;
 
+import org.oobium.app.AppService;
 import org.oobium.app.workers.Worker;
 import org.oobium.manager.ManagerService;
 import org.oobium.utils.json.JsonUtils;
 import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 
 public class InstallWorker extends Worker {
@@ -34,15 +32,15 @@ public class InstallWorker extends Worker {
 	protected void run() {
 		List<Bundle> bundles = new ArrayList<Bundle>();
 		String[] locations = JsonUtils.toStringList(location).toArray(new String[0]);
-		BundleContext context = ManagerService.context();
+		ManagerService manager = AppService.getActivator(ManagerService.class);
 		try {
 			for(String location : locations) {
-				Bundle bundle = context.installBundle(location);
+				Bundle bundle = manager.getContext().installBundle(location);
 				bundles.add(bundle);
 			}
-			createEvent("installed", locations, null, null);
+			manager.send("installed", locations, null);
 		} catch(BundleException e) {
-			createEvent("installed", locations, null, e.getLocalizedMessage());
+			manager.send("installed", locations, e.getLocalizedMessage());
 		}
 	}
 	

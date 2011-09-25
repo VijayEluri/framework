@@ -433,13 +433,34 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		expireCache();
 	}
 	
+	private void doRemoveDatabase(String client) {
+		Database database = databases.get(client);
+		if(database != null) {
+			try {
+				database.preRemove();
+				database.dispose();
+				databases.remove(client);
+				logger.info("removed Database for {}", database.client);
+			} catch(Exception e) {
+				logger.warn("error removing Database for {}", e, database.client);
+			}
+		}
+	}
+	
 	private void removeDatabase(String client) {
 		lock.writeLock().lock();
 		try {
-			Database db = databases.remove(client);
-			if(db != null) {
-				db.dispose();
-				logger.info("removed Database for {}", client);
+			doRemoveDatabase(client);
+		} finally {
+			lock.writeLock().unlock();
+		}
+	}
+	
+	private void removeDatabases() {
+		lock.writeLock().lock();
+		try {
+			for(String client : databases.keySet()) {
+				doRemoveDatabase(client);
 			}
 		} finally {
 			lock.writeLock().unlock();
@@ -543,6 +564,7 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	public void stop(BundleContext context) throws Exception {
 		appTracker.close();
 		appTracker = null;
+		removeDatabases();
 		this.context = null;
 		logger.info("PersistService stopped");
 		logger.setTag(null);

@@ -24,6 +24,8 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.jdt.core.IClassFile;
+import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
@@ -31,16 +33,19 @@ import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
+import org.eclipse.jdt.internal.ui.javaeditor.EditorUtility;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.texteditor.AbstractDecoratedTextEditor;
+import org.eclipse.ui.texteditor.ITextEditor;
 import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
 import org.oobium.utils.FileUtils;
@@ -179,13 +184,18 @@ public class Eclipse {
 			if(file != null) {
 				String relativeName = file.getAbsolutePath().substring(folder.getAbsolutePath().length());
 				IFile ifile = project.getFile(relativeName);
-				open(ifile, line);
+				open(ifile, null, line);
 				return;
 			}
 		}
 	}
 
 	public static void openType(String type, final int line) {
+		if(type.contains("$")) {
+			// handles inner classes
+			type = type.substring(0, type.indexOf('$'));
+		}
+		
 		SearchPattern pattern = SearchPattern.createPattern(type, IJavaSearchConstants.TYPE, IJavaSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH);
 		IJavaSearchScope scope = SearchEngine.createWorkspaceScope();
 		
@@ -199,9 +209,23 @@ public class Eclipse {
 					Display.getDefault().syncExec(new Runnable() {
 						@Override
 						public void run() {
-							open(file, line);
+							open(file, null, line);
 						}
 					});
+				} else {
+					Object element = match.getElement();
+					if(element instanceof IType) {
+						IType itype = (IType) element;
+						Object parent = itype.getParent();
+						if(parent instanceof IFile) {
+							open(parent, null, line);
+						}
+						if(parent instanceof IClassFile) {
+							// TODO is there a better way to do this?
+							IEditorInput input = EditorUtility.getEditorInput(itype.getParent());
+							open(input, "org.eclipse.jdt.ui.ClassFileEditor", line);
+						}
+					}
 				}
 			}
 		};
@@ -214,18 +238,27 @@ public class Eclipse {
 		}
 	}
 	
-	private static void open(IFile file, int line) {
+	private static void open(Object input, String editorId, int line) {
 		try {
 			IWorkbenchWindow window = PlatformUI.getWorkbench().getWorkbenchWindows()[0];
-		    IEditorPart editor = IDE.openEditor(window.getActivePage(), file, true);
-		    if(editor instanceof AbstractDecoratedTextEditor) {
-			    AbstractDecoratedTextEditor ed = (AbstractDecoratedTextEditor) editor;
+		    IEditorPart editor;
+		    if(input instanceof IFile) {
+		    	editor = IDE.openEditor(window.getActivePage(), (IFile) input, true);
+		    }
+		    else if(input instanceof IEditorInput) {
+		    	editor = IDE.openEditor(window.getActivePage(), (IEditorInput) input, editorId, true);
+		    }
+		    else {
+		    	throw new IllegalArgumentException("can't open editor on " + input);
+		    }
+		    if(editor instanceof ITextEditor) {
+			    ITextEditor ed = (ITextEditor) editor;
 			    IDocument doc = ed.getDocumentProvider().getDocument(ed.getEditorInput());
 			    try {
 					int offset = doc.getLineOffset(line - 1);
 					ed.selectAndReveal(offset, 0);
 				} catch(BadLocationException e) {
-					e.printStackTrace();
+					System.err.println("line " + line + " not found in " + input);
 				}
 		    }
 			editor.setFocus();

@@ -52,6 +52,10 @@ public abstract class WebsocketController implements IParams {
 		this.websocket = websocket;
 	}
 
+	public String getId() {
+		return websocket.getId();
+	}
+	
 	@Override
 	public Object getParam(String name) {
 		return websocket.getParam(name);

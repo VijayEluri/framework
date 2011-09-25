@@ -19,8 +19,9 @@ public class Websocket implements IParams {
 	String id;
 	String group;
 	
-	Websocket(WebsocketServerHandler handler, String group) {
+	Websocket(WebsocketServerHandler handler, String id, String group) {
 		this.handler = handler;
+		this.id = id;
 		this.group = group;
 	}
 

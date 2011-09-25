@@ -5,7 +5,8 @@ Bundle-SymbolicName: org.oobium.build.console;singleton:=true
 Bundle-Version: 0.6.0.qualifier
 Bundle-Vendor: oobium.org
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Import-Package: org.oobium.app,
+Import-Package: org.eclipse.jdt.internal.ui.javaeditor,
+ org.oobium.app,
  org.oobium.app.http,
  org.oobium.build,
  org.oobium.build.clients,

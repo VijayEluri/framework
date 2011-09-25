@@ -21,6 +21,7 @@ import java.util.Map;
 import org.oobium.app.AppService;
 import org.oobium.app.persist.MemoryPersistService;
 import org.oobium.app.routing.AppRouter;
+import org.oobium.app.server.Websocket;
 import org.oobium.build.runner.RunEvent.Type;
 import org.oobium.build.workspace.Application;
 import org.oobium.build.workspace.Bundle;
@@ -133,6 +134,13 @@ public class RunnerService extends AppService {
 		notifyListeners(event);
 	}
 	
+	static void notifyListeners(Type type, Application app, String message, Object details) {
+		RunEvent event = new RunEvent(type, app);
+		event.setMessage(message);
+		event.setDetails(details);
+		notifyListeners(event);
+	}
+	
 	public static void pauseUpdaters() {
 		synchronized(instance.runners) {
 			for(Runner runner : instance.runners.values()) {
@@ -174,8 +182,9 @@ public class RunnerService extends AppService {
 		synchronized(instance.runners) {
 			Runner runner = instance.runners.remove(app);
 			if(runner != null) {
-				instance.apps.remove(app.getName());
-				runner.stop();
+				instance.apps.remove(app.name);
+				Websocket ws = instance.getRouter().getWebsocket(app.name);
+				runner.stop(ws);
 				notifyListeners(Type.Stop, app);
 			}
 		}
@@ -204,7 +213,7 @@ public class RunnerService extends AppService {
 
 	@Override
 	public void addRoutes(Config config, AppRouter router) {
-		router.addWebsocket("/tether/{application:[\\w\\.]+}", RunnerController.class);
+		router.addWebsocket("/tether/{id:[\\w\\.]+}", RunnerController.class);
 	}
 	
 }

@@ -15,6 +15,7 @@ import static org.oobium.utils.literal.Dictionary;
 
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -393,7 +394,14 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 
 	protected final void initializeModulesTracker(final Config config) throws Exception {
 		List<String> modules = config.getModules();
-		if(!modules.isEmpty()) {
+		for(Iterator<String> iter = modules.iterator(); iter.hasNext(); ) {
+			if(blank(iter.next())) {
+				iter.remove();
+			}
+		}
+		if(modules.isEmpty()) {
+			logger.info("no modules configured - moduleTracker not started");
+		} else {
 			BundleContext context = getContext();
 			if(context == null) {
 				logger.info("no context - moduleTracker not started");
@@ -418,6 +426,20 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 				});
 				moduleTracker.open();
 				logger.info("moduleTracker started {" + StringUtils.asString(modules) + "}");
+				
+				// TODO experimental... but working well with changes to exporter...
+				for(String module : modules) {
+					int ix = module.lastIndexOf('_');
+					String name = (ix == -1) ? module : module.substring(0, ix);
+					for(Bundle bundle : context.getBundles()) {
+						if(name.equals(bundle.getSymbolicName())) {
+							if(bundle.getState() != Bundle.ACTIVE) {
+								// TODO handle errors
+								bundle.start();
+							}
+						}
+					}
+				}
 			}
 		}
 	}

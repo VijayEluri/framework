@@ -36,6 +36,24 @@ public class StreamGobbler extends Thread {
 		start();
 		return this;
 	}
+
+	public void print(Object o) {
+		if(outputStream != null) {
+			outputStream.print(o);
+		}
+	}
+	
+	public void println() {
+		if(outputStream != null) {
+			outputStream.println();
+		}
+	}
+	
+	public void println(Object o) {
+		if(outputStream != null) {
+			outputStream.println(o);
+		}
+	}
 	
 	@Override
 	public void run() {
@@ -50,6 +68,9 @@ public class StreamGobbler extends Thread {
 				if(error) {
 					if(line.contains("(ERROR)")) {
 						RunnerService.notifyListeners(Type.Error, runner.getApplication(), line);
+					}
+					else if(line.contains("(WARN)")) {
+						RunnerService.notifyListeners(Type.Warning, runner.getApplication(), line);
 					}
 				} else {
 					if(!appStarted || !serverStarted) {

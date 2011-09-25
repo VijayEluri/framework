@@ -10,10 +10,13 @@
  ******************************************************************************/
 package org.oobium.manager.controllers;
 
-import static org.oobium.manager.controllers.BundleController.createEvent;
+import static org.oobium.utils.literal.Map;
+import static org.oobium.utils.literal.e;
 import static org.osgi.framework.FrameworkEvent.ERROR;
 import static org.osgi.framework.FrameworkEvent.PACKAGES_REFRESHED;
 
+import org.oobium.app.AppService;
+import org.oobium.manager.ManagerService;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkEvent;
 import org.osgi.framework.FrameworkListener;
@@ -34,11 +37,14 @@ public class RefreshListener implements FrameworkListener {
 	
 	@Override
 	public void frameworkEvent(FrameworkEvent event) {
-		int type = event.getType();
-		if(type == PACKAGES_REFRESHED) {
-			createEvent("refreshed", names, ids, null);
-		} else if(type == ERROR) {
-			createEvent("refreshed", names, ids, event.getThrowable().getLocalizedMessage());
+		ManagerService manager = AppService.getActivator(ManagerService.class);
+		switch(event.getType()) {
+		case PACKAGES_REFRESHED:
+			manager.send("refreshed", Map(e("names", names), e("ids", ids)), null);
+			break;
+		case ERROR:
+			manager.send("refreshed", Map(e("names", names), e("ids", ids)), event.getThrowable().getLocalizedMessage());
+			break;
 		}
 	}
 	

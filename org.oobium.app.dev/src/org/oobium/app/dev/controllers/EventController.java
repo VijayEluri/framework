@@ -10,20 +10,26 @@
  ******************************************************************************/
 package org.oobium.app.dev.controllers;
 
+import static org.oobium.utils.literal.*;
+import static org.oobium.utils.StringUtils.*;
+
 import org.oobium.app.AppService;
 import org.oobium.app.controllers.HttpController;
-import org.oobium.app.dev.AppDevActivator;
-import org.oobium.events.models.Event;
 import org.oobium.manager.ManagerService;
-import org.oobium.utils.json.JsonUtils;
 
-public class NotifyController extends HttpController {
+public class EventController extends HttpController {
 
+	public enum EventType { OpenType }
+	
 	@Override
 	public void handleRequest() throws Exception {
-		AppService app = AppService.getActivator(ManagerService.class);
-		Event.create(app, AppDevActivator.ID, "openType", JsonUtils.toJson(params()));
-		renderOK();
+		switch(EventType.valueOf(camelCase(param("eventType")))) {
+		case OpenType:
+			ManagerService manager = AppService.getActivator(ManagerService.class);
+			manager.send("open", Map(e("type", param("type")), e("line", param("line", int.class))), null);
+			renderOK();
+			break;
+		}
 	}
 	
 }

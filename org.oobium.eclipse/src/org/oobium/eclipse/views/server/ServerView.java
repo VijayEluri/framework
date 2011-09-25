@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IStatusLineManager;
@@ -105,14 +106,10 @@ public class ServerView extends ViewPart {
 				if(event.application == application) {
 					switch(event.type) {
 					case Error:
-						String message = event.getMessage();
-						if(message.contains("(ERROR)")) {
-							int ix = message.indexOf("(ERROR)");
-							ix = message.indexOf(':', ix);
-							message = message.substring(ix+1).trim();
-						}
-						Status status = new Status(Status.ERROR, applicationName, message);
-						StatusManager.getManager().handle(status, StatusManager.SHOW);
+						StatusManager.getManager().handle(getStatus(event), StatusManager.SHOW);
+						break;
+					case Warning:
+						StatusManager.getManager().handle(getStatus(event), StatusManager.SHOW);
 						break;
 					case Start:
 						properties = JsonUtils.toJson(RunnerService.getRunner(application).getProperties());
@@ -134,7 +131,7 @@ public class ServerView extends ViewPart {
 			}
 		});
 	}
-	
+
 	private void createActions() {
 		clearAction = new ClearAction(consolePanel.getConsole());
 		scrollLockAction = new ScrollLockAction(consolePanel.getConsole());
@@ -232,6 +229,30 @@ public class ServerView extends ViewPart {
 			return RunnerService.getPaths(application);
 		}
 		return new ArrayList<String>(0);
+	}
+	
+	private IStatus getStatus(RunEvent event) {
+		int severity = IStatus.OK;
+		String message = event.getMessage();
+		Throwable throwable = null;
+		int ix = -1;
+		switch(event.type) {
+		case Error:
+			severity = IStatus.ERROR;
+			ix = message.indexOf("(ERROR)");
+			throwable = new Throwable(message);
+			break;
+		case Warning:
+			severity = IStatus.WARNING;
+			ix = message.indexOf("(WARN)");
+			throwable = new Throwable(message);
+			break;
+		}
+		if(ix != -1) {
+			ix = message.indexOf(':', ix);
+			message = message.substring(ix+1).trim();
+		}
+		return new Status(severity, applicationName, message, throwable);
 	}
 	
 	private void hookContextMenu() {
@@ -441,7 +462,6 @@ public class ServerView extends ViewPart {
 			purgeAction.setEnabled(false);
 			msyncAction.setEnabled(false);
 			browserPanel.updateAppState(false);
-			consolePanel.getConsole().out.println(application + " stopped");
 			RunnerService.addListener(runListener);
 		}
 	}
