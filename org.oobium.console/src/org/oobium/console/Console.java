@@ -188,16 +188,11 @@ public class Console extends Composite {
 	public Console(Composite parent, int style) {
 		super(parent, style);
 		
+		executor = Executors.newFixedThreadPool(1);
+
 		readOnly = (style & SWT.READ_ONLY) != 0;
 
-		if(readOnly) {
-			executor = null;
-			in = null;
-		} else {
-			executor = Executors.newFixedThreadPool(1);
-			in = new ConsoleReader();
-		}
-		
+		in = readOnly ? null : new ConsoleReader();
 		out = new ConsoleWriter(this);
 		err = new ConsoleErrorWriter(this);
 		

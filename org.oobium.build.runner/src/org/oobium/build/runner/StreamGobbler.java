@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.util.regex.Pattern;
 
 import org.oobium.build.runner.RunEvent.Type;
 
@@ -55,6 +56,8 @@ public class StreamGobbler extends Thread {
 		}
 	}
 	
+	private static final Pattern p = Pattern.compile("(\\t)at (([\\.\\w\\$]+)\\.\\w+)\\(([\\.\\w]+:(\\d+))\\)");
+
 	@Override
 	public void run() {
 		boolean serverStarted = false;
@@ -71,6 +74,9 @@ public class StreamGobbler extends Thread {
 					}
 					else if(line.contains("(WARN)")) {
 						RunnerService.notifyListeners(Type.Warning, runner.getApplication(), line);
+					}
+					else {
+						line = p.matcher(line).replaceFirst("$1at $2(<a href=\"open type $3 line:$5\">$4</a>)");
 					}
 				} else {
 					if(!appStarted || !serverStarted) {

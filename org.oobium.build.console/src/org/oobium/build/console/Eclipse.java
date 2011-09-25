@@ -206,7 +206,7 @@ public class Eclipse {
 				if(resource instanceof IFile) {
 					final IFile file = (IFile) match.getResource();
 					logger.debug(String.valueOf(match));
-					Display.getDefault().syncExec(new Runnable() {
+					Display.getDefault().asyncExec(new Runnable() {
 						@Override
 						public void run() {
 							open(file, null, line);
@@ -215,16 +215,21 @@ public class Eclipse {
 				} else {
 					Object element = match.getElement();
 					if(element instanceof IType) {
-						IType itype = (IType) element;
-						Object parent = itype.getParent();
-						if(parent instanceof IFile) {
-							open(parent, null, line);
-						}
-						if(parent instanceof IClassFile) {
-							// TODO is there a better way to do this?
-							IEditorInput input = EditorUtility.getEditorInput(itype.getParent());
-							open(input, "org.eclipse.jdt.ui.ClassFileEditor", line);
-						}
+						final IType itype = (IType) element;
+						Display.getDefault().asyncExec(new Runnable() {
+							@Override
+							public void run() {
+								Object parent = itype.getParent();
+								if(parent instanceof IFile) {
+									open(parent, null, line);
+								}
+								if(parent instanceof IClassFile) {
+									// TODO is there a better way to do this?
+									IEditorInput input = EditorUtility.getEditorInput(itype.getParent());
+									open(input, "org.eclipse.jdt.ui.ClassFileEditor", line);
+								}
+							}
+						});
 					}
 				}
 			}

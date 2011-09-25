@@ -19,6 +19,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
+import org.oobium.build.console.BuilderRootCommand;
 import org.oobium.console.Console;
 import org.oobium.console.ConsolePage;
 import org.oobium.eclipse.OobiumPlugin;
@@ -42,6 +43,7 @@ public class ConsolePanel extends Composite {
 		setLayout(layout);
 
 		consolePage = new ConsolePage(this, SWT.READ_ONLY);
+		consolePage.getConsole().setRootCommand(new BuilderRootCommand(OobiumPlugin.getWorkspace()));
 		consolePage.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
 
 		Listener listener = new Listener() {

@@ -11,6 +11,7 @@
 package org.oobium.build.console.commands.open;
 
 import org.oobium.build.console.BuilderCommand;
+import org.oobium.build.console.Eclipse;
 
 public class TypeCommand extends BuilderCommand {
 
@@ -22,8 +23,7 @@ public class TypeCommand extends BuilderCommand {
 	
 	@Override
 	public void run() {
-		console.err.println("not yet implemented");
-//		BuilderConsoleActivator.sendOpenType(param(0), (paramCount() > 1) ? param(1) : null);
+		Eclipse.openType(param(0), hasParam("line") ? param("line", int.class) : 0);
 	}
 
 }
