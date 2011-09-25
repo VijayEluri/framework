@@ -35,6 +35,7 @@ import java.util.concurrent.Future;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.dnd.Clipboard;
+import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.TextTransfer;
 import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.dnd.TransferData;
@@ -377,6 +378,7 @@ public class Console extends Composite {
 				setCommand(null);
 			}
 			buffer.clear();
+			clearSelection();
 			updateScrollBars();
 			canvas.redraw();
 		}
@@ -1135,11 +1137,18 @@ public class Console extends Composite {
 					def.notifyListeners(SWT.Selection, e, seg);
 				}
 			}
-		} else if(e.button == 2) {
-			String data = getSelectionText();
-			if(!blank(data)) {
-				commandInsert(data);
-				canvas.redraw();
+		}
+		else if(e.button == 2) {
+			Clipboard cb = new Clipboard(getDisplay());
+			TextTransfer tt = TextTransfer.getInstance();
+			try {
+				String data = (String) cb.getContents(tt, DND.SELECTION_CLIPBOARD);
+				if(!blank(data)) {
+					commandInsert(data);
+					canvas.redraw();
+				}
+			} finally {
+				cb.dispose();
 			}
 		}
 	}
@@ -1732,6 +1741,8 @@ public class Console extends Composite {
 		selection.x1 = selection.y1 = 0;
 		selection.x2 = buffer.getLastLength() + command.length();
 		selection.y2 = buffer.size() - 1;
+		setSelectionClipboard(getSelectionText());
+		canvas.redraw();
 	}
 	
 	@Override
@@ -1812,6 +1823,8 @@ public class Console extends Composite {
 	public void setCommandSelection(int start, int end) {
 		commandSel.x = max(start, 0);
 		commandSel.y = max(end, 0) - commandSel.x;
+		setSelectionClipboard(getCommandSelectionText());
+		canvas.redraw();
 	}
 
 	public void setCommandSelection(Point selection) {
@@ -1917,6 +1930,7 @@ public class Console extends Composite {
 			}
 			total++; // line ending
 		}
+		setSelectionClipboard(getSelectionText());
 		canvas.redraw();
 	}
 
@@ -1955,6 +1969,7 @@ public class Console extends Composite {
 					commandSel.y = -((commandSel.x - cx) + incStart(string, cx));
 				}
 			}
+			setSelectionClipboard(getCommandSelectionText());
 		} else {
 			commandSel.y = 0;
 			if(down.y < current.y || (down.y == current.y && down.x < current.x)) {
@@ -1971,6 +1986,19 @@ public class Console extends Composite {
 			if(wholeWordSel) {
 				selection.x1 -= incStart(buffer.get(selection.y1).sequence(), selection.x1);
 				selection.x2 += incEnd(buffer.get(selection.y2).sequence(), selection.x2);
+			}
+			setSelectionClipboard(getSelectionText());
+		}
+	}
+	
+	private void setSelectionClipboard(String text) {
+		if(!blank(text)) {
+			Clipboard cb = new Clipboard(getDisplay());
+			TextTransfer tt = TextTransfer.getInstance();
+			try {
+				cb.setContents(new Object[] { text }, new Transfer[] { tt }, DND.SELECTION_CLIPBOARD);
+			} finally {
+				cb.dispose();
 			}
 		}
 	}
