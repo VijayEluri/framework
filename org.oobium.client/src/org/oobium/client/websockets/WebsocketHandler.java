@@ -79,6 +79,11 @@ public class WebsocketHandler extends SimpleChannelUpstreamHandler {
     }
 
     ChannelFuture disconnect() {
+    	socket.state = State.Closing;
+    	if(channel == null) {
+    		// when disconnect is called before channelConnected
+    		return null;
+    	}
     	return channel.close();
     }
     
