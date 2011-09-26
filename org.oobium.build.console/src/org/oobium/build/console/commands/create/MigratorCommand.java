@@ -12,9 +12,11 @@ package org.oobium.build.console.commands.create;
 
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.Eclipse;
+import org.oobium.build.workspace.Application;
 import org.oobium.build.workspace.Migrator;
 import org.oobium.build.workspace.Module;
 import org.oobium.utils.FileUtils;
+import org.oobium.utils.Config.Mode;
 
 public class MigratorCommand extends BuilderCommand {
 
@@ -52,6 +54,9 @@ public class MigratorCommand extends BuilderCommand {
 		try {
 			migrator = getWorkspace().createMigrator(module);
 			if(migrator != null) {
+				if(module instanceof Application) {
+					((Application) module).createInitialMigration(getWorkspace(), Mode.PROD);
+				}
 				console.out.println("successfully created migrator: " + migrator.name);
 				if(isNew) {
 					Eclipse.importProject(migrator.name, migrator.file);
