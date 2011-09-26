@@ -1075,7 +1075,12 @@ public class Router {
 			if(websocketsById == null) {
 				websocketsById = new HashMap<String, Websocket>();
 			}
-			websocketsById.put(id, socket);
+			Websocket ws = websocketsById.put(id, socket);
+			if(ws != null) {
+				unregisterWebsocket(ws);
+				websocketsById.put(id, socket); // unregister will have remove it
+				ws.disconnect();
+			}
 		}
 
 		String group = socket.getGroup();
