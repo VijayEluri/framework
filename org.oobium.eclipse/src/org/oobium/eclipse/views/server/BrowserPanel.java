@@ -199,14 +199,15 @@ public class BrowserPanel extends Composite {
 				if(addHistory) {
 					if(history.length == 0) {
 						historyPosition = 0;
-						history = new String[1];
-						history[0] = url;
-					} else if(!url.equals(history[historyPosition])){
-						if(historyPosition == history.length-1) {
+						history = new String[] { url };
+					}
+					else {
+						String current = history[historyPosition];
+						if(!url.equals(current)) {
 							historyPosition++;
 							history = Arrays.copyOf(history, historyPosition+1);
+							history[historyPosition] = url;
 						}
-						history[historyPosition] = url;
 					}
 				}
 			}
