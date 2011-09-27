@@ -536,6 +536,11 @@ public class Bundle extends Project {
 		return true;
 	}
 
+	/**
+	 * Add the given packageName to the list of imported packages for this bundle.
+	 * @param packageName the name of the package to add
+	 * @return true if the package was added; false otherwise (such as if the package was already imported)
+	 */
 	public boolean addImportPackage(String packageName) {
 		String importStr = "Import-Package: ";
 		StringBuilder sb = readFile(manifest);

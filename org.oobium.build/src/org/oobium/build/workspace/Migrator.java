@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.jar.Manifest;
 import java.util.regex.Pattern;
 
+import org.oobium.persist.migrate.db.AbstractDbMigration;
 import org.oobium.utils.Config;
 import org.oobium.utils.FileUtils;
 import org.oobium.utils.Config.Mode;
@@ -132,14 +133,18 @@ public class Migrator extends Bundle {
 		sb.append("package " + packageName(migrations) + ";\n");
 		sb.append("\n");
 		sb.append("import java.sql.SQLException;\n");
-		sb.append("import org.oobium.persist.migrate.AbstractMigration;\n");
+		sb.append("import ").append(AbstractDbMigration.class.getCanonicalName()).append(";\n");
 		sb.append("\n");	
-		sb.append("public class ").append(name).append(" extends AbstractMigration {\n");
+		sb.append("public class ").append(name).append(" extends ").append(AbstractDbMigration.class.getSimpleName()).append(" {\n");
 		sb.append("\n");
 		sb.append("\t@Override\n");
 		sb.append("\tpublic void up() throws SQLException {\n");
 		if(sessions) {
-			sb.append("\t\tcreateSessions();\n");
+			sb.append("\t\tcreateTable(\"sessions\",\n");
+			sb.append("\t\t\tString(\"uuid\"),\n");
+			sb.append("\t\t\tText(\"data\"),\n");
+			sb.append("\t\t\tDate(\"expiration\")\n");
+			sb.append("\t\t);\n");
 		} else {
 			sb.append("\t\t// TODO auto-generated method\n");
 		}
@@ -148,7 +153,7 @@ public class Migrator extends Bundle {
 		sb.append("\t@Override\n");
 		sb.append("\tpublic void down() throws SQLException {\n");
 		if(sessions) {
-			sb.append("\t\tdropSessions();\n");
+			sb.append("\t\tdropTable(\"sessions\");\n");
 		} else {
 			sb.append("\t\t// TODO auto-generated method\n");
 		}

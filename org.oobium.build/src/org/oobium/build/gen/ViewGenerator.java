@@ -34,15 +34,7 @@ public class ViewGenerator {
 			path = path + ".esp";
 		}
 		
-		String simpleName = name.substring(name.lastIndexOf(File.separatorChar) + 1);
-		
-		StringBuilder sb = new StringBuilder();
-		sb.append("title ").append(simpleName).append(" Page\n\n");
-		if(content != null) {
-			sb.append(content);
-		}
-		
-		return writeFile(new File(folder, path), sb.toString());
+		return writeFile(new File(folder, path), content);
 	}
 	
 	public LinkedHashMap<String, PropertyDescriptor> properties;

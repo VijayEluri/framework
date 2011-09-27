@@ -44,6 +44,8 @@ public interface ISessions {
 	public abstract boolean hasSession();
 	
 	
+	public abstract Model getAuthenticated();
+	
 	public abstract <T extends Model> T getAuthenticated(Class<T> clazz);
 	
 	public abstract boolean isAuthenticated();

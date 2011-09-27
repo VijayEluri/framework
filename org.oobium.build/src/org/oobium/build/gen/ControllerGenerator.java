@@ -45,12 +45,32 @@ public class ControllerGenerator {
 		sigs[6] = Pattern.compile(".*(public\\s+void\\s+show\\().*", Pattern.DOTALL).matcher("");
 	}
 	
-	public static File createController(Module module, String name) {
+	public static File createController(Module module, String name, SourceFile sf) {
 		String controller = camelCase((name.endsWith("Controller")) ? name : (name + "Controller"));
 		String canonicalName = module.packageName(module.controllers) + "." + controller;
 		File appController = new File(module.controllers, "ApplicationController.java");
-		String src = generate(canonicalName, appController.isFile());
-		return writeFile(module.controllers, controller + ".java", src);
+
+		SourceFile src = (sf == null) ? new SourceFile() : sf;
+
+		src.packageName = packageName(canonicalName);
+		src.simpleName = simpleName(canonicalName);
+		if(appController.isFile()) {
+			src.superName = "ApplicationController";
+		} else {
+			src.superName = HttpController.class.getSimpleName();
+			src.imports.add(HttpController.class.getCanonicalName());
+		}
+
+		if(sf == null) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("@Override\n");
+			sb.append("public void handleRequest() throws Exception {\n");
+			sb.append("\t// TODO handle the request\n");
+			sb.append("}");
+			src.methods.put("show", sb.toString());
+		}
+		
+		return writeFile(module.controllers, controller + ".java", src.toSource());
 	}
 
 	public static String generate(Module module, ModelDefinition model) {
@@ -58,28 +78,6 @@ public class ControllerGenerator {
 		return gen.doGenerate();
 	}
  	
-	private static String generate(String canonicalName, boolean extendAppController) {
-		SourceFile src = new SourceFile();
-
-		src.packageName = packageName(canonicalName);
-		src.simpleName = simpleName(canonicalName);
-		if(extendAppController) {
-			src.superName = "ApplicationController";
-		} else {
-			src.superName = HttpController.class.getSimpleName();
-			src.imports.add(HttpController.class.getCanonicalName());
-		}
-		
-		StringBuilder sb = new StringBuilder();
-		sb.append("@Override\n");
-		sb.append("public void handleRequest() throws Exception {\n");
-		sb.append("\t// TODO handle the request\n");
-		sb.append("}");
-		src.methods.put("show", sb.toString());
-		
-		return src.toSource();
-	}
-
 	private final Module module;
 	private final ModelDefinition model;
 	private final boolean extendAppController;

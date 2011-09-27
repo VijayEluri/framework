@@ -485,6 +485,21 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	}
 	
 	@Override
+	public Model getAuthenticated() {
+		resolveSession(true);
+		String className = session.getData(AUTHENTICATED_BY_TYPE);
+		if(className != null && className.length() > 0) {
+			try {
+				Class<?> clazz = Class.forName(className);
+				return (Model) coerce(session.getData(AUTHENTICATED_BY), clazz);
+			} catch(ClassNotFoundException e) {
+				logger.warn("class type stored in session does not exist on classpath");
+			}
+		}
+		return null;
+	}
+	
+	@Override
 	public <T extends Model> T getAuthenticated(Class<T> clazz) {
 		if(clazz != null) {
 			resolveSession(true);

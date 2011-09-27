@@ -395,6 +395,38 @@ public class Module extends Bundle {
 		}
 	}
 	
+	/**
+	 * @param path
+	 * @param controller
+	 * @param action
+	 * @return true if there were changes made to Application.java; false otherwise
+	 */
+	public boolean addRoute(String path, File controller, Action action) {
+		String controllerName = getControllerName(controller);
+		
+		String oldsrc = FileUtils.readFile(activator).toString();
+		String newsrc = oldsrc;
+		
+		if(!Pattern.compile("router.addRoute\\s*\\(\\s*\"" + path + "\"\\s*,\\s*" + controllerName + ".class\\s*,\\s*" + action + "\\s*\\)\\s*;").matcher(newsrc).find()) {
+			newsrc = oldsrc.replaceFirst("public\\s+void\\s+addRoutes\\s*\\(\\s*Config\\s+config\\s*,\\s*(App)?Router\\s+router\\s*\\)\\s*\\{\\s*",
+											"public void addRoutes(Config config, $1Router router) {\n" +
+											"\t\t// auto-generated\n" +
+											"\t\trouter.addRoute(\"" + path + "\", " + controllerName + ".class, " + action + ");\n\n\t\t");
+		}
+		if(!Pattern.compile("import\\s+"+packageName(controller)+"."+controllerName).matcher(newsrc).find()) {
+			newsrc = newsrc.replaceFirst("(package\\s+[\\w\\.]+;)", "$1\n\nimport "+packageName(controller)+"."+controllerName+";");
+		}
+		if(!Pattern.compile("import\\s+static\\s+"+Action.class.getName()+"."+action.name()).matcher(newsrc).find()) {
+			newsrc = newsrc.replaceFirst("(package\\s+[\\w\\.]+;)", "$1\n\nimport static "+Action.class.getName()+"."+action.name()+";");
+		}
+
+		if(!newsrc.equals(oldsrc)) {
+			FileUtils.writeFile(activator, newsrc);
+			return true;
+		}
+		return false;
+	}
+
 	protected void addPersistDependency(Workspace workspace, Mode mode, Object obj, Map<Bundle, List<Bundle>> dependencies) {
 		if(!blank(obj)) {
 			if(obj instanceof String) {
@@ -417,11 +449,43 @@ public class Module extends Bundle {
 		}
 	}
 
-	private String adjust(String rawName) {
+	public boolean addViewRoute(File view) {
+		String name = view.getName();
+		name = name.substring(0, name.length() - 4);
+		
+		String oldsrc = FileUtils.readFile(activator).toString();
+		String newsrc = oldsrc;
+		
+		if(!Pattern.compile("router.addView\\s*\\(\\s*" + name + ".class\\s*\\)\\s*;").matcher(newsrc).find()) {
+			newsrc = oldsrc.replaceFirst("public\\s+void\\s+addRoutes\\s*\\(\\s*Config\\s+config\\s*,\\s*(App)?Router\\s+router\\s*\\)\\s*\\{\\s*",
+											"public void addRoutes(Config config, $1Router router) {\n" +
+											"\t\t// auto-generated\n" +
+											"\t\trouter.addView(" + name + ".class);\n\n\t\t");
+		}
+		if(!Pattern.compile("import\\s+"+packageName(view)+"."+name).matcher(newsrc).find()) {
+			newsrc = newsrc.replaceFirst("(package\\s+[\\w\\.]+;)", "$1\n\nimport "+packageName(view)+"."+name+";");
+		}
+
+		if(!newsrc.equals(oldsrc)) {
+			FileUtils.writeFile(activator, newsrc);
+			return true;
+		}
+		return false;
+	}
+	
+	/**
+	 * @param viewName
+	 * @return true if there were changes made to Application.java; false otherwise
+	 */
+	public boolean addViewRoute(String viewName) {
+		return addViewRoute(getView(viewName));
+	}
+
+	public String adjust(String rawName) {
 		return adjust(rawName, null);
 	}
 
-	private String adjust(String rawName, String nameEnding) {
+	public String adjust(String rawName, String nameEnding) {
 		String name = rawName;
 		
 		// strip extension
@@ -466,11 +530,19 @@ public class Module extends Bundle {
 	}
 	
 	public File createController(File controller) {
-		return createController(getControllerName(controller));
+		return createController(getControllerName(controller), null);
+	}
+	
+	public File createController(File controller, SourceFile sf) {
+		return createController(getControllerName(controller), sf);
 	}
 	
 	public File createController(String name) {
-		File controller = ControllerGenerator.createController(this, adjust(name, "Controller"));
+		return createController(name, null);
+	}
+	
+	public File createController(String name, SourceFile sf) {
+		File controller = ControllerGenerator.createController(this, adjust(name, "Controller"), sf);
 		addImportPackage(HttpController.class.getPackage().getName());
 		addExportPackage(packageName(controller));
 		return controller;
@@ -1346,7 +1418,7 @@ public class Module extends Bundle {
 		name = name.substring(models.getAbsolutePath().length() + 1, name.length() - 5);
 		return name;
 	}
-	
+
 	public String getModelType(File model) {
 		return packageName(model, true) + "." + getModelName(model);
 	}

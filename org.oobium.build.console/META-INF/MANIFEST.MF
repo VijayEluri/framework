@@ -8,6 +8,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: org.eclipse.jdt.internal.ui.javaeditor,
  org.oobium.app,
  org.oobium.app.http,
+ org.oobium.app.sessions,
  org.oobium.build,
  org.oobium.build.clients,
  org.oobium.build.clients.android,

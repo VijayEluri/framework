@@ -166,6 +166,11 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 	public String getActionName() {
 		return controller.getActionName();
 	}
+
+	@Override
+	public Model getAuthenticated() {
+		return controller.getAuthenticated();
+	}
 	
 	@Override
 	public <T extends Model> T getAuthenticated(Class<T> clazz) {
