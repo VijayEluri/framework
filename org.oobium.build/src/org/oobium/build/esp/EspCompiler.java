@@ -25,6 +25,7 @@ import static org.oobium.utils.StringUtils.plural;
 import static org.oobium.utils.StringUtils.titleize;
 import static org.oobium.utils.StringUtils.underscored;
 import static org.oobium.utils.StringUtils.varName;
+import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.utils.literal.Set;
 
 import java.util.ArrayList;
@@ -868,6 +869,92 @@ public class EspCompiler {
 		body.append(sbName).append(".append(\"</span>");
 		lastIsJava(body, false);
 	}
+	
+	private void buildDecimal(MarkupElement input) {
+		
+		// TODO incomplete - based on buildNumber - does not allow setting scale
+		
+		body.append("<input type=\\\"text\\\"");
+		if(input.hasArgs()) {
+			List<JavaSourcePart> fields = input.getArgs();
+			String model = getFormModel(input);
+			String modelName = getFormModelName(input);
+			if(!blank(modelName)) {
+				body.append(" id=");
+				int q1 = body.length();
+				if(input.hasId()) {
+					build(input.getId(), body);
+				} else if(input.hasEntry("id")) {
+					build(input.getEntry("id").getValue(), body);
+				} else {
+					appendFormFieldName(modelName, fields);
+				}
+				ensureQuotes(body, q1, true);
+				buildClasses(input, model, fields);
+				body.append(" name=");
+				q1 = body.length();
+				if(input.hasEntry("name")) {
+					build(input.getEntry("name").getValue(), body);
+				} else {
+					appendFormFieldName(modelName, fields);
+				}
+				ensureQuotes(body, q1, true);
+				if(input.hasEntry("value")) {
+					body.append(" value=");
+					q1 = body.length();
+					build(input.getEntry("value").getValue(), body);
+					ensureQuotes(body, q1, true);
+				} else {
+					body.append(" value=\\\"\").append(f(");
+					appendValueGetter(model, fields);
+					body.append(")).append(\"\\\"");
+				}
+				buildAttrs(input, "id", "name", "value", "onkeypress", "scale");
+			}
+		} else {
+			if(input.hasEntry("type")) {
+				body.append(" type=\\\"");
+				build(input.getEntry("type").getValue(), body);
+				body.append("\\\"");
+			}
+			buildId(input);
+			buildClasses(input);
+			buildAttrs(input, "type", "onkeypress", "scale");
+		}
+		
+		String js = "var k=window.event?event.keyCode:event.which;" +
+					"if(k==127||k<32){return true}" +
+					"if(k==46||(k>47&&k<58)){" +
+						"var ix=this.value.indexOf('.');" +
+						"if(ix==-1){return true}" +
+						"if(k!=46){" +
+							"if(document.selection && document.selection.createRange){var pos=document.selection.createRange().getBookmark().charCodeAt(2)-2;}" +
+							"else if(this.setSelectionRange){var pos=this.selectionStart;}" +
+							"if(pos<=ix||this.value.length<(ix+{scale}+1)){return true;}" +
+						"}" +
+					"}" +
+					"return false;";
+		
+		js = js.replace("{scale}", coerce(input.getEntryText("scale"), "2"));
+		
+		if(input.hasEntryValue("onkeypress")) {
+			JavaSourcePart part = (JavaSourcePart) input.getEntry("onkeypress").getValue();
+			if(part.isSimple()) {
+				String text = part.getText();
+				body.append(" onkeypress=\\\"").append(text.substring(1, text.length()-1));
+			} else {
+				body.append(" onkeypress=\\\"");
+				build(part, body);
+			}
+			if(body.charAt(body.length()-1) != ';') {
+				body.append(';');
+			}
+			body.append(js).append("\\\"");
+		} else {
+			body.append(" onkeypress=\\\"").append(js).append("\\\"");
+		}
+		body.append(" />");
+	}
 
 	private void buildElement(EspElement element) {
 		switch(element.getType()) {
@@ -1222,6 +1309,8 @@ public class EspCompiler {
 				buildImage(element);
 			} else if("number".equals(tag)) {
 				buildNumber(element);
+			} else if("decimal".equals(tag)) {
+				buildDecimal(element);
 			} else if("form".equals(tag)) {
 				buildForm(element);
 			} else if("fields".equals(tag)) {
@@ -1698,6 +1787,9 @@ public class EspCompiler {
 			buildClasses(input);
 			buildAttrs(input, "type", "onkeypress");
 		}
+		
+		String js = "var k=window.event?event.keyCode:event.which;return (k==127||k<32||(k>48&&k<58));";
+
 		if(input.hasEntryValue("onkeypress")) {
 			JavaSourcePart part = (JavaSourcePart) input.getEntry("onkeypress").getValue();
 			if(part.isSimple()) {
@@ -1710,9 +1802,9 @@ public class EspCompiler {
 			if(body.charAt(body.length()-1) != ';') {
 				body.append(';');
 			}
-			body.append("var k=window.event?event.keyCode:event.which;return !(k>31&&(k<48||k>57));\\\"");
+			body.append(js).append("\\\"");
 		} else {
-			body.append(" onkeypress=\\\"var k=window.event?event.keyCode:event.which;return !(k>31&&(k<48||k>57));\\\"");
+			body.append(" onkeypress=\\\"").append(js).append("\\\"");
 		}
 		body.append(" />");
 	}

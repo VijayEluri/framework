@@ -175,6 +175,7 @@ public class Constants {
 		HTML_TAGS.put("datagrid", "Specifies data in a tree-list (HTML 5)");
 		HTML_TAGS.put("datalist", "Specifies an \"autocomplete\" dropdown list (HTML 5)");
 		HTML_TAGS.put("dd", "Specifies a definition description");
+		HTML_TAGS.put("decimal", "Specifies an input that can only accept a decimal number (ESP)");
 		HTML_TAGS.put("del", "Specifies deleted text");
 		HTML_TAGS.put("details", "Specifies details of an element (HTML 5)");
 		HTML_TAGS.put("dialog", "Specifies a dialog (conversation) (HTML 5)");
@@ -268,7 +269,7 @@ public class Constants {
 		HTML_TAGS.put("submit", "Specifies an input of style: submit (ESP)");
 		HTML_TAGS.put("hidden", "Specifies a hidden form field (ESP)");
 		HTML_TAGS.put("text", "Specifies a multiline or single line text box (ESP)");
-		HTML_TAGS.put("number", "Specifies a multiline or single line text box that can only accept digits (ESP)");
+		HTML_TAGS.put("number", "Specifies an input of style: text, that can only accept digits (ESP)");
 		HTML_TAGS.put("options", "Specifies an option set belonging to a select element (ESP)");
 		HTML_TAGS.put("view", "Specifies a view of the given type (ESP)\nUsage: view<ViewName>(param1, param2, ...)");
 		HTML_TAGS.put("yield", "Yields rendering (ESP)\nUsage: yield - will yield rendering to the current view's child\n" +
