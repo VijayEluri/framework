@@ -78,6 +78,9 @@ public class ConstructorArg extends EspPart {
 				if(ca[vix] == '<') {
 					vix = closer(ca, vix, end, true);
 				}
+				if(vix == -1) {
+					vix = end;
+				}
 			}
 		}
 		
