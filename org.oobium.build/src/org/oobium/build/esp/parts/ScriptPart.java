@@ -22,6 +22,7 @@ public class ScriptPart extends EspPart {
 					}
 				} else if(ca[ix] == '/' && (ca[ix+1] == '*' || ca[ix+1] == '/')) {
 					CommentPart comment = new CommentPart(parent, ix);
+					end = ix-1;
 					ix = comment.getEnd();
 				}
 			}
