@@ -20,9 +20,8 @@ public class ScriptPart extends EspPart {
 					if(ix == -1) {
 						ix = end;
 					}
-				} else if(ca[ix] == '/' && (ca[ix+1] == '*' || ca[ix+1] == '/')) {
+				} else if(ca[ix] == '/' && (ix+1) < end && (ca[ix+1] == '*' || ca[ix+1] == '/')) {
 					CommentPart comment = new CommentPart(parent, ix);
-					end = ix-1;
 					ix = comment.getEnd();
 				}
 			}
@@ -37,7 +36,7 @@ public class ScriptPart extends EspPart {
 	private void parse() {
 		for(int s = start; s < end; s++) {
 			s = embeddedJavaCheck(this, ca, s, end);
-			s = commentCheck(parent, ca, s);
+			s = commentCheck(this, ca, s);
 		}
 	}
 

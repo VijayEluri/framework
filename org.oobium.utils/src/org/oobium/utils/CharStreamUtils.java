@@ -43,11 +43,14 @@ public class CharStreamUtils {
 	}
 
 	public static boolean isNext(char[] ca, int start, char...test) {
-		if(test.length == 0) {
+		if(start < 0 || start >= ca.length) {
 			return false;
 		}
-		for(int i = start, j = 0; i < ca.length && j < test.length; i++, j++) {
-			if(ca[i] != test[j]) {
+		if(test.length == 0 || (ca.length - start) < test.length) {
+			return false;
+		}
+		for(int i = 0; i < test.length; i++) {
+			if(ca[start+i] != test[i]) {
 				return false;
 			}
 		}

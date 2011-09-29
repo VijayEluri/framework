@@ -96,7 +96,7 @@ public class EspPart implements CharSequence {
 				if(ix == -1) {
 					ix = end;
 				}
-			} else if(ca[ix] == '/' && (ca[ix+1] == '*' || ca[ix+1] == '/')) {
+			} else if(ca[ix] == '/' && (ix+1) < ca.length && (ca[ix+1] == '*' || ca[ix+1] == '/')) {
 				CommentPart comment = new CommentPart(parent, ix);
 				ix = comment.getEnd();
 			}

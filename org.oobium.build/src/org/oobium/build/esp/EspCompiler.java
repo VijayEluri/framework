@@ -565,7 +565,24 @@ public class EspCompiler {
 						}
 					}
 				} else {
-					build(sub, sb);
+					int s1 = sub.getStart() - jpart.getStart();
+					int s2 = s1 + sub.getLength();
+					if(i == 0) {
+						if(s1 > 0) {
+							appendEscaped(sb, text, 0, s1);
+						}
+					} else {
+						int s0 = parts.get(i-1).getEnd() - jpart.getStart();
+						if(s0 < s1) {
+							appendEscaped(sb, text, s0, s1);
+						}
+					}
+					appendEscaped(sb, sub.getText());
+					if(i == parts.size() - 1) {
+						if(s2 < text.length()) {
+							appendEscaped(sb, text, s2, text.length());
+						}
+					}
 				}
 			}
 		}

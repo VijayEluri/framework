@@ -809,20 +809,20 @@ public class EspCompilerTests {
 	
 	@Test
 	public void testNumber() throws Exception {
-		assertEquals("__sb__.append(\"<input type=\\\"text\\\" onkeypress=\\\"var k=window.event?event.keyCode:event.which;return !(k>31&&(k<48||k>57));\\\" />\");",
+		assertEquals("__sb__.append(\"<input type=\\\"text\\\" onkeypress=\\\"var k=window.event?event.keyCode:event.which;return (k==127||k<32||(k>48&&k<58));\\\" />\");",
 				html("number"));
-		assertEquals("__sb__.append(\"<input type=\\\"text\\\" onkeypress=\\\"alert('hello');var k=window.event?event.keyCode:event.which;return !(k>31&&(k<48||k>57));\\\" />\");",
+		assertEquals("__sb__.append(\"<input type=\\\"text\\\" onkeypress=\\\"alert('hello');var k=window.event?event.keyCode:event.which;return (k==127||k<32||(k>48&&k<58));\\\" />\");",
 				html("number(onkeypress: \"alert('hello')\")"));
-		assertEquals("__sb__.append(\"<input type=\\\"text\\\" onkeypress=\\\"alert('hello');var k=window.event?event.keyCode:event.which;return !(k>31&&(k<48||k>57));\\\" />\");",
+		assertEquals("__sb__.append(\"<input type=\\\"text\\\" onkeypress=\\\"alert('hello');var k=window.event?event.keyCode:event.which;return (k==127||k<32||(k>48&&k<58));\\\" />\");",
 				html("number(onkeypress: \"alert('hello');\")"));
-		assertEquals("__sb__.append(\"<input type=\\\"text\\\" id=\\\"myField\\\" value=\\\"10\\\" onkeypress=\\\"var k=window.event?event.keyCode:event.which;return !(k>31&&(k<48||k>57));\\\" />\");",
+		assertEquals("__sb__.append(\"<input type=\\\"text\\\" id=\\\"myField\\\" value=\\\"10\\\" onkeypress=\\\"var k=window.event?event.keyCode:event.which;return (k==127||k<32||(k>48&&k<58));\\\" />\");",
 				html("number#myField(value:\"10\")"));
 		assertEquals("String formModelName$0 = \"member\";\n" +
 						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(f(member)).append(\"\\\" /><input type=\\\"text\\\" id=\\\"\").append(formModelName$0).append(\"[age]\\\"\");\n" +
 						"if(member.hasErrors(\"age\")) {\n" +
 						"\t__sb__.append(\" class=\\\"fieldWithErrors\\\"\");\n" +
 						"}\n" +
-						"__sb__.append(\" name=\\\"\").append(formModelName$0).append(\"[age]\\\" value=\\\"\").append(f(member.getAge())).append(\"\\\" onkeypress=\\\"var k=window.event?event.keyCode:event.which;return !(k>31&&(k<48||k>57));\\\" /></form>\");",
+						"__sb__.append(\" name=\\\"\").append(formModelName$0).append(\"[age]\\\" value=\\\"\").append(f(member.getAge())).append(\"\\\" onkeypress=\\\"var k=window.event?event.keyCode:event.which;return (k==127||k<32||(k>48&&k<58));\\\" /></form>\");",
 				html("form(member, create)\n\tnumber(\"age\")"));
 	}
 	

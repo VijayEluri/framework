@@ -278,6 +278,11 @@ public class EspStyleRanges {
 		switch(part.getType()) {
 		case TagPart:
 			return addRange(offset, part.getEnd()-offset, htmlTag);
+		case ScriptElement:
+			if(part.charAt(offset) == '\t' && part.charAt(offset-1) == '\n') {
+				addRange(offset, 1, level);
+			}
+			return offset + 1;
 		case ScriptPart:
 			EspPart next = part.getNextSubPart(offset);
 			int end = (next != null) ? next.getStart() : part.getEnd();
