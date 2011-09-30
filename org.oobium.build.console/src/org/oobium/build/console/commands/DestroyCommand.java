@@ -11,7 +11,7 @@
 package org.oobium.build.console.commands;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.commands.destroy.ActionCacheCommand;
+import org.oobium.build.console.commands.destroy.ControlerCacheCommand;
 import org.oobium.build.console.commands.destroy.ApplicationCommand;
 import org.oobium.build.console.commands.destroy.BundleCommand;
 import org.oobium.build.console.commands.destroy.ControllerCommand;
@@ -30,7 +30,7 @@ public class DestroyCommand extends BuilderCommand {
 
 	@Override
 	public void configure() {
-		add(new ActionCacheCommand());
+		add(new ControlerCacheCommand());
 		add(new ApplicationCommand());
 		add(new BundleCommand());
 		add(new ControllerCommand());

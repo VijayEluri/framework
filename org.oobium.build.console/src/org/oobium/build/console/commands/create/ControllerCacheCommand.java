@@ -12,12 +12,11 @@ package org.oobium.build.console.commands.create;
 
  import java.io.File;
 
-import org.oobium.app.http.Action;
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 
-public class ActionCacheCommand extends BuilderCommand {
+public class ControllerCacheCommand extends BuilderCommand {
 
 	@Override
 	public void configure() {
@@ -30,7 +29,7 @@ public class ActionCacheCommand extends BuilderCommand {
 		String modelName = param("model");
 		if(modelName == null) {
 			console.err.print("model parameter not given (");
-			console.out.print("help", "create action_cache help");
+			console.out.print("help", "create controller_cache help");
 			console.err.println(")");
 			return;
 		} else {
@@ -45,7 +44,7 @@ public class ActionCacheCommand extends BuilderCommand {
 					name = modelName;
 				}
 				name += "Cache";
-				File cache = module.getActionCache(name);
+				File cache = module.getControllerCache(name);
 				if(cache.exists()) {
 					String confirm = ask(name + " already exists. Overwrite?[Y/N] ");
 					if(!confirm.equalsIgnoreCase("Y")) {
@@ -54,30 +53,17 @@ public class ActionCacheCommand extends BuilderCommand {
 					}
 				}
 				try {
-					File file = module.createActionCache(name, modelName, getActions());
+					File file = module.createControllerCache(name, modelName);
 					Eclipse.refresh(module.file, cache);
 					
 					name = file.getName();
 					name = name.substring(0, name.length()-5);
-					console.out.println("created action cache <a href=\"open action_cache " + name + "\">" + name + "</a>");
+					console.out.println("created controller cache <a href=\"open controller_cache " + name + "\">" + name + "</a>");
 
 				} catch(IllegalArgumentException e) {
 					console.err.println(e.getLocalizedMessage());
 				}
 			}
-		}
-	}
-	
-	private Action[] getActions() {
-		if(hasParam("actions")) {
-			String[] sa = param("actions").split(",");
-			Action[] actions = new Action[sa.length];
-			for(int i = 0; i < sa.length; i++) {
-				actions[i] = Action.valueOf(sa[i]);
-			}
-			return actions;
-		} else {
-			return new Action[0];
 		}
 	}
 	

@@ -87,8 +87,6 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 	private int port;
 
 	private PersistServices persistServices;
-
-	private ServiceTracker cacheTracker;
 	private ServiceTracker moduleTracker;
 
 	private ServiceRegistration request404HandlerRegistration;
@@ -120,7 +118,7 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 
 			module.loadModels(modConfig);
 			module.loadObservers(modConfig);
-			module.loadActionCaches(this, modConfig);
+			module.loadControllerCaches(this, modConfig);
 			
 			if(module instanceof HttpRequest404Handler) {
 				request404HandlerRegistration.unregister();
@@ -167,7 +165,7 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		logger.info("configuring in {} mode", Mode.getSystemMode().name());
 		
 		Config config = loadConfiguration();
-		
+
 		port = config.getPort();
 		String[] hosts = config.getHosts();
 
@@ -189,7 +187,7 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 
 		loadModels(config);
 		loadObservers(config);
-		loadActionCaches(this, config);
+		loadControllerCaches(this, config);
 		setErrorViewClasses(config);
 
 		// register handlers
@@ -203,7 +201,6 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		registerServices(config);
 
 		// initialize trackers
-		initializeCacheTracker(config);
 		initializePersistServices(config);
 		initializeModulesTracker(config);
 		
@@ -212,11 +209,6 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 	}
 	
 	public final void stopApp() throws Exception {
-		if(cacheTracker != null) {
-			cacheTracker.close();
-			cacheTracker = null;
-		}
-		
 		if(persistServices != null) {
 			persistServices.close();
 			persistServices = null;
@@ -250,7 +242,11 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 	}
 
 	public CacheService getCacheService() {
-		return (cacheTracker != null) ? (CacheService) cacheTracker.getService() : null;
+		ServiceReference ref = context.getServiceReference(CacheService.class.getName());
+		if(ref != null) {
+			return (CacheService) context.getService(ref);
+		}
+		return null;
 	}
 
 	@Override
@@ -371,25 +367,6 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		}
 		logger.debug("end handleRequest");
 		return null;
-	}
-
-	protected final void initializeCacheTracker(Config config) throws Exception {
-		String cache = config.getString(Config.CACHE);
-		if(!blank(cache)) {
-			BundleContext context = getContext();
-			if(context == null) {
-				logger.info("no context - cacheTracker not started");
-			} else {
-				String str = "(&(" + Constants.OBJECTCLASS + "=" + CacheService.class.getName() + ")" +
-							"(" + CacheService.TYPE + "=" + cache + "))";
-				Filter filter = context.createFilter(str);
-				cacheTracker = new ServiceTracker(context, filter, null);
-				cacheTracker.open();
-				logger.info("cacheTracker started {" + cache + "}");
-			}
-		} else {
-			logger.info("cacheTracker not started");
-		}
 	}
 
 	protected final void initializeModulesTracker(final Config config) throws Exception {

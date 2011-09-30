@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import org.oobium.app.controllers.ActionCache;
+import org.oobium.app.controllers.ControllerCache;
 import org.oobium.app.controllers.HttpController;
 import org.oobium.app.routing.Router;
 import org.oobium.logging.LogProvider;
@@ -260,13 +260,13 @@ public abstract class ModuleService implements BundleActivator {
 	}
 
 	@SuppressWarnings("unchecked")
-	void loadActionCaches(AppService app, Config config) throws Exception {
+	void loadControllerCaches(AppService app, Config config) throws Exception {
 		logger.info("initializing ActionCache classes");
 
 		String pkg = pkg(config.getPathToCaches(pkgPath()));
 		for(Class<?> clazz : loadClassesInPackage(pkg)) {
-			if(ActionCache.class.isAssignableFrom(clazz)) {
-				ActionCache.addCache(app, this, (Class<? extends ActionCache<?>>) clazz);
+			if(ControllerCache.class.isAssignableFrom(clazz)) {
+				ControllerCache.addCache(app, this, (Class<? extends ControllerCache<?>>) clazz);
 			}
 		}
 	}
@@ -412,7 +412,7 @@ public abstract class ModuleService implements BundleActivator {
 
 		String pkg = pkg(config.getPathToCaches(pkgPath()));
 		for(Class<?> clazz : loadClassesInPackage(pkg)) {
-			ActionCache.removeCache(this, clazz);
+			ControllerCache.removeCache(this, clazz);
 		}
 	}
 

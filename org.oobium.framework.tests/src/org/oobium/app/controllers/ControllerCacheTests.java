@@ -4,7 +4,7 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-public class ActionCacheTests {
+public class ControllerCacheTests {
 
 	@Test
 	public void testX() throws Exception {

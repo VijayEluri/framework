@@ -12,3 +12,4 @@ Import-Package: org.oobium.cache,
 Bundle-Activator: org.oobium.cache.file.FileCacheService
 Bundle-ActivationPolicy: lazy
 Oobium-Service: org.oobium.cache.file
+Export-Package: org.oobium.cache.file

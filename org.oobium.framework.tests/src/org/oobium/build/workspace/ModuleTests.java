@@ -37,9 +37,9 @@ public class ModuleTests {
 		Manifest manifest = getManifest("Bundle-Version", "1.2.3.qualifier");
 		Module module = new Module(Module, file, manifest);
 		
-		assertEquals(new File(module.caches, "Cache1.java"), module.getActionCache("cache1"));
-		assertEquals(new File(module.caches, "Cache1.java"), module.getActionCache("Cache1"));
-		assertEquals(new File(module.caches, "Cache1.java"), module.getActionCache("Cache1.java"));
+		assertEquals(new File(module.caches, "Cache1.java"), module.getControllerCache("cache1"));
+		assertEquals(new File(module.caches, "Cache1.java"), module.getControllerCache("Cache1"));
+		assertEquals(new File(module.caches, "Cache1.java"), module.getControllerCache("Cache1.java"));
 	}
 	
 	@Test

@@ -18,11 +18,9 @@ public interface CacheService {
 	
 	public abstract void expire(String key);
 	
+	public abstract void expire();
+	
 	public abstract CacheObject get(String key);
-	
-	public abstract String[] getKeys();
-	
-	public abstract String[] getKeys(String regex);
 	
 	public abstract void set(String key, byte[] value);
 	

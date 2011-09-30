@@ -34,8 +34,8 @@ public class NewActionCacheWizardPage extends ProjectWizardPage {
 		super(pageName, website);
 		validator = new NewViewValidator(this);
 
-		setTitle("Create a new action cache");
-		setMessage("Create a new action cache in the current project.");
+		setTitle("Create a new controller cache");
+		setMessage("Create a new controller cache in the current project.");
 		setImageDescriptor(OobiumPlugin.getImageDescriptor("/icons/wizards/newprj_wiz.gif"));
 
 		setPageComplete(false);

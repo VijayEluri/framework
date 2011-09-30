@@ -10,16 +10,16 @@
  ******************************************************************************/
 package org.oobium.cache.file;
 
+import static org.oobium.utils.FileUtils.delete;
+import static org.oobium.utils.FileUtils.deleteContents;
+import static org.oobium.utils.FileUtils.writeFile;
 import static org.oobium.utils.literal.Dictionary;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileFilter;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.oobium.cache.CacheObject;
 import org.oobium.cache.CacheService;
@@ -34,43 +34,67 @@ public class FileCacheService implements BundleActivator, CacheService {
 
 	private final Logger logger;
 	private final ReadWriteLock lock;
+	private final String basePath;
 	
 	public FileCacheService() {
 		logger = LogProvider.getLogger(FileCacheService.class);
 		lock = new ReentrantReadWriteLock();
+		String path = System.getProperty("cache.file.path", "cache");
+		File file = new File(path);
+		if(!file.isAbsolute()) {
+			file = new File(System.getProperty("user.dir"), path);
+		}
+		basePath = file.getAbsolutePath();
 	}
 	
 	@Override
 	public void start(BundleContext context) throws Exception {
 		logger.setTag(context.getBundle().getSymbolicName());
+		logger.info("starting FileCacheService...");
 		
+		if("true".equalsIgnoreCase(System.getProperty("org.oobium.cache.file.expireOnStart"))) {
+			logger.info("expiring cache...");
+			expire();
+			logger.info("cache expired");
+		}
+
 		context.registerService(CacheService.class.getName(), this, Dictionary(CacheService.TYPE, CacheService.TYPE_FILE));
 
-		logger.info("CacheService started");
+		logger.info("FileCacheService started");
 	}
 	
 	@Override
 	public void stop(BundleContext context) throws Exception {
-		logger.info("CacheService stopped");
+		logger.info("FileCacheService stopped");
 		logger.setTag(null);
 	}
 
-	private String OSKey(String key) {
+	private File getFile(String key) {
 		if(adjustKey) {
-			return key.replace('/', File.separatorChar);
+			return new File(basePath, key.replace('/', File.separatorChar));
 		} else {
-			return key;
+			return new File(basePath, key);
+		}
+	}
+	
+	@Override
+	public void expire() {
+		lock.writeLock().lock();
+		try {
+			deleteContents(new File(basePath));
+		} finally {
+			lock.writeLock().unlock();
 		}
 	}
 	
 	@Override
 	public void expire(String key) {
+		if(key == null || key.length() == 0) {
+			throw new IllegalArgumentException("key cannot be blank");
+		}
 		lock.writeLock().lock();
 		try {
-			File file = new File("cache", OSKey(key));
-			if(file.exists()) {
-				file.delete();
-			}
+			delete(getFile(key));
 		} finally {
 			lock.writeLock().unlock();
 		}
@@ -78,10 +102,13 @@ public class FileCacheService implements BundleActivator, CacheService {
 
 	@Override
 	public CacheObject get(String key) {
+		if(key == null || key.length() == 0) {
+			throw new IllegalArgumentException("key cannot be blank");
+		}
 		lock.readLock().lock();
 		try {
-			File file = new File("cache", OSKey(key));
-			if(file.exists()) {
+			File file = getFile(key);
+			if(file.isFile()) {
 				return new FileCacheObject(file);
 			}
 			return null;
@@ -91,83 +118,21 @@ public class FileCacheService implements BundleActivator, CacheService {
 	}
 	
 	@Override
-	public String[] getKeys() {
-		lock.readLock().lock();
-		try {
-			File dir = new File("cache");
-			if(dir.exists() && dir.isDirectory()) {
-				File[] files = dir.listFiles(new FileFilter() {
-					@Override
-					public boolean accept(File file) {
-						return file.isFile();
-					}
-				});
-				String[] keys = new String[files.length];
-				for(int i = 0; i < keys.length; i++) {
-					keys[i] = files[i].getName();
-				}
-			}
-			return new String[0];
-		} finally {
-			lock.readLock().unlock();
-		}
-	}
-	
-	@Override
-	public String[] getKeys(String regex) {
-		lock.readLock().lock();
-		try {
-			File dir = new File("cache");
-			if(dir.exists() && dir.isDirectory()) {
-				final Matcher matcher = Pattern.compile(regex).matcher("");
-				File[] files = dir.listFiles(new FileFilter() {
-					@Override
-					public boolean accept(File file) {
-						return file.isFile() && matcher.reset(file.getName()).matches();
-					}
-				});
-				String[] keys = new String[files.length];
-				for(int i = 0; i < keys.length; i++) {
-					keys[i] = files[i].getName();
-				}
-			}
-			return new String[0];
-		} finally {
-			lock.readLock().unlock();
-		}
-	}
-
-	@Override
 	public void set(String key, byte[] value) {
+		if(key == null || key.length() == 0) {
+			throw new IllegalArgumentException("key cannot be blank");
+		}
 		lock.writeLock().lock();
 		try {
-			File file = new File("cache", OSKey(key));
-			if(!file.exists()) {
+			File file = getFile(key);
+			if(value == null || value.length == 0) {
 				file.getParentFile().mkdirs();
-				try {
-					file.createNewFile();
-				} catch(IOException e) {
-					logger.warn(e);
-					return;
-				}
+				file.createNewFile();
+			} else {
+				writeFile(file, new ByteArrayInputStream(value));
 			}
-			
-			FileOutputStream out = null;
-			try {
-				out = new FileOutputStream(file);
-				out.write(value);
-				out.flush();
-			} catch(Exception e) {
-				logger.warn(e);
-			} finally {
-				if(out != null) {
-					try {
-						out.close();
-					} catch(IOException e) {
-						// discard
-					}
-				}
-			}
+		} catch(IOException e) {
+			logger.warn("could not cache: {}", key);
 		} finally {
 			lock.writeLock().unlock();
 		}

@@ -18,6 +18,7 @@ import static org.oobium.app.http.MimeType.JSON;
 import static org.oobium.app.sessions.Session.SESSION_ID_KEY;
 import static org.oobium.app.sessions.Session.SESSION_UUID_KEY;
 import static org.oobium.utils.StringUtils.blank;
+import static org.oobium.utils.StringUtils.join;
 import static org.oobium.utils.StringUtils.varName;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.utils.json.JsonUtils.format;
@@ -87,16 +88,46 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	public static final String FLASH_NOTICE = "notice";
 	public static final String FLASH_WARNING = "warning";
 	
-	static String createActionCacheKey(Class<? extends HttpController> controller, Action action) {
-		return controller.getSimpleName() + "/" + action.name();
+	static String createCacheKey(AppService handler, Class<? extends HttpController> controller) {
+		return createCacheKey(handler, controller);
 	}
 	
-	static String createActionCacheKey(Class<? extends HttpController> controller, Action action, MimeType type) {
-		return controller.getSimpleName() + "/" + action.name() + "." + type.extension();
+	static String createCacheKey(AppService handler, Class<? extends HttpController> controller, Action action) {
+		return createCacheKey(handler, controller, action.name());
 	}
 	
-	static String createCacheKey(AppService handler, String key) {
-		return handler.getName() + "/" + key;
+	static String createCacheKey(AppService handler, Class<? extends HttpController> controller, Action action, MimeType type) {
+		return createCacheKey(handler, controller, action.name(), type.extension());
+	}
+	
+	static String createCacheKey(AppService handler, Class<? extends HttpController> controller, Action action, MimeType type, String...keys) {
+		if(keys.length == 0) {
+			return join('/', handler.getName(), controller.getSimpleName(), action.name(), type.extension());
+		}
+		if(keys.length == 1) {
+			return join('/', handler.getName(), controller.getSimpleName(), action.name(), type.extension(), keys[0]);
+		}
+		return join('/', handler.getName(), controller.getSimpleName(), action.name(), type.extension(), join(keys, '/'));
+	}
+	
+	static String createCacheKey(AppService handler, Class<? extends HttpController> controller, Action action, String...keys) {
+		if(keys.length == 0) {
+			return join('/', handler.getName(), controller.getSimpleName(), action.name());
+		}
+		if(keys.length == 1) {
+			return join('/', handler.getName(), controller.getSimpleName(), action.name(), keys[0]);
+		}
+		return join('/', handler.getName(), controller.getSimpleName(), action.name(), join(keys, '/'));
+	}
+	
+	static String createCacheKey(AppService handler, Class<? extends HttpController> controller, String...keys) {
+		if(keys.length == 0) {
+			throw new IllegalArgumentException("must have one or more keys");
+		}
+		if(keys.length == 1) {
+			return join('/', handler.getName(), controller.getSimpleName(), keys[0]);
+		}
+		return join('/', handler.getName(), controller.getSimpleName(), join(keys, '/'));
 	}
 
 	/**
@@ -347,6 +378,34 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		// to be implemented by subclasses if needed
 	}
 	
+	private void doExpireCache(String key) {
+		CacheService cache = handler.getCacheService();
+		if(cache != null) {
+			cache.expire(key);
+		} else {
+			logger.warn("cache service is not available");
+		}
+	}
+	
+	private CacheObject doGetCache(String key) {
+		CacheService cache = handler.getCacheService();
+		if(cache != null) {
+			return cache.get(key);
+		} else {
+			logger.warn("cache service is not available");
+			return null;
+		}
+	}
+	
+	private void doSetCache(String key, byte[] content) {
+		CacheService cache = handler.getCacheService();
+		if(cache != null) {
+			cache.set(key, content);
+		} else {
+			logger.warn("cache service is not available");
+		}
+	}
+	
 	public void execute(Action action) throws Exception {
 		if(logger.isLoggingDebug()) {
 			logger.debug("start controller#execute - " + getControllerName() + "#" + ((action != null) ? action : "handleRequest"));
@@ -355,7 +414,8 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 			this.action = action;
 			callFilters(true);
 			if(!isRendered) {
-				CacheObject cache = getCacheForAction(action);
+				String key = getCacheKey();
+				CacheObject cache = (key != null) ? getCache(key) : null;
 				if(cache != null) {
 					render(wants(), cache);
 				} else {
@@ -379,8 +439,10 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 						case showNew:	showNew();	break;
 						}
 					}
-					if(isRendered && response != null && ActionCache.isCaching(this, action)) {
-						setCacheForAction(action, response.getContent().array());
+					if(isRendered && response != null) {
+						if(key != null) {
+							setCache(key, response.getContentAsBytes());
+						}
 					}
 				}
 			}
@@ -412,24 +474,25 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 
 		logger.debug("end controller execute");
 	}
-	
-	public void expireCache(String key) {
-		CacheService cache = handler.getCacheService();
-		if(cache != null) {
-			cache.expire(createCacheKey(handler, key));
-		} else {
-			logger.warn("cache service is not available");
-		}
+
+	protected final void expireCache() {
+		String key = createCacheKey(handler, getClass());
+		doExpireCache(key);
 	}
 	
-	protected void expireCacheForAction() {
-		expireCacheForAction(action);
+	protected final void expireCache(Action action) {
+		String key = createCacheKey(handler, getClass(), action);
+		doExpireCache(key);
 	}
 	
-	protected void expireCacheForAction(Action action) {
-		if(ActionCache.isCaching(this, action)) {
-			expireCache(createActionCacheKey(getClass(), action, wants()));
-		}
+	protected final void expireCache(Action action, MimeType type) {
+		String key = createCacheKey(handler, getClass(), action, wants());
+		doExpireCache(key);
+	}
+
+	protected final void expireCache(String...keys) {
+		String key = createCacheKey(handler, getClass(), keys);
+		doExpireCache(key);
 	}
 	
 	/**
@@ -461,7 +524,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		}
 		return null;
 	}
-
+	
 	@Override
 	public <T> T flash(String name, T defaultValue) {
 		if(flash != null) {
@@ -483,7 +546,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	public AppService getApplication() {
 		return handler;
 	}
-	
+
 	@Override
 	public Model getAuthenticated() {
 		resolveSession(true);
@@ -510,29 +573,35 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		return null;
 	}
 	
-	protected CacheObject getCacheForAction() {
-		return getCacheForAction(action);
+	protected final CacheObject getCache() {
+		String key = createCacheKey(handler, getClass());
+		return doGetCache(key);
 	}
 
-	protected CacheObject getCacheForAction(Action action) {
-		if(ActionCache.isCaching(this, action)) {
-			String key = createActionCacheKey(getClass(), action, wants());
-			CacheService cache = handler.getCacheService();
-			if(cache != null) {
-				return cache.get(createCacheKey(handler, key));
-			} else {
-				logger.warn("cache service is not available");
-				return null;
-			}
-		}
-		return null;
+	protected final CacheObject getCache(Action action) {
+		String key = createCacheKey(handler, getClass(), action);
+		return doGetCache(key);
 	}
 	
+	protected final CacheObject getCache(Action action, MimeType type) {
+		String key = createCacheKey(handler, getClass(), action, wants());
+		return doGetCache(key);
+	}
+	
+	protected final CacheObject getCache(String...keys) {
+		String key = createCacheKey(handler, getClass(), keys);
+		return doGetCache(key);
+	}
+	
+	protected String getCacheKey() {
+		return ControllerCache.getCacheKey(this);
+	}
+
 	@Override
 	public String getControllerName() {
 		return getClass().getSimpleName();
 	}
-
+	
 	@Override
 	public String getFlash(String name) {
 		if(flash != null) {
@@ -563,12 +632,12 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	public String getFlashNotice() {
 		return getFlash(FLASH_NOTICE);
 	}
-	
+
 	@Override
 	public String getFlashWarning() {
 		return getFlash(FLASH_WARNING);
 	}
-
+	
 	public Object getId() {
 		return getParam("id");
 	}
@@ -576,17 +645,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	public <T> T getId(Class<T> type) {
 		return getParam("id", type);
 	}
-	
-	@SuppressWarnings("unchecked")
-	public Map<String, Object> getQuery() {
-		return (Map<String, Object>) param("query", Map.class);
-	}
 
-	public Object[] getValues() {
-		Object[] values = param("values", Object[].class);
-		return (values != null) ? values : new Object[0];
-	}
-	
 	public Logger getLogger() {
 		return logger;
 	}
@@ -617,6 +676,11 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		return params.keySet();
 	}
 	
+	@SuppressWarnings("unchecked")
+	public Map<String, Object> getQuery() {
+		return (Map<String, Object>) param("query", Map.class);
+	}
+	
 	public Request getRequest() {
 		return request;
 	}
@@ -638,6 +702,11 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		return session;
 	}
 	
+	public Object[] getValues() {
+		Object[] values = param("values", Object[].class);
+		return (values != null) ? values : new Object[0];
+	}
+
 	/**
 	 * Implemented by subclasses, if necessary, to handle non-RESTful GET routes.
 	 * @throws Exception
@@ -664,7 +733,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	public void handleRequest() throws Exception {
 		// to be implemented by subclasses if needed
 	}
-
+	
 	@Override
 	public boolean hasFlash(String name) {
 		if(flash != null) {
@@ -677,12 +746,12 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	public boolean hasFlashError() {
 		return hasFlash(FLASH_ERROR);
 	}
-	
+
 	@Override
 	public boolean hasFlashNotice() {
 		return hasFlash(FLASH_NOTICE);
 	}
-
+	
 	@Override
 	public boolean hasFlashWarning() {
 		return hasFlash(FLASH_WARNING);
@@ -691,7 +760,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	public boolean hasMany(String field) {
 		return field != null && field.equals(getParam("hasMany"));
 	}
-	
+
 	@Override
 	public boolean hasParam(String name) {
 		if(params == null) {
@@ -707,18 +776,18 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		}
 		return !params.isEmpty();
 	}
-
+	
 	public boolean hasQuery() {
 		Map<String, Object> query = getQuery();
 		return query != null && !query.isEmpty();
 	}
-	
+
 	@Override
 	public boolean hasSession() {
 		resolveSession(false);
 		return session != null;
 	}
-
+	
 	public void initialize(Router router, Request request, Map<String, Object> routeParams) {
 		this.router = router;
 		this.request = request;
@@ -756,14 +825,14 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	public boolean isAction(Action action) {
 		return getAction() == action;
 	}
-	
+
 	@Override
 	public boolean isAuthenticated() {
 		resolveSession(true);
 		long start = coerce(session.getData(AUTHENTICATED_AT), long.class);
 		return (System.currentTimeMillis() - start) < AUTHENTICATION_INTERVAL;
 	}
-
+	
 	@Override
 	public boolean isAuthenticated(Model model) {
 		if(model != null) {
@@ -818,7 +887,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	public Set<String> params() {
 		return getParams();
 	}
-	
+
 	public Map<String, Object> params(String...names) {
 		Map<String, Object> params = new HashMap<String, Object>();
 		for(String name : names) {
@@ -828,7 +897,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		}
 		return params;
 	}
-
+	
 	@Override
 	public String pathTo(Class<? extends Model> modelClass) {
 		return appRouter.pathTo(router, modelClass);
@@ -848,12 +917,12 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	public String pathTo(Model model, Action action) {
 		return appRouter.pathTo(router, model, action);
 	}
-	
+
 	@Override
 	public String pathTo(Model parent, String field) {
 		return appRouter.pathTo(router, parent, field);
 	}
-
+	
 	@Override
 	public String pathTo(Model parent, String field, Action action) {
 		return appRouter.pathTo(router, parent, field, action);
@@ -868,12 +937,12 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	public String pathTo(String routeName, Model model) {
 		return appRouter.pathTo(router, routeName, model);
 	}
-	
+
 	@Override
 	public String pathTo(String routeName, Object... params) {
 		return appRouter.pathTo(router, routeName, params);
 	}
-
+	
 	public void redirectTo(Class<? extends Model> clazz, Action action) {
 		redirectTo(pathTo(clazz, action));
 	}
@@ -895,7 +964,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		}
 		redirectTo(pathTo(model, action));
 	}
-	
+
 	public void redirectTo(Model parent, String field, Action action) {
 		if(action == showEdit || action == showNew) {
 			Object fieldValue = parent.get(field);
@@ -914,7 +983,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		response = new Response(HttpResponseStatus.FOUND);
 		response.addHeader(HttpHeaders.Names.LOCATION, path);
 	}
-
+	
 	public void redirectToHome() {
 		redirectTo("/");
 	}
@@ -922,23 +991,23 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	public void render(Collection<? extends Model> models) {
 		render(JSON, models);
 	}
-	
+
 	public void render(File file) {
 		rendering();
 		response = new StaticResponse(file);
 	}
-
+	
 	public void render(HttpResponseStatus status) {
 		render(status, wants(), status.getReasonPhrase());
 	}
-	
+
 	public void render(HttpResponseStatus status, MimeType contentType, String body) {
 		rendering();
 		response = new Response(status);
 		response.setContentType(contentType);
 		response.setContent(body);
 	}
-
+	
 	public void render(HttpResponseStatus status, String body) {
 		render(status, wants(), body);
 	}
@@ -1020,7 +1089,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		response.setContentType(wants());
 		response.setContent(body);
 	}
-	
+
 	public void render(String body, Collection<?> values) {
 		if(values == null || values.isEmpty()) {
 			render(body);
@@ -1055,7 +1124,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 			render(sb);
 		}
 	}
-
+	
 	/**
 	 * Render the given body String.<br/>
 	 * Body can contain anchors, just like in log messages, denoted by an opening brace immediately followed by a closing brace - {},
@@ -1071,11 +1140,11 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 			render(StringUtils.replace(body, values));
 		}
 	}
-	
+
 	public void render(StyleSheet ss) {
 		render(CSS, ss);
 	}
-
+	
 	public void render(View view) {
 		render(view, isXhr());
 	}
@@ -1110,9 +1179,13 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	public void renderCreated(int id) {
 		renderCreated((long) id);
 	}
-	
+
 	public void renderCreated(long id) {
 		renderCreated(id, null);
+	}
+	
+	public void renderCreated(Model model) {
+		renderCreated(model.getId(), pathTo(model));
 	}
 
 	public void renderCreated(Object id, String path) {
@@ -1126,10 +1199,6 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 			response.setContentType(wants());
 			response.setContent("null");
 		}
-	}
-	
-	public void renderCreated(Model model) {
-		renderCreated(model.getId(), pathTo(model));
 	}
 
 	public void renderDestroyed(Model model) {
@@ -1148,7 +1217,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 			renderErrors(new String[0]);
 		}
 	}
-
+	
 	public void renderErrors(Model...models) {
 		rendering();
 		response = new Response(HttpResponseStatus.CONFLICT);
@@ -1184,14 +1253,14 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 			response.setContent(toJson(errors));
 		}
 	}
-	
+
 	private void rendering() {
 		if(isRendered) {
 			throw new UnsupportedOperationException("cannot render more than once");
 		}
 		isRendered = true;
 	}
-
+	
 	public void renderJson(Collection<? extends Model> models, String include, Object...values) {
 		if(blank(models)) {
 			render(MimeType.JSON, "[]");
@@ -1200,11 +1269,11 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 			render(MimeType.JSON, json);
 		}
 	}
-	
+
 	public void renderJson(Object object) {
 		render(MimeType.JSON, format(toJson(object)));
 	}
-
+	
 	/**
 	 * Render the given object as JSON data in a manner appropriate for the standard
 	 * JQuery JSONP implementation.
@@ -1223,15 +1292,15 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 			render(MimeType.JS, callback);
 		}
 	}
-	
+
 	public void renderOK() {
 		render(HttpResponseStatus.OK, wantsJS() ? "[]" : HttpResponseStatus.OK.getReasonPhrase());
 	}
-
+	
 	public void renderPage(String text) {
 		renderPage("", text);
 	}
-	
+
 	public void renderPage(String title, String text) {
 		render(MimeType.PLAIN,
 				"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" " +
@@ -1310,20 +1379,20 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		}
 	}
 
-	protected void setCacheForAction(Action action, byte[] content) {
-		if(ActionCache.isCaching(this, action)) {
-			String key = createActionCacheKey(getClass(), action, wants());
-			CacheService cache = handler.getCacheService();
-			if(cache != null) {
-				cache.set(createCacheKey(handler, key), content);
-			} else {
-				logger.warn("cache service is not available");
-			}
-		}
+	protected final void setCache(Action action, byte[] content) {
+		doSetCache(createCacheKey(handler, getClass(), action), content);
 	}
 
-	protected void setCacheForAction(byte[] content) {
-		setCacheForAction(action, content);
+	protected final void setCache(Action action, MimeType type, byte[] content) {
+		doSetCache(createCacheKey(handler, getClass(), action, type), content);
+	}
+
+	protected final void setCache(byte[] content) {
+		doSetCache(createCacheKey(handler, getClass()), content);
+	}
+
+	protected final void setCache(String key, byte[] content) {
+		doSetCache(createCacheKey(handler, getClass(), key), content);
 	}
 
 	public void setFlash(String name, Object value) {

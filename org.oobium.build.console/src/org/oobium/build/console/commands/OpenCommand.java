@@ -11,6 +11,7 @@
 package org.oobium.build.console.commands;
 
 import org.oobium.build.console.BuilderCommand;
+import org.oobium.build.console.commands.open.ControllerCacheCommand;
 import org.oobium.build.console.commands.open.ActivatorCommand;
 import org.oobium.build.console.commands.open.ConfigurationCommand;
 import org.oobium.build.console.commands.open.ControllerCommand;
@@ -35,6 +36,7 @@ public class OpenCommand extends BuilderCommand {
 	@Override
 	public void configure() {
 		set(new FileCommand());
+		add(new ControllerCacheCommand());
 		add(new ActivatorCommand());
 		add(new ConfigurationCommand());
 		add(new ControllerCommand());

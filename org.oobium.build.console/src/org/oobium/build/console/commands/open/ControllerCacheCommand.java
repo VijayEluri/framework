@@ -8,7 +8,7 @@
  * Contributors:
  *     Jeremy Dowdall <jeremy@oobium.com> - initial API and implementation
  ******************************************************************************/
-package org.oobium.build.console.commands.destroy;
+package org.oobium.build.console.commands.open;
 
 import java.io.File;
 
@@ -16,7 +16,7 @@ import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
 
-public class ActionCacheCommand extends BuilderCommand {
+public class ControllerCacheCommand extends BuilderCommand {
 
 	@Override
 	public void configure() {
@@ -24,22 +24,16 @@ public class ActionCacheCommand extends BuilderCommand {
 		maxParams = 1;
 		minParams = 1;
 	}
-
+	
 	@Override
 	public void run() {
 		Module module = getModule();
-		File cache = module.getActionCache(param(0));
+		File cache = module.getControllerCache(param(0));
 		if(cache.exists()) {
-			String confirm = flag('f') ? "Y" : ask("Permanently remove the Action Cache?[Y/N] ");
-			if(!confirm.equalsIgnoreCase("Y")) {
-				console.out.println("operation cancelled");
-				return;
-			}
+			Eclipse.openFile(module.file, cache);
+		} else {
+			console.err.println("controller cache does not exist");
 		}
-		
-		cache.delete();
-
-		Eclipse.refresh(module.file, cache.getParentFile());
 	}
-	
+
 }

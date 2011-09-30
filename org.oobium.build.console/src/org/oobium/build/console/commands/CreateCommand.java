@@ -11,7 +11,7 @@
 package org.oobium.build.console.commands;
 
 import org.oobium.build.console.BuilderCommand;
-import org.oobium.build.console.commands.create.ActionCacheCommand;
+import org.oobium.build.console.commands.create.ControllerCacheCommand;
 import org.oobium.build.console.commands.create.ApplicationCommand;
 import org.oobium.build.console.commands.create.BlazeClientCommand;
 import org.oobium.build.console.commands.create.ClientCommand;
@@ -40,7 +40,7 @@ public class CreateCommand extends BuilderCommand {
 
 	@Override
 	public void configure() {
-		add(new ActionCacheCommand());
+		add(new ControllerCacheCommand());
 		add(new ApplicationCommand());
 		add(new BlazeClientCommand());
 		add(new ClientCommand());

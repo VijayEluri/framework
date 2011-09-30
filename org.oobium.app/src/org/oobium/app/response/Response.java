@@ -16,6 +16,7 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.codec.http.Cookie;
 import org.jboss.netty.handler.codec.http.DefaultCookie;
@@ -65,6 +66,24 @@ public class Response extends DefaultHttpResponse {
 		return getHeader("API-Location");
 	}
 
+	public byte[] getContentAsBytes() {
+		ChannelBuffer content = getContent();
+		if(content == null) {
+			return null;
+		}
+		byte[] bytes = new byte[content.readableBytes()];
+		content.getBytes(0, bytes);
+		return bytes;
+	}
+	
+	public String getContentAsString() {
+		ChannelBuffer content = getContent();
+		if(content == null) {
+			return null;
+		}
+		return content.toString(CharsetUtil.UTF_8);
+	}
+	
 	public MimeType getContentType() {
 		String header = getHeader(HttpHeaders.Names.CONTENT_TYPE);
 		if(header != null) {

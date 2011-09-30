@@ -30,7 +30,7 @@ import java.util.Set;
 
 import org.oobium.app.AppService;
 import org.oobium.app.ModuleService;
-import org.oobium.app.controllers.ActionCache;
+import org.oobium.app.controllers.ControllerCache;
 import org.oobium.app.controllers.HttpController;
 import org.oobium.app.http.Action;
 import org.oobium.app.persist.ModelNotifier;
@@ -72,26 +72,22 @@ public class ProjectGenerator {
 
 	private static File controllersFolder(File project)	{ return new File(appFolder(project), "controllers"); }
 
-	public static File createActionCache(Module module, String name, String model, Action...actions) {
+	public static File createControllerCache(Module module, String name, String model) {
 		SourceFile src = new SourceFile();
 		
 		src.packageName = module.packageName(module.caches);
 		src.simpleName = name;
-		src.superName = ActionCache.class.getSimpleName();
-		if(actions.length > 0) {
-			src.imports.add(Action.class.getCanonicalName());
-		}
-		src.imports.add(ActionCache.class.getCanonicalName());
+		src.superName = ControllerCache.class.getSimpleName() + "<" + model + ">";
+		src.imports.add(ControllerCache.class.getCanonicalName());
+		src.imports.add(HttpController.class.getCanonicalName());
 		src.imports.add(module.packageName(module.models) + "." + model);
 
-		StringBuilder sb = new StringBuilder();
-		sb.append("\tstatic { addCache(").append(name).append(".class, ").append(model).append(".class");
-		for(Action action : actions) {
-			sb.append(", Action.").append(action.name());
-		}
-		sb.append("); }\n\n//\tTODO override the Observer methods to implement sweeping for this ActionCache\n");
-
-		src.rawSource =  sb.toString();
+		src.methods.put("0",
+				"@Override\n" +
+				"protected String getKey(" + HttpController.class.getSimpleName() + " controller) {\n" +
+				"\treturn createKey(controller.getAction());\n" +
+				"}"
+			);
 		
 		File folder = createFolder(module.caches);
 		return writeFile(folder, name + ".java", src.toSource());
