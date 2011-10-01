@@ -24,6 +24,8 @@ import org.oobium.persist.Relation;
 )
 public class BModel extends Model {
 
+//	DynModel bm = DynClasses.getModel("pkg", "BModel").addAttr("bName", "String.class").addHasOne("cModel", "CModel.class");
+	
 	public String getBName() {
 		return (String) get("bName");
 	}

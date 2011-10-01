@@ -184,11 +184,27 @@ public class ModelToJsonTests {
 		b1.set("name", "bob");
 		b2.set("name", "joe");
 
-		assertEquals("{\"bmodels\":[null,null]}", a.toJson("include:b"));
+		assertEquals("{}", a.toJson());
 	}
 
 	@Test
-	public void testIncludeHasMany_New() throws Exception {
+	public void testHasMany_New_Include() throws Exception {
+		DynModel am = DynClasses.getModel("AModel").addHasMany("bmodels", "BModel.class");
+		DynModel bm = DynClasses.getModel("BModel");
+
+		Model a = am.newInstance();
+		Model b1 = bm.newInstance();
+		Model b2 = bm.newInstance();
+		
+		a.set("bmodels", new Object[] { b1, b2 });
+		b1.set("name", "bob");
+		b2.set("name", "joe");
+
+		assertEquals("{\"bmodels\":[{\"name\":\"bob\"},{\"name\":\"joe\"}]}", a.toJson("include:bmodels"));
+	}
+
+	@Test
+	public void testHasMany_New_IncludeByAnnotation() throws Exception {
 		DynModel am = DynClasses.getModel("AModel").addHasMany("bmodels", "BModel.class", "include=true");
 		DynModel bm = DynClasses.getModel("BModel");
 
@@ -200,7 +216,7 @@ public class ModelToJsonTests {
 		b1.set("name", "bob");
 		b2.set("name", "joe");
 
-		assertEquals("{\"bmodels\":[{\"name\":\"bob\"},{\"name\":\"joe\"}]}", a.toJson("include:b"));
+		assertEquals("{\"bmodels\":[{\"name\":\"bob\"},{\"name\":\"joe\"}]}", a.toJson());
 	}
 
 }

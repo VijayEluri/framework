@@ -42,7 +42,7 @@ public class ModelAttribute {
 		if("createdOn".equals(annotation) || "updatedOn".equals(annotation)) {
 			this.name = annotation;
 			this.type = "java.sql.Date";
-			this.json = false;
+			this.json = true;
 			this.check = "";
 			this.init = "";
 			this.precision = 0;
@@ -54,7 +54,7 @@ public class ModelAttribute {
 		} else if("createdAt".equals(annotation) || "updatedAt".equals(annotation)) {
 			this.name = annotation;
 			this.type = "java.util.Date";
-			this.json = false;
+			this.json = true;
 			this.check = "";
 			this.init = "";
 			this.precision = 0;
@@ -71,7 +71,7 @@ public class ModelAttribute {
 			
 			this.name = getString(entries.get("name"));
 			this.type = model.getType(entries.get("type"));
-			this.json = coerce(entries.get("json"), false);
+			this.json = coerce(entries.get("json"), true);
 			this.check = getString(entries.get("check"));
 			this.init = getString(entries.get("init"));
 			this.precision = coerce(entries.get("precision"), 8);
@@ -154,6 +154,9 @@ public class ModelAttribute {
 		}
 		if(virtual) {
 			sb.append(", virtual=true");
+		}
+		if(!json) {
+			sb.append(", json=false");
 		}
 
 		sb.append(')');

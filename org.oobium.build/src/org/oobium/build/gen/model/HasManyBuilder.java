@@ -13,9 +13,8 @@ package org.oobium.build.gen.model;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
-import org.oobium.persist.ActiveProxy;
+import org.oobium.persist.ModelList;
 
 
 public class HasManyBuilder extends PropertyBuilder {
@@ -24,18 +23,8 @@ public class HasManyBuilder extends PropertyBuilder {
 		super(descriptor);
 	}
 
-	@Override
-	public Map<String, String> getDeclarations() {
-		String type = ActiveProxy.class.getSimpleName() + "<" + descriptor.type() + ">";
-		Map<String, String> vars = new HashMap<String, String>();
-		vars.put(descriptor.variable(),
-				"public final {type} {var} = new {type}(this, \"{var}\");".replace("{type}", type).replace("{var}", descriptor.variable())
-			);
-		return vars;
-	}
-	
 	private String getGetterMethod() {
-		String type = Set.class.getSimpleName() + "<" + descriptor.type() + ">";
+		String type = ModelList.class.getSimpleName() + "<" + descriptor.type() + ">";
 		StringBuilder sb = new StringBuilder();
 		sb.append("@SuppressWarnings(\"unchecked\")\n");
 		sb.append("public ").append(type).append(' ').append(descriptor.getterName()).append("() {\n");
@@ -48,8 +37,7 @@ public class HasManyBuilder extends PropertyBuilder {
 	public ArrayList<String> getImports() {
 		ArrayList<String> imports = new ArrayList<String>();
 		imports.add(descriptor.fullType());
-		imports.add(ActiveProxy.class.getCanonicalName());
-		imports.add(Set.class.getCanonicalName());
+		imports.add(ModelList.class.getCanonicalName());
 		return imports;
 	}
 

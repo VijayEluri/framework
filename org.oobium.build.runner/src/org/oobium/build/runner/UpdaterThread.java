@@ -103,7 +103,7 @@ class UpdaterThread extends Thread {
 		interrupt();
 	}
 
-	void editing(File project, File file, boolean editing) {
+	synchronized void editing(File project, File file, boolean editing) {
 		Bundle bundle = workspace.getBundle(project);
 		if(editing) {
 			if(this.editing == null) {
@@ -121,7 +121,7 @@ class UpdaterThread extends Thread {
 		}
 	}
 	
-	private File[] getEditing(Module module) {
+	private synchronized File[] getEditing(Module module) {
 		if(editing != null) {
 			List<File> files = editing.get(module);
 			if(files != null) {

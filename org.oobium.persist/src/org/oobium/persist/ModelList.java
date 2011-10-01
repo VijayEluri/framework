@@ -15,33 +15,51 @@ import static java.util.Arrays.asList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.ListIterator;
 
-public class ActiveSet<E extends Model> implements Set<E> {
+public class ModelList<E extends Model> implements List<E> {
 
+	private static final int MANY_TO_NONE = 0;
+	private static final int MANY_TO_ONE  = 1;
+	private static final int MANY_TO_MANY = 2;
+	
 	private final Model owner;
 	private final String ownerField;
 	private final String memberField;
-	private final boolean manyToMany;
+	private final int type;
+	private final boolean through;
 	
-	private final Set<E> members;
+	private final List<E> members;
 
-	ActiveSet(Model owner, String ownerField) {
+	ModelList(Model owner, String ownerField) {
 		this(owner, ownerField, null);
 	}
+
 	
-	ActiveSet(Model owner, String ownerField, E[] members) {
+	// TODO handle :through and ManyToNone... (these used to be handled by a simple LinkedHashSet in Model)
+	
+	ModelList(Model owner, String ownerField, E[] members) {
 		this.owner = owner;
 		this.ownerField = ownerField;
 		
 		ModelAdapter adapter = ModelAdapter.getAdapter(owner);
 		
 		this.memberField = adapter.getOpposite(ownerField);
-		this.manyToMany = adapter.isManyToMany(ownerField);
 
-		this.members = (members != null) ? new LinkedHashSet<E>(asList(members)) : new LinkedHashSet<E>();
+		if(adapter.isManyToNone(ownerField)) {
+			this.type = MANY_TO_NONE;
+		}
+		else if(adapter.isManyToOne(ownerField)) {
+			this.type = MANY_TO_ONE;
+		}
+		else {
+			this.type = MANY_TO_MANY;
+		}
+
+		this.through = adapter.isThrough(ownerField);
+		
+		this.members = (members != null) ? new ArrayList<E>(asList(members)) : new ArrayList<E>();
 	}
 
 	@Override
@@ -76,12 +94,17 @@ public class ActiveSet<E extends Model> implements Set<E> {
 
 	@SuppressWarnings("unchecked")
 	private void clearOpposite(Model object) {
-		if(manyToMany) {
+		switch(type) {
+		case MANY_TO_MANY:
 			if(object.isSet(memberField)) {
-				((ActiveSet<Model>) object.get(memberField)).doRemove(owner);
+				((ModelList<Model>) object.get(memberField)).doRemove(owner);
 			}
-		} else {
+			break;
+		case MANY_TO_ONE:
 			object.set(memberField, null);
+			break;
+		default:
+			throw new IllegalStateException("why are we here?");
 		}
 	}
 	
@@ -150,20 +173,25 @@ public class ActiveSet<E extends Model> implements Set<E> {
 
 	@SuppressWarnings("unchecked")
 	private void setOpposite(Model object) {
-		if(manyToMany) {
+		switch(type) {
+		case MANY_TO_MANY:
 			if(object.isSet(memberField)) {
-				((ActiveSet<Model>) object.get(memberField)).doAdd(owner);
+				((ModelList<Model>) object.get(memberField)).doAdd(owner);
 			}
-		} else {
+			break;
+		case MANY_TO_ONE:
 			Model previousOwner = (Model) (object.isSet(memberField) ? object.get(memberField) : null);
 			if(previousOwner != owner) {
 				if(previousOwner != null) {
 					if(previousOwner.isSet(ownerField)) {
-						((ActiveSet<?>) previousOwner.get(ownerField)).doRemove(object);
+						((ModelList<?>) previousOwner.get(ownerField)).doRemove(object);
 					}
 				}
 				object.put(memberField, owner);
 			}
+			break;
+		default:
+			throw new IllegalStateException("why are we here?");
 		}
 	}
 	
@@ -191,5 +219,119 @@ public class ActiveSet<E extends Model> implements Set<E> {
 	public String toString() {
 		return String.valueOf(owner) + " <- " + String.valueOf(members);
 	}
+
+	@Override
+	public void add(int arg0, E arg1) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean addAll(int arg0, Collection<? extends E> arg1) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public E get(int arg0) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public int indexOf(Object arg0) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public int lastIndexOf(Object arg0) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public ListIterator<E> listIterator() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ListIterator<E> listIterator(int arg0) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public E remove(int arg0) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public E set(int arg0, E arg1) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<E> subList(int arg0, int arg1) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public boolean add(E...model) {
+		// TODO
+		return false;
+	}
 	
+	public boolean remove(E...model) {
+		// TODO
+		return false;
+	}
+	
+	public boolean destroy(E model) {
+		// TODO
+		return false;
+	}
+	
+	public boolean hasAny(E model) {
+		// TODO
+		return false;
+	}
+	
+	public boolean isEmpty(E model) {
+		// TODO
+		return false;
+	}
+	
+	public int count(E model) {
+		// TODO
+		return 0;
+	}
+
+	public E find(String where, Object...values) {
+		return null;
+	}
+	
+//	public ActiveSet<E> findAll() {
+//		// TODO
+//		return null;
+//	}
+//	
+//	public ActiveSet<E> findAll(String where, Object...values) {
+//		// TODO
+//		return null;
+//	}
+
+	public E findFirst() {
+		// TODO
+		return null;
+	}
+	
+	public E findLast() {
+		// TODO
+		return null;
+	}
+
 }

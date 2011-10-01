@@ -22,6 +22,8 @@ import org.oobium.persist.ModelDescription;
 )
 public class CModel extends Model {
 
+//	DynModel cm = DynClasses.getModel("pkg", "CModel").addAttr("cName", "String.class");
+
 	public String getCName() {
 		return (String) get("cName");
 	}

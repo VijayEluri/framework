@@ -13,25 +13,23 @@
  */
 package org.oobium.persist.db.tests.models;
 
-import java.util.Set;
-
 import org.oobium.persist.Attribute;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelDescription;
+import org.oobium.persist.ModelList;
 import org.oobium.persist.Relation;
 
 @ModelDescription(
-	attrs = {
-		@Attribute(name="dName", type=String.class)
-	},
-	hasOne = {
-		@Relation(name="fModel", type=FModel.class, opposite="dModels")
-	},
-	hasMany = {
-		@Relation(name="eModels", type=EModel.class, opposite="dModels")
-	}
+	attrs = @Attribute(name="dName", type=String.class),
+	hasOne = @Relation(name="fModel", type=FModel.class, opposite="dModels"),
+	hasMany = @Relation(name="eModels", type=EModel.class, opposite="dModels")
 )
 public class DModel extends Model {
+
+//	DynModel dm = DynClasses.getModel("pkg", "DModel")
+//											.addAttr("dName", "String.class")
+//											.addHasOne("fModel", "FModel.class", "opposite=dModels")
+//											.addHasMany("eModels", "EModel.class", "opposite=dModels");
 
 	public String getDName() {
 		return (String) get("dName");
@@ -49,8 +47,8 @@ public class DModel extends Model {
 		set("fModel", fModel);
 	}
 
-	public Set<EModel> eModels() {
-		return (Set<EModel>) get("eModels");
+	public ModelList<EModel> eModels() {
+		return (ModelList<EModel>) get("eModels");
 	}
 
 }

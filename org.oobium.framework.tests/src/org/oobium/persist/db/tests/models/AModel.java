@@ -13,11 +13,10 @@
  */
 package org.oobium.persist.db.tests.models;
 
-import java.util.Set;
-
 import org.oobium.persist.Attribute;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelDescription;
+import org.oobium.persist.ModelList;
 import org.oobium.persist.Relation;
 
 @ModelDescription(
@@ -30,6 +29,11 @@ import org.oobium.persist.Relation;
 )
 public class AModel extends Model {
 
+//	DynModel am = DynClasses.getModel("pkg", "AModel")
+//										.addAttr("aName", "String.class")
+//										.addHasOne("bModel", "BModel.class").addHasOne("cModel", "CModel.class")
+//										.addHasMany("bModels", "BModel.class");
+	
 	public String getAName() {
 		return (String) get("aName");
 	}
@@ -54,8 +58,8 @@ public class AModel extends Model {
 		set("cModel", cModel);
 	}
 
-	public Set<BModel> bModels() {
-		return (Set<BModel>) get("bModels");
+	public ModelList<BModel> bModels() {
+		return (ModelList<BModel>) get("bModels");
 	}
 
 }

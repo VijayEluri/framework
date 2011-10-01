@@ -10,16 +10,13 @@
  ******************************************************************************/
 package org.oobium.persist.db.tests;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.oobium.logging.Logger;
 import org.oobium.logging.LogProvider;
+import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.persist.SimplePersistServiceProvider;
 import org.oobium.persist.db.DbPersistService;
@@ -37,17 +34,18 @@ public class DbPersistorTestCase {
 	}
 
 	@Before
-	public void setUp() {
+	public void setUp() throws SQLException {
 		service = new DerbyEmbeddedPersistService("testClient", "testDatabase", true);
+		service.createDatabase("testClient");
 		Model.setLogger(logger);
 		Model.setPersistServiceProvider(new SimplePersistServiceProvider(service));
 	}
 
 	@After
-	public void tearDown() {
+	public void tearDown() throws SQLException {
 		Model.setLogger(null);
 		Model.setPersistServiceProvider(null);
-		dropDatabase();
+		service.dropDatabase("testClient");
 		service.closeSession();
 		service = null;
 	}
@@ -100,61 +98,4 @@ public class DbPersistorTestCase {
 		}
 	}
 	
-	/**
-	 * Drops all tables in the database, if it exists
-	 */
-	public final void dropDatabase() {
-		logger.info("Dropping database...");
-
-//		not currently using constraints
-//		
-//		String sql = "select t.tablename, c.constraintname" + " from sys.sysconstraints c, sys.systables t"
-//				+ " where c.type = 'F' and t.tableid = c.tableid";
-//
-//		List<Map<String, Object>> constraints = null;
-//		try {
-//			constraints = service.executeQuery(sql);
-//		} catch(SQLException e) {
-//			logger.info("database has not yet been created");
-//			return;
-//		}
-//		
-//		for(Map<String, Object> map : constraints) {
-//			sql = "alter table " + map.get("tablename") + " drop constraint " + map.get("constraintname");
-//			logger.debug(sql);
-//			try {
-//				service.executeUpdate(sql);
-//			} catch(Exception e) {
-//				logger.error("could not alter table: " + sql, e);
-//			}
-//		}
-
-		try {
-			Connection connection = service.getConnection();
-			ResultSet rs = null;
-			try {
-				rs = connection.getMetaData().getTables(null, "APP", "%", new String[] { "TABLE" });
-				while(rs.next()) {
-					String sql = "drop table APP." + rs.getString(3);
-					logger.debug(sql);
-					Statement stmt = connection.createStatement();
-					try {
-						stmt.executeUpdate(sql);
-					} finally{
-						stmt.close();
-					}
-				}
-			} finally {
-				if(rs != null) {
-					rs.close();
-				}
-				// connection.close(); no need - connection will be closed when the session is closed
-			}
-			logger.info("Database dropped.\n");
-		} catch(SQLException e) {
-			// well, something went wrong...
-			logger.error("ERROR dropping database", e);
-		}
-	}
-
 }

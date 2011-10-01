@@ -10,12 +10,12 @@
  ******************************************************************************/
 package org.oobium.persist;
 
-import static org.oobium.utils.literal.Map;
 import static org.oobium.persist.ModelAdapter.getAdapter;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.titleize;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.utils.json.JsonUtils.toList;
+import static org.oobium.utils.literal.Map;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
@@ -24,11 +24,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
@@ -596,15 +594,7 @@ public abstract class Model implements JsonModel {
 					return get(field, false); // exit through the if(fields.containsKey(field)) block above
 				} else {
 					if(hasMany(field)) { // prevents returning a null for a hasMany field
-						Set<?> set;
-						if(isThrough(field)) {
-							set = new LinkedHashSet<Model>();
-						} else if(isManyToNone(field)) {
-							set = new LinkedHashSet<Model>();
-						} else {
-							set = new ActiveSet<Model>(this, field);
-						}
-						fields.put(field, set);
+						fields.put(field, new ModelList<Model>(this, field));
 					}
 					return fields.get(field);
 				}
@@ -851,10 +841,6 @@ public abstract class Model implements JsonModel {
 		return fields.isEmpty();
 	}
 
-	private boolean isManyToNone(String field) {
-		return getAdapter(getClass()).isManyToNone(field);
-	}
-	
 	@Override
 	public final boolean isNew() {
 		if(id == null) {
@@ -920,10 +906,6 @@ public abstract class Model implements JsonModel {
 		return fields.containsKey(field);
 	}
 	
-	private boolean isThrough(String field) {
-		return getAdapter(getClass()).isManyToNone(field);
-	}
-
 	public final boolean load() {
 		try {
 			getPersistor().retrieve(this);
@@ -1305,7 +1287,7 @@ public abstract class Model implements JsonModel {
 	 * <ul>
 	 *   <li>it isn't already resolved</li>
 	 *   <li>the given value is an instance of {@link Model}</li>
-	 *   <li>the opposite of the given field is either an {@link ActiveSet} or {@link RequiredSet}
+	 *   <li>the opposite of the given field is a {@link ModelList}
 	 * </ul>
 	 * </p>
 	 * If the field already exists in the data map, it will be over-written.
@@ -1334,8 +1316,8 @@ public abstract class Model implements JsonModel {
 			ModelAdapter adapter = getAdapter(this);
 			Class<? extends Model> mtype = adapter.getHasManyMemberClass(field);
 			Model[] models = (Model[]) coerce(value, Array.newInstance(mtype, 0).getClass());
-			if(type == ActiveSet.class) {
-				Set<Model> set = new ActiveSet<Model>(this, field, models);
+			if(type == ModelList.class) {
+				List<Model> set = new ModelList<Model>(this, field, models);
 				if(adapter.isManyToOne(field)) {
 					String opposite = adapter.getOpposite(field);
 					for(Model model : set) {
@@ -1370,14 +1352,14 @@ public abstract class Model implements JsonModel {
 					Model oldModel = (Model) coerce(fields.get(field), type);
 					if(oldModel != null && !oldModel.equals(newModel)) {
 						Object o = oldModel.get(opposite);
-						if(o instanceof ActiveSet<?>) {
-							((ActiveSet<?>) oldModel.get(opposite)).doRemove(this);
+						if(o instanceof ModelList<?>) {
+							((ModelList<?>) oldModel.get(opposite)).doRemove(this);
 						}
 					}
 					if(newModel != null && !newModel.equals(oldModel)) {
 						Object o = newModel.get(opposite);
-						if(o instanceof ActiveSet<?>) {
-							((ActiveSet<?>) o).doAdd(this);
+						if(o instanceof ModelList<?>) {
+							((ModelList<?>) o).doAdd(this);
 						}
 					}
 				}
@@ -1485,9 +1467,7 @@ public abstract class Model implements JsonModel {
 
 	public String toJson(String include, Object...values) {
 		String json = ModelJsonBuilder.buildJson(this, include, values);
-		if(logger.isLoggingTrace()) {
-			logger.trace(this + ".toJson() -> \n  " + json);
-		}
+		logger.trace("{}.toJson() -> \n  {}", this, json);
 		return json;
 	}
 

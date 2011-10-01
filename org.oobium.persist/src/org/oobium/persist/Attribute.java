@@ -32,7 +32,7 @@ public @interface Attribute {
 	String init() default "";
 	
 	/**
-	 * Set whether or not this field will be included (if set) in the output from the
+	 * Sets whether or not this field will be included in the output from the
 	 * {@link Model#toJson()} and {@link Model#toJson(String, Object...)} methods.
 	 * <p>Default is true.</p>
 	 * @return boolean set to true if this field should be included in the output JSON when set;

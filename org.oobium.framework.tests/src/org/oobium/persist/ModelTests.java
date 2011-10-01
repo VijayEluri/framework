@@ -15,13 +15,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Set;
+import java.util.List;
 
 import org.junit.Test;
-import org.oobium.persist.Attribute;
-import org.oobium.persist.Model;
-import org.oobium.persist.ModelDescription;
-import org.oobium.persist.Relation;
 
 public class ModelTests {
 
@@ -41,12 +37,6 @@ public class ModelTests {
 		assertTrue(model.isEmpty());
 	}
 
-	@Test(expected=IllegalArgumentException.class)
-	public void testModelSet_WithException() throws Exception {
-		AModel model = new AModel();
-		model.set("model", new Object());
-	}
-	
 	@Test
 	public void testModelClear() throws Exception {
 		AModel model = new AModel();
@@ -73,7 +63,7 @@ public class ModelTests {
 	public void testModelCreateHasMany() throws Exception {
 		AModel model = new AModel();
 		assertFalse(model.isSet("models"));
-		assertTrue(model.get("models") instanceof Set<?>);
+		assertTrue(model.get("models") instanceof List<?>);
 		assertTrue(model.isSet("models"));
 	}
 	

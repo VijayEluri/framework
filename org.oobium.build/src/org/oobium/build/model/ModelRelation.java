@@ -38,6 +38,7 @@ public class ModelRelation {
 	public int onUpdate;
 	public String embed;
 	public boolean embedded;
+	public boolean include;
 	private ModelRelation oppositeRelation;
 	
 	public ModelRelation(ModelDefinition model, String annotation, boolean hasMany) {
@@ -61,6 +62,7 @@ public class ModelRelation {
 		this.onUpdate = getReferential(entries.get("onUpdate"));
 		this.embed = getString(entries.get("embed"));
 		this.embedded = coerce(entries.get("embedded"), false);
+		this.include = coerce(entries.get("include"), false);
 	}
 
 	private ModelRelation(ModelRelation original, ModelDefinition model, boolean hasMany) {
@@ -78,6 +80,7 @@ public class ModelRelation {
 		this.onUpdate = original.onUpdate;
 		this.embed = original.embed;
 		this.embedded = original.embedded;
+		this.include = original.include;
 	}
 	
 	public ModelRelation getCopy() {
@@ -192,6 +195,9 @@ public class ModelRelation {
 		}
 		if(onUpdate != -1) {
 			sb.append(", onUpdate=").append(onUpdate);
+		}
+		if(include) {
+			sb.append(", include=true");
 		}
 		sb.append(')');
 		return sb.toString();

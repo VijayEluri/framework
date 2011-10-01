@@ -28,6 +28,10 @@ import org.oobium.persist.Relation;
 )
 public class GModel extends Model {
 
+//	DynModel gm = DynClasses.getModel("pkg", "GModel")
+//											.addAttr("gName", "String.class")
+//											.addHasOne("hModel", "HModel.class", "opposite=gModels");
+
 	public String getGName() {
 		return (String) get("gName");
 	}

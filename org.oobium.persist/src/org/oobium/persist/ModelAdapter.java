@@ -108,7 +108,7 @@ public class ModelAdapter {
 		} else if(hasOne.containsKey(field)) {
 			return hasOne.get(field).type();
 		} else {
-			return getHasManyClass(field);
+			return ModelList.class;
 		}
 	}
 	
@@ -136,25 +136,6 @@ public class ModelAdapter {
 
 	public String[] getFields() {
 		return fields.toArray(new String[fields.size()]);
-	}
-	
-	/**
-	 * Get the class of the hasMany field.
-	 * @param field the field to get the class of
-	 * @return the class of the hasMany field if it exists; null otherwise
-	 * @see ActiveSet
-	 * @see RequiredSet
-	 * @see LinkedHashSet
-	 */
-	public Class<?> getHasManyClass(String field) {
-		if(hasMany.containsKey(field)) {
-			if(isThrough(field) || isManyToNone(field)) {
-				return LinkedHashSet.class;
-			} else {
-				return ActiveSet.class;
-			}
-		}
-		return null;
 	}
 	
 	public Set<String> getHasManyFields() {

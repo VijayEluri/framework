@@ -525,8 +525,8 @@ public class Module extends Bundle {
 		FileUtils.deleteContents(bin, generated);
 	}
 	
-	public File createActionCache(String name, String modelName, Action...actions) {
-		return ProjectGenerator.createActionCache(this, adjust(name), adjust(modelName), actions);
+	public File createControllerCache(String name, String modelName) {
+		return ProjectGenerator.createControllerCache(this, adjust(name), adjust(modelName));
 	}
 	
 	public File createController(File controller) {
@@ -1111,7 +1111,7 @@ public class Module extends Bundle {
 		return null;
 	}
 
-	public File getActionCache(String name) {
+	public File getControllerCache(String name) {
 		return new File(caches, adjust(name) + ".java");
 	}
 

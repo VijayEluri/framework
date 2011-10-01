@@ -714,8 +714,8 @@ public class Project implements Comparable<Project> {
 	}
 	
 	private String parseName() {
-		// yup, parsing xml with a regex. read it and weep!
-		if(project.exists()) {
+		if(project != null && project.exists()) { // project == null if isJar
+			// yup, parsing xml with a regex. read it and weep!
 			String src = FileUtils.readFile(project).toString();
 			Pattern p = Pattern.compile("<name>([^<]*)</name>");
 			Matcher m = p.matcher(src);
@@ -723,18 +723,21 @@ public class Project implements Comparable<Project> {
 				return m.group(1);
 			}
 		} else {
-			return file.getName();
+			String name = file.getName();
+			int ix = name.lastIndexOf('_');
+			if(ix != -1 && ix+1 < name.length() && Character.isDigit(name.charAt(ix+1))) {
+				name = name.substring(0, ix);
+			} else if(name.endsWith(".jar") || name.endsWith(".zip")) {
+				name = name.substring(0, name.length() - 4);
+			}
+			return name;
 		}
 		return "!UNKNOWN!";
 	}
 	
 	private String parseName(Manifest manifest) {
 		if(manifest == null) {
-			if(isJar) {
-				// TODO
-			} else {
-				return parseName();
-			}
+			return parseName();
 		} else {
 			String name = (String) manifest.getMainAttributes().getValue("Bundle-SymbolicName");
 			if(name == null) {
@@ -748,7 +751,6 @@ public class Project implements Comparable<Project> {
 				}
 			}
 		}
-		return "!UNKNOWN!";
 	}
 
 	public boolean removeNature(String nature) {
