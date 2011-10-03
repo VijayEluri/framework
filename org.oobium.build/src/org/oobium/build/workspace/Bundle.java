@@ -345,6 +345,8 @@ public class Bundle extends Project {
 	 * <code>Bundle-Version</code>
 	 */
 	public final Version version;
+	
+	public final File bundleClasspath;
 
 	/**
 	 * A list of bundles that are required by this bundle, as specified by the
@@ -390,38 +392,47 @@ public class Bundle extends Project {
 		this.services = parseServices(manifest);
 		if(isJar) {
 			this.activator = null;
+			this.bundleClasspath = file;
 		} else {
 			this.activator = parseActivator(manifest);
+			this.bundleClasspath = parseBundleClasspath(manifest);
 		}
 	}
 
-	private void addClasspathEntries(Set<String> cpes) {
-		if(classpath != null && classpath.isFile()) {
-			try {
-				DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
-				DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
-				Document doc = docBuilder.parse(classpath);
-				NodeList list = doc.getElementsByTagName("classpathentry");
-				for(int i = 0; i < list.getLength(); i++) {
-					Node node = list.item(i);
-					if(node.getNodeType() == Node.ELEMENT_NODE) {
-						Element cpe = (Element) node;
-						String kind = cpe.getAttribute("kind");
-						if("src".equals(kind)) {
-							String path = file.getAbsolutePath() + File.separator + cpe.getAttribute("path");
-							cpes.add(path);
+	private void addClasspathEntries(Workspace workspace, Set<String> cpes) {
+		if(isJar) {
+			cpes.add(file.getAbsolutePath());
+		}
+		else if(bundleClasspath != null) {
+			cpes.add(bundleClasspath.getAbsolutePath());
+		}
+		else {
+			if(classpath != null && classpath.isFile()) {
+				try {
+					DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
+					DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
+					Document doc = docBuilder.parse(classpath);
+					NodeList list = doc.getElementsByTagName("classpathentry");
+					for(int i = 0; i < list.getLength(); i++) {
+						Node node = list.item(i);
+						if(node.getNodeType() == Node.ELEMENT_NODE) {
+							Element cpe = (Element) node;
+							String kind = cpe.getAttribute("kind");
+							if("src".equals(kind)) {
+								String path = file.getAbsolutePath() + File.separator + cpe.getAttribute("path");
+								cpes.add(path);
+							}
 						}
 					}
+				} catch(Exception e) {
+					logger.warn(e);
 				}
-			} catch(Exception e) {
-				e.printStackTrace();
 			}
+			cpes.add(bin.getAbsolutePath());
 		}
 		
-		if(file.isDirectory()) {
-			cpes.add(file.getAbsolutePath() + File.separator + "bin");
-		} else {
-			cpes.add(file.getAbsolutePath());
+		for(Fragment fragment : workspace.getFragments(this)) {
+			cpes.addAll(fragment.getClasspathEntries());
 		}
 	}
 	
@@ -690,10 +701,10 @@ public class Bundle extends Project {
 	
 	public Set<String> getClasspathEntries(Workspace workspace) {
 		Set<String> cpes = new LinkedHashSet<String>();
-		addClasspathEntries(cpes);
+		addClasspathEntries(workspace, cpes);
 		
 		for(Bundle bundle : getDependencies(workspace).keySet()) {
-			bundle.addClasspathEntries(cpes);
+			bundle.addClasspathEntries(workspace, cpes);
 		}
 
 		return cpes;
@@ -701,19 +712,17 @@ public class Bundle extends Project {
 
 	public Set<String> getClasspathEntries(Workspace workspace, Mode mode) {
 		Set<String> cpes = new LinkedHashSet<String>();
-		addClasspathEntries(cpes);
+		addClasspathEntries(workspace, cpes);
 		
 		for(Bundle bundle : getDependencies(workspace, mode).keySet()) {
-			bundle.addClasspathEntries(cpes);
+			bundle.addClasspathEntries(workspace, cpes);
 		}
 
 		return cpes;
 	}
 
 	/**
-	 * Get all classpath dependencies (those required to build this particular
-	 * bundle)
-	 * 
+	 * Get all classpath dependencies (those required to build this particular bundle)
 	 * @return a set of bundles that are required to build this bundle
 	 */
 	public final Map<Bundle, List<Bundle>> getDependencies(Workspace workspace) {
@@ -818,6 +827,16 @@ public class Bundle extends Project {
 				String path = name.substring(0, ix + 1).replace('.', File.separatorChar);
 				name = name.substring(ix + 1) + ".java";
 				return new File(src, path + name);
+			}
+		}
+		return null;
+	}
+
+	private File parseBundleClasspath(Manifest manifest) {
+		if(manifest != null) {
+			String cp = (String) manifest.getMainAttributes().getValue("Bundle-ClassPath");
+			if(cp != null) {
+				return new File(file, cp);
 			}
 		}
 		return null;

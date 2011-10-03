@@ -98,6 +98,12 @@ public class Workspace {
 	private final Map<File, Application> applications;
 	
 	/**
+	 * A Map of all bundles that are also of type Fragment.
+	 * Note that these are bundles and are also in the {@link #bundles} Map.
+	 */
+	private final Map<String, List<Fragment>> fragments;
+
+	/**
 	 * Bundles repositories
 	 */
 	private Map<File, List<File>> repos;
@@ -130,6 +136,7 @@ public class Workspace {
 		projects = new HashMap<File, Project>();
 		bundles = new HashMap<File, Bundle>();
 		applications = new HashMap<File, Application>();
+		fragments = new HashMap<String, List<Fragment>>();
 		listeners = new WorkspaceListener[0];
 		setWorkingDirectory(workingDirectory);
 	}
@@ -144,6 +151,14 @@ public class Workspace {
 				bundles.put(cfile, bundle);
 				if(bundle instanceof Application) {
 					applications.put(cfile, (Application) bundle);
+				}
+				if(bundle instanceof Fragment) {
+					Fragment fragment = (Fragment) bundle;
+					List<Fragment> list = fragments.get(fragment.host);
+					if(list == null) {
+						fragments.put(fragment.host, list = new ArrayList<Fragment>());
+					}
+					list.add(fragment); 
 				}
 				if(bundle.name.equals(BuildBundle.ID)) {
 					buildBundle = bundle;
@@ -663,6 +678,23 @@ public class Workspace {
 		return new File(getWorkingDirectory(), "export");
 	}
 	
+	public Fragment[] getFragments(Bundle bundle) {
+		return getFragments(bundle.name);
+	}
+	
+	public Fragment[] getFragments(String bundleName) {
+		lock.readLock().lock();
+		try {
+			List<Fragment> list = fragments.get(bundleName);
+			if(list != null) {
+				return list.toArray(new Fragment[list.size()]);
+			}
+			return new Fragment[0];
+		} finally {
+			lock.readLock().unlock();
+		}
+	}
+	
 	public Migrator getMigrator(File file) {
 		Bundle bundle = getBundle(file);
 		if(bundle instanceof Migrator) {
@@ -954,7 +986,7 @@ public class Workspace {
 			if(project != null) {
 				logger.trace("project already loaded: {}", project);
 			} else {
-				project = bundles.get(file);
+				project = bundles.get(file); // shouldn't we be using the projects list
 				if(project != null) {
 					logger.trace("bundle already loaded: {}", project);
 				} else {
@@ -1061,6 +1093,13 @@ public class Workspace {
 		Project project = projects.remove(file);
 		if(project == null) {
 			project = bundles.remove(file);
+			if(project instanceof Fragment) {
+				Fragment fragment = (Fragment) project;
+				List<Fragment> list = fragments.get(fragment.host);
+				if(list != null && list.remove(fragment) && list.isEmpty()) {
+					fragments.remove(fragment.host);
+				}
+			}
 		}
 		return project;
 	}

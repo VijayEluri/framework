@@ -351,7 +351,7 @@ public class Project implements Comparable<Project> {
 		}
 		
 		if(file.isDirectory()) {
-			cpes.add(file.getAbsolutePath() + File.separator + "bin");
+			cpes.add(bin.getAbsolutePath());
 		} else {
 			cpes.add(file.getAbsolutePath());
 		}

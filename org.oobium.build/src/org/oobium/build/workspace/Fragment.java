@@ -26,7 +26,7 @@ public class Fragment extends Bundle {
 	}
 
 	private String parseHost(Manifest manifest) {
-		String name = (String) manifest.getMainAttributes().getValue("Bundle-SymbolicName");
+		String name = (String) manifest.getMainAttributes().getValue("Fragment-Host");
 		if(name != null) {
 			int ix = name.indexOf(';');
 			if(ix == -1) {
