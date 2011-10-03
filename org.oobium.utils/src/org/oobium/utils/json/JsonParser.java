@@ -46,13 +46,13 @@ public class JsonParser {
 		}
 	}
 	
-	
+	private char[] ca;
 	private boolean keepOrder;
 	private boolean stringsOnly;
 	private IConverter converter;
 	private Values values;
 	
-	private Object getObject(char[] ca, int start, int end) {
+	private Object getObject(int start, int end) {
 		if(ca == null || start >= end) {
 			return null;
 		}
@@ -104,7 +104,7 @@ public class JsonParser {
 					// remove escape characters, if any
 					StringBuilder sb = new StringBuilder(s2-s1-2);
 					for(int i = s1+1; i < s2-1; i++) {
-						if(ca[i] == '\\' && i < ca.length && ca[i+1] == ca[s1]) {
+						if(ca[i] == '\\' && i < end && ca[i+1] == ca[s1]) {
 							continue;
 						}
 						sb.append(ca[i]);
@@ -125,12 +125,12 @@ public class JsonParser {
 		}
 		if(ca[s1] == '[') {
 			if(ca[s2-1] == ']') {
-				return toList(ca, s1, s2);
+				return toList(s1, s2);
 			}
 		}
 		if(ca[s1] == '{') {
 			if(ca[s2-1] == '}') {
-				return toMap(ca, s1, s2);
+				return toMap(s1, s2);
 			}
 		}
 		
@@ -163,7 +163,8 @@ public class JsonParser {
 			return keepOrder ? new LinkedHashMap<String, String>() : new HashMap<String, String>();
 		}
 		stringsOnly = true;
-		return (Map<String, String>) toMap(json.toCharArray(), 0, json.length());
+		int len = setChars(json);
+		return (Map<String, String>) toMap(0, len);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -172,7 +173,8 @@ public class JsonParser {
 			return new ArrayList<String>(0);
 		}
 		stringsOnly = true;
-		return (List<String>) toList(json.toCharArray(), 0, json.length());
+		int len = setChars(json);
+		return (List<String>) toList(0, len);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -180,7 +182,8 @@ public class JsonParser {
 		if(json == null || json.length() == 0) {
 			return new ArrayList<Object>(0);
 		}
-		return (List<Object>) toList(json.toCharArray(), 0, json.length());
+		int len = setChars(json);
+		return (List<Object>) toList(0, len);
 	}
 	
 	/**
@@ -192,7 +195,8 @@ public class JsonParser {
 		if(json == null || json.length() == 0) {
 			return new ArrayList<T>(0);
 		}
-		List<?> list = toList(json.toCharArray(), 0, json.length());
+		int len = setChars(json);
+		List<?> list = toList(0, len);
 		for(Object element : list) {
 			if(element != null && !elementType.isAssignableFrom(element.getClass())) {
 				throw new IllegalStateException("cannot cast " + element.getClass() + " to type " + elementType);
@@ -201,7 +205,7 @@ public class JsonParser {
 		return (List<T>) list;
 	}
 	
-	private List<?> toList(char[] ca, int start, int end) {
+	private List<?> toList(int start, int end) {
 		int s = forward(ca, start, end);
 		
 		if(s == -1) {
@@ -249,7 +253,7 @@ public class JsonParser {
 				}
 				list.add(new String(ca, s1, s2-s1));
 			} else {
-				list.add(toObject(ca, s1, s2));
+				list.add(toObject(s1, s2));
 			}
 			s1 = find(ca, ',', s2, e);
 			if (s1 == -1) {
@@ -262,15 +266,59 @@ public class JsonParser {
 		return list;
 	}
 
+	private int setChars(String json) {
+		ca = json.toCharArray();
+		int len = ca.length;
+		for(int i = 1; i < len; i++) {
+			switch(ca[i]) {
+			case '\'':
+				i = closer(ca, i);
+				if(i == -1) i = len;
+				break;
+			case '"':
+				i = closer(ca, i);
+				if(i == -1) i = len;
+				break;
+			case '/':
+				if(ca[i-1] == '/') {
+					int s1 = i - 1;
+					int s2 = i + 1;
+					for( ; s2 < len; s2++) {
+						if(ca[s2] == '\n') break;
+					}
+					s2++;
+					System.arraycopy(ca, s2, ca, s1, len-s2);
+					len -= (s2-s1);
+					continue;
+				}
+				break;
+			case '*':
+				if(ca[i-1] == '/') {
+					int s1 = i - 1;
+					int s2 = i + 1;
+					for( ; s2 < len; s2++) {
+						if(ca[s2] == '/' && ca[s2-1] == '*') break;
+					}
+					s2++;
+					System.arraycopy(ca, s2, ca, s1, len-s2);
+					len -= (s2-s1);
+					continue;
+				}
+			}
+		}
+		return len;
+	}
+	
 	@SuppressWarnings("unchecked")
 	public Map<String, Object> toMap(String json) {
 		if(json == null || json.length() == 0) {
 			return keepOrder ? new LinkedHashMap<String, Object>(0) : new HashMap<String, Object>(0);
 		}
-		return (Map<String, Object>) toMap(json.toCharArray(), 0, json.length());
+		int len = setChars(json);
+		return (Map<String, Object>) toMap(0, len);
 	}
 	
-	private Map<String, ?> toMap(char[] ca, int start, int end) {
+	private Map<String, ?> toMap(int start, int end) {
 		int s = forward(ca, start, end);
 		
 		if(s == -1) {
@@ -334,23 +382,23 @@ public class JsonParser {
 				switch(ca[s1]) {
 				case '[':
 					s2 = closer(ca, s1, e) + 1;
-					value = toList(ca, s1, s2);
+					value = toList(s1, s2);
 					break;
 				case '{':
 					s2 = closer(ca, s1, e) + 1;
-					value = toMap(ca, s1, s2);
+					value = toMap(s1, s2);
 					break;
 				case '\'':
 				case '"':
 					s2 = closer(ca, s1, e) + 1;
-					value = toObject(ca, s1, s2);
+					value = toObject(s1, s2);
 					break;
 				default:
 					s2 = find(ca, ',', s1, e);
 					if(s2 < 0 || s2 >= e) {
 						s2 = reverse(ca, e-1) + 1;
 					}
-					value = toObject(ca, s1, s2);
+					value = toObject(s1, s2);
 					break;
 				}
 			}
@@ -369,8 +417,8 @@ public class JsonParser {
 		return map;
 	}
 	
-	private Object toObject(char[] ca, int start, int end) {
-		Object object = getObject(ca, start, end);
+	private Object toObject(int start, int end) {
+		Object object = getObject(start, end);
 		if(converter != null) {
 			object = converter.convert(object);
 		}
@@ -384,7 +432,8 @@ public class JsonParser {
 		if(json == null || json.length() == 0) {
 			return null;
 		}
-		return toObject(json.toCharArray(), 0, json.length());
+		int len = setChars(json);
+		return toObject(0, len);
 	}
 	
 }

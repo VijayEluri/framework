@@ -154,7 +154,14 @@ public class JsonUtilsTests {
 		assertEquals(1, toMap("a:1").get("a"));
 		assertEquals(-1, toMap("a:-1").get("a"));
 	}
-	
+
+	@Test
+	public void testToMap_WithComments() throws Exception {
+		assertEquals("{a=b}", toMap("{a:b/*,c*/}").toString());
+		assertEquals("{a=b/*,c*/}", toMap("{a:\"b/*,c*/\"}").toString());
+		assertEquals("{a=b/*,c*/}", toMap("{a:'b/*,c*/'}").toString());
+	}
+
 	@Test
 	public void testToList() throws Exception {
 		assertEquals("[]", asString(toList(null)));
