@@ -80,6 +80,9 @@ public class Workspace {
 	private Mode mode;
 	private Workspace parentWorkspace;
 
+	private boolean cacheClasspath;
+	private boolean cacheDependencies;
+
 	/**
 	 * A Map of all projects that are not bundles
 	 */
@@ -145,9 +148,11 @@ public class Workspace {
 		try {
 			File cfile = file.getCanonicalFile();
 			Project project = Project.load(cfile);
+			project.setCacheClasspath(cacheClasspath);
 			if(project instanceof Bundle) {
 				Bundle bundle = (Bundle) project;
 				logger.trace("adding bundle: {}", bundle);
+				bundle.setCacheDependencies(cacheDependencies);
 				bundles.put(cfile, bundle);
 				if(bundle instanceof Application) {
 					applications.put(cfile, (Application) bundle);
@@ -1148,6 +1153,23 @@ public class Workspace {
 		bundle = getBundle(OsgiRuntime.Knopplerfish);
 		if(bundle != null) {
 			bundles.remove(bundle);
+		}
+	}
+	
+	public void setCacheClasspath(boolean cacheClasspath) {
+		this.cacheClasspath = cacheClasspath;
+		for(Project project : projects.values()) {
+			project.setCacheClasspath(cacheClasspath);
+		}
+		for(Bundle bundle : bundles.values()) {
+			bundle.setCacheClasspath(cacheClasspath);
+		}
+	}
+	
+	public void setCacheDependecies(boolean cacheDependencies) {
+		this.cacheDependencies = cacheDependencies;
+		for(Bundle bundle : bundles.values()) {
+			bundle.setCacheDependencies(cacheDependencies);
 		}
 	}
 	

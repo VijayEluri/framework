@@ -186,6 +186,9 @@ public class Project implements Comparable<Project> {
 	
 	protected final Logger logger;
 
+	private boolean cacheClasspath;
+	private String cachedClasspath;
+
 	/**
 	 * This bundle's type, as specified in the custom manifest header, <code>Oobium-Type</code>.
 	 * @see Type
@@ -516,14 +519,32 @@ public class Project implements Comparable<Project> {
 	}
 	
 	public String getClasspath() {
+		if(cacheClasspath) {
+			if(cachedClasspath == null) {
+				cachedClasspath = StringUtils.join(getClasspathEntries(), File.pathSeparatorChar);
+			}
+			return cachedClasspath;
+		}
 		return StringUtils.join(getClasspathEntries(), File.pathSeparatorChar);
 	}
 
 	public String getClasspath(Workspace workspace) {
+		if(cacheClasspath) {
+			if(cachedClasspath == null) {
+				cachedClasspath = StringUtils.join(getClasspathEntries(workspace), File.pathSeparatorChar);
+			}
+			return cachedClasspath;
+		}
 		return StringUtils.join(getClasspathEntries(workspace), File.pathSeparatorChar);
 	}
 
 	public String getClasspath(Workspace workspace, Mode mode) {
+		if(cacheClasspath) {
+			if(cachedClasspath == null) {
+				cachedClasspath = StringUtils.join(getClasspathEntries(workspace, mode), File.pathSeparatorChar);
+			}
+			return cachedClasspath;
+		}
 		return StringUtils.join(getClasspathEntries(workspace, mode), File.pathSeparatorChar);
 	}
 
@@ -534,15 +555,11 @@ public class Project implements Comparable<Project> {
 	}
 
 	public Set<String> getClasspathEntries(Workspace workspace) {
-		Set<String> cpes = new LinkedHashSet<String>();
-		addClasspathEntries(cpes);
-		return cpes;
+		return getClasspathEntries();
 	}
 
 	public Set<String> getClasspathEntries(Workspace workspace, Mode mode) {
-		Set<String> cpes = new LinkedHashSet<String>();
-		addClasspathEntries(cpes);
-		return cpes;
+		return getClasspathEntries();
 	}
 
 	public String getManifestAttribute(String key) {
@@ -789,6 +806,13 @@ public class Project implements Comparable<Project> {
 		return false;
 	}
 
+	public void setCacheClasspath(boolean cacheClasspath) {
+		this.cacheClasspath = cacheClasspath;
+		if(!cacheClasspath) {
+			cachedClasspath = null;
+		}
+	}
+	
 	protected File setMain() {
 		return new File(src, name.replace('.', File.separatorChar));
 	}

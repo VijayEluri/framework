@@ -340,6 +340,10 @@ public class Bundle extends Project {
 	}
 
 	
+
+	private boolean cacheDependencies;
+	private Map<Bundle, List<Bundle>> cachedDependencies;
+
 	/**
 	 * This bundle's version, as specified by the manifest header
 	 * <code>Bundle-Version</code>
@@ -726,6 +730,13 @@ public class Bundle extends Project {
 	 * @return a set of bundles that are required to build this bundle
 	 */
 	public final Map<Bundle, List<Bundle>> getDependencies(Workspace workspace) {
+		if(cacheDependencies) {
+			if(cachedDependencies == null) {
+				cachedDependencies = new TreeMap<Bundle, List<Bundle>>();
+				addDependencies(workspace, cachedDependencies);
+			}
+			return cachedDependencies;
+		}
 		Map<Bundle, List<Bundle>> dependencies = new TreeMap<Bundle, List<Bundle>>();
 		addDependencies(workspace, dependencies);
 		return dependencies;
@@ -739,6 +750,13 @@ public class Bundle extends Project {
 	 *         bundle
 	 */
 	public Map<Bundle, List<Bundle>> getDependencies(Workspace workspace, Mode mode) {
+		if(cacheDependencies) {
+			if(cachedDependencies == null) {
+				cachedDependencies = new TreeMap<Bundle, List<Bundle>>();
+				addDependencies(workspace, mode, cachedDependencies);
+			}
+			return cachedDependencies;
+		}
 		Map<Bundle, List<Bundle>> dependencies = new TreeMap<Bundle, List<Bundle>>();
 		// long start = System.currentTimeMillis();
 		addDependencies(workspace, mode, dependencies);
@@ -846,7 +864,6 @@ public class Bundle extends Project {
 		Set<ExportedPackage> packages = new TreeSet<ExportedPackage>();
 		String str = (String) manifest.getMainAttributes().getValue("Export-Package");
 		if(str != null && str.trim().length() > 0) {
-
 			int s = 0;
 			for(int i = 0; i < str.length(); i++) {
 				char c = str.charAt(i);
@@ -1060,6 +1077,13 @@ public class Bundle extends Project {
 		return name.equals(requiredBundle.name) && version.resolves(requiredBundle.versionRange);
 	}
 
+	public void setCacheDependencies(boolean cacheDependencies) {
+		this.cacheDependencies = cacheDependencies;
+		if(!cacheDependencies) {
+			cachedDependencies = null;
+		}
+	}
+	
 	@Override
 	public String toString() {
 		return toString(null);
