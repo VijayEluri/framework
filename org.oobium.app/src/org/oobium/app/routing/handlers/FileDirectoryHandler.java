@@ -1,8 +1,13 @@
 package org.oobium.app.routing.handlers;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import org.oobium.app.http.MimeType;
 import org.oobium.app.request.Request;
 import org.oobium.app.response.Response;
 import org.oobium.app.response.StaticResponse;
@@ -26,14 +31,42 @@ public class FileDirectoryHandler extends RouteHandler {
 		}
 	}
 
+	private void addListings(String requestPath, StringBuilder sb, SimpleDateFormat sdf, List<File> files) {
+		for(File f : files) {
+			String name = f.getName();
+			String path = requestPath + ((filePath == null) ? ("/" + name) : (filePath + "/" + name));
+			sb.append("<tr>");
+			sb.append("<td class=\"name\"><a href=\"").append(path).append("\">").append(name).append("</a></td>");
+			sb.append("<td class=\"size\">").append(f.length()).append("</td>");
+			sb.append("<td class=\"date\">").append(sdf.format(new Date(f.lastModified()))).append("</td>");
+			sb.append("</tr>");
+		}
+	}
+	
 	@Override
 	public Response routeRequest(Request request) throws Exception {
-		File file = new File(basePath, filePath).getCanonicalFile();
-		String path = file.getPath();
-		if(path.startsWith(basePath)) {
+		File file = ((filePath == null) ? new File(basePath) : new File(basePath, filePath)).getCanonicalFile();
+		if(filePath == null || file.getPath().startsWith(basePath)) {
 			if(file.isFile()) {
 				return new StaticResponse(file);
-			} else {
+			}
+			else if(file.isDirectory()) {
+				List<File> dirs = new ArrayList<File>();
+				List<File> files = new ArrayList<File>();
+				for(File f : file.listFiles()) {
+					if(f.isDirectory()) dirs.add(f);
+					else files.add(f);
+				}
+
+				SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy hh:mm:ss");
+				StringBuilder sb = new StringBuilder();
+				sb.append("<html><body><table>");
+				addListings(request.getPath(), sb, sdf, dirs);
+				addListings(request.getPath(), sb, sdf, files);
+				sb.append("</table></body></html>");
+				return new StaticResponse(MimeType.HTML, sb.toString());
+			}
+			else {
 				return null;
 			}
 		} else {
