@@ -33,7 +33,7 @@ public class FileDirectoryRoute extends Route {
 		if(path.charAt(0) != '/') {
 			path = "/" + path;
 		}
-		this.pattern = Pattern.compile(path + "/(.+)");
+		this.pattern = Pattern.compile("{path}|{path}/(.+)".replace("{path}", path));
 
 		StringBuilder sb = new StringBuilder();
 		sb.append("[GET] ").append(pattern).append(" -> File");
