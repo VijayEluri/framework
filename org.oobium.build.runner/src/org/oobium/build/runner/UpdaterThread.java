@@ -112,11 +112,20 @@ class UpdaterThread extends Thread {
 				files.add(file);
 				this.editing.put(bundle, files);
 			} else {
-				this.editing.get(bundle).add(file);
+				List<File> files = this.editing.get(bundle);
+				if(files == null) {
+					this.editing.put(bundle, files = new ArrayList<File>());
+				}
+				files.add(file);
 			}
 		} else {
 			if(this.editing != null) {
-				this.editing.get(bundle).remove(file);
+				List<File> files = this.editing.get(bundle);
+				if(files != null) {
+					if(files.remove(file) && files.isEmpty()) {
+						this.editing.remove(bundle);
+					}
+				}
 			}
 		}
 	}
