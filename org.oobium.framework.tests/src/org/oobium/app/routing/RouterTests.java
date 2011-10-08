@@ -80,6 +80,7 @@ public class RouterTests {
 	public static class CategoryController extends HttpController { }
 
 	public static class AccountView extends View { }
+	public static class MyView extends View { }
 	public static class InvalidView extends View { InvalidView(String str) { } }
 
 	
@@ -2578,6 +2579,20 @@ public class RouterTests {
 	
 	@Test
 	public void testAddView() throws Exception {
+		router.addView(MyView.class);
+		assertEquals(1, router.getRoutes().size());
+		assertEquals("[GET] /my_view -> MyView", router.getRoutes().get(0).toString());
+
+		RouteHandler handler = router.getHandler(request("[GET] /my_view"));
+		assertNotNull(handler);
+		assertEquals(ViewHandler.class, handler.getClass());
+		ViewHandler vh = (ViewHandler) handler;
+		assertEquals(MyView.class, vh.viewClass);
+		assertNull(vh.params);
+	}
+	
+	@Test
+	public void testAddView_WithPath() throws Exception {
 		router.addView("/business?{type=business}", AccountView.class);
 		router.addView("/personal?{type=personal}", AccountView.class);
 		assertEquals(2, router.getRoutes().size());
