@@ -76,6 +76,7 @@ public class ServerView extends ViewPart {
 	private String applicationName;
 	private Application application;
 	private String properties;
+	private RunListener errorListener;
 	private RunListener runListener;
 	
 	private SashForm sf;
@@ -115,7 +116,7 @@ public class ServerView extends ViewPart {
 		
 		browserPanel.updateAppState(isRunning());
 		
-		RunnerService.addListener(runListener = new RunListener() {
+		errorListener = new RunListener() {
 			@Override
 			public void handleEvent(RunEvent event) {
 				if(event.application == application) {
@@ -126,6 +127,16 @@ public class ServerView extends ViewPart {
 					case Warning:
 						StatusManager.getManager().handle(getStatus(event), StatusManager.SHOW);
 						break;
+					}
+				}
+			}
+		};
+
+		RunnerService.addListener(runListener = new RunListener() {
+			@Override
+			public void handleEvent(RunEvent event) {
+				if(event.application == application) {
+					switch(event.type) {
 					case Start:
 						properties = JsonUtils.toJson(RunnerService.getRunner(application).getProperties());
 						start();
@@ -467,6 +478,7 @@ public class ServerView extends ViewPart {
 				autoMigAction.setEnabled(false);
 				RunnerService.pauseUpdaters();
 			}
+			RunnerService.addListener(errorListener);
 		}
 	}
 
@@ -497,6 +509,7 @@ public class ServerView extends ViewPart {
 	}
 	
 	public void stop() {
+		RunnerService.removeListener(errorListener);
 		if(application != null) {
 			RunnerService.removeListener(runListener);
 			RunnerService.stop(application);
