@@ -9,9 +9,7 @@ import java.util.concurrent.Executors;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelException;
-import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.group.ChannelGroup;
-import org.jboss.netty.channel.group.ChannelGroupFuture;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.oobium.app.handlers.Gateway;
@@ -39,8 +37,7 @@ public class AppServer implements BundleActivator {
 	private RequestHandlerTrackers trackers;
 	
 	private ServerBootstrap server;
-	private ChannelGroup channelGroup;
-	private Map<Integer, Channel> channels;
+	private Map<Integer, ChannelGroup> channels;
 	private ExecutorService executors;
 
 	private Thread shutdownHook;
@@ -53,6 +50,20 @@ public class AppServer implements BundleActivator {
 		instance = this;
 		this.logger = logger;
 		this.handlers = new RequestHandlers();
+	}
+	
+	public void addChannel(Channel channel) {
+		int port = ((InetSocketAddress) channel.getLocalAddress()).getPort();
+		addChannel(port, channel);
+	}
+	
+	public void addChannel(int port, Channel channel) {
+		// TODO need a way to make sure that this happens for all client connections...
+		ChannelGroup group = channels.get(port);
+		if(group == null) {
+			channels.put(port, group = new DefaultChannelGroup());
+		}
+		group.add(channel);
 	}
 	
 	private void addShutdownHook() {
@@ -87,8 +98,7 @@ public class AppServer implements BundleActivator {
 	}
 	
 	private ServerBootstrap createServer() {
-		channelGroup = new DefaultChannelGroup();
-		channels = new HashMap<Integer, Channel>();
+		channels = new HashMap<Integer, ChannelGroup>();
 
 		server = new ServerBootstrap(
 				new NioServerSocketChannelFactory(
@@ -97,7 +107,7 @@ public class AppServer implements BundleActivator {
 
 		executors = Executors.newCachedThreadPool();
 		
-		server.setPipelineFactory(new ServerPipelineFactory(logger, handlers, executors));
+		server.setPipelineFactory(new ServerPipelineFactory(this, logger, handlers, executors));
 
         server.setOption("child.tcpNoDelay", true);
         server.setOption("child.keepAlive", true);
@@ -111,29 +121,17 @@ public class AppServer implements BundleActivator {
 	
 	private synchronized void disposeServer() {
 		if(server != null) {
+			logger.debug("disposing server...");
+
 			removeShutdownHook();
 			
-			ChannelGroupFuture future = channelGroup.close();
-			future.awaitUninterruptibly();
+			for(ChannelGroup group : channels.values()) {
+				group.close().awaitUninterruptibly();
+			}
+			server.releaseExternalResources();
 
-			final ServerBootstrap tmp = server;
+			channels = null;
 			server = null;
-			new Thread() {
-				public void run() {
-					// TODO doesn't this indicate an arch problem?
-					//        we shouldn't be calling this in a Netty thread anyway!
-					try {
-						tmp.releaseExternalResources();
-					} catch(Throwable t) {
-						if(logger != null) {
-							logger.trace(t);
-						}
-					}
-				};
-			}.start();
-			
-			server = null;
-			channelGroup = null;
 			
 			logger.debug("disposed server");
 		}
@@ -147,24 +145,18 @@ public class AppServer implements BundleActivator {
 		}
 		
 		Channel channel = server.bind(new InetSocketAddress(port));
-		channelGroup.add(channel);
-		channels.put(port, channel);
+		addChannel(port, channel);
 	}
 	
 	private void stopServer(int port) {
 		if(server != null) {
-			Channel channel = channels.get(port);
-			if(channel == null) {
-				logger.error("no channel for port {}", port);
+			ChannelGroup group = channels.get(port);
+			if(group == null) {
+				logger.error("no channels for port {}", port);
 			} else {
 				channels.remove(port);
-				ChannelFuture future = channel.close();
-				try {
-					while(!future.await(100));
-					logger.info("closed channel for port {}", port);
-				} catch (InterruptedException e) {
-					logger.info("interrupted while waiting for channel to close on port {}", port);
-				}
+				group.close().awaitUninterruptibly();
+				logger.info("closed channels for port {}", port);
 			}
 		}
 	}

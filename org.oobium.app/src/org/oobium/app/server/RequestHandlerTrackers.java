@@ -11,7 +11,6 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
-@SuppressWarnings({"unchecked","rawtypes"})
 public class RequestHandlerTrackers {
 
 	private ServiceTracker requestHandlerTracker;

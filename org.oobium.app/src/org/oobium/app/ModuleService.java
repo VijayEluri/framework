@@ -71,6 +71,8 @@ public abstract class ModuleService implements BundleActivator {
 	protected String name;
 	protected BundleContext context;
 	protected Router router;
+	
+	volatile boolean running;
 
 	public ModuleService() {
 		this.logger = LogProvider.getLogger(getClass());
@@ -197,7 +199,7 @@ public abstract class ModuleService implements BundleActivator {
 	protected void initializeServiceTrackers(Config config) throws Exception {
 		// subclasses to implement if necessary
 	}
-
+	
 	protected List<Class<?>> loadClassesInPackage(String pkg) throws Exception {
 		ClassLoader loader = getClass().getClassLoader();
 		String path = pkg.replace('.', '/') + "/";
@@ -367,8 +369,9 @@ public abstract class ModuleService implements BundleActivator {
 		context.registerService(ModuleService.class.getName(), this, Dictionary("name", getName()));
 
 		startWorkers();
-		
+
 		logger.info(toString() + " started");
+		running = true;
 	}
 
 	/**
@@ -381,6 +384,7 @@ public abstract class ModuleService implements BundleActivator {
 	
 	@Override
 	public final void stop(BundleContext context) throws Exception {
+		running = false;
 		logger.info(toString() + " stopping");
 
 		teardown();

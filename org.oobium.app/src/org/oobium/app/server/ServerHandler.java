@@ -1,13 +1,20 @@
 package org.oobium.app.server;
 
 import static org.jboss.netty.handler.codec.http.HttpHeaders.isKeepAlive;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.TRANSFER_ENCODING;
 import static org.jboss.netty.handler.codec.http.HttpMethod.DELETE;
 import static org.jboss.netty.handler.codec.http.HttpMethod.GET;
 import static org.jboss.netty.handler.codec.http.HttpMethod.HEAD;
 import static org.jboss.netty.handler.codec.http.HttpMethod.POST;
 import static org.jboss.netty.handler.codec.http.HttpMethod.PUT;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.EXPECTATION_FAILED;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.NOT_MODIFIED;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.OK;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.PARTIAL_CONTENT;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.REQUESTED_RANGE_NOT_SATISFIABLE;
 import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static org.oobium.utils.DateUtils.httpDate;
 import static org.oobium.utils.StringUtils.blank;
@@ -42,6 +49,7 @@ import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameEncoder;
 import org.jboss.netty.handler.stream.ChunkedFile;
 import org.jboss.netty.handler.stream.ChunkedStream;
 import org.jboss.netty.util.CharsetUtil;
+import org.oobium.app.AppServer;
 import org.oobium.app.request.Request;
 import org.oobium.app.response.StaticResponse;
 import org.oobium.app.response.WebsocketUpgrade;
@@ -51,11 +59,13 @@ import org.oobium.utils.Config.Mode;
 
 public class ServerHandler extends SimpleChannelUpstreamHandler {
 
+	private final AppServer server;
 	private final Logger logger;
 	private final RequestHandlers handlers;
 	private final ExecutorService executors;
 	
-	public ServerHandler(Logger logger, RequestHandlers httpRequestHandlers, ExecutorService executors) {
+	public ServerHandler(AppServer server, Logger logger, RequestHandlers httpRequestHandlers, ExecutorService executors) {
+		this.server = server;
 		this.logger = logger;
 		this.handlers = httpRequestHandlers;
 		this.executors = executors;
@@ -76,6 +86,7 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 	@Override
 	public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
 		logger.trace("channel open");
+		server.addChannel(e.getChannel());
 		super.channelOpen(ctx, e);
 	}
 

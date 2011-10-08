@@ -343,19 +343,24 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 				return new HandlerTask(request) {
 					@Override
 					protected Response handleRequest(Request request) throws Exception {
+						if(!running) return null;
 						appService.set(AppService.this);
 						persistServices.openSession(getPersistClientName());
 						Model.setLogger(logger);
 						Model.setPersistServiceProvider(persistServices);
 						try {
 							Response response = handler.routeRequest(request);
-							getRouter().applyHeaders(request, response);
+							if(running) {
+								getRouter().applyHeaders(request, response);
+							}
 							return response;
 						} finally {
-							persistServices.closeSession();
-							Model.setPersistServiceProvider(null);
-							Model.setLogger(null);
-							appService.set(null);
+							if(running) {
+								persistServices.closeSession();
+								Model.setPersistServiceProvider(null);
+								Model.setLogger(null);
+								appService.set(null);
+							}
 						}
 					}
 				};

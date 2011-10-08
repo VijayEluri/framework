@@ -8,15 +8,18 @@ import org.jboss.netty.channel.Channels;
 import org.jboss.netty.handler.codec.http.HttpChunkAggregator;
 import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
+import org.oobium.app.AppServer;
 import org.oobium.logging.Logger;
 
 public class ServerPipelineFactory implements ChannelPipelineFactory {
 
+	private final AppServer server;
 	private final Logger logger;
 	private final RequestHandlers handlers;
 	private final ExecutorService executors;
 	
-	public ServerPipelineFactory(Logger logger, RequestHandlers handlers, ExecutorService executors) {
+	public ServerPipelineFactory(AppServer server, Logger logger, RequestHandlers handlers, ExecutorService executors) {
+		this.server = server;
 		this.logger = logger;
 		this.handlers = handlers;
 		this.executors = executors;
@@ -35,7 +38,7 @@ public class ServerPipelineFactory implements ChannelPipelineFactory {
 		pipeline.addLast("encoder", new HttpResponseEncoder());
 		pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
 		
-		pipeline.addLast("handler", new ServerHandler(logger, handlers, executors));
+		pipeline.addLast("handler", new ServerHandler(server, logger, handlers, executors));
 		
 		return pipeline;
 	}
