@@ -39,7 +39,7 @@ public class ViewCommand extends BuilderCommand {
 		
 		module.destroyView(param(0));
 
-		Eclipse.refresh(module.file, module.views);
+		Eclipse.refreshProject(module.name);
 	}
 	
 }

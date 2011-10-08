@@ -28,6 +28,8 @@ import org.oobium.build.console.commands.open.NotifierCommand;
 import org.oobium.build.console.commands.open.ObserverCommand;
 import org.oobium.build.console.commands.open.RouteTestsCommand;
 import org.oobium.build.console.commands.open.MigrationCommand;
+import org.oobium.build.console.commands.open.ScriptCommand;
+import org.oobium.build.console.commands.open.StyleCommand;
 import org.oobium.build.console.commands.open.TypeCommand;
 import org.oobium.build.console.commands.open.ViewCommand;
 
@@ -52,6 +54,8 @@ public class OpenCommand extends BuilderCommand {
 		add(new ObserverCommand());
 		add(new RouteTestsCommand());
 		add(new MigrationCommand());
+		add(new ScriptCommand());
+		add(new StyleCommand());
 		add(new TypeCommand());
 		add(new ViewCommand());
 	}

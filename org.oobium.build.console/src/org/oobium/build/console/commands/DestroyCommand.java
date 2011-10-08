@@ -22,6 +22,8 @@ import org.oobium.build.console.commands.destroy.ModelCommand;
 import org.oobium.build.console.commands.destroy.ModuleCommand;
 import org.oobium.build.console.commands.destroy.NotifierCommand;
 import org.oobium.build.console.commands.destroy.ObserverCommand;
+import org.oobium.build.console.commands.destroy.ScriptCommand;
+import org.oobium.build.console.commands.destroy.StyleCommand;
 import org.oobium.build.console.commands.destroy.ViewCommand;
 import org.oobium.build.console.commands.destroy.ViewsForCommand;
 
@@ -41,6 +43,8 @@ public class DestroyCommand extends BuilderCommand {
 		add(new ModuleCommand());
 		add(new NotifierCommand());
 		add(new ObserverCommand());
+		add(new ScriptCommand());
+		add(new StyleCommand());
 		add(new ViewCommand());
 		add(new ViewsForCommand());
 	}

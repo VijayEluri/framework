@@ -8,42 +8,44 @@
  * Contributors:
  *     Jeremy Dowdall <jeremy@oobium.com> - initial API and implementation
  ******************************************************************************/
-package org.oobium.build.console.commands.destroy;
+package org.oobium.build.console.commands.create;
 
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
-import org.oobium.utils.FileUtils;
 
-public class ViewsForCommand extends BuilderCommand {
+public class StyleCommand extends BuilderCommand {
 
 	@Override
 	public void configure() {
 		moduleRequired = true;
-		maxParams = 1;
+		maxParams = 2;
 		minParams = 1;
 	}
-
+	
 	@Override
 	public void run() {
 		Module module = getModule();
-		File views = module.getViewsFolder(param(0));
-		if(!views.exists()) {
-			console.err.println("views folder for " + param(0) + "does not exist");
-			return;
+		File style = module.getStyleSheet(param(0));
+		String name = module.getStyleName(style);
+		if(style.exists()) {
+			String confirm = ask(param(0) + " already exists. Overwrite?[Y/N] ");
+			if(!confirm.equalsIgnoreCase("Y")) {
+				console.out.println("operation cancelled");
+				return;
+			}
 		}
 		
-		String confirm = flag('f') ? "Y" : ask("Permanently remove the views folder and all contents?[Y/N] ");
-		if(!confirm.equalsIgnoreCase("Y")) {
-			console.out.println("operation cancelled");
-			return;
-		}
+		module.createStyleSheet(param(0), (paramCount() > 1) ? param(1) : "// TODO auto-generated style sheet");
+		console.out.println("created style sheet <a href=\"open style " + name + "\">" + name + "</a>");
 
-		FileUtils.delete(module.getViewsFolder(param(0)));
+		if(module.addScriptRoute(style)) {
+			console.out.println("added style route to <a href=\"open activator\">" + module.activator.getName() + "</a>");
+		}
 
 		Eclipse.refreshProject(module.name);
 	}
-	
+
 }

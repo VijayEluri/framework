@@ -48,6 +48,8 @@ import org.oobium.app.controllers.HttpController;
 import org.oobium.app.http.Action;
 import org.oobium.app.persist.ModelNotifier;
 import org.oobium.app.server.Websocket;
+import org.oobium.app.views.ScriptFile;
+import org.oobium.app.views.StyleSheet;
 import org.oobium.app.views.View;
 import org.oobium.build.esp.ESourceFile;
 import org.oobium.build.gen.ControllerGenerator;
@@ -212,6 +214,31 @@ public class Module extends Bundle {
 		
 		this.testSuiteName = name + ".tests";
 		this.testSuite = new File(file.getParent(), testSuiteName);
+	}
+	
+	public boolean addAssetRoute(File asset) {
+		String pname = packageName(asset);
+		String name = asset.getName();
+		name = name.substring(0, name.length() - 4);
+		
+		String oldsrc = FileUtils.readFile(activator).toString();
+		String newsrc = oldsrc;
+		
+		if(!Pattern.compile("router.addAsset\\s*\\(\\s*" + name + ".class\\s*\\)\\s*;").matcher(newsrc).find()) {
+			newsrc = oldsrc.replaceFirst("public\\s+void\\s+addRoutes\\s*\\(\\s*Config\\s+config\\s*,\\s*(App)?Router\\s+router\\s*\\)\\s*\\{\\s*",
+											"public void addRoutes(Config config, $1Router router) {\n" +
+											"\t\t// auto-generated\n" +
+											"\t\trouter.addAsset(" + name + ".class);\n\n\t\t");
+		}
+		if(!Pattern.compile("import\\s+"+pname+"."+name).matcher(newsrc).find()) {
+			newsrc = newsrc.replaceFirst("(package\\s+[\\w\\.]+;)", "$1\n\nimport "+pname+"."+name+";");
+		}
+
+		if(!newsrc.equals(oldsrc)) {
+			FileUtils.writeFile(activator, newsrc);
+			return true;
+		}
+		return false;
 	}
 	
 	@Override
@@ -449,7 +476,16 @@ public class Module extends Bundle {
 		}
 	}
 
+	public boolean addScriptRoute(File script) {
+		return addAssetRoute(script);
+	}
+
+	public boolean addStyleRoute(File style) {
+		return addAssetRoute(style);
+	}
+	
 	public boolean addViewRoute(File view) {
+		String pname = packageName(view);
 		String name = view.getName();
 		name = name.substring(0, name.length() - 4);
 		
@@ -462,8 +498,8 @@ public class Module extends Bundle {
 											"\t\t// auto-generated\n" +
 											"\t\trouter.addView(" + name + ".class);\n\n\t\t");
 		}
-		if(!Pattern.compile("import\\s+"+packageName(view)+"."+name).matcher(newsrc).find()) {
-			newsrc = newsrc.replaceFirst("(package\\s+[\\w\\.]+;)", "$1\n\nimport "+packageName(view)+"."+name+";");
+		if(!Pattern.compile("import\\s+"+pname+"."+name).matcher(newsrc).find()) {
+			newsrc = newsrc.replaceFirst("(package\\s+[\\w\\.]+;)", "$1\n\nimport "+pname+"."+name+";");
 		}
 
 		if(!newsrc.equals(oldsrc)) {
@@ -655,6 +691,20 @@ public class Module extends Bundle {
 		return ProjectGenerator.createObserver(this, modelPackage, adjust(modelName));
 	}
 	
+	public File createScriptFile(String name, String content) {
+		File script = ViewGenerator.createScript(views, adjust(name), content);
+		addImportPackage(ScriptFile.class.getPackage().getName());
+		addExportPackage(packageName(script));
+		return script;
+	}
+	
+	public File createStyleSheet(String name, String content) {
+		File style = ViewGenerator.createStyle(views, adjust(name), content);
+		addImportPackage(StyleSheet.class.getPackage().getName());
+		addExportPackage(packageName(style));
+		return style;
+	}
+	
 	public File createView(String name, String content) {
 		File view = ViewGenerator.createView(views, adjust(name), content);
 		addImportPackage(View.class.getPackage().getName());
@@ -664,8 +714,8 @@ public class Module extends Bundle {
 	
 	/**
 	 * Destroy a UI file and its generated file.  Also removes exported packages if
-	 * necessary.  Only intended to work with .esp and .emt files
-	 * @param file a .esp or .emt file
+	 * necessary.  Only intended to work with EFiles: .esp, .ejs, .ess, and .emt files
+	 * @param file an EFile
 	 * @return a list of files that were changed and/or deleted
 	 */
 	public File[] destroy(File file) {
@@ -690,7 +740,14 @@ public class Module extends Bundle {
 		String name = file.getName();
 		if(name.endsWith(".emt")) {
 			genFile = getGenMailerTemplate(file);
-		} else if(name.endsWith(".esp")) {
+		}
+		else if(name.endsWith(".esp")) {
+			genFile = getGenView(file);
+		}
+		else if(name.endsWith(".ejs")) {
+			genFile = getGenView(file);
+		}
+		else if(name.endsWith(".ess")) {
 			genFile = getGenView(file);
 		}
 		
@@ -704,17 +761,31 @@ public class Module extends Bundle {
 				folder.delete();
 				changed.add(folder);
 			} else if(genFile.isFile()) {
-				if(genFile.delete()) changed.add(file);
+				if(genFile.delete()) {
+					changed.add(genFile);
+				}
 			}
 		}
 
 		if(!changed.isEmpty()) {
-			if(!hasViews() && !hasMailerTemplates()) {
-				if(removeImportPackage(View.class.getPackage().getName())) {
-					changed.add(manifest);
-				}
+			boolean hasViews = hasViews();
+			boolean hasMailers = hasMailerTemplates();
+			boolean hasScripts = hasScripts();
+			boolean hasStyles = hasStyles();
+			
+			if(!hasViews && !hasMailers &&
+					removeImportPackage(View.class.getPackage().getName())) {
+				changed.add(manifest);
 			}
-			if(name.endsWith(".emt") && !hasMailerTemplates() && 
+			if(name.endsWith(".ejs") && !hasScripts && 
+					removeImportPackage(ScriptFile.class.getPackage().getName())) {
+				changed.add(manifest);
+			}
+			if(name.endsWith(".ess") && !hasStyles && 
+					removeImportPackage(StyleSheet.class.getPackage().getName())) {
+				changed.add(manifest);
+			}
+			if(name.endsWith(".emt") && !hasMailers && 
 					(removeImportPackage(Mailer.class.getPackage().getName()) ||
 							removeImportPackage(InternetAddress.class.getPackage().getName()))) {
 				changed.add(manifest);
@@ -789,6 +860,14 @@ public class Module extends Bundle {
 		return files.toArray(new File[files.size()]);
 	}
 	
+	public File[] destroyScriptFile(String name) {
+		return destroy(getScriptFile(name));
+	}
+
+	public File[] destroyStyleSheet(String name) {
+		return destroy(getStyleSheet(name));
+	}
+
 	public File[] destroyView(String name) {
 		return destroy(getView(name));
 	}
@@ -1302,7 +1381,7 @@ public class Module extends Bundle {
 	}
 	
 	/**
-	 * Get the generated file for the given view.<br>
+	 * Get the generated file for the given view. Works also for style sheets (.ess) and script files (.ejs).<br>
 	 * Note that the file may not actually exist on the file system - 
 	 * check using {@link File#exists()}.
 	 * @param name
@@ -1452,6 +1531,16 @@ public class Module extends Bundle {
 		return new File(views, adjust(name) + ".ejs");
 	}
 	
+	/**
+	 * Convenience method to call {@link #getViewName(File)}
+	 * @param script the script file
+	 * @return the name of the script file
+	 * @see #getViewName(File)
+	 */
+	public String getScriptName(File script) {
+		return getViewName(script);
+	}
+
 	public File getSrcMailer(File genMailer) {
 		return src(genMailer);
 	}
@@ -1495,6 +1584,16 @@ public class Module extends Bundle {
 	 */
 	public File getStyleSheet(String name) {
 		return new File(views, adjust(name) + ".ess");
+	}
+
+	/**
+	 * Convenience method to call {@link #getViewName(File)}
+	 * @param style the script file
+	 * @return the name of the style file
+	 * @see #getViewName(File)
+	 */
+	public String getStyleName(File style) {
+		return getViewName(style);
 	}
 
 	public int getType(File file) {
@@ -1581,6 +1680,22 @@ public class Module extends Bundle {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Does this module have any script files (.ejs).
+	 * @return true if there are .ejs files, false otherwise
+	 */
+	public boolean hasScripts() {
+		return !findScriptFiles().isEmpty();
+	}
+
+	/**
+	 * Does this module have any style sheets (.ess).
+	 * @return true if there are .ess files, false otherwise
+	 */
+	public boolean hasStyles() {
+		return !findStyleSheets().isEmpty();
 	}
 
 	/**

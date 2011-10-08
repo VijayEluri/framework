@@ -8,16 +8,15 @@
  * Contributors:
  *     Jeremy Dowdall <jeremy@oobium.com> - initial API and implementation
  ******************************************************************************/
-package org.oobium.build.console.commands.destroy;
+package org.oobium.build.console.commands.open;
 
 import java.io.File;
 
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.Eclipse;
 import org.oobium.build.workspace.Module;
-import org.oobium.utils.FileUtils;
 
-public class ViewsForCommand extends BuilderCommand {
+public class ScriptCommand extends BuilderCommand {
 
 	@Override
 	public void configure() {
@@ -25,25 +24,16 @@ public class ViewsForCommand extends BuilderCommand {
 		maxParams = 1;
 		minParams = 1;
 	}
-
+	
 	@Override
 	public void run() {
 		Module module = getModule();
-		File views = module.getViewsFolder(param(0));
-		if(!views.exists()) {
-			console.err.println("views folder for " + param(0) + "does not exist");
-			return;
+		File script = module.getScriptFile(param(0));
+		if(script != null && script.isFile()) {
+			Eclipse.openFile(module.file, script);
+		} else {
+			console.err.println("script does not exist");
 		}
-		
-		String confirm = flag('f') ? "Y" : ask("Permanently remove the views folder and all contents?[Y/N] ");
-		if(!confirm.equalsIgnoreCase("Y")) {
-			console.out.println("operation cancelled");
-			return;
-		}
-
-		FileUtils.delete(module.getViewsFolder(param(0)));
-
-		Eclipse.refreshProject(module.name);
 	}
-	
+
 }

@@ -28,6 +28,24 @@ import org.oobium.utils.StringUtils;
 
 public class ViewGenerator {
 
+	public static File createScript(File folder, String name, String content) {
+		String path = name;
+		if(!path.endsWith(".ejs")) {
+			path = path + ".ejs";
+		}
+		
+		return writeFile(new File(folder, path), content);
+	}
+	
+	public static File createStyle(File folder, String name, String content) {
+		String path = name;
+		if(!path.endsWith(".ess")) {
+			path = path + ".ess";
+		}
+		
+		return writeFile(new File(folder, path), content);
+	}
+	
 	public static File createView(File folder, String name, String content) {
 		String path = name;
 		if(!path.endsWith(".esp")) {
@@ -37,6 +55,7 @@ public class ViewGenerator {
 		return writeFile(new File(folder, path), content);
 	}
 	
+
 	public LinkedHashMap<String, PropertyDescriptor> properties;
 	private String mPkg;
 	private String mType;
