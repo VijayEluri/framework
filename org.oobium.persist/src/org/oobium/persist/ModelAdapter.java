@@ -105,11 +105,14 @@ public class ModelAdapter {
 	public Class<?> getClass(String field) {
 		if(attribute.containsKey(field)) {
 			return getType(attribute.get(field));
-		} else if(hasOne.containsKey(field)) {
+		}
+		else if(hasOne.containsKey(field)) {
 			return hasOne.get(field).type();
-		} else {
+		}
+		else if(hasMany.containsKey(field)) {
 			return ModelList.class;
 		}
+		return null;
 	}
 	
 	public String[] getEmbedded(String field) {
