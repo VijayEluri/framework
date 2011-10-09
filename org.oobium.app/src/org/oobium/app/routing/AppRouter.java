@@ -66,6 +66,10 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 	private String apiHeader;
 	
 
+	public AppRouter(AppService service, int port) {
+		this(service, new String[0], port);
+	}
+
 	public AppRouter(AppService service, String host, int port) {
 		this(service, new String[] { host }, port);
 	}
@@ -239,7 +243,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 			return null;
 		}
 		
-		if(!hasHost(request.getHost())) {
+		if(!hasHost(request)) {
 			return null;
 		}
 
@@ -571,7 +575,11 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		}
 	}
 
-	public boolean hasHost(String host) {
+	public boolean hasHost(Request request) {
+		if(hosts == null || hosts.length == 0) {
+			return true;
+		}
+		String host = request.getHost();
 		if(host != null && host.length() > 0) {
 			for(String h : hosts) {
 				if(h.equals(host)) {

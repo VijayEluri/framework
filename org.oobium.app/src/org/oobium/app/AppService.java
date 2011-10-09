@@ -302,7 +302,7 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 	
 	@Override
 	public Response handle404(Request request) {
-		if(getRouter().hasHost(request.getHost())) {
+		if(getRouter().hasHost(request)) {
 			if(errorClass404 != null) {
 				try{
 					Response response = View.render(errorClass404, request);
@@ -318,7 +318,7 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 
 	@Override
 	public Response handle500(Request request, Exception exception) {
-		if(getRouter().hasHost(request.getHost())) {
+		if(getRouter().hasHost(request)) {
 			if(errorClass500 != null) {
 				try{
 					Response response = View.render(errorClass500, request);
