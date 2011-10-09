@@ -39,6 +39,8 @@ public class ManagerService extends AppService {
 	}
 
 	
+	private Websocket websocket;
+	
 	public ManagerService() {
 		setPersistService(new MemoryPersistService());
 	}
@@ -62,8 +64,6 @@ public class ManagerService extends AppService {
 		router.add("refresh").asRoute(POST, BundleController.class);
 	}
 
-	private Websocket websocket;
-	
 	public void send(String eventName, Object data, Object error) {
 		if(websocket != null) {
 			websocket.send(toJson(Map(e("event", eventName), e("data", data), e("error", error))));
