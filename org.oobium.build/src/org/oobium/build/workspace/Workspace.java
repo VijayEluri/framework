@@ -694,6 +694,9 @@ public class Workspace {
 			if(list != null) {
 				return list.toArray(new Fragment[list.size()]);
 			}
+			if(parentWorkspace != null) {
+				return parentWorkspace.getFragments(bundleName);
+			}
 			return new Fragment[0];
 		} finally {
 			lock.readLock().unlock();
