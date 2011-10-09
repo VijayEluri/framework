@@ -125,7 +125,7 @@ public class AppServer implements BundleActivator {
 
 			removeShutdownHook();
 			
-			for(ChannelGroup group : channels.values()) {
+			for(ChannelGroup group : channels.values().toArray(new ChannelGroup[channels.size()])) {
 				group.close().awaitUninterruptibly();
 			}
 			server.releaseExternalResources();
