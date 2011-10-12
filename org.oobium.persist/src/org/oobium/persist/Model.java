@@ -907,8 +907,12 @@ public abstract class Model implements JsonModel {
 	}
 	
 	public final boolean load() {
+		return load(null);
+	}
+	
+	public final boolean load(String fields) {
 		try {
-			getPersistor().retrieve(this);
+			getPersistor().retrieve(this, fields);
 			return true;
 		} catch(Exception e) {
 			logger.warn("failed to load " + asSimpleString(), e);

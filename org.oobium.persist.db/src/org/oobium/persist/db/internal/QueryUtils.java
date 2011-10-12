@@ -17,6 +17,7 @@ import static org.oobium.utils.StringUtils.tableName;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
@@ -161,47 +162,49 @@ public class QueryUtils {
 		}
 	}
 	
-	public static void setFields(Model model, Map<String, Object> data) {
+	public static void setFields(Model model, Map<String, Object> data, String...fields) {
 		if(logger.isLoggingTrace()) {
 			logger.trace("start setFields " + model.asSimpleString());
 		}
 		ModelAdapter adapter = ModelAdapter.getAdapter(model.getClass());
-		Map<String, Object> fields = model.getAll();
+		Map<String, Object> modelFields;
+		if(fields.length == 0) {
+			modelFields = model.getAll();
+		} else {
+			modelFields = new HashMap<String, Object>();
+			for(String field : fields) {
+				modelFields.put(field, model.peek(field));
+			}
+		}
 		for(Entry<String, Object> entry : data.entrySet()) {
 			String field = entry.getKey();
 			if(!ModelDescription.ID.equals(field)) {
 //				TODO verify that data in the cache or db should over-write data in the object
-//				if(fields.containsKey(field)) {
-//					if(logger.isLoggingTrace()) {
-//						logger.trace("  field " + field + " already set - skipping");
-//					}
-//				} else {
-					Object value = entry.getValue();
+				Object value = entry.getValue();
+				if(logger.isLoggingTrace()) {
+					logger.trace("  " + field + " <- " + asString(value));
+				}
+				try {
+					if(adapter.hasAttribute(field)) {
+						modelFields.put(field, value);
+					} else if(adapter.hasOne(field)) {
+						if(value instanceof Integer) {
+							value = getObject(adapter.getHasOneClass(field), (Integer) value);
+						}
+						modelFields.put(field, value);
+					}
+				} catch(NoSuchFieldException e) {
 					if(logger.isLoggingTrace()) {
-						logger.trace("  " + field + " <- " + asString(value));
+						logger.trace("database field " + field + " does not exist in " + model.getClass());
 					}
-					try {
-						if(adapter.hasAttribute(field)) {
-							fields.put(field, value);
-						} else if(adapter.hasOne(field)) {
-							if(value instanceof Integer) {
-								value = getObject(adapter.getHasOneClass(field), (Integer) value);
-							}
-							fields.put(field, value);
-						}
-					} catch(NoSuchFieldException e) {
-						if(logger.isLoggingTrace()) {
-							logger.trace("database field " + field + " does not exist in " + model.getClass());
-						}
-					} catch(Exception e) {
-						if(logger.isLoggingTrace()) {
-							logger.trace("error setting field " + field + " in " + model.getClass(), e);
-						}
+				} catch(Exception e) {
+					if(logger.isLoggingTrace()) {
+						logger.trace("error setting field " + field + " in " + model.getClass(), e);
 					}
-//				}
+				}
 			}
 		}
-		model.putAll(fields);
+		model.putAll(modelFields);
 		logger.trace("end setFields");
 	}
 

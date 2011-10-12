@@ -1001,6 +1001,38 @@ public class DbPersistor {
 		logger.debug("end retrieve");
 	}
 
+	public void retrieve(Connection connection, Model model, String include) throws SQLException {
+		logger.debug("start retrieve: {}, include: {}", model, include);
+
+		int dbType = getDbType(connection);
+		QueryProcessor<?> processor = QueryProcessor.create(dbType, model.getClass(), "where id=? include:?", model.getId(), include);
+		List<?> list = processor.process(connection);
+		// TODO throw exception if list is empty?
+		if(!list.isEmpty()) {
+			setFields(model, ((Model) list.get(0)).getAll());
+		}
+
+		logger.debug("end retrieve");
+	}
+
+	public void retrieveFields(Connection connection, Model model, String fields) throws SQLException {
+		logger.debug("start retrieve: {}, fields: {}", model, fields);
+
+		int ix = fields.indexOf(':'); // field may contain include syntax
+		String[] fieldNames = ((ix == -1) ? fields : fields.substring(0, ix)).split("\\s*,\\s*");
+
+		int dbType = getDbType(connection);
+		// TODO hack: modify QueryProcessor so it doesn't need to re-fetch the given model
+		QueryProcessor<?> processor = QueryProcessor.create(dbType, model.getClass(), "where id=? include:?", model.getId(), fields);
+		List<?> list = processor.process(connection);
+		// TODO throw exception if list is empty?
+		if(!list.isEmpty()) {
+			setFields(model, ((Model) list.get(0)).getAll(), fieldNames);
+		}
+
+		logger.debug("end retrieve");
+	}
+
 	private void setStatementValues(PreparedStatement ps, Object[] values) throws SQLException {
 		for(int i = 0; i < values.length; i++) {
 			setObject(ps, i + 1, values[i]);

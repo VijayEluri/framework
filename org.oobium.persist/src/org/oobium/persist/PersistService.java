@@ -44,7 +44,7 @@ public interface PersistService {
 
     public abstract void retrieve(Model...models) throws Exception;
 
-    public abstract void retrieve(Model model, String hasMany) throws Exception;
+    public abstract void retrieve(Model model, String include) throws Exception;
 
     public abstract void update(Model...models) throws Exception;
 

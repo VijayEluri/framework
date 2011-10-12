@@ -24,11 +24,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
-import org.oobium.persist.ModelAdapter;
 import org.oobium.persist.PersistClient;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.ServiceInfo;
@@ -43,6 +44,8 @@ import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
 public abstract class DbPersistService implements BundleActivator, PersistService {
+
+	private static final Pattern includePattern = Pattern.compile("(include\\s*:).*");
 
 	private static final ThreadLocal<String> threadClient = new ThreadLocal<String>();
 	private static final ThreadLocal<Connection> threadConnection = new ThreadLocal<Connection>();
@@ -473,18 +476,34 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	}
 
 	/**
-	 * @param relation may be a hasMany or hasOne (if 1:1 and opposite holds the key)
+	 * Retrieve all or parts of the given model, as specified with the given options parameter.<br/>
+	 * <br/>
+	 * If the given options parameter:
+	 * <p><b>is blank</b>: this method delegates to {@link #retrieve(Model...)}</p>
+	 * <p><b>starts with "include:"</b>: this method will retrieve and set all fields of the given model. This operates just like
+	 * {@link #retrieve(Model...)}, except that it will also use the eager loading specified in the "include:" syntax</p>
+	 * <p><b>else</b>: the given options are used as a comma separated list of fields that are to be retrieved and loaded into the
+	 * given model (fields can also use the "include" syntax, and therefore, eager loading). The difference between this and the second option
+	 * is that the model fields that are <i>not</i> given in the options parameter will <i>not</i> be overwritten.</p>
+	 * @param model the model upon which to perform the retrieval; cannot be null
+	 * @param options a String or null
 	 */
 	@Override
-	public void retrieve(Model model, String relation) throws Exception {
-		// TODO hack: re-implement directly in DbPersistor
-		Connection connection = getConnection();
-		Model tmp = persistor.find(connection, model.getClass(), "where id=? include:?", model.getId(), relation);
-		if(tmp != null || ModelAdapter.getAdapter(model).hasOne(relation)) {
-			model.put(relation, tmp.get(relation));
+	public void retrieve(Model model, String options) throws Exception {
+		if(options == null || options.length() == 0) {
+			retrieve(model);
+		} else {
+			Connection connection = getConnection();
+			Matcher m = includePattern.matcher(options);
+			if(m.matches()) {
+				persistor.retrieve(connection, model, options.substring(m.end(1)).trim());
+			}
+			else {
+				persistor.retrieveFields(connection, model, options);
+			}
 		}
 	}
-
+	
 	public void rollback() throws SQLException {
 		Connection connection = getConnection(false);
 		if(connection != null) {
