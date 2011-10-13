@@ -432,32 +432,4 @@ public class QueryBuilderTests {
 		assertEquals("[1]", asString(query.getValues()));
 	}
 
-	@Test
-	public void testJsonInput() throws Exception {
-		String sql = "a:1";
-		Query query = QueryBuilder.build(dbType, Start1.class, sql);
-		
-		assertEquals("SELECT a.id a_id,a.a a_a FROM start1s a WHERE a.a=?", query.getSql());
-		assertEquals("[1]", asString(query.getValues()));
-	}
-	
-	@Test
-	public void testJsonInputWithInclude() throws Exception {
-		String sql = "a:1";
-		Query query = QueryBuilder.build(dbType, Start1.class, sql);
-		
-		assertEquals("SELECT a.id a_id,a.a a_a FROM start1s a WHERE a.a=?", query.getSql());
-		assertEquals("[1]", asString(query.getValues()));
-	}
-
-	@Test
-	public void testJsonHasOneSql4() throws Exception {
-		String sql = "a:1,$include:a";
-		Query query = QueryBuilder.build(dbType, Start1.class, sql);
-		
-		String expected = "SELECT a.id a_id,a.a a_a,b.id b_id,b.b b_b,b.c b_c FROM start1s a LEFT JOIN a1s b ON a.a=b.id WHERE a.a=?";
-		assertEquals(expected, query.getSql());
-		assertEquals("[1]", asString(query.getValues()));
-	}
-
 }
