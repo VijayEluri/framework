@@ -30,20 +30,22 @@ public class HttpRoute extends Route {
 	
 	public String realm;
 
-	
-	public HttpRoute(HttpMethod method, String rule, HttpController controller, Action action) {
-		this(method, rule, controller, null, controller.getClass(), action);
-	}
+	// for a hasMany route
+	public final Class<? extends Model> parentClass;
+	public final String hasManyField;
+
 	
 	public HttpRoute(HttpMethod method, String rule, Class<? extends Model> modelClass, Class<? extends HttpController> controllerClass, Action action) {
-		this(method, rule, null, modelClass, controllerClass, action);
+		this(method, rule, modelClass, controllerClass, action, null, null);
 	}
-	
-	private HttpRoute(HttpMethod method, String rule, HttpController controller, Class<? extends Model> modelClass, Class<? extends HttpController> controllerClass, Action action) {
+
+	public HttpRoute(HttpMethod method, String rule, Class<? extends Model> modelClass, Class<? extends HttpController> controllerClass, Action action, Class<? extends Model> parentClass, String hasManyField) {
 		super(Route.HTTP_CONTROLLER, method, rule);
 
 		this.modelClass = modelClass;
 		this.controllerClass = controllerClass;
+		this.parentClass = parentClass;
+		this.hasManyField = hasManyField;
 
 		Class<?> clazz = (modelClass != null) ? modelClass : controllerClass;
 		

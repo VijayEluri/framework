@@ -131,14 +131,14 @@ public class Routes {
 			HttpRoute route = null;
 			switch(action) {
 			case create:
-				route = router.addRoute(key, join(rule, field), parentClass, field, hasManyClass, action);
+				route = router.addRoute(key, rule, parentClass, field, hasManyClass, action);
 				updateParams(route, parentIdParam, hasManyParam);
 				break;
 			case showAll:
-				route = router.addRoute(key, join(rule, field), parentClass, field, hasManyClass, action);
+				route = router.addRoute(key, rule, parentClass, field, hasManyClass, action);
 				break;
 			case showNew:
-				route = router.addRoute(key, join(rule + "/new", field), parentClass, field, hasManyClass, action);
+				route = router.addRoute(key, rule + "/new", parentClass, field, hasManyClass, action);
 				updateParams(route, parentIdParam, hasManyParam);
 				break;
 			case destroy:
@@ -155,11 +155,6 @@ public class Routes {
 		return new RoutedRoutes(this, routed);
 	}
 
-	private String join(String rule, String field) {
-		String joiner = (rule.indexOf('?') == -1) ? "?" : "&";
-		return rule + joiner + "{hasMany=" + field + "}";
-	}
-	
 	public Routes publish() {
 		if(routed != null) {
 			for(Routed r : routed) {

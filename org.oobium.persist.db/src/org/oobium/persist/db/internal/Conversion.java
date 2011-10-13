@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelAdapter;
+import org.oobium.utils.json.JsonUtils;
 
 public class Conversion {
 
@@ -27,6 +28,18 @@ public class Conversion {
 		operators.put("and", " AND ");
 		operators.put("like", " LIKE ");
 		operators.put("nlike", " NOT LIKE ");
+	}
+	
+	public static Conversion run(Class<? extends Model> modelType, Map<String, Object> map, Object...values) throws Exception {
+		Conversion conversion = new Conversion(map, values);
+		conversion.setModelType(modelType);
+		conversion.run();
+		return conversion;
+	}
+	
+	public static Conversion run(Class<? extends Model> modelType, String query, Object...values) throws Exception {
+		Map<String, Object> map = JsonUtils.toMap(query, true);
+		return run(modelType, map, values);
 	}
 	
 	
@@ -71,40 +84,31 @@ public class Conversion {
 			throw new Exception("'and' not allowed on " + value);
 		}
 	}
-	
-	public void run() throws Exception {
-		v = 0;
-		sb = new StringBuilder();
-		list = new ArrayList<Object>();
 
-		Object limit = inQuery.remove("$limit");
-		Object include = inQuery.remove("$include");
-
-		if(inQuery.isEmpty()) {
-			if(limit != null) {
-				sb.append("LIMIT ").append(limit);
-			}
-			if(include != null) {
-				if(limit != null) sb.append(' ');
-				sb.append("INCLUDE:").append(include);
-			}
-		} else {
-			sb.append("WHERE ");
-
-			and(inQuery);
-		
-			if(limit != null) {
-				sb.append(" LIMIT ").append(limit);
-			}
-			if(include != null) {
-				sb.append(" INCLUDE:").append(include);
-			}
+	private void apply(StringBuilder sb, Object order, Object limit, Object include) {
+		boolean first = (sb.length() == 0 || sb.charAt(sb.length()-1) == ' ');
+		if(order != null) {
+			first = first(sb, first);
+			sb.append("ORDER BY ").append(order);
 		}
-		
-		sql = sb.toString();
-		values = list.toArray(new Object[list.size()]);
+		if(limit != null) {
+			first = first(sb, first);
+			sb.append("LIMIT ").append(limit);
+		}
+		if(include != null) {
+			first = first(sb, first);
+			sb.append("INCLUDE:").append(include);
+		}
 	}
 	
+	private boolean first(StringBuilder sb, boolean first) {
+		if(!first) {
+			sb.append(' ');
+			return false;
+		}
+		return true;
+	}
+
 	public String getSql() {
 		return sql;
 	}
@@ -184,6 +188,30 @@ public class Conversion {
 		else {
 			throw new Exception("'or' not allowed on " + value);
 		}
+	}
+	
+	public void run() throws Exception {
+		v = 0;
+		sb = new StringBuilder();
+		list = new ArrayList<Object>();
+
+		Object order = inQuery.remove("$sort");
+		if(order == null) {
+			order = inQuery.remove("$order");
+		}
+		Object limit = inQuery.remove("$limit");
+		Object include = inQuery.remove("$include");
+
+		if(inQuery.isEmpty()) {
+			apply(sb, order, limit, include);
+		} else {
+			sb.append("WHERE ");
+			and(inQuery);
+			apply(sb, order, limit, include);
+		}
+		
+		sql = sb.toString();
+		values = list.toArray(new Object[list.size()]);
 	}
 	
 	public void setModelType(Class<? extends Model> modelType) {

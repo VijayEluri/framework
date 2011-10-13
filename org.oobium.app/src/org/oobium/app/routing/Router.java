@@ -56,7 +56,6 @@ import org.oobium.app.http.MimeType;
 import org.oobium.app.request.Request;
 import org.oobium.app.routing.routes.DynamicAssetRoute;
 import org.oobium.app.routing.routes.FileDirectoryRoute;
-import org.oobium.app.routing.routes.HasManyRoute;
 import org.oobium.app.routing.routes.HttpRoute;
 import org.oobium.app.routing.routes.RedirectRoute;
 import org.oobium.app.routing.routes.RtspRoute;
@@ -539,7 +538,7 @@ public class Router {
 		}
 		Class<? extends Model> modelClass = Model.class.isAssignableFrom(clazz) ? clazz.asSubclass(Model.class) : null;
 		Class<? extends HttpController> controllerClass = getControllerClass(clazz);
-		HasManyRoute route = new HasManyRoute(type, rule, parentClass, hasManyField, modelClass, controllerClass, action);
+		HttpRoute route = new HttpRoute(type, rule, modelClass, controllerClass, action, parentClass, hasManyField);
 		addRoute(key, route);
 		return route;
 	}
@@ -750,50 +749,51 @@ public class Router {
 		Map<String, Map<String, Map<String, String>>> results = new TreeMap<String, Map<String, Map<String, String>>>();
 
 		for(Route route : routes) {
-			if(route instanceof HasManyRoute) {
-				HasManyRoute hmr = (HasManyRoute) route;
-				Class<?> c = hmr.parentClass;
-				String f = hmr.hasManyField;
-				Action a = hmr.action;
-				if(c != null && a != null) {
-					Map<String, String> map = new LinkedHashMap<String, String>();
-					map.put("method", route.httpMethod.getName());
-					if(route.isFixed()) {
-						map.put("path", route.path);
-						map.put("fixed", "true");
-					} else {
-						map.put("path", route.rule);
-					}
+			if(route instanceof HttpRoute) {
+				HttpRoute hr = (HttpRoute) route;
+				if(hr.parentClass != null) {
+					Class<?> c = hr.parentClass;
+					String f = hr.hasManyField;
+					Action a = hr.action;
+					if(c != null && a != null) {
+						Map<String, String> map = new LinkedHashMap<String, String>();
+						map.put("method", route.httpMethod.getName());
+						if(route.isFixed()) {
+							map.put("path", route.path);
+							map.put("fixed", "true");
+						} else {
+							map.put("path", route.rule);
+						}
 
-					String name = c.getName();
-					Map<String, Map<String, String>> model = results.get(name);
-					if(model == null) {
-						model = new TreeMap<String, Map<String, String>>();
-						results.put(name, model);
+						String name = c.getName();
+						Map<String, Map<String, String>> model = results.get(name);
+						if(model == null) {
+							model = new TreeMap<String, Map<String, String>>();
+							results.put(name, model);
+						}
+						model.put(a.name() + ":" + f, map);
 					}
-					model.put(a.name() + ":" + f, map);
-				}
-			} else if(route instanceof HttpRoute) {
-				HttpRoute cr = (HttpRoute) route;
-				Class<?> c = cr.modelClass;
-				Action a = cr.action;
-				if(c != null && a != null) {
-					Map<String, String> map = new LinkedHashMap<String, String>();
-					map.put("method", route.httpMethod.getName());
-					if(route.isFixed()) {
-						map.put("path", route.path);
-						map.put("fixed", "true");
-					} else {
-						map.put("path", route.rule);
-					}
+				} else {
+					Class<?> c = hr.modelClass;
+					Action a = hr.action;
+					if(c != null && a != null) {
+						Map<String, String> map = new LinkedHashMap<String, String>();
+						map.put("method", route.httpMethod.getName());
+						if(route.isFixed()) {
+							map.put("path", route.path);
+							map.put("fixed", "true");
+						} else {
+							map.put("path", route.rule);
+						}
 
-					String name = c.getName();
-					Map<String, Map<String, String>> model = results.get(name);
-					if(model == null) {
-						model = new TreeMap<String, Map<String, String>>();
-						results.put(name, model);
+						String name = c.getName();
+						Map<String, Map<String, String>> model = results.get(name);
+						if(model == null) {
+							model = new TreeMap<String, Map<String, String>>();
+							results.put(name, model);
+						}
+						model.put(a.name(), map);
 					}
-					model.put(a.name(), map);
 				}
 			}
 		}

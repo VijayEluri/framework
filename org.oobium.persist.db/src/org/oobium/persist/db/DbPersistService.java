@@ -11,6 +11,7 @@
 package org.oobium.persist.db;
 
 import static org.oobium.persist.SessionCache.expireCache;
+import static org.oobium.persist.db.internal.QueryUtils.isMapQuery;
 import static org.oobium.utils.StringUtils.parseUrl;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.utils.literal.Dictionary;
@@ -245,19 +246,44 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		return find(clazz, "where id=? include:?", id, include);
 	}
 	
+	@SuppressWarnings("unchecked")
+	public <E, T extends Model> E findByMapQuery(Class<T> clazz, Map<String, Object> query, Object[] values, boolean all) throws Exception {
+		if(query != null && !query.isEmpty()) {
+			Object from = query.get("$from");
+			if(from instanceof Map<?,?>) {
+				Map<?,?> map = (Map<?,?>) from;
+				Class<? extends Model> parentClass = ((Class<?>) map.get("$type")).asSubclass(Model.class);
+				Object id = map.get("$id");
+				String field = (String) map.get("$field");
+				// TODO add a type check using a ModelAdapter
+				return (E) Model.getPersistService(parentClass).find(parentClass, "where id=? include:?", id, field).get(field);
+			}
+			else {
+				Conversion conversion = Conversion.run(clazz, query, values);
+				if(all) {
+					return (E) findAll(clazz, conversion.getSql(), conversion.getValues());
+				} else {
+					return (E) find(clazz, conversion.getSql(), conversion.getValues());
+				}
+			}
+		}
+		else {
+			return (E) findAll(clazz, (String) null);
+		}
+	}
+	
 	@Override
 	public <T extends Model> T find(Class<T> clazz, Map<String, Object> query, Object... values) throws Exception {
-		if(query != null && !query.isEmpty()) {
-			Conversion conversion = new Conversion(query, values);
-			conversion.setModelType(clazz);
-			conversion.run();
-			return find(clazz, conversion.getSql(), conversion.getValues());
-		}
-		return find(clazz, (String) null, new Object[0]);
+		return findByMapQuery(clazz, query, values, true);
 	}
 	
 	@Override
 	public <T extends Model> T find(Class<T> clazz, String query, Object...values) throws Exception {
+		if(isMapQuery(query)) {
+			Conversion conversion = Conversion.run(clazz, query, values);
+			query = conversion.getSql();
+			values = conversion.getValues();
+		}
 		Connection connection = getConnection();
 		return persistor.find(connection, clazz, query, values);
 	}
@@ -266,20 +292,19 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	public <T extends Model> List<T> findAll(Class<T> clazz) throws Exception {
 		return findAll(clazz, (String) null);
 	}
-	
+
 	@Override
 	public <T extends Model> List<T> findAll(Class<T> clazz, Map<String, Object> query, Object... values) throws Exception {
-		if(query != null && !query.isEmpty()) {
-			Conversion conversion = new Conversion(query, values);
-			conversion.setModelType(clazz);
-			conversion.run();
-			return findAll(clazz, conversion.getSql(), conversion.getValues());
-		}
-		return findAll(clazz, (String) null);
+		return findByMapQuery(clazz, query, values, true);
 	}
 	
 	@Override
 	public <T extends Model> List<T> findAll(Class<T> clazz, String query, Object...values) throws Exception {
+		if(isMapQuery(query)) {
+			Conversion conversion = Conversion.run(clazz, query, values);
+			query = conversion.getSql();
+			values = conversion.getValues();
+		}
 		Connection connection = getConnection();
 		return persistor.findAll(connection, clazz, query, values);
 	}

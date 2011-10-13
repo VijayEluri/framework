@@ -84,12 +84,17 @@ public class ModelList<E extends Model> implements List<E> {
 	
 	@Override
 	public void clear() {
-		List<E> ca = new ArrayList<E>(members);
-		members.clear();
-		for(E o : ca) {
-			clearOpposite(o);
+		if(type == MANY_TO_NONE) {
+			members.clear();
 		}
-		ca.clear();
+		else {
+			List<E> ca = new ArrayList<E>(members);
+			members.clear();
+			for(E o : ca) {
+				clearOpposite(o);
+			}
+			ca.clear();
+		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -141,25 +146,35 @@ public class ModelList<E extends Model> implements List<E> {
 	@Override
 	@SuppressWarnings("unchecked")
 	public boolean remove(Object o) {
-		if(members.remove(o)) {
-			E e = (E) o;
-			clearOpposite(e);
-			return true;
+		if(type == MANY_TO_NONE) {
+			return members.remove(o);
 		}
-		return false;
+		else {
+			if(members.remove(o)) {
+				E e = (E) o;
+				clearOpposite(e);
+				return true;
+			}
+			return false;
+		}
 	}
 	
 	@Override
 	@SuppressWarnings("unchecked")
 	public boolean removeAll(Collection<?> c) {
-		if(members.removeAll(c)) {
-			Collection<E> e = (Collection<E>) c;
-			for(E o : e) {
-				clearOpposite(o);
-			}
-			return true;
+		if(type == MANY_TO_NONE) {
+			return members.removeAll(c);
 		}
-		return false;
+		else {
+			if(members.removeAll(c)) {
+				Collection<E> e = (Collection<E>) c;
+				for(E o : e) {
+					clearOpposite(o);
+				}
+				return true;
+			}
+			return false;
+		}
 	}
 
 	/**
@@ -190,8 +205,7 @@ public class ModelList<E extends Model> implements List<E> {
 				object.put(memberField, owner);
 			}
 			break;
-		default:
-			throw new IllegalStateException("why are we here?");
+		// default: nothing to do, just exit
 		}
 	}
 	

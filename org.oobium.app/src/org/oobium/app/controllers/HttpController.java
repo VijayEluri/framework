@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.oobium.app.controllers;
 
+import static org.oobium.utils.literal.*;
 import static org.oobium.app.http.Action.showEdit;
 import static org.oobium.app.http.Action.showNew;
 import static org.oobium.app.http.MimeType.CSS;
@@ -35,6 +36,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -181,6 +183,10 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	private Session session;
 	private boolean sessionResolved;
 	private boolean isRendered;
+	
+	private Class<? extends Model> parentClass;
+	private String hasManyField;
+
 	
 	public HttpController() {
 		// no args constructor
@@ -678,7 +684,18 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	
 	@SuppressWarnings("unchecked")
 	public Map<String, Object> getQuery() {
-		return (Map<String, Object>) param("query", Map.class);
+		Map<String, Object> query = (Map<String, Object>) param("query", Map.class);
+		if(parentClass != null) {
+			if(query == null) {
+				query = new LinkedHashMap<String, Object>();
+			}
+			query.put("$from", Map(
+						e("$type", parentClass),
+						e("$id", getId()),
+						e("$field", hasManyField)
+					));
+		}
+		return query;
 	}
 	
 	public Request getRequest() {
@@ -758,7 +775,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	}
 	
 	public boolean hasMany(String field) {
-		return field != null && field.equals(getParam("hasMany"));
+		return field != null && field.equals(hasManyField);
 	}
 
 	@Override
@@ -1445,6 +1462,10 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		setFlash(FLASH_ERROR, value);
 	}
 	
+	public void setHasManyField(String hasManyField) {
+		this.hasManyField = hasManyField;
+	}
+	
 	public void setParam(String name, Object value) {
 		if(params == null) {
 			initParams();
@@ -1454,6 +1475,10 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		} else {
 			params.put(name, value);
 		}
+	}
+
+	public void setParentClass(Class<? extends Model> parentClass) {
+		this.parentClass = parentClass;
 	}
 	
 	/**

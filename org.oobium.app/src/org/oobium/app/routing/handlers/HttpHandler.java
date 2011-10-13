@@ -16,22 +16,34 @@ import org.oobium.app.request.Request;
 import org.oobium.app.response.Response;
 import org.oobium.app.routing.RouteHandler;
 import org.oobium.app.routing.Router;
+import org.oobium.persist.Model;
 
 public class HttpHandler extends RouteHandler {
 
 	public final Class<? extends HttpController> controllerClass;
 	public final Action action;
-	
-	public HttpHandler(Router router, Class<? extends HttpController> controllerClass, Action action, String[][] params) {
+
+	// for a hasMany route
+	public final Class<? extends Model> parentClass;
+	public final String hasManyField;
+
+	public HttpHandler(Router router, Class<? extends HttpController> controllerClass, Action action,
+						Class<? extends Model> parentClass, String hasManyField, String[][] params) {
 		super(router, params);
 		this.controllerClass = controllerClass;
 		this.action = action;
+		this.parentClass = parentClass;
+		this.hasManyField = hasManyField;
 	}
 
 	public Response routeRequest(Request request) throws Exception {
 		HttpController controller = controllerClass.newInstance();
 		try {
 			controller.initialize(router, request, getParamMap());
+			if(parentClass != null) {
+				controller.setParentClass(parentClass);
+				controller.setHasManyField(hasManyField);
+			}
 			controller.execute(action);
 			return controller.getResponse();
 		} finally {

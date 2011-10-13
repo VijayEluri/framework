@@ -506,20 +506,6 @@ public class QueryBuilder {
 			ixs[2] = new int[] { sa[0].indexOf(LIMIT), LIMIT.length() };
 			ixs[3] = new int[] { include, INCLUDE.length() };
 			if((ixs[0][0] != 0) && (ixs[1][0] != 0) && (ixs[2][0] != 0) && (ixs[3][0] != 0)) {
-				Map<String, Object> map = JsonUtils.toMap(input);
-				if(!map.isEmpty()) {
-					try {
-						Conversion conversion = new Conversion(map, this.values);
-						conversion.setModelType(query.getType());
-						conversion.run();
-						this.input = conversion.getSql();
-						this.values = conversion.getValues();
-						parseInput();
-						return;
-					} catch(Exception e) {
-						// fall through
-					}
-				}
 				throw new IllegalArgumentException("if input is not a JSON map, then it must start with either: where, order by, limit, include");
 			}
 			int pos = -1;

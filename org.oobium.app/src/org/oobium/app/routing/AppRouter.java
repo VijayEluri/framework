@@ -213,7 +213,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 						throw new UnsupportedOperationException();
 					case Route.HTTP_CONTROLLER:
 						HttpRoute cr = (HttpRoute) fixedRoute;
-						return new HttpHandler(router, cr.controllerClass, cr.action, cr.params);
+						return new HttpHandler(router, cr.controllerClass, cr.action, cr.parentClass, cr.hasManyField, cr.params);
 					case Route.DYNAMIC_ASSET:
 						DynamicAssetRoute dar = (DynamicAssetRoute) fixedRoute;
 						return new DynamicAssetHandler(router, dar.assetClass, dar.params);
@@ -435,7 +435,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 						case Route.HTTP_CONTROLLER:
 							HttpRoute cr = (HttpRoute) route;
 							RouteHandler unauth = checkAuthorization(request, router, cr);
-							return (unauth != null) ? unauth : new HttpHandler(router, cr.controllerClass, cr.action, getParams(cr, matcher));
+							return (unauth != null) ? unauth : new HttpHandler(router, cr.controllerClass, cr.action, cr.parentClass, cr.hasManyField, getParams(cr, matcher));
 						case Route.REDIRECT:
 							RedirectRoute rr = (RedirectRoute) route;
 							return new RedirectHandler(router, rr.to);

@@ -10,7 +10,7 @@
  ******************************************************************************/
 package org.oobium.persist.db.internal;
 
-import static org.oobium.persist.SessionCache.*;
+import static org.oobium.persist.SessionCache.getCacheById;
 import static org.oobium.persist.db.internal.QueryUtils.ID;
 import static org.oobium.persist.db.internal.QueryUtils.createModel;
 import static org.oobium.persist.db.internal.QueryUtils.valuePattern;
@@ -27,11 +27,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.regex.Matcher;
 
-import org.oobium.logging.Logger;
 import org.oobium.logging.LogProvider;
+import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.persist.db.DbPersistService;
 
@@ -52,7 +51,9 @@ public class QueryProcessor<E extends Model> {
 	}
 	
 	private void build(int dbType, Class<E> clazz, String sql, Object...values) throws SQLException {
-		if(sql != null) {
+		if(sql == null) {
+			this.query = QueryBuilder.build(dbType, clazz, null);
+		} else {
 			StringBuilder sb = new StringBuilder(sql);
 			int i = 0, ix = 0;
 			for(; i < values.length && ix != -1; i++, ix++) {
@@ -65,8 +66,6 @@ public class QueryProcessor<E extends Model> {
 				throw new SQLException("The number of values does not match the number of place holders");
 			}
 			this.query = QueryBuilder.build(dbType, clazz, sb.toString(), values);
-		} else {
-			this.query = QueryBuilder.build(dbType, clazz, null);
 		}
 	}
 	
@@ -117,8 +116,8 @@ public class QueryProcessor<E extends Model> {
 					Object parentId = nestedResult.get("a").get(ID);
 					Model parent = getCacheById(parentClass, parentId);
 					Object collection = parent.get(field, false);
-					if(collection instanceof Set<?>) {
-						((Set) collection).add(model);
+					if(collection instanceof List<?>) {
+						((List) collection).add(model);
 					}
 				}
 			}

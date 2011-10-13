@@ -96,10 +96,31 @@ public class RetrieveTests extends BaseDbTestCase {
 
 		Model a = am.newInstance();
 		a.setId(1);
-		a.load();
 		
 		assertNotNull(a.get("bModel"));
 		assertEquals(1, ((Collection<?>) ((Model) a.get("bModel")).get("aModels")).size());
+	}
+
+	@Test
+	public void testSetOneToMany() throws Exception {
+		DynModel am = DynClasses.getModel(pkg, "AModel").timestamps().addHasOne("bModel", "BModel.class", "opposite=\"aModels\"");
+		DynModel bm = DynClasses.getModel(pkg, "BModel").timestamps().addHasMany("aModels", "AModel.class", "opposite=\"bModel\"");
+
+		migrate(am, bm);
+
+		persistService.executeUpdate("INSERT INTO b_models(created_at) VALUES(?)", new Timestamp(System.currentTimeMillis()));
+		persistService.executeUpdate("INSERT INTO a_models(b_model) VALUES(?)", 1);
+
+		Model a = am.newInstance();
+		Model b = bm.newInstance();
+		b.setId(1);
+		
+		a.set("bModel", b); // testing the fetch that happens when set is called on a hasMany before any get
+		
+		assertNotNull(a.get("bModel"));
+		
+		// there should be two - one from the db, and the one we just added
+		assertEquals(2, ((Collection<?>) ((Model) a.get("bModel")).get("aModels")).size());
 	}
 
 	@Test
