@@ -64,11 +64,9 @@ public class ModelList<E extends Model> implements List<E> {
 
 	@Override
 	public boolean add(E e) {
-		if(members.add(e)) {
-			setOpposite(e);
-			return true;
-		}
-		return false;
+		members.add(e);
+		setOpposite(e);
+		return true;
 	}
 	
 	@Override
@@ -99,6 +97,9 @@ public class ModelList<E extends Model> implements List<E> {
 
 	@SuppressWarnings("unchecked")
 	private void clearOpposite(Model object) {
+		if(object == null) {
+			return;
+		}
 		switch(type) {
 		case MANY_TO_MANY:
 			if(object.isSet(memberField)) {
@@ -188,6 +189,9 @@ public class ModelList<E extends Model> implements List<E> {
 
 	@SuppressWarnings("unchecked")
 	private void setOpposite(Model object) {
+		if(object == null) {
+			return;
+		}
 		switch(type) {
 		case MANY_TO_MANY:
 			if(object.isSet(memberField)) {
@@ -234,65 +238,6 @@ public class ModelList<E extends Model> implements List<E> {
 		return String.valueOf(owner) + " <- " + String.valueOf(members);
 	}
 
-	@Override
-	public void add(int arg0, E arg1) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public boolean addAll(int arg0, Collection<? extends E> arg1) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public E get(int arg0) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public int indexOf(Object arg0) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public int lastIndexOf(Object arg0) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public ListIterator<E> listIterator() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public ListIterator<E> listIterator(int arg0) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public E remove(int arg0) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public E set(int arg0, E arg1) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public List<E> subList(int arg0, int arg1) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	public boolean add(E...model) {
 		// TODO
@@ -347,5 +292,81 @@ public class ModelList<E extends Model> implements List<E> {
 		// TODO
 		return null;
 	}
+
+	
+	public E first() {
+		return members.isEmpty() ? null : members.get(0);
+	}
+	
+	public E last() {
+		return members.isEmpty() ? null : members.get(members.size()-1);
+	}
+
+
+	public void add(int index, E e) {
+		members.add(index, e);
+		setOpposite(e);
+	};
+	
+	@Override
+	public boolean addAll(int index, Collection<? extends E> c) {
+		if(members.addAll(index, c)) {
+			for(E e : c) {
+				setOpposite(e);
+			}
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public E get(int index) {
+		return members.get(index);
+	}
+
+	@Override
+	public E set(int index, E element) {
+		E orig = members.set(index, element);
+		clearOpposite(orig);
+		setOpposite(element);
+		return orig;
+	}
+
+	@Override
+	public E remove(int index) {
+		E orig = members.remove(index);
+		clearOpposite(orig);
+		return orig;
+	}
+
+	@Override
+	public int indexOf(Object o) {
+		return members.indexOf(o);
+	}
+
+	@Override
+	public int lastIndexOf(Object o) {
+		return members.lastIndexOf(o);
+	}
+
+	@Override
+	public ListIterator<E> listIterator() {
+		// TODO create a custom iterator - this exposes the internal members collection
+		return members.listIterator();
+	}
+
+	@Override
+	public ListIterator<E> listIterator(int index) {
+		// TODO create a custom iterator - this exposes the internal members collection
+		return members.listIterator(index);
+	}
+
+	@Override
+	public List<E> subList(int fromIndex, int toIndex) {
+		// TODO create a new ModelList?
+		return members.subList(fromIndex, toIndex);
+	}
+	
+	
 
 }

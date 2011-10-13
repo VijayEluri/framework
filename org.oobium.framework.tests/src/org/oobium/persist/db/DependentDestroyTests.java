@@ -1,7 +1,6 @@
 package org.oobium.persist.db;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
@@ -35,7 +34,8 @@ public class DependentDestroyTests extends BaseDbTestCase {
 		
 		assertNull(persistService.executeQueryValue("SELECT * from a_models where id=?", 1));
 		assertNull(persistService.executeQueryValue("SELECT * from b_models where id=?", 1));
-		
+
+		assertTrue(a.isEmpty());
 		verify(b).destroy();
 		
 		// double check it works even if bModel is not set
@@ -98,15 +98,17 @@ public class DependentDestroyTests extends BaseDbTestCase {
 		verify(b).destroy();
 	}
 
-	@Test(expected=StackOverflowError.class)
+	@Test
 	public void testHasOneToOne_Bidi() throws Exception {
-		
-		// DESTROY is not currently supported on both models when linked. maybe in the future...
-		
 		DynModel am = DynClasses.getModel(pkg, "AModel").timestamps().addHasOne("bModel", "BModel.class", "opposite=\"aModel\"", "dependent=Relation.DESTROY");
 		DynModel bm = DynClasses.getModel(pkg, "BModel").timestamps().addHasOne("aModel", "AModel.class", "opposite=\"bModel\"", "dependent=Relation.DESTROY");
 
-		Model b = bm.newInstance();
+		migrate(am, bm);
+
+		persistService.executeUpdate("INSERT INTO b_models(created_at) VALUES(?)", new Timestamp(System.currentTimeMillis()));
+		persistService.executeUpdate("INSERT INTO a_models(b_model) VALUES(?)", 1);
+
+		Model b = spy(bm.newInstance());
 		b.setId(1);
 		
 		Model a = am.newInstance();
@@ -114,6 +116,11 @@ public class DependentDestroyTests extends BaseDbTestCase {
 		a.set("bModel", b);
 		
 		a.destroy();
+
+		assertNull(persistService.executeQueryValue("SELECT * from a_models where id=?", 1));
+		assertNull(persistService.executeQueryValue("SELECT * from b_models where id=?", 1));
+		
+		verify(b).destroy();
 	}
 	
 	@Test

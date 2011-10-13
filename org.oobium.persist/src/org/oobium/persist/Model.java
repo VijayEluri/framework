@@ -12,6 +12,7 @@ package org.oobium.persist;
 
 import static org.oobium.persist.ModelAdapter.getAdapter;
 import static org.oobium.utils.StringUtils.blank;
+import static org.oobium.utils.StringUtils.join;
 import static org.oobium.utils.StringUtils.titleize;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.utils.json.JsonUtils.toList;
@@ -23,6 +24,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -379,6 +381,7 @@ public abstract class Model implements JsonModel {
 	
 	private void destroy(String field) {
 		Object o = get(field);
+		fields.remove(field);
 		if(o instanceof Model) {
 			Model related = (Model) o;
 			if(related != null && !related.isNew()) {
@@ -395,42 +398,65 @@ public abstract class Model implements JsonModel {
 		}
 	}
 	
-	private void destroyDependents(boolean beforeDestroy) {
+	private List<String> destroyDependents() {
 		ModelAdapter adapter = ModelAdapter.getAdapter(this);
-		if(beforeDestroy) {
-			for(String field : adapter.getHasOneFields()) {
+
+		// destroy fields that must be destroyed before this model
+		for(String field : adapter.getHasOneFields()) {
+			Relation relation = adapter.getRelation(field);
+			if(relation.dependent() == Relation.DESTROY) {
+				if(adapter.isOneToOne(field) && !adapter.hasKey(field)) {
+					destroy(field);
+				}
+			}
+		}
+		for(String field : adapter.getHasManyFields()) {
+			if(adapter.isManyToOne(field)) {
 				Relation relation = adapter.getRelation(field);
 				if(relation.dependent() == Relation.DESTROY) {
-					if(adapter.isOneToOne(field) && !adapter.hasKey(field)) {
-						destroy(field);
-					}
+					destroy(field);
 				}
 			}
-			for(String field : adapter.getHasManyFields()) {
-				if(adapter.isManyToOne(field)) {
-					Relation relation = adapter.getRelation(field);
-					if(relation.dependent() == Relation.DESTROY) {
-						destroy(field);
-					}
+		}
+		
+		// collect a list of fields that must be destroyed after this model
+		List<String> fields = new ArrayList<String>();
+		for(String field : adapter.getHasOneFields()) {
+			Relation relation = adapter.getRelation(field);
+			if(relation.dependent() == Relation.DESTROY) {
+				if(!adapter.isOneToOne(field) || adapter.hasKey(field)) {
+					fields.add(field);
 				}
 			}
-		} else {
-			for(String field : adapter.getHasOneFields()) {
+		}
+		for(String field : adapter.getHasManyFields()) {
+			if(!adapter.isManyToOne(field)) {
 				Relation relation = adapter.getRelation(field);
 				if(relation.dependent() == Relation.DESTROY) {
-					if(!adapter.isOneToOne(field) || adapter.hasKey(field)) {
-						destroy(field);
-					}
+					fields.add(field);
 				}
 			}
-			for(String field : adapter.getHasManyFields()) {
-				if(!adapter.isManyToOne(field)) {
-					Relation relation = adapter.getRelation(field);
-					if(relation.dependent() == Relation.DESTROY) {
-						destroy(field);
-					}
+		}
+		
+		// load fields that are not loaded
+		if(!fields.isEmpty()) {
+			List<String> unloaded = new ArrayList<String>(fields);
+			for(Iterator<String> iter = unloaded.iterator(); iter.hasNext(); ) {
+				if(isSet(iter.next())) {
+					iter.remove();
 				}
 			}
+			if(!unloaded.isEmpty()) {
+				load(join(unloaded, ','));
+			}
+		}
+		
+		return fields;
+	}
+
+	private void destroyDependents(List<String> fields) {
+		for(String field : fields) {
+			destroy(field);
 		}
 	}
 
@@ -462,9 +488,9 @@ public abstract class Model implements JsonModel {
 			try {
 				beforeDestroy();
 				PersistService service = getPersistor();
-				destroyDependents(true);
+				List<String> dependents = destroyDependents();
 				service.destroy(this);
-				destroyDependents(false);
+				destroyDependents(dependents);
 				destroyed = id;
 				id = null;
 				fields.clear();

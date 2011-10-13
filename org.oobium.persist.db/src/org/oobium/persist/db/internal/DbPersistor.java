@@ -947,7 +947,7 @@ public class DbPersistor {
 				int dbType = getDbType(connection);
 				QueryProcessor<?> processor = QueryProcessor.create(dbType, models[0].getClass(), "where id=?", models[0].getId());
 				List<?> list = processor.process(connection);
-				// TODO throw exception if list is empty?
+				// TODO throw exception if list is empty? (no - may be called from #load())
 				if(!list.isEmpty()) {
 					setFields(models[0], ((Model) list.get(0)).getAll());
 				}

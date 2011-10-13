@@ -294,6 +294,7 @@ public class CreateTests extends BaseDbTestCase {
 		verify(b2, never()).create();
 	}
 
+	@Ignore
 	@Test
 	public void testHasManyToMany_Through() throws Exception {
 		DynModel am = DynClasses.getModel(pkg, "AModel").timestamps()

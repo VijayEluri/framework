@@ -34,6 +34,7 @@ public class ModelRelation {
 	public boolean readOnly;
 	public boolean unique;
 	public boolean virtual;
+	public int dependent;
 	public int onDelete;
 	public int onUpdate;
 	public String embed;
@@ -58,6 +59,7 @@ public class ModelRelation {
 		this.readOnly = coerce(entries.get("readOnly"), false);
 		this.unique = coerce(entries.get("unique"), false);
 		this.virtual = coerce(entries.get("virtual"), false);
+		this.dependent = getReferential(entries.get("dependent"));
 		this.onDelete = getReferential(entries.get("onDelete"));
 		this.onUpdate = getReferential(entries.get("onUpdate"));
 		this.embed = getString(entries.get("embed"));
@@ -76,6 +78,7 @@ public class ModelRelation {
 		this.readOnly = original.readOnly;
 		this.unique = original.unique;
 		this.virtual = original.virtual;
+		this.dependent = original.dependent;
 		this.onDelete = original.onDelete;
 		this.onUpdate = original.onUpdate;
 		this.embed = original.embed;
@@ -189,6 +192,9 @@ public class ModelRelation {
 		}
 		if(virtual) {
 			sb.append(", virtual=true");
+		}
+		if(dependent != -1) {
+			sb.append(", dependent=").append(dependent);
 		}
 		if(onDelete != -1) {
 			sb.append(", onDelete=").append(onDelete);

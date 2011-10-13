@@ -13,7 +13,6 @@ package org.oobium.persist.db;
 import static org.oobium.utils.literal.*;
 import static org.junit.Assert.*;
 
-import java.util.Collection;
 import java.util.List;
 
 import org.junit.Test;
@@ -92,18 +91,7 @@ public class FindAllFromMapTests extends BaseDbTestCase {
 			);
 		
 		assertEquals(1, models.size());
-		assertEquals("nameF1", models.get(0).get("name"));
-
-		fail("test not finished");
-		
-		assertEquals(1, ((Collection<?>) models.get(0).get("aModels")).size());
-		assertEquals("nameD1", ((Model) ((Collection<?>) models.get(0).get("aModels")).iterator().next()).get("name"));
-		
-		assertEquals(2, ((Collection<?>) models.get(1).get("aModels")).size());
-		for(Object m : ((Collection<?>) models.get(1).get("aModels"))) {
-			Model model = (Model) m;
-			assertTrue("nameD2".equals(model.get("name")) || "nameD3".equals(model.get("name")));
-		}
+		assertEquals("nameD1", models.get(0).get("name"));
 	}
 
 }
