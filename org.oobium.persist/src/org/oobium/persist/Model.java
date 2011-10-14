@@ -12,7 +12,6 @@ package org.oobium.persist;
 
 import static org.oobium.persist.ModelAdapter.getAdapter;
 import static org.oobium.utils.StringUtils.blank;
-import static org.oobium.utils.StringUtils.join;
 import static org.oobium.utils.StringUtils.titleize;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.utils.json.JsonUtils.toList;
@@ -24,7 +23,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -438,16 +436,21 @@ public abstract class Model implements JsonModel {
 			}
 		}
 		
-		// load fields that are not loaded
+		// load fields that are not currently loaded
 		if(!fields.isEmpty()) {
-			List<String> unloaded = new ArrayList<String>(fields);
-			for(Iterator<String> iter = unloaded.iterator(); iter.hasNext(); ) {
-				if(isSet(iter.next())) {
-					iter.remove();
+			if(this.fields.isEmpty()) {
+				load();
+			} else {
+				for(String field : fields) {
+					if(!isSet(field)) {
+						// at least one is not set - load, but replace all that are currently set
+						Map<String, Object> orig = new HashMap<String, Object>(this.fields);
+						load();
+						this.fields.putAll(orig);
+						// only need to do this once, so exit
+						break;
+					}
 				}
-			}
-			if(!unloaded.isEmpty()) {
-				load(join(unloaded, ','));
 			}
 		}
 		

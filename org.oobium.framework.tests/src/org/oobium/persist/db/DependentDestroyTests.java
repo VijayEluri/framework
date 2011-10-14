@@ -259,4 +259,31 @@ public class DependentDestroyTests extends BaseDbTestCase {
 		verify(b).destroy();
 	}
 
+	@Test
+	public void test2HasOnes_1Set_1NotSet() throws Exception {
+		DynModel am = DynClasses.getModel(pkg, "AModel").addHasOne("bModel", "BModel.class", "dependent=Relation.DESTROY").addHasOne("otherBModel", "BModel.class", "dependent=Relation.DESTROY");
+		DynModel bm = DynClasses.getModel(pkg, "BModel").addAttr("name", "String.class");
+		
+		migrate(am, bm);
+
+		persistService.executeUpdate("INSERT INTO b_models(name) VALUES(?)", "name1");
+		persistService.executeUpdate("INSERT INTO b_models(name) VALUES(?)", "name2");
+		persistService.executeUpdate("INSERT INTO a_models(b_model,other_b_model) VALUES(?,?)", 1,2);
+
+		Model b = spy(bm.newInstance());
+		b.setId(1);
+		
+		Model a = am.newInstance();
+		a.setId(1);
+		a.set("bModel", b);
+		a.destroy();
+		
+		assertNull(persistService.executeQueryValue("SELECT * from a_models where id=?", 1));
+		assertNull(persistService.executeQueryValue("SELECT * from b_models where id=?", 1));
+		assertNull(persistService.executeQueryValue("SELECT * from b_models where id=?", 2));
+
+		assertTrue(a.isEmpty());
+		verify(b).destroy();
+	}
+
 }
