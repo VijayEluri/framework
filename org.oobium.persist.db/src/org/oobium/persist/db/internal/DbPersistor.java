@@ -10,7 +10,8 @@
  ******************************************************************************/
 package org.oobium.persist.db.internal;
 
-import static org.oobium.persist.SessionCache.*;
+import static org.oobium.persist.SessionCache.getCacheById;
+import static org.oobium.persist.SessionCache.setCache;
 import static org.oobium.persist.db.internal.QueryUtils.CREATED_AT;
 import static org.oobium.persist.db.internal.QueryUtils.CREATED_ON;
 import static org.oobium.persist.db.internal.QueryUtils.ID;
@@ -32,6 +33,7 @@ import static org.oobium.utils.StringUtils.joinColumn;
 import static org.oobium.utils.StringUtils.joinColumns;
 import static org.oobium.utils.StringUtils.joinTable;
 import static org.oobium.utils.StringUtils.tableName;
+import static org.oobium.utils.json.JsonUtils.toList;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -918,6 +920,16 @@ public class DbPersistor {
 		return deferred;
 	}
 
+	private String getField(Object o) {
+		if(o instanceof String) {
+			return (String) o;
+		}
+		if(o instanceof Map<?,?>) {
+			return String.valueOf(((Map<?,?>) o).keySet().iterator().next());
+		}
+		throw new IllegalArgumentException("only expecting String or Map, not: " + o);
+	}
+
 	private boolean isCreatedDateTimeField(Cell cell) {
 		return CREATED_AT.equals(cell.column) || CREATED_ON.equals(cell.column);
 	}
@@ -1018,21 +1030,22 @@ public class DbPersistor {
 	public void retrieveFields(Connection connection, Model model, String fields) throws SQLException {
 		logger.debug("start retrieve: {}, fields: {}", model, fields);
 
-		int ix = fields.indexOf(':'); // field may contain include syntax
-		String[] fieldNames = ((ix == -1) ? fields : fields.substring(0, ix)).split("\\s*,\\s*");
-
 		int dbType = getDbType(connection);
-		// TODO hack: modify QueryProcessor so it doesn't need to re-fetch the given model
+		// TODO modify QueryProcessor so it doesn't need to re-fetch the given model
 		QueryProcessor<?> processor = QueryProcessor.create(dbType, model.getClass(), "where id=? include:?", model.getId(), fields);
 		List<?> list = processor.process(connection);
-		// TODO throw exception if list is empty?
 		if(!list.isEmpty()) {
+			List<Object> fieldList = toList(fields);
+			String[] fieldNames = new String[fieldList.size()];
+			for(int i = 0; i < fieldNames.length; i++) {
+				fieldNames[i] = getField(fieldList.get(i));
+			}
 			setFields(model, ((Model) list.get(0)).getAll(), fieldNames);
 		}
 
 		logger.debug("end retrieve");
 	}
-
+	
 	private void setStatementValues(PreparedStatement ps, Object[] values) throws SQLException {
 		for(int i = 0; i < values.length; i++) {
 			setObject(ps, i + 1, values[i]);
