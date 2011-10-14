@@ -175,6 +175,45 @@ public class DependentDestroyTests extends BaseDbTestCase {
 	
 	@Test
 	public void testHasOneToMany() throws Exception {
+		DynModel am = DynClasses.getModel(pkg, "AModel").timestamps().addHasOne("bModel", "BModel.class", "opposite=\"aModels\"", "dependent=Relation.DESTROY");
+		DynModel bm = DynClasses.getModel(pkg, "BModel").timestamps().addHasMany("aModels", "AModel.class", "opposite=\"bModel\"");
+
+		migrate(am, bm);
+
+		persistService.executeUpdate("INSERT INTO b_models(created_at) VALUES(?)", new Timestamp(System.currentTimeMillis()));
+		persistService.executeUpdate("INSERT INTO a_models(b_model) VALUES(?)", 1);
+
+		Model a = am.newInstance();
+		a.setId(1);
+
+		a.destroy();
+		
+		assertNull(persistService.executeQueryValue("SELECT * from a_models where id=?", 1));
+		assertNull(persistService.executeQueryValue("SELECT * from b_models where id=?", 1));
+	}
+
+	@Test
+	public void testHasOneToMany_SelfReferential() throws Exception {
+		DynModel am = DynClasses.getModel(pkg, "AModel").timestamps()
+													.addHasOne("parent", "AModel.class", "opposite=\"children\"")
+													.addHasMany("children", "AModel.class", "opposite=\"parent\"", "dependent=Relation.DESTROY");
+
+		migrate(am);
+
+		persistService.executeUpdate("INSERT INTO a_models(created_at) VALUES(?)", new Timestamp(System.currentTimeMillis()));
+		persistService.executeUpdate("INSERT INTO a_models(parent) VALUES(?)", 1);
+
+		Model a = am.newInstance();
+		a.setId(1);
+
+		a.destroy();
+
+		assertNull(persistService.executeQueryValue("SELECT * from a_models where id=?", 1));
+		assertNull(persistService.executeQueryValue("SELECT * from a_models where id=?", 2));
+	}
+
+	@Test
+	public void testHasManyToOne() throws Exception {
 		DynModel am = DynClasses.getModel(pkg, "AModel").timestamps().addHasOne("bModel", "BModel.class", "opposite=\"aModels\"");
 		DynModel bm = DynClasses.getModel(pkg, "BModel").timestamps().addHasMany("aModels", "AModel.class", "opposite=\"bModel\"", "dependent=Relation.DESTROY");
 
