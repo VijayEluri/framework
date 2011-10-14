@@ -127,6 +127,15 @@ public class JsonUtilsTests {
 	}
 	
 	@Test
+	public void testToObject_ImpliedListsAndMaps() throws Exception {
+		assertEquals("[1, 2, 3]", asString(toObject("1,2,3")));
+		assertEquals("[1, 2,3]", asString(toObject("1,'2,3'")));
+		assertEquals("[1, 2'3]", asString(toObject("1,'2\\'3'")));
+		assertEquals("[{a={b=c}}, d]", asString(toObject("a:{b:c},d")));
+		assertEquals("[{a={b=c}}, d]", asString(toObject("a:b:c,d")));
+	}
+
+	@Test
 	public void testToMap() throws Exception {
 		assertEquals("{}", toMap(null).toString());
 		assertEquals("{}", toMap("").toString());

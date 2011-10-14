@@ -134,6 +134,14 @@ public class JsonParser {
 			}
 		}
 		
+		if(find(ca, ',', s1, s2) != -1) {
+			return toList(s1, s2);
+		}
+		
+		if(find(ca, ':', s1, s2) != -1) {
+			return toMap(s1, s2);
+		}
+		
 		Object obj = getDouble(ca, s1, s2);
 		if(obj == null) {
 			obj = getInteger(ca, s1, s2);
