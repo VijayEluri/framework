@@ -10,7 +10,6 @@
  ******************************************************************************/
 package org.oobium.persist.db.internal;
 
-//import static org.oobium.persist.SessionCache.getCacheById;
 import static org.oobium.persist.db.internal.Utils.ID;
 import static org.oobium.persist.db.internal.Utils.valuePattern;
 import static org.oobium.persist.db.internal.Utils.*;
