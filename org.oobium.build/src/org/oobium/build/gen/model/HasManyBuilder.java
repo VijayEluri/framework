@@ -29,6 +29,11 @@ public class HasManyBuilder extends PropertyBuilder {
 		sb.append("@SuppressWarnings(\"unchecked\")\n");
 		sb.append("public ").append(type).append(' ').append(descriptor.getterName()).append("() {\n");
 		sb.append("\treturn (").append(type).append(") get(").append(descriptor.enumProp()).append(");\n");
+		sb.append("}\n");
+		sb.append("\n");
+		sb.append("public ").append(type).append(' ').append(descriptor.getterName()).append("(String include) {\n");
+		sb.append("\tload(").append(descriptor.enumProp()).append(" + \":\" + include);\n");
+		sb.append("\treturn ").append(descriptor.getterName()).append("();\n");
 		sb.append("}");
 		return sb.toString();
 	}
