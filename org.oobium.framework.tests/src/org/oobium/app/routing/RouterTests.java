@@ -10,6 +10,8 @@
  ******************************************************************************/
 package org.oobium.app.routing;
 
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.AUTHORIZATION;
+import static org.jboss.netty.handler.codec.http.HttpMethod.GET;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -21,8 +23,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
-import static org.jboss.netty.handler.codec.http.HttpMethod.GET;
 import static org.oobium.app.http.Action.create;
 import static org.oobium.app.http.Action.destroy;
 import static org.oobium.app.http.Action.show;
@@ -45,20 +45,18 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.oobium.app.AppService;
 import org.oobium.app.controllers.HttpController;
+import org.oobium.app.handlers.HttpRequestHandler;
+import org.oobium.app.http.Action;
 import org.oobium.app.request.Request;
-import org.oobium.app.routing.AppRouter;
-import org.oobium.app.routing.Route;
-import org.oobium.app.routing.RouteHandler;
 import org.oobium.app.routing.handlers.AssetHandler;
 import org.oobium.app.routing.handlers.AuthorizationHandler;
-import org.oobium.app.routing.handlers.HttpHandler;
 import org.oobium.app.routing.handlers.DynamicAssetHandler;
+import org.oobium.app.routing.handlers.HttpHandler;
 import org.oobium.app.routing.handlers.RedirectHandler;
 import org.oobium.app.routing.handlers.ViewHandler;
 import org.oobium.app.views.ScriptFile;
 import org.oobium.app.views.StyleSheet;
 import org.oobium.app.views.View;
-import org.oobium.app.http.Action;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelDescription;
@@ -112,7 +110,10 @@ public class RouterTests {
 		String path = sa[0];
 		boolean hasParams = sa.length == 2;
 		
+		HttpRequestHandler handler = mock(AppService.class);
+		
 		Request request = mock(Request.class);
+		when(request.getHandler()).thenReturn(handler);
 		when(request.getPort()).thenReturn(router.getPort());
 		when(request.getHost()).thenReturn(router.getHosts()[0]);
 		when(request.getMethod()).thenReturn(HttpMethod.valueOf(method));
@@ -1807,7 +1808,9 @@ public class RouterTests {
 		assertEquals("/members/0/phones", router.pathTo(member, "phones", showAll));
 		assertEquals("/members/0/phones/new", router.pathTo(member, "phones", showNew));
 
-		RouteHandler handler = router.getHandler(request("[GET] /members/1/phones"));
+		Request request = request("[GET] /members/1/phones");
+		
+		RouteHandler handler = router.getHandler(request);
 		assertNotNull(handler);
 		assertEquals(HttpHandler.class, handler.getClass());
 		HttpHandler ch = (HttpHandler) handler;
@@ -1816,6 +1819,16 @@ public class RouterTests {
 		assertEquals(Member.class, ch.parentClass);
 		assertEquals("phones", ch.hasManyField);
 		assertEquals("[[member[id], 1]]", asString(ch.params));
+
+		HttpController c = ch.getController(request);
+		
+		Map<String, Object> query = c.getQuery();
+		Object from = query.remove("$from");
+		assertTrue(query.isEmpty());
+		assertTrue(from instanceof Map);
+		assertEquals(Member.class, ((Map<?,?>) from).get("$type"));
+		assertEquals("1", ((Map<?,?>) from).get("$id"));
+		assertEquals("phones", ((Map<?,?>) from).get("$field"));
 	}
 	
 	@Test

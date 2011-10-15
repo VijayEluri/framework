@@ -36,14 +36,19 @@ public class HttpHandler extends RouteHandler {
 		this.hasManyField = hasManyField;
 	}
 
-	public Response routeRequest(Request request) throws Exception {
+	public HttpController getController(Request request) throws Exception {
 		HttpController controller = controllerClass.newInstance();
+		controller.initialize(router, request, getParamMap());
+		if(parentClass != null) {
+			controller.setParentClass(parentClass);
+			controller.setHasManyField(hasManyField);
+		}
+		return controller;
+	}
+	
+	public Response routeRequest(Request request) throws Exception {
+		HttpController controller = getController(request);
 		try {
-			controller.initialize(router, request, getParamMap());
-			if(parentClass != null) {
-				controller.setParentClass(parentClass);
-				controller.setHasManyField(hasManyField);
-			}
 			controller.execute(action);
 			return controller.getResponse();
 		} finally {

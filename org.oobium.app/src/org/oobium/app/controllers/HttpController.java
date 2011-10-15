@@ -691,7 +691,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 			}
 			query.put("$from", Map(
 						e("$type", parentClass),
-						e("$id", getId()),
+						e("$id", param(varName(parentClass) + "[id]")),
 						e("$field", hasManyField)
 					));
 		}
