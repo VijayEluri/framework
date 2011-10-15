@@ -981,7 +981,6 @@ public class DbPersistor {
 		int dbType = getDbType(connection);
 		QueryProcessor<?> processor = QueryProcessor.create(dbType, model.getClass(), "where id=? include:?", model.getId(), include);
 		List<?> list = processor.process(connection);
-		// TODO throw exception if list is empty?
 		if(!list.isEmpty()) {
 			setFields(model, ((Model) list.get(0)).getAll());
 		}
@@ -993,9 +992,7 @@ public class DbPersistor {
 		logger.debug("start retrieve: {}, fields: {}", model, fields);
 
 		int dbType = getDbType(connection);
-		// TODO modify QueryProcessor so it doesn't need to re-fetch the given model
 		QueryProcessor<?> processor = QueryProcessor.create(dbType, model.getClass(), "where id=? include:?", model.getId(), fields);
-//		processor.setCache(false);
 		List<?> list = processor.process(connection);
 		if(!list.isEmpty()) {
 			List<Object> fieldList = toList(fields);
