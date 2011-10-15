@@ -177,7 +177,6 @@ public class Utils {
 			for(Entry<String, Object> entry : data.entrySet()) {
 				String field = entry.getKey();
 				if(!ModelDescription.ID.equals(field)) {
-	//				TODO verify that data in the cache or db should over-write data in the object
 					Object value = entry.getValue();
 					if(logger.isLoggingTrace()) {
 						logger.trace("  " + field + " <- " + asString(value));
