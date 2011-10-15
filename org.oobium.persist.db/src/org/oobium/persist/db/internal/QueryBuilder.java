@@ -43,8 +43,8 @@ import org.oobium.utils.json.JsonUtils;
 
 public class QueryBuilder {
 
-	private static Query build(int dbType, Class<? extends Model> parentClass, String field, Class<? extends Model> clazz, String sql, Object...values) throws SQLException {
-		Query query = new Query(parentClass, field, clazz);
+	private static Query build(int dbType, String sourceField, Class<? extends Model> parentClass, String field, Class<? extends Model> clazz, String sql, Object...values) throws SQLException {
+		Query query = new Query(sourceField, parentClass, field, clazz);
 		QueryBuilder builder = new QueryBuilder(dbType, parentClass, query, sql, values);
 		builder.build();
 		return query;
@@ -613,11 +613,12 @@ public class QueryBuilder {
 					processInclude(alias, child);
 				}
 			} else if(parentAdapter.hasMany(field)) {
+				String sourceField = query.getField(parentAlias);
 				Class<? extends Model> parentClass = parentAdapter.getModelClass();
 				Class<? extends Model> clazz = parentAdapter.getRelationClass(field);
 				String sql = blank(child) ? "" : ("include:" + JsonUtils.toJson(child));
-				Query query = QueryBuilder.build(dbType, parentClass, field, clazz, sql);
-				this.query.addChild(query);
+				Query childQuery = QueryBuilder.build(dbType, sourceField, parentClass, field, clazz, sql);
+				query.addChild(childQuery);
 			} else {
 				throw new SQLException("field not found: " + field + " in " + parentAdapter);
 			}

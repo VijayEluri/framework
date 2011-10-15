@@ -22,7 +22,8 @@ import org.oobium.persist.ModelAdapter;
 public class Query {
 
 	public static final String ID_MARKER = "#{ids}";
-	
+
+	private String sourceField;
 	private Class<? extends Model> parentClass;
 	private String field;
 	
@@ -41,7 +42,8 @@ public class Query {
 		this.clazz = clazz;
 	}
 	
-	Query(Class<? extends Model> parentClass, String field, Class<? extends Model> clazz) {
+	Query(String sourceField, Class<? extends Model> parentClass, String field, Class<? extends Model> clazz) {
+		this.sourceField = sourceField;
 		this.parentClass = parentClass;
 		this.field = field;
 		this.clazz = clazz;
@@ -94,7 +96,11 @@ public class Query {
 	String getSql(List<? extends Model> models) {
 		StringBuilder sb = new StringBuilder();
 		for(Iterator<? extends Model> iter = models.iterator(); iter.hasNext(); ) {
-			sb.append(iter.next().getId());
+			Model model = iter.next();
+			if(sourceField != null) {
+				model = (Model) model.get(sourceField);
+			}
+			sb.append(model.getId());
 			if(iter.hasNext()) {
 				sb.append(',');
 			}
