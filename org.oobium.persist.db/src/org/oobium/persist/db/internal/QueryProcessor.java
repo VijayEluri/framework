@@ -10,10 +10,10 @@
  ******************************************************************************/
 package org.oobium.persist.db.internal;
 
-import static org.oobium.persist.SessionCache.getCacheById;
-import static org.oobium.persist.db.internal.QueryUtils.ID;
-import static org.oobium.persist.db.internal.QueryUtils.createModel;
-import static org.oobium.persist.db.internal.QueryUtils.valuePattern;
+//import static org.oobium.persist.SessionCache.getCacheById;
+import static org.oobium.persist.db.internal.Utils.ID;
+import static org.oobium.persist.db.internal.Utils.valuePattern;
+import static org.oobium.persist.db.internal.Utils.*;
 import static org.oobium.utils.SqlUtils.asNestedFieldMaps;
 import static org.oobium.utils.SqlUtils.setObject;
 
@@ -68,7 +68,36 @@ public class QueryProcessor<E extends Model> {
 			this.query = QueryBuilder.build(dbType, clazz, sb.toString(), values);
 		}
 	}
+
+	private Map<String, Model> modelCache;
 	
+	private <T extends Model> T createModel(Class<T> clazz, Map<String, Object> data) throws NoSuchFieldException, SQLException {
+		try {
+			if(logger.isLoggingTrace()) {
+				logger.trace("start createModel " + clazz.getCanonicalName());
+			}
+
+			T model = clazz.newInstance();
+
+			Object id = data.get(ID);
+			model.setId((Integer) id);
+
+			setFields(model, data);
+
+			modelCache.put(model.getClass().getName() + "::" + model.getId(), model);
+
+			if(logger.isLoggingTrace()) {
+				logger.trace("done createModel: id <- " + id);
+			}
+			return model;
+		} catch(InstantiationException e) {
+			logger.error(e.getMessage(), e);
+		} catch(IllegalAccessException e) {
+			logger.error(e.getMessage(), e);
+		}
+		throw new SQLException("could not adapt class of type " + clazz.getSimpleName());
+	}
+
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private List createModels(Query query, List<Map<String, Map<String, Object>>> currentResults) throws SQLException {
 		try {
@@ -87,10 +116,7 @@ public class QueryProcessor<E extends Model> {
 					Object id = data.get(ID);
 					if(id != null) {
 						Class<? extends Model> clazz = query.getType(alias);
-						Model object = getCacheById(clazz, (Integer) id);
-						if(object == null) {
-							object = createModel(clazz, data);
-						}
+						Model object = createModel(clazz, data);
 						
 						if(model == null) {
 							model = object;
@@ -114,7 +140,7 @@ public class QueryProcessor<E extends Model> {
 					String field = query.getField();
 					Class<? extends Model> parentClass = query.getParentClass();
 					Object parentId = nestedResult.get("a").get(ID);
-					Model parent = getCacheById(parentClass, parentId);
+					Model parent = modelCache.get(parentClass.getName() + "::" + parentId);
 					Object collection = parent.get(field, false);
 					if(collection instanceof List<?>) {
 						((List) collection).add(model);
@@ -174,6 +200,7 @@ public class QueryProcessor<E extends Model> {
 
 	public List<E> process(Connection connection) throws SQLException {
 		try {
+			modelCache = new HashMap<String, Model>();
 			List<E> objects = processQuery(connection, query);
 			return objects;
 		} catch(Exception e) {

@@ -10,16 +10,14 @@
  ******************************************************************************/
 package org.oobium.persist.db.internal;
 
-import static org.oobium.persist.SessionCache.getCacheById;
-import static org.oobium.persist.SessionCache.setCache;
-import static org.oobium.persist.db.internal.QueryUtils.CREATED_AT;
-import static org.oobium.persist.db.internal.QueryUtils.CREATED_ON;
-import static org.oobium.persist.db.internal.QueryUtils.ID;
-import static org.oobium.persist.db.internal.QueryUtils.UPDATED_AT;
-import static org.oobium.persist.db.internal.QueryUtils.UPDATED_ON;
-import static org.oobium.persist.db.internal.QueryUtils.getDbType;
-import static org.oobium.persist.db.internal.QueryUtils.getWhere;
-import static org.oobium.persist.db.internal.QueryUtils.setFields;
+import static org.oobium.persist.db.internal.Utils.CREATED_AT;
+import static org.oobium.persist.db.internal.Utils.CREATED_ON;
+import static org.oobium.persist.db.internal.Utils.ID;
+import static org.oobium.persist.db.internal.Utils.UPDATED_AT;
+import static org.oobium.persist.db.internal.Utils.UPDATED_ON;
+import static org.oobium.persist.db.internal.Utils.getDbType;
+import static org.oobium.persist.db.internal.Utils.getWhere;
+import static org.oobium.persist.db.internal.Utils.setFields;
 import static org.oobium.utils.SqlUtils.asFieldMaps;
 import static org.oobium.utils.SqlUtils.asLists;
 import static org.oobium.utils.SqlUtils.getSqlType;
@@ -42,14 +40,13 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
@@ -431,8 +428,6 @@ public class DbPersistor {
 			if(model.isNew()) {
 				throw new SQLException("could not create record for " + model);
 			}
-
-			setCache(model);
 		}
 	}
 	
@@ -864,11 +859,6 @@ public class DbPersistor {
 			return null;
 		}
 
-		T object = getCacheById(clazz, id);
-		if(object != null) {
-			return object;
-		}
-
 		T result = find(connection, clazz, "where id=" + id);
 
 		logger.debug("end find");
@@ -949,64 +939,36 @@ public class DbPersistor {
 		if(models.length == 0) {
 			return;
 		} else if(models.length == 1) {
-			Model cache = getCacheById(models[0].getClass(), models[0].getId(int.class));
-			if(cache != null) {
-				if(logger.isLoggingDebug()) {
-					logger.debug("retrieving data from cache: " + cache.asSimpleString());
-				}
-				setFields(models[0], cache.getAll());
-			} else {
-				int dbType = getDbType(connection);
-				QueryProcessor<?> processor = QueryProcessor.create(dbType, models[0].getClass(), "where id=?", models[0].getId());
-				List<?> list = processor.process(connection);
-				// TODO throw exception if list is empty? (no - may be called from #load())
-				if(!list.isEmpty()) {
-					setFields(models[0], ((Model) list.get(0)).getAll());
-				}
+			int dbType = getDbType(connection);
+			QueryProcessor<?> processor = QueryProcessor.create(dbType, models[0].getClass(), "where id=?", models[0].getId());
+			List<?> list = processor.process(connection);
+			if(!list.isEmpty()) {
+				setFields(models[0], ((Model) list.get(0)).getAll());
 			}
 		} else {
-			LinkedHashMap<Class<? extends Model>, List<Integer>> map = null;
-			List<Model> list = new ArrayList<Model>(Arrays.asList(models));
-			for(Iterator<Model> iter = list.iterator(); iter.hasNext(); ) {
-				Model model = iter.next();
+			Map<Class<? extends Model>, Map<Integer, Model>> map = new HashMap<Class<? extends Model>, Map<Integer,Model>>();
+			for(Model model : models) {
 				Class<? extends Model> clazz = model.getClass();
 				int id = model.getId(int.class);
-				Model cache = getCacheById(clazz, id);
-				if(cache != null) {
-					logger.debug("retrieving data from cache: {}", cache.asSimpleString());
-					setFields(model, cache.getAll());
-					iter.remove();
-				} else {
-					if(map == null) {
-						map = new LinkedHashMap<Class<? extends Model>, List<Integer>>();
-					}
-					List<Integer> ids = map.get(clazz);
-					if(ids == null) {
-						map.put(clazz, ids = new ArrayList<Integer>());
-					}
-					ids.add(id);
+				Map<Integer, Model> ids = map.get(clazz);
+				if(ids == null) {
+					map.put(clazz, ids = new HashMap<Integer, Model>());
 				}
+				ids.put(id, model);
 			}
-			if(map != null) {
-				for(Entry<Class<? extends Model>, List<Integer>> entry : map.entrySet()) {
-					Class<? extends Model> clazz = entry.getKey();
-					List<Integer> ids = entry.getValue();
-					
-					if(logger.isLoggingDebug()) {
-						logger.debug("retrieving data from database: " + clazz.getCanonicalName() + StringUtils.join(", id IN (", ids, ")", ", "));
-					}
-					int dbType = getDbType(connection);
-					QueryProcessor<?> processor = QueryProcessor.create(dbType, clazz, StringUtils.join("id IN (", ids, ")", ","));
-					processor.process(connection); // loads data to cache
-					
-					for(Iterator<Model> iter = list.iterator(); iter.hasNext(); ) {
-						Model model = iter.next();
-						Model cache = getCacheById(clazz, model.getId(int.class));
-						if(cache != null) {
-							setFields(model, cache.getAll());
-							iter.remove();
-						}
-					}
+			for(Entry<Class<? extends Model>, Map<Integer, Model>> entry : map.entrySet()) {
+				Class<? extends Model> clazz = entry.getKey();
+				Map<Integer, Model> modelMap = entry.getValue();
+				Set<Integer> ids = modelMap.keySet();
+				
+				if(logger.isLoggingDebug()) {
+					logger.debug("retrieving data from database: " + clazz.getCanonicalName() + StringUtils.join(", id IN (", ids, ")", ", "));
+				}
+
+				int dbType = getDbType(connection);
+				QueryProcessor<? extends Model> processor = QueryProcessor.create(dbType, clazz, StringUtils.join("id IN (", ids, ")", ","));
+				for(Model model : processor.process(connection)) {
+					setFields(modelMap.get(model.getId()), model.getAll());
 				}
 			}
 		}
@@ -1033,6 +995,7 @@ public class DbPersistor {
 		int dbType = getDbType(connection);
 		// TODO modify QueryProcessor so it doesn't need to re-fetch the given model
 		QueryProcessor<?> processor = QueryProcessor.create(dbType, model.getClass(), "where id=? include:?", model.getId(), fields);
+//		processor.setCache(false);
 		List<?> list = processor.process(connection);
 		if(!list.isEmpty()) {
 			List<Object> fieldList = toList(fields);

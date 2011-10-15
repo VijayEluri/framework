@@ -12,12 +12,12 @@ package org.oobium.persist.db.internal;
 
 import static java.lang.Character.isLetterOrDigit;
 import static org.oobium.persist.ModelAdapter.getAdapter;
-import static org.oobium.persist.db.internal.QueryUtils.ID;
-import static org.oobium.persist.db.internal.QueryUtils.INCLUDE;
-import static org.oobium.persist.db.internal.QueryUtils.LIMIT;
-import static org.oobium.persist.db.internal.QueryUtils.ORDER_BY;
-import static org.oobium.persist.db.internal.QueryUtils.WHERE;
-import static org.oobium.persist.db.internal.QueryUtils.valuePattern;
+import static org.oobium.persist.db.internal.Utils.ID;
+import static org.oobium.persist.db.internal.Utils.INCLUDE;
+import static org.oobium.persist.db.internal.Utils.LIMIT;
+import static org.oobium.persist.db.internal.Utils.ORDER_BY;
+import static org.oobium.persist.db.internal.Utils.WHERE;
+import static org.oobium.persist.db.internal.Utils.valuePattern;
 import static org.oobium.utils.SqlUtils.safeSqlWord;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.columnName;

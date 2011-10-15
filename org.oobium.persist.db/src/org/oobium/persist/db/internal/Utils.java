@@ -10,15 +10,14 @@
  ******************************************************************************/
 package org.oobium.persist.db.internal;
 
-import static org.oobium.persist.SessionCache.getCacheById;
-import static org.oobium.persist.SessionCache.setCache;
+//import static org.oobium.persist.SessionCache.getCacheById;
+//import static org.oobium.persist.SessionCache.setCache;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.columnName;
 import static org.oobium.utils.StringUtils.tableName;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
@@ -31,7 +30,7 @@ import org.oobium.persist.ModelDescription;
 import org.oobium.persist.db.DbPersistService;
 import org.oobium.utils.SqlUtils;
 
-public class QueryUtils {
+public class Utils {
 
 	private static final Logger logger = LogProvider.getLogger(DbPersistService.class);
 	
@@ -60,33 +59,6 @@ public class QueryUtils {
 		return String.valueOf(object);
 	}
 
-	public static <T extends Model> T createModel(Class<T> clazz, Map<String, Object> data) throws NoSuchFieldException, SQLException {
-		try {
-			if(logger.isLoggingTrace()) {
-				logger.trace("start createModel " + clazz.getCanonicalName());
-			}
-
-			T model = clazz.newInstance();
-
-			Object id = data.get(ID);
-			model.setId((Integer) id);
-
-			setFields(model, data);
-
-			setCache(model);
-
-			if(logger.isLoggingTrace()) {
-				logger.trace("done createModel: id <- " + id);
-			}
-			return model;
-		} catch(InstantiationException e) {
-			logger.error(e.getMessage(), e);
-		} catch(IllegalAccessException e) {
-			logger.error(e.getMessage(), e);
-		}
-		throw new SQLException("could not adapt class of type " + clazz.getSimpleName());
-	}
-
 	public static int getDbType(Connection connection) {
 		String name = connection.getClass().getCanonicalName();
 		if(name.contains(".mysql.")) {
@@ -99,11 +71,14 @@ public class QueryUtils {
 	}
 	
 	public static Object getObject(Class<? extends Model> clazz, int id) throws InstantiationException, IllegalAccessException, NoSuchFieldException {
-		Model model = getCacheById(clazz, id);
-		if(model == null) {
-			model = clazz.newInstance();
-			model.setId(id);
-		}
+//		Model model = getCacheById(clazz, id);
+//		if(model == null) {
+//			model = clazz.newInstance();
+//			model.setId(id);
+//		}
+//		return model;
+		Model model = clazz.newInstance();
+		model.setId(id);
 		return model;
 	}
 	

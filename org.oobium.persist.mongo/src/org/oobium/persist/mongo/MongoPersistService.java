@@ -1,7 +1,6 @@
 package org.oobium.persist.mongo;
 
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
-import static org.oobium.persist.SessionCache.expireCache;
 import static org.oobium.utils.StringUtils.parseUrl;
 import static org.oobium.utils.StringUtils.tableName;
 import static org.oobium.utils.json.JsonUtils.toMap;
@@ -124,7 +123,6 @@ public class MongoPersistService implements BundleActivator, PersistService {
 	@Override
 	public void closeSession() {
 		threadClient.set(null);
-		expireCache();
 	}
 	
 	@Override
@@ -491,7 +489,6 @@ public class MongoPersistService implements BundleActivator, PersistService {
 	@Override
 	public void openSession(String name) {
 		threadClient.set(name);
-		expireCache();
 	}
 
 	private void removeDatabase(String client) {

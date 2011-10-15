@@ -10,8 +10,7 @@
  ******************************************************************************/
 package org.oobium.persist.db;
 
-import static org.oobium.persist.SessionCache.expireCache;
-import static org.oobium.persist.db.internal.QueryUtils.isMapQuery;
+import static org.oobium.persist.db.internal.Utils.isMapQuery;
 import static org.oobium.utils.StringUtils.parseUrl;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.utils.literal.Dictionary;
@@ -152,7 +151,6 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		}
 		threadConnection.set(null);
 		threadClient.set(null);
-		expireCache();
 		closeLogWriter();
 	}
 	
@@ -461,7 +459,6 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	public void openSession(String name) {
 		threadClient.set(name);
 		threadAutoCommit.set(true);
-		expireCache();
 	}
 	
 	private void doRemoveDatabase(String client) {
