@@ -11,6 +11,7 @@
 package org.oobium.app.response;
 
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.OK;
+import static org.oobium.utils.DateUtils.httpDate;
 
 import java.io.File;
 
@@ -23,7 +24,7 @@ public class StaticResponse extends Response {
 	private final Object payload;
 
 	public StaticResponse(File file) {
-		this(MimeType.getFromExtension(file.getName()), file, file.length(), file.lastModified());
+		this(OK, MimeType.getFromExtension(file.getName()), file, Long.toString(file.length()), httpDate(file.lastModified()));
 	}
 	
 	public StaticResponse(MimeType type, String payload) {
@@ -31,11 +32,11 @@ public class StaticResponse extends Response {
 	}
 	
 	public StaticResponse(MimeType type, String payload, long lastModified) {
-		this(OK, type, payload, Integer.toString(payload.length()), Long.toString(lastModified));
+		this(OK, type, payload, Integer.toString(payload.length()), httpDate(lastModified));
 	}
 	
 	public StaticResponse(MimeType type, Object payload, long length, long lastModified) {
-		this(OK, type, payload, Long.toString(length), Long.toString(lastModified));
+		this(OK, type, payload, Long.toString(length), httpDate(lastModified));
 	}
 	
 	public StaticResponse(MimeType type, Object payload, String length, String lastModified) {
