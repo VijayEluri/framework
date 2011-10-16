@@ -301,6 +301,14 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 		handleHttpRequest(ctx, (Request) e.getMessage());
 	}
 
+	private void setContentLength(HttpResponse response) {
+		// note that a StaticResponse should always have its ContentLength set by now
+		if(!response.containsHeader(CONTENT_LENGTH) && !response.containsHeader(TRANSFER_ENCODING)) {
+			ChannelBuffer content = response.getContent();
+			response.setHeader(CONTENT_LENGTH, (content != null) ? content.readableBytes() : 0);
+		}
+	}
+	
 	private void upgradeToWebsocket(ChannelHandlerContext ctx, Request request, WebsocketUpgrade upgrade) {
 		Channel channel = ctx.getChannel();
 		ChannelPipeline pipeline = channel.getPipeline();
@@ -395,17 +403,14 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 		}
 		else {
 			if(request.getMethod() == HEAD) {
+				setContentLength(response);
 				response.setContent(null);
-				response.setHeader(CONTENT_LENGTH, 0);
 				future = writeResponse(channel, response);
 			}
 			else {
 				int[] range = getRange(request, response);
 				if(range == null) {
-					if(!response.containsHeader(CONTENT_LENGTH) && !response.containsHeader(TRANSFER_ENCODING)) {
-						ChannelBuffer content = response.getContent();
-						response.setHeader(CONTENT_LENGTH, (content != null) ? content.readableBytes() : 0);
-					}
+					setContentLength(response);
 					future = writeResponse(channel, response);
 					if(response instanceof StaticResponse) {
 						future = writePayload(channel, (StaticResponse) response);
