@@ -598,7 +598,6 @@ public abstract class Model implements JsonModel {
 				if(load && !isNew()) {
 					ModelAdapter adapter = getAdapter(this);
 					if(hasContained(field)) {
-						// TODO include the requested field if it is a hasOne...?
 						load();
 					} else if(hasMany(field) || (adapter.isOneToOne(field) && !adapter.hasKey(field))) {
 						try {
