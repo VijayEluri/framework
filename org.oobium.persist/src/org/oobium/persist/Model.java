@@ -935,15 +935,24 @@ public abstract class Model implements JsonModel {
 	}
 	
 	public final boolean load() {
-		return load(null);
+		try {
+			getPersistor().retrieve(this);
+			return true;
+		} catch(Exception e) {
+			logger.warn("failed to load {}", e, asSimpleString());
+		}
+		return false;
 	}
 	
 	public final boolean load(String fields) {
+		if(fields == null) {
+			return load();
+		}
 		try {
 			getPersistor().retrieve(this, fields);
 			return true;
 		} catch(Exception e) {
-			logger.warn("failed to load " + asSimpleString(), e);
+			logger.warn("failed to load {}({})", e, asSimpleString(), fields);
 		}
 		return false;
 	}
