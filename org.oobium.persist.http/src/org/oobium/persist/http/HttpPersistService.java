@@ -6,11 +6,9 @@ import static org.oobium.app.http.Action.show;
 import static org.oobium.app.http.Action.showAll;
 import static org.oobium.app.http.Action.update;
 import static org.oobium.app.http.MimeType.JSON;
-import static org.oobium.persist.SessionCache.*;
 import static org.oobium.persist.http.PathBuilder.path;
 import static org.oobium.utils.StringUtils.varName;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
-import static org.oobium.utils.json.JsonUtils.toJson;
 import static org.oobium.utils.json.JsonUtils.toList;
 import static org.oobium.utils.json.JsonUtils.toMap;
 import static org.oobium.utils.json.JsonUtils.toObject;
@@ -163,7 +161,7 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 	
 	@Override
 	public void closeSession() {
-		expireCache();
+		// nothing to do
 	}
 	
 	@Override
@@ -205,7 +203,6 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 			if(response.isSuccess()) {
 				int id = coerce(response.getHeader("id"), int.class);
 				model.setId(id);
-				setCache(model);
 			}
 			else if(response.isConflict()) {
 				setErrors(model, response);
@@ -235,8 +232,6 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 			throw new Exception("no published route found for " + model.getClass() + ": destroy");
 		}
 		
-		Model cache = getCacheById(model.getClass(), model.getId());
-
 		try {
 			Client client = Client.client(request.url);
 			client.setAccepts(JSON.acceptsType);
@@ -245,10 +240,8 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 			
 			ClientResponse response = client.request(request.method, path);
 			if(response.isSuccess()) {
-				if(cache != null && cache != model) {
-					cache.setId(0);
-					cache.clear();
-				}
+				model.setId(null);
+				model.clear();
 			}
 			else if(response.isConflict()) {
 				setErrors(model, response);
@@ -299,11 +292,6 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 
 	@Override
 	public <T extends Model> T findById(Class<T> clazz, Object id, String include) throws Exception {
-		T model = getCacheById(clazz, id);
-		if(model != null) {
-			return model;
-		}
-		
 		Route request = api.getRoute(clazz, show);
 		if(request == null) {
 			throw new Exception("no published route found for " + clazz + ": show");
@@ -313,7 +301,7 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 			Client client = Client.client(request.url);
 			client.setAccepts(JSON.acceptsType);
 
-			model = coerce(id, clazz);
+			T model = coerce(id, clazz);
 			String path = path(request.path, model);
 
 			Map<String, ?> params = null;
@@ -332,7 +320,6 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 			ClientResponse response = client.request(request.method, path, params);
 			if(response.isSuccess()) {
 				model.putAll(response.getBody());
-				setCache(model);
 				return model;
 			} else {
 				if(response.exceptionThrown()) {
@@ -361,14 +348,6 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 			throw new IllegalArgumentException("cannot findAll: null class");
 		}
 
-		Map<String, Object> map = Map( e("query", query), e("values", values) );
-		String queryString = toJson(map);
-		
-		List<T> models = getCacheByQuery(clazz, queryString);
-		if(models != null) {
-			return models;
-		}
-
 		Route request = api.getRoute(clazz, showAll);
 		if(request == null) {
 			throw new Exception("no published route found for " + clazz + ": showAll");
@@ -384,16 +363,16 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 			if(query == null) {
 				response = client.request(request.method, path);
 			} else {
+				Map<String, Object> map = Map( e("query", query), e("values", values) );
 				response = client.request(request.method, path, map);
 			}
 			if(response.isSuccess()) {
 				List<Object> list = toList(response.getBody());
-				models = new ArrayList<T>();
+				List<T> models = new ArrayList<T>();
 				for(Object o : list) {
 					T model = coerce(o, clazz);
 					models.add(model);
 				}
-				setCache(clazz, queryString, models);
 				return models;
 			} else {
 				if(response.exceptionThrown()) {
@@ -453,7 +432,7 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 
 	@Override
 	public void openSession(String name) {
-		expireCache();
+		// nothing to do
 	}
 
 	public synchronized void removeSocketListener() {
@@ -464,7 +443,6 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 		}
 	}
 	
-	// always run the query (this is a reload request), but update the cache with the result
 	private void retrieve(Model model) throws Exception{
 		if(model == null) {
 			throw new Exception("cannot retrieve null model");
@@ -484,13 +462,6 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 			ClientResponse response = client.request(request.method, path);
 			if(response.isSuccess()) {
 				model.putAll(response.getBody());
-				Model cache = getCacheById(model.getClass(), model.getId());
-				if(cache == null) {
-					setCache(model);
-				} else if(cache != model) {
-					cache.putAll(model);
-					model.putAll(cache);
-				}
 			} else if(response.exceptionThrown()) {
 				throw new Exception(response.getException().getLocalizedMessage());
 			}
@@ -533,13 +504,6 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 					List<Object> list = new ArrayList<Object>();
 					for(Object e : (List<?>) o) {
 						Model m = coerce(e, type);
-						Model cache = getCacheById(type, m.getId());
-						if(cache == null) {
-							setCache(m);
-						} else {
-							cache.putAll(model);
-							model.putAll(cache);
-						}
 						list.add(m);
 					}
 					model.put(field, list);
@@ -585,16 +549,7 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 			Map<String, String> params = getParams(model);
 			
 			ClientResponse response = client.request(request.method, path, params);
-			if(response.isSuccess()) {
-				Model cache = getCacheById(model.getClass(), model.getId());
-				if(cache == null) {
-					setCache(model);
-				} else if(cache != model) {
-					cache.putAll(model);
-					model.putAll(cache);
-				}
-			}
-			else if(response.isConflict()) {
+			if(response.isConflict()) {
 				setErrors(model, response);
 			}
 			else if(response.exceptionThrown()) {
