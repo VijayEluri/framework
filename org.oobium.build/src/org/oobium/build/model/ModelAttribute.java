@@ -10,9 +10,20 @@
  ******************************************************************************/
 package org.oobium.build.model;
 
-import static org.oobium.utils.StringUtils.*;
+import static org.oobium.build.model.ModelDefinition.getJavaEntries;
+import static org.oobium.build.model.ModelDefinition.getString;
+import static org.oobium.persist.Attribute.DEFAULT_CHECK;
+import static org.oobium.persist.Attribute.DEFAULT_INDEXED;
+import static org.oobium.persist.Attribute.DEFAULT_INIT;
+import static org.oobium.persist.Attribute.DEFAULT_JSON;
+import static org.oobium.persist.Attribute.DEFAULT_PRECISION;
+import static org.oobium.persist.Attribute.DEFAULT_READONLY;
+import static org.oobium.persist.Attribute.DEFAULT_SCALE;
+import static org.oobium.persist.Attribute.DEFAULT_UNIQUE;
+import static org.oobium.persist.Attribute.DEFAULT_VIRTUAL;
+import static org.oobium.utils.StringUtils.blank;
+import static org.oobium.utils.StringUtils.simpleName;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
-import static org.oobium.build.model.ModelDefinition.*;
 
 import java.util.Map;
 
@@ -23,89 +34,90 @@ import org.oobium.persist.Text;
 
 public class ModelAttribute {
 
-	public final ModelDefinition model;
-	public String check;
-	public String init;
-	public String name;
-	public boolean json;
-	public int precision;
-	public int scale;
-	public String type;
-	public boolean indexed;
-	public boolean readOnly;
-	public boolean unique;
-	public boolean virtual;
+	private final ModelDefinition model;
+	private String check;
+	private String init;
+	private String name;
+	private boolean json;
+	private int precision;
+	private int scale;
+	private String type;
+	private boolean indexed;
+	private boolean readOnly;
+	private boolean unique;
+	private boolean virtual;
+	
+	private ModelAttribute(ModelAttribute original, ModelDefinition model) {
+		this.model = model;
+		check(check);
+		init(init);
+		name(name);
+		precision(precision);
+		scale(scale);
+		type(type);
+		json(json);
+		indexed(indexed);
+		readOnly(readOnly);
+		unique(unique);
+		virtual(virtual);
+	}
 	
 	public ModelAttribute(ModelDefinition model, String annotation) {
 		this.model = model;
 
-		if("createdOn".equals(annotation) || "updatedOn".equals(annotation)) {
-			this.name = annotation;
-			this.type = "java.sql.Date";
-			this.json = true;
-			this.check = "";
-			this.init = "";
-			this.precision = 0;
-			this.scale = 0;
-			this.indexed = false;
-			this.readOnly = false;
-			this.unique = false;
-			this.virtual = false;
-		} else if("createdAt".equals(annotation) || "updatedAt".equals(annotation)) {
-			this.name = annotation;
-			this.type = "java.util.Date";
-			this.json = true;
-			this.check = "";
-			this.init = "";
-			this.precision = 0;
-			this.scale = 0;
-			this.indexed = false;
-			this.readOnly = false;
-			this.unique = false;
-			this.virtual = false;
+		if("createdAt".equals(annotation) || "updatedAt".equals(annotation) || "createdOn".equals(annotation) || "updatedOn".equals(annotation)) {
+			name(annotation);
+			if("createdAt".equals(annotation) || "updatedAt".equals(annotation)) {
+				type("java.util.Date");
+			} else {
+				type("java.sql.Date");
+			}
+			json(DEFAULT_JSON);
+			check(DEFAULT_CHECK);
+			init(DEFAULT_INIT);
+			precision(DEFAULT_PRECISION);
+			scale(DEFAULT_SCALE);
+			indexed(DEFAULT_INDEXED);
+			readOnly(DEFAULT_READONLY);
+			unique(DEFAULT_UNIQUE);
+			virtual(DEFAULT_VIRTUAL);
 		} else {
 			char[] ca = annotation.toCharArray();
 			int start = annotation.indexOf('(') + 1;
 			int end = annotation.length() - 1;
 			Map<String, String> entries = getJavaEntries(ca, start, end);
 			
-			this.name = getString(entries.get("name"));
-			this.type = model.getType(entries.get("type"));
-			this.json = coerce(entries.get("json"), true);
-			this.check = getString(entries.get("check"));
-			this.init = getString(entries.get("init"));
-			this.precision = coerce(entries.get("precision"), 8);
-			this.scale = coerce(entries.get("scale"), 2);
-			this.indexed = coerce(entries.get("indexed"), false);
-			this.readOnly = coerce(entries.get("readOnly"), false);
-			this.unique = coerce(entries.get("unique"), false);
-			this.virtual = coerce(entries.get("virtual"), false);
+			name(getString(entries.get("name")));
+			type(model.getType(entries.get("type")));
+			json(coerce(entries.get("json"), DEFAULT_JSON));
+			check(getString(entries.get("check")));
+			init(getString(entries.get("init")));
+			precision(coerce(entries.get("precision"), DEFAULT_PRECISION));
+			scale(coerce(entries.get("scale"), DEFAULT_SCALE));
+			indexed(coerce(entries.get("indexed"), DEFAULT_INDEXED));
+			readOnly(coerce(entries.get("readOnly"), DEFAULT_READONLY));
+			unique(coerce(entries.get("unique"), DEFAULT_UNIQUE));
+			virtual(coerce(entries.get("virtual"), DEFAULT_VIRTUAL));
 		}
 	}
 	
-	private ModelAttribute(ModelAttribute original, ModelDefinition model) {
-		this.model = model;
-		this.check = original.check;
-		this.init = original.init;
-		this.name = original.name;
-		this.precision = original.precision;
-		this.scale = original.scale;
-		this.type = original.type;
-		this.json = original.json;
-		this.indexed = original.indexed;
-		this.readOnly = original.readOnly;
-		this.unique = original.unique;
-		this.virtual = original.virtual;
+	public String check() {
+		return check;
+	}
+	
+	public ModelAttribute check(String check) {
+		this.check = (check == null) ? DEFAULT_CHECK : check;
+		return this;
 	}
 	
 	public ModelAttribute getCopy() {
 		return new ModelAttribute(this, model);
 	}
-	
+
 	public ModelAttribute getCopy(ModelDefinition model) {
 		return new ModelAttribute(this, model);
 	}
-	
+
 	public String getJavaType() {
 		if(Text.class.getCanonicalName().equals(type)) {
 			return "java.lang.String";
@@ -120,8 +132,78 @@ public class ModelAttribute {
 		return simpleName(type);
 	}
 
+	public boolean indexed() {
+		return indexed;
+	}
+
+	public ModelAttribute indexed(boolean indexed) {
+		this.indexed = indexed;
+		return this;
+	}
+
+	public String init() {
+		return init;
+	}
+
+	public ModelAttribute init(String init) {
+		this.init = (init == null) ? DEFAULT_INIT : init;
+		return this;
+	}
+
 	public boolean isPrimitive() {
 		return (type.indexOf('.') == -1) && !type.endsWith("[]");
+	}
+
+	public boolean json() {
+		return json;
+	}
+
+	public ModelAttribute json(boolean json) {
+		this.json = json;
+		return this;
+	}
+
+	public ModelDefinition model() {
+		return model;
+	}
+
+	public String name() {
+		return name;
+	}
+
+	public ModelAttribute name(String name) {
+		if(name == null) {
+			throw new IllegalArgumentException("name cannot be null");
+		}
+		this.name = name;
+		return this;
+	}
+
+	public int precision() {
+		return precision;
+	}
+
+	public ModelAttribute precision(int precision) {
+		this.precision = precision;
+		return this;
+	}
+
+	public boolean readOnly() {
+		return readOnly;
+	}
+
+	public ModelAttribute readOnly(boolean readOnly) {
+		this.readOnly = readOnly;
+		return this;
+	}
+
+	public int scale() {
+		return scale;
+	}
+
+	public ModelAttribute scale(int scale) {
+		this.scale = scale;
+		return this;
 	}
 
 	@Override
@@ -162,5 +244,36 @@ public class ModelAttribute {
 		sb.append(')');
 		return sb.toString();
 	}
+
+	public String type() {
+		return type;
+	}
+
+	public ModelAttribute type(String type) {
+		if(type == null) {
+			throw new IllegalArgumentException("type cannot be null");
+		}
+		this.type = type;
+		return this;
+	}
+
+	public boolean unique() {
+		return unique;
+	}
+
+	public ModelAttribute unique(boolean unique) {
+		this.unique = unique;
+		return this;
+	}
+
+	public boolean virtual() {
+		return virtual;
+	}
+
+	public ModelAttribute virtual(boolean virtual) {
+		this.virtual = virtual;
+		return this;
+	}
+
 	
 }

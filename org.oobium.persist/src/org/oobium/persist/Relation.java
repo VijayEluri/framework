@@ -14,12 +14,11 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.Set;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface Relation {
-
+	
 	public static final int UNDEFINED = -1;
 	
 	/**
@@ -96,10 +95,19 @@ public @interface Relation {
 	public static final int NULLIFY = 2;
 
 	
-	/**
-	 * Not yet implemented
-	 */
-	Class<?> backedBy() default Set.class;
+	public static final int DEFAULT_DEPENDENT = UNDEFINED;
+	public static final String DEFAULT_EMBED = "";
+	public static final boolean DEFAULT_EMBEDDED = false;
+	public static final boolean DEFAULT_INCLUDE = false;
+	public static final int DEFAULT_ONDELETE = UNDEFINED;
+	public static final int DEFAULT_ONUPDATE = UNDEFINED;
+	public static final String DEFAULT_OPPOSITE = "";
+	public static final String DEFAULT_ORDERBY = "";
+	public static final boolean DEFAULT_READONLY = false;
+	public static final String DEFAULT_THROUGH = "";
+	public static final boolean DEFAULT_UNIQUE = false;
+	public static final boolean DEFAULT_VIRTUAL = false;
+
 	
 	/**
 	 * Specify what to do with dependent (related) model objects when this model is destroyed.
@@ -112,7 +120,7 @@ public @interface Relation {
 	 * </dl>
 	 * <p>default is UNDEFINED, meaning that it is not used</p>
 	 */
-	int dependent() default UNDEFINED;
+	int dependent() default DEFAULT_DEPENDENT;
 
 	/**
 	 * A comma separated list of the fields from the related Model to embed.
@@ -124,7 +132,7 @@ public @interface Relation {
 	 * @see #embedded()
 	 * @see ModelDescription#embedded()
 	 */
-	String embed() default "";
+	String embed() default DEFAULT_EMBED;
 
 	/**
 	 * If set true, then the entire related Model will be embedded within this Model.
@@ -133,16 +141,14 @@ public @interface Relation {
 	 * @see #embed()
 	 * @see ModelDescription#embedded()
 	 */
-	boolean embedded() default false;
+	boolean embedded() default DEFAULT_EMBEDDED;
 	
 	/**
 	 * If set true, specifies that this field should always be included (eagerly loaded) when loading the model.<br/>
 	 * default is false.
 	 */
-	boolean include() default false;
+	boolean include() default DEFAULT_INCLUDE;
 	
-	int limit() default -1;
-
 	/**
 	 * The name of the field that will represent this relationship in the defining class.
 	 */
@@ -162,7 +168,7 @@ public @interface Relation {
 	 * </dl>
 	 * <p>default is UNDEFINED, meaning that this clause is not set</p>
 	 */
-	int onDelete() default UNDEFINED;
+	int onDelete() default DEFAULT_ONDELETE;
 
 	/**
 	 * The referential action to take place when the referenced model is destroyed. The name comes from the ON UPDATE clause
@@ -178,20 +184,20 @@ public @interface Relation {
 	 * </dl>
 	 * <p>default is UNDEFINED, meaning that this clause is not set</p>
 	 */
-	int onUpdate() default UNDEFINED;
+	int onUpdate() default DEFAULT_ONUPDATE;
 
 	/**
 	 * The name of the field in the related class that points to this field
 	 * (the opposite of 'parent', would be 'children')
 	 * @return
 	 */
-	String opposite() default "";
+	String opposite() default DEFAULT_OPPOSITE;
 
-	String orderBy() default "";
+	String orderBy() default DEFAULT_ORDERBY;
 	
 	boolean readOnly() default false;
 	
-	String through() default "";
+	String through() default DEFAULT_THROUGH;
 	
 	/**
 	 * The class type that this relation points to
@@ -208,8 +214,8 @@ public @interface Relation {
 	 * </p>
 	 * @return the uniqueness of the attribute for this attribute
 	 */
-	boolean unique() default false;
+	boolean unique() default DEFAULT_UNIQUE;
 
-	boolean virtual() default false;
+	boolean virtual() default DEFAULT_VIRTUAL;
 
 }

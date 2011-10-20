@@ -53,12 +53,12 @@ public class ModelTable {
 		boolean timestamps = model.timestamps;
 		for(ModelAttribute attribute : model.getAttributes()) {
 			if(datestamps) {
-				if(attribute.name.equals("createdOn") || attribute.name.equals("updatedOn")) {
+				if(attribute.name().equals("createdOn") || attribute.name().equals("updatedOn")) {
 					continue;
 				}
 			}
 			if(timestamps) {
-				if(attribute.name.equals("createdAt") || attribute.name.equals("updatedAt")) {
+				if(attribute.name().equals("createdAt") || attribute.name().equals("updatedAt")) {
 					continue;
 				}
 			}
@@ -72,7 +72,7 @@ public class ModelTable {
 		}
 		
 		for(ModelRelation relation : model.getRelations()) {
-			if(!relation.hasMany && !relation.isThrough()) {
+			if(!relation.hasMany() && !relation.isThrough()) {
 				addRelation(relation);
 			}
 		}
@@ -83,22 +83,22 @@ public class ModelTable {
 	}
 	
 	private void addAttribute(ModelAttribute attribute) {
-		String name = columnName(attribute.name);
-		String type = attribute.type;
+		String name = columnName(attribute.name());
+		String type = attribute.type();
 		
 		Map<String, Object> options = new LinkedHashMap<String, Object>();
 		if(attribute.isPrimitive()) {
 			options.put("required", true);
 		}
-		if("java.math.BigDecimal".equals(attribute.type)) {
-			options.put("precision", attribute.precision);
-			options.put("scale", attribute.scale);
+		if("java.math.BigDecimal".equals(attribute.type())) {
+			options.put("precision", attribute.precision());
+			options.put("scale", attribute.scale());
 		}
-		if(attribute.unique) {
+		if(attribute.unique()) {
 			options.put("unique", true);
 		}
-		if(!blank(attribute.check)) {
-			options.put("check", attribute.check);
+		if(!blank(attribute.check())) {
+			options.put("check", attribute.check());
 		}
 		if(attribute.isPrimitive()) {
 			options.put("primitive", true);
@@ -106,8 +106,8 @@ public class ModelTable {
 
 		columns.add(new Column(type, name, options.isEmpty() ? null : options));
 		
-		if(attribute.indexed) {
-			indexes.add(new Index(columnName(attribute.name), attribute.unique));
+		if(attribute.indexed()) {
+			indexes.add(new Index(columnName(attribute.name()), attribute.unique()));
 		}
 	}
 
@@ -138,8 +138,8 @@ public class ModelTable {
 	public void addRelation(ModelRelation relation) {
 		boolean isOneToOneKey = false;
 		ModelRelation oppositeRelation = relation.getOpposite();
-		if(oppositeRelation != null && !oppositeRelation.hasMany) {
-			if(name.compareTo(tableName(oppositeRelation.model.type)) > 0) {
+		if(oppositeRelation != null && !oppositeRelation.hasMany()) {
+			if(name.compareTo(tableName(oppositeRelation.model().type)) > 0) {
 				// don't add if 1:1 and this table is less than the opposite table
 				return;
 			} else {
@@ -147,7 +147,7 @@ public class ModelTable {
 			}
 		}
 		
-		String column = columnName(relation.name);
+		String column = columnName(relation.name());
 
 		// add the column
 		String type = Integer.class.getCanonicalName();
@@ -157,12 +157,12 @@ public class ModelTable {
 		// add the foreign key
 		String reference = tableName(relation.getSimpleType());
 		options = new LinkedHashMap<String, Object>();
-		String onDelete = getReferentialAction(relation.onDelete);
+		String onDelete = getReferentialAction(relation.onDelete());
 		if(onDelete != null) {
 			sf.staticImports.add(Relation.class.getCanonicalName() + "." + onDelete);
 			options.put("onDelete", onDelete);
 		}
-		String onUpdate = getReferentialAction(relation.onUpdate);
+		String onUpdate = getReferentialAction(relation.onUpdate());
 		if(onUpdate != null) {
 			sf.staticImports.add(Relation.class.getCanonicalName() + "." + onUpdate);
 			options.put("onUpdate", onUpdate);
@@ -170,7 +170,7 @@ public class ModelTable {
 		foreignKeys.add(new ForeignKey(column, reference, options.isEmpty() ? null : options));
 
 		// add the index
-		indexes.add(new Index(column, isOneToOneKey || relation.isUnique()));
+		indexes.add(new Index(column, isOneToOneKey || relation.unique()));
 	}
 
 	public boolean hasForeignKey() {

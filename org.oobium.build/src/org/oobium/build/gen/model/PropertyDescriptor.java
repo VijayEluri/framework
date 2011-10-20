@@ -53,18 +53,18 @@ public class PropertyDescriptor {
 	private String relatedType;
 
 	public PropertyDescriptor(ModelAttribute attribute) {
-		this(attribute.model.getSimpleName(), attribute.getJavaType(), attribute.name);
+		this(attribute.model().getSimpleName(), attribute.getJavaType(), attribute.name());
 
-		rawType = attribute.type;
+		rawType = attribute.type();
 		
-		init = attribute.init;
+		init = attribute.init();
 		
 		getterName = StringUtils.getterName(variable);
 		
-		check = attribute.check;
-		readOnly = attribute.readOnly;
-		unique = attribute.unique;
-		virtual = attribute.virtual;
+		check = attribute.check();
+		readOnly = attribute.readOnly();
+		unique = attribute.unique();
+		virtual = attribute.virtual();
 		
 		isAttr = true;
 		hasOne = false;
@@ -75,30 +75,30 @@ public class PropertyDescriptor {
 	}
 
 	public PropertyDescriptor(ModelRelation relation) {
-		this(relation.model.getSimpleName(), relation.type, relation.name);
+		this(relation.model().getSimpleName(), relation.type(), relation.name());
 
 		init = null;
 		
-		model = relation.model;
+		model = relation.model();
 		opposite = relation.getOpposite();
 		
-		readOnly = relation.readOnly;
-		unique = relation.unique;
-		virtual = relation.virtual;
+		readOnly = relation.readOnly();
+		unique = relation.unique();
+		virtual = relation.virtual();
 
 		isAttr = false;
-		hasOne = !relation.hasMany;
-		hasMany = relation.hasMany;
-		relatedType = relation.type;
+		hasOne = !relation.hasMany();
+		hasMany = relation.hasMany();
+		relatedType = relation.type();
 
-		if(relation.hasMany) {
+		if(relation.hasMany()) {
 			castType = Set.class.getSimpleName();
 			getterName = variable;
 		} else {
 			getterName = StringUtils.getterName(variable);
 		}
 
-		builder = relation.hasMany ? new HasManyBuilder(this) : new HasOneBuilder(this);
+		builder = relation.hasMany() ? new HasManyBuilder(this) : new HasOneBuilder(this);
 	}
 
 	PropertyDescriptor(String modelType, String type, String name) {

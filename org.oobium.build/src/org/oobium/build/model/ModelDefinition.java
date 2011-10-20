@@ -198,7 +198,7 @@ public class ModelDefinition {
 	
 	public static String getString(String in) {
 		if(in == null) {
-			return "";
+			return null;
 		}
 		if(in.length() > 1 && in.charAt(0) == '"' && in.charAt(in.length()-1) == '"') {
 			// it is a string literal - escape special characters
@@ -286,13 +286,13 @@ public class ModelDefinition {
 
 	public ModelAttribute addAttribute(ModelAttribute attribute) {
 		ModelAttribute attr = attribute.getCopy();
-		attributes.put(attr.name, attr);
+		attributes.put(attr.name(), attr);
 		return attr;
 	}
 	
 	public ModelAttribute addAttribute(String attribute) {
 		ModelAttribute attr = new ModelAttribute(this, attribute);
-		attributes.put(attr.name, attr);
+		attributes.put(attr.name(), attr);
 		return attr;
 	}
 
@@ -321,20 +321,20 @@ public class ModelDefinition {
 	
 	public ModelRelation addRelation(ModelRelation relation) {
 		ModelRelation rel = relation.getCopy(this);
-		if(rel.hasMany) {
-			this.hasMany.put(rel.name, rel);
+		if(rel.hasMany()) {
+			this.hasMany.put(rel.name(), rel);
 		} else {
-			this.hasOne.put(rel.name, rel);
+			this.hasOne.put(rel.name(), rel);
 		}
 		return rel;
 	}
 
 	public ModelRelation addRelation(String annotation, boolean hasMany) {
 		ModelRelation rel = new ModelRelation(this, annotation, hasMany);
-		if(rel.hasMany) {
-			this.hasMany.put(rel.name, rel);
+		if(rel.hasMany()) {
+			this.hasMany.put(rel.name(), rel);
 		} else {
-			this.hasOne.put(rel.name, rel);
+			this.hasOne.put(rel.name(), rel);
 		}
 		return rel;
 	}
@@ -498,25 +498,25 @@ public class ModelDefinition {
 		if(hasAttributes()) {
 			imports.add(Attribute.class.getCanonicalName());
 			for(ModelAttribute attr : attributes.values()) {
-				if(!attr.type.startsWith("java.lang") && !primitives.contains(attr.type)) {
-					imports.add(attr.type);
+				if(!attr.type().startsWith("java.lang") && !primitives.contains(attr.type())) {
+					imports.add(attr.type());
 				}
 			}
 		}
 		if(hasRelations()) {
 			imports.add(Relation.class.getCanonicalName());
 			for(ModelRelation r : hasOne.values()) {
-				Pattern p = Pattern.compile("import\\s+" + r.type + "\\s*;");
+				Pattern p = Pattern.compile("import\\s+" + r.type() + "\\s*;");
 				Matcher m = p.matcher(source);
 				if(m.find()) {
-					imports.add(r.type);
+					imports.add(r.type());
 				}
 			}
 			for(ModelRelation r : hasMany.values()) {
-				Pattern p = Pattern.compile("import\\s+" + r.type + "\\s*;");
+				Pattern p = Pattern.compile("import\\s+" + r.type() + "\\s*;");
 				Matcher m = p.matcher(source);
 				if(m.find()) {
-					imports.add(r.type);
+					imports.add(r.type());
 				}
 			}
 		}

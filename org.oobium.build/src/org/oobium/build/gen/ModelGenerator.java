@@ -328,11 +328,11 @@ public class ModelGenerator {
 
 		src.propertiesArray = "FIELDS";
 		for(ModelAttribute attribute : model.getAttributes()) {
-			src.properties.put(attribute.name, new PropertyDescriptor(attribute));
+			src.properties.put(attribute.name(), new PropertyDescriptor(attribute));
 		}
 
 		for(ModelRelation relation : model.getRelations()) {
-			src.properties.put(relation.name, new PropertyDescriptor(relation));
+			src.properties.put(relation.name(), new PropertyDescriptor(relation));
 		}
 
 		src.imports.add(JsonModel.class.getCanonicalName());

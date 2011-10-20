@@ -151,13 +151,13 @@ public class DbGenerator {
 		
 		for(ModelDefinition model : models) {
 			for(ModelRelation relation : model.getRelations()) {
-				if(relation.hasMany && !relation.isThrough()) {
+				if(relation.hasMany() && !relation.isThrough()) {
 					ModelRelation opposite = relation.getOpposite();
-					if(opposite == null || opposite.hasMany) {
+					if(opposite == null || opposite.hasMany()) {
 						ModelTable table1 = tables.get(model.getSimpleName());
 						ModelTable table2 = tables.get(relation.getSimpleType());
 						if(table1 != null && table2 != null) {
-							JoinTable joinTable = new JoinTable(table1.name, columnName(relation.name), table2.name, columnName(relation.opposite));
+							JoinTable joinTable = new JoinTable(table1.name, columnName(relation.name()), table2.name, columnName(relation.opposite()));
 							if(!joins.containsKey(joinTable.name)) {
 								joins.put(joinTable.name, joinTable);
 								joinedModels.add(table1);

@@ -21,10 +21,6 @@ import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.ui.views.contentoutline.ContentOutlinePage;
 import org.oobium.eclipse.esp.outline.actions.SortAction;
 
-/**
- * A content outline page which always represents the content of the connected
- * editor in 10 segments.
- */
 public class EspOutlinePage extends ContentOutlinePage {
 
 	private IDocument document;
