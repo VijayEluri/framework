@@ -299,7 +299,21 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		}
 		return session;
 	}
-	
+
+	@Override
+	public Class<? extends View> getViewClass(String name) {
+		Class<? extends View> viewClass = super.getViewClass(name);
+		if(viewClass == null) {
+			for(Object service : moduleTracker.getServices()) {
+				viewClass = ((ModuleService) service).getViewClass(name);
+				if(viewClass != null) {
+					return viewClass;
+				}
+			}
+		}
+		return viewClass;
+	}
+
 	@Override
 	public Response handle404(Request request) {
 		if(getRouter().hasHost(request)) {

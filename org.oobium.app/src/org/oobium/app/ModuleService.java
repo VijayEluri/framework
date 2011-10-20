@@ -25,6 +25,7 @@ import java.util.jar.JarFile;
 import org.oobium.app.controllers.ControllerCache;
 import org.oobium.app.controllers.HttpController;
 import org.oobium.app.routing.Router;
+import org.oobium.app.views.View;
 import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
@@ -162,6 +163,22 @@ public abstract class ModuleService implements BundleActivator {
 		return null;
 	}
 
+	Class<? extends View> getViewClass(String name) {
+		int ix = this.name.lastIndexOf('_');
+		String base = (ix == -1) ? this.name : this.name.substring(0, ix);
+		Config config = loadConfiguration();
+		String fullname = config.getPathToViews(base).replace('/', '.') + "." + name;
+		try {
+			Class<?> clazz = context.getBundle().loadClass(fullname);
+			if(View.class.isAssignableFrom(clazz)) {
+				return clazz.asSubclass(View.class);
+			}
+		} catch(ClassNotFoundException e) {
+			// discard
+		}
+		return null;
+	}
+	
 	public Logger getLogger() {
 		return logger;
 	}

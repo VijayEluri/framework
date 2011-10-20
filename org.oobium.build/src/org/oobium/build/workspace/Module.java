@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -343,9 +344,11 @@ public class Module extends Bundle {
 			newsrc = oldsrc.replaceFirst("public\\s+void\\s+addRoutes\\s*\\(\\s*Config\\s+config\\s*,\\s*(App)?Router\\s+router\\s*\\)\\s*\\{\\s*",
 											"public void addRoutes(Config config, $1Router router) {\n" +
 											"\t\trouter.addResource(" + modelName + ".class, " + action.name() + ");\n\t\t");
-			newsrc = SourceFile.ensureImport(newsrc, packageName(getModel(modelName)) + "." + modelName);
 			newsrc = SourceFile.ensureImport(newsrc, "static " + Action.class.getCanonicalName() + "." + action.name());
 		}
+
+		// in case this is a new add, or it's just not there
+		newsrc = SourceFile.ensureImport(newsrc, packageName(getModel(modelName)) + "." + modelName);
 		
 		if(!newsrc.equals(oldsrc)) {
 			FileUtils.writeFile(activator, newsrc);
@@ -661,8 +664,20 @@ public class Module extends Bundle {
 	/**
 	 * Creates the model, if it does not exist, and updates the Manifest's
 	 * Import-Package and Export-Package sections accordingly.
-	 * @param name
-	 * @param attrs
+	 * @param name the name of the new model
+	 * @param attrs any attributes to be used when creating the model; cannot be null
+	 * @throws IllegalArgumentException if an attribute cannot be parsed
+	 * @return the model file
+	 */
+	public File createModel(String name) {
+		return createModel(name, new HashMap<String, String>(0));
+	}
+
+	/**
+	 * Creates the model, if it does not exist, and updates the Manifest's
+	 * Import-Package and Export-Package sections accordingly.
+	 * @param name the name of the new model
+	 * @param attrs any attributes to be used when creating the model; cannot be null
 	 * @throws IllegalArgumentException if an attribute cannot be parsed
 	 * @return the model file
 	 */

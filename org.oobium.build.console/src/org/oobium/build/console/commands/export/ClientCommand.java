@@ -135,7 +135,7 @@ public class ClientCommand extends BuilderCommand {
 			}
 			
 			if(target != null) {
-				console.out.println("export complete\n *** models to be accessed by the client must be published first ***");
+				console.out.println("export complete");
 				Eclipse.refreshProject(target.name);
 			}
 		} catch(IOException e) {

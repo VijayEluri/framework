@@ -10,7 +10,6 @@
  ******************************************************************************/
 package org.oobium.app.controllers;
 
-import static org.oobium.utils.literal.*;
 import static org.oobium.app.http.Action.showEdit;
 import static org.oobium.app.http.Action.showNew;
 import static org.oobium.app.http.MimeType.CSS;
@@ -18,18 +17,24 @@ import static org.oobium.app.http.MimeType.JS;
 import static org.oobium.app.http.MimeType.JSON;
 import static org.oobium.app.sessions.Session.SESSION_ID_KEY;
 import static org.oobium.app.sessions.Session.SESSION_UUID_KEY;
+import static org.oobium.utils.StringUtils.asString;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.join;
+import static org.oobium.utils.StringUtils.plural;
+import static org.oobium.utils.StringUtils.underscored;
 import static org.oobium.utils.StringUtils.varName;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.utils.json.JsonUtils.format;
 import static org.oobium.utils.json.JsonUtils.toJson;
 import static org.oobium.utils.json.JsonUtils.toMap;
+import static org.oobium.utils.literal.Map;
+import static org.oobium.utils.literal.e;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Timestamp;
@@ -1271,6 +1276,45 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		}
 	}
 
+	public void renderView(Object...args) {
+		String model = getClass().getSimpleName();
+		if(model.endsWith("Controller")) {
+			model = model.substring(0, model.length() - 10);
+		}
+
+		String name = underscored(plural(model)) + ".";
+		switch(action) {
+		case create:   name = name + "ShowNew" + model; break; // shown for errors
+		case update:   name = name + "ShowEdit" + model; break; // shown for errors
+		case destroy:  name = name + "ShowDestroyed" + model; break; // ???
+		case show:     name = name + "Show" + model; break;
+		case showAll:  name = name + "ShowAll" + plural(model); break;
+		case showEdit: name = name + "ShowEdit" + model; break;
+		case showNew:  name = name + "ShowNew" + model; break;
+		}
+
+		Class<? extends View> viewClass = handler.getViewClass(name);
+		if(viewClass != null) {
+			Class<?>[] types = new Class<?>[args.length];
+			for(int i = 0; i < args.length; i++) {
+				types[i] = args[i].getClass();
+			}
+			try {
+				Constructor<? extends View> ctor = viewClass.getConstructor(types);
+				View view = ctor.newInstance(args);
+				render(view);
+			} catch(NoSuchMethodException e) {
+				logger.warn("incorrect arguments ({}) for view: {}", asString(args), viewClass);
+			} catch(IllegalAccessException e) {
+				logger.warn(e.getMessage());
+			} catch(InstantiationException e) {
+				logger.warn(e.getMessage());
+			} catch(InvocationTargetException e) {
+				logger.warn(e.getMessage());
+			}
+		}
+	}
+	
 	private void rendering() {
 		if(isRendered) {
 			throw new UnsupportedOperationException("cannot render more than once");
