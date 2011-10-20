@@ -960,8 +960,10 @@ public class Console extends Composite {
 						sb.append(' ');
 					}
 					sb.append(suggestion);
-					for(int j = suggestion.length(); j < colWidth; j++) {
-						sb.append(' ');
+					if(i % numCols < numCols-1) {
+						for(int j = suggestion.length(); j < colWidth; j++) {
+							sb.append(' ');
+						}
 					}
 				}
 				if(sb.length() > 0) {
