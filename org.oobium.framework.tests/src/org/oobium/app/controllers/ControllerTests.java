@@ -53,7 +53,7 @@ public class ControllerTests {
 		when(request.getHandler()).thenReturn(handler);
 		
 		HttpController c = new HttpController();
-		c.initialize(null, request, Map("id", (Object) 15));
+		c.initialize(null, request, Map("member[id]", (Object) 15));
 		c.setParentClass(Member.class);
 		c.setHasManyField("phones");
 		
@@ -68,7 +68,7 @@ public class ControllerTests {
 		assertNotNull(id);
 		assertNotNull(field);
 		assertEquals(Member.class, type);
-		assertEquals(15, id);
+		assertEquals("15", id);
 		assertEquals("phones", field);
 	}
 	
@@ -79,7 +79,7 @@ public class ControllerTests {
 		when(request.getHandler()).thenReturn(handler);
 		
 		HttpController c = new HttpController();
-		c.initialize(null, request, Map(e("id", (Object) 15), e("query", Map("number", "303-555-1212"))));
+		c.initialize(null, request, Map(e("member[id]", (Object) 15), e("query", Map("number", "303-555-1212"))));
 		c.setParentClass(Member.class);
 		c.setHasManyField("phones");
 		
@@ -94,7 +94,7 @@ public class ControllerTests {
 		assertNotNull(id);
 		assertNotNull(field);
 		assertEquals(Member.class, type);
-		assertEquals(15, id);
+		assertEquals("15", id);
 		assertEquals("phones", field);
 		
 		Object number = query.get("number");
@@ -109,7 +109,7 @@ public class ControllerTests {
 		when(request.getHandler()).thenReturn(handler);
 		
 		HttpController c = new HttpController();
-		c.initialize(null, request, Map(e("id", (Object) 15), e("query", Map("$from", "something"))));
+		c.initialize(null, request, Map(e("member[id]", (Object) 15), e("query", Map("$from", "something"))));
 		c.setParentClass(Member.class);
 		c.setHasManyField("phones");
 		
@@ -125,7 +125,7 @@ public class ControllerTests {
 		assertNotNull(id);
 		assertNotNull(field);
 		assertEquals(Member.class, type);
-		assertEquals(15, id);
+		assertEquals("15", id);
 		assertEquals("phones", field);
 	}
 	
