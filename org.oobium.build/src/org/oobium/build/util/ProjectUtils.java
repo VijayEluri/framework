@@ -117,6 +117,10 @@ public class ProjectUtils {
 		return file.isFile() && file.getName().endsWith("Controller.java");
 	}
 
+	public static boolean isNotifier(File file) {
+		return file.isFile() && file.getName().endsWith("Notifier.java");
+	}
+
 	public static boolean isView(File file) {
 		return file.isFile() && file.getName().endsWith(".esp");
 	}

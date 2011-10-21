@@ -18,6 +18,7 @@ import static org.oobium.utils.StringUtils.simpleName;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 
 import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.oobium.persist.Relation;
@@ -69,19 +70,19 @@ public class ModelRelation {
 	private ModelRelation(ModelRelation original, ModelDefinition model, boolean hasMany) {
 		this.model = model;
 		this.hasMany = hasMany;
-		name(name);
-		type(type);
-		opposite(opposite);
-		through(through);
-		readOnly(readOnly);
-		unique(unique);
-		virtual(virtual);
-		dependent(dependent);
-		onDelete(onDelete);
-		onUpdate(onUpdate);
-		embed(embed);
-		embedded(embedded);
-		include(include);
+		name(original.name);
+		type(original.type);
+		opposite(original.opposite);
+		through(original.through);
+		readOnly(original.readOnly);
+		unique(original.unique);
+		virtual(original.virtual);
+		dependent(original.dependent);
+		onDelete(original.onDelete);
+		onUpdate(original.onUpdate);
+		embed(original.embed);
+		embedded(original.embedded);
+		include(original.include);
 	}
 	
 	public int dependent() {
@@ -127,6 +128,47 @@ public class ModelRelation {
 		return new ModelRelation(this, model, hasMany);
 	}
 
+	public Map<String, Object> getProperties() {
+		Map<String, Object> props = new HashMap<String, Object>();
+		props.put("name", name);
+		props.put("type", type);
+		props.put("hasMany", hasMany);
+		if(!opposite.equals(DEFAULT_OPPOSITE)) {
+			props.put("opposite", opposite);
+		}
+		if(!through.equals(DEFAULT_THROUGH)) {
+			props.put("through", through);
+		}
+		if(readOnly != DEFAULT_READONLY) {
+			props.put("readOnly", readOnly);
+		}
+		if(unique != DEFAULT_UNIQUE) {
+			props.put("unique", unique);
+		}
+		if(virtual != DEFAULT_VIRTUAL) {
+			props.put("virtual", virtual);
+		}
+		if(dependent != DEFAULT_DEPENDENT) {
+			props.put("dependent", dependent);
+		}
+		if(onDelete != DEFAULT_ONDELETE) {
+			props.put("onDelete", onDelete);
+		}
+		if(onUpdate != DEFAULT_ONUPDATE) {
+			props.put("onUpdate", onUpdate);
+		}
+		if(!embed.equals(DEFAULT_EMBED)) {
+			props.put("embed", embed);
+		}
+		if(embedded != DEFAULT_EMBEDDED) {
+			props.put("embedded", embedded);
+		}
+		if(include != DEFAULT_INCLUDE) {
+			props.put("include", include);
+		}
+		return props;
+	}
+	
 	public ModelRelation getOpposite() {
 		return oppositeRelation;
 	}

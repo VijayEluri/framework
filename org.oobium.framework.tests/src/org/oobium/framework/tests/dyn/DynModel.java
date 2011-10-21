@@ -52,22 +52,22 @@ public class DynModel extends DynClass {
 	}
 	
 	public DynModel embedded() {
-		def.embedded = true;
+		def.embedded(true);
 		return this;
 	}
 	
 	public DynModel datestamps() {
-		def.datestamps = true;
+		def.datestamps(true);
 		return this;
 	}
 	
 	public DynModel timestamps() {
-		def.timestamps = true;
+		def.timestamps(true);
 		return this;
 	}
 	
 	public DynModel setTimestamps(boolean on) {
-		def.timestamps = on;
+		def.timestamps(on);
 		return this;
 	}
 

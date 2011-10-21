@@ -232,20 +232,20 @@ public class ModelDefinition {
 	private int mdstart;
 	private int mdend;
 
-	public final String packageName;
-	public final String type;
-	private Map<String, ModelAttribute> attributes;
-	private final Map<String, ModelRelation> hasOne;
-	private final Map<String, ModelRelation> hasMany;
-	private final List<String> indexes;
-	public boolean datestamps;
-	public boolean timestamps;
-	public boolean allowUpdate = true; // TODO
-	public boolean allowDelete = true; // TODO
-	public boolean embedded;
-	public boolean activation;
+	private final String packageName;
+	private final String type;
+	private LinkedHashMap<String, ModelAttribute> attributes;
+	private final LinkedHashMap<String, ModelRelation> hasOne;
+	private final LinkedHashMap<String, ModelRelation> hasMany;
+	private final ArrayList<String> indexes;
+	private boolean datestamps;
+	private boolean timestamps;
+	private boolean allowUpdate = true; // TODO
+	private boolean allowDelete = true; // TODO
+	private boolean embedded;
+	private boolean activation;
 
-	public String[] siblings;
+	private String[] siblings;
 
 	public ModelDefinition(File file) {
 		this(file.getName(), null, file, null);
@@ -284,6 +284,15 @@ public class ModelDefinition {
 		this(simpleName, source, null, siblings);
 	}
 
+	public boolean activation() {
+		return activation;
+	}
+	
+	public ModelDefinition activation(boolean activation) {
+		this.activation = activation;
+		return this;
+	}
+
 	public ModelAttribute addAttribute(ModelAttribute attribute) {
 		ModelAttribute attr = attribute.getCopy();
 		attributes.put(attr.name(), attr);
@@ -296,29 +305,18 @@ public class ModelDefinition {
 		return attr;
 	}
 
-	private String build(String name, String type, String...options) {
-		if(!type.endsWith(".class")) type = type + ".class";
-		StringBuilder sb = new StringBuilder();
-		sb.append("(name=\"").append(name).append("\",type=").append(type);
-		for(String option : options) {
-			sb.append(',').append(option);
-		}
-		sb.append(')');
-		return sb.toString();
-	}
-	
 	public ModelAttribute addAttribute(String name, String type, String...options) {
 		return addAttribute(build(name, type, options));
-	}
-
-	public ModelRelation addHasOne(String name, String type, String...options) {
-		return addRelation(build(name, type, options), false);
 	}
 	
 	public ModelRelation addHasMany(String name, String type, String...options) {
 		return addRelation(build(name, type, options), true);
 	}
 	
+	public ModelRelation addHasOne(String name, String type, String...options) {
+		return addRelation(build(name, type, options), false);
+	}
+
 	public ModelRelation addRelation(ModelRelation relation) {
 		ModelRelation rel = relation.getCopy(this);
 		if(rel.hasMany()) {
@@ -328,7 +326,7 @@ public class ModelDefinition {
 		}
 		return rel;
 	}
-
+	
 	public ModelRelation addRelation(String annotation, boolean hasMany) {
 		ModelRelation rel = new ModelRelation(this, annotation, hasMany);
 		if(rel.hasMany()) {
@@ -342,6 +340,91 @@ public class ModelDefinition {
 	public ModelRelation addRelation(String name, String type, boolean hasMany) {
 		if(!type.endsWith(".class")) type = type + ".class";
 		return addRelation("(name=\"" + name + "\",type=" + type + ")", hasMany);
+	}
+	
+	public boolean allowDelete() {
+		return allowDelete;
+	}
+
+	public ModelDefinition allowDelete(boolean allowDelete) {
+		this.allowDelete = allowDelete;
+		return this;
+	}
+	
+	public boolean allowUpdate() {
+		return allowUpdate;
+	}
+	
+	public ModelDefinition allowUpdate(boolean allowUpdate) {
+		this.allowUpdate = allowUpdate;
+		return this;
+	}
+
+	private String build(String name, String type, String...options) {
+		if(!type.endsWith(".class")) type = type + ".class";
+		StringBuilder sb = new StringBuilder();
+		sb.append("(name=\"").append(name).append("\",type=").append(type);
+		for(String option : options) {
+			sb.append(',').append(option);
+		}
+		sb.append(')');
+		return sb.toString();
+	}
+	
+	public boolean datestamps() {
+		return datestamps;
+	}
+	
+	public ModelDefinition datestamps(boolean datestamps) {
+		this.datestamps = datestamps;
+		return this;
+	}
+	
+	public boolean embedded() {
+		return embedded;
+	}
+
+	public ModelDefinition embedded(boolean embedded) {
+		this.embedded = embedded;
+		return this;
+	}
+	
+	public boolean equivalent(ModelDefinition other) {
+		if(this.type.equals(other.type)
+				&& this.attributes.size() == other.attributes.size()
+				&& this.hasOne.size() == other.hasOne.size()
+				&& this.hasMany.size() == other.hasMany.size()
+				&& this.timestamps == other.timestamps
+				&& this.datestamps == other.datestamps
+				&& this.allowDelete == other.allowDelete
+				&& this.allowUpdate == other.allowUpdate
+				&& this.embedded == other.embedded
+				&& this.activation == other.activation
+				&& this.indexes.equals(other.indexes)) {
+			ModelAttribute[] aa = this.attributes.values().toArray(new ModelAttribute[this.attributes.size()]);
+			ModelAttribute[] ab = other.attributes.values().toArray(new ModelAttribute[other.attributes.size()]);
+			for(int i = 0; i < aa.length; i++) {
+				if(!aa[i].getProperties().equals(ab[i].getProperties())) {
+					return false;
+				}
+			}
+			ModelRelation[] ra = this.hasOne.values().toArray(new ModelRelation[this.hasOne.size()]);
+			ModelRelation[] rb = other.hasOne.values().toArray(new ModelRelation[other.hasOne.size()]);
+			for(int i = 0; i < ra.length; i++) {
+				if(!ra[i].getProperties().equals(rb[i].getProperties())) {
+					return false;
+				}
+			}
+			ra = this.hasMany.values().toArray(new ModelRelation[this.hasMany.size()]);
+			rb = other.hasMany.values().toArray(new ModelRelation[other.hasMany.size()]);
+			for(int i = 0; i < ra.length; i++) {
+				if(!ra[i].getProperties().equals(rb[i].getProperties())) {
+					return false;
+				}
+			}
+			return true;
+		}
+		return false;
 	}
 	
 	public ModelAttribute getAttribute(String name) {
@@ -373,18 +456,18 @@ public class ModelDefinition {
 	public String getCanonicalName() {
 		return type;
 	}
-	
+
 	public String getControllerName() {
 		return controllerSimpleName(type);
 	}
-
+	
 	public ModelAttribute[] getDatestampFields() {
 		return new ModelAttribute[] {
 				new ModelAttribute(this, "createdOn"),
 				new ModelAttribute(this, "updatedOn")
 		};
 	}
-	
+
 	public String getDescription() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("@ModelDescription(");
@@ -492,7 +575,7 @@ public class ModelDefinition {
 		sb.append(')');
 		return sb.toString();
 	}
-	
+
 	public List<String> getDescriptionImports() {
 		List<String> imports = new ArrayList<String>();
 		if(hasAttributes()) {
@@ -526,7 +609,7 @@ public class ModelDefinition {
 	public File getFile() {
 		return file;
 	}
-
+	
 	public File getFile(File srcFolder, String extension) {
 		String name = getSimpleName();
 		if(extension != null && extension.length() > 0) {
@@ -553,7 +636,7 @@ public class ModelDefinition {
 		}
 		return type.substring(0, ix);
 	}
-
+	
 	public LinkedHashMap<String, PropertyDescriptor> getProperties() {
 		LinkedHashMap<String, PropertyDescriptor> properties = new LinkedHashMap<String, PropertyDescriptor>();
 		for(Entry<String, ModelAttribute> entry : attributes.entrySet()) {
@@ -587,7 +670,7 @@ public class ModelDefinition {
 		}
 		return r;
 	}
-
+	
 	public List<ModelRelation> getRelations() {
 		List<ModelRelation> relations = new ArrayList<ModelRelation>();
 		relations.addAll(hasOne.values());
@@ -605,14 +688,6 @@ public class ModelDefinition {
 	public String getSimpleName() {
 		return simpleName(type);
 	}
-
-	public void setAttributeOrder(String[] names) {
-		Map<String, ModelAttribute> attrs = attributes;
-		attributes = new LinkedHashMap<String, ModelAttribute>();
-		for(String name : names) {
-			attributes.put(name, attrs.get(name));
-		}
-	}
 	
 	public ModelAttribute[] getTimestampFields() {
 		return new ModelAttribute[] {
@@ -620,7 +695,7 @@ public class ModelDefinition {
 				new ModelAttribute(this, "updatedAt")
 		};
 	}
-	
+
 	String getType(String name) {
 		String type = null;
 		if(name.endsWith(".class")) name = name.substring(0, name.length() - 6);
@@ -711,6 +786,10 @@ public class ModelDefinition {
 	public boolean hasRelations() {
 		return !hasOne.isEmpty() || !hasMany.isEmpty();
 	}
+
+	public boolean isNew() {
+		return file == null || !file.isFile();
+	}
 	
 	public boolean isThrough(String field) {
 		ModelRelation relation = hasOne.get(field);
@@ -723,7 +802,7 @@ public class ModelDefinition {
 		}
 		return false;
 	}
-	
+
 	public void load() {
 		attributes.clear();
 		hasOne.clear();
@@ -737,6 +816,10 @@ public class ModelDefinition {
 		parse();
 	}
 	
+	public String packageName() {
+		return packageName;
+	}
+
 	private void parse() {
 		mdstart = -1;
 		mdend = -1;
@@ -806,7 +889,7 @@ public class ModelDefinition {
 		String s = new String(ca, start, end-start+1).trim();
 		indexes.addAll(JsonUtils.toStringList(s));
 	}
-	
+
 	private String parsePackageName() {
 		Pattern p = Pattern.compile("package\\s+([\\w\\d\\._]+);");
 		Matcher m = p.matcher(source);
@@ -833,7 +916,7 @@ public class ModelDefinition {
 		}
 		return name;
 	}
-	
+
 	public boolean remove(String field) {
 		if(attributes.remove(field) != null) {
 			return true;
@@ -860,7 +943,15 @@ public class ModelDefinition {
 			load();
 		}
 	}
-	
+
+	public void setAttributeOrder(String[] names) {
+		Map<String, ModelAttribute> attrs = attributes;
+		attributes = new LinkedHashMap<String, ModelAttribute>();
+		for(String name : names) {
+			attributes.put(name, attrs.get(name));
+		}
+	}
+
 	public void setOpposites(ModelDefinition[] models) {
 		for(ModelRelation relation : hasOne.values()) {
 			relation.setOpposite(models);
@@ -869,14 +960,36 @@ public class ModelDefinition {
 			relation.setOpposite(models);
 		}
 	}
-
+	
 	public void setSiblings(String...siblings) {
 		this.siblings = siblings;
 	}
-	
+
+	public String[] siblings() {
+		return siblings;
+	}
+
+	public ModelDefinition siblings(String[] siblings) {
+		this.siblings = siblings;
+		return this;
+	}
+
+	public boolean timestamps() {
+		return timestamps;
+	}
+
+	public ModelDefinition timestamps(boolean timestamps) {
+		this.timestamps = timestamps;
+		return this;
+	}
+
 	@Override
 	public String toString() {
 		return type + " => {" + "}";
 	}
 
+	public String type() {
+		return type;
+	}
+	
 }

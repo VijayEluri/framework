@@ -144,7 +144,7 @@ public class DbGenerator {
 		Set<ModelTable> joinedModels = new HashSet<ModelTable>();
 		
 		for(ModelDefinition model : models) {
-			if(!model.embedded) {
+			if(!model.embedded()) {
 				tables.put(model.getSimpleName(), new ModelTable(sf, model, models));
 			}
 		}

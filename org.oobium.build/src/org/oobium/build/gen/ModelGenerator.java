@@ -134,7 +134,7 @@ public class ModelGenerator {
 		sb.append("}");
 		src.staticMethods.put(String.valueOf(i++), sb.toString());
 		
-		if(model.embedded) {
+		if(model.embedded()) {
 			return; // that's it! just the getPersistService() method
 		}
 

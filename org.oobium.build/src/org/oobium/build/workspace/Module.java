@@ -60,6 +60,7 @@ import org.oobium.build.gen.MailerGenerator;
 import org.oobium.build.gen.ModelGenerator;
 import org.oobium.build.gen.ProjectGenerator;
 import org.oobium.build.gen.ViewGenerator;
+import org.oobium.build.model.ModelDefinition;
 import org.oobium.build.util.ProjectUtils;
 import org.oobium.build.util.SourceFile;
 import org.oobium.mailer.Mailer;
@@ -357,6 +358,10 @@ public class Module extends Bundle {
 		return false;
 	}
 
+	public boolean addModelRoutes(File model) {
+		return addModelRoutes(getModelName(model));
+	}
+	
 	/**
 	 * @param modelName
 	 * @return true if there were changes made to Application.java; false otherwise
@@ -628,6 +633,39 @@ public class Module extends Bundle {
 		return new File[0];
 	}
 
+	public File[] destroyForModel(File model, int flags) {
+		Set<File> changed = new LinkedHashSet<File>();
+		if(model.isFile()) {
+			if((flags & CONTROLLER) != 0) {
+				File controller = getControllerFor(model);
+				if(controller.delete()) {
+					changed.add(controller);
+				}
+				if(!hasControllers()) {
+					if(removeImportPackage(HttpController.class.getPackage().getName())) {
+						changed.add(manifest);
+					}
+					if(removeExportPackage(packageName(controllers))) {
+						changed.add(manifest);
+					}
+				}
+			}
+			if((flags & VIEW) != 0) {
+				File viewsFolder = getViewsFolder(model);
+				List<File> files = FileUtils.delete(viewsFolder);
+				changed.addAll(files);
+				if(removeExportPackage(packageName(getViewsFolder(model)))) {
+					changed.add(manifest);
+				}
+				if(!hasViews() && removeImportPackage(View.class.getPackage().getName())) {
+					changed.add(manifest);
+				}
+			}
+			return changed.toArray(new File[changed.size()]);
+		}
+		return new File[0];
+	}
+
 	/**
 	 * Creates the mailer, if it does not exist, and updates the Manifest's
 	 * Import-Package and Export-Package sections accordingly.
@@ -689,10 +727,40 @@ public class Module extends Bundle {
 		return model;
 	}
 
+	public File createModel(ModelDefinition definition) {
+		definition.save();
+		addExportPackage(packageName(models));
+		addImportPackage(Model.class.getPackage().getName());
+		addImportPackage(ModelDescription.class.getPackage().getName());
+		return definition.getFile();
+	}
+
 	public File createNotifier(File model) {
 		String pkg = packageName(model);
 		String modelName = getModelName(model);
 		return createNotifier(pkg, modelName);
+	}
+	
+	public File[] destroyNotifier(File model) {
+		Set<File> changed = new HashSet<File>();
+		File notifier = getNotifier(model);
+		if(notifier.delete()) {
+			File folder = notifier.getParentFile();
+			if(folder.delete()) {
+				changed.add(folder);
+			} else {
+				changed.add(notifier);
+			}
+		}
+		if(!hasNotifiers()) {
+			if(removeImportPackage(ModelNotifier.class.getPackage().getName())) {
+				changed.add(manifest);
+			}
+			if(removeImportPackage(Websocket.class.getPackage().getName())) {
+				changed.add(manifest);
+			}
+		}
+		return changed.toArray(new File[changed.size()]);
 	}
 	
 	public File createNotifier(String modelPackage, String modelName) {
@@ -851,10 +919,13 @@ public class Module extends Bundle {
 	public File[] destroyMailerTemplate(String name) {
 		return destroy(getMailerTemplate(name));
 	}
-	
+
 	public File[] destroyModel(String name) {
+		return destroyModel(getModel(name));
+	}
+	
+	public File[] destroyModel(File model) {
 		List<File> files = new ArrayList<File>();
-		File model = getModel(name);
 		if(removeModelRoutes(model)) {
 			files.add(activator);
 		}
@@ -1691,6 +1762,16 @@ public class Module extends Bundle {
 		File[] files = FileUtils.findFiles(models, ".java");
 		for(File file : files) {
 			if(ProjectUtils.isModel(file)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public boolean hasNotifiers() {
+		File[] files = FileUtils.findFiles(notifiers, ".java");
+		for(File file : files) {
+			if(ProjectUtils.isNotifier(file)) {
 				return true;
 			}
 		}

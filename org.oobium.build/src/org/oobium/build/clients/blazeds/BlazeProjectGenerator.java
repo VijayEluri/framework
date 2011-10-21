@@ -213,7 +213,7 @@ public class BlazeProjectGenerator {
 		sf.imports.add("flex.messaging.FlexSession");
 		sf.imports.add(List.class.getCanonicalName());
 		sf.imports.add(model.getCanonicalName());
-		sf.imports.add(model.packageName + ".notifiers." + model.getSimpleName() + "Notifier");
+		sf.imports.add(model.packageName() + ".notifiers." + model.getSimpleName() + "Notifier");
 
 		sf.staticVariables.put("addNotifier", "private static AtomicBoolean addNotifier = new AtomicBoolean(true);");
 		
@@ -522,7 +522,7 @@ public class BlazeProjectGenerator {
 	}
 	
 	private void createNotifier(File srcFolder, ModelDefinition model) throws IOException {
-		String name = model.packageName.replace('.', '/') + "/notifiers/" + model.getSimpleName() + "Notifier.java";
+		String name = model.packageName().replace('.', '/') + "/notifiers/" + model.getSimpleName() + "Notifier.java";
 		writeFile(srcFolder, name, source(
 				"package {modelsPackage}.notifiers;",
 				"",
@@ -536,7 +536,7 @@ public class BlazeProjectGenerator {
 				" }",
 				"",
 				"}"
-			).replace("{modelsPackage}", model.packageName).replace("{type}", model.getSimpleName()));
+			).replace("{modelsPackage}", model.packageName()).replace("{type}", model.getSimpleName()));
 	}
 	
 	private void createPrefsFile() {

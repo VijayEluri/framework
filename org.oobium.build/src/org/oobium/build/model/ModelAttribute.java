@@ -25,6 +25,7 @@ import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.simpleName;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.oobium.persist.Attribute;
@@ -49,17 +50,17 @@ public class ModelAttribute {
 	
 	private ModelAttribute(ModelAttribute original, ModelDefinition model) {
 		this.model = model;
-		check(check);
-		init(init);
-		name(name);
-		precision(precision);
-		scale(scale);
-		type(type);
-		json(json);
-		indexed(indexed);
-		readOnly(readOnly);
-		unique(unique);
-		virtual(virtual);
+		check(original.check);
+		init(original.init);
+		name(original.name);
+		precision(original.precision);
+		scale(original.scale);
+		type(original.type);
+		json(original.json);
+		indexed(original.indexed);
+		readOnly(original.readOnly);
+		unique(original.unique);
+		virtual(original.virtual);
 	}
 	
 	public ModelAttribute(ModelDefinition model, String annotation) {
@@ -118,6 +119,40 @@ public class ModelAttribute {
 		return new ModelAttribute(this, model);
 	}
 
+	public Map<String, Object> getProperties() {
+		Map<String, Object> props = new HashMap<String, Object>();
+		props.put("name", name);
+		props.put("type", type);
+		if(!check.equals(DEFAULT_CHECK)) {
+			props.put("check", check);
+		}
+		if(!init.equals(DEFAULT_INIT)) {
+			props.put("init", init);
+		}
+		if(json != DEFAULT_JSON) {
+			props.put("json", json);
+		}
+		if(precision != DEFAULT_PRECISION) {
+			props.put("precision", precision);
+		}
+		if(scale != DEFAULT_SCALE) {
+			props.put("scale", scale);
+		}
+		if(indexed != DEFAULT_INDEXED) {
+			props.put("indexed", indexed);
+		}
+		if(readOnly != DEFAULT_READONLY) {
+			props.put("readOnly", readOnly);
+		}
+		if(unique != DEFAULT_UNIQUE) {
+			props.put("unique", unique);
+		}
+		if(virtual != DEFAULT_VIRTUAL) {
+			props.put("virtual", virtual);
+		}
+		return props;
+	}
+	
 	public String getJavaType() {
 		if(Text.class.getCanonicalName().equals(type)) {
 			return "java.lang.String";

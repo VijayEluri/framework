@@ -49,8 +49,8 @@ public class ModelTable {
 		foreignKeys = new ArrayList<ForeignKey>();
 		indexes = new ArrayList<Index>();
 
-		boolean datestamps = model.datestamps;
-		boolean timestamps = model.timestamps;
+		boolean datestamps = model.datestamps();
+		boolean timestamps = model.timestamps();
 		for(ModelAttribute attribute : model.getAttributes()) {
 			if(datestamps) {
 				if(attribute.name().equals("createdOn") || attribute.name().equals("updatedOn")) {
@@ -139,7 +139,7 @@ public class ModelTable {
 		boolean isOneToOneKey = false;
 		ModelRelation oppositeRelation = relation.getOpposite();
 		if(oppositeRelation != null && !oppositeRelation.hasMany()) {
-			if(name.compareTo(tableName(oppositeRelation.model().type)) > 0) {
+			if(name.compareTo(tableName(oppositeRelation.model().type())) > 0) {
 				// don't add if 1:1 and this table is less than the opposite table
 				return;
 			} else {
