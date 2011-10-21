@@ -428,7 +428,7 @@ public abstract class ModuleService implements BundleActivator {
 		return "Module " + getName();
 	}
 
-	void unloadActionCaches(Config config) throws Exception {
+	void unloadControllerCaches(Config config) throws Exception {
 		logger.info("unloading ActionCache classes");
 
 		String pkg = pkg(config.getPathToCaches(pkgPath()));

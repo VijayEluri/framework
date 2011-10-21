@@ -495,6 +495,7 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 			
 			module.unloadModels(modConfig);
 			module.unloadObservers(modConfig);
+			module.unloadControllerCaches(modConfig);
 
 			if(reference == request404HandlerRegistration.getReference()) {
 				request404HandlerRegistration.unregister();
