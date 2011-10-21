@@ -160,11 +160,8 @@ public class FileUtils {
 				}
 				doCopy(src, dst, flags);
 			} else if(src.isDirectory()) {
-				if(!dst.exists()) {
-					dst = new File(dst, src.getName());
-				}
-				else if(dst.isDirectory()) {
-					dst = new File(dst, src.getName());
+				if(dst.isFile()) {
+					throw new IOException("cannot copy directory to an existing file: " + dst);
 				}
 				int beginIndex = src.getAbsolutePath().length();
 				File[] sfiles = skipHidden ? findFiles(src) : findAll(src);
@@ -172,7 +169,7 @@ public class FileUtils {
 					File dfile = new File(dst, sfile.getAbsolutePath().substring(beginIndex));
 					doCopy(sfile, dfile, flags);
 				}
-			} // else nothing to do...
+			} // src doesn't exist - else nothing to do...
 		}
 		return dst;
 	}
