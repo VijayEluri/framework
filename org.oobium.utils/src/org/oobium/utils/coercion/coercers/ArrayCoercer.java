@@ -42,6 +42,10 @@ public class ArrayCoercer extends AbstractCoercer {
 				}
 				return s.getBytes();
 			}
+			if(componentType == String.class) {
+				List<String> list = JsonUtils.toStringList(s);
+				return list.toArray(new String[list.size()]);
+			}
 			object = JsonUtils.toList(s);
 		}
 		

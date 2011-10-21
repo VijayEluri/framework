@@ -15,6 +15,7 @@ import static java.util.Collections.singletonMap;
 import static org.junit.Assert.*;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.utils.json.JsonUtils.SERIALIZATION_TYPE_KEY;
+import static org.oobium.utils.StringUtils.*;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -199,6 +200,12 @@ public class TypeCoercerTests {
 		String string = coerce(bytes, String.class);
 		assertEquals("/Base64(" + new String(Base64.encode(bytes)) + ")/", string);
 		assertArrayEquals(bytes, coerce(string, byte[].class));
+	}
+	
+	@Test
+	public void testStringToStringArray() throws Exception {
+		assertEquals("[a:b]", asString(coerce("a:b", String[].class)));
+		assertEquals("[{a=b}]", asString(coerce("a:b", Object[].class)));
 	}
 	
 	@Test
