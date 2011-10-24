@@ -789,7 +789,8 @@ public class EspCompilerTests {
 						"}\n" +
 						"__sb__.append(\"</label></form>\");",
 				html("form(member, create)\n\tlabel(firstName)"));
-		
+
+		// with "text" attribute
 		assertEquals("String formModelName$0 = \"member\";\n" +
 						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(f(member)).append(\"\\\" /><label\");\n" +
 						"if(member.hasErrors(\"firstName\")) {\n" +
@@ -797,7 +798,16 @@ public class EspCompilerTests {
 						"}\n" +
 						"__sb__.append(\" for=\\\"\").append(formModelName$0).append(\"[firstName]\\\">Member Name\");\nif(member.isRequired(\"firstName\")) {\n\t__sb__.append(\"<span class=\\\"required\\\">*</span>\");\n}\n__sb__.append(\"</label></form>\");",
 				html("form(member, create)\n\tlabel(\"firstName\", text:\"Member Name\")"));
-		
+
+		// with inner text field
+		assertEquals("String formModelName$0 = \"member\";\n" +
+				"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(f(member)).append(\"\\\" /><label\");\n" +
+				"if(member.hasErrors(\"firstName\")) {\n" +
+				"\t__sb__.append(\" class=\\\"fieldWithErrors\\\"\");\n" +
+				"}\n" +
+				"__sb__.append(\" for=\\\"\").append(formModelName$0).append(\"[firstName]\\\">Member Name\");\nif(member.isRequired(\"firstName\")) {\n\t__sb__.append(\"<span class=\\\"required\\\">*</span>\");\n}\n__sb__.append(\"</label></form>\");",
+		html("form(member, create)\n\tlabel(\"firstName\") Member Name"));
+
 		assertEquals("String formModelName$0 = \"member\";\n" +
 						"__sb__.append(\"<form action=\\\"\").append(pathTo(member, create)).append(\"\\\" method=\\\"POST\\\"><input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\").append(f(member)).append(\"\\\" /><label\");\n" +
 						"if(member.hasErrors(\"spouse\", \"firstName\")) {\n" +

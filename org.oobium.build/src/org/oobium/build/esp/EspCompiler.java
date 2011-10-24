@@ -1603,7 +1603,8 @@ public class EspCompiler {
 							body.delete(body.length()-2, body.length());
 						}
 					}
-				} else {
+				}
+				else if(!label.hasInnerText()) {
 					JavaSourcePart jpart = fields.get(fields.size()-1);
 					if(jpart.isSimple()) {
 						String text = jpart.getText();
