@@ -756,7 +756,7 @@ public class ModelDefinition {
 	}
 	
 	public boolean hasAttributes() {
-		return !attributes.isEmpty();
+		return !attributes.isEmpty() || timestamps || datestamps;
 	}
 	
 	public boolean hasField(String name) {
