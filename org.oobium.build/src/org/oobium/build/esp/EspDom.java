@@ -10,10 +10,13 @@
  ******************************************************************************/
 package org.oobium.build.esp;
 
+import static org.oobium.build.esp.EspPart.Type.ImportElement;
 import static org.oobium.utils.CharStreamUtils.findEOL;
 import static org.oobium.utils.CharStreamUtils.forward;
 import static org.oobium.utils.StringUtils.join;
 import static org.oobium.utils.StringUtils.when;
+
+import java.util.List;
 
 import org.oobium.build.BuildBundle;
 import org.oobium.build.esp.elements.CommentElement;
@@ -70,6 +73,19 @@ public class EspDom extends EspPart {
 	@Override
 	public EspElement getElement() {
 		return null;
+	}
+	
+	public int getNextImportOffset() {
+		EspPart part = null;
+		for(int i = 0; i < parts.size(); i++) {
+			part = parts.get(i);
+			if(!part.isA(ImportElement)) {
+				if(i == 0) part = null;
+				else part = parts.get(i-1);
+				break;
+			}
+		}
+		return (part != null) ? (part.end + 1) : 0;
 	}
 	
 	public String getName() {

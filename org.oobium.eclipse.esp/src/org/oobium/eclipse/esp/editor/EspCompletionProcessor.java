@@ -16,6 +16,8 @@ import static org.oobium.build.esp.EspPart.Type.ImportElement;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -26,6 +28,9 @@ import org.eclipse.jdt.core.CompletionRequestor;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.ui.text.java.CompletionProposalCollector;
+import org.eclipse.jdt.ui.text.java.CompletionProposalComparator;
+import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextViewer;
@@ -42,7 +47,8 @@ import org.oobium.build.esp.EspPart;
 import org.oobium.build.esp.EspPart.Type;
 import org.oobium.eclipse.esp.EspCore;
 import org.oobium.eclipse.esp.editor.completions.ContextInformationValidator;
-import org.oobium.eclipse.esp.editor.completions.HtmlCompletionProposal;
+import org.oobium.eclipse.esp.editor.completions.EspCompletionProposal;
+import org.oobium.eclipse.esp.editor.completions.EspJavaProposalCollector;
 import org.oobium.eclipse.esp.editor.completions.MarkupEditorMessages;
 
 public class EspCompletionProcessor implements IContentAssistProcessor {
@@ -64,12 +70,12 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 				if(part.isA(DOM)) return computeDomProposals(doc, part, offset);
 			} else {
 				switch(element.getType()) {
-				case ConstructorElement:
-					return computeConstructorProposals(doc, element, part, offset);
 				case MarkupElement:
 					return computeHtmlProposals(doc, element, part, offset);
+				case ConstructorElement:
+//					return computeConstructorProposals(doc, element, part, offset);
 				case ImportElement:
-					return computeImportProposals(doc, element, part, offset);
+//					return computeImportProposals(doc, element, part, offset);
 				case JavaElement:
 					return computeJavaProposals(doc, element, part, offset);
 				case StyleElement:
@@ -119,7 +125,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 					int rlength = part.getLength();
 					int length = tag.length();
 					ICompletionProposal proposal = 
-						new HtmlCompletionProposal(tag, offset - prefix.length(), rlength, length, null, tag, null, Constants.CSS_PROPERTIES.get(tag));
+						new EspCompletionProposal(tag, offset - prefix.length(), rlength, length, null, tag, null, Constants.CSS_PROPERTIES.get(tag));
 					results.add(proposal);
 				}
 				return results.toArray(new ICompletionProposal[results.size()]);
@@ -133,7 +139,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 			if(c == '{' || c == '"' || c == ';') {
 				List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
 				for(String tag : Constants.CSS_PROPERTIES.keySet()) {
-					results.add(new HtmlCompletionProposal(tag, offset, 0, tag.length(), null, tag, null, Constants.CSS_PROPERTIES.get(tag)));
+					results.add(new EspCompletionProposal(tag, offset, 0, tag.length(), null, tag, null, Constants.CSS_PROPERTIES.get(tag)));
 				}
 				return results.toArray(new ICompletionProposal[results.size()]);
 			}
@@ -146,7 +152,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 			if(c == '{' || c == '\n' || c == ';') {
 				List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
 				for(String tag : Constants.CSS_PROPERTIES.keySet()) {
-					results.add(new HtmlCompletionProposal(tag, offset, 0, tag.length(), null, tag, null, Constants.CSS_PROPERTIES.get(tag)));
+					results.add(new EspCompletionProposal(tag, offset, 0, tag.length(), null, tag, null, Constants.CSS_PROPERTIES.get(tag)));
 				}
 				return results.toArray(new ICompletionProposal[results.size()]);
 			}
@@ -181,13 +187,13 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 			int lineStart = doc.getLineOffset(doc.getLineOfOffset(offset));
 			if(offset == lineStart) {
 				if(imp != null) {
-					proposals.add(new HtmlCompletionProposal("import ", offset, 0, 7, null, "import", null, "add a new import statement"));
+					proposals.add(new EspCompletionProposal("import ", offset, 0, 7, null, "import", null, "add a new import statement"));
 				}
 				if(ctor != null) {
-					proposals.add(new HtmlCompletionProposal(ctor, offset, 0, ctor.length(), null, ctor, null, "add a new constructor"));
+					proposals.add(new EspCompletionProposal(ctor, offset, 0, ctor.length(), null, ctor, null, "add a new constructor"));
 				}
 				for(String tag : Constants.HTML_TAGS.keySet()) {
-					proposals.add(new HtmlCompletionProposal(tag, offset, 0, tag.length(), null, tag, null, Constants.HTML_TAGS.get(tag)));
+					proposals.add(new EspCompletionProposal(tag, offset, 0, tag.length(), null, tag, null, Constants.HTML_TAGS.get(tag)));
 				}
 			} else {
 				int i = offset - 1;
@@ -198,15 +204,15 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 				if(c == '\n' || (c == '-' && i > 0 && part.charAt(i-1) == '<')) {
 					List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
 					for(String tag : Constants.HTML_TAGS.keySet()) {
-						results.add(new HtmlCompletionProposal(tag, offset, 0, tag.length(), null, tag, null, Constants.HTML_TAGS.get(tag)));
+						results.add(new EspCompletionProposal(tag, offset, 0, tag.length(), null, tag, null, Constants.HTML_TAGS.get(tag)));
 					}
 					return results.toArray(new ICompletionProposal[results.size()]);
 				} else {
 					String s = part.substring(lineStart, offset).toLowerCase();
 					if(imp != null && "import".startsWith(s)) {
-						proposals.add(new HtmlCompletionProposal("import ", lineStart, offset-lineStart, 7, null, "import", null, "add a new import statement"));
+						proposals.add(new EspCompletionProposal("import ", lineStart, offset-lineStart, 7, null, "import", null, "add a new import statement"));
 					} else if(ctor != null && ctor.toLowerCase().startsWith(s)) {
-						proposals.add(new HtmlCompletionProposal(ctor+"()", lineStart, offset-lineStart, ctor.length()+1, null, ctor, null, "add a new constructor"));
+						proposals.add(new EspCompletionProposal(ctor+"()", lineStart, offset-lineStart, ctor.length()+1, null, ctor, null, "add a new constructor"));
 					}
 				}
 			}
@@ -269,9 +275,9 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 				}
 				String s = part.substring(start, offset).toLowerCase();
 				if(imp != null && "import".startsWith(s)) {
-					proposals.add(new HtmlCompletionProposal("import ", start, offset-start, 7, null, "import", null, "add a new import statement"));
+					proposals.add(new EspCompletionProposal("import ", start, offset-start, 7, null, "import", null, "add a new import statement"));
 				} else if(ctor != null && ctor.toLowerCase().startsWith(s)) {
-					proposals.add(new HtmlCompletionProposal(ctor+"()", start, offset-start, ctor.length()+1, null, ctor, null, "add a new constructor"));
+					proposals.add(new EspCompletionProposal(ctor+"()", start, offset-start, ctor.length()+1, null, ctor, null, "add a new constructor"));
 				}
 			} catch(BadLocationException e) {
 				e.printStackTrace();
@@ -290,7 +296,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 					int rlength = part.getLength();
 					int length = tag.length();
 					ICompletionProposal proposal = 
-						new HtmlCompletionProposal(tag, offset - prefix.length(), rlength, length, null, tag, null, Constants.HTML_TAGS.get(tag));
+						new EspCompletionProposal(tag, offset - prefix.length(), rlength, length, null, tag, null, Constants.HTML_TAGS.get(tag));
 					proposals.add(proposal);
 				}
 			}
@@ -306,7 +312,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 			if(c == '\n' || (c == '-' && i > 0 && part.charAt(i-1) == '<')) {
 				List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
 				for(String tag : Constants.HTML_TAGS.keySet()) {
-					proposals.add(new HtmlCompletionProposal(tag, offset, 0, tag.length(), null, tag, null, Constants.HTML_TAGS.get(tag)));
+					proposals.add(new EspCompletionProposal(tag, offset, 0, tag.length(), null, tag, null, Constants.HTML_TAGS.get(tag)));
 				}
 				return proposals.toArray(new ICompletionProposal[proposals.size()]);
 			}
@@ -328,24 +334,20 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 		ESourceFile jf = editor.getEspJavaFile();
 		final int javaOffset = jf.getJavaOffset(espOffset - 1);
 		ICompilationUnit cu = (ICompilationUnit) JavaCore.create(editor.getJavaResource());
-		final List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
+		final List<EspCompletionProposal> proposals = new ArrayList<EspCompletionProposal>();
 		try {
 			((ICompilationUnit) cu).codeComplete(javaOffset + 1, new CompletionRequestor() {
 				@Override
 				public void accept(CompletionProposal completion) {
-					String text;
-					char[] ca = completion.getCompletion();
-					if(ca.length > 0 && ca[ca.length-1] == ';') {
-						text = new String(ca, 0, ca.length-1);
-					} else {
-						text = new String(ca);
-					}
-					proposals.add(new HtmlCompletionProposal(text, start, end-start, text.length(), null, text, null, completion.toString()));
+					proposals.add(EspCompletionProposal.createPackageCompletion(completion, start, end));
 				}
 			});
 		} catch (JavaModelException e) {
 			e.printStackTrace();
 		}
+		
+		Collections.sort(proposals);
+		
 		return proposals.toArray(new ICompletionProposal[proposals.size()]);
 	}
 	
@@ -360,30 +362,36 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 			i++;
 		}
 		final int end = i;
-//		if(part.isA(Type.JavaSourcePart)) {
-			ESourceFile jf = editor.getEspJavaFile();
-			final int javaOffset = jf.getJavaOffset(espOffset - 1);
-			ICompilationUnit cu = (ICompilationUnit) JavaCore.create(editor.getJavaResource());
-			final List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
-			try {
-				((ICompilationUnit) cu).codeComplete(javaOffset + 1, new CompletionRequestor() {
-					@Override
-					public void accept(CompletionProposal completion) {
-						String text = new String(completion.getCompletion());
-						proposals.add(new HtmlCompletionProposal(text, start, end-start, text.length(), null, text, null, completion.toString()));
-					}
-				});
-			} catch (JavaModelException e) {
-				e.printStackTrace();
-			}
-			return proposals.toArray(new ICompletionProposal[proposals.size()]);
-//		} else {
-//			List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
-//			for(String tag : Constants.HTML_TAGS.keySet()) {
-//				proposals.add(new HtmlCompletionProposal(tag, start, end-start, tag.length(), null, tag, null, Constants.HTML_TAGS.get(tag)));
-//			}
-//			return proposals.toArray(new ICompletionProposal[proposals.size()]);
+		ESourceFile jf = editor.getEspJavaFile();
+		final int javaOffset = jf.getJavaOffset(espOffset - 1);
+		ICompilationUnit cu = (ICompilationUnit) JavaCore.create(editor.getJavaResource());
+		
+		try {
+			EspJavaProposalCollector collector = new EspJavaProposalCollector(cu, start);
+			cu.codeComplete(javaOffset + 1, collector);
+			IJavaCompletionProposal[] proposals = collector.getJavaCompletionProposals();
+			Arrays.sort(proposals, new CompletionProposalComparator());
+			return proposals;
+		} catch (JavaModelException e) {
+			e.printStackTrace();
+		}
+
+		return new ICompletionProposal[0];
+//		final List<EspCompletionProposal> proposals = new ArrayList<EspCompletionProposal>();
+//		try {
+//			((ICompilationUnit) cu).codeComplete(javaOffset + 1, new CompletionRequestor() {
+//				@Override
+//				public void accept(CompletionProposal completion) {
+//					proposals.add(EspCompletionProposal.createJavaCompletion(completion, start, end));
+//				}
+//			});
+//		} catch (JavaModelException e) {
+//			e.printStackTrace();
 //		}
+//		
+//		Collections.sort(proposals);
+//		
+//		return proposals.toArray(new ICompletionProposal[proposals.size()]);
 	}
 	
 	private ICompletionProposal[] computeStyleProposals(EspElement element, EspPart part, int offset) {

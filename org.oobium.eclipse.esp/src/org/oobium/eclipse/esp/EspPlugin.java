@@ -11,6 +11,7 @@
 package org.oobium.eclipse.esp;
 
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.oobium.eclipse.esp.editor.EspColorProvider;
 
@@ -46,6 +47,15 @@ public class EspPlugin extends AbstractUIPlugin {
 		return colorProvider;
 	}
 
+	public static Image getImage(String key) {
+		Image image = instance.getImageRegistry().get(key);
+		if(image == null) {
+			image = ImageDescriptor.createFromFile(EspPlugin.class, key).createImage(true);
+			instance.getImageRegistry().put(key, image);
+		}
+		return image;
+	}
+	
 	public static ImageDescriptor getImageDescriptor(String key) {
 		ImageDescriptor descriptor = instance.getImageRegistry().getDescriptor(key);
 		if(descriptor == null) {

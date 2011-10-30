@@ -59,12 +59,14 @@ public class EspSourceViewerConfiguration extends SourceViewerConfiguration {
 		assistant.setContentAssistProcessor(new EspCompletionProcessor(editor), IDocument.DEFAULT_CONTENT_TYPE);
 
 		assistant.enableAutoActivation(true);
+		assistant.enableAutoInsert(true);
+		assistant.enableColoredLabels(true);
 		assistant.setAutoActivationDelay(500);
 		assistant.setProposalPopupOrientation(IContentAssistant.PROPOSAL_OVERLAY);
 		assistant.setContextInformationPopupOrientation(IContentAssistant.CONTEXT_INFO_ABOVE);
-		assistant.setContextInformationPopupBackground(EspPlugin.getDefault().getEspColorProvider().getColor(150, 0, 0));
-		assistant.setStatusLineVisible(true);
-		assistant.setStatusMessage("hello everybody!");
+		assistant.setContextInformationPopupBackground(EspPlugin.getDefault().getEspColorProvider().getColor(250, 250, 250));
+//		assistant.setStatusLineVisible(true);
+//		assistant.setStatusMessage("hello everybody!");
 		assistant.setInformationControlCreator(new IInformationControlCreator() {
 			@Override
 			public IInformationControl createInformationControl(Shell parent) {

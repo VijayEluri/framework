@@ -455,8 +455,6 @@ public class EspEditor extends TextEditor {
 							} else {
 								marker.setAttribute(IMarker.LINE_NUMBER, 1);
 							}
-//							marker.setAttribute(IMarker.SEVERITY, IMarker.SEVERITY_ERROR);//jmarker.getAttribute(IMarker.SEVERITY));
-//							marker.setAttribute(IMarker.PRIORITY, IMarker.PRIORITY_HIGH);//jmarker.getAttribute(IMarker.PRIORITY));
 							marker.setAttribute(IMarker.SEVERITY, jmarker.getAttribute(IMarker.SEVERITY));
 							marker.setAttribute(IMarker.PRIORITY, IMarker.PRIORITY_HIGH);//jmarker.getAttribute(IMarker.PRIORITY));
 							marker.setAttribute(IMarker.MESSAGE, jmarker.getAttribute(IMarker.MESSAGE));
