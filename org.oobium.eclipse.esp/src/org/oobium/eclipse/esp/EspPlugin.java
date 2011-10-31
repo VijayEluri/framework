@@ -25,6 +25,17 @@ public class EspPlugin extends AbstractUIPlugin {
 	public static final String ID = EspPlugin.class.getCanonicalName();
 	public static final String ESP_PARTITIONING = "__esp_partitioning"; //$NON-NLS-1$
 
+	public static final String IMG_HTML_TAG       = "/icons/html_tag.gif";
+	public static final String IMG_META_TAG  = "/icons/meta_tag.gif";
+	public static final String IMG_IMPORTS   = "/icons/imports.gif";
+	public static final String IMG_IMPORT    = "/icons/import.gif";
+	public static final String IMG_CTOR      = "/icons/constructor.gif";
+	public static final String IMG_JAVA_LINE = "/icons/java_line.gif";
+	public static final String IMG_SCRIPT    = "/icons/javascript.gif";
+	public static final String IMG_STYLE     = "/icons/stylesheet.gif";
+	public static final String IMG_TITLE     = "/icons/title.png";
+	
+	
 	private static EspPlugin instance;
 
 	public static EspPlugin getDefault() {

@@ -10,7 +10,6 @@
  ******************************************************************************/
 package org.oobium.eclipse.esp.outline;
 
-import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.IColorProvider;
 import org.eclipse.jface.viewers.IFontProvider;
 import org.eclipse.jface.viewers.ILabelProvider;
@@ -21,51 +20,13 @@ import org.eclipse.swt.graphics.Image;
 import org.oobium.build.esp.EspElement;
 import org.oobium.build.esp.EspPart;
 import org.oobium.build.esp.elements.JavaElement;
+import org.oobium.eclipse.esp.EspPlugin;
 
 public class EspLabelProvider extends LabelProvider implements IColorProvider, IFontProvider, ILabelProvider {
 
-	private static final int TAG		= 0;
-	private static final int META_TAG	= 1;
-	private static final int IMPORTS	= 2;
-	private static final int IMPORT		= 3;
-	private static final int CTOR		= 4;
-	private static final int JAVA_LINE	= 5;
-	private static final int SCRIPT		= 6;
-	private static final int STYLE		= 7;
-	private static final int TITLE		= 8;
-	
-	private Image[] images;
-	
-	public EspLabelProvider() {
-		String[] names = {
-				"html_tag.gif", 
-				"meta_tag.gif", 
-				"imports.gif", 
-				"import.gif", 
-				"constructor.gif", 
-				"java_line.gif",
-				"javascript.gif",
-				"stylesheet.gif",
-				"title.png"
-				};
-		images = new Image[names.length];
-		for(int i = 0; i < names.length; i++) {
-			ImageDescriptor desc = ImageDescriptor.createFromFile(getClass(), "/icons/" + names[i]);
-			if(desc != null) {
-				images[i] = desc.createImage();
-			}
-		}
-	}
-	
 	@Override
 	public void dispose() {
-		if(images != null) {
-			for(Image image : images) {
-				if(image != null && !image.isDisposed()) {
-					image.dispose();
-				}
-			}
-		}
+		// nothing to do
 	}
 	
 	@Override
@@ -88,20 +49,20 @@ public class EspLabelProvider extends LabelProvider implements IColorProvider, I
 		if(element instanceof EspElement) {
 			EspElement espElement = (EspElement) element;
 			switch(espElement.getType()) {
-			case ImportElement: return images[IMPORT];
-			case ConstructorElement: return images[CTOR];
-			case JavaElement: return images[JAVA_LINE];
-			case ScriptElement: return images[SCRIPT];
-			case StyleElement: return images[STYLE];
+			case ImportElement: return EspPlugin.getImage(EspPlugin.IMG_IMPORT);
+			case ConstructorElement: return EspPlugin.getImage(EspPlugin.IMG_CTOR);
+			case JavaElement: return EspPlugin.getImage(EspPlugin.IMG_JAVA_LINE);
+			case ScriptElement: return EspPlugin.getImage(EspPlugin.IMG_SCRIPT);
+			case StyleElement: return EspPlugin.getImage(EspPlugin.IMG_STYLE);
 			case MarkupElement:
 				if(espElement.getElementText().startsWith("title ")) {
-					return images[TITLE];
+					return EspPlugin.getImage(EspPlugin.IMG_TITLE);
 				}
-				return images[TAG];
+				return EspPlugin.getImage(EspPlugin.IMG_HTML_TAG);
 			}
 		}
 		if(element instanceof Imports) {
-			return images[IMPORTS];
+			return EspPlugin.getImage(EspPlugin.IMG_IMPORTS);
 		}
 		return null;
 	}
