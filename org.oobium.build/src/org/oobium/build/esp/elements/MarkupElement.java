@@ -330,7 +330,7 @@ public class MarkupElement extends EspElement {
 		boolean isEntry = false;
 		int s1 = forward(ca, start, end);
 		for(int s = s1; s1 != -1 && s < end; s++) {
-			if(ca[s] == '"' || ca[s] == '{') {
+			if(ca[s] == '"' || ca[s] == '{' || ca[s] == '(') {
 				int s2 = closer(ca, s, end, true);
 				if(s2 == -1) {
 					s2 = end;
