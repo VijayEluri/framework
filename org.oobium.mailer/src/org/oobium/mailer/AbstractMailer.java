@@ -17,6 +17,7 @@ import static org.oobium.utils.json.JsonUtils.toStringMap;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -126,7 +127,13 @@ public abstract class AbstractMailer implements IUrlRouting {
 		init();
 	}
 
-	public AbstractMailer addBCC(@Name("address") String address) throws AddressException {
+	/**
+	 * 
+	 * @param address
+	 * @return
+	 * @throws InvalidParameterException if address is not valid
+	 */
+	public AbstractMailer addBCC(@Name("address") String address) {
 		if(bcc == null) {
 			bcc = new ArrayList<InternetAddress>();
 		}
@@ -134,15 +141,28 @@ public abstract class AbstractMailer implements IUrlRouting {
 		return this;
 	}
 	
-	public AbstractMailer addCC(@Name("address") String address) throws AddressException {
+	/**
+	 * 
+	 * @param address
+	 * @return
+	 * @throws InvalidParameterException if address is not valid
+	 */
+	public AbstractMailer addCC(@Name("address") String address) {
 		if(cc == null) {
 			cc = new ArrayList<InternetAddress>();
 		}
 		cc.add(parseAddress(address));
 		return this;
 	}
-	
-	public AbstractMailer addRecipient(@Name("type") RecipientType type, @Name("address") String address) throws AddressException {
+
+	/**
+	 * 
+	 * @param type
+	 * @param address
+	 * @return
+	 * @throws InvalidParameterException if address is not valid
+	 */
+	public AbstractMailer addRecipient(@Name("type") RecipientType type, @Name("address") String address) {
 		switch(type) {
 		case TO:	addRecipient(address); break;
 		case CC:	addCC(address); break;
@@ -152,7 +172,13 @@ public abstract class AbstractMailer implements IUrlRouting {
 		return this;
 	}
 	
-	public AbstractMailer addRecipient(@Name("address") String address) throws AddressException {
+	/**
+	 * 
+	 * @param address
+	 * @return
+	 * @throws InvalidParameterException if address is not valid
+	 */
+	public AbstractMailer addRecipient(@Name("address") String address) {
 		if(to == null) {
 			to = new ArrayList<InternetAddress>();
 		}
@@ -225,35 +251,35 @@ public abstract class AbstractMailer implements IUrlRouting {
 			if(!blank(ann.to())) {
 				try {
 					setTo(ann.to());
-				} catch(AddressException e) {
+				} catch(InvalidParameterException e) {
 					logger.warn(e.getMessage());
 				}
 			}
 			if(!blank(ann.cc())) {
 				try {
 					setCC(ann.cc());
-				} catch(AddressException e) {
+				} catch(InvalidParameterException e) {
 					logger.warn(e.getMessage());
 				}
 			}
 			if(!blank(ann.bcc())) {
 				try {
 					setBCC(ann.bcc());
-				} catch(AddressException e) {
+				} catch(InvalidParameterException e) {
 					logger.warn(e.getMessage());
 				}
 			}
 			if(!blank(ann.from())) {
 				try {
 					setFrom(ann.from());
-				} catch(AddressException e) {
+				} catch(InvalidParameterException e) {
 					logger.warn(e.getMessage());
 				}
 			}
 			if(!blank(ann.replyTo())) {
 				try {
 					setReplyTo(ann.replyTo());
-				} catch(AddressException e) {
+				} catch(InvalidParameterException e) {
 					logger.warn(e.getMessage());
 				}
 			}
@@ -263,12 +289,6 @@ public abstract class AbstractMailer implements IUrlRouting {
 			if(!blank(ann.subject())) {
 				setSubject(ann.subject());
 			}
-	//			try {
-	//				ann.template();
-	//			} catch(MirroredTypeException e) {
-	//				if(ann.template() != Object.class) {
-	//					return e.getTypeMirror();
-	//			}
 			if(ann.template() != Object.class) {
 				try {
 					Class<?> clazz = ann.template();
@@ -294,7 +314,7 @@ public abstract class AbstractMailer implements IUrlRouting {
 		}
 	}
 	
-	private InternetAddress parseAddress(String input) throws AddressException {
+	private InternetAddress parseAddress(String input) {
 		Pattern pattern = Pattern.compile("<(.+)>");
 		Matcher matcher = pattern.matcher(input);
 		if(matcher.find()) {
@@ -303,10 +323,14 @@ public abstract class AbstractMailer implements IUrlRouting {
 			try {
 				return new InternetAddress(address, personal);
 			} catch(UnsupportedEncodingException e) {
-				throw new AddressException(input);
+				throw new InvalidParameterException("unsupported encoding in address: " + input + " (" + address + ", " + personal + ")");
 			}
 		} else {
-			return new InternetAddress(input.trim());
+			try {
+				return new InternetAddress(input.trim());
+			} catch(AddressException e) {
+				throw new InvalidParameterException("invalid address: " + input);
+			}
 		}
 	}
 
@@ -496,7 +520,13 @@ public abstract class AbstractMailer implements IUrlRouting {
 		return this;
 	}
 	
-	public AbstractMailer setBCC(@Name("addresses") String...addresses) throws AddressException {
+	/**
+	 * 
+	 * @param addresses
+	 * @return
+	 * @throws InvalidParameterException if an address is not valid
+	 */
+	public AbstractMailer setBCC(@Name("addresses") String...addresses) {
 		InternetAddress[] addrs = new InternetAddress[addresses.length];
 		for(int i = 0; i < addresses.length; i++) {
 			addrs[i] = parseAddress(addresses[i]);
@@ -504,8 +534,14 @@ public abstract class AbstractMailer implements IUrlRouting {
 		bcc = new ArrayList<InternetAddress>(Arrays.asList(addrs));
 		return this;
 	}
-	
-	public AbstractMailer setCC(@Name("addresses") String...addresses) throws AddressException {
+
+	/**
+	 * 
+	 * @param addresses
+	 * @return
+	 * @throws InvalidParameterException if an address is not valid
+	 */
+	public AbstractMailer setCC(@Name("addresses") String...addresses) {
 		InternetAddress[] addrs = new InternetAddress[addresses.length];
 		for(int i = 0; i < addresses.length; i++) {
 			addrs[i] = parseAddress(addresses[i]);
@@ -513,8 +549,14 @@ public abstract class AbstractMailer implements IUrlRouting {
 		cc = new ArrayList<InternetAddress>(Arrays.asList(addrs));
 		return this;
 	}
-	
-	public AbstractMailer setFrom(@Name("address") String address) throws AddressException {
+
+	/**
+	 * 
+	 * @param address
+	 * @return
+	 * @throws InvalidParameterException if address is not valid
+	 */
+	public AbstractMailer setFrom(@Name("address") String address) {
 		from = parseAddress(address);
 		return this;
 	}
@@ -528,8 +570,15 @@ public abstract class AbstractMailer implements IUrlRouting {
 		properties = new Properties();
 		properties.putAll(props);
 	}
-	
-	public AbstractMailer setRecipients(@Name("type") RecipientType type, @Name("addresses") String...addresses) throws AddressException {
+
+	/**
+	 * 
+	 * @param type
+	 * @param addresses
+	 * @return
+	 * @throws InvalidParameterException if an address is not valid
+	 */
+	public AbstractMailer setRecipients(@Name("type") RecipientType type, @Name("addresses") String...addresses) {
 		switch(type) {
 		case TO:	setTo(addresses); break;
 		case CC:	setCC(addresses); break;
@@ -538,8 +587,14 @@ public abstract class AbstractMailer implements IUrlRouting {
 		}
 		return this;
 	}
-	
-	public AbstractMailer setReplyTo(@Name("address") String address) throws AddressException {
+
+	/**
+	 * 
+	 * @param address
+	 * @return
+	 * @throws InvalidParameterException if address is not valid
+	 */
+	public AbstractMailer setReplyTo(@Name("address") String address) {
 		replyTo = parseAddress(address);
 		return this;
 	}
@@ -548,8 +603,14 @@ public abstract class AbstractMailer implements IUrlRouting {
 		this.subject = subject;
 		return this;
 	}
-	
-	public AbstractMailer setTo(@Name("addresses") String...addresses) throws AddressException {
+
+	/**
+	 * 
+	 * @param addresses
+	 * @return
+	 * @throws InvalidParameterException if an address is not valid
+	 */
+	public AbstractMailer setTo(@Name("addresses") String...addresses) {
 		InternetAddress[] addrs = new InternetAddress[addresses.length];
 		for(int i = 0; i < addresses.length; i++) {
 			addrs[i] = parseAddress(addresses[i]);
