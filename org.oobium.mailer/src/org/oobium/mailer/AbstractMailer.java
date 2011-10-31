@@ -460,7 +460,7 @@ public abstract class AbstractMailer implements IUrlRouting {
 			String host;
 			
 			String service = (String) properties.remove("service");
-			if("gmail".equals(service)) {
+			if("gmail".equalsIgnoreCase(service)) {
 				protocol = (String) properties.getProperty("mail.transport.protocol", "smtps");
 				host = (String) properties.getProperty("host", "smtp.gmail.com");
 		        properties.put("mail.smtps.auth", "true");
