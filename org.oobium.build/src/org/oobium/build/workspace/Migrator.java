@@ -143,7 +143,7 @@ public class Migrator extends Bundle {
 			sb.append("\t\tcreateTable(\"sessions\",\n");
 			sb.append("\t\t\tString(\"uuid\"),\n");
 			sb.append("\t\t\tText(\"data\"),\n");
-			sb.append("\t\t\tDate(\"expiration\")\n");
+			sb.append("\t\t\tTimestamp(\"expiration\")\n");
 			sb.append("\t\t);\n");
 		} else {
 			sb.append("\t\t// TODO auto-generated method\n");

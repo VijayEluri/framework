@@ -256,7 +256,7 @@ public abstract class AbstractDbMigration implements Migration {
     public Table createSessions() throws SQLException {
     	return createTable("sessions",
 	    			String("uuid"),
-	    			String("data"),
+	    			Text("data"),
 	    			Timestamp("expiration")
 	    		);
     }
