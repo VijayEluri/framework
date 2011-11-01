@@ -128,7 +128,8 @@ public class ModelRelation {
 		return new ModelRelation(this, model, hasMany);
 	}
 
-	public Map<String, Object> getProperties() {
+	public Map<String, Object> getCustomProperties() {
+		// when updated this method, make sure to also update #hasCustomProperties()
 		Map<String, Object> props = new HashMap<String, Object>();
 		props.put("name", name);
 		props.put("type", type);
@@ -169,6 +170,14 @@ public class ModelRelation {
 		return props;
 	}
 	
+	public Map<String, Object> getProperties() {
+		Map<String, Object> props = getCustomProperties();
+		props.put("name", name);
+		props.put("type", type);
+		props.put("hasMany", hasMany);
+		return props;
+	}
+	
 	public ModelRelation getOpposite() {
 		return oppositeRelation;
 	}
@@ -199,6 +208,44 @@ public class ModelRelation {
 	
 	public String getSimpleType() {
 		return simpleName(type);
+	}
+	
+	public boolean hasCustomProperties() {
+		// when updated this method, make sure to also update #getCustomProperties()
+		if(!opposite.equals(DEFAULT_OPPOSITE)) {
+			return true;
+		}
+		if(!through.equals(DEFAULT_THROUGH)) {
+			return true;
+		}
+		if(readOnly != DEFAULT_READONLY) {
+			return true;
+		}
+		if(unique != DEFAULT_UNIQUE) {
+			return true;
+		}
+		if(virtual != DEFAULT_VIRTUAL) {
+			return true;
+		}
+		if(dependent != DEFAULT_DEPENDENT) {
+			return true;
+		}
+		if(onDelete != DEFAULT_ONDELETE) {
+			return true;
+		}
+		if(onUpdate != DEFAULT_ONUPDATE) {
+			return true;
+		}
+		if(!embed.equals(DEFAULT_EMBED)) {
+			return true;
+		}
+		if(embedded != DEFAULT_EMBEDDED) {
+			return true;
+		}
+		if(include != DEFAULT_INCLUDE) {
+			return true;
+		}
+		return false;
 	}
 	
 	public boolean hasMany() {

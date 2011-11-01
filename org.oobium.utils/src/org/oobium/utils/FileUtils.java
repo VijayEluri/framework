@@ -955,7 +955,7 @@ public class FileUtils {
 		}
 	}
 	
-	public static File writeFile(File dst, InputStream in) throws IOException {
+	public static File writeFile(File dst, InputStream in) {
 		return writeFile(dst, in, -1);
 	}
 	

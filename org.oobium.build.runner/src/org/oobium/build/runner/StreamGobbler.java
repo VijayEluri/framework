@@ -62,6 +62,7 @@ public class StreamGobbler extends Thread {
 	public void run() {
 		boolean serverStarted = false;
 		boolean appStarted = false;
+		String startString = runner.getStartString();
 		
 		BufferedReader in = null;
 		try {
@@ -83,7 +84,7 @@ public class StreamGobbler extends Thread {
 						if(!serverStarted && line.endsWith("(INFO)  org.oobium.app: Server started")) {
 							serverStarted = true;
 						}
-						if(!appStarted && line.endsWith(runner.startString)) {
+						if(!appStarted && line.endsWith(startString)) {
 							appStarted = true;
 						}
 						if(serverStarted && appStarted) {

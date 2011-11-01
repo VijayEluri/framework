@@ -6,6 +6,10 @@ public abstract class RemotePersistService implements PersistService {
 
 	protected abstract void addSocketListener();
 	
+	protected Class<?> loadClass(String className) throws Exception {
+		return Class.forName(className);
+	}
+	
 	protected void notifyCreate(Model model) {
 		Observer.runAfterCreate(model);
 	}
@@ -15,7 +19,7 @@ public abstract class RemotePersistService implements PersistService {
 	}
 
 	protected void notifyDestroy(String className, int id) throws Exception {
-		Model model = (Model) Class.forName(className).newInstance();
+		Model model = (Model) loadClass(className).newInstance();
 		model.destroyed = id;
 		Observer.runAfterDestroy(model);
 	}

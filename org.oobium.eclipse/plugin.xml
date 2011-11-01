@@ -50,42 +50,6 @@
       </wizard>
       <wizard
             category="org.oobium.builder"
-            class="org.oobium.eclipse.wizards.migration.NewMigrationWizard"
-            hasPages="true"
-            icon="icons/database_go.png"
-            id="org.oobium.eclipse.wizards.migration.NewMigrationWizard"
-            name="Migration"
-            project="true">
-         <description>
-            Create a new Migration project
-         </description>
-      </wizard>
-      <wizard
-            category="org.oobium.builder"
-            class="org.oobium.eclipse.wizards.testsuite.NewTestSuiteWizard"
-            hasPages="true"
-            id="org.oobium.eclipse.wizards.testsuite.NewTestSuiteWizard"
-            name="Test Suite"
-            project="true">
-         <description>
-            Create a new Test Suite project
-         </description>
-      </wizard>
-      <wizard
-            category="org.oobium.builder"
-            class="org.oobium.eclipse.wizards.model.NewModelWizard"
-            hasPages="true"
-            icon="icons/model.gif"
-            id="org.oobium.eclipse.wizards.model.NewModelWizard"
-            name="Model"
-            preferredPerspectives="org.eclipse.jdt.ui.JavaPerspective"
-            project="false">
-         <description>
-            Create a new model and, optionally, all of its dependencies.
-         </description>
-      </wizard>
-      <wizard
-            category="org.oobium.builder"
             class="org.oobium.eclipse.wizards.view.NewViewWizard"
             hasPages="true"
             icon="icons/view.gif"
@@ -129,7 +93,7 @@
             hasPages="true"
             icon="icons/java_line.gif"
             id="org.oobium.eclipse.wizards.actioncache.NewActionCacheWizard"
-            name="ActionCache"
+            name="Controller Cache"
             preferredPerspectives="org.eclipse.jdt.ui.JavaPerspective"
             project="false">
          <description>

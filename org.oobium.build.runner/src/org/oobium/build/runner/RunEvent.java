@@ -15,7 +15,7 @@ import org.oobium.build.workspace.Bundle;
 
 public class RunEvent {
 
-	public enum Type { Open, Start, Started, Stop, Stopped, Update, Updated, Error, Warning }
+	public enum Type { Open, Start, Started, Stop, Stopped, Update, Updated, Migrate, Migrated, Error, Warning }
 	
 	public final Type type;
 	public final Application application;

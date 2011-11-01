@@ -395,11 +395,11 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 		return info;
 	}
 	
-	private Model getModel(String text) {
+	protected Model getModel(String text) {
 		String[] sa = text.split(":", 2);
 		if(sa.length == 2) {
 			try {
-				Class<?> clazz = Class.forName(sa[0]);
+				Class<?> clazz = loadClass(sa[0]);
 				int id = Integer.parseInt(sa[1]);
 				return (Model) coerce(id, clazz);
 			} catch(Exception e) {

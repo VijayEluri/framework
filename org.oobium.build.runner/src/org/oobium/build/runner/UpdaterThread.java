@@ -40,9 +40,31 @@ class UpdaterThread extends Thread {
 	private class MigrateListener implements RunListener {
 		@Override
 		public void handleEvent(RunEvent event) {
+			if(event.type == Type.Started) {
+				RunnerService.removeListener(this);
+				RunnerService.notifyListeners(Type.Migrate, application);
+				ClientResponse response = Client.client("localhost", 5001).post("/migrate");
+				if(response.isSuccess()) {
+					logger.info(response.getBody());
+				} else {
+					if(response.exceptionThrown()) {
+						logger.warn(response.getException().getLocalizedMessage());
+					} else {
+						logger.warn("migrator at {}:{} completed with errors: {}", domain, port, response.getBody());
+					}
+				}
+				RunnerService.notifyListeners(Type.Migrated, application);
+			}
+		}
+	}
+
+	private class ReMigrateListener implements RunListener {
+		@Override
+		public void handleEvent(RunEvent event) {
 			if(event.type == Type.Updated) {
 				RunnerService.removeListener(this);
 				if(!migratorPaused) {
+					RunnerService.notifyListeners(Type.Migrate, application);
 					ClientResponse response = Client.client("localhost", 5001).post("/migrate/redo/all");
 					if(response.isSuccess()) {
 						logger.info(response.getBody());
@@ -53,6 +75,7 @@ class UpdaterThread extends Thread {
 							logger.warn("migrator at {}:{} completed with errors: {}", domain, port, response.getBody());
 						}
 					}
+					RunnerService.notifyListeners(Type.Migrated, application);
 				}
 			}
 		}
@@ -68,7 +91,7 @@ class UpdaterThread extends Thread {
 	private Map<Bundle, Long> bundles;
 	private Map<Bundle, Bundle> exported;
 
-	private MigrateListener mlistener;
+	private ReMigrateListener reMigListener;
 	
 	private volatile boolean running;
 	private volatile boolean paused;
@@ -96,6 +119,7 @@ class UpdaterThread extends Thread {
 			logger.debug("updater monitoring: {}", bundle);
 			this.bundles.put(bundle, getLastModified(bundle));
 		}
+		RunnerService.addListener(new MigrateListener());
 	}
 	
 	synchronized void cancel() {
@@ -159,6 +183,10 @@ class UpdaterThread extends Thread {
 		return FileUtils.getLastModified(bundle.bin);
 	}
 	
+	public boolean isAutoMigrating() {
+		return !migratorPaused;
+	}
+
 	public void paused(boolean paused) {
 		this.paused = paused;
 	}
@@ -217,9 +245,9 @@ class UpdaterThread extends Thread {
 					Bundle update = workspace.export(application, bundle);
 					logger.debug("updating {} ({} < {})", update, modified, lastModified);
 					bundles.put(bundle, lastModified);
-					if(!migratorPaused && update.isMigrator() && mlistener == null) {
-						mlistener = new MigrateListener();
-						RunnerService.addListener(mlistener);
+					if(!migratorPaused && update.isMigrator() && reMigListener == null) {
+						reMigListener = new ReMigrateListener();
+						RunnerService.addListener(reMigListener);
 					}
 					update(domain, port, bundle, "file:" + update.file.getAbsolutePath());
 					RunnerService.notifyListeners(Type.Update, application, update);

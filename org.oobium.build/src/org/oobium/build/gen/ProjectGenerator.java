@@ -200,6 +200,8 @@ public class ProjectGenerator {
 		createApplicationConfigFile(project, false);
 		createApplicationController(project);
 		
+		writeFile(project, "oobium.models", "{}");
+		
 		return project;
 	}
 	

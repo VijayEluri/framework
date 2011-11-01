@@ -114,6 +114,16 @@ public class RunnerService extends AppService {
 		}
 	}
 	
+	public static boolean isAutoMigrating(Application app) {
+		synchronized(instance.runners) {
+			Runner runner = instance.runners.get(app);
+			if(runner != null) {
+				return runner.isAutoMigrating();
+			}
+			return false;
+		}
+	}
+	
 	public static boolean isRunning(Application app) {
 		synchronized(instance.runners) {
 			Runner runner = instance.runners.get(app);

@@ -325,7 +325,7 @@ public class Config {
 	}
 	
 	public int getPort(Mode mode) {
-		return coerce(get(PORT, mode), int.class);
+		return coerce(get(PORT, mode), 80);
 	}
 	
 	/**

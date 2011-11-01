@@ -633,6 +633,10 @@ public class Module extends Bundle {
 		return new File[0];
 	}
 
+	public File[] createForModel(Workspace workspace, String model, int flags) {
+		return createForModel(workspace, getModel(model), flags);
+	}
+	
 	public File[] destroyForModel(File model, int flags) {
 		Set<File> changed = new LinkedHashSet<File>();
 		if(model.isFile()) {
@@ -666,6 +670,10 @@ public class Module extends Bundle {
 		return new File[0];
 	}
 
+	public File[] destroyForModel(String model, int flags) {
+		return destroyForModel(getModel(model), flags);
+	}
+	
 	/**
 	 * Creates the mailer, if it does not exist, and updates the Manifest's
 	 * Import-Package and Export-Package sections accordingly.
@@ -1844,6 +1852,10 @@ public class Module extends Bundle {
 
 	public Config loadConfiguration() {
 		return Config.loadConfiguration(config);
+	}
+
+	public Config loadConfiguration(Mode mode) {
+		return Config.loadConfiguration(config, mode);
 	}
 
 	public boolean removeModelRoute(String modelName, Action action) {

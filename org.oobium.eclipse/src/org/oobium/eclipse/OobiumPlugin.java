@@ -239,17 +239,20 @@ public class OobiumPlugin extends AbstractUIPlugin {
 					});
 					break;
 				case Start:
-					Display.getDefault().asyncExec(new Runnable() {
-						@Override
-						public void run() {
-							try {
-								IWorkbenchPage page = getWorkbench().getWorkbenchWindows()[0].getPages()[0];
-								page.showView(ServerView.ID, event.application.name, VIEW_ACTIVATE);
-							} catch(PartInitException e) {
-								logger.warn(e);
+					IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(event.application.name);
+					if(project.isOpen()) {
+						Display.getDefault().asyncExec(new Runnable() {
+							@Override
+							public void run() {
+								try {
+									IWorkbenchPage page = getWorkbench().getWorkbenchWindows()[0].getPages()[0];
+									page.showView(ServerView.ID, event.application.name, VIEW_ACTIVATE);
+								} catch(PartInitException e) {
+									logger.warn(e);
+								}
 							}
-						}
-					});
+						});
+					}
 					break;
 				}
 			}

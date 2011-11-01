@@ -168,6 +168,25 @@ public class OobiumCore {
 		}
 	}
 
+	public static void generateViews(IFile file, IProgressMonitor monitor) {
+		if(logger.isLoggingDebug()) logger.debug("generating views for: " + file);
+		try {
+			File model = file.getLocation().toFile();
+			File projectDir = file.getProject().getLocation().toFile();
+			Bundle bundle = OobiumPlugin.getWorkspace().getBundle(projectDir);
+			if(bundle instanceof Module) {
+				Workspace workspace = OobiumPlugin.getWorkspace();
+				Module module = (Module) bundle;
+				File[] modified = module.createForModel(workspace, model, Module.VIEW);
+				for(File mfile : modified) {
+					refresh(file.getProject(), mfile, monitor);
+				}
+			}
+		} catch(Exception e) {
+			logger.warn(e);
+		}
+	}
+
 	@SuppressWarnings("unchecked")
 	private static Map<String, String> createFormatterOptions() {
 		Map<String, String> options = null;

@@ -726,6 +726,13 @@ public class Workspace {
 	}
 
 	public Migrator getMigratorFor(Module module) {
+		return getMigratorFor(module, false);
+	}
+	
+	public Migrator getMigratorFor(Module module, boolean load) {
+		if(load) {
+			load(module.migrator);
+		}
 		return getMigrator(module.migrator);
 	}
 	

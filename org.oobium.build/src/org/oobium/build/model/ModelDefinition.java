@@ -36,6 +36,7 @@ import java.util.regex.Pattern;
 
 import org.oobium.build.gen.model.PropertyDescriptor;
 import org.oobium.persist.Attribute;
+import org.oobium.persist.ModelDescription;
 import org.oobium.persist.Relation;
 import org.oobium.utils.json.JsonUtils;
 
@@ -624,6 +625,14 @@ public class ModelDefinition {
 		String folder = getPackageName().replace('.', File.separatorChar);
 		return new File(srcFolder, folder + File.separator + name);
 	}
+
+	public List<ModelRelation> getHasOnes() {
+		return new ArrayList<ModelRelation>(hasOne.values());
+	}
+	
+	public List<ModelRelation> getHasManys() {
+		return new ArrayList<ModelRelation>(hasMany.values());
+	}
 	
 	public List<String> getIndexes() {
 		return indexes;
@@ -751,8 +760,17 @@ public class ModelDefinition {
 		return type;
 	}
 	
-	public boolean hasAttribute(String name) {
-		return attributes.containsKey(name);
+	public boolean hasAttribute(String field) {
+		if(attributes.containsKey(field)) {
+			return true;
+		}
+		if(timestamps && (ModelDescription.CREATED_AT.equals(field) || ModelDescription.UPDATED_AT.equals(field))) {
+			return true;
+		}
+		if(datestamps && (ModelDescription.CREATED_ON.equals(field) || ModelDescription.UPDATED_ON.equals(field))) {
+			return true;
+		}
+		return false;
 	}
 	
 	public boolean hasAttributes() {

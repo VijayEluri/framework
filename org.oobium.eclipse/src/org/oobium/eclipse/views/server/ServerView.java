@@ -144,14 +144,20 @@ public class ServerView extends ViewPart {
 						break;
 					case Started:
 						browserPanel.refreshPaths(true);
-						migrateAction.run();
 						break;
 					case Stop:
 						stop();
 						browserPanel.updateAppState(false);
 						break;
 					case Updated:
-						browserPanel.refresh();
+						if(!RunnerService.isAutoMigrating(application)) {
+							browserPanel.refresh();
+						}
+						break;
+					case Migrated:
+						if(RunnerService.isAutoMigrating(application)) {
+							browserPanel.refresh();
+						}
 						break;
 					}
 				}

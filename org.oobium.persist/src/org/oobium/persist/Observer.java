@@ -69,12 +69,13 @@ public class Observer<T extends Model> {
 		return false;
 	}
 	
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings("rawtypes")
 	private static Class<? extends Model> findModelClass(Class<? extends Observer> clazz) {
 		Type type = clazz.getGenericSuperclass();
 		if(type instanceof ParameterizedType) {
 			ParameterizedType pt = (ParameterizedType) type;
-			return (Class<? extends Model>) pt.getActualTypeArguments()[0];
+			Class<?> c = (Class<?>) pt.getActualTypeArguments()[0];
+			return c.asSubclass(Model.class);
 		} else {
 			throw new IllegalArgumentException("Observer class must be parameterized");
 		}
@@ -154,9 +155,13 @@ public class Observer<T extends Model> {
 	private static final int BEFORE_VALIDATE_UPDATE	= 15;
 	
 	
-	@SuppressWarnings("unchecked")
 	private static <T extends Model> void run(T model, int method) {
-		List<Observer<?>> observers = observerMap.get(model.getClass());
+		run(model, method, observerMap.get(Model.class));
+		run(model, method, observerMap.get(model.getClass()));
+	}
+	
+	@SuppressWarnings("unchecked")
+	private static <T extends Model> void run(T model, int method, List<Observer<?>> observers) {
 		if(observers != null && !observers.isEmpty()) {
 			Logger logger = Model.getLogger();
 			for(Observer<?> o : observers) {
@@ -184,7 +189,7 @@ public class Observer<T extends Model> {
 			}
 		}
 	}
-	
+
 	static void runAfterCreate(Model model) {
 		run(model, AFTER_CREATE);
 	}

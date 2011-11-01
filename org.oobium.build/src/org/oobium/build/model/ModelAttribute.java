@@ -119,10 +119,9 @@ public class ModelAttribute {
 		return new ModelAttribute(this, model);
 	}
 
-	public Map<String, Object> getProperties() {
+	public Map<String, Object> getCustomProperties() {
+		// when updated this method, make sure to also update #hasCustomProperties()
 		Map<String, Object> props = new HashMap<String, Object>();
-		props.put("name", name);
-		props.put("type", type);
 		if(!check.equals(DEFAULT_CHECK)) {
 			props.put("check", check);
 		}
@@ -153,6 +152,13 @@ public class ModelAttribute {
 		return props;
 	}
 	
+	public Map<String, Object> getProperties() {
+		Map<String, Object> props = getCustomProperties();
+		props.put("name", name);
+		props.put("type", type);
+		return props;
+	}
+	
 	public String getJavaType() {
 		if(Text.class.getCanonicalName().equals(type)) {
 			return "java.lang.String";
@@ -167,6 +173,38 @@ public class ModelAttribute {
 		return simpleName(type);
 	}
 
+	public boolean hasCustomProperties() {
+		// when updated this method, make sure to also update #getCustomProperties()
+		if(!check.equals(DEFAULT_CHECK)) {
+			return true;
+		}
+		if(!init.equals(DEFAULT_INIT)) {
+			return true;
+		}
+		if(json != DEFAULT_JSON) {
+			return true;
+		}
+		if(precision != DEFAULT_PRECISION) {
+			return true;
+		}
+		if(scale != DEFAULT_SCALE) {
+			return true;
+		}
+		if(indexed != DEFAULT_INDEXED) {
+			return true;
+		}
+		if(readOnly != DEFAULT_READONLY) {
+			return true;
+		}
+		if(unique != DEFAULT_UNIQUE) {
+			return true;
+		}
+		if(virtual != DEFAULT_VIRTUAL) {
+			return true;
+		}
+		return false;
+	}
+	
 	public boolean indexed() {
 		return indexed;
 	}

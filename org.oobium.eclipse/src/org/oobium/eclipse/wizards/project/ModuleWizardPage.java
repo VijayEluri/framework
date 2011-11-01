@@ -34,6 +34,9 @@ public class ModuleWizardPage extends WizardPage implements IWizardPage {
 		setMessage("Create an Oobium Module in the workspace.");
 		setImageDescriptor(OobiumPlugin.getImageDescriptor("/icons/wizards/newpprj_wiz.png"));
 		
+		createMigration = true;
+		createTestSuite = true;
+		
 		setPageComplete(true);
 	}
 
@@ -82,7 +85,7 @@ public class ModuleWizardPage extends WizardPage implements IWizardPage {
 	
 	@Override
 	public IWizardPage getNextPage() {
-		return ((NewProjectWizard) getWizard()).bundlePropsPage;
+		return null; // ((NewProjectWizard) getWizard()).bundlePropsPage;
 	}
 
 	@Override

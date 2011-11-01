@@ -303,6 +303,7 @@ public class Exporter {
 				if(isMigrator) {
 					throw new IllegalStateException("migrator does not exist");
 				}
+				logger.warn("migrator not found for: " + application);
 			} else {
 				logger.info("including migrator");
 				addStart(migrator);

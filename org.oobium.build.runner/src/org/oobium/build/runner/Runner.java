@@ -40,7 +40,7 @@ public class Runner {
 	private UpdaterThread updater;
 	private Thread shutdownHook;
 	
-	String startString;
+	private String startString;
 	
 	Runner(Workspace workspace, Application application, Mode mode, Map<String, String> properties) {
 		this.logger = LogProvider.getLogger(RunnerService.class);
@@ -75,9 +75,17 @@ public class Runner {
 		return new LinkedHashMap<String, String>(properties);
 	}
 	
+	public String getStartString() {
+		return startString;
+	}
+	
 	void handleStarted() {
 		RunnerService.notifyListeners(Type.Started, application);
 		startString = null;
+	}
+	
+	public boolean isAutoMigrating() {
+		return updater.isAutoMigrating();
 	}
 	
 	public boolean isRunning() {
@@ -120,6 +128,15 @@ public class Runner {
 	
 	public boolean start() {
 		if(process == null) {
+			shutdownHook = new Thread(application + " process shutdown hook") {
+				public void run() {
+					if(process != null) {
+						process.destroy();
+					}
+				};
+			};
+			Runtime.getRuntime().addShutdownHook(shutdownHook);
+			
 			File exportDir = null;
 			Exporter exporter = null;
 			try {
@@ -132,8 +149,10 @@ public class Runner {
 			} catch(IOException e) {
 				return false;
 			}
-			
 			exportDir = exporter.getExportDir();
+			
+			updater = new UpdaterThread(workspace, application, exporter.getBundles());
+			updater.start();
 
 			ProcessBuilder builder = new ProcessBuilder();
 			builder.command("java", "-jar", "bin/felix.jar");
@@ -147,18 +166,6 @@ public class Runner {
 			
 			errGobbler = new StreamGobbler(this, process.getErrorStream()).activate();
 			outGobbler = new StreamGobbler(this, process.getInputStream()).activate();
-
-			shutdownHook = new Thread(application + " process shutdown hook") {
-				public void run() {
-					if(process != null) {
-						process.destroy();
-					}
-				};
-			};
-			Runtime.getRuntime().addShutdownHook(shutdownHook);
-			
-			updater = new UpdaterThread(workspace, application, exporter.getBundles());
-			updater.start();
 		}
 		return true;
 	}

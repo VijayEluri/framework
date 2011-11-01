@@ -33,7 +33,6 @@ public class NewProjectWizardPage extends WizardNewProjectCreationPage implement
 
 	private Button[] b;
 	private Project.Type type;
-	private boolean webservice;
 	
 	protected NewProjectWizardPage(String pageName) {
 		super(pageName);
@@ -70,7 +69,7 @@ public class NewProjectWizardPage extends WizardNewProjectCreationPage implement
 		
 		b[0] = new Button(group, RADIO);
 		b[0].setSelection(true);
-		b[0].setImage(OobiumPlugin.getImage("/icons/application_label.png"));
+		b[0].setImage(OobiumPlugin.getImage("/icons/application.png"));
 		b[0].setText("Application");
 		b[0].setLayoutData(new GridData(FILL, FILL, true, false));
 		b[0].addSelectionListener(new SelectionAdapter() {
@@ -81,25 +80,13 @@ public class NewProjectWizardPage extends WizardNewProjectCreationPage implement
 		});
 
 		b[1] = new Button(group, RADIO);
-		b[1].setImage(OobiumPlugin.getImage("/icons/bundle_label.png"));
+		b[1].setImage(OobiumPlugin.getImage("/icons/module.png"));
 		b[1].setText("Module");
 		b[1].setLayoutData(new GridData(FILL, FILL, true, false));
 		b[1].addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				updateSelection();
-			}
-		});
-		
-		Button b = new Button(comp, SWT.CHECK);
-		b.setText("This project is a Webservice");
-		b.setToolTipText("Webservices do not include a UI (this setting can always be changed later)");
-		b.setSelection(false);
-		b.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-		b.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				webservice = ((Button) e.widget).getSelection();
 			}
 		});
 	}
@@ -122,10 +109,6 @@ public class NewProjectWizardPage extends WizardNewProjectCreationPage implement
 		case Module:		return ((NewProjectWizard) getWizard()).modulePage;
 		}
 		throw new IllegalStateException();
-	}
-	
-	public boolean isWebservice() {
-		return webservice;
 	}
 	
 	@Override

@@ -96,6 +96,10 @@ public abstract class Model implements JsonModel {
 		return (o1 != null && !o1.equals(o2)) || o2 != null; 
 	}
 
+	public static void removeObserver(Observer<?> observer) {
+		Observer.removeObserver(observer);
+	}
+
 	public static void removeObservers(Class<?> clazz) {
 		Observer.removeObservers(clazz);
 	}
@@ -545,12 +549,14 @@ public abstract class Model implements JsonModel {
 		}
 		if(obj.getClass() == getClass()) {
 			Object oid = ((Model) obj).getId();
-			if(id.getClass() != oid.getClass()) {
-				try {
-					oid = coerce(oid, id.getClass());
-				} catch(Exception e) { /* discard */ }
+			if(oid != null) {
+				if(id.getClass() != oid.getClass()) {
+					try {
+						oid = coerce(oid, id.getClass());
+					} catch(Exception e) { /* discard */ }
+				}
+				return id.equals(oid);
 			}
-			return id.equals(oid);
 		}
 		return false;
 	}
@@ -745,7 +751,15 @@ public abstract class Model implements JsonModel {
 	}
 	
 	public final Object getId(boolean saveFirst) {
-		return getId(saveFirst, getPersistor().getInfo().getIdType());
+		Class<?> type = null;
+		PersistService persistor = getPersistor();
+		if(persistor != null) {
+			ServiceInfo info = persistor.getInfo();
+			if(info != null) {
+				type = info.getIdType();
+			}
+		}
+		return getId(saveFirst, (type == null) ? Object.class : type);
 	}
 	
 	public final <T> T getId(boolean saveFirst, Class<T> clazz) {
