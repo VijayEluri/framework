@@ -1423,13 +1423,13 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 					cookie = request.getCookie(SESSION_UUID_KEY);
 					if(cookie != null) {
 						String uuid = cookie.getValue();
-						session = handler.getSession(id, uuid, create);
+						session = Session.retrieve(id, uuid, create);
 					}
 				} catch(NumberFormatException e) {
 					logger.warn("invalid cookie id format: " + cookie.getValue());
 				}
 			} else if(create) {
-				session = handler.getSession(-1, null, true);
+				session = Session.retrieve(-1, null, true);
 			}
 		}
 	}

@@ -7,7 +7,6 @@ import static org.jboss.netty.handler.codec.http.HttpMethod.GET;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -583,25 +582,25 @@ public class ControllerTester {
 		
 		when(service.getLogger()).thenReturn(logger);
 		when(service.getRouter()).thenReturn(router);
-		when(service.getSession(anyInt(), anyString(), anyBoolean())).thenAnswer(new Answer<Session>() {
-			@Override
-			public Session answer(InvocationOnMock invocation) throws Throwable {
-				int id = (Integer) invocation.getArguments()[0];
-				String uuid = (String) invocation.getArguments()[1];
-				if(session != null) {
-					int sid = session.getId(int.class);
-					String suuid = session.getUuid();
-					if((sid < 0 || sid == id) && (suuid.equals("*") || suuid.equals(uuid))) {
-						return session;
-					}
-				}
-				boolean create = (Boolean) invocation.getArguments()[2];
-				if(create) {
-					return new Session(30*60);
-				}
-				return null;
-			}
-		});
+//		when(service.getSession(anyInt(), anyString(), anyBoolean())).thenAnswer(new Answer<Session>() {
+//			@Override
+//			public Session answer(InvocationOnMock invocation) throws Throwable {
+//				int id = (Integer) invocation.getArguments()[0];
+//				String uuid = (String) invocation.getArguments()[1];
+//				if(session != null) {
+//					int sid = session.getId(int.class);
+//					String suuid = session.getUuid();
+//					if((sid < 0 || sid == id) && (suuid.equals("*") || suuid.equals(uuid))) {
+//						return session;
+//					}
+//				}
+//				boolean create = (Boolean) invocation.getArguments()[2];
+//				if(create) {
+//					return new Session(30*60);
+//				}
+//				return null;
+//			}
+//		});
 		
 		return service;
 	}

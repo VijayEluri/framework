@@ -31,7 +31,7 @@ public class Session extends Model {
 	public static final String SESSION_ID_KEY = "oobium_session_id";
 	public static final String SESSION_UUID_KEY = "oobium_session_uuid";
 
-    public static Session retrieve(int id, String uuid) {
+    private static Session retrieve(int id, String uuid) {
 		if(id > 0 && uuid != null) {
 			try {
 				return Model.getPersistService(Session.class).find(Session.class, "id:?,uuid:?,expiration:{gt:?}", id, uuid, new Date());
@@ -40,6 +40,17 @@ public class Session extends Model {
 			}
 		}
 		return null;
+	}
+
+	public static Session retrieve(int id, String uuid, boolean create) {
+		Session session = null;
+		if(id > 0 && uuid != null && !uuid.isEmpty()) {
+			session = Session.retrieve(id, uuid);
+		}
+		if(session == null && create) {
+			session = new Session(30*60);
+		}
+		return session;
 	}
 
     /**

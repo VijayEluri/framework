@@ -32,7 +32,6 @@ import org.oobium.app.routing.RouteHandler;
 import org.oobium.app.routing.Router;
 import org.oobium.app.routing.handlers.HttpHandler;
 import org.oobium.app.server.HandlerTask;
-import org.oobium.app.sessions.Session;
 import org.oobium.app.views.View;
 import org.oobium.app.workers.Worker;
 import org.oobium.app.workers.Workers;
@@ -287,17 +286,6 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 
 	public AppRouter getRouter() {
 		return (AppRouter) router;
-	}
-
-	public Session getSession(int id, String uuid, boolean create) {
-		Session session = null;
-		if(id > 0 && uuid != null && !uuid.isEmpty()) {
-			session = Session.retrieve(id, uuid);
-		}
-		if(session == null && create) {
-			session = new Session(30*60);
-		}
-		return session;
 	}
 
 	@Override
