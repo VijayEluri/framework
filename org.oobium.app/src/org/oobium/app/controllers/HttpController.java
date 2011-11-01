@@ -524,7 +524,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	}
 
 	@Override
-	public String flash(String name) {
+	public Object flash(String name) {
 		return getFlash(name);
 	}
 	
@@ -614,14 +614,8 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	}
 	
 	@Override
-	public String getFlash(String name) {
-		if(flash != null) {
-			Object o = flash.get(name);
-			if(o != null) {
-				return coerce(o, String.class);
-			}
-		}
-		return null;
+	public Object getFlash(String name) {
+		return (flash != null) ? flash.get(name) : null;
 	}
 	
 	@Override
@@ -635,17 +629,17 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	}
 	
 	@Override
-	public String getFlashError() {
+	public Object getFlashError() {
 		return getFlash(FLASH_ERROR);
 	}
 	
 	@Override
-	public String getFlashNotice() {
+	public Object getFlashNotice() {
 		return getFlash(FLASH_NOTICE);
 	}
 
 	@Override
-	public String getFlashWarning() {
+	public Object getFlashWarning() {
 		return getFlash(FLASH_WARNING);
 	}
 	

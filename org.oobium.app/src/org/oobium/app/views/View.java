@@ -36,7 +36,6 @@ import org.oobium.app.routing.Router;
 import org.oobium.app.sessions.Session;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
-import org.oobium.utils.json.JsonUtils;
 
 public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessions, IHttp {
 
@@ -142,8 +141,33 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 		// subclasses to override if necessary
 	}
 	
+	protected void errorsBlock(StringBuilder sb, Model model, String title, String message) {
+		if(model.hasErrors()) {
+			List<String> errors = model.getErrorsList();
+			sb.append("<div class=\"errorExplanation\">");
+			if(title == null) {
+				String s1 = pluralize(errors.size(), "error");
+				String s2 = titleize(model.getClass().getSimpleName()).toLowerCase();
+				sb.append("<h2>").append(s1).append(" prohibited this ").append(s2).append(" from being saved").append("</h2>");
+			} else if(title.length() > 0) {
+				sb.append("<h2>").append(h(title)).append("</h2>");
+			}
+			if(message == null) {
+				sb.append("<p>There were problems with the following fields:</p>");
+			} else if(message.length() > 0) {
+				sb.append("<p>").append(h(message)).append("</p>");
+			}
+			sb.append("<ul>");
+			for(String error : errors) {
+				sb.append("<li>").append(h(error)).append("</li>");
+			}
+			sb.append("</ul>");
+			sb.append("</div>");
+		}
+	}
+	
 	@Override
-	public String flash(String name) {
+	public Object flash(String name) {
 		return controller.flash(name);
 	}
 	
@@ -191,7 +215,7 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 	}
 	
 	@Override
-	public String getFlash(String name) {
+	public Object getFlash(String name) {
 		return controller.getFlash(name);
 	}
 	
@@ -206,17 +230,17 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 	}
 	
 	@Override
-	public String getFlashError() {
+	public Object getFlashError() {
 		return controller.getFlashError();
 	}
 	
 	@Override
-	public String getFlashNotice() {
+	public Object getFlashNotice() {
 		return controller.getFlashNotice();
 	}
 	
 	@Override
-	public String getFlashWarning() {
+	public Object getFlashWarning() {
 		return controller.getFlashWarning();
 	}
 	
@@ -391,36 +415,11 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 		messagesBlock(sb, true, true, true);
 	}
 
-	protected void errorsBlock(StringBuilder sb, Model model, String title, String message) {
-		if(model.hasErrors()) {
-			List<String> errors = model.getErrorsList();
-			sb.append("<div class=\"errorExplanation\">");
-			if(title == null) {
-				String s1 = pluralize(errors.size(), "error");
-				String s2 = titleize(model.getClass().getSimpleName()).toLowerCase();
-				sb.append("<h2>").append(s1).append(" prohibited this ").append(s2).append(" from being saved").append("</h2>");
-			} else if(title.length() > 0) {
-				sb.append("<h2>").append(h(title)).append("</h2>");
-			}
-			if(message == null) {
-				sb.append("<p>There were problems with the following fields:</p>");
-			} else if(message.length() > 0) {
-				sb.append("<p>").append(h(message)).append("</p>");
-			}
-			sb.append("<ul>");
-			for(String error : model.getErrorsList()) {
-				sb.append("<li>").append(h(error)).append("</li>");
-			}
-			sb.append("</ul>");
-			sb.append("</div>");
-		}
-	}
-	
 	protected void messagesBlock(StringBuilder sb, boolean errors, boolean warnings, boolean notices) {
 		if(errors && hasFlashError()) {
 			sb.append("<div class=\"errors\">");
 			sb.append("<ul>");
-			Object error = JsonUtils.toObject(getFlashError());
+			Object error = getFlashError();
 			if(error instanceof Iterable<?>) {
 				for(Object o : (Iterable<?>) error) {
 					sb.append("<li>").append(h(o)).append("</li>");
@@ -435,7 +434,7 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 		if(warnings && hasFlashWarning()) {
 			sb.append("<div class=\"warnings\">");
 			sb.append("<ul>");
-			Object error = JsonUtils.toObject(getFlashWarning());
+			Object error = getFlashWarning();
 			if(error instanceof Iterable<?>) {
 				for(Object o : (Iterable<?>) error) {
 					sb.append("<li>").append(h(o)).append("</li>");
@@ -450,7 +449,7 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 		if(notices && hasFlashNotice()) {
 			sb.append("<div class=\"notices\">");
 			sb.append("<ul>");
-			Object error = JsonUtils.toObject(getFlashNotice());
+			Object error = getFlashNotice();
 			if(error instanceof Iterable<?>) {
 				for(Object o : (Iterable<?>) error) {
 					sb.append("<li>").append(h(o)).append("</li>");

@@ -12,22 +12,22 @@ package org.oobium.app.controllers;
 
 public interface IFlash {
 
-	public abstract String flash(String name);
+	public abstract Object flash(String name);
 	public abstract <T> T flash(String name, Class<T> type);
 	public <T> T flash(String name, T defaultValue);
 
-	public abstract String getFlash(String name);
+	public abstract Object getFlash(String name);
 	public abstract <T> T getFlash(String name, Class<T> type);
 	public <T> T getFlash(String name, T defaultValue);
 	public abstract boolean hasFlash(String name);
 	
-	public abstract String getFlashError();
+	public abstract Object getFlashError();
 	public abstract boolean hasFlashError();
 	
-	public abstract String getFlashNotice();
+	public abstract Object getFlashNotice();
 	public abstract boolean hasFlashNotice();
 	
-	public abstract String getFlashWarning();
+	public abstract Object getFlashWarning();
 	public abstract boolean hasFlashWarning();
 	
 }
