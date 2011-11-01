@@ -287,7 +287,7 @@ public abstract class MigratorService extends AppService {
 				for(int i = 0; i < step && ix >= 0; i++, ix--) {
 					String name = names.get(ix);
 					if(migrated.contains(name)) {
-						Migration migration = createMigration(migrations.get(i), mservice);
+						Migration migration = createMigration(migrations.get(ix), mservice);
 						migration.down();
 						commit();
 						setMigrated(name, false);
@@ -393,7 +393,6 @@ public abstract class MigratorService extends AppService {
 			// instead - get list of migration services necessary, do a count down on them, and start when they're all active
 			//   can use package manager to make sure they're all installed first...
 			
-			@SuppressWarnings({ "rawtypes", "unchecked" })
 			final ServiceTracker tmp = new ServiceTracker(getContext(), MigrationService.class.getName(), new ServiceTrackerCustomizer() {
 				public Object addingService(ServiceReference reference) {
 					Worker worker = new Worker() {

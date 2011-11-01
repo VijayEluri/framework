@@ -13,7 +13,12 @@ public class RedoController extends HttpController {
 			MigratorService service = MigratorService.instance();
 			String response;
 			try {
-				response = service.migrateRedo("all".equals(param("step")) ? -1 : param("step", 1));
+				if("all".equals(param("step"))) {
+					service.migratePurge();
+					response = service.migrate();
+				} else {
+					response = service.migrateRedo(param("step", 1));
+				}
 				logger.info(response);
 			} catch(Exception e) {
 				response = e.getLocalizedMessage();
