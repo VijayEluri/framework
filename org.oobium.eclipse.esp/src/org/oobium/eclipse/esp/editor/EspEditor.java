@@ -61,6 +61,7 @@ import org.oobium.build.esp.EspPart;
 import org.oobium.build.esp.EspPart.Type;
 import org.oobium.build.workspace.Module;
 import org.oobium.eclipse.esp.EspCore;
+import org.oobium.eclipse.esp.config.ConfigOutlinePage;
 import org.oobium.eclipse.esp.editor.actions.DefineFoldingRegionAction;
 import org.oobium.eclipse.esp.outline.EspOutlinePage;
 import org.oobium.eclipse.workspace.OobiumCore;
@@ -88,7 +89,7 @@ public class EspEditor extends TextEditor {
 	private IDocument document;
 	private IResourceChangeListener buildListener;
 	
-	private EspOutlinePage outlinePage;
+	private ISortableOutlinePage outlinePage;
 	private ProjectionSupport projectionSupport;
 	private IDocumentListener docListener;
 	private ISelectionChangedListener selListener;
@@ -117,7 +118,7 @@ public class EspEditor extends TextEditor {
 				if(selection.isEmpty()) {
 					resetHighlightRange();
 				} else if(document != null) {
-					EspOutlinePage page = outlinePage;
+					ISortableOutlinePage page = outlinePage;
 					outlinePage = null;
 					Object sel = ((IStructuredSelection) selection).getFirstElement();
 					if(sel instanceof EspElement) {
@@ -330,7 +331,12 @@ public class EspEditor extends TextEditor {
 	public Object getAdapter(Class required) {
 		if(IContentOutlinePage.class.equals(required)) {
 			if(outlinePage == null) {
-				outlinePage = new EspOutlinePage(getDocumentProvider(), this);
+				IFile file = getEResource();
+				if(file != null && file.getName().equals("configuration.js")) {
+					outlinePage = new ConfigOutlinePage(getDocumentProvider(), this);
+				} else {
+					outlinePage = new EspOutlinePage(getDocumentProvider(), this);
+				}
 				if(document != null) {
 					outlinePage.setInput(document);
 					outlinePage.addSelectionChangedListener(selListener);

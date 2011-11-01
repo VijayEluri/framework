@@ -8,7 +8,7 @@
  * Contributors:
  *     Jeremy Dowdall <jeremy@oobium.com> - initial API and implementation
  ******************************************************************************/
-package org.oobium.eclipse.esp.outline;
+package org.oobium.eclipse.esp.config;
 
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.Separator;
@@ -19,20 +19,25 @@ import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.texteditor.IDocumentProvider;
 import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.ui.views.contentoutline.ContentOutlinePage;
+import org.oobium.eclipse.esp.config.actions.MergeAction;
+import org.oobium.eclipse.esp.config.actions.SortAction;
 import org.oobium.eclipse.esp.editor.ISortableOutlinePage;
-import org.oobium.eclipse.esp.outline.actions.SortAction;
 
-public class EspOutlinePage extends ContentOutlinePage implements ISortableOutlinePage {
+public class ConfigOutlinePage extends ContentOutlinePage implements ISortableOutlinePage {
 
 	private IDocument document;
-	private EspContentProvider contentProvider;
+	private ConfigContentProvider contentProvider;
+	private MergeAction mergeAction;
 	private SortAction sortAction;
 
-	public EspOutlinePage(IDocumentProvider provider, ITextEditor editor) {
+	public ConfigOutlinePage(IDocumentProvider provider, ITextEditor editor) {
 		super();
 	}
 
 	private void createActions() {
+		mergeAction = new MergeAction(this);
+		mergeAction.setChecked(false);
+		
 		sortAction = new SortAction(this);
 		sortAction.setChecked(true);
 	}
@@ -44,8 +49,8 @@ public class EspOutlinePage extends ContentOutlinePage implements ISortableOutli
 		createActions();
 		
 		TreeViewer viewer = getTreeViewer();
-		viewer.setContentProvider(contentProvider = new EspContentProvider(true));
-		viewer.setLabelProvider(new EspLabelProvider());
+		viewer.setContentProvider(contentProvider = new ConfigContentProvider(sortAction.isChecked(), mergeAction.isChecked()));
+		viewer.setLabelProvider(new ConfigLabelProvider());
 		viewer.addSelectionChangedListener(this);
 
 		createToolBar();
@@ -58,6 +63,7 @@ public class EspOutlinePage extends ContentOutlinePage implements ISortableOutli
 	private void createToolBar() {
 		IToolBarManager manager = getSite().getActionBars().getToolBarManager();
 
+		manager.add(mergeAction);
 		manager.add(sortAction);
 		
 		manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
@@ -72,6 +78,10 @@ public class EspOutlinePage extends ContentOutlinePage implements ISortableOutli
 		}
 	}
 
+	public void setMerge(boolean merge) {
+		contentProvider.setMerge(merge);
+	}
+	
 	@Override
 	public void setSort(boolean sort) {
 		contentProvider.setSort(sort);
