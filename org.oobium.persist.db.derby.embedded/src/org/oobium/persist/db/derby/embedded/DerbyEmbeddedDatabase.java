@@ -161,9 +161,13 @@ public class DerbyEmbeddedDatabase extends Database {
 			try {
 				DriverManager.getConnection(dbURL);
 			} catch(SQLException e) {
-				if(!e.getSQLState().equals("08006")) { // 08006 indicates success
-					throw e;
+				if(e.getSQLState().equals("08006")) { // success
+					return;
 				}
+				if(e.getSQLState().equals("XJ004")) { // database not found (nothing to drop)
+					return;
+				}
+				throw e;
 			}
 		} else {
 			File db = new File(File.separator + properties.get("database"));
@@ -171,8 +175,6 @@ public class DerbyEmbeddedDatabase extends Database {
 			dispose();
 			if(db.exists()) {
 				FileUtils.delete(db);
-			} else {
-				throw new SQLException("database does not exist: " + db);
 			}
 		}
 	}
