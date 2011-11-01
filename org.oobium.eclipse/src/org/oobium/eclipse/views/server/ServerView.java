@@ -140,10 +140,12 @@ public class ServerView extends ViewPart {
 					case Start:
 						properties = JsonUtils.toJson(RunnerService.getRunner(application).getProperties());
 						start();
-						browserPanel.updateAppState(true);
 						break;
 					case Started:
-						browserPanel.refreshPaths(true);
+						browserPanel.updateAppState(true);
+						if(!RunnerService.isAutoMigrating(application)) {
+							browserPanel.refreshPaths(true);
+						}
 						break;
 					case Stop:
 						stop();
@@ -151,12 +153,12 @@ public class ServerView extends ViewPart {
 						break;
 					case Updated:
 						if(!RunnerService.isAutoMigrating(application)) {
-							browserPanel.refresh();
+							browserPanel.refreshPaths(true);
 						}
 						break;
 					case Migrated:
 						if(RunnerService.isAutoMigrating(application)) {
-							browserPanel.refresh();
+							browserPanel.refreshPaths(true);
 						}
 						break;
 					}
