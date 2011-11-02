@@ -1,0 +1,87 @@
+package org.oobium.build.model.system;
+
+import java.io.UnsupportedEncodingException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Date;
+import java.util.UUID;
+
+import org.oobium.persist.Attribute;
+import org.oobium.persist.ModelDescription;
+import org.oobium.persist.Relation;
+import org.oobium.persist.Validate;
+import org.oobium.persist.Validations;
+import org.oobium.utils.PasswordUtils;
+
+@ModelDescription(
+	attrs = {
+		@Attribute(name="name", type=String.class),
+		@Attribute(name="email", type=String.class),
+		@Attribute(name="password", type=String.class),
+		@Attribute(name="passwordSalt", type=String.class, readOnly=true),
+		@Attribute(name="activationCode", type=String.class, readOnly=true),
+		@Attribute(name="activatedAt", type=Date.class)
+	},
+	timestamps = true
+)
+@Validations({
+	@Validate(field="name,email,password,passwordSalt", isNotBlank=true)
+})
+public class User {
+
+	public boolean isActive() {
+		return hasActivatedAt() && getActivatedAt().before(new Date());
+	}
+	
+	public boolean isAdmin() {
+		return hasAdmin();
+	}
+	
+	public boolean isBuyer() {
+		return hasBuyer();
+	}
+	
+	public boolean isPassword(String password) {
+		if(hasPassword() && hasPasswordSalt()) {
+			try {
+				String encrypted = PasswordUtils.encrypt(password, getPasswordSalt());
+				return encrypted.equals(getPassword());
+			} catch (NoSuchAlgorithmException e) {
+				logger.error(e);
+			} catch (UnsupportedEncodingException e) {
+				logger.error(e);
+			}
+		}
+		return false;
+	}
+
+	public boolean isSeller() {
+		return hasSeller();
+	}
+	
+	@Override
+	public User setActivatedAt(Date activatedAt) {
+		if(activatedAt != null) {
+			put(ACTIVATION_CODE, null);
+		}
+		return super.setActivatedAt(activatedAt);
+	}
+	
+	@Override
+	public User setPassword(String password) {
+		try {
+			String[] sa = PasswordUtils.encrypt(password);
+			put(PASSWORD, sa[0]);
+			put(PASSWORD_SALT, sa[1]);
+			if(!isActive()) {
+				// user has not been activated - reset activation code too
+				put(ACTIVATION_CODE, UUID.randomUUID().toString());
+			}
+		} catch (NoSuchAlgorithmException e) {
+			logger.error(e);
+		} catch (UnsupportedEncodingException e) {
+			logger.error(e);
+		}
+		return this;
+	}
+	
+}

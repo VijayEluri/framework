@@ -50,7 +50,7 @@ import org.oobium.app.request.Request;
 import org.oobium.app.response.Response;
 import org.oobium.app.routing.AppRouter;
 import org.oobium.app.routing.Router;
-import org.oobium.app.sessions.Session;
+import org.oobium.app.sessions.ISession;
 import org.oobium.app.views.View;
 import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
@@ -88,7 +88,7 @@ public class ControllerTester {
 	public HttpController controller;
 	private Request request;
 	private Map<String, ?> params;
-	private Session session;
+	private ISession session;
 	private boolean authorize;
 	
 	private Map<String, Object> flashOut;
@@ -455,7 +455,7 @@ public class ControllerTester {
 		return getFlash(HttpController.FLASH_NOTICE, String.class);
 	}
 
-	public Session getSession() {
+	public ISession getSession() {
 		return session;
 	}
 	
@@ -627,7 +627,7 @@ public class ControllerTester {
 		return setFlash(Map(name, value));
 	}
 
-	public void setSession(Session session) {
+	public void setSession(ISession session) {
 		this.session = session;
 	}
 

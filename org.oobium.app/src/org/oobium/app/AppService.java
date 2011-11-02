@@ -32,6 +32,7 @@ import org.oobium.app.routing.RouteHandler;
 import org.oobium.app.routing.Router;
 import org.oobium.app.routing.handlers.HttpHandler;
 import org.oobium.app.server.HandlerTask;
+import org.oobium.app.sessions.ISession;
 import org.oobium.app.views.View;
 import org.oobium.app.workers.Worker;
 import org.oobium.app.workers.Workers;
@@ -288,6 +289,28 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		return (AppRouter) router;
 	}
 
+    private ISession getSession(Object id, String uuid) {
+		if(!blank(id) && uuid != null) {
+//			try {
+//				return Model.getPersistService(Session.class).find(Session.class, "id:?,uuid:?,expiration:{gt:?}", id, uuid, new Date());
+//			} catch(Exception e) {
+//				Model.getLogger().warn(e);
+//			}
+		}
+		return null;
+	}
+
+	public ISession getSession(Object id, String uuid, boolean create) {
+		ISession session = null;
+		if(!blank(id) && uuid != null && !uuid.isEmpty()) {
+			session = getSession(id, uuid);
+		}
+		if(session == null && create) {
+//			session = new Session(30*60);
+		}
+		return session;
+	}
+	
 	@Override
 	public Class<? extends View> getViewClass(String name) {
 		Class<? extends View> viewClass = super.getViewClass(name);

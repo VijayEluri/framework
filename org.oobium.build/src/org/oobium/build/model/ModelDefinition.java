@@ -57,6 +57,25 @@ public class ModelDefinition {
 		primitives.add("boolean");
 		primitives.add("char");
 	}
+
+	public static List<ModelDefinition> getSystemDefinitions() {
+		List<ModelDefinition> defs = new ArrayList<ModelDefinition>();
+		defs.add(getSessionDefinition());
+		defs.add(getUserDefinition());
+		return defs;
+	}
+	
+	public static ModelDefinition getSessionDefinition() {
+		String source = getResourceAsString(ModelDefinition.class, "system/Session.src");
+		ModelDefinition def = new ModelDefinition("Session", source);
+		return def;
+	}
+	
+	public static ModelDefinition getUserDefinition() {
+		String source = getResourceAsString(ModelDefinition.class, "system/User.src");
+		ModelDefinition def = new ModelDefinition("User", source);
+		return def;
+	}
 	
 	public static List<String> getJavaArguments(char[] ca, int start, int end) {
 		List<String> args = new ArrayList<String>();

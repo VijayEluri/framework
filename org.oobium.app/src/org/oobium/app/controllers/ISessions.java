@@ -10,7 +10,7 @@
  ******************************************************************************/
 package org.oobium.app.controllers;
 
-import org.oobium.app.sessions.Session;
+import org.oobium.app.sessions.ISession;
 import org.oobium.persist.Model;
 
 public interface ISessions {
@@ -22,7 +22,7 @@ public interface ISessions {
 	 * @see #getSession(boolean)
 	 * @return the session object related to the current request (may be a new session); never null
 	 */
-	public abstract Session getSession();
+	public abstract ISession getSession();
 
 	/**
 	 * Get the session object related to the current request.
@@ -33,7 +33,7 @@ public interface ISessions {
 	 * @return the session object related to the current request; null if one
 	 * does not exist and create is false.
 	 */
-	public abstract Session getSession(boolean create);
+	public abstract ISession getSession(boolean create);
 	
 	/**
 	 * Find out if a session object is already associated with the current request.<br>

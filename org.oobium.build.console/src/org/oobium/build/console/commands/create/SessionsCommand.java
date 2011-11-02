@@ -3,7 +3,6 @@ package org.oobium.build.console.commands.create;
 import java.io.File;
 
 import org.oobium.app.http.Action;
-import org.oobium.app.sessions.Session;
 import org.oobium.build.console.BuilderCommand;
 import org.oobium.build.console.Eclipse;
 import org.oobium.build.util.SourceFile;
@@ -67,9 +66,9 @@ public class SessionsCommand extends BuilderCommand {
 			Eclipse.refreshProject(migrator.name);
 		}
 		
-		if(app.addImportPackage(Session.class.getPackage().getName())) {
-			console.out.println("modified <a href=\"open manifest\">MANIFEST.MF</a>");
-		}
+//		if(app.addImportPackage(Session.class.getPackage().getName())) {
+//			console.out.println("modified <a href=\"open manifest\">MANIFEST.MF</a>");
+//		}
 
 		String s = (flag('f') || hasParam("model")) ? "Y" : ask("also create 'login' scaffolding? [Y/N] ");
 		if("Y".equalsIgnoreCase(s)) {
@@ -96,7 +95,7 @@ public class SessionsCommand extends BuilderCommand {
 	private File createController(Application app) {
 		String model = hasParam("model") ? app.adjust(param("model")) : "User";
 		SourceFile sf = new SourceFile();
-		sf.imports.add(Session.class.getCanonicalName());
+//		sf.imports.add(Session.class.getCanonicalName());
 		sf.imports.add(app.packageName(app.models) + ".*");
 		sf.imports.add(app.packageName(app.views) + ".pages.Login");
 		sf.methods.put("0",

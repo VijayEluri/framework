@@ -8,13 +8,14 @@
  * Contributors:
  *     Jeremy Dowdall <jeremy@oobium.com> - initial API and implementation
  ******************************************************************************/
-package org.oobium.app.sessions;
+package org.oobium.build.model.system;
 
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.oobium.app.sessions.ISession;
 import org.oobium.persist.Attribute;
 import org.oobium.persist.Model;
 import org.oobium.persist.ModelDescription;
@@ -26,32 +27,7 @@ import org.oobium.persist.ModelDescription;
 		@Attribute(name="expiration", type=Date.class)
 	}
 )
-public class Session extends Model {
-
-	public static final String SESSION_ID_KEY = "oobium_session_id";
-	public static final String SESSION_UUID_KEY = "oobium_session_uuid";
-
-    private static Session retrieve(int id, String uuid) {
-		if(id > 0 && uuid != null) {
-			try {
-				return Model.getPersistService(Session.class).find(Session.class, "id:?,uuid:?,expiration:{gt:?}", id, uuid, new Date());
-			} catch(Exception e) {
-				Model.getLogger().warn(e);
-			}
-		}
-		return null;
-	}
-
-	public static Session retrieve(int id, String uuid, boolean create) {
-		Session session = null;
-		if(id > 0 && uuid != null && !uuid.isEmpty()) {
-			session = Session.retrieve(id, uuid);
-		}
-		if(session == null && create) {
-			session = new Session(30*60);
-		}
-		return session;
-	}
+public class Session extends Model implements ISession {
 
     /**
      * @param expiresIn seconds
@@ -76,6 +52,7 @@ public class Session extends Model {
 		return (Map<String, String>) get("data");
 	}
 	
+	@Override
 	public void clearData() {
     	Map<String, String> data = getData();
     	if(data != null) {
@@ -83,6 +60,7 @@ public class Session extends Model {
     	}
 	}
 
+	@Override
 	public String getData(String key) {
     	Map<String, String> data = getData();
     	if(data != null) {
@@ -91,24 +69,29 @@ public class Session extends Model {
     	return null;
 	}
 
+	@Override
 	public Date getExpiration() {
 		Date expiration = (Date) get("expiration");
 		return (Date) expiration.clone();
 	}
 
+	@Override
 	public String getUuid() {
 		return (String) get("uuid");
 	}
 	
+	@Override
 	public boolean isDestroyed() {
 		Date expiration = (Date) get("expiration");
 		return expiration == null || expiration.before(new Date());
 	}
 	
+	@Override
 	public void putData(String key, Object value) {
 		putData(key, String.valueOf(value));
 	}
 	
+	@Override
 	public void putData(String key, String value) {
     	Map<String, String> data = getData();
     	if(data == null) {
@@ -118,6 +101,7 @@ public class Session extends Model {
 		data.put(key, value);
 	}
 	
+	@Override
 	public String removeData(String key) {
     	Map<String, String> data = getData();
     	if(data != null) {
@@ -126,6 +110,7 @@ public class Session extends Model {
     	return null;
 	}
 
+	@Override
 	public void setExpiration(Date expiration) {
 		put("expiration", (Date) expiration.clone());
 	}

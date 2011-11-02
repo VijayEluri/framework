@@ -15,8 +15,8 @@ import static org.oobium.app.http.Action.showNew;
 import static org.oobium.app.http.MimeType.CSS;
 import static org.oobium.app.http.MimeType.JS;
 import static org.oobium.app.http.MimeType.JSON;
-import static org.oobium.app.sessions.Session.SESSION_ID_KEY;
-import static org.oobium.app.sessions.Session.SESSION_UUID_KEY;
+import static org.oobium.app.sessions.ISession.SESSION_ID_KEY;
+import static org.oobium.app.sessions.ISession.SESSION_UUID_KEY;
 import static org.oobium.utils.StringUtils.asString;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.join;
@@ -69,7 +69,7 @@ import org.oobium.app.routing.handlers.AuthorizationHandler;
 import org.oobium.app.server.netty4.Attribute;
 import org.oobium.app.server.netty4.FileUpload;
 import org.oobium.app.server.netty4.HttpData;
-import org.oobium.app.sessions.Session;
+import org.oobium.app.sessions.ISession;
 import org.oobium.app.views.DynamicAsset;
 import org.oobium.app.views.ScriptFile;
 import org.oobium.app.views.StyleSheet;
@@ -185,7 +185,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	private Map<String, Object> params;
 	private Map<String, Object> flash;
 	private Map<String, Object> flashOut;
-	private Session session;
+	private ISession session;
 	private boolean sessionResolved;
 	private boolean isRendered;
 	
@@ -709,11 +709,11 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		return appRouter;
 	}
 	
-	public Session getSession() {
+	public ISession getSession() {
 		return getSession(true);
 	}
 	
-	public Session getSession(boolean create) {
+	public ISession getSession(boolean create) {
 		resolveSession(create);
 		return session;
 	}
@@ -1423,13 +1423,13 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 					cookie = request.getCookie(SESSION_UUID_KEY);
 					if(cookie != null) {
 						String uuid = cookie.getValue();
-						session = Session.retrieve(id, uuid, create);
+						session = handler.getSession(id, uuid, create);
 					}
 				} catch(NumberFormatException e) {
 					logger.warn("invalid cookie id format: " + cookie.getValue());
 				}
 			} else if(create) {
-				session = Session.retrieve(-1, null, true);
+				session = handler.getSession(-1, null, true);
 			}
 		}
 	}

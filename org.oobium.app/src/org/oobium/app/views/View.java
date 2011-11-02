@@ -33,7 +33,7 @@ import org.oobium.app.response.Response;
 import org.oobium.app.routing.IPathRouting;
 import org.oobium.app.routing.IUrlRouting;
 import org.oobium.app.routing.Router;
-import org.oobium.app.sessions.Session;
+import org.oobium.app.sessions.ISession;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 
@@ -308,12 +308,12 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 	}
 	
 	@Override
-	public Session getSession() {
+	public ISession getSession() {
 		return controller.getSession();
 	}
 	
 	@Override
-	public Session getSession(boolean create) {
+	public ISession getSession(boolean create) {
 		return controller.getSession(create);
 	}
 
