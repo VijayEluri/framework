@@ -27,10 +27,10 @@ public @interface ModelDescription {
 	public static final String UPDATED_ON = "updatedOn";
 
 	public static final boolean DEFAULT_ACTIVATION = false;
-	public static final boolean DEFAULT_TIMESTAMPS = false;
+	public static final boolean DEFAULT_TIMESTAMPS = true;
 	public static final boolean DEFAULT_DATESTAMPS = false;
-	public static final boolean DEFAULT_ALLOWDELETE = true;
-	public static final boolean DEFAULT_ALLOWUPDATE = true;
+	public static final boolean DEFAULT_ALLOW_DELETE = true;
+	public static final boolean DEFAULT_ALLOW_UPDATE = true;
 	public static final boolean DEFAULT_EMBEDDED = false;
 	
 	
@@ -59,8 +59,8 @@ public @interface ModelDescription {
 	 */
 	boolean timestamps() default DEFAULT_TIMESTAMPS;
 	
-	boolean allowDelete() default DEFAULT_ALLOWDELETE;
-	boolean allowUpdate() default DEFAULT_ALLOWUPDATE;
+	boolean allowDelete() default DEFAULT_ALLOW_DELETE;
+	boolean allowUpdate() default DEFAULT_ALLOW_UPDATE;
 
 	/**
 	 * If true, then this model type is <i>only</i> to be used as an embedded model - standard
