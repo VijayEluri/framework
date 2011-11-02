@@ -32,6 +32,7 @@ public class HasManyBuilder extends PropertyBuilder {
 		sb.append("}\n");
 		sb.append("\n");
 		sb.append("public ").append(type).append(' ').append(descriptor.getterName()).append("(String include) {\n");
+		sb.append("\tif(include.startsWith(\"include:\")) include = include.substring(8);\n");
 		sb.append("\tload(").append(descriptor.enumProp()).append(" + \":\" + include);\n");
 		sb.append("\treturn ").append(descriptor.getterName()).append("();\n");
 		sb.append("}");
