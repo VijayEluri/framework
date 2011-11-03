@@ -223,18 +223,18 @@ public class ControllerGenerator {
 				"public void create() throws Exception {\n" +
 				"\t/*\n" +
 				"\tTODO example create() Session method\n" + 
-				"\tUser model = null;\n" +
+				"\tUser user = null;\n" +
 				"\tif(hasParam(\"email\") && hasParam(\"password\")) {\n" +
-				"\tmodel = User.find(\"where email=?\", param(\"email\"));\n" +
-				"\tif(model != null && model.isPassword(param(\"password\"))) {\n" +
-				"\t\tif(authenticate(model)) {\n" +
+				"\t\tuser = User.find(\"where email=?\", param(\"email\"));\n" +
+				"\t\tif(user != null && user.isPassword(param(\"password\"))) {\n" +
+				"\t\t\tSession session = (Session) getSession();\n" +
+				"\t\t\tsession.setUser(user);\n" +
 				"\t\t\tif(hasParam(\"goto\")) {\n" +
 				"\t\t\t\tredirectTo(param(\"goto\"));\n" +
 				"\t\t\t} else {\n" +
 				"\t\t\t\tredirectToHome();\n" +
 				"\t\t\t}\n" +
-				"\t\t\t\treturn;\n" +
-				"\t\t\t} // else, fall through to try again\n" +
+				"\t\t\treturn;\n" +
 				"\t\t}\n" +
 				"\t}\n" +
 				"\t*/\n" +

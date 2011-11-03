@@ -70,6 +70,7 @@ import org.oobium.app.server.netty4.Attribute;
 import org.oobium.app.server.netty4.FileUpload;
 import org.oobium.app.server.netty4.HttpData;
 import org.oobium.app.sessions.ISession;
+import org.oobium.app.sessions.ISessions;
 import org.oobium.app.views.DynamicAsset;
 import org.oobium.app.views.ScriptFile;
 import org.oobium.app.views.StyleSheet;
@@ -85,11 +86,6 @@ import org.oobium.utils.StringUtils;
 
 public class HttpController implements IFlash, IParams, IPathRouting, IUrlRouting, ISessions, IHttp {
 
-	private static final String AUTHENTICATED_AT = "authenticatedAt";
-	private static final String AUTHENTICATED_BY = "authenticatedBy";
-	private static final String AUTHENTICATED_BY_TYPE = "authenticatedByType";
-	private static final long AUTHENTICATION_INTERVAL = 1000*60*30; // 30 minutes
-	
 	public static final String FLASH_KEY = "oobium_flash";
 	public static final String FLASH_ERROR = "error";
 	public static final String FLASH_NOTICE = "notice";
@@ -242,30 +238,6 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		// subclasses to implement
 	}
 	
-	public boolean authenticate() {
-		resolveSession(true);
-		if(session != null) {
-			session.putData(AUTHENTICATED_AT, System.currentTimeMillis());
-			session.removeData(AUTHENTICATED_BY);
-			session.removeData(AUTHENTICATED_BY_TYPE);
-			return true;
-		}
-		return false;
-	}
-
-	public boolean authenticate(Model model) {
-		if(model != null) {
-			resolveSession(true);
-			if(session != null) {
-				session.putData(AUTHENTICATED_AT, System.currentTimeMillis());
-				session.putData(AUTHENTICATED_BY, model.getId());
-				session.putData(AUTHENTICATED_BY_TYPE, model.getClass().getName());
-				return true;
-			}
-		}
-		return false;
-	}
-
 	/**
 	 * This method calls the {@link #authorize(String, String)} method, passing in the
 	 * username and password from the request. If the {@link #authorize(String, String)}
@@ -558,32 +530,6 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		return handler;
 	}
 
-	@Override
-	public Model getAuthenticated() {
-		resolveSession(true);
-		String className = session.getData(AUTHENTICATED_BY_TYPE);
-		if(className != null && className.length() > 0) {
-			try {
-				Class<?> clazz = Class.forName(className);
-				return (Model) coerce(session.getData(AUTHENTICATED_BY), clazz);
-			} catch(ClassNotFoundException e) {
-				logger.warn("class type stored in session does not exist on classpath");
-			}
-		}
-		return null;
-	}
-	
-	@Override
-	public <T extends Model> T getAuthenticated(Class<T> clazz) {
-		if(clazz != null) {
-			resolveSession(true);
-			if(clazz.getName() == session.getData(AUTHENTICATED_BY_TYPE)) {
-				return coerce(session.getData(AUTHENTICATED_BY), clazz);
-			}
-		}
-		return null;
-	}
-	
 	protected final CacheObject getCache() {
 		String key = createCacheKey(handler, getClass());
 		return doGetCache(key);
@@ -708,19 +654,23 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	public AppRouter getRouter() {
 		return appRouter;
 	}
-	
+
+	@Override
 	public ISession getSession() {
 		return getSession(null, true);
 	}
 	
+	@Override
 	public ISession getSession(boolean create) {
 		return getSession(null, create);
 	}
 	
+	@Override
 	public ISession getSession(String include) {
 		return getSession(include, true);
 	}
 	
+	@Override
 	public ISession getSession(String include, boolean create) {
 		resolveSession(include, create);
 		return session;
@@ -850,25 +800,6 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		return getAction() == action;
 	}
 
-	@Override
-	public boolean isAuthenticated() {
-		resolveSession(true);
-		long start = coerce(session.getData(AUTHENTICATED_AT), long.class);
-		return (System.currentTimeMillis() - start) < AUTHENTICATION_INTERVAL;
-	}
-	
-	@Override
-	public boolean isAuthenticated(Model model) {
-		if(model != null) {
-			resolveSession(true);
-			if(model.getId() == coerce(session.getData(AUTHENTICATED_BY), int.class) &&
-					model.getClass().getName().equals(session.getData(AUTHENTICATED_BY_TYPE))) {
-				return isAuthenticated();
-			}
-		}
-		return false;
-	}
-	
 	protected boolean isAuthorized(Realm realm) {
 		return appRouter.isAuthorized(request, realm);
 	}

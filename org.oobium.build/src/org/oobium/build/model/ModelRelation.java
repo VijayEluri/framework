@@ -131,9 +131,6 @@ public class ModelRelation {
 	public Map<String, Object> getCustomProperties() {
 		// when updated this method, make sure to also update #hasCustomProperties()
 		Map<String, Object> props = new HashMap<String, Object>();
-		props.put("name", name);
-		props.put("type", type);
-		props.put("hasMany", hasMany);
 		if(!opposite.equals(DEFAULT_OPPOSITE)) {
 			props.put("opposite", opposite);
 		}

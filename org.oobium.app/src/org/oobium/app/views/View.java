@@ -25,7 +25,6 @@ import org.oobium.app.controllers.HttpController;
 import org.oobium.app.controllers.IFlash;
 import org.oobium.app.controllers.IHttp;
 import org.oobium.app.controllers.IParams;
-import org.oobium.app.controllers.ISessions;
 import org.oobium.app.http.Action;
 import org.oobium.app.http.MimeType;
 import org.oobium.app.request.Request;
@@ -34,6 +33,7 @@ import org.oobium.app.routing.IPathRouting;
 import org.oobium.app.routing.IUrlRouting;
 import org.oobium.app.routing.Router;
 import org.oobium.app.sessions.ISession;
+import org.oobium.app.sessions.ISessions;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 
@@ -191,16 +191,6 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 		return controller.getActionName();
 	}
 
-	@Override
-	public Model getAuthenticated() {
-		return controller.getAuthenticated();
-	}
-	
-	@Override
-	public <T extends Model> T getAuthenticated(Class<T> clazz) {
-		return controller.getAuthenticated(clazz);
-	}
-	
 	public View getChild() {
 		return child;
 	}
@@ -317,6 +307,16 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 		return controller.getSession(create);
 	}
 
+	@Override
+	public ISession getSession(String include) {
+		return controller.getSession(include);
+	}
+	
+	@Override
+	public ISession getSession(String include, boolean create) {
+		return controller.getSession(include, create);
+	}
+	
 	public String getTitle() {
 		StringBuilder sb = new StringBuilder();
 		renderTitle(sb);
@@ -389,16 +389,6 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 	@Override
 	public boolean isAction(Action action) {
 		return controller.isAction(action);
-	}
-	
-	@Override
-	public boolean isAuthenticated() {
-		return controller.isAuthenticated();
-	}
-	
-	@Override
-	public boolean isAuthenticated(Model model) {
-		return controller.isAuthenticated(model);
 	}
 	
 	@Override
