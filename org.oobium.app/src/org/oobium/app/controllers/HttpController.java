@@ -476,8 +476,8 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 					Timestamp exp = new Timestamp(System.currentTimeMillis() + 30*60*1000);
 					session.setExpiration(exp);
 					if(session.save()) {
-						response.setCookie(SESSION_ID_KEY, session.getId(), 30);
-						response.setCookie(SESSION_UUID_KEY, session.getUuid(), 30);
+						response.setCookie(SESSION_ID_KEY, session.getId(), 30*60*1000);
+						response.setCookie(SESSION_UUID_KEY, session.getUuid(), 30*60*1000);
 					}
 				}
 			}
@@ -710,11 +710,19 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	}
 	
 	public ISession getSession() {
-		return getSession(true);
+		return getSession(null, true);
 	}
 	
 	public ISession getSession(boolean create) {
-		resolveSession(create);
+		return getSession(null, create);
+	}
+	
+	public ISession getSession(String include) {
+		return getSession(include, true);
+	}
+	
+	public ISession getSession(String include, boolean create) {
+		resolveSession(include, create);
 		return session;
 	}
 	
@@ -1414,6 +1422,10 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	}
 
 	private void resolveSession(boolean create) {
+		resolveSession(null, create);
+	}
+	
+	private void resolveSession(String include, boolean create) {
 		if((create && session == null) || (!create && !sessionResolved)) {
 			sessionResolved = true;
 			Cookie cookie = request.getCookie(SESSION_ID_KEY);
@@ -1423,13 +1435,13 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 					cookie = request.getCookie(SESSION_UUID_KEY);
 					if(cookie != null) {
 						String uuid = cookie.getValue();
-						session = handler.getSession(id, uuid, create);
+						session = handler.getSession(id, uuid, include, create);
 					}
 				} catch(NumberFormatException e) {
 					logger.warn("invalid cookie id format: " + cookie.getValue());
 				}
 			} else if(create) {
-				session = handler.getSession(-1, null, true);
+				session = handler.getSession(-1, null, include, true);
 			}
 		}
 	}

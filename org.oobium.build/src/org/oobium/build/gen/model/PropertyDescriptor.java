@@ -10,13 +10,15 @@
  ******************************************************************************/
 package org.oobium.build.gen.model;
 
+import static org.oobium.utils.StringUtils.varName;
+
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.oobium.build.model.ModelAttribute;
 import org.oobium.build.model.ModelDefinition;
 import org.oobium.build.model.ModelRelation;
+import org.oobium.persist.ModelList;
 import org.oobium.utils.StringUtils;
 
 public class PropertyDescriptor {
@@ -51,6 +53,7 @@ public class PropertyDescriptor {
 	private boolean hasOne;
 	private boolean hasMany;
 	private String relatedType;
+	private String through;
 
 	public PropertyDescriptor(ModelAttribute attribute) {
 		this(attribute.model().getSimpleName(), attribute.getJavaType(), attribute.name());
@@ -90,9 +93,10 @@ public class PropertyDescriptor {
 		hasOne = !relation.hasMany();
 		hasMany = relation.hasMany();
 		relatedType = relation.type();
+		through = relation.through();
 
 		if(relation.hasMany()) {
-			castType = Set.class.getSimpleName();
+			castType = ModelList.class.getSimpleName();
 			getterName = variable;
 		} else {
 			getterName = StringUtils.getterName(variable);
@@ -125,6 +129,21 @@ public class PropertyDescriptor {
 		return relatedType;
 	}
 
+	/**
+	 * @return new String[] { field, subfield }
+	 */
+	public String[] through() {
+		if(isThrough()) {
+			int ix = through.indexOf(':');
+			if(ix == -1) {
+				return new String[] { through, varName(type(), hasMany) };
+			} else {
+				return new String[] { through.substring(0, ix), through.substring(ix + 1) };
+			}
+		}
+		return null;
+	}
+	
 	public String castType() {
 		return castType;
 	}
@@ -167,6 +186,10 @@ public class PropertyDescriptor {
 	
 	public boolean isReadOnly() {
 		return readOnly;
+	}
+	
+	public boolean isThrough() {
+		return through != null && through.length() > 0;
 	}
 	
 	public boolean isUnique() {

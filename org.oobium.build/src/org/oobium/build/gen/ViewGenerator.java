@@ -168,6 +168,25 @@ public class ViewGenerator {
 		return sb.toString();
 	}
 
+	public String generateLoginForm() {
+		return
+		"import " + mPkg + ".*\n" + 
+		"Login(String email = \"login\")\n" + 
+		"\n" + 
+		"title Log In\n" + 
+		"\n" + 
+		"div#logPage\n" + 
+		"\tmessages\n" + 
+		"\tdiv.Login\n" + 
+		"\t\tform(action: pathTo(Session.class, Action.create), method: \"post\")\n" + 
+		"\t\t\t- if(hasParam(\"goto\")) {\n" + 
+		"\t\t\t\t\thidden(name: \"goto\", value: param(\"goto\"))\n" + 
+		"\t\t\t- }\n" + 
+		"\t\t\ttext.name(name: \"email\", value: email, onfocus: \"enterText(this, 'login');\", onblur: \"exitText(this, 'login');\")\n" + 
+		"\t\t\tpassword.pass(name: \"password\")\n" + 
+		"\t\t\tbutton#login Submit";
+	}
+
 	public String generateShowAllView() {
 		StringBuilder sb = new StringBuilder();
 

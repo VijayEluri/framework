@@ -32,14 +32,6 @@ public class User {
 		return hasActivatedAt() && getActivatedAt().before(new Date());
 	}
 	
-	public boolean isAdmin() {
-		return hasAdmin();
-	}
-	
-	public boolean isBuyer() {
-		return hasBuyer();
-	}
-	
 	public boolean isPassword(String password) {
 		if(hasPassword() && hasPasswordSalt()) {
 			try {
@@ -54,10 +46,6 @@ public class User {
 		return false;
 	}
 
-	public boolean isSeller() {
-		return hasSeller();
-	}
-	
 	@Override
 	public User setActivatedAt(Date activatedAt) {
 		if(activatedAt != null) {

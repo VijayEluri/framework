@@ -25,6 +25,7 @@ import java.util.jar.JarFile;
 import org.oobium.app.controllers.ControllerCache;
 import org.oobium.app.controllers.HttpController;
 import org.oobium.app.routing.Router;
+import org.oobium.app.sessions.ISession;
 import org.oobium.app.views.View;
 import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
@@ -72,7 +73,9 @@ public abstract class ModuleService implements BundleActivator {
 	protected String name;
 	protected BundleContext context;
 	protected Router router;
-	
+
+	protected Class<? extends Model> sessionClass;
+
 	volatile boolean running;
 
 	public ModuleService() {
@@ -294,7 +297,15 @@ public abstract class ModuleService implements BundleActivator {
 		logger.info("loading Model classes");
 
 		String pkg = pkg(config.getPathToModels(pkgPath()));
-		loadClassesInPackage(pkg);
+		for(Class<?> clazz : loadClassesInPackage(pkg)) {
+			if("Session".equals(clazz.getSimpleName())) {
+				if(Model.class.isAssignableFrom(clazz) && ISession.class.isAssignableFrom(clazz)) {
+					logger.info("setting session class: " + clazz);
+					sessionClass = clazz.asSubclass(Model.class);
+				}
+				break;
+			}
+		}
 	}
 	
 	@SuppressWarnings("unchecked")

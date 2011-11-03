@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.oobium.build.model;
 
+import static org.oobium.persist.ModelDescription.*;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.build.util.SourceFile.ensureImports;
 import static org.oobium.utils.CharStreamUtils.closer;
@@ -23,6 +24,7 @@ import static org.oobium.utils.StringUtils.*;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -41,6 +43,9 @@ import org.oobium.persist.Relation;
 import org.oobium.utils.json.JsonUtils;
 
 public class ModelDefinition {
+
+	private static final String packageRegex = "package\\s+([\\w\\d\\._]+);";
+	private static final Pattern packagePattern = Pattern.compile(packageRegex);
 
 	private static final char[] MODEL_DESCRIPTION = "@ModelDescription".toCharArray();
 	private static final char[] INDEXES = "@Indexes".toCharArray();
@@ -247,26 +252,61 @@ public class ModelDefinition {
 	}
 
 	
-	private final File file; // TODO this file object will not work when we need to deal with jars...
+	private File file; // TODO this file object will not work when we need to deal with jars...
 	private String source;
 	private int mdstart;
 	private int mdend;
 
-	private final String packageName;
-	private final String type;
+	private String type;
+	private String packageName;
 	private LinkedHashMap<String, ModelAttribute> attributes;
 	private final LinkedHashMap<String, ModelRelation> hasOne;
 	private final LinkedHashMap<String, ModelRelation> hasMany;
 	private final ArrayList<String> indexes;
-	private boolean datestamps;
-	private boolean timestamps;
-	private boolean allowUpdate = true; // TODO
-	private boolean allowDelete = true; // TODO
-	private boolean embedded;
-	private boolean activation;
+	private boolean datestamps = DEFAULT_DATESTAMPS;
+	private boolean timestamps = DEFAULT_TIMESTAMPS;
+	private boolean allowUpdate = DEFAULT_ALLOW_UPDATE;
+	private boolean allowDelete = DEFAULT_ALLOW_DELETE;
+	private boolean embedded = DEFAULT_EMBEDDED;
 
 	private String[] siblings;
 
+	
+	private ModelDefinition(ModelDefinition original) {
+		this.file = new File(original.file.getAbsolutePath());
+		this.source = original.source;
+		this.mdstart = original.mdstart;
+		this.mdend = original.mdend;
+
+		this.packageName = original.packageName;
+		this.type = original.type;
+
+		this.datestamps = original.datestamps;
+		this.timestamps = original.timestamps;
+		this.allowUpdate = original.allowUpdate;
+		this.allowDelete = original.allowDelete;
+		this.embedded = original.embedded;
+		
+		this.attributes = new LinkedHashMap<String, ModelAttribute>();
+		for(Entry<String, ModelAttribute> entry : original.attributes.entrySet()) {
+			this.attributes.put(entry.getKey(), entry.getValue().getCopy());
+		}
+		
+		this.hasOne = new LinkedHashMap<String, ModelRelation>();
+		for(Entry<String, ModelRelation> entry : original.hasOne.entrySet()) {
+			this.hasOne.put(entry.getKey(), entry.getValue().getCopy());
+		}
+
+		this.hasMany = new LinkedHashMap<String, ModelRelation>();
+		for(Entry<String, ModelRelation> entry : original.hasMany.entrySet()) {
+			this.hasMany.put(entry.getKey(), entry.getValue().getCopy());
+		}
+		
+		this.indexes = new ArrayList<String>(original.indexes);
+		this.siblings = (original.siblings != null) ? Arrays.copyOf(original.siblings, original.siblings.length) : null;
+	}
+	
+	
 	public ModelDefinition(File file) {
 		this(file.getName(), null, file, null);
 	}
@@ -302,15 +342,6 @@ public class ModelDefinition {
 
 	public ModelDefinition(String simpleName, String source, String...siblings) {
 		this(simpleName, source, null, siblings);
-	}
-
-	public boolean activation() {
-		return activation;
-	}
-	
-	public ModelDefinition activation(boolean activation) {
-		this.activation = activation;
-		return this;
 	}
 
 	public ModelAttribute addAttribute(ModelAttribute attribute) {
@@ -390,7 +421,7 @@ public class ModelDefinition {
 		sb.append(')');
 		return sb.toString();
 	}
-	
+
 	public boolean datestamps() {
 		return datestamps;
 	}
@@ -419,7 +450,6 @@ public class ModelDefinition {
 				&& this.allowDelete == other.allowDelete
 				&& this.allowUpdate == other.allowUpdate
 				&& this.embedded == other.embedded
-				&& this.activation == other.activation
 				&& this.indexes.equals(other.indexes)) {
 			ModelAttribute[] aa = this.attributes.values().toArray(new ModelAttribute[this.attributes.size()]);
 			ModelAttribute[] ab = other.attributes.values().toArray(new ModelAttribute[other.attributes.size()]);
@@ -479,6 +509,10 @@ public class ModelDefinition {
 
 	public String getControllerName() {
 		return controllerSimpleName(type);
+	}
+	
+	public ModelDefinition getCopy() {
+		return new ModelDefinition(this);
 	}
 	
 	public ModelAttribute[] getDatestampFields() {
@@ -579,15 +613,6 @@ public class ModelDefinition {
 				sb.append(",\n");
 			}
 			sb.append("\tembedded = true");
-		}
-		if(activation) {
-			if(first) {
-				first = false;
-				sb.append("\n");
-			} else {
-				sb.append(",\n");
-			}
-			sb.append("\tactivation = true");
 		}
 		if(!first) {
 			sb.append('\n');
@@ -715,6 +740,21 @@ public class ModelDefinition {
 
 	public String getSimpleName() {
 		return simpleName(type);
+	}
+	
+	public void setPackageName(String packageName) {
+		this.type = packageName + "." + getSimpleName();
+		this.packageName = packageName;
+		source = (source != null)
+					? source.replaceFirst(packageRegex, "package " + packageName + ";")
+					: "package " + packageName + ";\n" +
+					  "\n" +
+					  "import org.oobium.persist.ModelDescription;\n" +
+					  "\n" +
+					  "@ModelDescription()\n" +
+					  "public class " + getSimpleName() + " {\n" +
+					  "\n" +
+					  "}";
 	}
 	
 	public ModelAttribute[] getTimestampFields() {
@@ -914,12 +954,11 @@ public class ModelDefinition {
 			parseRelations(v, true);
 		}
 		
-		datestamps = coerce(parameters.get("datestamps"), false);
-		timestamps = coerce(parameters.get("timestamps"), false);
-		allowUpdate = coerce(parameters.get("allowUpdate"), true);
-		allowDelete = coerce(parameters.get("allowDelete"), true);
-		embedded = coerce(parameters.get("embedded"), false);
-		activation = coerce(parameters.get("activation"), false);
+		datestamps = coerce(parameters.get("datestamps"), DEFAULT_DATESTAMPS);
+		timestamps = coerce(parameters.get("timestamps"), DEFAULT_TIMESTAMPS);
+		allowUpdate = coerce(parameters.get("allowUpdate"), DEFAULT_ALLOW_UPDATE);
+		allowDelete = coerce(parameters.get("allowDelete"), DEFAULT_ALLOW_DELETE);
+		embedded = coerce(parameters.get("embedded"), DEFAULT_EMBEDDED);
 	}
 
 	private void parseIndexes(char[] ca, int start, int end) {
@@ -928,8 +967,7 @@ public class ModelDefinition {
 	}
 
 	private String parsePackageName() {
-		Pattern p = Pattern.compile("package\\s+([\\w\\d\\._]+);");
-		Matcher m = p.matcher(source);
+		Matcher m = packagePattern.matcher(source);
 		if(m.find()) {
 			return m.group(1);
 		}
@@ -980,6 +1018,11 @@ public class ModelDefinition {
 			load();
 		}
 	}
+	
+	public void save(File file) {
+		this.file = file;
+		save();
+	}
 
 	public void setAttributeOrder(String[] names) {
 		Map<String, ModelAttribute> attrs = attributes;
@@ -989,6 +1032,10 @@ public class ModelDefinition {
 		}
 	}
 
+	public void setFile(File file) {
+		this.file = file;
+	}
+	
 	public void setOpposites(ModelDefinition[] models) {
 		for(ModelRelation relation : hasOne.values()) {
 			relation.setOpposite(models);

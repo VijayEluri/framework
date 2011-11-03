@@ -9,6 +9,8 @@ public interface ISession {
 
 	public abstract void clearData();
 
+	public abstract boolean destroy();
+	
 	public abstract String getData(String key);
 
 	public abstract Date getExpiration();
@@ -19,14 +21,16 @@ public interface ISession {
 
 	public abstract boolean isDestroyed();
 
-	public abstract void putData(String key, Object value);
+	public abstract ISession putData(String key, Object value);
 
-	public abstract void putData(String key, String value);
+	public abstract ISession putData(String key, String value);
 
 	public abstract String removeData(String key);
 
 	public abstract boolean save();
 	
-	public abstract void setExpiration(Date expiration);
+	public abstract ISession setExpiration(Date expiration);
 
+	public abstract ISession setExpiration(int secondsFromNow);
+	
 }

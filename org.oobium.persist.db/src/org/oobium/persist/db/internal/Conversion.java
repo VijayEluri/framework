@@ -60,7 +60,7 @@ public class Conversion {
 	}
 	
 	private void add(String field, String key, Object value) throws Exception {
-		if(adapter != null && !adapter.hasField(field)) {
+		if(adapter != null && !adapter.hasField(field) && !"id".equals(field)) {
 			throw new Exception("model of type " + adapter.getModelClass() + " does not contain the field '" + field + "'");
 		}
 		
@@ -90,14 +90,17 @@ public class Conversion {
 		if(order != null) {
 			first = first(sb, first);
 			sb.append("ORDER BY ").append(order);
+			if("?".equals(order)) list.add(inValues[v++]);
 		}
 		if(limit != null) {
 			first = first(sb, first);
 			sb.append("LIMIT ").append(limit);
+			if("?".equals(limit)) list.add(inValues[v++]);
 		}
 		if(include != null) {
 			first = first(sb, first);
 			sb.append("INCLUDE:").append(include);
+			if("?".equals(include)) list.add(inValues[v++]);
 		}
 	}
 	

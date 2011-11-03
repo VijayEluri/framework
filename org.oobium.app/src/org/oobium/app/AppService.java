@@ -13,6 +13,7 @@ package org.oobium.app;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.literal.Dictionary;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -289,24 +290,40 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		return (AppRouter) router;
 	}
 
-    private ISession getSession(Object id, String uuid) {
-		if(!blank(id) && uuid != null) {
-//			try {
-//				return Model.getPersistService(Session.class).find(Session.class, "id:?,uuid:?,expiration:{gt:?}", id, uuid, new Date());
-//			} catch(Exception e) {
-//				Model.getLogger().warn(e);
-//			}
+    private ISession getSession(Object id, String uuid, String include) {
+		if(sessionClass != null && !blank(id) && uuid != null) {
+			PersistService service = Model.getPersistService(sessionClass);
+			if(service != null) {
+				try {
+					if(!blank(include)) {
+						if(include.startsWith("include:")) include = include.substring(8).trim();
+						return (ISession) service.find(sessionClass, "id:?,uuid:?,expiration:{gt:?},$include:?", id, uuid, new Date(), include);
+					}
+					return (ISession) service.find(sessionClass, "id:?,uuid:?,expiration:{gt:?}", id, uuid, new Date());
+				} catch(Exception e) {
+					logger.warn(e);
+				}
+			}
 		}
 		return null;
 	}
 
-	public ISession getSession(Object id, String uuid, boolean create) {
+	public ISession getSession(Object id, String uuid, String include, boolean create) {
 		ISession session = null;
 		if(!blank(id) && uuid != null && !uuid.isEmpty()) {
-			session = getSession(id, uuid);
+			session = getSession(id, uuid, include);
 		}
 		if(session == null && create) {
-//			session = new Session(30*60);
+			if(sessionClass == null) {
+				logger.warn("cannot create session: sessionClass is null");
+			} else {
+				try {
+					session = (ISession) sessionClass.newInstance();
+					session.setExpiration(30*60);
+				} catch(Exception e) {
+					logger.warn("failed to create session: " + e.getLocalizedMessage());
+				}
+			}
 		}
 		return session;
 	}

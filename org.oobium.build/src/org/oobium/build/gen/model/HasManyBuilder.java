@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.oobium.build.model.ModelRelation;
 import org.oobium.persist.ModelList;
 
 

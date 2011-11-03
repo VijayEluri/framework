@@ -13,43 +13,30 @@ package org.oobium.build.model.system;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import org.oobium.app.sessions.ISession;
 import org.oobium.persist.Attribute;
-import org.oobium.persist.Model;
 import org.oobium.persist.ModelDescription;
+import org.oobium.persist.Validate;
+import org.oobium.persist.Validations;
 
 @ModelDescription(
 	attrs = {
-		@Attribute(name="uuid", type=String.class),
+		@Attribute(name="uuid", type=String.class, readOnly=true),
 		@Attribute(name="data", type=Map.class),
 		@Attribute(name="expiration", type=Date.class)
 	}
 )
-public class Session extends Model implements ISession {
+@Validations(
+	@Validate(field="expiration", isNotNull=true)
+)
+public class Session extends SessionModel implements ISession {
 
-    /**
-     * @param expiresIn seconds
-     */
-	public Session(int expiresIn) {
-		this(-1, UUID.randomUUID().toString(), new HashMap<String, String>(), new Date(System.currentTimeMillis() + expiresIn*1000));
-	}
-	
-	private Session(int id, String uuid, Map<String, String> dataMap, Date expiration) {
-		put("id", id);
-		put("uuid", uuid);
-		put("dataMap", dataMap);
-		put("expiration", new Date(expiration.getTime()));
-	}
-	
-	public Session(Date expiration) {
-		this(-1, UUID.randomUUID().toString(), new HashMap<String, String>(), expiration);
-	}
-	
-	@SuppressWarnings("unchecked")
-	private Map<String, String> getData() {
-		return (Map<String, String>) get("data");
+	@Override
+	protected void beforeCreate() {
+		if(!hasUuid()) {
+			put(UUID, java.util.UUID.randomUUID().toString());
+		}
 	}
 	
 	@Override
@@ -70,35 +57,25 @@ public class Session extends Model implements ISession {
 	}
 
 	@Override
-	public Date getExpiration() {
-		Date expiration = (Date) get("expiration");
-		return (Date) expiration.clone();
-	}
-
-	@Override
-	public String getUuid() {
-		return (String) get("uuid");
-	}
-	
-	@Override
 	public boolean isDestroyed() {
 		Date expiration = (Date) get("expiration");
 		return expiration == null || expiration.before(new Date());
 	}
 	
 	@Override
-	public void putData(String key, Object value) {
-		putData(key, String.valueOf(value));
+	public Session putData(String key, Object value) {
+		return putData(key, String.valueOf(value));
 	}
 	
 	@Override
-	public void putData(String key, String value) {
+	public Session putData(String key, String value) {
     	Map<String, String> data = getData();
     	if(data == null) {
     		data = new HashMap<String, String>();
     		put("data", data);
     	}
 		data.put(key, value);
+		return this;
 	}
 	
 	@Override
@@ -111,8 +88,8 @@ public class Session extends Model implements ISession {
 	}
 
 	@Override
-	public void setExpiration(Date expiration) {
-		put("expiration", (Date) expiration.clone());
+	public Session setExpiration(int secondsFromNow) {
+		return setExpiration(new Date(System.currentTimeMillis() + secondsFromNow*1000));
 	}
 
 	@Override

@@ -31,6 +31,7 @@ import org.oobium.build.util.SourceFile;
 import org.oobium.build.workspace.Module;
 import org.oobium.app.http.Action;
 import org.oobium.app.http.MimeType;
+import org.oobium.app.sessions.ISession;
 
 public class ControllerGenerator {
 
@@ -75,6 +76,9 @@ public class ControllerGenerator {
 
 	public static String generate(Module module, ModelDefinition model) {
 		ControllerGenerator gen = new ControllerGenerator(module, model);
+		if("Session".equals(model.getSimpleName())) {
+			return gen.doGenerateSession();
+		}
 		return gen.doGenerate();
 	}
  	
@@ -91,7 +95,7 @@ public class ControllerGenerator {
 		this.module = module;
 		this.model = model;
 		extendAppController = module.getController("ApplicationController").isFile();
-		withViews = !module.hasNature(Module.NATURE_WEBSERVICE);
+		withViews = !"Session".equals(model.getSimpleName()) && !module.hasNature(Module.NATURE_WEBSERVICE);
 		mType = model.getSimpleName();
 		mTypePlural = plural(mType);
 		varName = varName(mType);
@@ -198,6 +202,57 @@ public class ControllerGenerator {
 			src.methods.put("showNew", genShowNew());
 		}
 		src.methods.put("show", genShow());
+		
+		return src.toSource();
+	}
+	
+	private String doGenerateSession() {
+		SourceFile src = new SourceFile();
+
+		String controllerName = model.getControllerName();
+		
+		src.packageName = module.packageName(module.getController(controllerName).getParentFile());
+		src.simpleName = controllerName;
+		src.superName = HttpController.class.getSimpleName();
+		src.imports.add(HttpController.class.getCanonicalName());
+		src.imports.add(ISession.class.getCanonicalName());
+		src.imports.add(module.packageName(module.getViewsFolder(mType))+".Login");
+
+		src.methods.put("create",
+				"@Override\n" +
+				"public void create() throws Exception {\n" +
+				"\t/*\n" +
+				"\tTODO example create() Session method\n" + 
+				"\tUser model = null;\n" +
+				"\tif(hasParam(\"email\") && hasParam(\"password\")) {\n" +
+				"\tmodel = User.find(\"where email=?\", param(\"email\"));\n" +
+				"\tif(model != null && model.isPassword(param(\"password\"))) {\n" +
+				"\t\tif(authenticate(model)) {\n" +
+				"\t\t\tif(hasParam(\"goto\")) {\n" +
+				"\t\t\t\tredirectTo(param(\"goto\"));\n" +
+				"\t\t\t} else {\n" +
+				"\t\t\t\tredirectToHome();\n" +
+				"\t\t\t}\n" +
+				"\t\t\t\treturn;\n" +
+				"\t\t\t} // else, fall through to try again\n" +
+				"\t\t}\n" +
+				"\t}\n" +
+				"\t*/\n" +
+				"\tsetFlashError(\"Login failed: incorrect username or password\");\n" +
+				"\trender(new Login(param(\"email\")));\n" +
+				"}"
+			);
+
+		src.methods.put("destroy",
+				"@Override\n" +
+				"public void destroy() throws Exception {\n" +
+				"\tISession session = getSession(false);\n" +
+				"\tif(session != null) {\n" +
+				"\t\tsession.destroy();\n" +
+				"\t}\n" +
+				"\tredirectToHome();\n" +
+				"}"
+			);
 		
 		return src.toSource();
 	}

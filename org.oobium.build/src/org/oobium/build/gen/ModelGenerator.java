@@ -395,11 +395,15 @@ public class ModelGenerator {
 			
 			ViewGenerator gen = new ViewGenerator(model);
 
-			files.add(writeFile(folder, "ShowEdit" + name + ".esp", gen.generateShowEditView()));
-			files.add(writeFile(folder, "ShowAll"  + plur + ".esp", gen.generateShowAllView()));
-			files.add(writeFile(folder, "ShowNew"  + name + ".esp", gen.generateShowNewView()));
-			files.add(writeFile(folder, "Show" 	   + name + ".esp", gen.generateShowView()));
-			files.add(writeFile(folder, name	   + "Form" + ".esp", gen.generateForm()));
+			if("Session".equals(name)) {
+				files.add(writeFile(folder, "Login.esp", gen.generateLoginForm()));
+			} else {
+				files.add(writeFile(folder, "ShowEdit" + name + ".esp", gen.generateShowEditView()));
+				files.add(writeFile(folder, "ShowAll"  + plur + ".esp", gen.generateShowAllView()));
+				files.add(writeFile(folder, "ShowNew"  + name + ".esp", gen.generateShowNewView()));
+				files.add(writeFile(folder, "Show" 	   + name + ".esp", gen.generateShowView()));
+				files.add(writeFile(folder, name	   + "Form" + ".esp", gen.generateForm()));
+			}
 		}
 	}
 	

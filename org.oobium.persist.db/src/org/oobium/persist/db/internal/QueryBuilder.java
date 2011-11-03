@@ -108,7 +108,7 @@ public class QueryBuilder {
 	private void addColumns(String alias, ModelAdapter adapter) {
 		columns.add(column(alias, ID));
 		for(String field : adapter.getFields()) {
-			if(!adapter.hasMany(field) && !adapter.isVirtual(field) && (!adapter.isOneToOne(field) || adapter.hasKey(field))) {
+			if(!adapter.hasMany(field) && !adapter.isVirtual(field) && !adapter.isThrough(field) && (!adapter.isOneToOne(field) || adapter.hasKey(field))) {
 				columns.add(column(alias, field));
 			}
 		}
@@ -381,6 +381,9 @@ public class QueryBuilder {
 	}
 	
 	private List<Object> getModelIncludes(ModelAdapter adapter) {
+		if(adapter == null) {
+			return new ArrayList<Object>(0);
+		}
 		List<Object> includes = new ArrayList<Object>();
 		for(String field : adapter.getRelationFields()) {
 			if(adapter.isIncluded(field)) {

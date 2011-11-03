@@ -265,7 +265,10 @@ public class ModelAdapter {
 	}
 
 	public String[] getThrough(String field) {
-		Relation relation = hasMany.get(field);
+		Relation relation = hasOne.get(field);
+		if(relation == null) {
+			relation = hasMany.get(field);
+		}
 		if(relation != null) {
 			String through = relation.through();
 			if(!blank(through)) {
@@ -570,6 +573,9 @@ public class ModelAdapter {
 	}
 
 	public boolean isThrough(String field) {
+		if(hasOne.containsKey(field)) {
+			return !blank(hasOne.get(field).through());
+		}
 		if(hasMany.containsKey(field)) {
 			return !blank(hasMany.get(field).through());
 		}

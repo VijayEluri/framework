@@ -27,7 +27,7 @@ public @interface ModelDescription {
 	public static final String UPDATED_ON = "updatedOn";
 
 	public static final boolean DEFAULT_ACTIVATION = false;
-	public static final boolean DEFAULT_TIMESTAMPS = true;
+	public static final boolean DEFAULT_TIMESTAMPS = false;
 	public static final boolean DEFAULT_DATESTAMPS = false;
 	public static final boolean DEFAULT_ALLOW_DELETE = true;
 	public static final boolean DEFAULT_ALLOW_UPDATE = true;

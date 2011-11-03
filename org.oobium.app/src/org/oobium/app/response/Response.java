@@ -126,6 +126,7 @@ public class Response extends DefaultHttpResponse {
 		}
 		Cookie cookie = new DefaultCookie(name, value);
 		cookies.put(name, cookie);
+		setHeader("Set-Cookie", cookies.values());
 		return cookie;
 	}
 	

@@ -49,6 +49,7 @@ import org.oobium.app.controllers.HttpController;
 import org.oobium.app.http.Action;
 import org.oobium.app.persist.ModelNotifier;
 import org.oobium.app.server.Websocket;
+import org.oobium.app.sessions.ISession;
 import org.oobium.app.views.ScriptFile;
 import org.oobium.app.views.StyleSheet;
 import org.oobium.app.views.View;
@@ -371,22 +372,32 @@ public class Module extends Bundle {
 		
 		String oldsrc = FileUtils.readFile(activator).toString();
 		String newsrc = oldsrc;
-		
-		if(!Pattern.compile("router.addResources\\s*\\(\\s*" + modelName + ".class\\s*\\)\\s*;").matcher(newsrc).find()) {
-			newsrc = oldsrc.replaceFirst("public\\s+void\\s+addRoutes\\s*\\(\\s*Config\\s+config\\s*,\\s*(App)?Router\\s+router\\s*\\)\\s*\\{\\s*",
-											"public void addRoutes(Config config, $1Router router) {\n" +
-											"\t\t// auto-generated\n" +
-											"\t\trouter.addResources(" + modelName + ".class);\n\n\t\t");
-		}
-		if(!Pattern.compile("import\\s+"+packageName(models)+"."+modelName).matcher(newsrc).find()) {
-			newsrc = newsrc.replaceFirst("(package\\s+[\\w\\.]+;)", "$1\n\nimport "+packageName(models)+"."+modelName+";");
-		}
 
-		if(!newsrc.equals(oldsrc)) {
-			FileUtils.writeFile(activator, newsrc);
-			return true;
+		boolean updated = false;
+		if("Session".equals(modelName)) {
+			File v = getView(modelName, "Login");
+			if(v.isFile()) {
+				if(addViewRoute("/sessions/Login")) updated = true;
+			}
+			if(addModelRoute(modelName, Action.create)) updated = true;
+			if(addModelRoute(modelName, Action.destroy)) updated = true;
+		} else {
+			if(!Pattern.compile("router.addResources\\s*\\(\\s*" + modelName + ".class\\s*\\)\\s*;").matcher(newsrc).find()) {
+				newsrc = oldsrc.replaceFirst("public\\s+void\\s+addRoutes\\s*\\(\\s*Config\\s+config\\s*,\\s*(App)?Router\\s+router\\s*\\)\\s*\\{\\s*",
+												"public void addRoutes(Config config, $1Router router) {\n" +
+												"\t\trouter.addResources(" + modelName + ".class);\n\n\t\t");
+			}
+			if(!Pattern.compile("import\\s+"+packageName(models)+"."+modelName).matcher(newsrc).find()) {
+				newsrc = newsrc.replaceFirst("(package\\s+[\\w\\.]+;)", "$1\n\nimport "+packageName(models)+"."+modelName+";");
+			}
+
+			if(!newsrc.equals(oldsrc)) {
+				FileUtils.writeFile(activator, newsrc);
+				updated = true;
+			}
 		}
-		return false;
+		
+		return updated;
 	}
 	
 	public void addModule(Module module) {
@@ -445,7 +456,6 @@ public class Module extends Bundle {
 		if(!Pattern.compile("router.addRoute\\s*\\(\\s*\"" + path + "\"\\s*,\\s*" + controllerName + ".class\\s*,\\s*" + action + "\\s*\\)\\s*;").matcher(newsrc).find()) {
 			newsrc = oldsrc.replaceFirst("public\\s+void\\s+addRoutes\\s*\\(\\s*Config\\s+config\\s*,\\s*(App)?Router\\s+router\\s*\\)\\s*\\{\\s*",
 											"public void addRoutes(Config config, $1Router router) {\n" +
-											"\t\t// auto-generated\n" +
 											"\t\trouter.addRoute(\"" + path + "\", " + controllerName + ".class, " + action + ");\n\n\t\t");
 		}
 		if(!Pattern.compile("import\\s+"+packageName(controller)+"."+controllerName).matcher(newsrc).find()) {
@@ -503,7 +513,6 @@ public class Module extends Bundle {
 		if(!Pattern.compile("router.addView\\s*\\(\\s*" + name + ".class\\s*\\)\\s*;").matcher(newsrc).find()) {
 			newsrc = oldsrc.replaceFirst("public\\s+void\\s+addRoutes\\s*\\(\\s*Config\\s+config\\s*,\\s*(App)?Router\\s+router\\s*\\)\\s*\\{\\s*",
 											"public void addRoutes(Config config, $1Router router) {\n" +
-											"\t\t// auto-generated\n" +
 											"\t\trouter.addView(" + name + ".class);\n\n\t\t");
 		}
 		if(!Pattern.compile("import\\s+"+pname+"."+name).matcher(newsrc).find()) {
@@ -729,17 +738,13 @@ public class Module extends Bundle {
 	 */
 	public File createModel(String name, Map<String, String> attrs) {
 		File model = ProjectGenerator.createModel(this, adjust(name), attrs);
-		addExportPackage(packageName(models));
-		addImportPackage(Model.class.getPackage().getName());
-		addImportPackage(ModelDescription.class.getPackage().getName());
+		updateManifestForNewModel(name);
 		return model;
 	}
 
 	public File createModel(ModelDefinition definition) {
 		definition.save();
-		addExportPackage(packageName(models));
-		addImportPackage(Model.class.getPackage().getName());
-		addImportPackage(ModelDescription.class.getPackage().getName());
+		updateManifestForNewModel(definition.getSimpleName());
 		return definition.getFile();
 	}
 
@@ -1948,6 +1953,15 @@ public class Module extends Bundle {
 	private File src(File genFile) {
 		String relativePath = genFile.getAbsolutePath().substring(generated.getAbsolutePath().length());
 		return new File(src, relativePath);
+	}
+	
+	private void updateManifestForNewModel(String name) {
+		addExportPackage(packageName(models));
+		addImportPackage(Model.class.getPackage().getName());
+		addImportPackage(ModelDescription.class.getPackage().getName());
+		if("Session".equals(name)) {
+			addImportPackage(ISession.class.getPackage().getName());
+		}
 	}
 	
 	private String updateRoute(String newsrc, String modelName, List<Action> actions, String regex) {
