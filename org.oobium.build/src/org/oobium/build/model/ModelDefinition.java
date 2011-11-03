@@ -320,7 +320,15 @@ public class ModelDefinition {
 			if(file != null && file.isFile()) {
 				this.source = readFile(file).toString();
 			} else {
-				this.source = "";
+				this.source =
+					"package unknown;\n" +
+					"\n" +
+					"import org.oobium.persist.ModelDescription;\n" +
+					"\n" +
+					"@ModelDescription()\n" +
+					"public class " + simpleName + " {\n" +
+					"\n" +
+					"}";
 			}
 		} else {
 			this.source = source;
@@ -356,6 +364,10 @@ public class ModelDefinition {
 		return attr;
 	}
 
+	public ModelAttribute addAttribute(String name, String type, Map<String, Object> options) {
+		return addAttribute(build(name, type, options));
+	}
+	
 	public ModelAttribute addAttribute(String name, String type, String...options) {
 		return addAttribute(build(name, type, options));
 	}
@@ -409,6 +421,17 @@ public class ModelDefinition {
 	public ModelDefinition allowUpdate(boolean allowUpdate) {
 		this.allowUpdate = allowUpdate;
 		return this;
+	}
+
+	private String build(String name, String type, Map<String, Object> options) {
+		if(!type.endsWith(".class")) type = type + ".class";
+		StringBuilder sb = new StringBuilder();
+		sb.append("(name=\"").append(name).append("\",type=").append(type);
+		for(Entry<String, Object> option : options.entrySet()) {
+			sb.append(',').append(option);
+		}
+		sb.append(')');
+		return sb.toString();
 	}
 
 	private String build(String name, String type, String...options) {
@@ -732,7 +755,7 @@ public class ModelDefinition {
 	}
 	
 	protected String[] getSiblings() {
-		if(siblings != null) {
+		if(siblings != null && siblings.length > 0) {
 			return siblings;
 		}
 		return (file != null) ? file.getParentFile().list() : new String[0];
@@ -745,16 +768,7 @@ public class ModelDefinition {
 	public void setPackageName(String packageName) {
 		this.type = packageName + "." + getSimpleName();
 		this.packageName = packageName;
-		source = (source != null)
-					? source.replaceFirst(packageRegex, "package " + packageName + ";")
-					: "package " + packageName + ";\n" +
-					  "\n" +
-					  "import org.oobium.persist.ModelDescription;\n" +
-					  "\n" +
-					  "@ModelDescription()\n" +
-					  "public class " + getSimpleName() + " {\n" +
-					  "\n" +
-					  "}";
+		source = source.replaceFirst(packageRegex, "package " + packageName + ";");
 	}
 	
 	public ModelAttribute[] getTimestampFields() {
