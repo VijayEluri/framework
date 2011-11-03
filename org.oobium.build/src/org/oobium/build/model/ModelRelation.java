@@ -129,7 +129,7 @@ public class ModelRelation {
 	}
 
 	public Map<String, Object> getCustomProperties() {
-		// when updated this method, make sure to also update #hasCustomProperties()
+		// when updating this method, make sure to also update #hasCustomProperties()
 		Map<String, Object> props = new HashMap<String, Object>();
 		if(!opposite.equals(DEFAULT_OPPOSITE)) {
 			props.put("opposite", opposite);
@@ -208,7 +208,7 @@ public class ModelRelation {
 	}
 	
 	public boolean hasCustomProperties() {
-		// when updated this method, make sure to also update #getCustomProperties()
+		// when updating this method, make sure to also update #getCustomProperties()
 		if(!opposite.equals(DEFAULT_OPPOSITE)) {
 			return true;
 		}

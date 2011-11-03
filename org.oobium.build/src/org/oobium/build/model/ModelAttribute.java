@@ -120,7 +120,7 @@ public class ModelAttribute {
 	}
 
 	public Map<String, Object> getCustomProperties() {
-		// when updated this method, make sure to also update #hasCustomProperties()
+		// when updating this method, make sure to also update #hasCustomProperties()
 		Map<String, Object> props = new HashMap<String, Object>();
 		if(!check.equals(DEFAULT_CHECK)) {
 			props.put("check", check);
@@ -174,7 +174,7 @@ public class ModelAttribute {
 	}
 
 	public boolean hasCustomProperties() {
-		// when updated this method, make sure to also update #getCustomProperties()
+		// when updating this method, make sure to also update #getCustomProperties()
 		if(!check.equals(DEFAULT_CHECK)) {
 			return true;
 		}
