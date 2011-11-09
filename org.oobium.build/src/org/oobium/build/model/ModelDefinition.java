@@ -427,8 +427,10 @@ public class ModelDefinition {
 		if(!type.endsWith(".class")) type = type + ".class";
 		StringBuilder sb = new StringBuilder();
 		sb.append("(name=\"").append(name).append("\",type=").append(type);
-		for(Entry<String, Object> option : options.entrySet()) {
-			sb.append(',').append(option);
+		if(options != null) {
+			for(Entry<String, Object> option : options.entrySet()) {
+				sb.append(',').append(option);
+			}
 		}
 		sb.append(')');
 		return sb.toString();
@@ -758,7 +760,11 @@ public class ModelDefinition {
 		if(siblings != null && siblings.length > 0) {
 			return siblings;
 		}
-		return (file != null) ? file.getParentFile().list() : new String[0];
+		String[] sa = (file != null) ? file.getParentFile().list() : new String[0];
+		if(sa == null) {
+			return new String[0];
+		}
+		return sa;
 	}
 
 	public String getSimpleName() {

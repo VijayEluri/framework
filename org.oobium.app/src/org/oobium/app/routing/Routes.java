@@ -39,18 +39,13 @@ public class Routes {
 		this.parentClass = parentClass;
 		this.baseRule = baseRule;
 	}
-
-	public RoutedRoutes hasMany(String field, Action...actions) {
-		if(baseRule == null) {
-			throw new IllegalArgumentException("base rule is null");
-		}
-
-		ModelAdapter adapter = ModelAdapter.getAdapter(parentClass);
+	
+	private void addHasMany(ModelAdapter adapter, String field, Action[] actions) {
 		Class<? extends Model> hasManyClass = adapter.getRelationClass(field);
 		if(hasManyClass == null) {
 			throw new IllegalArgumentException(parentClass.getSimpleName() + " does not contain a field called " + field);
 		}
-		
+
 		String rule = baseRule;
 		int pix = rule.indexOf('?');
 		if(pix == -1) {
@@ -152,6 +147,29 @@ public class Routes {
 			router.addHasMany(router.getKey(parentClass, action), key);
 			routed.add(new Routed(router, route));
 		}
+	}
+
+	public RoutedRoutes hasMany() {
+		if(baseRule == null) {
+			throw new IllegalArgumentException("base rule is null");
+		}
+
+		ModelAdapter adapter = ModelAdapter.getAdapter(parentClass);
+		for(String field : adapter.getHasManyFields()) {
+			addHasMany(adapter, field, new Action[0]);
+		}
+
+		return new RoutedRoutes(this, routed);
+	}
+	
+	public RoutedRoutes hasMany(String field, Action...actions) {
+		if(baseRule == null) {
+			throw new IllegalArgumentException("base rule is null");
+		}
+
+		ModelAdapter adapter = ModelAdapter.getAdapter(parentClass);
+		addHasMany(adapter, field, actions);
+		
 		return new RoutedRoutes(this, routed);
 	}
 

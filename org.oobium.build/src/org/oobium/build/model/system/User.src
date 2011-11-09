@@ -16,9 +16,9 @@ import org.oobium.utils.PasswordUtils;
 	attrs = {
 		@Attribute(name="name", type=String.class),
 		@Attribute(name="email", type=String.class),
-		@Attribute(name="password", type=String.class),
-		@Attribute(name="passwordSalt", type=String.class, readOnly=true),
-		@Attribute(name="activationCode", type=String.class, readOnly=true),
+		@Attribute(name="password", type=String.class, json=false),
+		@Attribute(name="passwordSalt", type=String.class, json=false, readOnly=true),
+		@Attribute(name="activationCode", type=String.class, json=false, readOnly=true),
 		@Attribute(name="activatedAt", type=Date.class)
 	},
 	timestamps = true

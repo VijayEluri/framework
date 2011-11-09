@@ -20,9 +20,9 @@ import java.lang.annotation.Target;
 public @interface Indexes {
 
 	/**
-	 * <p>An array of indexes to be explicitly created on the table to which this class is persisted.<p>
+	 * <p>An array of indexes to be explicitly created on the table to which this class is persisted.</p>
 	 * <p>Use the field names as given in the ModelDefinition. To create a multi-field index use a comma separated list.
-	 * To create a Unique index, precede the fields with "Unique-" (case sensitive).<p>
+	 * To create a Unique index, precede the fields with "Unique-" (case sensitive).</p>
 	 * <p>Examples:</br>
 	 * <code>@Indexes({"id,lastName","firstName"})</code></br>
 	 * <code>@Indexes({"Unique-group,alias"})</code></br>

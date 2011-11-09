@@ -142,6 +142,7 @@
    <extension
          point="org.eclipse.ui.menus">
       <menuContribution
+            allPopups="true"
             locationURI="popup:org.eclipse.jdt.ui.PackageExplorer?after=additions">
          <menu
                label="Oobium">

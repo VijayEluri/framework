@@ -365,7 +365,7 @@ public class Module extends Bundle {
 	
 	/**
 	 * @param modelName
-	 * @return true if there were changes made to Application.java; false otherwise
+	 * @return true if there were changes made to Activator.java; false otherwise
 	 */
 	public boolean addModelRoutes(String modelName) {
 		modelName = adjust(modelName);
@@ -382,10 +382,10 @@ public class Module extends Bundle {
 			if(addModelRoute(modelName, Action.create)) updated = true;
 			if(addModelRoute(modelName, Action.destroy)) updated = true;
 		} else {
-			if(!Pattern.compile("router.addResources\\s*\\(\\s*" + modelName + ".class\\s*\\)\\s*;").matcher(newsrc).find()) {
+			if(!Pattern.compile("router.addResources\\s*\\(\\s*" + modelName + ".class\\s*\\)\\s*(\\.\\s*hasMany\\(\\s*\\)\\s*)?;").matcher(newsrc).find()) {
 				newsrc = oldsrc.replaceFirst("public\\s+void\\s+addRoutes\\s*\\(\\s*Config\\s+config\\s*,\\s*(App)?Router\\s+router\\s*\\)\\s*\\{\\s*",
 												"public void addRoutes(Config config, $1Router router) {\n" +
-												"\t\trouter.addResources(" + modelName + ".class);\n\n\t\t");
+												"\t\trouter.addResources(" + modelName + ".class).hasMany();\n\n\t\t");
 			}
 			if(!Pattern.compile("import\\s+"+packageName(models)+"."+modelName).matcher(newsrc).find()) {
 				newsrc = newsrc.replaceFirst("(package\\s+[\\w\\.]+;)", "$1\n\nimport "+packageName(models)+"."+modelName+";");
@@ -1915,7 +1915,7 @@ public class Module extends Bundle {
 		String srcOld = readFile(activator).toString();
 		String srcNew = srcOld.replaceFirst("import\\s+" + className + "\\s*;\\s*", "");
 		if(!srcOld.equals(srcNew)) {
-			srcNew = srcNew.replaceAll("(// auto-generated)?\\s*router\\.addResources\\(" + modelName + ".class\\);\\s*", "");
+			srcNew = srcNew.replaceAll("(// auto-generated)?\\s*router\\.addResources\\(" + modelName + ".class\\)\\s*(\\.\\s*hasMany\\s*\\(\\s*\\))?\\s*;\\s*\n", "");
 			writeFile(activator, srcNew);
 			return true;
 		}
