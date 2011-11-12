@@ -42,6 +42,8 @@ public class Runner {
 	
 	private String startString;
 	
+	private boolean debug;
+	
 	Runner(Workspace workspace, Application application, Mode mode, Map<String, String> properties) {
 		this.logger = LogProvider.getLogger(RunnerService.class);
 		this.workspace = workspace;
@@ -62,6 +64,10 @@ public class Runner {
 	
 	public Application getApplication() {
 		return application;
+	}
+	
+	public boolean getDebug() {
+		return debug;
 	}
 	
 	/**
@@ -110,6 +116,10 @@ public class Runner {
 		}
 	}
 	
+	public void setDebug(boolean debug) {
+		this.debug = debug;
+	}
+	
 	public boolean setError(PrintStream err) {
 		if(errGobbler != null) {
 			errGobbler.setError(err);
@@ -155,7 +165,11 @@ public class Runner {
 			updater.start();
 
 			ProcessBuilder builder = new ProcessBuilder();
-			builder.command("java", "-jar", "bin/felix.jar");
+			if(debug) {
+				builder.command("java", "-Xdebug", "-Xrunjdwp:transport=dt_socket,address=127.0.0.1:8000,suspend=y", "-jar", "bin/felix.jar");
+			} else {
+				builder.command("java", "-jar", "bin/felix.jar");
+			}
 			builder.directory(exportDir);
 			
 			try {
