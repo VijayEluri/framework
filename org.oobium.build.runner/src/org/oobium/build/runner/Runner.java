@@ -175,7 +175,15 @@ public class Runner {
 			try {
 				process = builder.start();
 			} catch(IOException e) {
+				logger.warn(e.getMessage());
 				return false;
+			}
+			try {
+				int exitValue = process.exitValue();
+				logger.warn("process exited with value: " + exitValue);
+				return false;
+			} catch(IllegalThreadStateException e) {
+				// this means it hasn't exited yet, good - continue
 			}
 			
 			errGobbler = new StreamGobbler(this, process.getErrorStream()).activate();

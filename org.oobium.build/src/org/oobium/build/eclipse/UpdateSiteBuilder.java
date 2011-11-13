@@ -62,7 +62,7 @@ public class UpdateSiteBuilder {
 		builder.setIncludeSource(true);
 		builder.setEclipse("../../../eclipse");
 		builder.setSiteDirectory("../../website/org.oobium.www.update_site/assets/updates");
-		builder.setAssociatedSites("http://download.eclipse.org/releases/helios");
+		builder.setAssociatedSites("http://download.eclipse.org/releases/indigo");
 		builder.build();
 		
 		System.out.println("update-site created in " + builder.getSiteDirectory().getCanonicalPath());
@@ -217,7 +217,7 @@ public class UpdateSiteBuilder {
 		return false;
 	}
 
-	private void build() throws Exception {
+	public void build() throws Exception {
 		if(siteDirectory == null) {
 			siteDirectory = new File(site.workspace.getWorkingDirectory(), site.file.getParentFile().getName());
 		}

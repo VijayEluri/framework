@@ -200,7 +200,7 @@ public class OobiumPlugin extends AbstractUIPlugin {
 			}
 		}
 		
-		logger.debug("loading project in the Eclipse workspace");
+		logger.debug("loading projects in the Eclipse workspace");
 		for(IProject project : ResourcesPlugin.getWorkspace().getRoot().getProjects()) {
 			if(project.isOpen()) {
 				workspace.load(project.getLocation().toFile());

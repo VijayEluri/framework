@@ -21,6 +21,7 @@ import org.oobium.build.console.commands.CatCommand;
 import org.oobium.build.console.commands.CdCommand;
 import org.oobium.build.console.commands.CleanCommand;
 import org.oobium.build.console.commands.CreateCommand;
+import org.oobium.build.console.commands.DebugCommand;
 import org.oobium.build.console.commands.DestroyCommand;
 import org.oobium.build.console.commands.ExportCommand;
 import org.oobium.build.console.commands.GenerateCommand;
@@ -76,6 +77,7 @@ public class BuilderRootCommand extends BuilderCommand {
 		add(new CdCommand());
 		add(new CleanCommand());
 		add(new CreateCommand());
+		add(new DebugCommand());
 		add(new DestroyCommand());
 		add(new ExportCommand());
 		add(new GenerateCommand());

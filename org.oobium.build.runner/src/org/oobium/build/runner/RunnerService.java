@@ -203,11 +203,31 @@ public class RunnerService extends AppService {
 		}
 	}
 
+	public static Runner debug(Workspace workspace, Application app, Mode mode, Map<String, String> properties) {
+		return start(workspace, app, mode, properties, true);
+	}
+	
+	/**
+	 * @see #debug(Workspace, Application, Mode, Map)
+	 */
+	public static Runner run(Workspace workspace, Application app, Mode mode, Map<String, String> properties) {
+		return start(workspace, app, mode, properties, false);
+	}
+	
+	/**
+	 * @deprecated use {@link #run(Workspace, Application, Mode, Map)} instead
+	 */
+	@Deprecated
 	public static Runner start(Workspace workspace, Application app, Mode mode, Map<String, String> properties) {
+		return start(workspace, app, mode, properties, false);
+	}
+	
+	private static Runner start(Workspace workspace, Application app, Mode mode, Map<String, String> properties, boolean debug) {
 		synchronized(instance.runners) {
 			Runner runner = instance.runners.get(app);
 			if(runner == null) {
 				runner = new Runner(workspace, app, mode, properties);
+				runner.setDebug(debug);
 				for(Editor editor : instance.editors) {
 					runner.editing(editor.project, editor.file, true);
 				}

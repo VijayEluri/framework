@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -136,10 +137,10 @@ public class Workspace {
 		logger = LogProvider.getLogger(BuildBundle.class);
 		lock = new ReentrantReadWriteLock();
 		mode = Mode.DEV;
-		projects = new HashMap<File, Project>();
-		bundles = new HashMap<File, Bundle>();
-		applications = new HashMap<File, Application>();
-		fragments = new HashMap<String, List<Fragment>>();
+		projects = new LinkedHashMap<File, Project>();
+		bundles = new LinkedHashMap<File, Bundle>();
+		applications = new LinkedHashMap<File, Application>();
+		fragments = new LinkedHashMap<String, List<Fragment>>();
 		listeners = new WorkspaceListener[0];
 		setWorkingDirectory(workingDirectory);
 	}

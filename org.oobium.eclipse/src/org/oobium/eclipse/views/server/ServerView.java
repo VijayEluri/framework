@@ -467,7 +467,7 @@ public class ServerView extends ViewPart {
 				}
 			});
 			Map<String, String> properties = JsonUtils.toStringMap(this.properties);
-			Runner runner = RunnerService.start(OobiumPlugin.getWorkspace(), application, Mode.DEV, properties);
+			Runner runner = RunnerService.run(OobiumPlugin.getWorkspace(), application, Mode.DEV, properties);
 			runner.setError(new ConsolePrintStream(consolePanel.getConsole().err));
 			runner.setOut(new ConsolePrintStream(consolePanel.getConsole().out));
 			startAction.setEnabled(false);

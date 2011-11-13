@@ -20,7 +20,7 @@ import org.oobium.build.workspace.Application;
 import org.oobium.logging.Logger;
 import org.oobium.utils.Config.Mode;
 
-public class StartCommand extends BuilderCommand {
+public class DebugCommand extends BuilderCommand {
 
 	@Override
 	public void configure() {
@@ -50,7 +50,7 @@ public class StartCommand extends BuilderCommand {
 		}
 		
 		Application app = getApplication();
-		RunnerService.run(getWorkspace(), app, mode, properties);
+		RunnerService.debug(getWorkspace(), app, mode, properties);
 	}
 	
 }
