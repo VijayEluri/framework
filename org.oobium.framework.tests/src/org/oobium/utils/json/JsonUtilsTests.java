@@ -165,6 +165,14 @@ public class JsonUtilsTests {
 	}
 
 	@Test
+	public void testToMap_WithValues() throws Exception {
+		assertEquals("{a=b,c}", toMap("a:?", "b,c").toString());
+		assertEquals("{a=b,c}", toMap("{a:?}", "b,c").toString());
+		assertEquals("{a='b,c'}", toMap("{a:?}", "'b,c'").toString()); // values are _not_ JSON processed
+		assertEquals("{a='b,c'}", toMap("a:?", "'b,c'").toString());
+	}
+	
+	@Test
 	public void testToMap_WithComments() throws Exception {
 		assertEquals("{a=b}", toMap("{a:b/*,c*/}").toString());
 		assertEquals("{a=b/*,c*/}", toMap("{a:\"b/*,c*/\"}").toString());
