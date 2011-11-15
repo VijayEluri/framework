@@ -44,6 +44,11 @@ import org.oobium.utils.json.JsonUtils;
 
 public class SqlUtils {
 
+	public static final int DERBY		= 1;
+	public static final int MYSQL		= 2;
+	public static final int POSTGRESQL	= 3;
+
+	
 	private static final Logger logger = LogProvider.getLogger(SqlUtils.class);
 	
 	private static final Set<String> _reservedWords = new HashSet<String>();
@@ -557,10 +562,4 @@ public class SqlUtils {
     	}
 	}
 
-	public static final int DERBY		= 1;
-
-	public static final int MYSQL		= 2;
-
-	public static final int POSTGRESQL	= 3;
-    
 }
