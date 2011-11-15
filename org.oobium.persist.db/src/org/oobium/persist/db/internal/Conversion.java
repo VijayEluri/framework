@@ -1,5 +1,7 @@
 package org.oobium.persist.db.internal;
 
+import static org.oobium.utils.SqlUtils.safeSqlWord;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -30,19 +32,20 @@ public class Conversion {
 		operators.put("nlike", " NOT LIKE ");
 	}
 	
-	public static Conversion run(Class<? extends Model> modelType, Map<String, Object> map, Object...values) throws Exception {
-		Conversion conversion = new Conversion(map, values);
+	public static Conversion run(int dbType, Class<? extends Model> modelType, Map<String, Object> map, Object...values) throws Exception {
+		Conversion conversion = new Conversion(dbType, map, values);
 		conversion.setModelType(modelType);
 		conversion.run();
 		return conversion;
 	}
 	
-	public static Conversion run(Class<? extends Model> modelType, String query, Object...values) throws Exception {
+	public static Conversion run(int dbType, Class<? extends Model> modelType, String query, Object...values) throws Exception {
 		Map<String, Object> map = JsonUtils.toMap(query, true);
-		return run(modelType, map, values);
+		return run(dbType, modelType, map, values);
 	}
 	
 	
+	private final int dbType;
 	private final Map<String, Object> inQuery;
 	private final Object[] inValues;
 	private ModelAdapter adapter;
@@ -54,7 +57,8 @@ public class Conversion {
 	private List<Object> list;
 	private int v;
 	
-	public Conversion(Map<String, Object> query, Object...values) {
+	public Conversion(int dbType, Map<String, Object> query, Object...values) {
+		this.dbType = dbType;
 		this.inQuery = query;
 		this.inValues = values;
 	}
@@ -63,8 +67,10 @@ public class Conversion {
 		if(adapter != null && !adapter.hasField(field) && !"id".equals(field)) {
 			throw new Exception("model of type " + adapter.getModelClass() + " does not contain the field '" + field + "'");
 		}
-		
-		sb.append(field).append(operators.get(key)).append('?');
+
+		String column = safeSqlWord(dbType, field);
+		String operator = operators.get(key);
+		sb.append(column).append(operator).append('?');
 		
 		if("?".equals(value)) {
 			list.add(inValues[v++]);
@@ -91,6 +97,8 @@ public class Conversion {
 			first = first(sb, first);
 			sb.append("ORDER BY ").append(order);
 			if("?".equals(order)) list.add(inValues[v++]);
+			// TODO support ORDER BY (currently unsafe)
+			throw new UnsupportedOperationException("ORDER BY not yet supported");
 		}
 		if(limit != null) {
 			first = first(sb, first);
