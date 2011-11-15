@@ -49,7 +49,7 @@ public class FileUtilsTests {
 		File jar = new File(lwd, "simple.jar");
 		
 		try {
-			FileUtils.createJar(jar, System.currentTimeMillis(), new String[][] {
+			FileUtils.createJar(jar, System.currentTimeMillis(), new Object[][] {
 				new String[] {	"/META-INF/MANIFEST.MF",
 						"Bundle-Name: Test\n"
 				},
@@ -63,9 +63,11 @@ public class FileUtilsTests {
 		
 		String s;
 		s = FileUtils.readJarEntry(jar, "/resources/test.properties");
+		assertEquals("test=yes\n", s);
 		System.out.println(s);
 
 		s = FileUtils.readJarEntry(jar, "/does/not/Exist.java");
+		assertNull(s);
 		System.out.println(s);
 	}
 

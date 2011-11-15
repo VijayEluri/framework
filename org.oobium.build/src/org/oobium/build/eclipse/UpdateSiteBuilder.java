@@ -287,7 +287,7 @@ public class UpdateSiteBuilder {
 			for(Map<String, String> feature : site.features) {
 				if(feature.containsKey("source")) {
 					String name = feature.get("id") + ".source_" + feature.get("version") + ".jar";
-					createJar(new File(features, name), site.date.getTime(), new String[][] {
+					createJar(new File(features, name), site.date.getTime(), new Object[][] {
 						new String[] {
 								"feature.xml",
 								feature.get("feature.xml")
@@ -296,7 +296,7 @@ public class UpdateSiteBuilder {
 				} else {
 					Project project = site.workspace.getProject(feature.get("id"));
 					Map<String, File> files = project.getBuildFiles();
-					String[][] srcs = new String[files.size()][2];
+					Object[][] srcs = new Object[files.size()][2];
 					int i = 0;
 					for(Entry<String, File> entry : files.entrySet()) {
 						srcs[i][0] = entry.getKey();
@@ -441,7 +441,7 @@ public class UpdateSiteBuilder {
 			}
 
 			createJar(contentJar, contentJar.lastModified(), new String[] { "content.xml", content } );
-		}		
+		}
 	}
 	
 	public File getSiteDirectory() {
