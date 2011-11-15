@@ -2180,9 +2180,7 @@ public class EspCompiler {
 	}
 	
 	private void buildView(MarkupElement view) {
-		String type = view.getJavaType();
-		if(type != null) {
-			
+		if(view.hasJavaType()) {
 			if(view.hasEntries()) {
 				Entry<String, EntryPart> entry = view.getEntries().entrySet().iterator().next();
 				EntryPart part = entry.getValue();
@@ -2194,7 +2192,9 @@ public class EspCompiler {
 
 					body.append("for(").append(itype).append(' ').append(var).append(" : ").append(part.getValue().getText()).append(") {\n");
 					indent(body);
-					body.append("\tyield(new ").append(type).append('(').append(var).append("), ").append(sbName).append(");\n");
+					body.append("\tyield(new ");
+					build(view.getJavaTypePart(), body);
+					body.append('(').append(var).append("), ").append(sbName).append(");\n");
 					indent(body);
 					body.append("}\n");
 					
@@ -2202,7 +2202,8 @@ public class EspCompiler {
 				}
 			} else {
 				prepForJava(body);
-				body.append("yield(new ").append(type);
+				body.append("yield(new ");
+				build(view.getJavaTypePart(), body);
 				if(view.hasArgs()) {
 					body.append("(");
 					for(Iterator<JavaSourcePart> iter = view.getArgs().iterator(); iter.hasNext(); ) {

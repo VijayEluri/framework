@@ -235,6 +235,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 		switch(part.getType()) {
 		case JavaPart:
 		case JavaSourcePart:
+		case JavaTypePart:
 			return computeJavaProposals(doc, element, part, offset);
 		case StyleElement:
 		case MarkupElement:
@@ -377,9 +378,8 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 		while(i < part.getEnd() && Character.isLetterOrDigit(part.charAt(i))) {
 			i++;
 		}
-		final int end = i;
 		ESourceFile jf = editor.getEspJavaFile();
-		final int javaOffset = jf.getJavaOffset(espOffset - 1);
+		int javaOffset = jf.getJavaOffset(espOffset - 1);
 		ICompilationUnit cu = (ICompilationUnit) JavaCore.create(editor.getJavaResource());
 		
 		try {

@@ -47,7 +47,7 @@ public class MarkupElement extends EspElement {
 	
 	protected int style;
 	protected EspPart tag;
-	protected EspPart javaType;
+	protected JavaSourcePart javaType;
 	private EspPart id;
 	private List<EspPart> classNames;
 	private boolean hide;
@@ -245,7 +245,7 @@ public class MarkupElement extends EspElement {
 		return (javaType != null) ? javaType.getText() : null;
 	}
 	
-	public EspPart getJavaTypePart() {
+	public JavaSourcePart getJavaTypePart() {
 		return javaType;
 	}
 	
@@ -490,7 +490,7 @@ public class MarkupElement extends EspElement {
 				if(s2 == -1) {
 					s2 = eoe;
 				}
-				javaType = new EspPart(this, Type.JavaTypePart, ++s1, s2);
+				javaType = new JavaSourcePart(this, Type.JavaTypePart, ++s1, s2);
 				s1 = s2+1;
 			}
 		}
