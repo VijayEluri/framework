@@ -67,7 +67,10 @@ public class Utils {
 		if(name.contains(".postgresql.")) {
 			return SqlUtils.POSTGRESQL;
 		}
-		return SqlUtils.DERBY;
+		if(name.contains(".derby.")) {
+			return SqlUtils.DERBY;
+		}
+		throw new IllegalArgumentException("unknown database type: " + name);
 	}
 	
 	public static Object getObject(Class<? extends Model> clazz, int id) throws InstantiationException, IllegalAccessException, NoSuchFieldException {
