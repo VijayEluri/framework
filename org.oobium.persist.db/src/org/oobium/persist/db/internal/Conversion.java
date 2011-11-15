@@ -64,16 +64,6 @@ public class Conversion {
 		this.inValues = values;
 	}
 	
-	private void checkField(String field) throws Exception {
-		if(adapter != null && !adapter.hasField(field) && !"id".equals(field)) {
-			throw new Exception("model of type " + adapter.getModelClass() + " does not contain the field '" + field + "'");
-		}
-	}
-
-	private String column(String field) {
-		return safeSqlWord(dbType, columnName(field));
-	}
-	
 	private void add(String field, String key, Object value) throws Exception {
 		checkField(field);
 		
@@ -95,6 +85,23 @@ public class Conversion {
 		}
 		else {
 			throw new Exception("'and' not allowed on " + value);
+		}
+	}
+	
+	private void apply(StringBuilder sb, Object order, Object limit, Object include) throws Exception {
+		boolean first = (sb.length() == 0 || sb.charAt(sb.length()-1) == ' ');
+		if(order != null) {
+			first = first(sb, first);
+			applyOrder(sb, order);
+		}
+		if(limit != null) {
+			first = first(sb, first);
+			applyLimit(sb, limit);
+		}
+		if(include != null) {
+			first = first(sb, first);
+			sb.append("INCLUDE:").append(include);
+			if("?".equals(include)) list.add(inValues[v++]);
 		}
 	}
 
@@ -123,7 +130,7 @@ public class Conversion {
 			throw new Exception("invalid format of LIMIT clause: " + value);
 		}
 	}
-	
+
 	private void applyOrder(StringBuilder sb, Object order) throws Exception {
 		sb.append("ORDER BY ");
 		String value = String.valueOf("?".equals(order) ? inValues[v++] : order); 
@@ -153,21 +160,14 @@ public class Conversion {
 		}
 	}
 	
-	private void apply(StringBuilder sb, Object order, Object limit, Object include) throws Exception {
-		boolean first = (sb.length() == 0 || sb.charAt(sb.length()-1) == ' ');
-		if(order != null) {
-			first = first(sb, first);
-			applyOrder(sb, order);
+	private void checkField(String field) throws Exception {
+		if(adapter != null && !adapter.hasField(field) && !"id".equals(field)) {
+			throw new Exception("model of type " + adapter.getModelClass() + " does not contain the field '" + field + "'");
 		}
-		if(limit != null) {
-			first = first(sb, first);
-			applyLimit(sb, limit);
-		}
-		if(include != null) {
-			first = first(sb, first);
-			sb.append("INCLUDE:").append(include);
-			if("?".equals(include)) list.add(inValues[v++]);
-		}
+	}
+	
+	private String column(String field) {
+		return safeSqlWord(dbType, columnName(field));
 	}
 	
 	private boolean first(StringBuilder sb, boolean first) {
