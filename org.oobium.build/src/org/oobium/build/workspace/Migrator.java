@@ -132,13 +132,12 @@ public class Migrator extends Bundle {
 		StringBuilder sb = new StringBuilder();
 		sb.append("package " + packageName(migrations) + ";\n");
 		sb.append("\n");
-		sb.append("import java.sql.SQLException;\n");
 		sb.append("import ").append(AbstractDbMigration.class.getCanonicalName()).append(";\n");
 		sb.append("\n");	
 		sb.append("public class ").append(name).append(" extends ").append(AbstractDbMigration.class.getSimpleName()).append(" {\n");
 		sb.append("\n");
 		sb.append("\t@Override\n");
-		sb.append("\tpublic void up() throws SQLException {\n");
+		sb.append("\tpublic void up() throws Exception {\n");
 		if(sessions) {
 			sb.append("\t\tcreateTable(\"sessions\",\n");
 			sb.append("\t\t\tString(\"uuid\"),\n");
@@ -151,7 +150,7 @@ public class Migrator extends Bundle {
 		sb.append("\t}\n");
 		sb.append("\n");
 		sb.append("\t@Override\n");
-		sb.append("\tpublic void down() throws SQLException {\n");
+		sb.append("\tpublic void down() throws Exception {\n");
 		if(sessions) {
 			sb.append("\t\tdropTable(\"sessions\");\n");
 		} else {
