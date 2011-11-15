@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.oobium.persist.db;
 
+import static org.oobium.persist.db.internal.Utils.getDbType;
 import static org.oobium.persist.db.internal.Utils.isMapQuery;
 import static org.oobium.utils.StringUtils.parseUrl;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
@@ -119,9 +120,27 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		}
 	}
 	
-	public boolean getAutoCommit() {
-		Boolean ac = threadAutoCommit.get();
-		return (ac != null) && ac.booleanValue();
+	private Connection checkLoggingConnection(Connection connection) throws SQLException {
+		String path = System.getProperty("org.oobium.persist.db.logging");
+		if(path == null) {
+			closeLogWriter();
+			return connection;
+		}
+		createLogWriter(path);
+		return new LoggingConnection(connection, logWriter);
+	}
+	
+	private void closeLogWriter() {
+		if(logWriter != null) {
+			try {
+				logWriter.flush();
+				logWriter.close();
+			} catch(IOException e) {
+				logger.warn(e + ": " + e.getMessage());
+			}
+			logWriter = null;
+			logPath = null;
+		}
 	}
 	
 	@Override
@@ -165,42 +184,73 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	public long count(Class<? extends Model> clazz) throws Exception {
 		return count(clazz, (String) null);
 	}
-	
-	@Override
-	public long count(Class<? extends Model> clazz, String query, Object... values) throws Exception {
-		if(isMapQuery(query)) {
-			Conversion conversion = Conversion.run(clazz, query, values);
-			query = conversion.getSql();
-			values = conversion.getValues();
-		}
-		Connection connection = getConnection();
-		return persistor.count(connection, clazz, query, values);
-	}
 
 	@Override
 	public long count(Class<? extends Model> clazz, Map<String, Object> query, Object... values) throws Exception {
 		if(query != null && !query.isEmpty()) {
-			Conversion conversion = Conversion.run(clazz, query, values);
-			return count(clazz, conversion.getSql(), conversion.getValues());
+			Connection connection = getConnection();
+			int dbType = getDbType(connection);
+			Conversion conversion = Conversion.run(dbType, clazz, query, values);
+			return persistor.count(connection, clazz, conversion.getSql(), conversion.getValues());
 		}
 		return count(clazz);
 	}
 	
 	@Override
+	public long count(Class<? extends Model> clazz, String query, Object... values) throws Exception {
+		Connection connection = getConnection();
+		if(isMapQuery(query)) {
+			int dbType = getDbType(connection);
+			Conversion conversion = Conversion.run(dbType, clazz, query, values);
+			query = conversion.getSql();
+			values = conversion.getValues();
+		}
+		return persistor.count(connection, clazz, query, values);
+	}
+
+	@Override
 	public void create(Model...models) throws Exception {
 		handleCrud(CREATE, models);
 	}
-
+	
 	public void createDatabase(String client) throws SQLException {
 		Database db = getDatabase(client);
 		db.createDatabase();
 	}
-	
+
 	protected abstract Database createDatabase(String client, Map<String, Object> properties);
+
+	private void createLogWriter(String path) throws SQLException {
+		if(logWriter != null && !path.equals(logPath)) {
+			closeLogWriter();
+		}
+		if(logWriter == null) {
+			try {
+				logWriter = new FileWriter(path);
+			} catch(IOException e) {
+				throw new SQLException("could not create log writer: " + e.getMessage());
+			}
+		}
+		logPath = path;
+	}
 
 	@Override
 	public void destroy(Model...models) throws Exception {
 		handleCrud(DESTROY, models);
+	}
+	
+	private void doRemoveDatabase(String client) {
+		Database database = databases.get(client);
+		if(database != null) {
+			try {
+				database.preRemove();
+				database.dispose();
+				databases.remove(client);
+				logger.info("removed Database for {}", database.client);
+			} catch(Exception e) {
+				logger.warn("error removing Database for {}", e, database.client);
+			}
+		}
 	}
 
 	public void dropDatabase(String client) throws SQLException {
@@ -223,10 +273,49 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		Connection connection = getConnection();
 		return persistor.executeQueryValue(connection, sql, values);
 	}
-
+	
 	public int executeUpdate(String sql, Object... values) throws SQLException {
 		Connection connection = getConnection();
 		return persistor.executeUpdate(connection, sql, values);
+	}
+	
+	@Override
+	public <T extends Model> T find(Class<T> clazz, Map<String, Object> query, Object... values) throws Exception {
+		return findByMapQuery(clazz, query, values, true);
+	}
+	
+	@Override
+	public <T extends Model> T find(Class<T> clazz, String query, Object...values) throws Exception {
+		Connection connection = getConnection();
+		if(isMapQuery(query)) {
+			int dbType = getDbType(connection);
+			Conversion conversion = Conversion.run(dbType, clazz, query, values);
+			query = conversion.getSql();
+			values = conversion.getValues();
+		}
+		return persistor.find(connection, clazz, query, values);
+	}
+
+	@Override
+	public <T extends Model> List<T> findAll(Class<T> clazz) throws Exception {
+		return findAll(clazz, (String) null);
+	}
+
+	@Override
+	public <T extends Model> List<T> findAll(Class<T> clazz, Map<String, Object> query, Object... values) throws Exception {
+		return findByMapQuery(clazz, query, values, true);
+	}
+	
+	@Override
+	public <T extends Model> List<T> findAll(Class<T> clazz, String query, Object...values) throws Exception {
+		Connection connection = getConnection();
+		if(isMapQuery(query)) {
+			int dbType = getDbType(connection);
+			Conversion conversion = Conversion.run(dbType, clazz, query, values);
+			query = conversion.getSql();
+			values = conversion.getValues();
+		}
+		return persistor.findAll(connection, clazz, query, values);
 	}
 	
 	@Override
@@ -246,9 +335,9 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		}
 		return find(clazz, "where id=? include:?", id, include);
 	}
-	
+
 	@SuppressWarnings("unchecked")
-	public <E, T extends Model> E findByMapQuery(Class<T> clazz, Map<String, Object> query, Object[] values, boolean all) throws Exception {
+	private <E, T extends Model> E findByMapQuery(Class<T> clazz, Map<String, Object> query, Object[] values, boolean all) throws Exception {
 		if(query != null && !query.isEmpty()) {
 			Object from = query.get("$from");
 			if(from instanceof Map<?,?>) {
@@ -260,11 +349,13 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 				return (E) Model.getPersistService(parentClass).find(parentClass, "where id=? include:?", id, field).get(field);
 			}
 			else {
-				Conversion conversion = Conversion.run(clazz, query, values);
+				Connection connection = getConnection();
+				int dbType = getDbType(connection);
+				Conversion conversion = Conversion.run(dbType, clazz, query, values);
 				if(all) {
-					return (E) findAll(clazz, conversion.getSql(), conversion.getValues());
+					return (E) persistor.findAll(connection, clazz, conversion.getSql(), conversion.getValues());
 				} else {
-					return (E) find(clazz, conversion.getSql(), conversion.getValues());
+					return (E) persistor.find(connection, clazz, conversion.getSql(), conversion.getValues());
 				}
 			}
 		}
@@ -273,82 +364,17 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		}
 	}
 	
-	@Override
-	public <T extends Model> T find(Class<T> clazz, Map<String, Object> query, Object... values) throws Exception {
-		return findByMapQuery(clazz, query, values, true);
-	}
-	
-	@Override
-	public <T extends Model> T find(Class<T> clazz, String query, Object...values) throws Exception {
-		if(isMapQuery(query)) {
-			Conversion conversion = Conversion.run(clazz, query, values);
-			query = conversion.getSql();
-			values = conversion.getValues();
-		}
-		Connection connection = getConnection();
-		return persistor.find(connection, clazz, query, values);
+	public boolean getAutoCommit() {
+		Boolean ac = threadAutoCommit.get();
+		return (ac != null) && ac.booleanValue();
 	}
 
-	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz) throws Exception {
-		return findAll(clazz, (String) null);
-	}
-
-	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz, Map<String, Object> query, Object... values) throws Exception {
-		return findByMapQuery(clazz, query, values, true);
-	}
-	
-	@Override
-	public <T extends Model> List<T> findAll(Class<T> clazz, String query, Object...values) throws Exception {
-		if(isMapQuery(query)) {
-			Conversion conversion = Conversion.run(clazz, query, values);
-			query = conversion.getSql();
-			values = conversion.getValues();
-		}
-		Connection connection = getConnection();
-		return persistor.findAll(connection, clazz, query, values);
+	Bundle getBundle() {
+		return context.getBundle();
 	}
 	
 	public Connection getConnection() throws SQLException {
 		return getConnection(true);
-	}
-
-	private void closeLogWriter() {
-		if(logWriter != null) {
-			try {
-				logWriter.flush();
-				logWriter.close();
-			} catch(IOException e) {
-				logger.warn(e + ": " + e.getMessage());
-			}
-			logWriter = null;
-			logPath = null;
-		}
-	}
-
-	private void createLogWriter(String path) throws SQLException {
-		if(logWriter != null && !path.equals(logPath)) {
-			closeLogWriter();
-		}
-		if(logWriter == null) {
-			try {
-				logWriter = new FileWriter(path);
-			} catch(IOException e) {
-				throw new SQLException("could not create log writer: " + e.getMessage());
-			}
-		}
-		logPath = path;
-	}
-	
-	private Connection checkLoggingConnection(Connection connection) throws SQLException {
-		String path = System.getProperty("org.oobium.persist.db.logging");
-		if(path == null) {
-			closeLogWriter();
-			return connection;
-		}
-		createLogWriter(path);
-		return new LoggingConnection(connection, logWriter);
 	}
 	
 	private Connection getConnection(boolean create) throws SQLException {
@@ -369,6 +395,10 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		} finally {
 			lock.readLock().unlock();
 		}
+	}
+	
+	public BundleContext getContext() {
+		return context;
 	}
 	
 	public Database getDatabase() {
@@ -449,30 +479,20 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 			}
 		}
 	}
+
+	public boolean hasContext() {
+		return context != null;
+	}
 	
 	@Override
 	public boolean isSessionOpen() {
 		return threadClient.get() != null;
 	}
-
+	
 	@Override
 	public void openSession(String name) {
 		threadClient.set(name);
 		threadAutoCommit.set(true);
-	}
-	
-	private void doRemoveDatabase(String client) {
-		Database database = databases.get(client);
-		if(database != null) {
-			try {
-				database.preRemove();
-				database.dispose();
-				databases.remove(client);
-				logger.info("removed Database for {}", database.client);
-			} catch(Exception e) {
-				logger.warn("error removing Database for {}", e, database.client);
-			}
-		}
 	}
 	
 	private void removeDatabase(String client) {
@@ -494,12 +514,12 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 			lock.writeLock().unlock();
 		}
 	}
-	
+
 	@Override
 	public void retrieve(Model...models) throws Exception {
 		handleCrud(RETRIEVE, models);
 	}
-
+	
 	/**
 	 * Retrieve all or parts of the given model, as specified with the given options parameter.<br/>
 	 * <br/>
@@ -528,7 +548,7 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 			}
 		}
 	}
-	
+
 	public void rollback() throws SQLException {
 		Connection connection = getConnection(false);
 		if(connection != null) {
@@ -555,10 +575,6 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 				connection.setAutoCommit(autoCommit);
 			}
 		}
-	}
-
-	Bundle getBundle() {
-		return context.getBundle();
 	}
 	
 	public void start(BundleContext context) throws Exception {

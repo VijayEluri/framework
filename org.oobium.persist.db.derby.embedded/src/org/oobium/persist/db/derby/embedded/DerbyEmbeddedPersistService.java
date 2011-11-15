@@ -10,6 +10,10 @@
  ******************************************************************************/
 package org.oobium.persist.db.derby.embedded;
 
+import static org.oobium.utils.FileUtils.createJar;
+
+import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
@@ -52,7 +56,7 @@ public class DerbyEmbeddedPersistService extends DbPersistService {
 
 	@Override
 	protected Database createDatabase(String client, Map<String, Object> properties) {
-		return new DerbyEmbeddedDatabase(client, properties);
+		return new DerbyEmbeddedDatabase(this, client, properties);
 	}
 	
 	
@@ -74,6 +78,14 @@ public class DerbyEmbeddedPersistService extends DbPersistService {
 	@Override
 	public ServiceInfo getInfo() {
 		return new DbServiceInfo(this);
+	}
+
+	public File getJar(Class<?> clazz) throws IOException {
+		File jar = getContext().getDataFile("tmp/" + clazz.getSimpleName() + ".jar");
+		return createJar(jar, new Object[] {
+				clazz.getCanonicalName().replace('.', '/') + ".class",
+				clazz.getResourceAsStream(clazz.getSimpleName() + ".class")
+		});
 	}
 	
 }

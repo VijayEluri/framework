@@ -2,6 +2,7 @@ package org.oobium.persist.db;
 
 import static org.junit.Assert.*;
 
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.Date;
@@ -46,6 +47,29 @@ public class RetrieveTests extends BaseDbTestCase {
 		assertEquals("bob", ((Model) a.get("bModel")).get("name"));
 	}
 
+	@Test(expected=SQLException.class)
+	public void testHasOneToOne_UniqueIndex() throws Exception {
+		DynModel am = DynClasses.getModel(pkg, "AModel").timestamps().addHasOne("bModel", "BModel.class", "opposite=\"aModel\"");
+		DynModel bm = DynClasses.getModel(pkg, "BModel").timestamps().addHasOne("aModel", "AModel.class", "opposite=\"bModel\"");
+
+		migrate(am, bm);
+
+		persistService.executeUpdate("INSERT INTO b_models(created_at) VALUES(?)", System.currentTimeMillis());
+		persistService.executeUpdate("INSERT INTO a_models(b_model) VALUES(?)", 1);
+		persistService.executeUpdate("INSERT INTO a_models(b_model) VALUES(?)", 1); // b_model column should be unique
+	}
+	
+	@Test
+	public void testHasOneToOne_UniqueIndex_Nulls() throws Exception {
+		DynModel am = DynClasses.getModel(pkg, "AModel").timestamps().addHasOne("bModel", "BModel.class", "opposite=\"aModel\"");
+		DynModel bm = DynClasses.getModel(pkg, "BModel").timestamps().addHasOne("aModel", "AModel.class", "opposite=\"bModel\"");
+
+		migrate(am, bm);
+
+		persistService.executeUpdate("INSERT INTO a_models(b_model) VALUES(null)");
+		persistService.executeUpdate("INSERT INTO a_models(b_model) VALUES(null)"); // unique constraint should allow multiple nulls
+	}
+	
 	@Test
 	public void testHasOneToOne() throws Exception {
 		DynModel am = DynClasses.getModel(pkg, "AModel").timestamps().addHasOne("bModel", "BModel.class", "opposite=\"aModel\"");

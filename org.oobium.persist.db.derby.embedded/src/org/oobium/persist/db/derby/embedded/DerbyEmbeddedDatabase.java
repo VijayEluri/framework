@@ -20,10 +20,12 @@ import org.oobium.utils.FileUtils;
 
 public class DerbyEmbeddedDatabase extends Database {
 
+	private final DerbyEmbeddedPersistService service;
 	private boolean memoryDbCreated;
 	
-	public DerbyEmbeddedDatabase(String client, Map<String, Object> properties) {
+	public DerbyEmbeddedDatabase(DerbyEmbeddedPersistService service, String client, Map<String, Object> properties) {
 		super(client, properties);
+		this.service = service;
 	}
 
 	@Override
@@ -128,6 +130,21 @@ public class DerbyEmbeddedDatabase extends Database {
 	        	"EXTERNAL NAME '" + UniqueColumnTrigger.class.getCanonicalName() + ".checkUnique'";
         	logger.debug(sql);
 	        s.executeUpdate(sql);
+	        
+	        if(service.hasContext()) {
+		        try {
+			        File jar = service.getJar(UniqueColumnTrigger.class);
+			        sql = "CALL SQLJ.install_jar('" + jar.getCanonicalPath() + "', 'APP." + UniqueColumnTrigger.class.getSimpleName() + "', 0)";
+		        	logger.debug(sql);
+			        s.executeUpdate(sql);
+	
+			        sql = "CALL SYSCS_UTIL.SYSCS_SET_DATABASE_PROPERTY('derby.database.classpath', 'APP." + UniqueColumnTrigger.class.getSimpleName() + "')";
+		        	logger.debug(sql);
+			        s.executeUpdate(sql);
+		        } catch(Exception e) {
+		        	logger.error(e);
+		        }
+	        }
         } finally {
         	try {
         		s.close();
