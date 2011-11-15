@@ -318,7 +318,11 @@ public class ModelAdapter {
 	 * @see #isOneToOne(String)
 	 */
 	public boolean hasKey(String field) {
+		// NOTE: update this with ModelRelation#hasKey()
 		Relation relation = hasOne.get(field);
+		if(relation == null) {
+			return false;
+		}
 		String column1 = columnName(tableName(clazz), columnName(field));
 		String column2 = columnName(tableName(relation.type()), columnName(relation.opposite()));
 		return column1.compareTo(column2) < 0; // the lower sort order contains the key
