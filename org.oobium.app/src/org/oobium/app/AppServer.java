@@ -146,6 +146,8 @@ public class AppServer implements BundleActivator {
 		
 		Channel channel = server.bind(new InetSocketAddress(port));
 		addChannel(port, channel);
+
+		logger.info("started server on port " + port);
 	}
 	
 	private void stopServer(int port) {
