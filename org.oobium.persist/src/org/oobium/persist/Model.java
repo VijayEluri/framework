@@ -560,6 +560,19 @@ public abstract class Model implements JsonModel {
 		}
 		return false;
 	}
+	
+	public boolean exists() {
+		PersistService service = getPersistor();
+		if(service != null) {
+			try {
+				return service.find(getClass(), fields) != null;
+			} catch(Exception e) {
+				logger.debug(e);
+				// fall through
+			}
+		}
+		return false;
+	}
 
 	/**
 	 * Get a data field from the model object.
