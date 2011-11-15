@@ -1,6 +1,7 @@
 package org.oobium.persist.db.internal;
 
 import static org.oobium.utils.SqlUtils.safeSqlWord;
+import static org.oobium.utils.StringUtils.columnName;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -63,14 +64,20 @@ public class Conversion {
 		this.inValues = values;
 	}
 	
-	private void add(String field, String key, Object value) throws Exception {
+	private void checkField(String field) throws Exception {
 		if(adapter != null && !adapter.hasField(field) && !"id".equals(field)) {
 			throw new Exception("model of type " + adapter.getModelClass() + " does not contain the field '" + field + "'");
 		}
+	}
 
-		String column = safeSqlWord(dbType, field);
-		String operator = operators.get(key);
-		sb.append(column).append(operator).append('?');
+	private String column(String field) {
+		return safeSqlWord(dbType, columnName(field));
+	}
+	
+	private void add(String field, String key, Object value) throws Exception {
+		checkField(field);
+		
+		sb.append(column(field)).append(operators.get(key)).append('?');
 		
 		if("?".equals(value)) {
 			list.add(inValues[v++]);
@@ -91,14 +98,34 @@ public class Conversion {
 		}
 	}
 
-	private void apply(StringBuilder sb, Object order, Object limit, Object include) {
+	private void apply(StringBuilder sb, Object order) throws Exception {
+		sb.append("ORDER BY ");
+		String value = String.valueOf("?".equals(order) ? inValues[v++] : order); 
+		String[] sa1 = String.valueOf(value).trim().split("\\s*,\\s*");
+		for(int i = 0; i < sa1.length; i++) {
+			if(i != 0) sb.append(",");
+			String[] sa2 = sa1[i].split("\\s+");
+			checkField(sa2[0]);
+			sb.append(column(sa2[0]));
+			if(sa2.length > 1) {
+				if("DESC".equalsIgnoreCase(sa2[1])) {
+					sb.append(" DESC");
+				}
+				else if("ASC".equalsIgnoreCase(sa2[1])) {
+					sb.append(" ASC");
+				}
+				else {
+					throw new Exception("unknown direction in ORDER BY clause: " + value);
+				}
+			}
+		}
+	}
+	
+	private void apply(StringBuilder sb, Object order, Object limit, Object include) throws Exception {
 		boolean first = (sb.length() == 0 || sb.charAt(sb.length()-1) == ' ');
 		if(order != null) {
 			first = first(sb, first);
-			sb.append("ORDER BY ").append(order);
-			if("?".equals(order)) list.add(inValues[v++]);
-			// TODO support ORDER BY (currently unsafe)
-			throw new UnsupportedOperationException("ORDER BY not yet supported");
+			apply(sb, order);
 		}
 		if(limit != null) {
 			first = first(sb, first);

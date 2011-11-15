@@ -55,6 +55,22 @@ public class FindAllFromJsonTests extends BaseDbTestCase {
 	}
 	
 	@Test
+	public void testFindAllWithOrder_AsParameter() throws Exception {
+		DynModel am = DynClasses.getModel("AModel").addAttr("name", "String.class");
+		
+		migrate(am);
+		
+		persistService.executeUpdate("INSERT INTO a_models(name) VALUES(?)", "nameA1");
+		persistService.executeUpdate("INSERT INTO a_models(name) VALUES(?)", "nameA2");
+
+		List<? extends Model> models = persistService.findAll(am.getModelClass(), "$sort:?", "name desc");
+		
+		assertEquals(2, models.size());
+		assertEquals("nameA2", models.get(0).get("name"));
+		assertEquals("nameA1", models.get(1).get("name"));
+	}
+	
+	@Test
 	public void testFindAllWithValue() throws Exception {
 		DynModel am = DynClasses.getModel("AModel").addAttr("name", "String.class");
 		
