@@ -14,7 +14,9 @@ import static org.oobium.persist.Relation.*;
 import static org.oobium.build.model.ModelDefinition.getJavaEntries;
 import static org.oobium.build.model.ModelDefinition.getString;
 import static org.oobium.utils.StringUtils.blank;
+import static org.oobium.utils.StringUtils.columnName;
 import static org.oobium.utils.StringUtils.simpleName;
+import static org.oobium.utils.StringUtils.tableName;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 
 import java.lang.reflect.Field;
@@ -245,6 +247,13 @@ public class ModelRelation {
 		return false;
 	}
 	
+	public boolean hasKey() {
+		// NOTE: update this with ModelAdapter#hasKey(String)
+		String column1 = columnName(tableName(model.getSimpleName()), columnName(name()));
+		String column2 = columnName(tableName(getSimpleType()), columnName(opposite()));
+		return column1.compareTo(column2) < 0; // the lower sort order contains the key
+	}
+
 	public boolean hasMany() {
 		return hasMany;
 	}
