@@ -41,42 +41,35 @@ class UpdaterThread extends Thread {
 		@Override
 		public void handleEvent(RunEvent event) {
 			if(event.type == Type.Started) {
-				RunnerService.removeListener(this);
-				RunnerService.notifyListeners(Type.Migrate, application);
-				ClientResponse response = Client.client("localhost", 5001).post("/migrate");
-				if(response.isSuccess()) {
-					logger.info(response.getBody());
-				} else {
-					if(response.exceptionThrown()) {
-						logger.warn(response.getException().getLocalizedMessage());
-					} else {
-						logger.warn("migrator at {}:{} completed with errors: {}", domain, port, response.getBody());
-					}
+				try {
+					Thread.sleep(50); // TODO VERY TEMPORARY FIX
+				} catch(InterruptedException e) {
 				}
-				RunnerService.notifyListeners(Type.Migrated, application);
+				handleEvent("/migrate");
 			}
+		}
+		protected void handleEvent(String command) {
+			RunnerService.removeListener(this);
+			RunnerService.notifyListeners(Type.Migrate, application);
+			ClientResponse response = Client.client(migratorHost, migratorPort).post(command);
+			if(response.isSuccess()) {
+				logger.info(response.getBody());
+			} else {
+				if(response.exceptionThrown()) {
+					logger.warn("migrator at {}:{} threw an exception: {}", migratorHost, migratorPort, response.getException().getLocalizedMessage());
+				} else {
+					logger.warn("migrator at {}:{} completed with errors: {}", migratorHost, migratorPort, response.getBody());
+				}
+			}
+			RunnerService.notifyListeners(Type.Migrated, application);
 		}
 	}
 
-	private class ReMigrateListener implements RunListener {
+	private class ReMigrateListener extends MigrateListener {
 		@Override
 		public void handleEvent(RunEvent event) {
 			if(event.type == Type.Updated) {
-				RunnerService.removeListener(this);
-				if(!migratorPaused) {
-					RunnerService.notifyListeners(Type.Migrate, application);
-					ClientResponse response = Client.client("localhost", 5001).post("/migrate/redo/all");
-					if(response.isSuccess()) {
-						logger.info(response.getBody());
-					} else {
-						if(response.exceptionThrown()) {
-							logger.warn(response.getException().getLocalizedMessage());
-						} else {
-							logger.warn("migrator at {}:{} completed with errors: {}", domain, port, response.getBody());
-						}
-					}
-					RunnerService.notifyListeners(Type.Migrated, application);
-				}
+				handleEvent("/migrate/redo/all");
 			}
 		}
 	}
@@ -85,8 +78,10 @@ class UpdaterThread extends Thread {
 	private final Logger logger;
 	private final Workspace workspace;
 	private final Application application;
-	private final String domain;
-	private final int port;
+	private final String managerHost;
+	private final int managerPort;
+	private final String migratorHost;
+	private final int migratorPort;
 
 	private Map<Bundle, Long> bundles;
 	private Map<Bundle, Bundle> exported;
@@ -110,8 +105,10 @@ class UpdaterThread extends Thread {
 		this.waitLock = new Object();
 		this.workspace = workspace;
 		this.application = application;
-		this.domain = "localhost";
-		this.port = 5050;
+		this.managerHost = "localhost";
+		this.managerPort = 5050;
+		this.migratorHost = "localhost";
+		this.migratorPort = 5001;
 		this.bundles = new HashMap<Bundle, Long>();
 		this.exported = new HashMap<Bundle, Bundle>();
 		this.bundles.put(application, getLastModified(application));
@@ -249,7 +246,7 @@ class UpdaterThread extends Thread {
 						reMigListener = new ReMigrateListener();
 						RunnerService.addListener(reMigListener);
 					}
-					update(domain, port, bundle, "file:" + update.file.getAbsolutePath());
+					update(managerHost, managerPort, bundle, "file:" + update.file.getAbsolutePath());
 					RunnerService.notifyListeners(Type.Update, application, update);
 					Bundle previous = exported.put(bundle, update);
 					if(previous != null) {
