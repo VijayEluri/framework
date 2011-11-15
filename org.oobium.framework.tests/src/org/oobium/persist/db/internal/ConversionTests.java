@@ -143,11 +143,29 @@ public class ConversionTests {
 
 	@Test
 	public void testLimitOnly() throws Exception {
+		Conversion conversion = new Conversion(DERBY, toMap("$limit:1"));
+		conversion.run();
+		assertEquals("LIMIT 1", conversion.getSql());
+	}
+
+	@Test
+	public void testLimitAndOffset() throws Exception {
 		Conversion conversion = new Conversion(DERBY, toMap("$limit:'1,2'"));
 		conversion.run();
 		assertEquals("LIMIT 1,2", conversion.getSql());
 	}
-
+	
+	@Test(expected=Exception.class)
+	public void testIllegalLimit() throws Exception {
+		Conversion conversion = new Conversion(DERBY, toMap("$limit:'bob'"));
+		conversion.run();
+	}
+	
+	@Test(expected=Exception.class)
+	public void testIllegalOffset() throws Exception {
+		Conversion conversion = new Conversion(DERBY, toMap("$limit:'bob, 2'"));
+		conversion.run();
+	}
 	
 	@ModelDescription(attrs={@Attribute(name="name",type=String.class)})
 	public static class TestClass extends Model { }

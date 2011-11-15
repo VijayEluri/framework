@@ -98,7 +98,33 @@ public class Conversion {
 		}
 	}
 
-	private void apply(StringBuilder sb, Object order) throws Exception {
+	private void applyLimit(StringBuilder sb, Object limit) throws Exception {
+		sb.append("LIMIT ");
+		String value = String.valueOf("?".equals(limit) ? inValues[v++] : limit); 
+		String[] sa = value.trim().split("\\s*,\\s*");
+		if(sa.length == 1) {
+			try {
+				int i = Integer.parseInt(sa[0]);
+				sb.append(i);
+			} catch(NumberFormatException e) {
+				throw new Exception("illegal parameter in LIMIT clause: " + value);
+			}
+		}
+		else if(sa.length == 2) {
+			try {
+				int o = Integer.parseInt(sa[0]);
+				int l = Integer.parseInt(sa[1]);
+				sb.append(o).append(',').append(l);
+			} catch(NumberFormatException e) {
+				throw new Exception("illegal parameter in LIMIT clause: " + value);
+			}
+		}
+		else {
+			throw new Exception("invalid format of LIMIT clause: " + value);
+		}
+	}
+	
+	private void applyOrder(StringBuilder sb, Object order) throws Exception {
 		sb.append("ORDER BY ");
 		String value = String.valueOf("?".equals(order) ? inValues[v++] : order); 
 		String[] sa1 = String.valueOf(value).trim().split("\\s*,\\s*");
@@ -106,8 +132,11 @@ public class Conversion {
 			if(i != 0) sb.append(",");
 			String[] sa2 = sa1[i].split("\\s+");
 			checkField(sa2[0]);
-			sb.append(column(sa2[0]));
-			if(sa2.length > 1) {
+			if(sa2.length == 1) {
+				sb.append(column(sa2[0]));
+			}
+			else if(sa2.length > 1) {
+				sb.append(column(sa2[0]));
 				if("DESC".equalsIgnoreCase(sa2[1])) {
 					sb.append(" DESC");
 				}
@@ -118,6 +147,9 @@ public class Conversion {
 					throw new Exception("unknown direction in ORDER BY clause: " + value);
 				}
 			}
+			else {
+				throw new Exception("invalid format of ORDER BY clause: " + value);
+			}
 		}
 	}
 	
@@ -125,12 +157,11 @@ public class Conversion {
 		boolean first = (sb.length() == 0 || sb.charAt(sb.length()-1) == ' ');
 		if(order != null) {
 			first = first(sb, first);
-			apply(sb, order);
+			applyOrder(sb, order);
 		}
 		if(limit != null) {
 			first = first(sb, first);
-			sb.append("LIMIT ").append(limit);
-			if("?".equals(limit)) list.add(inValues[v++]);
+			applyLimit(sb, limit);
 		}
 		if(include != null) {
 			first = first(sb, first);
