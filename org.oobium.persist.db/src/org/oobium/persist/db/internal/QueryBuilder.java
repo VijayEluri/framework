@@ -65,24 +65,24 @@ public class QueryBuilder {
 	}
 	
 	
-	int dbType;
+	private final int dbType;
 	
-	ModelAdapter parentAdapter;
+	private ModelAdapter parentAdapter;
 	
-	Query query;
-	ModelAdapter adapter;
-	String input;
-	Object[] values;
+	private Query query;
+	private ModelAdapter adapter;
+	private String input;
+	private Object[] values;
 
-	List<String> columns;
-	List<String> tables;
-	List<String> whereClauses;
-	List<String> orderClauses;
-	int offset;
-	int limit;
-	List<Object> includes;
+	private List<String> columns;
+	private List<String> tables;
+	private List<String> whereClauses;
+	private List<String> orderClauses;
+	private int offset;
+	private int limit;
+	private List<Object> includes;
 
-	String alias;
+	private String alias;
 
 	private QueryBuilder(int dbType, Class<? extends Model> parentClass, Query query, String sql, Object...values) {
 		this(dbType, query, sql, values);
