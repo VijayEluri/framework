@@ -388,7 +388,11 @@ public class FileUtils {
 		return folder;
 	}
 	
-	public static File createJar(File jar, long lastModified, String[]...entries) throws IOException {
+	public static File createJar(File jar, Object[]...entries) throws IOException {
+		return createJar(jar, System.currentTimeMillis(), entries);
+	}
+	
+	public static File createJar(File jar, long lastModified, Object[]...entries) throws IOException {
 		if(!jar.exists()) {
 			jar.getParentFile().mkdirs();
 			jar.createNewFile();
@@ -406,13 +410,23 @@ public class FileUtils {
 			}
 			jos = new JarOutputStream(fos);
 			
-			for(String[] entry : entries) {
+			for(Object[] entry : entries) {
 				if(entry != null && entry.length > 0) {
-					JarEntry jentry = new JarEntry(entry[0]);
+					JarEntry jentry = new JarEntry(String.valueOf(entry[0]));
 					jentry.setTime(lastModified);
 					jos.putNextEntry(jentry);
 					if(entry.length > 1) {
-						jos.write(entry[1].getBytes());
+						if(entry[1] instanceof InputStream) {
+							InputStream in = (InputStream) entry[1];
+							byte buffer[] = new byte[1024];
+							int read;
+							while((read = in.read(buffer, 0, buffer.length)) != -1) {
+								jos.write(buffer, 0, read);
+							}
+						}
+						else {
+							jos.write(String.valueOf(entry[1]).getBytes());
+						}
 					}
 				}
 			}
