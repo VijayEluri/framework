@@ -166,7 +166,8 @@ public class Runner {
 
 			ProcessBuilder builder = new ProcessBuilder();
 			if(debug) {
-				builder.command("java", "-Xdebug", "-Xrunjdwp:transport=dt_socket,address=127.0.0.1:8000,suspend=y", "-jar", "bin/felix.jar");
+//				builder.command("java", "-Xdebug", "-Xrunjdwp:transport=dt_socket,address=127.0.0.1:8000,suspend=y", "-jar", "bin/felix.jar");
+				builder.command("java", "-Xdebug", "-Xrunjdwp:transport=dt_socket,server=y,address=8000", "-jar", "bin/felix.jar");
 			} else {
 				builder.command("java", "-jar", "bin/felix.jar");
 			}

@@ -11,7 +11,9 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui.ide,
  org.eclipse.jdt.ui,
  org.oobium.build,
- org.oobium.build.console
+ org.oobium.build.console,
+ org.eclipse.debug.core;bundle-version="3.7.0",
+ org.eclipse.jdt.launching;bundle-version="3.6.1"
 Export-Package: org.oobium.eclipse,
  org.oobium.eclipse.dialogs,
  org.oobium.eclipse.util,

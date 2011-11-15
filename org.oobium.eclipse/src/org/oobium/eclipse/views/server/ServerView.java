@@ -10,6 +10,8 @@
  ******************************************************************************/
 package org.oobium.eclipse.views.server;
 
+import static org.oobium.utils.literal.*;
+import static org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants.*;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 
 import java.util.ArrayList;
@@ -17,7 +19,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.debug.core.DebugPlugin;
+import org.eclipse.debug.core.ILaunchConfiguration;
+import org.eclipse.debug.core.ILaunchConfigurationType;
+import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
+import org.eclipse.debug.core.ILaunchManager;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IStatusLineManager;
 import org.eclipse.jface.action.IToolBarManager;
@@ -45,6 +53,7 @@ import org.oobium.eclipse.views.actions.ClearAction;
 import org.oobium.eclipse.views.actions.ScrollLockAction;
 import org.oobium.eclipse.views.server.actions.AutoMigrateAction;
 import org.oobium.eclipse.views.server.actions.AutoUpdateAction;
+import org.oobium.eclipse.views.server.actions.DebugAction;
 import org.oobium.eclipse.views.server.actions.LayoutAction;
 import org.oobium.eclipse.views.server.actions.MigrateAction;
 import org.oobium.eclipse.views.server.actions.MigratePurgeAction;
@@ -83,6 +92,7 @@ public class ServerView extends ViewPart {
 	private BrowserPanel browserPanel;
 	private ConsolePanel consolePanel;
 	
+	private DebugAction debugAction;
 	private StartAction startAction;
 	private StopAction stopAction;
 	private AutoUpdateAction autoUpAction;
@@ -174,6 +184,7 @@ public class ServerView extends ViewPart {
 		showConsoleAction = new ShowConsoleAction(this, consoleVisible);
 		layoutAction = new LayoutAction(this);
 		startAction = new StartAction(this);
+		debugAction = new DebugAction(this);
 		stopAction = new StopAction(this);
 		autoUpAction = new AutoUpdateAction(this);
 		migrateAction = new MigrateAction();
@@ -219,6 +230,7 @@ public class ServerView extends ViewPart {
 	private void createToolBar() {
 		IToolBarManager manager = getViewSite().getActionBars().getToolBarManager();
 
+		manager.add(debugAction);
 		manager.add(startAction);
 		manager.add(stopAction);
 		manager.add(autoUpAction);
@@ -236,7 +248,7 @@ public class ServerView extends ViewPart {
 		manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
 	}
 
-	boolean isRunning() {
+	private boolean isRunning() {
 		if(application != null) {
 			return RunnerService.isRunning(application);
 		}
@@ -350,6 +362,7 @@ public class ServerView extends ViewPart {
 						Runner runner = RunnerService.getRunner(application);
 						runner.setError(new ConsolePrintStream(consolePanel.getConsole().err));
 						runner.setOut(new ConsolePrintStream(consolePanel.getConsole().out));
+						debugAction.setEnabled(false);
 						startAction.setEnabled(false);
 						stopAction.setEnabled(true);
 						autoUpAction.setEnabled(true);
@@ -359,6 +372,7 @@ public class ServerView extends ViewPart {
 						purgeAction.setEnabled(b);
 						autoMigAction.setEnabled(b);
 					} else {
+						debugAction.setEnabled(true);
 						startAction.setEnabled(true);
 						stopAction.setEnabled(false);
 						autoUpAction.setEnabled(false);
@@ -368,6 +382,7 @@ public class ServerView extends ViewPart {
 						autoMigAction.setEnabled(false);
 					}
 				} else {
+					debugAction.setEnabled(false);
 					startAction.setEnabled(false);
 					stopAction.setEnabled(false);
 					autoUpAction.setEnabled(false);
@@ -459,6 +474,10 @@ public class ServerView extends ViewPart {
 	}
 	
 	public void start() {
+		start(false);
+	}
+	
+	public void start(boolean debug) {
 		if(application != null) {
 			Display.getDefault().syncExec(new Runnable() {
 				@Override
@@ -467,9 +486,46 @@ public class ServerView extends ViewPart {
 				}
 			});
 			Map<String, String> properties = JsonUtils.toStringMap(this.properties);
-			Runner runner = RunnerService.run(OobiumPlugin.getWorkspace(), application, Mode.DEV, properties);
+			
+			Runner runner = RunnerService.getRunner(application);
+			if(runner == null) {
+				if(debug) {
+					runner = RunnerService.debug(OobiumPlugin.getWorkspace(), application, Mode.DEV, properties);
+				} else {
+					runner = RunnerService.run(OobiumPlugin.getWorkspace(), application, Mode.DEV, properties);
+				}
+			}
 			runner.setError(new ConsolePrintStream(consolePanel.getConsole().err));
 			runner.setOut(new ConsolePrintStream(consolePanel.getConsole().out));
+			if(runner.getDebug()) {
+				try {
+					
+					Thread.sleep(500); // TODO another oobicrap temporary fix...
+					
+					ILaunchManager manager = DebugPlugin.getDefault().getLaunchManager();
+					ILaunchConfigurationType type = manager.getLaunchConfigurationType(ID_REMOTE_JAVA_APPLICATION);
+
+					ILaunchConfiguration[] configurations = manager.getLaunchConfigurations(type);
+					System.out.println(configurations);
+
+					ILaunchConfigurationWorkingCopy configuration = type.newInstance(null, "Debug Oobium");
+					boolean attach = true;
+					if(attach) {
+						configuration.setAttribute(ATTR_VM_CONNECTOR, ID_SOCKET_ATTACH_VM_CONNECTOR);
+						configuration.setAttribute(ATTR_CONNECT_MAP, Map( e("hostname", "localhost"), e("port", "8000")) );
+					} else {
+						configuration.setAttribute(ATTR_VM_CONNECTOR, ID_SOCKET_LISTEN_VM_CONNECTOR);
+						configuration.setAttribute(ATTR_CONNECT_MAP, Map("port", "8000"));
+					}
+					configuration.setAttribute(ATTR_ALLOW_TERMINATE, true);
+					configuration.launch(ILaunchManager.DEBUG_MODE, new NullProgressMonitor());
+				} catch(Exception e) {
+					// TODO
+					e.printStackTrace();
+				}
+			}
+
+			debugAction.setEnabled(false);
 			startAction.setEnabled(false);
 			stopAction.setEnabled(true);
 			autoUpAction.setEnabled(true);
@@ -521,6 +577,7 @@ public class ServerView extends ViewPart {
 		if(application != null) {
 			RunnerService.removeListener(runListener);
 			RunnerService.stop(application);
+			debugAction.setEnabled(true);
 			startAction.setEnabled(true);
 			stopAction.setEnabled(false);
 			autoUpAction.setEnabled(false);
