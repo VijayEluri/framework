@@ -449,21 +449,24 @@ public class EspEditor extends TextEditor {
 				for(IMarker jmarker : markers) {
 					if(jmarker.isSubtypeOf(IMarker.PROBLEM)) {
 						try {
-							int start = jf.getEspOffset((Integer) jmarker.getAttribute(IMarker.CHAR_START));
-							int end = jf.getEspOffset((Integer) jmarker.getAttribute(IMarker.CHAR_END) - 1) + 1;
-
-							IMarker marker = file.createMarker(jmarker.getType());
-							if(start != -1 && end != -1) {
-								marker.setAttribute(IMarker.CHAR_START, start);
-								marker.setAttribute(IMarker.CHAR_END, end);
-								ranges.add(start);
-								ranges.add(end - start);
-							} else {
-								marker.setAttribute(IMarker.LINE_NUMBER, 1);
+							String message = String.valueOf(jmarker.getAttribute(IMarker.MESSAGE));
+							if(message != null && !message.endsWith(" is never used")) {
+								int start = jf.getEspOffset((Integer) jmarker.getAttribute(IMarker.CHAR_START));
+								int end = jf.getEspOffset((Integer) jmarker.getAttribute(IMarker.CHAR_END) - 1) + 1;
+	
+								IMarker marker = file.createMarker(jmarker.getType());
+								if(start != -1 && end != -1) {
+									marker.setAttribute(IMarker.CHAR_START, start);
+									marker.setAttribute(IMarker.CHAR_END, end);
+									ranges.add(start);
+									ranges.add(end - start);
+								} else {
+									marker.setAttribute(IMarker.LINE_NUMBER, 1);
+								}
+								marker.setAttribute(IMarker.SEVERITY, jmarker.getAttribute(IMarker.SEVERITY));
+								marker.setAttribute(IMarker.PRIORITY, IMarker.PRIORITY_HIGH);//jmarker.getAttribute(IMarker.PRIORITY));
+								marker.setAttribute(IMarker.MESSAGE, jmarker.getAttribute(IMarker.MESSAGE));
 							}
-							marker.setAttribute(IMarker.SEVERITY, jmarker.getAttribute(IMarker.SEVERITY));
-							marker.setAttribute(IMarker.PRIORITY, IMarker.PRIORITY_HIGH);//jmarker.getAttribute(IMarker.PRIORITY));
-							marker.setAttribute(IMarker.MESSAGE, jmarker.getAttribute(IMarker.MESSAGE));
 						} catch(ClassCastException e) {
 							e.printStackTrace();
 						}
