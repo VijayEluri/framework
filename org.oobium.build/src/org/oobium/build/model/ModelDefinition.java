@@ -23,6 +23,7 @@ import static org.oobium.utils.StringUtils.controllerSimpleName;
 import static org.oobium.utils.StringUtils.*;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -648,7 +649,7 @@ public class ModelDefinition {
 
 	public List<String> getDescriptionImports() {
 		List<String> imports = new ArrayList<String>();
-		if(hasAttributes()) {
+		if(hasAttributes(false)) {
 			imports.add(Attribute.class.getCanonicalName());
 			for(ModelAttribute attr : attributes.values()) {
 				if(!attr.type().startsWith("java.lang") && !primitives.contains(attr.type())) {
@@ -658,16 +659,21 @@ public class ModelDefinition {
 		}
 		if(hasRelations()) {
 			imports.add(Relation.class.getCanonicalName());
+			Pattern p = Pattern.compile("import\\s+static\\s+(" + Relation.class.getCanonicalName().replace(".", "\\.") + "\\.[\\*\\w]+)\\s*;");
+			Matcher m = p.matcher(source);
+			while(m.find()) {
+				imports.add("static " + m.group(1));
+			}
 			for(ModelRelation r : hasOne.values()) {
-				Pattern p = Pattern.compile("import\\s+" + r.type() + "\\s*;");
-				Matcher m = p.matcher(source);
+				p = Pattern.compile("import\\s+" + r.type() + "\\s*;");
+				m = p.matcher(source);
 				if(m.find()) {
 					imports.add(r.type());
 				}
 			}
 			for(ModelRelation r : hasMany.values()) {
-				Pattern p = Pattern.compile("import\\s+" + r.type() + "\\s*;");
-				Matcher m = p.matcher(source);
+				p = Pattern.compile("import\\s+" + r.type() + "\\s*;");
+				m = p.matcher(source);
 				if(m.find()) {
 					imports.add(r.type());
 				}
@@ -828,6 +834,22 @@ public class ModelDefinition {
 						break;
 					}
 				}
+				
+				if(type == null) {
+					p = Pattern.compile("import\\s+(static\\s+)?([\\w\\d\\._\\$]+)\\.\\*;");
+					m = p.matcher(source);
+					while(m.find()) {
+						try {
+							Class<?> c = Class.forName(m.group(2));
+							if(c.getField(name) != null) {
+								return m.group(2);
+							}
+						} catch(Exception e) {
+							// try again
+						}
+					}
+				}
+				
 				if(type == null) {
 					type = "java.lang." + name;
 				}
@@ -853,7 +875,14 @@ public class ModelDefinition {
 	}
 	
 	public boolean hasAttributes() {
-		return !attributes.isEmpty() || timestamps || datestamps;
+		return hasAttributes(true);
+	}
+	
+	public boolean hasAttributes(boolean includeTemporal) {
+		if(includeTemporal) {
+			return !attributes.isEmpty() || timestamps || datestamps;
+		}
+		return !attributes.isEmpty();
 	}
 	
 	public boolean hasField(String name) {

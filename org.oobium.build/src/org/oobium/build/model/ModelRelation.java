@@ -27,6 +27,31 @@ import org.oobium.persist.Relation;
 
 public class ModelRelation {
 
+	public static String getDependentConstant(int dependent) {
+		switch(dependent) {
+		case UNDEFINED: return "UNDEFINED";
+		case DESTROY:   return "DESTROY";
+		case DELETE:    return "DELETE";
+		case NULLIFY:   return "NULLIFY";
+		default:
+			throw new IllegalArgumentException("unknown dependent constant: " + dependent);
+		}
+	}
+	
+	public static String getReferentialConstant(int referentialAction) {
+		switch(referentialAction) {
+		case UNDEFINED:   return "UNDEFINED";
+		case CASCADE:     return "CASCADE";
+		case NO_ACTION:   return "NO_ACTION";
+		case RESTRICT:    return "RESTRICT";
+		case SET_DEFAULT: return "SET_DEFAULT";
+		case SET_NULL:    return "SET_NULL";
+		default:
+			throw new IllegalArgumentException("unknown referential action: " + referentialAction);
+		}
+	}
+	
+	
 	private final ModelDefinition model;
 
 	private final boolean hasMany;
@@ -167,6 +192,18 @@ public class ModelRelation {
 			props.put("include", include);
 		}
 		return props;
+	}
+	
+	public String getDependentConstant() {
+		return getDependentConstant(dependent);
+	}
+	
+	public String getOnDeleteConstant() {
+		return getDependentConstant(onDelete);
+	}
+	
+	public String getOnUpdateConstant() {
+		return getDependentConstant(onUpdate);
 	}
 	
 	public Map<String, Object> getProperties() {
@@ -377,13 +414,13 @@ public class ModelRelation {
 			sb.append(", virtual=true");
 		}
 		if(dependent != DEFAULT_DEPENDENT) {
-			sb.append(", dependent=").append(dependent);
+			sb.append(", dependent=").append(getDependentConstant());
 		}
 		if(onDelete != DEFAULT_ONDELETE) {
-			sb.append(", onDelete=").append(onDelete);
+			sb.append(", onDelete=").append(getOnDeleteConstant());
 		}
 		if(onUpdate != DEFAULT_ONUPDATE) {
-			sb.append(", onUpdate=").append(onUpdate);
+			sb.append(", onUpdate=").append(getOnUpdateConstant());
 		}
 		if(include != DEFAULT_INCLUDE) {
 			sb.append(", include=true");
