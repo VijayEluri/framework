@@ -18,7 +18,10 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface Relation {
-	
+
+	public static final String[] DEPENDENT_CONSTANTS = { "UNDEFINED", "DESTROY", "DELETE", "NULLIFY" };
+	public static final String[] REFERENTIAL_CONSTANTS = { "UNDEFINED", "CASCADE", "NO_ACTION", "RESTRICT", "SET_DEFAULT", "SET_NULL" };
+
 	public static final int UNDEFINED = -1;
 	
 	/**
@@ -108,7 +111,6 @@ public @interface Relation {
 	public static final boolean DEFAULT_UNIQUE = false;
 	public static final boolean DEFAULT_VIRTUAL = false;
 
-	
 	/**
 	 * Specify what to do with dependent (related) model objects when this model is destroyed.
 	 * <p><b>Valid only for both has one and has many relationships</b></p>

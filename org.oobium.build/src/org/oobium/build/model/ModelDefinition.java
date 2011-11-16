@@ -10,9 +10,12 @@
  ******************************************************************************/
 package org.oobium.build.model;
 
-import static org.oobium.persist.ModelDescription.*;
-import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.build.util.SourceFile.ensureImports;
+import static org.oobium.persist.ModelDescription.DEFAULT_ALLOW_DELETE;
+import static org.oobium.persist.ModelDescription.DEFAULT_ALLOW_UPDATE;
+import static org.oobium.persist.ModelDescription.DEFAULT_DATESTAMPS;
+import static org.oobium.persist.ModelDescription.DEFAULT_EMBEDDED;
+import static org.oobium.persist.ModelDescription.DEFAULT_TIMESTAMPS;
 import static org.oobium.utils.CharStreamUtils.closer;
 import static org.oobium.utils.CharStreamUtils.find;
 import static org.oobium.utils.CharStreamUtils.findAll;
@@ -20,10 +23,11 @@ import static org.oobium.utils.CharStreamUtils.findEOL;
 import static org.oobium.utils.FileUtils.readFile;
 import static org.oobium.utils.FileUtils.writeFile;
 import static org.oobium.utils.StringUtils.controllerSimpleName;
-import static org.oobium.utils.StringUtils.*;
+import static org.oobium.utils.StringUtils.getResourceAsString;
+import static org.oobium.utils.StringUtils.simpleName;
+import static org.oobium.utils.coercion.TypeCoercer.coerce;
 
 import java.io.File;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -402,8 +406,11 @@ public class ModelDefinition {
 	}
 	
 	public ModelRelation addRelation(String name, String type, boolean hasMany) {
-		if(!type.endsWith(".class")) type = type + ".class";
-		return addRelation("(name=\"" + name + "\",type=" + type + ")", hasMany);
+		return addRelation(build(name, type), hasMany);
+	}
+	
+	public ModelRelation addRelation(String name, String type, boolean hasMany, Map<String, Object> options) {
+		return addRelation(build(name, type, options), hasMany);
 	}
 	
 	public boolean allowDelete() {
