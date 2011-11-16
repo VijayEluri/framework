@@ -10,9 +10,17 @@
  ******************************************************************************/
 package org.oobium.eclipse.views.server;
 
-import static org.oobium.utils.literal.*;
-import static org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants.*;
+import static org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants.ATTR_ALLOW_TERMINATE;
+import static org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants.ATTR_CONNECT_MAP;
+import static org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants.ATTR_DEFAULT_SOURCE_PATH;
+import static org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants.ATTR_SOURCE_PATH_PROVIDER;
+import static org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants.ATTR_VM_CONNECTOR;
+import static org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants.ID_REMOTE_JAVA_APPLICATION;
+import static org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants.ID_SOCKET_ATTACH_VM_CONNECTOR;
+import static org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants.ID_SOCKET_LISTEN_VM_CONNECTOR;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
+import static org.oobium.utils.literal.Map;
+import static org.oobium.utils.literal.e;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +30,6 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.debug.core.DebugPlugin;
-import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchConfigurationType;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
 import org.eclipse.debug.core.ILaunchManager;
@@ -504,12 +511,8 @@ public class ServerView extends ViewPart {
 					
 					ILaunchManager manager = DebugPlugin.getDefault().getLaunchManager();
 					ILaunchConfigurationType type = manager.getLaunchConfigurationType(ID_REMOTE_JAVA_APPLICATION);
-
-					ILaunchConfiguration[] configurations = manager.getLaunchConfigurations(type);
-					System.out.println(configurations);
-
 					ILaunchConfigurationWorkingCopy configuration = type.newInstance(null, "Debug Oobium");
-					boolean attach = true;
+					boolean attach = true; // place-holder
 					if(attach) {
 						configuration.setAttribute(ATTR_VM_CONNECTOR, ID_SOCKET_ATTACH_VM_CONNECTOR);
 						configuration.setAttribute(ATTR_CONNECT_MAP, Map( e("hostname", "localhost"), e("port", "8000")) );
@@ -518,6 +521,10 @@ public class ServerView extends ViewPart {
 						configuration.setAttribute(ATTR_CONNECT_MAP, Map("port", "8000"));
 					}
 					configuration.setAttribute(ATTR_ALLOW_TERMINATE, true);
+					
+					configuration.setAttribute(ATTR_SOURCE_PATH_PROVIDER, "org.eclipse.pde.ui.workbenchClasspathProvider");
+					configuration.setAttribute(ATTR_DEFAULT_SOURCE_PATH, false);
+					
 					configuration.launch(ILaunchManager.DEBUG_MODE, new NullProgressMonitor());
 				} catch(Exception e) {
 					// TODO
