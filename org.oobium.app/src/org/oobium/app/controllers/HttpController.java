@@ -838,10 +838,12 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		return getParam(name, defaultValue);
 	}
 
+	@Override
 	public <T> T param(Class<T> type) {
 		return getParam(varName(type), type);
 	}
 	
+	@Override
 	public <T> T param(T defaultValue) {
 		return getParam(varName(defaultValue.getClass()), defaultValue);
 	}

@@ -1,5 +1,7 @@
 package org.oobium.app.controllers;
 
+import static org.oobium.utils.StringUtils.varName;
+
 import java.util.Map;
 import java.util.Set;
 
@@ -71,6 +73,16 @@ public abstract class WebsocketController implements IParams {
 		return websocket.getParam(name, defaultValue);
 	}
 
+	@Override
+	public <T> T param(Class<T> type) {
+		return getParam(varName(type), type);
+	}
+	
+	@Override
+	public <T> T param(T defaultValue) {
+		return getParam(varName(defaultValue.getClass()), defaultValue);
+	}
+	
 	@Override
 	public Set<String> getParams() {
 		return websocket.getParams();
