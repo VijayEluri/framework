@@ -458,8 +458,8 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 	}
 
 	@Override
-	public <T> T param(String name, Class<T> clazz) {
-		return controller.param(name, clazz);
+	public <T> T param(String name, Class<T> type) {
+		return controller.param(name, type);
 	}
 
 	@Override
@@ -467,6 +467,16 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 		return controller.param(name, defaultValue);
 	}
 
+	@Override
+	public <T> T param(Class<T> type) {
+		return controller.param(type);
+	}
+
+	@Override
+	public <T> T param(T defaultValue) {
+		return controller.param(defaultValue);
+	}
+	
 	@Override
 	public Set<String> params() {
 		return controller.params();

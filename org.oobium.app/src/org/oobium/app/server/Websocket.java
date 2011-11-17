@@ -1,5 +1,6 @@
 package org.oobium.app.server;
 
+import static org.oobium.utils.StringUtils.varName;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 
 import java.util.HashSet;
@@ -89,13 +90,23 @@ public class Websocket implements IParams {
 	}
 	
 	@Override
-	public <T> T param(String name, Class<T> clazz) {
-		return getParam(name, clazz);
+	public <T> T param(String name, Class<T> type) {
+		return getParam(name, type);
 	}
 	
 	public <T> T param(String name, T defaultValue) {
 		return getParam(name, defaultValue);
 	}
+
+	@Override
+	public <T> T param(Class<T> type) {
+		return getParam(varName(type), type);
+	}
+	
+	@Override
+	public <T> T param(T defaultValue) {
+		return getParam(varName(defaultValue.getClass()), defaultValue);
+	};
 	
 	@Override
 	public Set<String> params() {
