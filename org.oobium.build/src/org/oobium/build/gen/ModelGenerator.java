@@ -309,7 +309,7 @@ public class ModelGenerator {
 	private String generate(String classAnnotations, ModelDefinition model) {
 		SourceFile src = new SourceFile();
 
-		src.classAnnotations.put(0, model.getDescription());
+		src.classAnnotations.put(0, model.getModelDescriptionAnnotation());
 		src.imports.add(ModelDescription.class.getCanonicalName());
 		if(model.hasAttributes()) {
 			src.imports.add(Attribute.class.getCanonicalName());
@@ -317,7 +317,7 @@ public class ModelGenerator {
 		if(model.hasRelations()) {
 			src.imports.add(Relation.class.getCanonicalName());
 		}
-		for(String di : model.getDescriptionImports()) {
+		for(String di : model.getModelDescriptionImports()) {
 			src.imports.add(di);
 		}
 		

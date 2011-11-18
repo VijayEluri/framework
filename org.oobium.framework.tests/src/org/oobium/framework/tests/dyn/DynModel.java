@@ -91,10 +91,10 @@ public class DynModel extends DynClass {
 	
 	public String getSource() {
 		if(source == null) {
-			for(String imp : def.getDescriptionImports()) {
+			for(String imp : def.getModelDescriptionImports()) {
 				addImport(imp);
 			}
-			source = getSource(getFullName()).replace("@ModelDescription()", def.getDescription());
+			source = getSource(getFullName()).replace("@ModelDescription()", def.getModelDescriptionAnnotation());
 		}
 		return source;
 	}

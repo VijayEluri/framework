@@ -24,13 +24,15 @@ import static org.oobium.utils.FileUtils.readFile;
 import static org.oobium.utils.FileUtils.writeFile;
 import static org.oobium.utils.StringUtils.controllerSimpleName;
 import static org.oobium.utils.StringUtils.getResourceAsString;
-import static org.oobium.utils.StringUtils.simpleName;
+import static org.oobium.utils.StringUtils.join;
+import static org.oobium.utils.StringUtils.*;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -38,6 +40,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -54,6 +58,7 @@ public class ModelDefinition {
 
 	private static final char[] MODEL_DESCRIPTION = "@ModelDescription".toCharArray();
 	private static final char[] INDEXES = "@Indexes".toCharArray();
+	private static final char[] VALIDATIONS = "@Validations".toCharArray();
 	
 	private static final Set<String> primitives;
 	static {
@@ -68,25 +73,6 @@ public class ModelDefinition {
 		primitives.add("char");
 	}
 
-	public static List<ModelDefinition> getSystemDefinitions() {
-		List<ModelDefinition> defs = new ArrayList<ModelDefinition>();
-		defs.add(getSessionDefinition());
-		defs.add(getUserDefinition());
-		return defs;
-	}
-	
-	public static ModelDefinition getSessionDefinition() {
-		String source = getResourceAsString(ModelDefinition.class, "system/Session.src");
-		ModelDefinition def = new ModelDefinition("Session", source);
-		return def;
-	}
-	
-	public static ModelDefinition getUserDefinition() {
-		String source = getResourceAsString(ModelDefinition.class, "system/User.src");
-		ModelDefinition def = new ModelDefinition("User", source);
-		return def;
-	}
-	
 	public static List<String> getJavaArguments(char[] ca, int start, int end) {
 		List<String> args = new ArrayList<String>();
 		
@@ -207,11 +193,11 @@ public class ModelDefinition {
 	public static Map<String, String> getJavaEntries(String s) {
 		return getJavaEntries(s.toCharArray(), 0, s.length());
 	}
-
+	
 	public static ModelDefinition[] getModelDefinitions(Collection<File> models) {
 		return getModelDefinitions(models.toArray(new File[models.size()]));
 	}
-
+	
 	public static ModelDefinition[] getModelDefinitions(File[] models) {
 		ModelDefinition[] defs = new ModelDefinition[models.length];
 
@@ -226,10 +212,17 @@ public class ModelDefinition {
 		return defs;
 	}
 	
-	public static String getString(String in) {
-		if(in == null) {
+	public static ModelDefinition getSessionDefinition() {
+		String source = getResourceAsString(ModelDefinition.class, "system/Session.src");
+		ModelDefinition def = new ModelDefinition("Session", source);
+		return def;
+	}
+
+	public static String getString(Object object) {
+		if(object == null) {
 			return null;
 		}
+		String in = object.toString();
 		if(in.length() > 1 && in.charAt(0) == '"' && in.charAt(in.length()-1) == '"') {
 			// it is a string literal - escape special characters
 			StringBuilder sb = new StringBuilder(in.length());
@@ -256,18 +249,36 @@ public class ModelDefinition {
 		return in;
 	}
 
+	public static List<ModelDefinition> getSystemDefinitions() {
+		List<ModelDefinition> defs = new ArrayList<ModelDefinition>();
+		defs.add(getSessionDefinition());
+		defs.add(getUserDefinition());
+		return defs;
+	}
+	
+	public static ModelDefinition getUserDefinition() {
+		String source = getResourceAsString(ModelDefinition.class, "system/User.src");
+		ModelDefinition def = new ModelDefinition("User", source);
+		return def;
+	}
+
 	
 	private File file; // TODO this file object will not work when we need to deal with jars...
 	private String source;
-	private int mdstart;
-	private int mdend;
+	private int mdstart; // ModelDescription start
+	private int mdend;   // ModelDescription end
+	private int ixstart; // Indexes start
+	private int ixend;   // Indexes end
+	private int mvstart; // Validations start
+	private int mvend;   // Validations end
 
 	private String type;
 	private String packageName;
-	private LinkedHashMap<String, ModelAttribute> attributes;
+	private final LinkedHashMap<String, ModelAttribute> attributes;
 	private final LinkedHashMap<String, ModelRelation> hasOne;
 	private final LinkedHashMap<String, ModelRelation> hasMany;
 	private final ArrayList<String> indexes;
+	private final LinkedHashMap<String, ModelValidation> validations;
 	private boolean datestamps = DEFAULT_DATESTAMPS;
 	private boolean timestamps = DEFAULT_TIMESTAMPS;
 	private boolean allowUpdate = DEFAULT_ALLOW_UPDATE;
@@ -277,6 +288,14 @@ public class ModelDefinition {
 	private String[] siblings;
 
 	
+	public ModelDefinition(File file) {
+		this(file.getName(), null, file, null);
+	}
+	
+	public ModelDefinition(File file, String source) {
+		this(file.getName(), source, file, null);
+	}
+
 	private ModelDefinition(ModelDefinition original) {
 		this.file = new File(original.file.getAbsolutePath());
 		this.source = original.source;
@@ -308,16 +327,17 @@ public class ModelDefinition {
 		}
 		
 		this.indexes = new ArrayList<String>(original.indexes);
+
+		this.validations = new LinkedHashMap<String, ModelValidation>();
+		for(Entry<String, ModelValidation> entry : original.validations.entrySet()) {
+			this.validations.put(entry.getKey(), entry.getValue().getCopy());
+		}
+
 		this.siblings = (original.siblings != null) ? Arrays.copyOf(original.siblings, original.siblings.length) : null;
 	}
-	
-	
-	public ModelDefinition(File file) {
-		this(file.getName(), null, file, null);
-	}
 
-	public ModelDefinition(File file, String source) {
-		this(file.getName(), source, file, null);
+	public ModelDefinition(String simpleName) {
+		this(simpleName, null, null, new String[0]);
 	}
 
 	private ModelDefinition(String simpleName, String source, File file, String[] siblings) {
@@ -349,12 +369,9 @@ public class ModelDefinition {
 		this.hasOne = new LinkedHashMap<String, ModelRelation>();
 		this.hasMany = new LinkedHashMap<String, ModelRelation>();
 		this.indexes = new ArrayList<String>();
+		this.validations = new LinkedHashMap<String, ModelValidation>();
 
 		parse();
-	}
-
-	public ModelDefinition(String simpleName) {
-		this(simpleName, null, null, new String[0]);
 	}
 	
 	public ModelDefinition(String simpleName, String source, String...siblings) {
@@ -416,7 +433,29 @@ public class ModelDefinition {
 	public ModelRelation addRelation(String name, String type, boolean hasMany, Map<String, Object> options) {
 		return addRelation(build(name, type, options), hasMany);
 	}
+
+	public void addValidation(String field, Map<String, ?> options) {
+		ModelValidation v = validations.get(field);
+		if(v == null) {
+			v = new ModelValidation(this, field, options);
+			validations.put(v.field(), v);
+		} else {
+			v.putAll(options);
+		}
+	}
 	
+	private void addValidations(String annotation) {
+		char[] ca = annotation.toCharArray();
+		int start = annotation.indexOf('(') + 1;
+		int end = annotation.length() - 1;
+		Map<String, String> entries = getJavaEntries(ca, start, end);
+		
+		String[] fields = getString(entries.remove("field")).split("\\s*,\\s*");
+		for(String field : fields) {
+			addValidation(field, entries);
+		}
+	}
+
 	public boolean allowDelete() {
 		return allowDelete;
 	}
@@ -487,26 +526,42 @@ public class ModelDefinition {
 				&& this.allowDelete == other.allowDelete
 				&& this.allowUpdate == other.allowUpdate
 				&& this.embedded == other.embedded
+				&& this.validations.size() == other.validations.size()
 				&& this.indexes.equals(other.indexes)) {
-			ModelAttribute[] aa = this.attributes.values().toArray(new ModelAttribute[this.attributes.size()]);
-			ModelAttribute[] ab = other.attributes.values().toArray(new ModelAttribute[other.attributes.size()]);
-			for(int i = 0; i < aa.length; i++) {
-				if(!aa[i].getProperties().equals(ab[i].getProperties())) {
-					return false;
+			if(this.attributes.size() > 0) {
+				ModelAttribute[] aa = this.attributes.values().toArray(new ModelAttribute[this.attributes.size()]);
+				ModelAttribute[] ab = other.attributes.values().toArray(new ModelAttribute[other.attributes.size()]);
+				for(int i = 0; i < aa.length; i++) {
+					if(!aa[i].getProperties().equals(ab[i].getProperties())) {
+						return false;
+					}
 				}
 			}
-			ModelRelation[] ra = this.hasOne.values().toArray(new ModelRelation[this.hasOne.size()]);
-			ModelRelation[] rb = other.hasOne.values().toArray(new ModelRelation[other.hasOne.size()]);
-			for(int i = 0; i < ra.length; i++) {
-				if(!ra[i].getProperties().equals(rb[i].getProperties())) {
-					return false;
+			if(this.hasOne.size() > 0) {
+				ModelRelation[] ra = this.hasOne.values().toArray(new ModelRelation[this.hasOne.size()]);
+				ModelRelation[] rb = other.hasOne.values().toArray(new ModelRelation[other.hasOne.size()]);
+				for(int i = 0; i < ra.length; i++) {
+					if(!ra[i].getProperties().equals(rb[i].getProperties())) {
+						return false;
+					}
 				}
 			}
-			ra = this.hasMany.values().toArray(new ModelRelation[this.hasMany.size()]);
-			rb = other.hasMany.values().toArray(new ModelRelation[other.hasMany.size()]);
-			for(int i = 0; i < ra.length; i++) {
-				if(!ra[i].getProperties().equals(rb[i].getProperties())) {
-					return false;
+			if(this.hasMany.size() > 0) {
+				ModelRelation[] ra = this.hasMany.values().toArray(new ModelRelation[this.hasMany.size()]);
+				ModelRelation[] rb = other.hasMany.values().toArray(new ModelRelation[other.hasMany.size()]);
+				for(int i = 0; i < ra.length; i++) {
+					if(!ra[i].getProperties().equals(rb[i].getProperties())) {
+						return false;
+					}
+				}
+			}
+			if(this.validations.size() > 0) {
+				ModelValidation[] va = this.validations.values().toArray(new ModelValidation[this.validations.size()]);
+				ModelValidation[] vb = other.validations.values().toArray(new ModelValidation[other.validations.size()]);
+				for(int i = 0; i < va.length; i++) {
+					if(!va[i].getProperties().equals(vb[i].getProperties())) {
+						return false;
+					}
 				}
 			}
 			return true;
@@ -559,7 +614,50 @@ public class ModelDefinition {
 		};
 	}
 
-	public String getDescription() {
+	public File getFile() {
+		return file;
+	}
+
+	public File getFile(File srcFolder, String extension) {
+		String name = getSimpleName();
+		if(extension != null && extension.length() > 0) {
+			if(extension.charAt(0) == '.') {
+				if(extension.length() > 1) {
+					name = name + extension;
+				}
+			} else {
+				name = name + "." + extension;
+			}
+		}
+		String folder = getPackageName().replace('.', File.separatorChar);
+		return new File(srcFolder, folder + File.separator + name);
+	}
+	
+	public List<ModelRelation> getHasManys() {
+		return new ArrayList<ModelRelation>(hasMany.values());
+	}
+	
+	public List<ModelRelation> getHasOnes() {
+		return new ArrayList<ModelRelation>(hasOne.values());
+	}
+
+	public List<String> getIndexes() {
+		return new ArrayList<String>(indexes);
+	}
+	
+	public String getIndexesAnnotation() {
+		if(indexes.isEmpty()) {
+			return null;
+		}
+		
+		if(indexes.size() == 1) {
+			return "@Indexes(" + indexes.get(0) + ")";
+		}
+		
+		return join("@Indexes({", indexes, "\n})", "\n, ");
+	}
+	
+	public String getModelDescriptionAnnotation() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("@ModelDescription(");
 		boolean first = true;
@@ -658,7 +756,7 @@ public class ModelDefinition {
 		return sb.toString();
 	}
 
-	public List<String> getDescriptionImports() {
+	public List<String> getModelDescriptionImports() {
 		List<String> imports = new ArrayList<String>();
 		if(hasAttributes(false)) {
 			imports.add(Attribute.class.getCanonicalName());
@@ -691,37 +789,6 @@ public class ModelDefinition {
 			}
 		}
 		return imports;
-	}
-	
-	public File getFile() {
-		return file;
-	}
-	
-	public File getFile(File srcFolder, String extension) {
-		String name = getSimpleName();
-		if(extension != null && extension.length() > 0) {
-			if(extension.charAt(0) == '.') {
-				if(extension.length() > 1) {
-					name = name + extension;
-				}
-			} else {
-				name = name + "." + extension;
-			}
-		}
-		String folder = getPackageName().replace('.', File.separatorChar);
-		return new File(srcFolder, folder + File.separator + name);
-	}
-
-	public List<ModelRelation> getHasOnes() {
-		return new ArrayList<ModelRelation>(hasOne.values());
-	}
-	
-	public List<ModelRelation> getHasManys() {
-		return new ArrayList<ModelRelation>(hasMany.values());
-	}
-	
-	public List<String> getIndexes() {
-		return indexes;
 	}
 	
 	public String getPackageName() {
@@ -788,19 +855,13 @@ public class ModelDefinition {
 		return simpleName(type);
 	}
 	
-	public void setPackageName(String packageName) {
-		this.type = packageName + "." + getSimpleName();
-		this.packageName = packageName;
-		source = source.replaceFirst(packageRegex, "package " + packageName + ";");
-	}
-	
 	public ModelAttribute[] getTimestampFields() {
 		return new ModelAttribute[] {
 				new ModelAttribute(this, "createdAt"),
 				new ModelAttribute(this, "updatedAt")
 		};
 	}
-
+	
 	String getType(String name) {
 		String type = null;
 		if(name.endsWith(".class")) name = name.substring(0, name.length() - 6);
@@ -871,7 +932,83 @@ public class ModelDefinition {
 		}
 		return type;
 	}
+
+	public ModelValidation getValidation(String field) {
+		return validations.get(field);
+	}
 	
+	public List<ModelValidation> getValidations() {
+		return new ArrayList<ModelValidation>(validations.values());
+	}
+	
+	public String getValidationsAnnotation() {
+		if(validations.isEmpty()) {
+			return null;
+		}
+		
+		if(validations.size() == 1) {
+			return "@Validations(" + validations.values().iterator().next() + ")";
+		}
+		
+		// TODO improve validations packing routine
+
+		List<String> fields = new ArrayList<String>(validations.keySet());
+		Set<String> found = new HashSet<String>();
+		Map<ModelValidation, Set<String>> m1 = new HashMap<ModelValidation, Set<String>>();
+		for(int i = 0; i < fields.size(); i++) {
+			String field = fields.get(i);
+			if(found.contains(field)) {
+				continue;
+			}
+			ModelValidation current = validations.get(field);
+			Set<String> set = new TreeSet<String>();
+			set.add(current.field());
+			m1.put(current, set);
+			for(int j = 0; j < fields.size(); j++) {
+				if(i != j) {
+					field = fields.get(j);
+					if(found.contains(field)) {
+						continue;
+					}
+					ModelValidation validation = validations.get(field);
+					if(current.getCustomProperties().equals(validation.getCustomProperties())) {
+						m1.get(current).add(field);
+						found.add(field);
+					}
+				}
+			}
+		}
+		
+		Map<String, ModelValidation> m2 = new TreeMap<String, ModelValidation>();
+		for(Entry<ModelValidation, Set<String>> entry : m1.entrySet()) {
+			m2.put(join(entry.getValue(), ','), entry.getKey());
+		}
+
+		if(m2.size() == 1) {
+			Entry<String, ModelValidation> e = m2.entrySet().iterator().next();
+			return "@Validations(" + e.getValue().toString(e.getKey()) + ")";
+		}
+		else {
+			StringBuilder sb = new StringBuilder();
+			sb.append("@Validations({\n");
+			for(Iterator<Entry<String, ModelValidation>> iter = m2.entrySet().iterator(); iter.hasNext(); ) {
+				Entry<String, ModelValidation> e = iter.next();
+				sb.append('\t').append(e.getValue().toString(e.getKey()));
+				if(iter.hasNext()) {
+					sb.append(",\n");
+				} else {
+					sb.append('\n');
+				}
+			}
+			sb.append("})");
+			return sb.toString();
+		}
+	}
+	
+	private List<String> getValidationsImports() {
+		return new ArrayList<String>();
+	}
+
 	public boolean hasAttribute(String field) {
 		if(attributes.containsKey(field)) {
 			return true;
@@ -911,15 +1048,15 @@ public class ModelDefinition {
 	public boolean hasOne() {
 		return !hasOne.isEmpty();
 	}
-
+	
 	public boolean hasOne(String field) {
 		return hasOne.containsKey(field);
 	}
-	
+
 	public boolean hasRelation(String name) {
 		return hasOne.containsKey(name) || hasMany.containsKey(name);
 	}
-
+	
 	public boolean hasRelations() {
 		return !hasOne.isEmpty() || !hasMany.isEmpty();
 	}
@@ -927,7 +1064,7 @@ public class ModelDefinition {
 	public boolean isNew() {
 		return file == null || !file.isFile();
 	}
-	
+
 	public boolean isThrough(String field) {
 		ModelRelation relation = hasOne.get(field);
 		if(relation != null) {
@@ -939,7 +1076,7 @@ public class ModelDefinition {
 		}
 		return false;
 	}
-
+	
 	public void load() {
 		attributes.clear();
 		hasOne.clear();
@@ -952,14 +1089,15 @@ public class ModelDefinition {
 		
 		parse();
 	}
-	
+
 	public String packageName() {
 		return packageName;
 	}
-
+	
 	private void parse() {
-		mdstart = -1;
-		mdend = -1;
+		mdstart = mdend = -1;
+		ixstart = ixend = -1;
+		mvstart = mvend = -1;
 		
 		char[] ca = source.toCharArray();
 		
@@ -972,21 +1110,37 @@ public class ModelDefinition {
 					mdstart = s0;
 					mdend = s2+1;
 					parseDescription(ca, s1+1, s2);
-					s1 = findAll(ca, 0, INDEXES);
-					if(s1 != -1) {
-						s1 = find(ca, '(', s1);
-						if(s1 != -1) {
-							s2 = closer(ca, s1);
-							if(s2 != -1) {
-								parseIndexes(ca, s1+2, s2);
-							}
-						}
-					}
+				}
+			}
+		}
+
+		s0 = findAll(ca, 0, INDEXES);
+		if(s0 != -1) {
+			int s1 = find(ca, '(', s0);
+			if(s1 != -1) {
+				int s2 = closer(ca, s1);
+				if(s2 != -1) {
+					ixstart = s0;
+					ixend = s2+1;
+					parseIndexes(ca, s1+1, s2);
+				}
+			}
+		}
+
+		s0 = findAll(ca, 0, VALIDATIONS);
+		if(s0 != -1) {
+			int s1 = find(ca, '(', s0);
+			if(s1 != -1) {
+				int s2 = closer(ca, s1);
+				if(s2 != -1) {
+					mvstart = s0;
+					mvend = s2+1;
+					parseValidations(ca, s1+1, s2);
 				}
 			}
 		}
 	}
-	
+
 	private void parseAttributes(String attribute) {
 		char[] ca = attribute.toCharArray();
 		for(String attr : getJavaArguments(ca, 1, ca.length-1)) {
@@ -1020,7 +1174,7 @@ public class ModelDefinition {
 		allowDelete = coerce(parameters.get("allowDelete"), DEFAULT_ALLOW_DELETE);
 		embedded = coerce(parameters.get("embedded"), DEFAULT_EMBEDDED);
 	}
-
+	
 	private void parseIndexes(char[] ca, int start, int end) {
 		String s = new String(ca, start, end-start+1).trim();
 		indexes.addAll(JsonUtils.toStringList(s));
@@ -1052,7 +1206,22 @@ public class ModelDefinition {
 		return name;
 	}
 
+	private void parseValidations(char[] ca, int start, int end) {
+		int s1 = find(ca, '{', start, end);
+		int s2 = (s1 == -1) ? end : closer(ca, s1, end);
+		if(s1 == -1) {
+			s1 = start;
+		} else {
+			s1++;
+			s2--;
+		}
+		for(String v : getJavaArguments(ca, s1, s2)) {
+			addValidations(v);
+		}
+	}
+
 	public boolean remove(String field) {
+		validations.remove(field);
 		if(attributes.remove(field) != null) {
 			return true;
 		}
@@ -1066,36 +1235,50 @@ public class ModelDefinition {
 	}
 
 	public void save() {
-		if(file != null && mdstart != -1) {
+		if(file != null) {
 			// TODO not the most efficient scheme in the world...
-			String desciption = getDescription();
-			List<String> imports = getDescriptionImports();
+			List<String> imports = new ArrayList<String>();
+			String description = getModelDescriptionAnnotation();
+			imports.addAll(getModelDescriptionImports());
+			String indexes = getIndexesAnnotation();
+			String validations = getValidationsAnnotation();
+			imports.addAll(getValidationsImports());
+			
 			load();
+
 			StringBuilder sb = new StringBuilder(source);
-			sb.replace(mdstart, mdend, desciption);
+			if(mdstart != -1 && description != null) {
+				sb.replace(mdstart, mdend, description);
+			}
+			if(ixstart != -1 && indexes != null) {
+				sb.replace(ixstart, ixend, indexes);
+			}
+			if(mvstart != -1 && validations != null) {
+				sb.replace(mvstart, mvend, validations);
+			}
 			ensureImports(sb, imports);
 			writeFile(file, sb.toString());
 			load();
 		}
 	}
-	
+
 	public void save(File file) {
 		this.file = file;
 		save();
 	}
-
+	
 	public void setAttributeOrder(String[] names) {
-		Map<String, ModelAttribute> attrs = attributes;
-		attributes = new LinkedHashMap<String, ModelAttribute>();
+		Map<String, ModelAttribute> tmp = new HashMap<String, ModelAttribute>(attributes);
+		attributes.clear();
 		for(String name : names) {
-			attributes.put(name, attrs.get(name));
+			attributes.put(name, tmp.get(name));
 		}
 	}
 
 	public void setFile(File file) {
 		this.file = file;
 	}
-	
+
 	public void setOpposites(ModelDefinition[] models) {
 		for(ModelRelation relation : hasOne.values()) {
 			relation.setOpposite(models);
@@ -1103,6 +1286,12 @@ public class ModelDefinition {
 		for(ModelRelation relation : hasMany.values()) {
 			relation.setOpposite(models);
 		}
+	}
+	
+	public void setPackageName(String packageName) {
+		this.type = packageName + "." + getSimpleName();
+		this.packageName = packageName;
+		source = source.replaceFirst(packageRegex, "package " + packageName + ";");
 	}
 	
 	public void setSiblings(String...siblings) {

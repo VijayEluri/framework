@@ -23,12 +23,12 @@ public class ModelDefinitionTests {
 		File file = writeFile(File.createTempFile("test", null), source);
 		
 		ModelDefinition definition = new ModelDefinition(file);
-		System.out.println(definition.getDescription());
-		assertEquals(description, definition.getDescription());
+		System.out.println(definition.getModelDescriptionAnnotation());
+		assertEquals(description, definition.getModelDescriptionAnnotation());
 
 		definition.save();
 		System.out.println(readFile(file));
-		assertEquals(description, new ModelDefinition(file).getDescription());
+		assertEquals(description, new ModelDefinition(file).getModelDescriptionAnnotation());
 	}
 	
 	@Test
@@ -45,12 +45,12 @@ public class ModelDefinitionTests {
 		File file = writeFile(File.createTempFile("test", null), source);
 		
 		ModelDefinition definition = new ModelDefinition(file);
-		System.out.println(definition.getDescription());
-		assertEquals(description, definition.getDescription());
+		System.out.println(definition.getModelDescriptionAnnotation());
+		assertEquals(description, definition.getModelDescriptionAnnotation());
 
 		definition.save();
 		System.out.println(readFile(file));
-		assertEquals(description, new ModelDefinition(file).getDescription());
+		assertEquals(description, new ModelDefinition(file).getModelDescriptionAnnotation());
 	}
 	
 	@Test
@@ -67,12 +67,12 @@ public class ModelDefinitionTests {
 		File file = writeFile(File.createTempFile("test", null), source);
 		
 		ModelDefinition definition = new ModelDefinition(file);
-		System.out.println(definition.getDescription());
-		assertEquals(description, definition.getDescription());
+		System.out.println(definition.getModelDescriptionAnnotation());
+		assertEquals(description, definition.getModelDescriptionAnnotation());
 
 		definition.save();
 		System.out.println(readFile(file));
-		assertEquals(description, new ModelDefinition(file).getDescription());
+		assertEquals(description, new ModelDefinition(file).getModelDescriptionAnnotation());
 	}
 	
 	@Test
@@ -90,12 +90,12 @@ public class ModelDefinitionTests {
 		File file = writeFile(File.createTempFile("test", null), source);
 		
 		ModelDefinition definition = new ModelDefinition(file);
-		System.out.println(definition.getDescription());
-		assertEquals(description, definition.getDescription());
+		System.out.println(definition.getModelDescriptionAnnotation());
+		assertEquals(description, definition.getModelDescriptionAnnotation());
 
 		definition.save();
 		System.out.println(readFile(file));
-		assertEquals(description, new ModelDefinition(file).getDescription());
+		assertEquals(description, new ModelDefinition(file).getModelDescriptionAnnotation());
 	}
 	
 	@Test
@@ -118,12 +118,12 @@ public class ModelDefinitionTests {
 		File file = writeFile(File.createTempFile("test", null), source);
 		
 		ModelDefinition definition = new ModelDefinition(file);
-		System.out.println(definition.getDescription());
-		assertEquals(description, definition.getDescription());
+		System.out.println(definition.getModelDescriptionAnnotation());
+		assertEquals(description, definition.getModelDescriptionAnnotation());
 
 		definition.save();
 		System.out.println(readFile(file));
-		assertEquals(description, new ModelDefinition(file).getDescription());
+		assertEquals(description, new ModelDefinition(file).getModelDescriptionAnnotation());
 	}
 
 	@Test
@@ -143,12 +143,12 @@ public class ModelDefinitionTests {
 		File file = writeFile(File.createTempFile("test", null), source);
 		
 		ModelDefinition definition = new ModelDefinition(file);
-		System.out.println(definition.getDescription());
-		assertEquals(description, definition.getDescription());
+		System.out.println(definition.getModelDescriptionAnnotation());
+		assertEquals(description, definition.getModelDescriptionAnnotation());
 
 		definition.save();
 		System.out.println(readFile(file));
-		assertEquals(description, new ModelDefinition(file).getDescription());
+		assertEquals(description, new ModelDefinition(file).getModelDescriptionAnnotation());
 	}
 	
 	@Test
@@ -163,12 +163,96 @@ public class ModelDefinitionTests {
 		File file = writeFile(File.createTempFile("test", null), source);
 		
 		ModelDefinition definition = new ModelDefinition(file);
-		System.out.println(definition.getDescription());
-		assertEquals(description, definition.getDescription());
+		System.out.println(definition.getModelDescriptionAnnotation());
+		assertEquals(description, definition.getModelDescriptionAnnotation());
 
 		definition.save();
 		System.out.println(readFile(file));
-		assertEquals(description, new ModelDefinition(file).getDescription());
+		assertEquals(description, new ModelDefinition(file).getModelDescriptionAnnotation());
 	}
 	
+	@Test
+	public void testValidations_Single() throws Exception {
+		String description = "@Validations(@Validate(field=\"name\", isNotBlank=true))";
+		
+		String source = description + "\npublic class TestModel {\n\n}";
+		
+		File file = writeFile(File.createTempFile("test", null), source);
+		
+		ModelDefinition definition = new ModelDefinition(file);
+		System.out.println(definition.getValidationsAnnotation());
+		assertEquals(description, definition.getValidationsAnnotation());
+
+		definition.save();
+		System.out.println(readFile(file));
+		assertEquals(description, new ModelDefinition(file).getValidationsAnnotation());
+	}
+	
+	@Test
+	public void testValidations_Multiple() throws Exception {
+		String description = 
+			"@Validations({\n" +
+			"\t@Validate(field=\"name\", isNotBlank=true),\n" +
+			"\t@Validate(field=\"type\", isBlank=true)\n" +
+			"})";
+		
+		String source = description + "\npublic class TestModel {\n\n}";
+		
+		File file = writeFile(File.createTempFile("test", null), source);
+		
+		ModelDefinition definition = new ModelDefinition(file);
+		System.out.println(definition.getValidationsAnnotation());
+		assertEquals(description, definition.getValidationsAnnotation());
+
+		definition.save();
+		System.out.println(readFile(file));
+		assertEquals(description, new ModelDefinition(file).getValidationsAnnotation());
+	}
+
+	@Test
+	public void testValidations_Multiple_SameField() throws Exception {
+		String description = 
+			"@Validations({\n" +
+			"\t@Validate(field=\"name\", isNotBlank=true),\n" +
+			"\t@Validate(field=\"name\", isBlank=true)\n" +
+			"})";
+		
+		String packed = "@Validations(@Validate(field=\"name\", isBlank=true, isNotBlank=true))";
+
+		String source = description + "\npublic class TestModel {\n\n}";
+		
+		File file = writeFile(File.createTempFile("test", null), source);
+		
+		ModelDefinition definition = new ModelDefinition(file);
+		System.out.println(definition.getValidationsAnnotation());
+		assertEquals(packed, definition.getValidationsAnnotation());
+
+		definition.save();
+		System.out.println(readFile(file));
+		assertEquals(packed, new ModelDefinition(file).getValidationsAnnotation());
+	}
+	
+	@Test
+	public void testValidations_Multiple_SameValue() throws Exception {
+		String description = 
+			"@Validations({\n" +
+			"\t@Validate(field=\"name\", isNotBlank=true),\n" +
+			"\t@Validate(field=\"type\", isNotBlank=true)\n" +
+			"})";
+
+		String packed = "@Validations(@Validate(field=\"name,type\", isNotBlank=true))";
+
+		String source = description + "\npublic class TestModel {\n\n}";
+		
+		File file = writeFile(File.createTempFile("test", null), source);
+		
+		ModelDefinition definition = new ModelDefinition(file);
+		System.out.println(definition.getValidationsAnnotation());
+		assertEquals(packed, definition.getValidationsAnnotation());
+
+		definition.save();
+		System.out.println(readFile(file));
+		assertEquals(packed, new ModelDefinition(file).getValidationsAnnotation());
+	}
+
 }
