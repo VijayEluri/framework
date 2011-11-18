@@ -10,7 +10,6 @@
  ******************************************************************************/
 package org.oobium.eclipse.wizards.view;
 
-import org.eclipse.core.resources.IProject;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
@@ -29,8 +28,8 @@ public class NewViewWizardPage extends ProjectWizardPage {
 	private Text nameTxt;
 	private NewViewValidator validator;
 
-	protected NewViewWizardPage(String pageName, IProject website) {
-		super(pageName, website);
+	protected NewViewWizardPage(String pageName) {
+		super(pageName);
 		validator = new NewViewValidator(this);
 
 		setTitle("Create a new web page");

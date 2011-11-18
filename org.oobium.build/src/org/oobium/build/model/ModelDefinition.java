@@ -353,6 +353,10 @@ public class ModelDefinition {
 		parse();
 	}
 
+	public ModelDefinition(String simpleName) {
+		this(simpleName, null, null, new String[0]);
+	}
+	
 	public ModelDefinition(String simpleName, String source, String...siblings) {
 		this(simpleName, source, null, siblings);
 	}

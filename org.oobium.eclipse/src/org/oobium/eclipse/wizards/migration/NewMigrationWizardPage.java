@@ -10,14 +10,13 @@
  ******************************************************************************/
 package org.oobium.eclipse.wizards.migration;
 
-import org.eclipse.core.resources.IProject;
 import org.eclipse.swt.widgets.Composite;
 import org.oobium.eclipse.wizards.ProjectWizardPage;
 
 public class NewMigrationWizardPage extends ProjectWizardPage {
 
-	protected NewMigrationWizardPage(String pageName, IProject website) {
-		super(pageName, website);
+	protected NewMigrationWizardPage(String pageName) {
+		super(pageName);
 	}
 
 	@Override

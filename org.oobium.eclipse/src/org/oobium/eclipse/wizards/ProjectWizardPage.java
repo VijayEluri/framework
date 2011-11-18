@@ -15,7 +15,6 @@ import java.util.List;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.wizard.IWizardPage;
@@ -33,7 +32,9 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
-import org.oobium.eclipse.OobiumNature;
+import org.oobium.build.workspace.Application;
+import org.oobium.build.workspace.Workspace;
+import org.oobium.eclipse.OobiumPlugin;
 import org.oobium.eclipse.dialogs.ProjectSelectionDialog;
 
 public abstract class ProjectWizardPage extends WizardPage implements IWizardPage {
@@ -44,36 +45,35 @@ public abstract class ProjectWizardPage extends WizardPage implements IWizardPag
 	private Text projectTxt;
 	private Button browseBtn;
 
-	protected ProjectWizardPage(String pageName, IProject project) {
+	protected ProjectWizardPage(String pageName) {
 		super(pageName);
-		this.project = project;
 	}
 
 	private void browseProjects() {
-		try {
-			List<IProject> projects = new ArrayList<IProject>();
-			for(IProject project : ResourcesPlugin.getWorkspace().getRoot().getProjects()) {
-				if(project.isOpen() && project.getNature(OobiumNature.ID) != null) {
+		Workspace workspace = OobiumPlugin.getWorkspace();
+		List<IProject> projects = new ArrayList<IProject>();
+		for(IProject project : ResourcesPlugin.getWorkspace().getRoot().getProjects()) {
+			if(project.isOpen()) {
+				Application app = workspace.getApplication(project.getName());
+				if(app != null) {
 					projects.add(project);
 				}
 			}
-			if(projects.isEmpty()) {
-				MessageDialog.openError(getShell(), "No Projects",
-						"There are no web projects in the current workspace.  \n"
-								+ "You must create or import one before using this wizard.");
-			} else {
-				ProjectSelectionDialog dlg = new ProjectSelectionDialog(getShell(), projects);
-				dlg.setSingleSelection(true);
-				if(Dialog.OK == dlg.open()) {
-					IProject project = dlg.getProject();
-					if(this.project != project) {
-						this.project = project;
-						projectTxt.setText(project.getName());
-					}
+		}
+		if(projects.isEmpty()) {
+			MessageDialog.openError(getShell(), "No Projects",
+					"There are no Oobium projects in the current workspace.  \n"
+							+ "You must create or import one before using this wizard.");
+		} else {
+			ProjectSelectionDialog dlg = new ProjectSelectionDialog(getShell(), projects);
+			dlg.setSingleSelection(true);
+			dlg.setShowOnlyApplicableProjects(true);
+			if(Dialog.OK == dlg.open()) {
+				IProject project = dlg.getProject();
+				if(this.project != project) {
+					setProject(project);
 				}
 			}
-		} catch(CoreException e) {
-			e.printStackTrace();
 		}
 	}
 
@@ -122,11 +122,10 @@ public abstract class ProjectWizardPage extends WizardPage implements IWizardPag
 			public void modifyText(ModifyEvent e) {
 				String websiteName = ((Text) e.widget).getText().trim();
 				if(websiteName.length() > 0) {
-					project = ResourcesPlugin.getWorkspace().getRoot().getProject(websiteName);
+					setProject(ResourcesPlugin.getWorkspace().getRoot().getProject(websiteName));
 				} else {
-					project = null;
+					setProject(null);
 				}
-				setPageComplete(validate());
 			}
 		});
 		projectTxt.addVerifyListener(new VerifyListener() {
@@ -154,6 +153,18 @@ public abstract class ProjectWizardPage extends WizardPage implements IWizardPag
 		return project;
 	}
 
+	public void setProject(IProject project) {
+		this.project = project;
+		if(projectTxt != null) {
+			if(project == null) {
+				projectTxt.setText("");
+			} else {
+				projectTxt.setText(project.getName());
+			}
+			setPageComplete(validate());
+		}
+	}
+	
 	protected abstract boolean validate();
 	
 }

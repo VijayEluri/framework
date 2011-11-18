@@ -27,6 +27,7 @@ Import-Package: org.oobium.app,
  org.oobium.build.runner,
  org.oobium.client,
  org.oobium.logging,
+ org.oobium.persist,
  org.oobium.utils,
  org.oobium.utils.coercion,
  org.oobium.utils.json

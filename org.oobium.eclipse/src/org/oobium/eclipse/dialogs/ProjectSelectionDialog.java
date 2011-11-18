@@ -51,6 +51,7 @@ public class ProjectSelectionDialog extends SelectionStatusDialog {
 	private TableViewer viewer;
 	
 	private ViewerFilter filter;
+	private boolean doFilter;
 
 	private List<IProject> projects;
 	private boolean single;
@@ -117,7 +118,7 @@ public class ProjectSelectionDialog extends SelectionStatusDialog {
 		viewer.getControl().setFont(font);
 
 		Button checkbox = new Button(composite, SWT.CHECK);
-		checkbox.setText("Show only projects");
+		checkbox.setText("Show only applicable projects");
 		checkbox.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
 		checkbox.addSelectionListener(new SelectionListener() {
 			public void widgetDefaultSelected(SelectionEvent e) {
@@ -130,7 +131,6 @@ public class ProjectSelectionDialog extends SelectionStatusDialog {
 		});
 //		IDialogSettings dialogSettings = JavaPlugin.getDefault().getDialogSettings();
 //		boolean doFilter = !dialogSettings.getBoolean(DIALOG_SETTINGS_SHOW_ALL) && !fProjectsWithSpecifics.isEmpty();
-		boolean doFilter = false;
 		checkbox.setSelection(doFilter);
 		updateFilter(doFilter);
 
@@ -172,6 +172,10 @@ public class ProjectSelectionDialog extends SelectionStatusDialog {
 
 	public void setSingleSelection(boolean single) {
 		this.single = single;
+	}
+	
+	public void setShowOnlyApplicableProjects(boolean onlyApplicable) {
+		this.doFilter = onlyApplicable;
 	}
 	
 	protected void updateFilter(boolean selected) {

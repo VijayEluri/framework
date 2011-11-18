@@ -42,7 +42,6 @@
             icon="icons/oobium.png"
             id="org.oobium.eclipse.wizards.project.NewProjectWizard"
             name="Oobium Project"
-            preferredPerspectives="org.eclipse.jdt.ui.JavaPerspective"
             project="true">
          <description>
             Create a new Oobium Project
@@ -50,15 +49,26 @@
       </wizard>
       <wizard
             category="org.oobium.builder"
-            class="org.oobium.eclipse.wizards.view.NewViewWizard"
+            class="org.oobium.eclipse.wizards.model.NewModelWizard"
             hasPages="true"
-            icon="icons/view.gif"
-            id="org.oobium.eclipse.wizards.view.NewViewWizard"
-            name="View"
-            preferredPerspectives="org.eclipse.jdt.ui.JavaPerspective"
+            icon="icons/model.gif"
+            id="org.oobium.eclipse.wizards.model.NewModelWizard"
+            name="Model"
             project="false">
          <description>
-            Create a new web page and, optionally, all of its dependencies.
+            Create a new Model and, optionally, all supporting classes.
+         </description>
+      </wizard>
+      <wizard
+            category="org.oobium.builder"
+            class="org.oobium.eclipse.wizards.view.NewViewWizard"
+            hasPages="true"
+            icon="icons/esp.gif"
+            id="org.oobium.eclipse.wizards.view.NewViewWizard"
+            name="View"
+            project="false">
+         <description>
+            Create a new View (ESP file).
          </description>
       </wizard>
       <wizard
@@ -68,10 +78,45 @@
             icon="icons/controller.gif"
             id="org.oobium.eclipse.wizards.controller.NewControllerWizard"
             name="Controller"
-            preferredPerspectives="org.eclipse.jdt.ui.JavaPerspective"
             project="false">
          <description>
-            Create a new controller and, optionally, all of its dependencies.
+            Create a new Controller.
+         </description>
+      </wizard>
+      <wizard
+            category="org.oobium.builder"
+            class="org.oobium.eclipse.wizards.observer.NewObserverWizard"
+            hasPages="true"
+            icon="icons/observer.gif"
+            id="org.oobium.eclipse.wizards.observer.NewObserverWizard"
+            name="Observer"
+            project="false">
+         <description>
+            Create a new Model Observer.
+         </description>
+      </wizard>
+      <wizard
+            category="org.oobium.builder"
+            class="org.oobium.eclipse.wizards.style.NewStyleWizard"
+            hasPages="true"
+            icon="icons/stylesheet.gif"
+            id="org.oobium.eclipse.wizards.style.NewStyleWizard"
+            name="StyleSheet"
+            project="false">
+         <description>
+            Create a new StyleSheet (ESS file).
+         </description>
+      </wizard>
+      <wizard
+            category="org.oobium.builder"
+            class="org.oobium.eclipse.wizards.script.NewScriptWizard"
+            hasPages="true"
+            icon="icons/javascript.gif"
+            id="org.oobium.eclipse.wizards.script.NewScriptWizard"
+            name="Script"
+            project="false">
+         <description>
+            Create a new Script (EJS file).
          </description>
       </wizard>
       <wizard
@@ -81,36 +126,21 @@
             icon="icons/email.png"
             id="org.oobium.eclipse.wizards.mailer.NewMailerWizard"
             name="Mailer"
-            preferredPerspectives="org.eclipse.jdt.ui.JavaPerspective"
             project="false">
          <description>
-            Create a new model and, optionally, all of its dependencies.
+            Create a new Mailer and, optionally, all supporting classes.
          </description>
       </wizard>
       <wizard
             category="org.oobium.builder"
-            class="org.oobium.eclipse.wizards.actioncache.NewActionCacheWizard"
+            class="org.oobium.eclipse.wizards.controllercache.NewControllerCacheWizard"
             hasPages="true"
             icon="icons/java_line.gif"
-            id="org.oobium.eclipse.wizards.actioncache.NewActionCacheWizard"
+            id="org.oobium.eclipse.wizards.actioncache.NewControllerCacheWizard"
             name="Controller Cache"
-            preferredPerspectives="org.eclipse.jdt.ui.JavaPerspective"
             project="false">
          <description>
-            Create a new model and, optionally, all of its dependencies.
-         </description>
-      </wizard>
-      <wizard
-            category="org.oobium.builder"
-            class="org.oobium.eclipse.wizards.observer.NewObserverWizard"
-            hasPages="true"
-            icon="icons/java_line.gif"
-            id="org.oobium.eclipse.wizards.observer.NewObserverWizard"
-            name="Observer"
-            preferredPerspectives="org.eclipse.jdt.ui.JavaPerspective"
-            project="false">
-         <description>
-            Create a new model and, optionally, all of its dependencies.
+            Create a new Controller Cache.
          </description>
       </wizard>
       <primaryWizard

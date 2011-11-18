@@ -26,7 +26,8 @@ public class NewTestSuiteWizard extends ProjectWizard {
 	}
 
 	public void init(IWorkbench workbench, IStructuredSelection selection) {
-		page1 = new NewTestSuiteWizardPage("New Web Page", getSelectedProject(selection));
+		page1 = new NewTestSuiteWizardPage("New Test Suite Page");
+		page1.setProject(getSelectedProject(selection));
 		addPage(page1);
 	}
 	

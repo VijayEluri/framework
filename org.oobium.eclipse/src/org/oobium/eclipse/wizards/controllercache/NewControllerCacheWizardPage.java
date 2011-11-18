@@ -8,9 +8,8 @@
  * Contributors:
  *     Jeremy Dowdall <jeremy@oobium.com> - initial API and implementation
  ******************************************************************************/
-package org.oobium.eclipse.wizards.actioncache;
+package org.oobium.eclipse.wizards.controllercache;
 
-import org.eclipse.core.resources.IProject;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
@@ -23,15 +22,15 @@ import org.oobium.eclipse.OobiumPlugin;
 import org.oobium.eclipse.wizards.ProjectWizardPage;
 import org.oobium.eclipse.wizards.view.NewViewValidator;
 
-public class NewActionCacheWizardPage extends ProjectWizardPage {
-	public static final String ID = NewActionCacheWizardPage.class.getCanonicalName();
+public class NewControllerCacheWizardPage extends ProjectWizardPage {
+	public static final String ID = NewControllerCacheWizardPage.class.getCanonicalName();
 
 	private String name;
 	private Text nameTxt;
 	private NewViewValidator validator;
 
-	protected NewActionCacheWizardPage(String pageName, IProject website) {
-		super(pageName, website);
+	protected NewControllerCacheWizardPage(String pageName) {
+		super(pageName);
 		validator = new NewViewValidator(this);
 
 		setTitle("Create a new controller cache");

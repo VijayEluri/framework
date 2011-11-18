@@ -10,7 +10,6 @@
  ******************************************************************************/
 package org.oobium.eclipse.wizards.controller;
 
-import org.eclipse.core.resources.IProject;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
@@ -38,8 +37,8 @@ public class NewControllerWizardPage extends ProjectWizardPage {
 	
 	private NewModelValidator validator;
 
-	protected NewControllerWizardPage(String pageName, IProject website) {
-		super(pageName, website);
+	protected NewControllerWizardPage(String pageName) {
+		super(pageName);
 		validator = new NewModelValidator(this);
 
 		setTitle("Create a new controller");

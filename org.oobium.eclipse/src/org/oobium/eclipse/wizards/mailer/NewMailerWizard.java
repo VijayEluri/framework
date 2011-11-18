@@ -25,7 +25,8 @@ public class NewMailerWizard extends ProjectWizard {
 	}
 
 	public void init(IWorkbench workbench, IStructuredSelection selection) {
-		page1 = new NewMailerWizardPage("New Mailer", getSelectedProject(selection));
+		page1 = new NewMailerWizardPage("New Mailer");
+		page1.setProject(getSelectedProject(selection));
 		addPage(page1);
 	}
 	

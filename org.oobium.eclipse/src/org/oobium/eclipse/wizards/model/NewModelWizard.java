@@ -14,8 +14,7 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.actions.WorkspaceModifyOperation;
-import org.oobium.eclipse.OobiumPlugin;
-import org.oobium.eclipse.views.developer.ConsoleView;
+import org.oobium.build.model.ModelDefinition;
 import org.oobium.eclipse.wizards.ProjectWizard;
 
 public class NewModelWizard extends ProjectWizard {
@@ -27,16 +26,19 @@ public class NewModelWizard extends ProjectWizard {
 	}
 
 	public void init(IWorkbench workbench, IStructuredSelection selection) {
-		page1 = new NewModelWizardPage("New Model", getSelectedProject(selection));
+		page1 = new NewModelWizardPage("New Model");
+		page1.setProject(getSelectedProject(selection));
 		addPage(page1);
 	}
 	
 	@Override
 	public boolean performFinish() {
+		ModelDefinition def = page1.getDefinition();
+		System.out.println(def);
 		try {
 			getContainer().run(false, true, new WorkspaceModifyOperation() {
 				protected void execute(IProgressMonitor monitor) {
-					OobiumPlugin.getInstance().execute(ConsoleView.ID, "create model " + page1.getName());
+//					OobiumPlugin.getInstance().execute(ConsoleView.ID, "create model " + page1.getName());
 				}
 			});
 		} catch(Exception e) {

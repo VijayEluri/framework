@@ -17,6 +17,7 @@ import org.eclipse.ui.actions.WorkspaceModifyOperation;
 import org.oobium.eclipse.wizards.ProjectWizard;
 
 public class NewViewWizard extends ProjectWizard {
+	
 	public static final String ID = NewViewWizard.class.getCanonicalName();
 	
 	private NewViewWizardPage page1;
@@ -25,7 +26,8 @@ public class NewViewWizard extends ProjectWizard {
 	}
 
 	public void init(IWorkbench workbench, IStructuredSelection selection) {
-		page1 = new NewViewWizardPage("New Web Page", getSelectedProject(selection));
+		page1 = new NewViewWizardPage("New View Page");
+		page1.setProject(getSelectedProject(selection));
 		addPage(page1);
 	}
 	

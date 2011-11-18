@@ -8,7 +8,7 @@
  * Contributors:
  *     Jeremy Dowdall <jeremy@oobium.com> - initial API and implementation
  ******************************************************************************/
-package org.oobium.eclipse.wizards.actioncache;
+package org.oobium.eclipse.wizards.controllercache;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -16,16 +16,17 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.actions.WorkspaceModifyOperation;
 import org.oobium.eclipse.wizards.ProjectWizard;
 
-public class NewActionCacheWizard extends ProjectWizard {
-	public static final String ID = NewActionCacheWizard.class.getCanonicalName();
+public class NewControllerCacheWizard extends ProjectWizard {
+	public static final String ID = NewControllerCacheWizard.class.getCanonicalName();
 	
-	private NewActionCacheWizardPage page1;
+	private NewControllerCacheWizardPage page1;
 
-	public NewActionCacheWizard() {
+	public NewControllerCacheWizard() {
 	}
 
 	public void init(IWorkbench workbench, IStructuredSelection selection) {
-		page1 = new NewActionCacheWizardPage("New ActionCache", getSelectedProject(selection));
+		page1 = new NewControllerCacheWizardPage("New Controller Cache");
+		page1.setProject(getSelectedProject(selection));
 		addPage(page1);
 	}
 	

@@ -8,16 +8,16 @@
  * Contributors:
  *     Jeremy Dowdall <jeremy@oobium.com> - initial API and implementation
  ******************************************************************************/
-package org.oobium.eclipse.wizards.actioncache;
+package org.oobium.eclipse.wizards.controllercache;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.jface.dialogs.DialogPage;
 import org.eclipse.jface.wizard.WizardPage;
 import org.oobium.eclipse.wizards.ProjectValidator;
 
-public class NewActionCacheValidator extends ProjectValidator {
+public class NewControllerCacheValidator extends ProjectValidator {
 
-	public NewActionCacheValidator(WizardPage page) {
+	public NewControllerCacheValidator(WizardPage page) {
 		super(page);
 	}
 	

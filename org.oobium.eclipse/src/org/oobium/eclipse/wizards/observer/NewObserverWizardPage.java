@@ -10,7 +10,6 @@
  ******************************************************************************/
 package org.oobium.eclipse.wizards.observer;
 
-import org.eclipse.core.resources.IProject;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
@@ -30,8 +29,8 @@ public class NewObserverWizardPage extends ProjectWizardPage {
 	private Text nameTxt;
 	private NewViewValidator validator;
 
-	protected NewObserverWizardPage(String pageName, IProject website) {
-		super(pageName, website);
+	protected NewObserverWizardPage(String pageName) {
+		super(pageName);
 		validator = new NewViewValidator(this);
 
 		setTitle("Create a new Observer");

@@ -29,7 +29,6 @@ import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.Project.Type;
 import org.oobium.build.workspace.Workspace;
 import org.oobium.eclipse.OobiumPlugin;
-import org.oobium.eclipse.views.developer.ConsoleView;
 import org.oobium.eclipse.wizards.ProjectWizard;
 
 public class NewProjectWizard extends ProjectWizard implements INewWizard {

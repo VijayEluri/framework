@@ -10,14 +10,13 @@
  ******************************************************************************/
 package org.oobium.eclipse.wizards.testsuite;
 
-import org.eclipse.core.resources.IProject;
 import org.eclipse.swt.widgets.Composite;
 import org.oobium.eclipse.wizards.ProjectWizardPage;
 
 public class NewTestSuiteWizardPage extends ProjectWizardPage {
 
-	protected NewTestSuiteWizardPage(String pageName, IProject website) {
-		super(pageName, website);
+	protected NewTestSuiteWizardPage(String pageName) {
+		super(pageName);
 	}
 
 	@Override
