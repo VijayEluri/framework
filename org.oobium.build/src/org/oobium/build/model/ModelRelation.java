@@ -10,9 +10,26 @@
  ******************************************************************************/
 package org.oobium.build.model;
 
-import static org.oobium.persist.Relation.*;
-import static org.oobium.build.model.ModelDefinition.getJavaEntries;
-import static org.oobium.build.model.ModelDefinition.getString;
+import static org.oobium.persist.Relation.CASCADE;
+import static org.oobium.persist.Relation.DEFAULT_DEPENDENT;
+import static org.oobium.persist.Relation.DEFAULT_EMBED;
+import static org.oobium.persist.Relation.DEFAULT_EMBEDDED;
+import static org.oobium.persist.Relation.DEFAULT_INCLUDE;
+import static org.oobium.persist.Relation.DEFAULT_ONDELETE;
+import static org.oobium.persist.Relation.DEFAULT_ONUPDATE;
+import static org.oobium.persist.Relation.DEFAULT_OPPOSITE;
+import static org.oobium.persist.Relation.DEFAULT_READONLY;
+import static org.oobium.persist.Relation.DEFAULT_THROUGH;
+import static org.oobium.persist.Relation.DEFAULT_UNIQUE;
+import static org.oobium.persist.Relation.DEFAULT_VIRTUAL;
+import static org.oobium.persist.Relation.DELETE;
+import static org.oobium.persist.Relation.DESTROY;
+import static org.oobium.persist.Relation.NO_ACTION;
+import static org.oobium.persist.Relation.NULLIFY;
+import static org.oobium.persist.Relation.RESTRICT;
+import static org.oobium.persist.Relation.SET_DEFAULT;
+import static org.oobium.persist.Relation.SET_NULL;
+import static org.oobium.persist.Relation.UNDEFINED;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.columnName;
 import static org.oobium.utils.StringUtils.simpleName;
@@ -77,19 +94,19 @@ public class ModelRelation {
 		char[] ca = annotation.toCharArray();
 		int start = annotation.indexOf('(') + 1;
 		int end = annotation.length() - 1;
-		Map<String, String> entries = getJavaEntries(ca, start, end);
+		Map<String, String> entries = ModelUtils.getJavaEntries(ca, start, end);
 		
-		name(getString(entries.get("name")));
+		name(ModelUtils.getString(entries.get("name")));
 		type(model.getType(entries.get("type")));
-		opposite(getString(entries.get("opposite")));
-		through(getString(entries.get("through")));
+		opposite(ModelUtils.getString(entries.get("opposite")));
+		through(ModelUtils.getString(entries.get("through")));
 		readOnly(coerce(entries.get("readOnly"), DEFAULT_READONLY));
 		unique(coerce(entries.get("unique"), DEFAULT_UNIQUE));
 		virtual(coerce(entries.get("virtual"), DEFAULT_VIRTUAL));
 		dependent(getReferential(entries.get("dependent"), DEFAULT_DEPENDENT));
 		onDelete(getReferential(entries.get("onDelete"), DEFAULT_ONDELETE));
 		onUpdate(getReferential(entries.get("onUpdate"), DEFAULT_ONUPDATE));
-		embed(getString(entries.get("embed")));
+		embed(ModelUtils.getString(entries.get("embed")));
 		embedded(coerce(entries.get("embedded"), DEFAULT_EMBEDDED));
 		include(coerce(entries.get("include"), DEFAULT_INCLUDE));
 	}

@@ -19,7 +19,6 @@ import static org.oobium.persist.ModelDescription.DEFAULT_TIMESTAMPS;
 import static org.oobium.utils.CharStreamUtils.closer;
 import static org.oobium.utils.CharStreamUtils.find;
 import static org.oobium.utils.CharStreamUtils.findAll;
-import static org.oobium.utils.CharStreamUtils.findEOL;
 import static org.oobium.utils.FileUtils.readFile;
 import static org.oobium.utils.FileUtils.writeFile;
 import static org.oobium.utils.StringUtils.controllerSimpleName;
@@ -27,6 +26,7 @@ import static org.oobium.utils.StringUtils.getResourceAsString;
 import static org.oobium.utils.StringUtils.join;
 import static org.oobium.utils.StringUtils.*;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
+import static org.oobium.build.model.ModelUtils.*;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -49,6 +49,8 @@ import org.oobium.build.gen.model.PropertyDescriptor;
 import org.oobium.persist.Attribute;
 import org.oobium.persist.ModelDescription;
 import org.oobium.persist.Relation;
+import org.oobium.persist.Validate;
+import org.oobium.persist.Validations;
 import org.oobium.utils.json.JsonUtils;
 
 public class ModelDefinition {
@@ -73,134 +75,13 @@ public class ModelDefinition {
 		primitives.add("char");
 	}
 
-	public static List<String> getJavaArguments(char[] ca, int start, int end) {
-		List<String> args = new ArrayList<String>();
-		
-		int s1 = start;
-		int s = start;
-		while(s < end) {
-			switch(ca[s]) {
-			case ',':
-				String value = new String(ca, s1, s-s1).trim();
-				args.add(value);
-				s++;
-				s1 = s;
-				break;
-			case '<':
-			case '(':
-			case '{':
-			case '[':
-			case '"':
-				s = closer(ca, s, end, true) + 1;
-				if(s == 0) {
-					s = end;
-				}
-				break;
-			case '/':
-				if(ca[s-1] == '/') { // line comment
-					s = findEOL(ca, s+1);
-				}
-				break;
-			case '*':
-				if(ca[s-1] == '/') { // multiline comment
-					s++;
-					while(s < end) {
-						if(ca[s] == '/' && ca[s-1] == '*') {
-							s++;
-							break;
-						}
-						s++;
-					}
-				}
-				break;
-			default:
-				s++;
-			}
-		}
-
-		if(end >= s1) {
-			String value = new String(ca, s1, end-s1).trim();
-			if(value.length() > 0) {
-				args.add(value);
-			}
-		}
-		
-		return args;
-	}
-	
-	public static Map<String, String> getJavaEntries(char[] ca, int start, int end) {
-		Map<String, String> entries = new LinkedHashMap<String, String>();
-		
-		String name = null;
-		int s1 = start;
-		int s = start;
-		while(s < end) {
-			switch(ca[s]) {
-			case '=':
-				name = new String(ca, s1, s-s1).trim();
-				s++;
-				s1 = s;
-				break;
-			case ',':
-				String value = new String(ca, s1, s-s1).trim();
-				entries.put(name, value);
-				name = null;
-				s++;
-				s1 = s;
-				break;
-			case '<':
-			case '(':
-			case '{':
-			case '[':
-			case '"':
-				s = closer(ca, s, end, true) + 1;
-				if(s == 0) {
-					s = end;
-				}
-				break;
-			case '/':
-				if(ca[s-1] == '/') { // line comment
-					s = findEOL(ca, s+1);
-				}
-				break;
-			case '*':
-				if(ca[s-1] == '/') { // multiline comment
-					s++;
-					while(s < end) {
-						if(ca[s] == '/' && ca[s-1] == '*') {
-							s++;
-							break;
-						}
-						s++;
-					}
-				}
-				break;
-			default:
-				s++;
-			}
-		}
-		
-		if(name != null) {
-			String value = new String(ca, s1, end-s1).trim();
-			if(value.length() > 0) {
-				entries.put(name, value);
-			}
-		}
-		
-		return entries;
-	}
-	
-	public static Map<String, String> getJavaEntries(String s) {
-		return getJavaEntries(s.toCharArray(), 0, s.length());
-	}
-	
 	public static ModelDefinition[] getModelDefinitions(Collection<File> models) {
 		return getModelDefinitions(models.toArray(new File[models.size()]));
 	}
-	
+
 	public static ModelDefinition[] getModelDefinitions(File[] models) {
 		ModelDefinition[] defs = new ModelDefinition[models.length];
-
+	
 		for(int i = 0; i < defs.length; i++) {
 			defs[i] = new ModelDefinition(models[i]);
 		}
@@ -211,43 +92,6 @@ public class ModelDefinition {
 		
 		return defs;
 	}
-	
-	public static ModelDefinition getSessionDefinition() {
-		String source = getResourceAsString(ModelDefinition.class, "system/Session.src");
-		ModelDefinition def = new ModelDefinition("Session", source);
-		return def;
-	}
-
-	public static String getString(Object object) {
-		if(object == null) {
-			return null;
-		}
-		String in = object.toString();
-		if(in.length() > 1 && in.charAt(0) == '"' && in.charAt(in.length()-1) == '"') {
-			// it is a string literal - escape special characters
-			StringBuilder sb = new StringBuilder(in.length());
-			for(int j = 1; j < in.length()-1; j++) {
-				char c = in.charAt(j);
-				switch(c) {
-				case '\\':
-					if(j < in.length()-2) {
-						char c2 = in.charAt(j+1);
-						switch(c2) {
-						case '\\':
-						case '"':
-							c = c2;
-							j++; // skip the next character (don't add it twice)
-						}
-					}
-				default:
-					sb.append(c);
-					break;
-				}
-			}
-			return sb.toString();
-		}
-		return in;
-	}
 
 	public static List<ModelDefinition> getSystemDefinitions() {
 		List<ModelDefinition> defs = new ArrayList<ModelDefinition>();
@@ -256,6 +100,12 @@ public class ModelDefinition {
 		return defs;
 	}
 	
+	public static ModelDefinition getSessionDefinition() {
+		String source = getResourceAsString(ModelDefinition.class, "system/Session.src");
+		ModelDefinition def = new ModelDefinition("Session", source);
+		return def;
+	}
+
 	public static ModelDefinition getUserDefinition() {
 		String source = getResourceAsString(ModelDefinition.class, "system/User.src");
 		ModelDefinition def = new ModelDefinition("User", source);
@@ -434,7 +284,13 @@ public class ModelDefinition {
 		return addRelation(build(name, type, options), hasMany);
 	}
 
-	public void addValidation(String field, Map<String, ?> options) {
+	public ModelValidation addValidation(ModelValidation validation) {
+		ModelValidation v = validation.getCopy();
+		validations.put(v.field(), v);
+		return validation;
+	}
+	
+	public ModelValidation addValidation(String field, Map<String, ?> options) {
 		ModelValidation v = validations.get(field);
 		if(v == null) {
 			v = new ModelValidation(this, field, options);
@@ -442,6 +298,10 @@ public class ModelDefinition {
 		} else {
 			v.putAll(options);
 		}
+		if(v.getCustomProperties().isEmpty()) {
+			validations.remove(v.field());
+		}
+		return v;
 	}
 	
 	private void addValidations(String annotation) {
@@ -1006,7 +866,14 @@ public class ModelDefinition {
 	}
 	
 	private List<String> getValidationsImports() {
-		return new ArrayList<String>();
+		if(validations.isEmpty()) {
+			return new ArrayList<String>(0);
+		} else {
+			List<String> imports = new ArrayList<String>();
+			imports.add(Validations.class.getCanonicalName());
+			imports.add(Validate.class.getCanonicalName());
+			return imports;
+		}
 	}
 
 	public boolean hasAttribute(String field) {
@@ -1095,11 +962,10 @@ public class ModelDefinition {
 	}
 	
 	private void parse() {
-		mdstart = mdend = -1;
-		ixstart = ixend = -1;
-		mvstart = mvend = -1;
-		
 		char[] ca = source.toCharArray();
+
+		mdstart = ixstart = mvstart = findStart(getSimpleName(), ca);
+		mdend   = ixend   = mvend   = -1;
 		
 		int s0 = findAll(ca, 0, MODEL_DESCRIPTION);
 		if(s0 != -1) {
@@ -1234,28 +1100,27 @@ public class ModelDefinition {
 		return false;
 	}
 
+	public boolean removeValidation(String field) {
+		return (validations.remove(field) != null);
+	}
+
 	public void save() {
 		if(file != null) {
 			// TODO not the most efficient scheme in the world...
+			
+			Edits edits = new Edits();
+			edits.add(mdstart, mdend, getModelDescriptionAnnotation());
+			edits.add(ixstart, ixend, getIndexesAnnotation());
+			edits.add(mvstart, mvend, getValidationsAnnotation());
+
 			List<String> imports = new ArrayList<String>();
-			String description = getModelDescriptionAnnotation();
 			imports.addAll(getModelDescriptionImports());
-			String indexes = getIndexesAnnotation();
-			String validations = getValidationsAnnotation();
 			imports.addAll(getValidationsImports());
 			
-			load();
+			load(); // pick up any changes that may have happened to the source, but not the definition...
 
 			StringBuilder sb = new StringBuilder(source);
-			if(mdstart != -1 && description != null) {
-				sb.replace(mdstart, mdend, description);
-			}
-			if(ixstart != -1 && indexes != null) {
-				sb.replace(ixstart, ixend, indexes);
-			}
-			if(mvstart != -1 && validations != null) {
-				sb.replace(mvstart, mvend, validations);
-			}
+			edits.apply(sb);
 			ensureImports(sb, imports);
 			writeFile(file, sb.toString());
 			load();

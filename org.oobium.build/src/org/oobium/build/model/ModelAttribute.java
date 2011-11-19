@@ -10,8 +10,6 @@
  ******************************************************************************/
 package org.oobium.build.model;
 
-import static org.oobium.build.model.ModelDefinition.getJavaEntries;
-import static org.oobium.build.model.ModelDefinition.getString;
 import static org.oobium.persist.Attribute.DEFAULT_CHECK;
 import static org.oobium.persist.Attribute.DEFAULT_INDEXED;
 import static org.oobium.persist.Attribute.DEFAULT_INIT;
@@ -86,13 +84,13 @@ public class ModelAttribute {
 			char[] ca = annotation.toCharArray();
 			int start = annotation.indexOf('(') + 1;
 			int end = annotation.length() - 1;
-			Map<String, String> entries = getJavaEntries(ca, start, end);
+			Map<String, String> entries = ModelUtils.getJavaEntries(ca, start, end);
 			
-			name(getString(entries.get("name")));
+			name(ModelUtils.getString(entries.get("name")));
 			type(model.getType(entries.get("type")));
 			json(coerce(entries.get("json"), DEFAULT_JSON));
-			check(getString(entries.get("check")));
-			init(getString(entries.get("init")));
+			check(ModelUtils.getString(entries.get("check")));
+			init(ModelUtils.getString(entries.get("init")));
 			precision(coerce(entries.get("precision"), DEFAULT_PRECISION));
 			scale(coerce(entries.get("scale"), DEFAULT_SCALE));
 			indexed(coerce(entries.get("indexed"), DEFAULT_INDEXED));

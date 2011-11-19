@@ -1,6 +1,5 @@
 package org.oobium.build.model;
 
-import static org.oobium.build.model.ModelDefinition.getString;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 
 import java.util.HashMap;
@@ -69,28 +68,28 @@ public class ModelValidation {
 		this.model = model;
 		field(field);
 		isBlank(coerce(entries.get("isBlank"), false));
-		isIn(getString(entries.get("isIn")));
+		isIn(ModelUtils.getString(entries.get("isIn")));
 		isNotBlank(coerce(entries.get("isNotBlank"), false));
-		isNotIn(getString(entries.get("isNotIn")));
+		isNotIn(ModelUtils.getString(entries.get("isNotIn")));
 		isNotNull(coerce(entries.get("isNotNull"), false));
 		isNull(coerce(entries.get("isNull"), false));
 		isUnique(coerce(entries.get("isUnique"), false));
 		lengthIs(coerce(entries.get("lengthIs"), -1));
-		matches(getString(entries.get("matches")));
-		max(getString(entries.get("max")));
+		matches(ModelUtils.getString(entries.get("matches")));
+		max(ModelUtils.getString(entries.get("max")));
 		maxLength(coerce(entries.get("maxLength"), -1));
-		message(getString(entries.get("message")));
-		min(getString(entries.get("min")));
+		message(ModelUtils.getString(entries.get("message")));
+		min(ModelUtils.getString(entries.get("min")));
 		minLength(coerce(entries.get("minLength"), -1));
 		on(coerce(entries.get("on"), -1));
-		tokenizer(getString(entries.get("tokenizer")));
-		unless(getString(entries.get("unless")));
+		tokenizer(ModelUtils.getString(entries.get("tokenizer")));
+		unless(ModelUtils.getString(entries.get("unless")));
 		unlessBlank(coerce(entries.get("unlessBlank"), false));
 		unlessNull(coerce(entries.get("unlessNull"), false));
-		when(getString(entries.get("when")));
+		when(ModelUtils.getString(entries.get("when")));
 		// TODO with(coerce(entries.get("with"), Class.class));
 		with(Object.class);
-		withMethod(getString(entries.get("withMethod")));
+		withMethod(ModelUtils.getString(entries.get("withMethod")));
 	}
 	
 	public ModelValidation getCopy() {
@@ -384,28 +383,28 @@ public class ModelValidation {
 
 	ModelValidation putAll(Map<String, ?> entries) {
 		if(entries.containsKey("isBlank"))     isBlank(coerce(entries.get("isBlank"), false));
-		if(entries.containsKey("isIn"))        isIn(getString(entries.get("isIn")));
+		if(entries.containsKey("isIn"))        isIn(ModelUtils.getString(entries.get("isIn")));
 		if(entries.containsKey("isNotBlank"))  isNotBlank(coerce(entries.get("isNotBlank"), false));
-		if(entries.containsKey("isNotIn"))     isNotIn(getString(entries.get("isNotIn")));
+		if(entries.containsKey("isNotIn"))     isNotIn(ModelUtils.getString(entries.get("isNotIn")));
 		if(entries.containsKey("isNotNull"))   isNotNull(coerce(entries.get("isNotNull"), false));
 		if(entries.containsKey("isNull"))      isNull(coerce(entries.get("isNull"), false));
 		if(entries.containsKey("isUnique"))    isUnique(coerce(entries.get("isUnique"), false));
 		if(entries.containsKey("lengthIs"))    lengthIs(coerce(entries.get("lengthIs"), -1));
-		if(entries.containsKey("matches"))     matches(getString(entries.get("matches")));
-		if(entries.containsKey("max"))         max(getString(entries.get("max")));
+		if(entries.containsKey("matches"))     matches(ModelUtils.getString(entries.get("matches")));
+		if(entries.containsKey("max"))         max(ModelUtils.getString(entries.get("max")));
 		if(entries.containsKey("maxLength"))   maxLength(coerce(entries.get("maxLength"), -1));
-		if(entries.containsKey("message"))     message(getString(entries.get("message")));
-		if(entries.containsKey("min"))         min(getString(entries.get("min")));
+		if(entries.containsKey("message"))     message(ModelUtils.getString(entries.get("message")));
+		if(entries.containsKey("min"))         min(ModelUtils.getString(entries.get("min")));
 		if(entries.containsKey("minLength"))   minLength(coerce(entries.get("minLength"), -1));
 		if(entries.containsKey("on"))          on(coerce(entries.get("on"), -1));
-		if(entries.containsKey("tokenizer"))   tokenizer(getString(entries.get("tokenizer")));
-		if(entries.containsKey("unless"))      unless(getString(entries.get("unless")));
+		if(entries.containsKey("tokenizer"))   tokenizer(ModelUtils.getString(entries.get("tokenizer")));
+		if(entries.containsKey("unless"))      unless(ModelUtils.getString(entries.get("unless")));
 		if(entries.containsKey("unlessBlank")) unlessBlank(coerce(entries.get("unlessBlank"), false));
 		if(entries.containsKey("unlessNull"))  unlessNull(coerce(entries.get("unlessNull"), false));
-		if(entries.containsKey("when"))        when(getString(entries.get("when")));
+		if(entries.containsKey("when"))        when(ModelUtils.getString(entries.get("when")));
 		// TODO with(coerce(entries.get("with"), Class.class));
 		if(entries.containsKey("with"))        with(Object.class);
-		if(entries.containsKey("withMethod"))  withMethod(getString(entries.get("withMethod")));
+		if(entries.containsKey("withMethod"))  withMethod(ModelUtils.getString(entries.get("withMethod")));
 		return this;
 	}
 	
