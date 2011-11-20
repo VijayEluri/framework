@@ -928,6 +928,14 @@ public class ModelDefinition {
 		return !hasOne.isEmpty() || !hasMany.isEmpty();
 	}
 
+	public boolean hasValidation(String field) {
+		return validations.containsKey(field);
+	}
+	
+	public boolean hasValidations() {
+		return !validations.isEmpty();
+	}
+	
 	public boolean isNew() {
 		return file == null || !file.isFile();
 	}

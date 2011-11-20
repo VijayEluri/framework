@@ -263,6 +263,10 @@ public class ModelRelation {
 		return simpleName(type);
 	}
 	
+	public ModelValidation getValidation() {
+		return model.getValidation(name);
+	}
+
 	public boolean hasCustomProperties() {
 		// when updating this method, make sure to also update #getCustomProperties()
 		if(!opposite.equals(DEFAULT_OPPOSITE)) {
@@ -314,6 +318,10 @@ public class ModelRelation {
 	
 	public boolean hasOpposite() {
 		return opposite != null && opposite.length() > 0;
+	}
+	
+	public boolean hasValidation() {
+		return model.hasValidation(name);
 	}
 	
 	public boolean include() {

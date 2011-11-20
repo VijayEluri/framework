@@ -170,6 +170,10 @@ public class ModelAttribute {
 	public String getSimpleType() {
 		return simpleName(type);
 	}
+	
+	public ModelValidation getValidation() {
+		return model.getValidation(name);
+	}
 
 	public boolean hasCustomProperties() {
 		// when updating this method, make sure to also update #getCustomProperties()
@@ -201,6 +205,10 @@ public class ModelAttribute {
 			return true;
 		}
 		return false;
+	}
+	
+	public boolean hasValidation() {
+		return model.hasValidation(name);
 	}
 	
 	public boolean indexed() {
