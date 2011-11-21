@@ -548,8 +548,11 @@ public class MarkupElement extends EspElement {
 		} else if("label".equals(tag)) {
 			type = Type.MarkupElement;
 			style = JAVA_TYPE | ID | CLASSES | ARGS | ENTRIES | STYLES | INNER_TEXT | INNER_TEXT_JAVA | CHILDREN | CLOSING_TAG;
+		} else if("submit".equals(tag)) {
+			type = Type.MarkupElement;
+			style = ID | CLASSES | ARGS | ENTRIES | STYLES | INNER_TEXT;
 		} else if("radio".equals(tag) || "reset".equals(tag) || "date".equals(tag)
-				|| "submit".equals(tag) || "hidden".equals(tag) || "check".equals(tag)
+				|| "hidden".equals(tag) || "check".equals(tag)
 				|| "file".equals(tag) || "input".equals(tag) || "number".equals(tag)
 				|| "password".equals(tag) || "text".equals(tag)) {
 			type = Type.MarkupElement;

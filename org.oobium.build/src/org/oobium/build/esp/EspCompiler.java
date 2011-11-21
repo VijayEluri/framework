@@ -2128,20 +2128,26 @@ public class EspCompiler {
 		buildClasses(element);
 		buildAttrs(element, "type");
 		if(!element.hasEntry("value")) {
-			String model = getFormModel(element);
-			if(blank(model)) {
-				body.append(" value=\\\"Submit\\\"");
+			if(element.hasInnerText()) {
+				body.append(" value=\\\"");
+				build(element.getInnerText(), body);
+				body.append("\\\"");
 			} else {
-				String modelName = getFormModelName(element);
-				String action = getFormAction(element);
-				if("create".equalsIgnoreCase(action)) {
-					body.append(" value=\\\"Create ");
-				} else if("update".equalsIgnoreCase(action)) {
-					body.append(" value=\\\"Update ");
+				String model = getFormModel(element);
+				if(blank(model)) {
+					body.append(" value=\\\"Submit\\\"");
 				} else {
-					body.append(" value=\\\"\").append(").append(model).append(".isNew() ? \"Create \" : \"Update ");
+					String modelName = getFormModelName(element);
+					String action = getFormAction(element);
+					if("create".equalsIgnoreCase(action)) {
+						body.append(" value=\\\"Create ");
+					} else if("update".equalsIgnoreCase(action)) {
+						body.append(" value=\\\"Update ");
+					} else {
+						body.append(" value=\\\"\").append(").append(model).append(".isNew() ? \"Create \" : \"Update ");
+					}
+					body.append("\").append(titleize(").append(modelName).append(")).append(\"\\\"");
 				}
-				body.append("\").append(titleize(").append(modelName).append(")).append(\"\\\"");
 			}
 		}
 		body.append(" />");
