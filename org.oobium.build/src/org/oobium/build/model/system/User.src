@@ -15,7 +15,7 @@ import org.oobium.utils.PasswordUtils;
 @ModelDescription(
 	attrs = {
 		@Attribute(name="name", type=String.class),
-		@Attribute(name="email", type=String.class),
+		@Attribute(name="email", type=String.class, unique=true),
 		@Attribute(name="password", type=String.class, json=false),
 		@Attribute(name="passwordSalt", type=String.class, json=false, readOnly=true),
 		@Attribute(name="activationCode", type=String.class, json=false, readOnly=true),
@@ -24,7 +24,7 @@ import org.oobium.utils.PasswordUtils;
 	timestamps = true
 )
 @Validations({
-	@Validate(field="name,email,password,passwordSalt", isNotBlank=true)
+	@Validate(field="email,password,passwordSalt", isNotBlank=true)
 })
 public class User {
 
