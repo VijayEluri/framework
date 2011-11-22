@@ -912,6 +912,13 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		redirectTo(pathTo(clazz, action));
 	}
 	
+	public void redirectTo(Class<? extends Model> clazz, Action action, String notice) {
+		if(!blank(notice)) {
+			setFlashNotice(notice);
+		}
+		redirectTo(pathTo(clazz, action));
+	}
+	
 	public void redirectTo(Model model, Action action) {
 		redirectTo(model, action, null);
 	}
