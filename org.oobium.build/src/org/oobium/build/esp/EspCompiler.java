@@ -150,6 +150,22 @@ public class EspCompiler {
 		this.captureLevel = -1;
 	}
 
+	private void addLocation(EspPart part, StringBuilder sb) {
+		EspLocation location = new EspLocation(sb.length(), part);
+		if(sb == body) {
+			bodyLocations.add(location);
+		}
+		else if(sb == script) {
+			scriptLocations.add(location);
+		}
+		else if(sb == style) {
+			styleLocations.add(location);
+		}
+		else if(sb == title) {
+			titleLocations.add(location);
+		}
+	}
+	
 	/**
 	 * append an HTML attribute, ensuring that double quotes are around the value, whether is a simple string or Java expression
 	 */
@@ -283,7 +299,7 @@ public class EspCompiler {
 		String type;
 		if(element.hasJavaType()) {
 			type = element.getJavaType();
-			bodyLocations.add(new EspLocation(body.length(), element.getJavaTypePart()));
+			addLocation(element.getJavaTypePart(), body);
 			body.append(type);
 		} else if(defaultType != null) {
 			type = defaultType.getSimpleName();
@@ -402,16 +418,9 @@ public class EspCompiler {
 						if(jpart.isEscaped()) {
 							sb.append(jpart.getEscapeChar()).append('(');
 						}
-						if(sb == body) {
-							EspPart spart = jpart.getSourcePart();
-							if(spart != null) {
-								bodyLocations.add(new EspLocation(sb.length(), spart));
-							}
-						} else if(sb == title) {
-							EspPart spart = jpart.getSourcePart();
-							if(spart != null) {
-								titleLocations.add(new EspLocation(sb.length(), spart));
-							}
+						EspPart spart = jpart.getSourcePart();
+						if(spart != null) {
+							addLocation(spart, sb);
 						}
 						sb.append(jpart.getSource());
 						if(jpart.isEscaped()) {
@@ -458,10 +467,10 @@ public class EspCompiler {
 		String text = jpart.getText();
 		if(jpart.isSimple()) {
 			if(forceLastIsJava || lastIsJava(sb)) {
-				bodyLocations.add(new EspLocation(sb.length(), jpart));
+				addLocation(jpart, sb);
 				sb.append(text);
 			} else {
-				bodyLocations.add(new EspLocation(sb.length(), jpart));
+				addLocation(jpart, sb);
 				appendEscaped(sb, text);
 			}
 		} else {
@@ -496,7 +505,7 @@ public class EspCompiler {
 						sb.append("h(");
 						EspPart spart = jsspart.getSourcePart();
 						if(spart != null) {
-							bodyLocations.add(new EspLocation(sb.length(), spart));
+							addLocation(spart, sb);
 						}
 						sb.append(jsspart.getSource());
 						sb.append(")");
@@ -515,11 +524,11 @@ public class EspCompiler {
 				}
 			} else {
 				if(forceLastIsJava || lastIsJava(sb)) {
-					bodyLocations.add(new EspLocation(sb.length(), jpart));
+					addLocation(jpart, sb);
 					sb.append(text);
 				} else {
 					sb.append("\").append(h(");
-					bodyLocations.add(new EspLocation(sb.length(), jpart));
+					addLocation(jpart, sb);
 					sb.append(text);
 					sb.append(")).append(\"");
 				}
@@ -555,7 +564,7 @@ public class EspCompiler {
 					sb.append("\").append(h(");
 					EspPart spart = embedded.getSourcePart();
 					if(spart != null) {
-						bodyLocations.add(new EspLocation(sb.length(), spart));
+						addLocation(spart, sb);
 					}
 					sb.append(embedded.getSource());
 					sb.append(")).append(\"");
@@ -631,7 +640,7 @@ public class EspCompiler {
 					sb.append("\").append(h(");
 					EspPart spart = embedded.getSourcePart();
 					if(spart != null) {
-						bodyLocations.add(new EspLocation(sb.length(), spart));
+						addLocation(spart, sb);
 					}
 					sb.append(embedded.getSource());
 					sb.append(")).append(\"");
@@ -818,11 +827,11 @@ public class EspCompiler {
 			if(j != 0) sb.append(", ");
 			locations.add(new EspLocation(sb.length(), arg));
 			if(arg.hasVarType()) {
-				String type = arg.getVarType();
+				String vtype = arg.getVarType();
 				locations.add(new EspLocation(sb.length(), arg.getVarTypePart()));
-				sb.append(type);
+				sb.append(vtype);
 				if(arg.isVarArgs()) {
-					type = type + "[]";
+					vtype = vtype + "[]";
 					sb.append('.').append('.').append('.');
 				} else {
 					sb.append(' ');
@@ -831,7 +840,7 @@ public class EspCompiler {
 					locations.add(new EspLocation(sb.length(), arg.getVarNamePart()));
 					String name = arg.getVarName();
 					sb.append(name);
-					esf.addVariable(name, "public " + type + " " + name);
+					esf.addVariable(name, "public " + vtype + " " + name);
 				}
 			}
 		}
@@ -1074,18 +1083,22 @@ public class EspCompiler {
 		}
 	}
 	
-	private void buildExternalEjs(StringBuilder sb, String type, ScriptElement element) {
+	private void buildExternalEjs(StringBuilder sb, JavaSourcePart type, ScriptElement element) {
 		prepForJava(sb);
 		int pos = element.getStart();
-		sb.append("String path$").append(pos).append(" = underscored(").append(type).append(".class.getName()).replace('.', '/');\n");
+		sb.append("String path$").append(pos).append(" = underscored(");
+		build(type, sb);
+		sb.append(".class.getName()).replace('.', '/');\n");
 		prepForMarkup(sb);
 		sb.append("<script src='/\").append(path$").append(pos).append(").append(\".js'></script>");
 	}
 	
-	private void buildExternalEss(StringBuilder sb, String type, StyleElement element) {
+	private void buildExternalEss(StringBuilder sb, JavaSourcePart type, StyleElement element) {
 		prepForJava(sb);
 		int pos = element.getStart();
-		sb.append("String path$").append(pos).append(" = underscored(").append(type).append(".class.getName()).replace('.', '/');\n");
+		sb.append("String path$").append(pos).append(" = underscored(");
+		build(type, sb);
+		sb.append(".class.getName()).replace('.', '/');\n");
 		prepForMarkup(sb);
 		sb.append("<link rel='stylesheet' type='text/css' href='/\").append(path$").append(pos).append(").append(\".css' />");
 	}
@@ -1438,9 +1451,11 @@ public class EspCompiler {
 		}
 	}
 
-	private void buildInlineDynamicAsset(StringBuilder sb, String type, int start, List<JavaSourcePart> args) {
-		String varName = varName(type) + "$" + start;
-		sb.append(type).append(' ').append(varName).append(" = new ").append(type);
+	private void buildInlineDynamicAsset(StringBuilder sb, JavaSourcePart type, int start, List<JavaSourcePart> args) {
+		String typeName = type.getText();
+		String varName = varName(typeName) + "$" + start;
+		build(type, sb);
+		sb.append(' ').append(varName).append(" = new ").append(typeName);
 		if(args != null && !args.isEmpty()) {
 			sb.append("(");
 			for(Iterator<JavaSourcePart> iter = args.iterator(); iter.hasNext(); ) {
@@ -1455,7 +1470,7 @@ public class EspCompiler {
 		sb.append(varName).append(".render(" + sbName + ");\n");
 	}
 
-	private void buildInlineEjs(StringBuilder sb, String type, ScriptElement element) {
+	private void buildInlineEjs(StringBuilder sb, JavaSourcePart type, ScriptElement element) {
 		prepForMarkup(sb);
 		sb.append("<script>");
 		prepForJava(sb);
@@ -1464,7 +1479,7 @@ public class EspCompiler {
 		sb.append("</script>");
 	}
 
-	private void buildInlineEss(StringBuilder sb, String type, StyleElement element) {
+	private void buildInlineEss(StringBuilder sb, JavaSourcePart type, StyleElement element) {
 		prepForMarkup(sb);
 		sb.append("<style>");
 		prepForJava(sb);
@@ -1493,7 +1508,7 @@ public class EspCompiler {
 		JavaSourcePart source = element.getSourcePart();
 		if(source != null) {
 			prepForJava(body);
-			bodyLocations.add(new EspLocation(body.length(), element.getSourcePart()));
+			addLocation(element.getSourcePart(), body);
 			buildJavaLine(source, body);
 			body.append("\n");
 			lastBodyIsJava = true;
@@ -1526,7 +1541,7 @@ public class EspCompiler {
 		}
 		String text = jpart.getText();
 		if(jpart.isSimple()) {
-			bodyLocations.add(new EspLocation(sb.length(), jpart));
+			addLocation(jpart, sb);
 			sb.append(text);
 		} else {
 			if(jpart.hasParts()) {
@@ -1550,7 +1565,7 @@ public class EspCompiler {
 						sb.append("\" + ");
 						EspPart spart = jsspart.getSourcePart();
 						if(spart != null) {
-							bodyLocations.add(new EspLocation(sb.length(), spart));
+							addLocation(spart, sb);
 						}
 						sb.append(jsspart.getSource());
 						sb.append(" + \"");
@@ -1564,7 +1579,7 @@ public class EspCompiler {
 					}
 				}
 			} else {
-				bodyLocations.add(new EspLocation(sb.length(), jpart));
+				addLocation(jpart, sb);
 				sb.append(text);
 			}
 		}
@@ -1842,7 +1857,7 @@ public class EspCompiler {
 	private void buildScript(ScriptElement element) {
 		StringBuilder sb = isInHead(element) ? script : body;
 		
-		String type = element.getJavaType();
+		JavaSourcePart type = element.getJavaTypePart();
 		if(type != null) {
 			if(sb == body) {
 				if("false".equals(element.getEntryText("inline"))) {
@@ -2043,7 +2058,7 @@ public class EspCompiler {
 	private void buildStyle(StyleElement element) {
 		StringBuilder sb = isInHead(element) ? style : body;
 		
-		String type = element.getJavaType();
+		JavaSourcePart type = element.getJavaTypePart();
 		if(type != null) {
 			if(sb == body) {
 				if("false".equals(element.getEntryText("inline"))) {
