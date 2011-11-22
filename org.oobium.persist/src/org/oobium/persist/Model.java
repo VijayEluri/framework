@@ -23,10 +23,12 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
@@ -127,7 +129,6 @@ public abstract class Model implements JsonModel {
 	public static void setPersistServiceProvider(PersistServiceProvider services) {
 		persistServiceProvider.set(services);
 	}
-	
 
 	public static String toJson(Collection<? extends Model> models, String include, Object...values) {
 		String json = ModelJsonBuilder.buildJson(models, include, values);
@@ -140,12 +141,12 @@ public abstract class Model implements JsonModel {
 		}
 		return json;
 	}
-	private PersistService persistor;
+
 	
-	protected Logger logger;
+	protected final Logger logger;
+	private final Map<String, Object> fields;
 	private Object id;
-	private Map<String, Object> fields;
-	
+	private PersistService persistor;
 	private Map<String, ArrayList<String>> errors;
 
 	/**
@@ -271,9 +272,15 @@ public abstract class Model implements JsonModel {
 	}
 	
 	public final boolean canCreate() {
+		Set<Model> validated = new HashSet<Model>();
+		return canCreate(validated);
+	}
+	
+	private boolean canCreate(Set<Model> validated) {
+		validated.add(this);
 		clearErrors();
 		Observer.runBeforeValidateCreate(this);
-		runValidations(Validate.CREATE);
+		runValidations(Validate.CREATE, validated);
 		validateCreate();
 		Observer.runAfterValidateCreate(this);
 		return !hasErrors();
@@ -288,25 +295,31 @@ public abstract class Model implements JsonModel {
 			addError("cannot destroy a model that has not been saved");
 		}
 		Observer.runBeforeValidateDestroy(this);
-		runValidations(Validate.DESTROY);
+		runValidations(Validate.DESTROY, null);
 		validateDestroy();
 		Observer.runAfterValidateDestroy(this);
 		return !hasErrors();
 	}
 	
 	public final boolean canSave() {
+		Set<Model> validated = new HashSet<Model>();
+		return canSave(validated);
+	}
+	
+	private boolean canSave(Set<Model> validated) {
+		validated.add(this);
 		clearErrors();
 		Observer.runBeforeValidateSave(this);
 		validateSave();
 		if(!hasErrors()) {
 			if(isNew()) {
 				Observer.runBeforeValidateCreate(this);
-				runValidations(Validate.CREATE);
+				runValidations(Validate.CREATE, validated);
 				validateCreate();
 				Observer.runAfterValidateCreate(this);
 			} else {
 				Observer.runBeforeValidateUpdate(this);
-				runValidations(Validate.UPDATE);
+				runValidations(Validate.UPDATE, validated);
 				validateUpdate();
 				Observer.runAfterValidateUpdate(this);
 			}
@@ -316,6 +329,12 @@ public abstract class Model implements JsonModel {
 	}
 	
 	public final boolean canUpdate() {
+		Set<Model> validated = new HashSet<Model>();
+		return canUpdate(validated);
+	}
+	
+	private boolean canUpdate(Set<Model> validated) {
+		validated.add(this);
 		clearErrors();
 		if(!getAdapter(getClass()).isUpdatable()) {
 			addError("Updates are not permitted.");
@@ -330,7 +349,7 @@ public abstract class Model implements JsonModel {
 			return false;
 		}
 		Observer.runBeforeValidateUpdate(this);
-		runValidations(Validate.UPDATE);
+		runValidations(Validate.UPDATE, validated);
 		validateUpdate();
 		Observer.runAfterValidateUpdate(this);
 		return !hasErrors();
@@ -877,6 +896,9 @@ public abstract class Model implements JsonModel {
 	
 	@Override
 	public int hashCode() {
+		if(isNew()) {
+			return super.hashCode();
+		}
 		int hash = String.valueOf(id).hashCode() + 2;
 		hash = (hash * 31) + getClass().getCanonicalName().hashCode();
 		return hash;
@@ -1306,7 +1328,7 @@ public abstract class Model implements JsonModel {
 		}
 	}
 	
-	private void runValidations(int on) {
+	private void runValidations(int on, Set<Model> validated) {
 		Validations validations = getClass().getAnnotation(Validations.class);
 		if(validations != null) {
 			boolean onUpdate = (on == Validate.UPDATE);
@@ -1316,8 +1338,11 @@ public abstract class Model implements JsonModel {
 				}
 			}
 			if(on == Validate.DESTROY) {
-				validateDependents();
+				validateDependentsOnDestroy();
 			}
+		}
+		if(on != Validate.DESTROY) {
+			validateRelatedModelsToBeCreated(validated);
 		}
 	}
 
@@ -1554,8 +1579,43 @@ public abstract class Model implements JsonModel {
 	protected void validateCreate() {
 		// subclasses to override
 	}
+
+	/**
+	 * When a model is updated or created, any models that are relations of it
+	 * will need to be saved first. This method verifies that this is possible
+	 * by running the canCreate validation on the related models. The given
+	 * validated set is used to make sure a model is validated only once,
+	 * thereby preventing infinite loops
+	 */
+	private void validateRelatedModelsToBeCreated(Set<Model> validated) {
+		ModelAdapter adapter = ModelAdapter.getAdapter(this);
+		for(String field : fields.keySet()) {
+			if(adapter.hasOne(field)) {
+				Model model = (Model) get(field, false);
+				validateRelatedModelsToBeCreated(model, validated);
+			}
+			else if(adapter.hasMany(field)) {
+				for(Object o : (Iterable<?>) get(field, false)) {
+					Model model = (Model) o;
+					validateRelatedModelsToBeCreated(model, validated);
+				}
+			}
+		}
+	}
+
+	private void validateRelatedModelsToBeCreated(Model model, Set<Model> validated) {
+		if(model == null || validated.contains(model)) {
+			return;
+		}
+		if(model.isNew() && !model.canCreate(validated)) {
+			if(errors == null) {
+				errors = new LinkedHashMap<String, ArrayList<String>>();
+			}
+			errors.putAll(model.errors);
+		}
+	}
 	
-	private void validateDependents() {
+	private void validateDependentsOnDestroy() {
 		ModelAdapter adapter = ModelAdapter.getAdapter(this);
 		for(String field : adapter.getRelationFields()) {
 			Relation relation = adapter.getRelation(field);
