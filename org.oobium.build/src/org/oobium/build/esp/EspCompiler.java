@@ -282,7 +282,11 @@ public class EspCompiler {
 	}
 	
 	private void appendFormFieldName(String name, List<JavaSourcePart> fields) {
-		body.append("\").append(").append(name).append(").append(\"");
+		if(lastIsJava(body)) {
+			body.append(name).append(" + \"");
+		} else {
+			body.append("\").append(").append(name).append(").append(\"");
+		}
 		for(JavaSourcePart field : fields) {
 			body.append('[');
 			if(field.isSimple()) {
@@ -292,6 +296,9 @@ public class EspCompiler {
 				build(field, body);
 			}
 			body.append(']');
+		}
+		if(lastIsJava(body)) {
+			body.append("\"");
 		}
 	}
 	
@@ -864,18 +871,29 @@ public class EspCompiler {
 		buildFormField(date, false);
 		body.append(">\");\n");
 		indent(body);
-		body.append(sbName).append(".append(dateTimeTags(\"");
+		body.append(sbName).append(".append(dateTimeTags(");
 		lastIsJava(body, true);
 		if(date.hasEntry("name")) {
 			build(date.getEntryValue("name"), body);
-		} else if(date.hasId()) {
+		}
+		else if(date.hasId()) {
 			build(date.getId(), body);
-		} else if(date.hasEntry("id")) {
+		}
+		else if(date.hasEntry("id")) {
 			build(date.getEntryValue("id"), body);
-		} else {
+		}
+		else if(date.hasArgs()) {
+			String modelName = getFormModelName(date);
+			if(!blank(modelName)) {
+				appendFormFieldName(modelName, date.getArgs());
+			}else {
+				body.append("datetime");
+			}
+		}
+		else {
 			body.append("datetime");
 		}
-		body.append("\", ");
+		body.append(", ");
 		if(date.hasEntry("format")) {
 			build(date.getEntryValue("format"), body);
 		} else {
