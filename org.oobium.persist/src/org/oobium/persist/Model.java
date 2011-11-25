@@ -393,11 +393,27 @@ public abstract class Model implements JsonModel {
 		return false;
 	}
 
+	public void CREATE() {
+		boolean result = create();
+		if(result == false) {
+			String message = "Errors creating the model: " + this + " \n" + StringUtils.join(getErrorsList(), '\n');
+			throw new IllegalStateException(message);
+		}
+	}
+	
 	public boolean destroy() {
 		if(canDestroy()) {
 			return doDestroy();
 		}
 		return false;
+	}
+
+	public void DESTROY() {
+		boolean result = destroy();
+		if(result == false) {
+			String message = "Errors destroying the model: " + this + " \n" + StringUtils.join(getErrorsList(), '\n');
+			throw new IllegalStateException(message);
+		}
 	}
 	
 	private void destroy(String field) {
@@ -1373,7 +1389,15 @@ public abstract class Model implements JsonModel {
 		}
 		return result;
 	}
-	
+
+	public void SAVE() {
+		boolean result = save();
+		if(result == false) {
+			String message = "Errors saving the model: " + this + " \n" + StringUtils.join(getErrorsList(), '\n');
+			throw new IllegalStateException(message);
+		}
+	}
+
 	/**
 	 * Set the given field to the coerced type of the given value.
 	 * <p>The model will be resolved if:
@@ -1574,6 +1598,14 @@ public abstract class Model implements JsonModel {
 			return doUpdate();
 		}
 		return false;
+	}
+
+	public void UPDATE() {
+		boolean result = update();
+		if(result == false) {
+			String message = "Errors updating the model: " + this + " " + this + " \n" + StringUtils.join(getErrorsList(), '\n');
+			throw new IllegalStateException(message);
+		}
 	}
 	
 	protected void validateCreate() {
