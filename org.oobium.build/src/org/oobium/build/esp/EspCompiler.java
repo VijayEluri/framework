@@ -34,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.oobium.app.controllers.HttpController;
 import org.oobium.app.http.Action;
@@ -1148,6 +1150,14 @@ public class EspCompiler {
 			String modelVal = args.get(0).getText().trim();
 			String modelName = getFormModelNameVar(form.getStart());
 			
+			if(type == "Model") { // try to figure it out from the modelVal
+				Pattern p = Pattern.compile("\\s*new\\s+(\\w+)\\s*\\(");
+				Matcher m = p.matcher(modelVal);
+				if(m.find()) {
+					type = m.group(1);
+				}
+			}
+			
 			prepForJava(body);
 			if(!model.equals(modelVal)) {
 				if(type.equals("Model")) {
@@ -1958,10 +1968,10 @@ public class EspCompiler {
 		if(element.hasArgs()) {
 			prepForJava(body);
 
-			JavaSourcePart options = element.getArgs().get(0);
-			String selectionGetter = getSelectionGetter(element);
+			JavaSourcePart options = element.getArg(0);
+			Object selection = element.hasArg(1) ? element.getArg(1) : getSelectionGetter(element);
 			if(element.hasEntry("text") || element.hasEntry("value")) {
-				if(blank(selectionGetter)) {
+				if(blank(selection)) {
 					body.append("for(");
 					String var = varName(appendJavaType(element, Object.class));
 					body.append(" ").append(var).append(" : ");
@@ -1993,7 +2003,7 @@ public class EspCompiler {
 					String selectionVar = "selection$" + element.getStart();
 					String selectedVar = "selected$" + element.getStart();
 					
-					body.append("Object ").append(selectionVar).append(" = ").append(selectionGetter).append(";\n");
+					body.append("Object ").append(selectionVar).append(" = ").append(selection).append(";\n");
 					indent(body);
 					body.append("for(");
 					String var = varName(appendJavaType(element, Object.class));
@@ -2037,7 +2047,7 @@ public class EspCompiler {
 				if(element.hasEntry("required")) {
 					required = element.hasEntryValue("required") ? toArg(element.getEntryValue("required").getText()) : "false";
 				}
-				if(blank(selectionGetter)) {
+				if(blank(selection)) {
 					body.append(sbName).append(".append(optionTags(");
 					build(options, body, true);
 					if(blank(required)) {
@@ -2048,7 +2058,12 @@ public class EspCompiler {
 				} else {
 					body.append(sbName).append(".append(optionTags(");
 					build(options, body, true);
-					body.append(", ").append(selectionGetter);
+					if(selection instanceof JavaSourcePart) {
+						body.append(", ");
+						build((JavaSourcePart) selection, body);
+					} else {
+						body.append(", ").append(selection);
+					}
 					if(blank(required)) {
 						String model = getFormModel(element);
 						if(!blank(model)) {
@@ -2689,21 +2704,23 @@ public class EspCompiler {
 			if(!blank(model)) {
 				StringBuilder sb = new StringBuilder();
 				List<JavaSourcePart> fields = select.getArgs();
-				if(fields.size() == 1) {
-					sb.append(model).append('.').append(getter(fields.get(0)));
-				} else {
-					int last = fields.size() - 1;
-					for(int i = 0; i < fields.size(); i++) {
-						sb.append(model);
-						for(int j = 0; j <= i; j++) {
-							sb.append('.').append((j == i && j != last) ? hasser(fields.get(j)) : getter(fields.get(j)));
+				if(fields != null) {
+					if(fields.size() == 1) {
+						sb.append(model).append('.').append(getter(fields.get(0)));
+					} else {
+						int last = fields.size() - 1;
+						for(int i = 0; i < fields.size(); i++) {
+							sb.append(model);
+							for(int j = 0; j <= i; j++) {
+								sb.append('.').append((j == i && j != last) ? hasser(fields.get(j)) : getter(fields.get(j)));
+							}
+							if(i < last) {
+								sb.append("?(");
+							}
 						}
-						if(i < last) {
-							sb.append("?(");
+						for(int i = 0; i < last; i++) {
+							sb.append("):\"\"");
 						}
-					}
-					for(int i = 0; i < last; i++) {
-						sb.append("):\"\"");
 					}
 				}
 				return sb.toString();
