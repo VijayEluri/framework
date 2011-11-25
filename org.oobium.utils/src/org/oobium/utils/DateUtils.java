@@ -29,6 +29,18 @@ public class DateUtils {
 		httpDate_ASCTIME.setTimeZone(tz);
 	}
 
+	public static Date dateFromNow(int amount, int calendarField) {
+		Calendar cal = Calendar.getInstance();
+		cal.add(calendarField, amount);
+		return cal.getTime();
+	}
+	
+	public static Date daysFromNow(int amount) {
+		Calendar cal = Calendar.getInstance();
+		cal.add(Calendar.DATE, amount);
+		return cal.getTime();
+	}
+	
 	public static String httpDate() {
 		return httpDate(new Date());
 	}
@@ -59,6 +71,12 @@ public class DateUtils {
 		} catch(Exception e) {
 			throw new ParseException("could not parse http date: " + date, -1);
 		}
+	}
+	
+	public static Date monthsFromNow(int amount) {
+		Calendar cal = Calendar.getInstance();
+		cal.add(Calendar.MONTH, amount);
+		return cal.getTime();
 	}
 	
 	public static boolean sameDay(Date date1, Date date2)  {
@@ -93,6 +111,12 @@ public class DateUtils {
 		c1.setTime(date1);
 		c2.setTime(date2);
 		return c1.get(Calendar.YEAR) == c2.get(Calendar.YEAR);
+	}
+	
+	public static Date weeksFromNow(int amount) {
+		Calendar cal = Calendar.getInstance();
+		cal.add(Calendar.WEEK_OF_YEAR, amount);
+		return cal.getTime();
 	}
 	
 	private DateUtils() {
