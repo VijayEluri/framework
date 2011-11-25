@@ -427,7 +427,7 @@ public class ModelValidation {
 			sb.append(", isNotBlank=true");
 		}
 		if(isNotIn != null && isNotIn.length() > 0) {
-			sb.append(", isNotIn\"").append(isNotIn).append('"');
+			sb.append(", isNotIn=\"").append(isNotIn).append('"');
 		}
 		if(isNotNull) {
 			sb.append(", isNotNull=true");
@@ -442,19 +442,19 @@ public class ModelValidation {
 			sb.append(", lengthIs=").append(lengthIs);
 		}
 		if(matches != null && matches.length() > 0) {
-			sb.append(", matches\"").append(matches).append('"');
+			sb.append(", matches=\"").append(matches).append('"');
 		}
 		if(max != null && max.length() > 0) {
-			sb.append(", max\"").append(max).append('"');
+			sb.append(", max=\"").append(max).append('"');
 		}
 		if(maxLength != -1) {
 			sb.append(", maxLength=").append(maxLength);
 		}
 		if(message != null && message.length() > 0) {
-			sb.append(", message\"").append(message).append('"');
+			sb.append(", message=\"").append(message).append('"');
 		}
 		if(min != null && min.length() > 0) {
-			sb.append(", min\"").append(min).append('"');
+			sb.append(", min=\"").append(min).append('"');
 		}
 		if(minLength != -1) {
 			sb.append(", minLength=").append(minLength);
@@ -463,10 +463,10 @@ public class ModelValidation {
 			sb.append(", on=").append(on);
 		}
 		if(tokenizer != null && tokenizer.length() > 0) {
-			sb.append(", tokenizer\"").append(tokenizer).append('"');
+			sb.append(", tokenizer=\"").append(tokenizer).append('"');
 		}
 		if(unless != null && unless.length() > 0) {
-			sb.append(", unless\"").append(unless).append('"');
+			sb.append(", unless=\"").append(unless).append('"');
 		}
 		if(unlessBlank) {
 			sb.append(", unlessBlank=true");
@@ -475,13 +475,13 @@ public class ModelValidation {
 			sb.append(", unlessNull=true");
 		}
 		if(when != null && when.length() > 0) {
-			sb.append(", when\"").append(when).append('"');
+			sb.append(", when=\"").append(when).append('"');
 		}
 		if(with != Object.class) {
 			sb.append(", with=").append(with.getSimpleName()).append(".class");
 		}
 		if(withMethod != null && withMethod.length() > 0) {
-			sb.append(", withMethod\"").append(withMethod).append('"');
+			sb.append(", withMethod=\"").append(withMethod).append('"');
 		}
 		
 		sb.append(')');

@@ -307,6 +307,34 @@ public class ModelDefinitionTests {
 	}
 
 	@Test
+	public void testValidations_Multiple_AddValidate() throws Exception {
+		String description = 
+			"@Validations({\n" +
+			"\t@Validate(field=\"name\", isNotBlank=true),\n" +
+			"\t@Validate(field=\"count\", isNotNull=true)\n" +
+			"})";
+
+		String result =
+			"@Validations({\n" +
+			"\t@Validate(field=\"count\", isNotNull=true, min=\"1\"),\n" +
+			"\t@Validate(field=\"name\", isNotBlank=true)\n" +
+			"})";
+		
+		String source = description + "\npublic class TestModel {\n\n}";
+		
+		File file = writeFile(File.createTempFile("test", null), source);
+		
+		ModelDefinition definition = new ModelDefinition(file);
+		definition.getValidation("count").min("1");
+		System.out.println(definition.getValidationsAnnotation());
+		assertEquals(result, definition.getValidationsAnnotation());
+
+		definition.save();
+		System.out.println(readFile(file));
+		assertEquals(result, new ModelDefinition(file).getValidationsAnnotation());
+	}
+
+	@Test
 	public void testValidations_Multiple_SameField() throws Exception {
 		String description = 
 			"@Validations({\n" +
