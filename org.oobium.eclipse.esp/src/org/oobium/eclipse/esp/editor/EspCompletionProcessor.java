@@ -83,6 +83,11 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 					return computeHtmlProposals(doc, element, part, offset);
 				case StyleChildElement:
 					return computeStyleProposals(element, part, offset);
+				default:
+					switch(part.getType()) {
+					case JavaSourcePart:
+						return computeJavaProposals(doc, element, part, offset);
+					}
 				}
 			}
 		}
