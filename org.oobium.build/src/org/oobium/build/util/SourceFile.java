@@ -209,6 +209,9 @@ public class SourceFile {
 				start++;
 			}
 			int end = find(sb, start, stop, ';');
+			if(end == -1) {
+				break;
+			}
 			imports.add(sb.substring(start, end));
 			start = find(sb, end, stop, IMPORT);
 		}
