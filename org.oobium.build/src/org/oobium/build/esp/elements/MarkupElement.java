@@ -257,6 +257,10 @@ public class MarkupElement extends EspElement {
 		return (style & CHILDREN) != 0;
 	}
 
+	public boolean hasArg(int index) {
+		return args != null && index < args.size();
+	}
+	
 	public boolean hasArgs() {
 		return args != null;
 	}
