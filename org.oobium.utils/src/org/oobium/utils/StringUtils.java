@@ -490,6 +490,9 @@ public class StringUtils {
 		if(object instanceof Map) {
 			return htmlEscape(JsonUtils.toJson(object));
 		}
+		if(object instanceof Date) {
+			return String.valueOf(((Date) object).getTime());
+		}
 		return htmlEscape(object);
 	}
 
@@ -1076,11 +1079,14 @@ public class StringUtils {
 		}
 		if(singular.equalsIgnoreCase("person")) {
 			return singular.charAt(0) + "eople";
-		} else if(singular.equalsIgnoreCase("child")) {
+		}
+		else if(singular.equalsIgnoreCase("child")) {
 			return singular.charAt(0) + "hildren";
-		} else if(singular.equalsIgnoreCase("alumnus")) {
+		}
+		else if(singular.equalsIgnoreCase("alumnus")) {
 			return singular.charAt(0) + "lumni";
-		} else if('y' == singular.charAt(singular.length()-1)) {
+		}
+		else if('y' == singular.charAt(singular.length()-1)) {
 			if(singular.length() > 1) {
 				switch(singular.charAt(singular.length()-2)) {
 				case 'a':
@@ -1093,7 +1099,11 @@ public class StringUtils {
 					return singular.substring(0, singular.length()-1) + "ies";
 				}
 			}
-		} else if('s' == singular.charAt(singular.length()-1)){
+		}
+		else if('s' == singular.charAt(singular.length()-1)){
+			return singular + "es";
+		}
+		else if(singular.endsWith("ch")){
 			return singular + "es";
 		}
 		return singular + "s";
