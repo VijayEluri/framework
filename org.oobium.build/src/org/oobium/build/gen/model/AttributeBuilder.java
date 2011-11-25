@@ -12,6 +12,7 @@ package org.oobium.build.gen.model;
 
 import static org.oobium.utils.StringUtils.getterName;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,10 +32,22 @@ public class AttributeBuilder extends PropertyBuilder {
 			sb.append("public Map<String, String> ").append(descriptor.getterName()).append("() {\n");
 			sb.append("\treturn JsonUtils.toStringMap(get(").append(descriptor.enumProp()).append(", String.class));\n");
 			sb.append("}");
-		} else {
+		}
+		else {
 			sb.append("public ").append(descriptor.type()).append(' ').append(descriptor.getterName()).append("() {\n");
 			sb.append("\treturn get(").append(descriptor.enumProp()).append(", ").append(descriptor.type()).append(".class);\n");
 			sb.append("}");
+			if("Date".equals(descriptor.type())) {
+				sb.append("\n\n");
+				sb.append("public String ").append(descriptor.getterName()).append("(String format) {\n");
+				sb.append("\tDate date = ").append(descriptor.getterName()).append("();\n");
+				sb.append("\tif(date != null) {\n");
+				sb.append("\t\tSimpleDateFormat sdf = new SimpleDateFormat(format);\n");
+				sb.append("\t\treturn sdf.format(date);\n");
+				sb.append("\t}\n");
+				sb.append("\treturn null;\n");
+				sb.append("}");
+			}
 		}
 		return sb.toString();
 	}
@@ -55,6 +68,9 @@ public class AttributeBuilder extends PropertyBuilder {
 			imports.add(fullType);
 			if("Map".equals(descriptor.type())) {
 				imports.add(JsonUtils.class.getCanonicalName());
+			}
+			else if("Date".equals(descriptor.type())) {
+				imports.add(SimpleDateFormat.class.getCanonicalName());
 			}
 		}
 		return imports;
