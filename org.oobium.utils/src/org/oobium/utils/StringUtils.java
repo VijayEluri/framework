@@ -1165,12 +1165,24 @@ public class StringUtils {
 		return (count == 1) ? singular : plural;
 	}
 	
-	public static Integer[] range(Integer start, Integer end) {
-		Integer[] range = new Integer[end-start+1];
-		for(int i = start; i <= end; i++) {
-			range[i] = i;
+	public static int[] range(int start, int end) {
+		return range(start, end, false);
+	}
+	
+	public static int[] range(int start, int end, boolean exclusive) {
+		if(exclusive) {
+			int[] range = new int[end-start];
+			for(int i = start; i < end; i++) {
+				range[i-start] = i;
+			}
+			return range;
+		} else {
+			int[] range = new int[end-start+1];
+			for(int i = start; i <= end; i++) {
+				range[i-start] = i;
+			}
+			return range;
 		}
-		return range;
 	}
 	
 	public static String repeat(char c, int times) {

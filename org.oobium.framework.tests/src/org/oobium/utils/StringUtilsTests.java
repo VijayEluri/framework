@@ -104,5 +104,13 @@ public class StringUtilsTests {
 	public void testJsonEscape() throws Exception {
 		assertEquals("is a \u003E 0 \u0026 a \u003C 10?", jsonEscape("is a > 0 & a < 10?"));
 	}
+
+	@Test
+	public void testRange() throws Exception {
+		assertArrayEquals(new int[] { 1, 2, 3, 4, 5 }, range(1, 5));
+		assertArrayEquals(new int[] { 2, 3, 4, 5 }, range(2, 5));
+		assertArrayEquals(new int[] { 3, 4, 5 }, range(3, 5, false));
+		assertArrayEquals(new int[] { 3, 4 }, range(3, 5, true));
+	}
 	
 }
