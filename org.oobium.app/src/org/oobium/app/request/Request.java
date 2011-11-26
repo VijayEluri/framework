@@ -1,6 +1,7 @@
 package org.oobium.app.request;
 
-import static org.jboss.netty.handler.codec.http.HttpMethod.*;
+import static org.jboss.netty.handler.codec.http.HttpMethod.POST;
+import static org.jboss.netty.handler.codec.http.HttpMethod.PUT;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -51,6 +52,21 @@ public class Request extends DefaultHttpRequest {
 	public Request(HttpVersion httpVersion, HttpMethod method, String uri, int port) {
 		super(httpVersion, method, uri);
 		this.port = port;
+	}
+	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private void addParameter(String name, Object value) {
+		if(name.endsWith("[]")) {
+			if(parameters.containsKey(name)) {
+				((List) parameters.get(name)).add(value);
+			} else {
+				List<Object> list = new ArrayList<Object>();
+				list.add(value);
+				parameters.put(name, list);
+			}
+		} else {
+			parameters.put(name, value);
+		}
 	}
 	
 	public void dispose() {
@@ -137,7 +153,7 @@ public class Request extends DefaultHttpRequest {
 					try {
 						HttpPostRequestDecoder bodyDecoder = new HttpPostRequestDecoder(this);
 						for(InterfaceHttpData data : bodyDecoder.getBodyHttpDatas()) {
-							parameters.put(data.getName(), data);
+							addParameter(data.getName(), data);
 						}
 					} catch(ErrorDataDecoderException e) {
 						e.printStackTrace();
@@ -156,7 +172,7 @@ public class Request extends DefaultHttpRequest {
 			for(Entry<String, List<String>> entry : queryDecoder.getParameters().entrySet()) {
 				List<String> vals = entry.getValue();
 				if(vals != null && !vals.isEmpty()) {
-					parameters.put(entry.getKey(), vals.get(0));
+					addParameter(entry.getKey(), vals.get(0));
 				}
 			}
 		}
