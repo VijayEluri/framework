@@ -113,4 +113,10 @@ public class StringUtilsTests {
 		assertArrayEquals(new int[] { 3, 4 }, range(3, 5, true));
 	}
 	
+	@Test
+	public void testOptions() throws Exception {
+		assertEquals("<option title=\"1\" value=\"1\">1</option><option title=\"2\" value=\"2\">2</option>", optionTags(new int[] { 1, 2 }));
+		assertEquals("<option title=\"1\" value=\"1\">1</option><option title=\"2\" value=\"2\" selected>2</option>", optionTags(new int[] { 1, 2 }, 2));
+	}
+	
 }

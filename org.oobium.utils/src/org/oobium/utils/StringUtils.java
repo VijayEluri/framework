@@ -893,7 +893,7 @@ public class StringUtils {
 		if(selected) {
 			sb.append(" selected");
 		}
-		sb.append('>').append(h(text)).append("</options>");
+		sb.append('>').append(h(text)).append("</option>");
 	}
 	
 	public static String optionTags(Object options) {
@@ -928,8 +928,9 @@ public class StringUtils {
 					Map<?,?> map = (Map<?,?>) option;
 					optionTag(sb, map.get("text"), map.get("value"), selection);
 				} else if(option != null && option.getClass().isArray()) {
-					Object[] array = (Object[]) option;
-					optionTag(sb, array[0], array[1], selection);
+					Object o1 = Array.get(option, 0);
+					Object o2 = Array.get(option, 1);
+					optionTag(sb, o1, o2, selection);
 				} else {
 					optionTag(sb, option, option, selection);
 				}
@@ -939,13 +940,19 @@ public class StringUtils {
 		if(options.getClass().isArray()) {
 			if(options.getClass().getComponentType().isArray()) {
 				StringBuilder sb = new StringBuilder();
-				for(Object[] option : (Object[][]) options) {
-					optionTag(sb, option[0], option[1], selection);
+				int len = Array.getLength(options);
+				for(int i = 0; i < len; i++) {
+					Object option = Array.get(options, i);
+					Object o1 = Array.get(option, 0);
+					Object o2 = Array.get(option, 1);
+					optionTag(sb, o1, o2, selection);
 				}
 				return sb.toString();
 			} else {
 				StringBuilder sb = new StringBuilder();
-				for(Object option : (Object[]) options) {
+				int len = Array.getLength(options);
+				for(int i = 0; i < len; i++) {
+					Object option = Array.get(options, i);
 					optionTag(sb, option, option, selection);
 				}
 				return sb.toString();
@@ -969,7 +976,7 @@ public class StringUtils {
 			if(selected) {
 				sb.append("selected ");
 			}
-			sb.append('>').append(h(text)).append("</options>");
+			sb.append('>').append(h(text)).append("</option>");
 		}
 	}
 	
@@ -1170,19 +1177,11 @@ public class StringUtils {
 	}
 	
 	public static int[] range(int start, int end, boolean exclusive) {
-		if(exclusive) {
-			int[] range = new int[end-start];
-			for(int i = start; i < end; i++) {
-				range[i-start] = i;
-			}
-			return range;
-		} else {
-			int[] range = new int[end-start+1];
-			for(int i = start; i <= end; i++) {
-				range[i-start] = i;
-			}
-			return range;
+		int[] range = exclusive ? new int[end-start] : new int[end-start+1];
+		for(int i = 0; i < range.length; i++) {
+			range[i] = i + start;
 		}
+		return range;
 	}
 	
 	public static String repeat(char c, int times) {
