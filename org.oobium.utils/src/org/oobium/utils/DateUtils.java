@@ -12,8 +12,10 @@ package org.oobium.utils;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -39,6 +41,22 @@ public class DateUtils {
 		Calendar cal = Calendar.getInstance();
 		cal.add(Calendar.DATE, amount);
 		return cal.getTime();
+	}
+
+	public static List<Object[]> getSelectDates(String format, int count) {
+		return getSelectDates(format, 0, count);
+	}
+	
+	public static List<Object[]> getSelectDates(String format, int start, int end) {
+		SimpleDateFormat sdf = new SimpleDateFormat(format);
+		Calendar cal = Calendar.getInstance();
+		List<Object[]> dates = new ArrayList<Object[]>();
+		for(int i = start; i < end; i++) {
+				Date date = cal.getTime();
+				dates.add(new Object[] { sdf.format(date), date.getTime() });
+				cal.add(Calendar.DATE, 1);
+		}
+		return dates;
 	}
 	
 	public static String httpDate() {
