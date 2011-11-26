@@ -557,7 +557,7 @@ public class MarkupElement extends EspElement {
 			style = ID | CLASSES | ARGS | ENTRIES | STYLES | INNER_TEXT;
 		} else if("radio".equals(tag) || "reset".equals(tag) || "date".equals(tag)
 				|| "hidden".equals(tag) || "check".equals(tag)
-				|| "file".equals(tag) || "input".equals(tag) || "number".equals(tag)
+				|| "file".equals(tag) || "input".equals(tag) || "number".equals(tag) || "decimal".equals(tag)
 				|| "password".equals(tag) || "text".equals(tag)) {
 			type = Type.MarkupElement;
 			style = ID | CLASSES | ARGS | ENTRIES | STYLES;
