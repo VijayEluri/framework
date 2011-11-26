@@ -46,6 +46,8 @@ import org.oobium.utils.coercion.coercers.TimestampCoercer;
 
 public class TypeCoercer {
 
+	private static final String EMPTY_STRING = "";
+	
 	private static final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
 	private static final Map<Class<?>, Coercer> coercers;
@@ -126,7 +128,7 @@ public class TypeCoercer {
 			throw new IllegalArgumentException("type cannot be null");
 		}
 		
-		if(object == null) {
+		if(object == null || object.equals(EMPTY_STRING)) {
 			Coercer coercer = null;
 			lock.readLock().lock();
 			try {
