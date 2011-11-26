@@ -945,6 +945,9 @@ public abstract class Model implements JsonModel {
 		if("0".equals(id)) {
 			return true;
 		}
+		if("".equals(id)) {
+			return true;
+		}
 		return false;
 	}
 
