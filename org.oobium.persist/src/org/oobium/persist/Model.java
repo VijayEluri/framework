@@ -85,7 +85,9 @@ public abstract class Model implements JsonModel {
 					String[] fields = validate.field().split("\\s*,\\s*");
 					for(String f : fields) {
 						if(f.equals(field)) {
-							return validate.isNotBlank() || validate.isNotNull();
+							return validate.isNotBlank() || validate.isNotNull()
+									|| !"".equals(validate.min()) || !"".equals(validate.max())
+									|| !"".equals(validate.isIn());
 						}
 					}
 				}
