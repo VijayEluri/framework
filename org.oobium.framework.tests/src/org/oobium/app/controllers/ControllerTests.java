@@ -7,6 +7,7 @@ import static org.oobium.app.controllers.HttpController.mapParams;
 import static org.oobium.app.controllers.HttpController.splitParam;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.junit.Test;
@@ -160,44 +161,45 @@ public class ControllerTests {
 	
 	@Test
 	public void testMapParams2() throws Exception {
-		Map<String, Object> params = new HashMap<String, Object>();
+		Map<String, Object> params = new LinkedHashMap<String, Object>();
 		params.put("client[name]", "joe");
 		params.put("client[phone]", "12345");
 		
-		Map<String, Object> expected = new HashMap<String, Object>();
-		Map<String, Object> client = new HashMap<String, Object>();
-		client.put("name", "joe");
-		client.put("phone", "12345");
-		expected.put("client", client);
-		
-		assertEquals("{client={phone=12345, name=joe}, client[phone]=12345, client[name]=joe}", mapParams(params).toString());
+		assertEquals("{client[name]=joe, client[phone]=12345, client={name=joe, phone=12345}}", mapParams(params).toString());
 	}
 	
 	@Test
 	public void testMapParams3() throws Exception {
-		Map<String, Object> params = new HashMap<String, Object>();
+		Map<String, Object> params = new LinkedHashMap<String, Object>();
 		params.put("client[name]", "joe");
 		params.put("client[phone]", "12345");
 		params.put("client[address][city]", "Carrot City");
 		params.put("client[address][zipcode]", "12345");
 		
-		Map<String, Object> expected = new HashMap<String, Object>();
-		Map<String, Object> client = new HashMap<String, Object>();
-		client.put("name", "joe");
-		client.put("phone", "12345");
-		Map<String, Object> address = new HashMap<String, Object>();
-		address.put("city", "Carrot City");
-		address.put("zipcode", "12345");
-		client.put("address", address);
-		expected.put("client", client);
+		assertEquals("{" +
+		              "client[name]=joe, " +
+		              "client[phone]=12345, " +
+		              "client[address][city]=Carrot City, " +
+		              "client[address][zipcode]=12345, " +
+		              "client={name=joe, " +
+		                      "phone=12345, " +
+		                      "address={city=Carrot City, zipcode=12345}}" +
+				     "}", mapParams(params).toString());
+	}
+
+	@Test
+	public void testMapParams4() throws Exception {
+		Map<String, Object> params = new LinkedHashMap<String, Object>();
+		params.put("client[address]", "1");
+		params.put("client[address][city]", "Carrot City");
+		params.put("client[address][zipcode]", "12345");
 		
-		assertEquals("{client[address][city]=Carrot City, " +
-					  "client[phone]=12345, " +
-					  "client={phone=12345, " +
-					  		  "address={zipcode=12345, city=Carrot City}, " +
-					  		  "name=joe}, " +
-					  "client[name]=joe, " +
-					  "client[address][zipcode]=12345}", mapParams(params).toString());
+		assertEquals("{" +
+				      "client[address]=1, " +
+				      "client[address][city]=Carrot City, " +
+				      "client[address][zipcode]=12345, " +
+				      "client={address={id=1, city=Carrot City, zipcode=12345}}" +
+				     "}", mapParams(params).toString());
 	}
 
 }

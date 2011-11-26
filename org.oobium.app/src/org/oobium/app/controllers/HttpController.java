@@ -142,21 +142,50 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 			return new HashMap<String, Object>(0);
 		}
 		
-		Map<String, Object> map = new HashMap<String, Object>();
+		/*
+		 * a model may contain nested models, some of which may have an id field that is not directly
+		 * expressed - rather than: model[child][id], it may be: model[child]. this will be coerced
+		 * correctly, but needs additional logic in this routine in case there are additional fields
+		 * defined on the child model:
+		 *   model[child]
+		 *   model[child][name]
+		 *   model[child][type]
+		 * the above should create a map equivalent to:
+		 *   model[child][id]
+		 *   model[child][name]
+		 *   model[child][type]
+		 */
+		
+		Map<String, Object> map = new LinkedHashMap<String, Object>(params);
 		
 		for(String param : params.keySet()) {
-			map.put(param, params.get(param));
 			String[] parts = splitParam(param);
 			if(parts.length > 1) {
 				Map<String, Object> m = map;
 				for(int i = 0; i < parts.length; i++) {
 					if(i == parts.length-1) {
-						m.put(parts[i], params.get(param));
+						Object o = m.get(parts[i]);
+						if(o instanceof Map) {
+							Map<String, Object> tmp = (Map<String, Object>) o;
+							if(!tmp.containsKey("id")) {
+								tmp.put("id", params.get(param)); // see note above
+							} // else, skip it
+						} else {
+							m.put(parts[i], params.get(param));
+						}
 					} else {
 						if(!m.containsKey(parts[i])) {
-							m.put(parts[i], new HashMap<String, Object>());
+							m.put(parts[i], new LinkedHashMap<String, Object>());
 						}
-						m = (Map<String, Object>) m.get(parts[i]);
+						Object o = m.get(parts[i]);
+						if(o instanceof Map) {
+							m = (Map<String, Object>) o;
+						} else {
+							Map<String, Object> tmp = new LinkedHashMap<String, Object>();
+							tmp.put("id", o); // see note above
+							m.put(parts[i], tmp);
+							m = tmp;
+						}
 					}
 				}
 			}
