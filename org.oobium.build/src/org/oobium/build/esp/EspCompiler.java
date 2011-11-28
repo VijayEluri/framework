@@ -258,6 +258,31 @@ public class EspCompiler {
 		body.append("return false;\\\"");
 	}
 
+	private void appendDeleteJs(MarkupElement element, String target) {
+		body.append(" onclick=\\\"");
+		appendConfirmOpener(element);
+		body.append("var f = document.createElement('form');");
+		body.append("f.style.display = 'none';");
+		body.append("this.parentNode.appendChild(f);");
+		body.append("f.method = 'POST';");
+		body.append("f.action = '\").append(");
+		body.append(target);
+		body.append(").append(\"';");
+		body.append("var m = document.createElement('input');");
+		body.append("m.setAttribute('type', 'hidden');");
+		body.append("m.setAttribute('name', '_method');");
+		body.append("m.setAttribute('value', 'delete');");
+		body.append("f.appendChild(m);");
+//					sb.append("var s = document.createElement('input');");
+//					sb.append("s.setAttribute('type', 'hidden');");
+//					sb.append("s.setAttribute('name', 'authenticity_token');");
+//					sb.append("s.setAttribute('value', 'b9373bb3936620b9457ec2edc19f597b32faf6bf');");
+//					sb.append("f.appendChild(s);");
+		body.append("f.submit();");
+		appendConfirmCloser(element);
+		body.append("return false;\\\"");
+	}
+
 	private void appendEntryValueWithoutQuotes(MarkupElement element, String key) {
 		JavaSourcePart part = (JavaSourcePart) element.getEntryValue(key);
 		if(part.isSimple()) {
@@ -1258,8 +1283,10 @@ public class EspCompiler {
 			if(method == null) {
 				esf.addImport(Action.class.getCanonicalName());
 				body.append(" action=\\\"\").append(pathTo(").append(model).append(", ").append(model).append(".isNew() ? Action.create : Action.update)).append(\"\\\"");
+				body.append(" method=\\\"POST\\\"");
+			} else {
+				body.append(" method=\\\"").append(method).append("\\\"");
 			}
-			body.append(" method=\\\"POST\\\"");
 			if(form.hasEntry("enctype")) {
 				body.append(" enctype=\\\"");
 				build(form.getEntry("enctype").getValue(), body);
@@ -1705,10 +1732,16 @@ public class EspCompiler {
 		JavaSourcePart target = null;
 		String action = null;
 		if(link.hasArgs() && link.getArgs().size() <= 2) {
-			buildAttrs(link, "href", "action", "confirm", "update", "field", "value");
+			buildAttrs(link, "href", "action", "confirm", "update", "field", "value", "method");
 			target = link.getArg(0);
 			if(link.getArgs().size() == 1) {
 				appendAttr("href", target);
+				if(link.hasEntryValue("method")) {
+					String method = link.getEntryValue("method").getText();
+					if("\"delete\"".equalsIgnoreCase(method)) {
+						appendDeleteJs(link, target.getText());
+					}
+				}
 			} else if(dom.isEsp()) { // size == 2
 				JavaSourcePart part = dom.isEsp() ? link.getArg(1) : null;
 				if(part == null) {
