@@ -23,6 +23,8 @@ public interface IHttp {
 	public abstract boolean isPath(String path);
 	public abstract boolean isXhr();
 	
+	public abstract String path();
+	
 	public abstract boolean accepts(MimeType type);
 
 	public abstract MimeType wants();

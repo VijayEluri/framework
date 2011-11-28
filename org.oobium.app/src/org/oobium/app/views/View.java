@@ -483,6 +483,11 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 	}
 	
 	@Override
+	public String path() {
+		return request.getPath();
+	}
+	
+	@Override
 	public String pathTo(Class<? extends Model> modelClass) {
 		return controller.pathTo(modelClass);
 	}

@@ -893,6 +893,11 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	}
 	
 	@Override
+	public String path() {
+		return request.getPath();
+	}
+	
+	@Override
 	public String pathTo(Class<? extends Model> modelClass) {
 		return appRouter.pathTo(router, modelClass);
 	}
