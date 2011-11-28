@@ -40,6 +40,7 @@ import org.oobium.app.workers.Workers;
 import org.oobium.cache.CacheService;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
+import org.oobium.persist.NullPersistService;
 import org.oobium.persist.PersistClient;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.PersistServiceProvider;
@@ -294,6 +295,10 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		if(sessionClass != null && !blank(id) && uuid != null) {
 			PersistService service = Model.getPersistService(sessionClass);
 			if(service != null) {
+				if(service instanceof NullPersistService) {
+					logger.debug("NullPersistService returned for sessionClass: {}", sessionClass);
+					return null;
+				}
 				try {
 					if(!blank(include)) {
 						if(include.startsWith("include:")) include = include.substring(8).trim();
