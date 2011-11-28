@@ -477,8 +477,8 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 					Timestamp exp = new Timestamp(System.currentTimeMillis() + 30*60*1000);
 					session.setExpiration(exp);
 					if(session.save()) {
-						response.setCookie(SESSION_ID_KEY, session.getId(), 30*60*1000);
-						response.setCookie(SESSION_UUID_KEY, session.getUuid(), 30*60*1000);
+						response.setCookie(SESSION_ID_KEY, session.getId(), 30*60);
+						response.setCookie(SESSION_UUID_KEY, session.getUuid(), 30*60);
 					}
 				}
 			}
@@ -1415,14 +1415,17 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 				try {
 					int id = Integer.parseInt(cookie.getValue());
 					cookie = request.getCookie(SESSION_UUID_KEY);
-					if(cookie != null) {
+					if(cookie == null) {
+						logger.debug("SESSION_UUID_KEY does not exist");
+					} else {
 						String uuid = cookie.getValue();
 						session = handler.getSession(id, uuid, include, create);
 					}
 				} catch(NumberFormatException e) {
-					logger.warn("invalid cookie id format: " + cookie.getValue());
+					logger.debug("invalid format of SESSION_ID_KEY: '{}'", cookie.getValue());
 				}
-			} else if(create) {
+			}
+			if(session == null && create) {
 				session = handler.getSession(-1, null, include, true);
 			}
 		}

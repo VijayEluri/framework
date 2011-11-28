@@ -19,6 +19,7 @@ import java.util.Map;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.codec.http.Cookie;
+import org.jboss.netty.handler.codec.http.CookieEncoder;
 import org.jboss.netty.handler.codec.http.DefaultCookie;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
@@ -45,23 +46,23 @@ public class Response extends DefaultHttpResponse {
 		setHeader(HttpHeaders.Names.DATE, httpDate());
 	}
 
-	public void expireCookie(String name) {
-		Cookie cookie = (cookies != null) ? cookies.get(name) : null;
-		if(cookie == null) {
-			cookie = setCookie(name, "");
+	private void addCookie(Cookie cookie) {
+		if(cookies == null) {
+			cookies = new HashMap<String, Cookie>();
 		}
-		cookie.setMaxAge(0);
+		cookies.put(cookie.getName(), cookie);
+		removeHeader(HttpHeaders.Names.SET_COOKIE);
+		for(Cookie c : cookies.values()) {
+			CookieEncoder encoder = new CookieEncoder(true);
+			encoder.addCookie(c);
+			addHeader(HttpHeaders.Names.SET_COOKIE, encoder.encode());
+		}
+	}
+	
+	public void expireCookie(String name) {
+		setCookie(name, "", 0);
 	}
 
-	public boolean isSuccess() {
-		int code = getStatus().getCode();
-		return code >= 200 && code < 300;
-	}
-	
-	public Cookie getCookie(String name) {
-		return (cookies != null) ? cookies.get(name) : null;
-	}
-	
 	public String getApiLocation() {
 		return getHeader("API-Location");
 	}
@@ -96,6 +97,11 @@ public class Response extends DefaultHttpResponse {
 		return null;
 	}
 	
+	public boolean isSuccess() {
+		int code = getStatus().getCode();
+		return code >= 200 && code < 300;
+	}
+	
 	public void setApiLocation(String location) {
 		setHeader("API-Location", location);
 	}
@@ -116,28 +122,23 @@ public class Response extends DefaultHttpResponse {
 		setHeader(HttpHeaders.Names.CONTENT_TYPE, type.contentType);
 	}
 	
-	public Cookie setCookie(String name, Object value) {
-		return setCookie(name, String.valueOf(value));
+	public void setCookie(String name, Object value) {
+		setCookie(name, String.valueOf(value));
 	}
-	
-	public Cookie setCookie(String name, String value) {
-		if(cookies == null) {
-			cookies = new HashMap<String, Cookie>();
-		}
+
+	public void setCookie(String name, String value) {
 		Cookie cookie = new DefaultCookie(name, value);
-		cookies.put(name, cookie);
-		setHeader("Set-Cookie", cookies.values());
-		return cookie;
+		addCookie(cookie);
 	}
 	
-	public Cookie setCookie(String name, Object value, int maxAge) {
-		return setCookie(name, String.valueOf(value), maxAge);
+	public void setCookie(String name, Object value, int maxAge) {
+		setCookie(name, String.valueOf(value), maxAge);
 	}
 	
-	public Cookie setCookie(String name, String value, int maxAge) {
-		Cookie cookie = setCookie(name, value);
+	public void setCookie(String name, String value, int maxAge) {
+		Cookie cookie = new DefaultCookie(name, value);
 		cookie.setMaxAge(maxAge);
-		return cookie;
+		addCookie(cookie);
 	}
 	
 }
