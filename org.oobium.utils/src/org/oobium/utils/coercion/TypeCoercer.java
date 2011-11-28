@@ -128,7 +128,10 @@ public class TypeCoercer {
 			throw new IllegalArgumentException("type cannot be null");
 		}
 		
-		if(object == null || object.equals(EMPTY_STRING)) {
+		if(type.isInstance(object)) {
+			return type.cast(object);
+		}
+		else if(object == null || object.equals(EMPTY_STRING)) {
 			Coercer coercer = null;
 			lock.readLock().lock();
 			try {
@@ -142,9 +145,8 @@ public class TypeCoercer {
 				// this type of cast handles Integer -> int... seems there should be a better way...
 				return (T) coercer.coerceNull();
 			}
-		} else if(type.isInstance(object)) {
-			return type.cast(object);
-		} else {
+		}
+		else {
 			Coercer coercer = null;
 			Method method = null;
 			lock.readLock().lock();
