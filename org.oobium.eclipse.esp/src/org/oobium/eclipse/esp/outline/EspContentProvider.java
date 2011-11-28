@@ -11,7 +11,7 @@
 package org.oobium.eclipse.esp.outline;
 
 import static org.oobium.build.esp.EspPart.Type.ConstructorElement;
-import static org.oobium.build.esp.EspPart.Type.ImportElement;
+import static org.oobium.build.esp.EspPart.Type.*;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -111,6 +111,9 @@ class EspContentProvider implements ITreeContentProvider, PropertyChangeListener
 				else if(e.isA(ConstructorElement)) {
 					ctors.add(e);
 				}
+				else if(e.isA(CommentElement)) {
+					continue;
+				}
 				else {
 					int level = e.getLevel();
 					if(level == 0) {
@@ -118,7 +121,9 @@ class EspContentProvider implements ITreeContentProvider, PropertyChangeListener
 					} else if(level < 1 && e instanceof StyleElement) { // CSS or ESS file
 						for(EspElement child : ((StyleElement) e).getChildren()) {
 							for(EspPart selector : ((StyleChildElement) child).getSelectorGroups()) {
-								elements.add(selector);
+								if(!selector.getText().trim().startsWith("//")) { // TODO implement real comment handling
+									elements.add(selector);
+								}
 							}
 						}
 					}
