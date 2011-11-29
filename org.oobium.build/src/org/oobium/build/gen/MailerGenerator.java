@@ -27,8 +27,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.mail.internet.InternetAddress;
-
 import org.oobium.build.util.SourceFile;
 import org.oobium.build.workspace.Module;
 import org.oobium.mailer.AbstractMailer;
@@ -195,13 +193,13 @@ public class MailerGenerator {
 	}
 
 	private void addCreateMethod(String method) {
-		String[] sa = method.split("\\s*\\(\\s*");
-		String name = "create" + sa[0];
+		String setupMethod = "setup" + method.substring(0, method.indexOf('(')).trim();
+		String createMethod = "create" + method;
 		
 		StringBuilder sb = new StringBuilder();
-		sb.append("\tpublic static ").append(simpleName).append(' ').append(name).append('(').append(sa[1]).append(" {\n");
+		sb.append("\tpublic static ").append(simpleName).append(' ').append(createMethod).append(" {\n");
 		sb.append("\t\t").append(simpleName).append(" mailer = new ").append(simpleName).append("();\n");
-		sb.append("\t\tmailer.setup").append(sa[0]).append('(');
+		sb.append("\t\tmailer.").append(setupMethod).append('(');
 		String[] args = getArgs(method);
 		if(args.length > 0) {
 			for(int i = 0; i < args.length; i++) {
@@ -213,7 +211,7 @@ public class MailerGenerator {
 		sb.append("\t\treturn mailer;\n");
 		sb.append("\t}");
 		
-		sf.staticMethods.put(name, sb.toString());
+		sf.staticMethods.put(createMethod, sb.toString());
 	}
 	
 	private void addImports(String methodSig) {
@@ -231,12 +229,12 @@ public class MailerGenerator {
 	}
 	
 	private void addSendMethod(String method) {
-		String[] sa = method.split("\\s*\\(\\s*");
-		String name = "send" + sa[0];
+		String createMethod = "create" + method.substring(0, method.indexOf('(')).trim();
+		String sendMethod = "send" + method;
 		
 		StringBuilder sb = new StringBuilder();
-		sb.append("\tpublic static ").append(simpleName).append(' ').append(name).append('(').append(sa[1]).append(" {\n");
-		sb.append("\t\treturn create").append(sa[0]).append('(');
+		sb.append("\tpublic static ").append(simpleName).append(' ').append(sendMethod).append(" {\n");
+		sb.append("\t\treturn ").append(createMethod).append('(');
 		String[] args = getArgs(method);
 		if(args.length > 0) {
 			for(int i = 0; i < args.length; i++) {
@@ -247,7 +245,7 @@ public class MailerGenerator {
 		sb.append(").send();\n");
 		sb.append("\t}");
 		
-		sf.staticMethods.put(name, sb.toString());
+		sf.staticMethods.put(sendMethod, sb.toString());
 	}
 	
 	private List<File> generate() {
@@ -276,6 +274,8 @@ public class MailerGenerator {
 		if(modifySrcFile(canonicalName, simpleName(canonicalName), srcFile)) {
 			generated.add(srcFile);
 		}
+
+		generated.addAll(createTemplates(methods));
 		
 		return generated;
 	}
@@ -360,11 +360,18 @@ public class MailerGenerator {
 	}
 	
 	private List<File> createTemplates() {
+		String[] methods = findMailerMethodSignatures(src);
+		return createTemplates(methods);
+	}
+	
+	private List<File> createTemplates(String[] methods) {
 		List<File> generated = new ArrayList<File>();
 		
-		String[] methods = findMailerMethodSignatures(src);
 		for(String method : methods) {
-			generated.add(createTemplate(method));
+			File template = createTemplate(method);
+			if(template != null) {
+				generated.add(template);
+			}
 		}
 
 		if(modifySrcFile(canonicalName, simpleName(canonicalName), srcFile)) {
@@ -380,19 +387,22 @@ public class MailerGenerator {
 
 		String viewName = (methodName.startsWith("setup") ? methodName.substring(5) : methodName);
 
-		StringBuilder sb = new StringBuilder();
-		sb.append("import java.util.Date\n");
-		sb.append("import ").append(InternetAddress.class.getCanonicalName()).append('\n');
-		sb.append('\n');
-		sb.append("div Date: { new Date() }\n");
-		sb.append("div From: { mailer.getFrom() }\n");
-		sb.append("div To: { asString(mailer.getTo()) }\n");
-		sb.append("div Subject: { mailer.getSubject() }\n");
-		sb.append('\n');
-		sb.append("div This is an auto-generated email template\n");
-
 		File folder = new File(mailersFolder, underscored(simpleName.substring(0, simpleName.length() - 6)));
-		return writeFile(folder, viewName + ".emt", sb.toString());
+		File file = new File(folder, viewName + ".emt");
+		if(file.exists()) {
+			return null;
+		} else {
+			StringBuilder sb = new StringBuilder();
+			sb.append("import java.util.Date\n");
+			sb.append('\n');
+			sb.append("div Date: { new Date() }\n");
+			sb.append("div From: { mailer.getFrom() }\n");
+			sb.append("div To: { asString(mailer.getTo()) }\n");
+			sb.append("div Subject: { mailer.getSubject() }\n");
+			sb.append('\n');
+			sb.append("div This is an auto-generated email template\n");
+			return writeFile(file, sb.toString());
+		}
 	}
 	
 	private File createLayout() {
