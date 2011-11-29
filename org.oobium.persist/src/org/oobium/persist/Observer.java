@@ -27,6 +27,8 @@ public class Observer<T extends Model> {
 
 	private static final Map<Class<?>, List<Observer<? extends Model>>> observerMap = new HashMap<Class<?>, List<Observer<? extends Model>>>();
 
+	static volatile boolean active = true;
+
 	synchronized static void addObserver(Class<? extends Observer<?>> observerClass) {
 		try {
 			Observer<?> observer = observerClass.newInstance();
@@ -156,8 +158,12 @@ public class Observer<T extends Model> {
 	
 	
 	private static <T extends Model> void run(T model, int method) {
-		run(model, method, observerMap.get(Model.class));
-		run(model, method, observerMap.get(model.getClass()));
+		if(active) {
+			run(model, method, observerMap.get(Model.class));
+			run(model, method, observerMap.get(model.getClass()));
+		} else {
+			slogger.debug("observers not active ({}, {})", model, method);
+		}
 	}
 	
 	@SuppressWarnings("unchecked")

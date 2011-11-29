@@ -45,12 +45,20 @@ public abstract class Model implements JsonModel {
 	
 	private static PersistServiceProvider globalPersistServiceProvider;
 
+	public static void activateObservers() {
+		Observer.active = true;
+	}
+	
 	public static void addObserver(Class<? extends Observer<?>> observerClass) {
 		Observer.addObserver(observerClass);
 	}
 	
 	public static void addObserver(Observer<?> observer) {
 		Observer.addObserver(observer);
+	}
+	
+	public static void deactivateObservers() {
+		Observer.active = false;
 	}
 	
 	public static Logger getLogger() {
@@ -120,6 +128,10 @@ public abstract class Model implements JsonModel {
 
 	public static void setLogger(Logger service) {
 		logService.set(service);
+	}
+
+	public static void setObserversActive(boolean active) {
+		Observer.active = active;
 	}
 	
 	public static PersistServiceProvider setPersistService(PersistService service) {
