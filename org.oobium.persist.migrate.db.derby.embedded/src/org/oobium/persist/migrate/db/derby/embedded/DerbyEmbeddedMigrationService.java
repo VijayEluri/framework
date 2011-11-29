@@ -54,7 +54,7 @@ public class DerbyEmbeddedMigrationService extends DbMigrationService {
 	
 	@Override
 	protected String getRenameColumnSql(Table table, String from, String to) {
-		return "RENAME COLUMN " + table.name + "." + from + " TO " + to;
+		return "RENAME COLUMN " + getSqlSafe(table.name) + "." + getSqlSafe(from) + " TO " + getSqlSafe(to);
 	}
 	
 	@Override
@@ -80,10 +80,10 @@ public class DerbyEmbeddedMigrationService extends DbMigrationService {
 			for(String action : new String[] { "INSERT", "UPDATE" }) {
 				String sql =
 					"CREATE TRIGGER " + table.name + "___" + column + "___u_" + action.toLowerCase() + "_trigger" +
-					" NO CASCADE BEFORE " + action + " ON " + table.name +
+					" NO CASCADE BEFORE " + action + " ON " + getSqlSafe(table.name) +
 					" REFERENCING NEW ROW AS NEWROW" +
 					" FOR EACH ROW" +
-					" CALL APP.CHECK_UNIQUE('" + table.name + "', '" + column + "', NEWROW." + column + ")";
+					" CALL APP.CHECK_UNIQUE('" + getSqlSafe(table.name) + "', '" + getSqlSafe(column) + "', NEWROW." + getSqlSafe(column) + ")";
 				
 				logger.info(sql);
 				stmt.executeUpdate(sql);
