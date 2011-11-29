@@ -1743,7 +1743,7 @@ public class EspCompiler {
 					}
 				}
 			} else if(dom.isEsp()) { // size == 2
-				JavaSourcePart part = dom.isEsp() ? link.getArg(1) : null;
+				JavaSourcePart part = link.getArg(1);
 				if(part == null) {
 					body.append(" href=\\\"\").append(").append("pathTo(");
 					build(target, body, true);
@@ -1771,6 +1771,26 @@ public class EspCompiler {
 						}
 						body.append(")).append(\"\\\"");
 					}
+				}
+			} else if(dom.isEmt()) { // size == 2
+				// mailers can't use JavaScript or pathTo (uses urlTo instead)
+				JavaSourcePart part = link.getArg(1);
+				if(part == null) {
+					body.append(" href=\\\"\").append(").append("urlTo(");
+					build(target, body, true);
+					body.append(", null)).append(\"\\\"");
+				} else {
+					action = part.getText().trim();
+					body.append(" href=\\\"\").append(").append("urlTo(");
+					build(target, body, true);
+					body.append(", ");
+					if("show".equals(action) || "showAll".equals(action) || "showEdit".equals(action) || "showNew".equals(action)) {
+						esf.addStaticImport(Action.class.getCanonicalName() + "." + action);
+						body.append(action);
+					} else {
+						build(part, body, true);
+					}
+					body.append(")).append(\"\\\"");
 				}
 			}
 		} else {
