@@ -101,6 +101,7 @@ public @interface Relation {
 	public static final int DEFAULT_DEPENDENT = UNDEFINED;
 	public static final String DEFAULT_EMBED = "";
 	public static final boolean DEFAULT_EMBEDDED = false;
+	public static final boolean DEFAULT_HASKEY = false;
 	public static final boolean DEFAULT_INCLUDE = false;
 	public static final int DEFAULT_ONDELETE = UNDEFINED;
 	public static final int DEFAULT_ONUPDATE = UNDEFINED;
@@ -144,6 +145,8 @@ public @interface Relation {
 	 * @see ModelDescription#embedded()
 	 */
 	boolean embedded() default DEFAULT_EMBEDDED;
+	
+	boolean hasKey() default false;
 	
 	/**
 	 * If set true, specifies that this field should always be included (eagerly loaded) when loading the model.<br/>

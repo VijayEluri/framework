@@ -208,6 +208,40 @@ public class ModelAdapter {
 		return null;
 	}
 	
+	public Relation getOppositeRelation(String field) {
+		Relation relation = hasMany.get(field);
+		if(relation == null) {
+			relation = hasOne.get(field);
+		}
+		if(relation != null) {
+			String opposite = relation.opposite();
+			if(opposite != null) {
+				ModelDescription md = relation.type().getAnnotation(ModelDescription.class);
+				if(md != null) {
+					for(Relation r : md.hasOne()) {
+						if(r.name().equals(opposite)) {
+							if(r.type().isAssignableFrom(this.clazz) && r.opposite().equals(field)) {
+								return r;
+							} else {
+								return null;
+							}
+						}
+					}
+					for(Relation r : md.hasMany()) {
+						if(r.name().equals(opposite)) {
+							if(r.type().isAssignableFrom(this.clazz) && r.opposite().equals(field)) {
+								return r;
+							} else {
+								return null;
+							}
+						}
+					}
+				}
+			}
+		}
+		return null;
+	}
+
 	public Class<? extends Model> getOppositeType(String field) {
 		Relation relation = getRelation(field);
 		return (relation != null) ? relation.type() : null;
@@ -318,9 +352,17 @@ public class ModelAdapter {
 	 * @see #isOneToOne(String)
 	 */
 	public boolean hasKey(String field) {
-		// NOTE: update this with ModelRelation#hasKey()
+		// NOTE: this is the compile-time version of ModelRelation#hasKey(String)
+		//       make sure to apply updates to both
 		Relation relation = hasOne.get(field);
 		if(relation == null) {
+			return false;
+		}
+		if(relation.hasKey()) {
+			return true;
+		}
+		Relation opposite = getOppositeRelation(field);
+		if(opposite != null && opposite.hasKey()) {
 			return false;
 		}
 		String column1 = columnName(tableName(clazz), columnName(field));
@@ -337,39 +379,9 @@ public class ModelAdapter {
 	}
 
 	public boolean hasOpposite(String field) {
-		Relation relation = hasMany.get(field);
-		if(relation == null) {
-			relation = hasOne.get(field);
-		}
-		if(relation != null) {
-			String opposite = relation.opposite();
-			if(opposite != null) {
-				ModelDescription md = relation.type().getAnnotation(ModelDescription.class);
-				if(md != null) {
-					for(Relation r : md.hasOne()) {
-						if(r.name().equals(opposite)) {
-							if(r.type().isAssignableFrom(this.clazz) && r.opposite().equals(field)) {
-								return true;
-							} else {
-								return false;
-							}
-						}
-					}
-					for(Relation r : md.hasMany()) {
-						if(r.name().equals(opposite)) {
-							if(r.type().isAssignableFrom(this.clazz) && r.opposite().equals(field)) {
-								return true;
-							} else {
-								return false;
-							}
-						}
-					}
-				}
-			}
-		}
-		return false;
+		return getOppositeRelation(field) != null;
 	}
-
+	
 	void init() {
 		LinkedList<Class<?>> classes = new LinkedList<Class<?>>();
 		Class<?> c = this.clazz;

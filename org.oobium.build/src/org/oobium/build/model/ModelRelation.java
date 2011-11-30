@@ -14,6 +14,7 @@ import static org.oobium.persist.Relation.CASCADE;
 import static org.oobium.persist.Relation.DEFAULT_DEPENDENT;
 import static org.oobium.persist.Relation.DEFAULT_EMBED;
 import static org.oobium.persist.Relation.DEFAULT_EMBEDDED;
+import static org.oobium.persist.Relation.DEFAULT_HASKEY;
 import static org.oobium.persist.Relation.DEFAULT_INCLUDE;
 import static org.oobium.persist.Relation.DEFAULT_ONDELETE;
 import static org.oobium.persist.Relation.DEFAULT_ONUPDATE;
@@ -85,6 +86,7 @@ public class ModelRelation {
 	private String embed;
 	private boolean embedded;
 	private boolean include;
+	private boolean hasKey;
 	private ModelRelation oppositeRelation;
 	
 	public ModelRelation(ModelDefinition model, String annotation, boolean hasMany) {
@@ -108,6 +110,7 @@ public class ModelRelation {
 		onUpdate(getReferential(entries.get("onUpdate"), DEFAULT_ONUPDATE));
 		embed(ModelUtils.getString(entries.get("embed")));
 		embedded(coerce(entries.get("embedded"), DEFAULT_EMBEDDED));
+		hasKey(coerce(entries.get("hasKey"), DEFAULT_HASKEY));
 		include(coerce(entries.get("include"), DEFAULT_INCLUDE));
 	}
 
@@ -126,6 +129,7 @@ public class ModelRelation {
 		onUpdate(original.onUpdate);
 		embed(original.embed);
 		embedded(original.embedded);
+		hasKey(original.hasKey);
 		include(original.include);
 	}
 	
@@ -204,6 +208,9 @@ public class ModelRelation {
 		}
 		if(embedded != DEFAULT_EMBEDDED) {
 			props.put("embedded", embedded);
+		}
+		if(hasKey != DEFAULT_HASKEY) {
+			props.put("hasKey", hasKey);
 		}
 		if(include != DEFAULT_INCLUDE) {
 			props.put("include", include);
@@ -299,6 +306,9 @@ public class ModelRelation {
 		if(embedded != DEFAULT_EMBEDDED) {
 			return true;
 		}
+		if(hasKey != DEFAULT_HASKEY) {
+			return true;
+		}
 		if(include != DEFAULT_INCLUDE) {
 			return true;
 		}
@@ -306,12 +316,23 @@ public class ModelRelation {
 	}
 	
 	public boolean hasKey() {
-		// NOTE: update this with ModelAdapter#hasKey(String)
+		// NOTE: this is the compile-time version of ModelAdapter#hasKey(String)
+		//       make sure to apply updates to both
+		if(hasKey) {
+			return true;
+		}
+		if(oppositeRelation != null && oppositeRelation.hasKey) {
+			return false;
+		}
 		String column1 = columnName(tableName(model.getSimpleName()), columnName(name()));
 		String column2 = columnName(tableName(getSimpleType()), columnName(opposite()));
 		return column1.compareTo(column2) < 0; // the lower sort order contains the key
 	}
 
+	public void hasKey(boolean hasKey) {
+		this.hasKey = hasKey;
+	}
+	
 	public boolean hasMany() {
 		return hasMany;
 	}
@@ -424,19 +445,19 @@ public class ModelRelation {
 				sb.append(", opposite=\"").append(opposite).append('"');
 			}
 			if(embedded != DEFAULT_EMBEDDED) {
-				sb.append(", embedded=true");
+				sb.append(", embedded=").append(embedded);
 			} else if(!embed.equals(DEFAULT_EMBED)) {
 				sb.append(", embed=\"").append(embed).append('"');
 			}
-			if(readOnly) {
-				sb.append(", readOnly=true");
+			if(readOnly != DEFAULT_READONLY) {
+				sb.append(", readOnly=").append(readOnly);
 			}
 		}
 		if(unique != DEFAULT_UNIQUE) {
-			sb.append(", unique=true");
+			sb.append(", unique=").append(unique);
 		}
 		if(virtual != DEFAULT_VIRTUAL) {
-			sb.append(", virtual=true");
+			sb.append(", virtual=").append(virtual);
 		}
 		if(dependent != DEFAULT_DEPENDENT) {
 			sb.append(", dependent=").append(getDependentConstant());
@@ -447,8 +468,11 @@ public class ModelRelation {
 		if(onUpdate != DEFAULT_ONUPDATE) {
 			sb.append(", onUpdate=").append(getOnUpdateConstant());
 		}
+		if(hasKey != DEFAULT_HASKEY) {
+			sb.append(", hasKey=").append(hasKey);
+		}
 		if(include != DEFAULT_INCLUDE) {
-			sb.append(", include=true");
+			sb.append(", include=").append(include);
 		}
 		sb.append(')');
 		return sb.toString();
