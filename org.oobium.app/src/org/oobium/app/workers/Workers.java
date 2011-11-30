@@ -10,7 +10,6 @@
  ******************************************************************************/
 package org.oobium.app.workers;
 
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
@@ -24,7 +23,7 @@ public class Workers {
 	private final ExecutorService executor;
 	private final AtomicLong workerCount;
 	
-	private Map<Long, Worker> workers;
+//	private Map<Long, Worker> workers;
 	
 	
 	public Workers(AppService service) {
@@ -44,10 +43,11 @@ public class Workers {
 	}
 	
 	void complete(long id) {
-		Worker worker = workers.remove(id);
-		if(worker != null) {
-			worker.workers = null;
-		}
+//		TODO redo worker get and complete
+//		Worker worker = workers.remove(id);
+//		if(worker != null) {
+//			worker.workers = null;
+//		}
 	}
 	
 	public AppService getService() {
