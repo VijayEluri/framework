@@ -57,11 +57,26 @@ import org.oobium.persist.Model;
 
 public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 
+	public static final String ANY_HOST = "*";
 	private static final String API_NAME = "__api__";
 
+	private static boolean anyHost(String[] hosts) {
+		if(hosts == null || hosts.length == 0) {
+			return true;
+		}
+
+		for(int i = 0; i < hosts.length; i++) {
+			if(ANY_HOST.equals(hosts[i])) {
+				return true;
+			}
+		}
+
+		return false;
+	}
 	
 	private final int port;
 	private final String[] hosts;
+	private final boolean anyHost;
 	private List<Router> moduleRouters;
 	private String apiHeader;
 	
@@ -78,6 +93,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		super(service);
 		this.hosts = hosts;
 		this.port = port;
+		this.anyHost = anyHost(hosts);
 		setApi(API_NAME, true);
 	}
 
@@ -120,18 +136,23 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 	}
 	
 	private String asUrl(String path) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("http://").append(hosts[0]);
-		if(port != 80) {
-			sb.append(':').append(port);
-		}
-		if(!blank(path)) {
-			if(path.charAt(0) != '/') {
-				sb.append('/');
+		if(hosts == null || hosts.length < 1) {
+			logger.warn(new Exception("cannot convert path (" + path + ") to an URL: host has not been set"));
+			return UNKNOWN_PATH;
+		} else {
+			StringBuilder sb = new StringBuilder();
+			sb.append("http://").append(hosts[0]);
+			if(port != 80) {
+				sb.append(':').append(port);
 			}
-			sb.append(path);
+			if(!blank(path)) {
+				if(path.charAt(0) != '/') {
+					sb.append('/');
+				}
+				sb.append(path);
+			}
+			return sb.toString();
 		}
-		return sb.toString();
 	}
 	
 	/**
@@ -576,13 +597,13 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 	}
 
 	public boolean hasHost(Request request) {
-		if(hosts == null || hosts.length == 0) {
+		if(anyHost) {
 			return true;
 		}
 		String host = request.getHost();
 		if(host != null && host.length() > 0) {
 			for(String h : hosts) {
-				if(h.equals(host)) {
+				if(h == ANY_HOST || h.equals(host)) {
 					return true;
 				}
 			}
