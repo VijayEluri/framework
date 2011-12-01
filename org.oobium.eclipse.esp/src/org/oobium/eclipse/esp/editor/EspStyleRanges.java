@@ -253,8 +253,16 @@ public class EspStyleRanges {
 						}
 						s++;
 					}
-					addRange(s1, s-s1, javaString);
-					s1 = s + 1;
+					EspPart sub = part.getNextSubPart(s1 + 1);
+					while(sub != null && sub.getStart() < s) {
+						addRange(s1, sub.getStart()-s1, javaString);
+						s1 = evaluateJava(sub.getStart(), element, sub);
+						sub = part.getNextSubPart(s1);
+					}
+					if(s > s1) {
+						addRange(s1, s-s1, javaString);
+						s1 = s + 1;
+					}
 				} else {
 					s1++;
 				}
