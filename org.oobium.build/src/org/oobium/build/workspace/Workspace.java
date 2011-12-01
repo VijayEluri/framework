@@ -1035,6 +1035,20 @@ public class Workspace {
 		}
 	}
 	
+	public void moveToStart(String fullName) {
+		Bundle bundle = getBundle(fullName);
+		if(bundle != null) {
+			Bundle[] ba = bundles.values().toArray(new Bundle[bundles.size()]);
+			bundles.clear();
+			bundles.put(bundle.file, bundle);
+			for(Bundle b : ba) {
+				if(b != bundle) {
+					bundles.put(b.file, b);
+				}
+			}
+		}
+	}
+	
 	/**
 	 * Refreshes all bundles and repositories currently loaded in this workspace.
 	 * Independent bundles will be reloaded if they exist, and removed if they don't.

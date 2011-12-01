@@ -199,6 +199,7 @@ public class OobiumPlugin extends AbstractUIPlugin {
 						FileUtils.copy(new File(src, "org.apache.felix.log-1.0.0.jar"), dst);
 						workspace.addRepository(dst);
 					}
+					workspace.moveToStart("org.apache.felix.log");
 					logger.debug("felix bundles loaded from {}", dataArea);
 				} catch(Exception e) {
 					logger.warn("failed to copy felix bundles", e);
