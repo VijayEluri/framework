@@ -1902,7 +1902,7 @@ public class EspCompiler {
 			buildAttrs(input, "type", "onkeypress");
 		}
 		
-		String js = "var k=window.event?event.keyCode:event.which;return (k==127||k<32||(k>48&&k<58));";
+		String js = "var k=window.event?event.keyCode:event.which;return (k==127||k<32||(k>47&&k<58));";
 
 		if(input.hasEntryValue("onkeypress")) {
 			JavaSourcePart part = (JavaSourcePart) input.getEntry("onkeypress").getValue();
