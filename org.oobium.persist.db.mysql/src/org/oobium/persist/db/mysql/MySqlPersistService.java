@@ -27,6 +27,10 @@ public class MySqlPersistService extends DbPersistService {
 		super(client, url);
 	}
 	
+	public MySqlPersistService(String client, String url, Map<String, Object> properties) {
+		super(client, url, properties);
+	}
+	
 	@Override
 	protected Database createDatabase(String client, Map<String, Object> properties) {
 		return new MySqlDatabase(client, properties);

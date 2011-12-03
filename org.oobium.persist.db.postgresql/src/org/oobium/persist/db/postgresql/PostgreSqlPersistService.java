@@ -27,6 +27,10 @@ public class PostgreSqlPersistService extends DbPersistService {
 		super(client, url);
 	}
 	
+	public PostgreSqlPersistService(String client, String url, Map<String, Object> properties) {
+		super(client, url, properties);
+	}
+	
 	@Override
 	protected Database createDatabase(String client, Map<String, Object> properties) {
 		return new PostgreSqlDatabase(client, properties);

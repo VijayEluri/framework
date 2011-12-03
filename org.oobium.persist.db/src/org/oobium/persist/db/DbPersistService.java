@@ -57,6 +57,15 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	private static final int RETRIEVE = 2;
 	private static final int UPDATE = 3;
 	
+	private static Map<String, Object> merge(String url, Map<String, Object> properties) {
+		Map<String, Object> map = parseUrl(url);
+		if(properties != null) {
+			map.putAll(properties);
+		}
+		return map;
+	}
+	
+	
 	protected final Logger logger;
 	private final DbPersistor persistor;
 	private final Map<String, Database> databases;
@@ -96,6 +105,10 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	
 	public DbPersistService(String client, String url) {
 		this(client, parseUrl(url));
+	}
+	
+	public DbPersistService(String client, String url, Map<String, Object> properties) {
+		this(client, merge(url, properties));
 	}
 	
 	private void addDatabase(String client, Map<String, Object> properties) {
