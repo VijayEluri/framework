@@ -12,7 +12,6 @@ package org.oobium.persist.db;
 
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 
-import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashSet;
@@ -62,40 +61,37 @@ public class ConnectionPool {
 			@Override
 			public void connectionClosed(ConnectionEvent event) {
 				PooledConnection pc = (PooledConnection) event.getSource();
-				pc.removeConnectionEventListener(this);
 				addConnection(pc);
 			}
 			@Override
 			public void connectionErrorOccurred(ConnectionEvent event) {
 				PooledConnection pc = (PooledConnection) event.getSource();
-				pc.removeConnectionEventListener(this);
 				disposeConnection(pc);
 			}
 		};
 	}
 	
+	/**
+	 * adds a connection back to the pool (also stops listening to it)
+	 * @param connection
+	 */
 	private synchronized void addConnection(PooledConnection connection) {
+		connection.removeConnectionEventListener(connectionListener);
 		semaphore.release();
 		pool.push(connection);
 	}
 
-	private void log(String message) {
-		message = getClass().getSimpleName() + ": " + message;
-		try {
-			PrintWriter log = ds.getLogWriter();
-			log.println(message);
-		} catch(SQLException e) {
-			logger.error(e);
-		}
-	}
-	
+	/**
+	 * closes and removes the connection
+	 */
 	private synchronized void disposeConnection(PooledConnection connection) {
+		connection.removeConnectionEventListener(connectionListener);
 		connections.remove(connection);
 		semaphore.release();
 		try {
 			connection.close();
 		} catch(SQLException e) {
-			log("could not dispose connection");
+			logger.debug("could not dispose connection");
 		}
 	}
 	
@@ -103,13 +99,13 @@ public class ConnectionPool {
 	 * Closes all connections and clears the pool.
 	 */
 	public synchronized void close() {
-		if(client != null) { // in case is has been disposed
+		if(client != null) { // in case it has been disposed
 			if(!connections.isEmpty()) {
 				for(PooledConnection connection : connections) {
 					try {
 						connection.close();
 					} catch(SQLException e) {
-						log("could not close connection during dispose");
+						logger.debug("could not close connection");
 					}
 				}
 			}
@@ -133,7 +129,7 @@ public class ConnectionPool {
 					try {
 						connection.close();
 					} catch(SQLException e) {
-						log("could not close connection during dispose");
+						logger.debug("could not close connection during dispose");
 					}
 				}
 			}
@@ -163,8 +159,22 @@ public class ConnectionPool {
 			pc = pool.pop();
 		}
 		pc.addConnectionEventListener(connectionListener);
-		Connection connection = pc.getConnection();
-		return connection;
+		try {
+			Connection connection = pc.getConnection();
+			if(connection.isValid(1)) {
+				return connection;
+			}
+			// fall through
+		} catch(SQLException e) {
+			if(logger.isLoggingDebug()) {
+				logger.debug(e);
+			} else {
+				logger.info(e.getLocalizedMessage());
+			}
+			// fall through
+		}
+		disposeConnection(pc);
+		return doGetConnection();
 	}
 	
 	public Connection getConnection() throws SQLException {
