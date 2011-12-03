@@ -1,8 +1,10 @@
 package org.oobium.persist.db.mysql;
 
+import static org.oobium.utils.StringUtils.blank;
+import static org.oobium.utils.StringUtils.varName;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
-import static org.oobium.utils.StringUtils.*;
 
+import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -14,6 +16,7 @@ import javax.sql.ConnectionPoolDataSource;
 
 import org.oobium.persist.db.Database;
 
+import com.mysql.jdbc.ConnectionProperties;
 import com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource;
 
 public class MySqlDatabase extends Database {
@@ -59,6 +62,9 @@ public class MySqlDatabase extends Database {
 
 			StringBuilder sb = new StringBuilder();
 			sb.append("jdbc:mysql://").append(properties.get("host")).append(':').append(properties.get("port"));
+			if(cmd.startsWith("CREATE ") && properties.containsKey("settings")) {
+				
+			}
 
 			String dbURL = sb.toString();
 			if(logger.isLoggingDebug()) {
@@ -98,6 +104,27 @@ public class MySqlDatabase extends Database {
 		ds.setPortNumber(coerce(properties.get("port"), int.class));
 		ds.setUser(coerce(properties.get("username"), String.class));
 		ds.setPassword(coerce(properties.get("password"), String.class));
+		
+		for(Method method : ConnectionProperties.class.getMethods()) {
+			String name = method.getName();
+			if(name.startsWith("set")) {
+				String key = varName(name.substring(3));
+				if(properties.containsKey(key)) {
+					Object val = properties.get(key);
+					try {
+						Class<?>[] types = method.getParameterTypes();
+						Object[] args = new Object[types.length];
+						for(int i = 0; i < types.length && i < args.length; i++) {
+							args[i] = coerce(val, types[i]);
+						}
+						method.invoke(ds, args);
+					} catch(Exception e) {
+						logger.error("could not set property '{}' to value of '{}'", key, val);
+					}
+				}
+			}
+		}
+
 		return ds;
 	}
 
