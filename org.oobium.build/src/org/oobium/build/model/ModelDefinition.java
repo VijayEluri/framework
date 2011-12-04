@@ -970,6 +970,10 @@ public class ModelDefinition {
 	}
 	
 	private void parse() {
+		parse(false);
+	}
+	
+	private void parse(boolean positionsOnly) {
 		char[] ca = source.toCharArray();
 
 		mdstart = ixstart = mvstart = findStart(getSimpleName(), ca);
@@ -983,7 +987,9 @@ public class ModelDefinition {
 				if(s2 != -1) {
 					mdstart = s0;
 					mdend = s2+1;
-					parseDescription(ca, s1+1, s2);
+					if(!positionsOnly) {
+						parseDescription(ca, s1+1, s2);
+					}
 				}
 			}
 		}
@@ -996,7 +1002,9 @@ public class ModelDefinition {
 				if(s2 != -1) {
 					ixstart = s0;
 					ixend = s2+1;
-					parseIndexes(ca, s1+1, s2);
+					if(!positionsOnly) {
+						parseIndexes(ca, s1+1, s2);
+					}
 				}
 			}
 		}
@@ -1009,7 +1017,9 @@ public class ModelDefinition {
 				if(s2 != -1) {
 					mvstart = s0;
 					mvend = s2+1;
-					parseValidations(ca, s1+1, s2);
+					if(!positionsOnly) {
+						parseValidations(ca, s1+1, s2);
+					}
 				}
 			}
 		}
@@ -1113,26 +1123,35 @@ public class ModelDefinition {
 	}
 
 	public void save() {
-		if(file != null) {
-			// TODO not the most efficient scheme in the world...
-			
-			Edits edits = new Edits();
-			edits.add(mdstart, mdend, getModelDescriptionAnnotation());
-			edits.add(ixstart, ixend, getIndexesAnnotation());
-			edits.add(mvstart, mvend, getValidationsAnnotation());
-
-			List<String> imports = new ArrayList<String>();
-			imports.addAll(getModelDescriptionImports());
-			imports.addAll(getValidationsImports());
-			
-			load(); // pick up any changes that may have happened to the source, but not the definition...
-
-			StringBuilder sb = new StringBuilder(source);
-			edits.apply(sb);
-			ensureImports(sb, imports);
-			writeFile(file, sb.toString());
-			load();
+		if(file == null) {
+			throw new IllegalArgumentException("cannot save: file is null");
 		}
+		if(file.isDirectory()) {
+			throw new IllegalArgumentException("cannot save: file is a directory");
+		}
+
+		if(file.isFile()) {
+			// pick up any class changes that may have occurred
+			// any changes to ModelDescription, Validations, or Indexes will be overwritten
+			source = readFile(file).toString();
+		}
+
+		// reset the positions, in case any changes occurred
+		parse(true);
+		
+		Edits edits = new Edits();
+		edits.add(mdstart, mdend, getModelDescriptionAnnotation());
+		edits.add(ixstart, ixend, getIndexesAnnotation());
+		edits.add(mvstart, mvend, getValidationsAnnotation());
+
+		List<String> imports = new ArrayList<String>();
+		imports.addAll(getModelDescriptionImports());
+		imports.addAll(getValidationsImports());
+		
+		StringBuilder sb = new StringBuilder(source);
+		edits.apply(sb);
+		ensureImports(sb, imports);
+		writeFile(file, sb.toString());
 	}
 
 	public void save(File file) {
