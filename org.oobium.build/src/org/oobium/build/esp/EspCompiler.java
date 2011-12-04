@@ -1691,7 +1691,7 @@ public class EspCompiler {
 				indent(body);
 				body.append("if(");
 				if(label.hasEntry("required")) {
-					build(label.getEntry("required").getValue(), body);
+					build(label.getEntry("required").getValue(), body, true);
 				} else {
 					body.append(model).append(".isRequired(");
 					lastIsJava(body, true);
@@ -1717,10 +1717,32 @@ public class EspCompiler {
 			}
 		} else {
 			buildClasses(label);
-			buildAttrs(label);
+			buildAttrs(label, "required", "requiredClass");
+			if(label.hasEntryValue("required")) {
+				
+			}
 			body.append('>');
 			if(label.hasInnerText()) {
 				build(label.getInnerText(), body);
+			}
+			if(label.hasEntryValue("required")) {
+				body.append("\");\n");
+				indent(body);
+				body.append("if(");
+				build(label.getEntryValue("required"), body, true);
+				body.append(") {\n");
+				if(label.hasEntryValue("requiredClass")) {
+					indent(body);
+					body.append('\t').append(sbName).append(".append(\"<span class=\\\"");
+					build(label.getEntryValue("requiredClass"), body);
+					body.append("\\\">*</span>\");\n");
+				} else {
+					indent(body);
+					body.append('\t').append(sbName).append(".append(\"<span class=\\\"required\\\">*</span>\");\n");
+				}
+				indent(body);
+				body.append("}\n");
+				lastIsJava(body, true);
 			}
 		}
 	}
