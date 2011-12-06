@@ -35,6 +35,12 @@ public class EspJavaTypeCompletionProposal extends LazyJavaTypeCompletionProposa
 	
 	@Override
 	public void apply(IDocument document, char trigger, int offset) {
+		int charsFromEnd = 0;
+		String replacement = getReplacementString();
+		if("List".equals(replacement)) {
+			setReplacementString("List<>");
+			charsFromEnd = 1;
+		}
 		super.apply(document, trigger, offset);
 		if(addImport && super.allowAddingImports()) {
 			try {
@@ -45,6 +51,7 @@ public class EspJavaTypeCompletionProposal extends LazyJavaTypeCompletionProposa
 				}
 				TextEdit edit = new InsertEdit(importOffset, txt);
 				edit.apply(document);
+				setReplacementOffset(getReplacementOffset() + txt.length() - charsFromEnd);
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
