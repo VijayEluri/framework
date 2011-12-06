@@ -144,6 +144,18 @@ public abstract class Model implements JsonModel {
 		persistServiceProvider.set(services);
 	}
 
+	public static String toJson(Collection<? extends Model> models) {
+		String json = ModelJsonBuilder.buildJson(models);
+		Logger logger = logService.get();
+		if(logger == null) {
+			logger = LogProvider.getLogger(Model.class);
+		}
+		if(logger.isLoggingTrace()) {
+			logger.trace("Model#toJson(" + StringUtils.asString(models) + ") -> \n  " + json);
+		}
+		return json;
+	}
+	
 	public static String toJson(Collection<? extends Model> models, String include, Object...values) {
 		String json = ModelJsonBuilder.buildJson(models, include, values);
 		Logger logger = logService.get();

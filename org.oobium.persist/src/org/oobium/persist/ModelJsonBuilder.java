@@ -31,6 +31,12 @@ class ModelJsonBuilder {
 	public static final String INCLUDE = "include:";
 	public static final Pattern valuePattern = Pattern.compile("#\\{(\\d+)\\}");
 
+	static String buildJson(Collection<? extends Model> models) {
+		Model[] ma = models.toArray(new Model[models.size()]);
+		ModelJsonBuilder builder = new ModelJsonBuilder();
+		return builder.build(ma);
+	}
+	
 	static String buildJson(Collection<? extends Model> models, String include, Object...values) {
 		Model[] ma = models.toArray(new Model[models.size()]);
 		ModelJsonBuilder builder = new ModelJsonBuilder();
