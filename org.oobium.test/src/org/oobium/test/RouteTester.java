@@ -18,6 +18,7 @@ import org.oobium.app.controllers.HttpController;
 import org.oobium.app.routing.AppRouter;
 import org.oobium.app.routing.IPathRouting;
 import org.oobium.app.routing.IUrlRouting;
+import org.oobium.app.routing.Path;
 import org.oobium.app.routing.RouteHandler;
 import org.oobium.app.routing.Router;
 import org.oobium.app.request.Request;
@@ -183,47 +184,47 @@ public class RouteTester implements IPathRouting, IUrlRouting {
 	}
 
 	@Override
-	public String pathTo(Class<? extends Model> modelClass) {
+	public Path pathTo(Class<? extends Model> modelClass) {
 		return router.pathTo(modelClass);
 	}
 
 	@Override
-	public String pathTo(Class<? extends Model> modelClass, Action action) {
+	public Path pathTo(Class<? extends Model> modelClass, Action action) {
 		return router.pathTo(modelClass, action);
 	}
 
 	@Override
-	public String pathTo(Model model) {
+	public Path pathTo(Model model) {
 		return router.pathTo(model);
 	}
 
 	@Override
-	public String pathTo(Model model, Action action) {
+	public Path pathTo(Model model, Action action) {
 		return router.pathTo(model, action);
 	}
 
 	@Override
-	public String pathTo(Model parent, String field) {
+	public Path pathTo(Model parent, String field) {
 		return router.pathTo(parent, field);
 	}
 
 	@Override
-	public String pathTo(Model parent, String field, Action action) {
+	public Path pathTo(Model parent, String field, Action action) {
 		return router.pathTo(parent, field, action);
 	}
 
 	@Override
-	public String pathTo(String routeName) {
+	public Path pathTo(String routeName) {
 		return router.pathTo(routeName);
 	}
 
 	@Override
-	public String pathTo(String routeName, Model model) {
+	public Path pathTo(String routeName, Model model) {
 		return router.pathTo(routeName, model);
 	}
 
 	@Override
-	public String pathTo(String routeName, Object... params) {
+	public Path pathTo(String routeName, Object... params) {
 		return router.pathTo(routeName, params);
 	}
 
@@ -248,47 +249,47 @@ public class RouteTester implements IPathRouting, IUrlRouting {
 	}
 
 	@Override
-	public String urlTo(Class<? extends Model> modelClass) {
+	public Path urlTo(Class<? extends Model> modelClass) {
 		return router.urlTo(modelClass);
 	}
 
 	@Override
-	public String urlTo(Class<? extends Model> modelClass, Action action) {
+	public Path urlTo(Class<? extends Model> modelClass, Action action) {
 		return router.urlTo(modelClass, action);
 	}
 
 	@Override
-	public String urlTo(Model model) {
+	public Path urlTo(Model model) {
 		return router.urlTo(model);
 	}
 
 	@Override
-	public String urlTo(Model model, Action action) {
+	public Path urlTo(Model model, Action action) {
 		return router.urlTo(model, action);
 	}
 
 	@Override
-	public String urlTo(Model parent, String field) {
+	public Path urlTo(Model parent, String field) {
 		return router.urlTo(parent, field);
 	}
 
 	@Override
-	public String urlTo(Model parent, String field, Action action) {
+	public Path urlTo(Model parent, String field, Action action) {
 		return router.urlTo(parent, field, action);
 	}
 
 	@Override
-	public String urlTo(String routeName) {
+	public Path urlTo(String routeName) {
 		return router.urlTo(routeName);
 	}
 
 	@Override
-	public String urlTo(String routeName, Model model) {
+	public Path urlTo(String routeName, Model model) {
 		return router.urlTo(routeName, model);
 	}
 
 	@Override
-	public String urlTo(String routeName, Object... params) {
+	public Path urlTo(String routeName, Object... params) {
 		return router.urlTo(routeName, params);
 	}
 	

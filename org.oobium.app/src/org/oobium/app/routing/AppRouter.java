@@ -135,23 +135,14 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		return null;
 	}
 	
-	private String asUrl(String path) {
+	private Path asUrl(Path path) {
 		if(hosts == null || hosts.length < 1) {
 			logger.warn(new Exception("cannot convert path (" + path + ") to an URL: host has not been set"));
-			return UNKNOWN_PATH;
+			return new Path(UNKNOWN_PATH);
 		} else {
-			StringBuilder sb = new StringBuilder();
-			sb.append("http://").append(hosts[0]);
-			if(port != 80) {
-				sb.append(':').append(port);
-			}
-			if(!blank(path)) {
-				if(path.charAt(0) != '/') {
-					sb.append('/');
-				}
-				sb.append(path);
-			}
-			return sb.toString();
+			path.host(hosts[0]);
+			path.port(port);
+			return path;
 		}
 	}
 	
@@ -392,7 +383,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		return paths;
 	}
 	
-	private String getPathTo(Router router, Class<? extends Model> modelClass, Action action) {
+	private Path getPathTo(Router router, Class<? extends Model> modelClass, Action action) {
 		if(router != null) {
 			Route[] routes = router.routes.get(getKey(modelClass, action));
 			if(routes != null) {
@@ -412,13 +403,13 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		return null;
 	}
 	
-	public String getPathTo(Router router, String routeName, Object...params) {
+	public Path getPathTo(Router router, String routeName, Object...params) {
 		if(router != null) {
 			Route[] routes = router.routes.get(routeName);
 			if(routes != null) {
 				for(Route route : routes) {
 					if(route.isFixed()) {
-						return route.path;
+						return new Path(route.path);
 					} else {
 						Class<?> clazz = (router.namedClasses != null) ? router.namedClasses.get(routeName) : null;
 						return pathToClass(route.rule, clazz, params);
@@ -611,7 +602,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		return false;
 	}
 
-	private String pathError(Object obj1, String field) {
+	private Path pathError(Object obj1, String field) {
 		if(obj1 == null) {
 			logger.warn(new Exception("cannot find a path to a null object"));
 		} else if(obj1 instanceof Model) {
@@ -633,47 +624,47 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		} else {
 			logger.warn(new Exception("could not find path for: " + obj1));
 		}
-		return UNKNOWN_PATH;
+		return new Path(UNKNOWN_PATH);
 	}
 	
 	@Override
-	public String pathTo(Class<? extends Model> modelClass) {
+	public Path pathTo(Class<? extends Model> modelClass) {
 		return pathTo((Router) null, modelClass);
 	}
 	
 	@Override
-	public String pathTo(Class<? extends Model> modelClass, Action action) {
+	public Path pathTo(Class<? extends Model> modelClass, Action action) {
 		return pathTo((Router) null, modelClass, action);
 	}
 
 	@Override
-	public String pathTo(Model model) {
+	public Path pathTo(Model model) {
 		return pathTo((Router) null, model);
 	}
 	
 	@Override
-	public String pathTo(Model model, Action action) {
+	public Path pathTo(Model model, Action action) {
 		return pathTo((Router) null, model, action);
 	}
 	
 	@Override
-	public String pathTo(Model parent, String field) {
+	public Path pathTo(Model parent, String field) {
 		return pathTo((Router) null, parent, field);
 	}
 
 	@Override
-	public String pathTo(Model parent, String field, Action action) {
+	public Path pathTo(Model parent, String field, Action action) {
 		return pathTo((Router) null, parent, field, action);
 	}
 	
-	public String pathTo(Router router, Class<? extends Model> modelClass) {
+	public Path pathTo(Router router, Class<? extends Model> modelClass) {
 		return pathTo(router, modelClass, Action.showAll);
 	}
 	
-	public String pathTo(Router router, Class<? extends Model> modelClass, Action action) {
+	public Path pathTo(Router router, Class<? extends Model> modelClass, Action action) {
 		if(modelClass != null) {
 			IllegalArgumentException exception = null;
-			String path = null;
+			Path path = null;
 			// try the initial router
 			try {
 				path = getPathTo(router, modelClass, action);
@@ -711,11 +702,11 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		return pathError(modelClass, null);
 	}
 	
-	public String pathTo(Router router, Model model) {
+	public Path pathTo(Router router, Model model) {
 		return pathTo(router, model, Action.show);
 	}
 
-	public String pathTo(Router router, Model model, Action action) {
+	public Path pathTo(Router router, Model model, Action action) {
 		if(model != null) {
 			Route route = getRoute(router, getKey(model.getClass(), action));
 			if(route != null) {
@@ -725,7 +716,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		return pathError(model, null);
 	}
 
-	public String pathTo(Router router, Model parent, String field) {
+	public Path pathTo(Router router, Model parent, String field) {
 		if(parent != null && field != null) {
 			Action action = getAdapter(parent).hasMany(field) ? showAll : show;
 			Route route = getRoute(router, getKey(parent.getClass(), field, action));
@@ -736,7 +727,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		return pathError(parent, field);
 	}
 
-	public String pathTo(Router router, Model parent, String field, Action action) {
+	public Path pathTo(Router router, Model parent, String field, Action action) {
 		if(parent != null && field != null) {
 			Route route = getRoute(router, getKey(parent.getClass(), field, action));
 			if(route != null) {
@@ -746,11 +737,11 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		return pathError(parent, field);
 	}
 
-	public String pathTo(Router router, String routeName) {
+	public Path pathTo(Router router, String routeName) {
 		return pathTo(router, routeName, new Object[0]);
 	}
 	
-	public String pathTo(Router router, String routeName, Model model) {
+	public Path pathTo(Router router, String routeName, Model model) {
 		if(!blank(routeName)) {
 			Route route = getRoute(router, routeName);
 			if(route != null) {
@@ -760,14 +751,14 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		return pathError(routeName, null);
 	}
 	
-	public String pathTo(Router router, String routeName, Object...params) {
+	public Path pathTo(Router router, String routeName, Object...params) {
 		if(params.length == 1 && params[0] instanceof Model) {
 			return pathTo(router, routeName, (Model) params[0]);
 		}
 		
 		if(!blank(routeName)) {
 			IllegalArgumentException exception = null;
-			String path = null;
+			Path path = null;
 			// try initial router
 			try {
 				path = getPathTo(router, routeName, params);
@@ -803,17 +794,17 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 	}
 
 	@Override
-	public String pathTo(String routeName) {
+	public Path pathTo(String routeName) {
 		return pathTo((Router) null, routeName);
 	}
 	
 	@Override
-	public String pathTo(String routeName, Model model) {
+	public Path pathTo(String routeName, Model model) {
 		return pathTo((Router) null, routeName, model);
 	}
 
 	@Override
-	public String pathTo(String routeName, Object... params) {
+	public Path pathTo(String routeName, Object... params) {
 		return pathTo((Router) null, routeName, params);
 	}
 	
@@ -821,7 +812,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 	 * TODO switch to using PathBuilder
 	 */
 	@Deprecated
-	private String pathToClass(String path, Class<?> clazz, Object...params) {
+	private Path pathToClass(String path, Class<?> clazz, Object...params) {
 		StringBuilder sb = new StringBuilder(path.length() + 20);
 		char[] ca = path.toCharArray();
 		int pix = find(ca, '?');
@@ -889,12 +880,12 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		if(sb.charAt(sb.length()-1) == '?') {
 			sb.deleteCharAt(sb.length()-1);
 		}
-		return sb.toString();
+		return new Path(sb.toString());
 	}
 
-	private String pathToHasMany(String path, Model parent, String field) {
+	private Path pathToHasMany(String path, Model parent, String field) {
 		if(path == null) {
-			return UNKNOWN_PATH;
+			return new Path(UNKNOWN_PATH);
 		}
 		
 		StringBuilder sb = new StringBuilder(path.length() + 20);
@@ -931,14 +922,14 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		if(sb.charAt(sb.length()-1) == '?') {
 			sb.deleteCharAt(sb.length()-1);
 		}
-		return sb.toString();
+		return new Path(sb.toString());
 	}
 
 	/**
 	 * TODO switch to using PathBuilder
 	 */
 	@Deprecated
-	private String pathToModel(String path, Model model) {
+	private Path pathToModel(String path, Model model) {
 		StringBuilder sb = new StringBuilder(path.length() + 20);
 		char[] ca = path.toCharArray();
 		int pix = find(ca, '?');
@@ -973,7 +964,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		if(sb.charAt(sb.length()-1) == '?') {
 			sb.deleteCharAt(sb.length()-1);
 		}
-		return sb.toString();
+		return new Path(sb.toString());
 	}
 
 	public synchronized void remove(Router moduleRouter) {
@@ -1010,83 +1001,83 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 	}
 
 	@Override
-	public String urlTo(Class<? extends Model> modelClass) {
+	public Path urlTo(Class<? extends Model> modelClass) {
 		return urlTo((Router) null, modelClass);
 	}
 
 	@Override
-	public String urlTo(Class<? extends Model> modelClass, Action action) {
+	public Path urlTo(Class<? extends Model> modelClass, Action action) {
 		return urlTo((Router) null, modelClass, action);
 	}
 
 	@Override
-	public String urlTo(Model model) {
+	public Path urlTo(Model model) {
 		return urlTo((Router) null, model);
 	}
 
 	@Override
-	public String urlTo(Model model, Action action) {
+	public Path urlTo(Model model, Action action) {
 		return urlTo((Router) null, model, action);
 	}
 
 	@Override
-	public String urlTo(Model parent, String field) {
+	public Path urlTo(Model parent, String field) {
 		return urlTo((Router) null, parent, field);
 	}
 
 	@Override
-	public String urlTo(Model parent, String field, Action action) {
+	public Path urlTo(Model parent, String field, Action action) {
 		return urlTo((Router) null, parent, field, action);
 	}
 
-	public String urlTo(Router router, Class<? extends Model> modelClass) {
+	public Path urlTo(Router router, Class<? extends Model> modelClass) {
 		return urlTo(router, modelClass, Action.showAll);
 	}
 
-	public String urlTo(Router router, Class<? extends Model> modelClass, Action action) {
+	public Path urlTo(Router router, Class<? extends Model> modelClass, Action action) {
 		return asUrl(pathTo(router, modelClass, action));
 	}
 
-	public String urlTo(Router router, Model model) {
+	public Path urlTo(Router router, Model model) {
 		return urlTo(router, model, Action.show);
 	}
 
-	public String urlTo(Router router, Model model, Action action) {
+	public Path urlTo(Router router, Model model, Action action) {
 		return asUrl(pathTo(router, model, action));
 	}
 
-	public String urlTo(Router router, Model parent, String field) {
+	public Path urlTo(Router router, Model parent, String field) {
 		return asUrl(pathTo(router, parent, field));
 	}
 
-	public String urlTo(Router router, Model parent, String field, Action action) {
+	public Path urlTo(Router router, Model parent, String field, Action action) {
 		return asUrl(pathTo(router, parent, field, action));
 	}
 
-	public String urlTo(Router router, String routeName) {
+	public Path urlTo(Router router, String routeName) {
 		return asUrl(pathTo(router, routeName));
 	}
 
-	public String urlTo(Router router, String routeName, Model model) {
+	public Path urlTo(Router router, String routeName, Model model) {
 		return asUrl(pathTo(router, routeName, model));
 	}
 
-	public String urlTo(Router router, String routeName, Object... params) {
+	public Path urlTo(Router router, String routeName, Object... params) {
 		return asUrl(pathTo(router, routeName, params));
 	}
 
 	@Override
-	public String urlTo(String routeName) {
+	public Path urlTo(String routeName) {
 		return urlTo((Router) null, routeName);
 	}
 
 	@Override
-	public String urlTo(String routeName, Model model) {
+	public Path urlTo(String routeName, Model model) {
 		return urlTo((Router) null, routeName, model);
 	}
 
 	@Override
-	public String urlTo(String routeName, Object... params) {
+	public Path urlTo(String routeName, Object... params) {
 		return urlTo((Router) null, routeName, params);
 	}
 

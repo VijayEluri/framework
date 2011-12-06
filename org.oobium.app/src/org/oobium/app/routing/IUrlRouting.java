@@ -22,7 +22,7 @@ public interface IUrlRouting {
 	 * @param modelClass
 	 * @return
 	 */
-	public abstract String urlTo(Class<? extends Model> modelClass);
+	public abstract Path urlTo(Class<? extends Model> modelClass);
 
 	/**
 	 * @param modelClass the class of model to get the url to
@@ -30,7 +30,7 @@ public interface IUrlRouting {
 	 * @return
 	 * @see Action
 	 */
-	public abstract String urlTo(Class<? extends Model> modelClass, Action action);
+	public abstract Path urlTo(Class<? extends Model> modelClass, Action action);
 	
 	/**
 	 * Get the url to the show method for the given model.
@@ -39,7 +39,7 @@ public interface IUrlRouting {
 	 * @param modelClass
 	 * @return
 	 */
-	public abstract String urlTo(Model model);
+	public abstract Path urlTo(Model model);
 	
 	/**
 	 * @param
@@ -47,7 +47,7 @@ public interface IUrlRouting {
 	 * @return
 	 * @see Action
 	 */
-	public abstract String urlTo(Model model, Action action);
+	public abstract Path urlTo(Model model, Action action);
 
 	/**
 	 * A convenience method that is the same as calling
@@ -57,7 +57,7 @@ public interface IUrlRouting {
 	 * @param parent
 	 * @return
 	 */
-	public abstract String urlTo(Model parent, String field);
+	public abstract Path urlTo(Model parent, String field);
 	
 	/**
 	 * @param
@@ -66,14 +66,14 @@ public interface IUrlRouting {
 	 * @return
 	 * @see Action
 	 */
-	public abstract String urlTo(Model parent, String field, Action action);
+	public abstract Path urlTo(Model parent, String field, Action action);
 
 	/**
 	 * Get the url to a named route.
 	 * @param routeName the name of the named route, as given with {@link Router#add(String)}
 	 * @return
 	 */
-	public abstract String urlTo(String routeName);
+	public abstract Path urlTo(String routeName);
 	
 	/**
 	 * Get the url to a named route, using the given model to resolve any variables in the route.
@@ -81,7 +81,7 @@ public interface IUrlRouting {
 	 * @param model the model object
 	 * @return
 	 */
-	public abstract String urlTo(String routeName, Model model);
+	public abstract Path urlTo(String routeName, Model model);
 
 	/**
 	 * Get the url to a named route, using the given params to resolve any variables in the route.
@@ -89,6 +89,6 @@ public interface IUrlRouting {
 	 * @param params a varargs array of params
 	 * @return
 	 */
-	public abstract String urlTo(String routeName, Object...params);
+	public abstract Path urlTo(String routeName, Object...params);
 	
 }

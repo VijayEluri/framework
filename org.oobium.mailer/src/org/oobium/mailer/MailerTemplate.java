@@ -15,6 +15,7 @@ import static org.oobium.utils.StringUtils.camelCase;
 import java.lang.reflect.Constructor;
 
 import org.oobium.app.routing.IUrlRouting;
+import org.oobium.app.routing.Path;
 import org.oobium.app.http.Action;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
@@ -137,47 +138,47 @@ public class MailerTemplate implements IUrlRouting {
 	}
 
 	@Override
-	public String urlTo(Class<? extends Model> modelClass) {
+	public Path urlTo(Class<? extends Model> modelClass) {
 		return mailer.urlTo(modelClass);
 	}
 
 	@Override
-	public String urlTo(Class<? extends Model> modelClass, Action action) {
+	public Path urlTo(Class<? extends Model> modelClass, Action action) {
 		return mailer.urlTo(modelClass, action);
 	}
 
 	@Override
-	public String urlTo(Model model) {
+	public Path urlTo(Model model) {
 		return mailer.urlTo(model);
 	}
 
 	@Override
-	public String urlTo(Model model, Action action) {
+	public Path urlTo(Model model, Action action) {
 		return mailer.urlTo(model, action);
 	}
 
 	@Override
-	public String urlTo(Model parent, String field) {
+	public Path urlTo(Model parent, String field) {
 		return mailer.urlTo(parent, field);
 	}
 
 	@Override
-	public String urlTo(Model parent, String field, Action action) {
+	public Path urlTo(Model parent, String field, Action action) {
 		return mailer.urlTo(parent, field, action);
 	}
 
 	@Override
-	public String urlTo(String routeName) {
+	public Path urlTo(String routeName) {
 		return mailer.urlTo(routeName);
 	}
 
 	@Override
-	public String urlTo(String routeName, Model model) {
+	public Path urlTo(String routeName, Model model) {
 		return mailer.urlTo(routeName, model);
 	}
 	
 	@Override
-	public String urlTo(String routeName, Object... params) {
+	public Path urlTo(String routeName, Object... params) {
 		return mailer.urlTo(routeName, params);
 	}
 

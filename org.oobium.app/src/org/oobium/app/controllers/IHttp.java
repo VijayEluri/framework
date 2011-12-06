@@ -12,6 +12,7 @@ package org.oobium.app.controllers;
 
 import org.oobium.app.http.Action;
 import org.oobium.app.http.MimeType;
+import org.oobium.app.routing.Path;
 
 public interface IHttp {
 
@@ -20,6 +21,7 @@ public interface IHttp {
 	public abstract String getControllerName();
 
 	public abstract boolean isAction(Action action);
+	public abstract boolean isPath(Path path);
 	public abstract boolean isPath(String path);
 	public abstract boolean isXhr();
 	

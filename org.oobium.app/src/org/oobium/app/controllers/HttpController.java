@@ -63,6 +63,7 @@ import org.oobium.app.response.StaticResponse;
 import org.oobium.app.routing.AppRouter;
 import org.oobium.app.routing.IPathRouting;
 import org.oobium.app.routing.IUrlRouting;
+import org.oobium.app.routing.Path;
 import org.oobium.app.routing.Realm;
 import org.oobium.app.routing.Router;
 import org.oobium.app.routing.handlers.AuthorizationHandler;
@@ -838,6 +839,11 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	}
 	
 	@Override
+	public boolean isPath(Path path) {
+		return (path != null) && request.getPath().equals(path.path());
+	}
+	
+	@Override
 	public boolean isPath(String path) {
 		return request.getPath().equals(path);
 	}
@@ -898,59 +904,59 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	}
 	
 	@Override
-	public String pathTo(Class<? extends Model> modelClass) {
+	public Path pathTo(Class<? extends Model> modelClass) {
 		return appRouter.pathTo(router, modelClass);
 	}
 	
 	@Override
-	public String pathTo(Class<? extends Model> modelClass, Action action) {
+	public Path pathTo(Class<? extends Model> modelClass, Action action) {
 		return appRouter.pathTo(router, modelClass, action);
 	}
 	
 	@Override
-	public String pathTo(Model model) {
+	public Path pathTo(Model model) {
 		return appRouter.pathTo(router, model);
 	}
 	
 	@Override
-	public String pathTo(Model model, Action action) {
+	public Path pathTo(Model model, Action action) {
 		return appRouter.pathTo(router, model, action);
 	}
 
 	@Override
-	public String pathTo(Model parent, String field) {
+	public Path pathTo(Model parent, String field) {
 		return appRouter.pathTo(router, parent, field);
 	}
 	
 	@Override
-	public String pathTo(Model parent, String field, Action action) {
+	public Path pathTo(Model parent, String field, Action action) {
 		return appRouter.pathTo(router, parent, field, action);
 	}
 	
 	@Override
-	public String pathTo(String routeName) {
+	public Path pathTo(String routeName) {
 		return appRouter.pathTo(router, routeName);
 	}
 	
 	@Override
-	public String pathTo(String routeName, Model model) {
+	public Path pathTo(String routeName, Model model) {
 		return appRouter.pathTo(router, routeName, model);
 	}
 
 	@Override
-	public String pathTo(String routeName, Object... params) {
+	public Path pathTo(String routeName, Object... params) {
 		return appRouter.pathTo(router, routeName, params);
 	}
 	
 	public void redirectTo(Class<? extends Model> clazz, Action action) {
-		redirectTo(pathTo(clazz, action));
+		redirectTo(pathTo(clazz, action).toString());
 	}
 	
 	public void redirectTo(Class<? extends Model> clazz, Action action, String notice) {
 		if(!blank(notice)) {
 			setFlashNotice(notice);
 		}
-		redirectTo(pathTo(clazz, action));
+		redirectTo(pathTo(clazz, action).toString());
 	}
 	
 	public void redirectTo(Model model, Action action) {
@@ -965,10 +971,10 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 			addFlashError(model);
 			setFlash(varName(model.getClass()), model);
 		}
-		if(!blank(notice)) {
+		if(notice != null && notice.length() > 0) {
 			setFlashNotice(notice);
 		}
-		redirectTo(pathTo(model, action));
+		redirectTo(pathTo(model, action).toString());
 	}
 
 	public void redirectTo(Model parent, String field, Action action) {
@@ -981,21 +987,44 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 				}
 			}
 		}
-		redirectTo(pathTo(parent, field, action));
+		redirectTo(pathTo(parent, field, action).toString());
 	}
 
+	public void redirectTo(Path path) {
+		redirectTo(path.toString(), null);
+	}
+	
+	public void redirectTo(Path path, String notice) {
+		redirectTo(path.toString(), notice);
+	}
+	
 	public void redirectTo(String path) {
+		redirectTo(path, null);
+	}
+	
+	public void redirectTo(String path, String notice) {
 		rendering();
+		if(notice != null && notice.length() > 0) {
+			setFlashNotice(notice);
+		}
 		response = new Response(HttpResponseStatus.FOUND);
 		response.addHeader(HttpHeaders.Names.LOCATION, path);
 	}
 	
 	public void redirectToHome() {
-		redirectTo("/");
+		redirectTo("/", null);
+	}
+	
+	public void redirectToHome(String notice) {
+		redirectTo("/", notice);
 	}
 	
 	public void render(Collection<? extends Model> models) {
 		render(JSON, models);
+	}
+
+	public void render(Collection<? extends Model> models, String include, Object...values) {
+		render(JSON, models, include, values);
 	}
 
 	public void render(File file) {
@@ -1031,7 +1060,11 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	}
 	
 	public void render(MimeType type, Collection<? extends Model> models) {
-		render(type, toJson(models));
+		render(type, (models == null) ? "null" : Model.toJson(models));
+	}
+	
+	public void render(MimeType type, Collection<? extends Model> models, String include, Object...values) {
+		render(type, (models == null) ? "null" : Model.toJson(models, include, values));
 	}
 	
 	private void render(MimeType type, DynamicAsset asset) {
@@ -1191,7 +1224,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	}
 	
 	public void renderCreated(Model model) {
-		renderCreated(model.getId(), pathTo(model));
+		renderCreated(model.getId(), pathTo(model).toString());
 	}
 
 	public void renderCreated(Object id, String path) {
@@ -1562,47 +1595,47 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	}
 
 	@Override
-	public String urlTo(Class<? extends Model> modelClass) {
+	public Path urlTo(Class<? extends Model> modelClass) {
 		return appRouter.urlTo(router, modelClass);
 	}
 
 	@Override
-	public String urlTo(Class<? extends Model> modelClass, Action action) {
+	public Path urlTo(Class<? extends Model> modelClass, Action action) {
 		return appRouter.urlTo(router, modelClass, action);
 	}
 
 	@Override
-	public String urlTo(Model model) {
+	public Path urlTo(Model model) {
 		return appRouter.urlTo(router, model);
 	}
 
 	@Override
-	public String urlTo(Model model, Action action) {
+	public Path urlTo(Model model, Action action) {
 		return appRouter.urlTo(router, model, action);
 	}
 
 	@Override
-	public String urlTo(Model parent, String field) {
+	public Path urlTo(Model parent, String field) {
 		return appRouter.urlTo(router, parent, field);
 	}
 
 	@Override
-	public String urlTo(Model parent, String field, Action action) {
+	public Path urlTo(Model parent, String field, Action action) {
 		return appRouter.urlTo(router, parent, field, action);
 	}
 
 	@Override
-	public String urlTo(String routeName) {
+	public Path urlTo(String routeName) {
 		return appRouter.urlTo(router, routeName);
 	}
 
 	@Override
-	public String urlTo(String routeName, Model model) {
+	public Path urlTo(String routeName, Model model) {
 		return appRouter.urlTo(router, routeName, model);
 	}
 
 	@Override
-	public String urlTo(String routeName, Object... params) {
+	public Path urlTo(String routeName, Object... params) {
 		return appRouter.urlTo(router, routeName, params);
 	}
 	

@@ -31,6 +31,7 @@ import org.oobium.app.request.Request;
 import org.oobium.app.response.Response;
 import org.oobium.app.routing.IPathRouting;
 import org.oobium.app.routing.IUrlRouting;
+import org.oobium.app.routing.Path;
 import org.oobium.app.routing.Router;
 import org.oobium.app.sessions.ISession;
 import org.oobium.app.sessions.ISessions;
@@ -392,6 +393,11 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 	}
 	
 	@Override
+	public boolean isPath(Path path) {
+		return (path != null) && request.getPath().equals(path.path());
+	}
+	
+	@Override
 	public boolean isPath(String path) {
 		return request.getPath().equals(path);
 	}
@@ -488,47 +494,47 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 	}
 	
 	@Override
-	public String pathTo(Class<? extends Model> modelClass) {
+	public Path pathTo(Class<? extends Model> modelClass) {
 		return controller.pathTo(modelClass);
 	}
 	
 	@Override
-	public String pathTo(Class<? extends Model> modelClass, Action action) {
+	public Path pathTo(Class<? extends Model> modelClass, Action action) {
 		return controller.pathTo(modelClass, action);
 	}
 
 	@Override
-	public String pathTo(Model model) {
+	public Path pathTo(Model model) {
 		return controller.pathTo(model);
 	}
 	
 	@Override
-	public String pathTo(Model model, Action action) {
+	public Path pathTo(Model model, Action action) {
 		return controller.pathTo(model, action);
 	}
 	
 	@Override
-	public String pathTo(Model parent, String field) {
+	public Path pathTo(Model parent, String field) {
 		return controller.pathTo(parent, field);
 	}
 	
 	@Override
-	public String pathTo(Model parent, String field, Action action) {
+	public Path pathTo(Model parent, String field, Action action) {
 		return controller.pathTo(parent, field, action);
 	}
 
 	@Override
-	public String pathTo(String routeName) {
+	public Path pathTo(String routeName) {
 		return controller.pathTo(routeName);
 	}
 	
 	@Override
-	public String pathTo(String routeName, Model model) {
+	public Path pathTo(String routeName, Model model) {
 		return controller.pathTo(routeName, model);
 	}
 	
 	@Override
-	public String pathTo(String routeName, Object... params) {
+	public Path pathTo(String routeName, Object... params) {
 		return controller.pathTo(routeName, params);
 	}
 	
@@ -599,47 +605,47 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 	}
 	
 	@Override
-	public String urlTo(Class<? extends Model> modelClass) {
+	public Path urlTo(Class<? extends Model> modelClass) {
 		return controller.urlTo(modelClass);
 	}
 	
 	@Override
-	public String urlTo(Class<? extends Model> modelClass, Action action) {
+	public Path urlTo(Class<? extends Model> modelClass, Action action) {
 		return controller.urlTo(modelClass, action);
 	}
 	
 	@Override
-	public String urlTo(Model model) {
+	public Path urlTo(Model model) {
 		return controller.urlTo(model);
 	}
 
 	@Override
-	public String urlTo(Model model, Action action) {
+	public Path urlTo(Model model, Action action) {
 		return controller.urlTo(model, action);
 	}
 
 	@Override
-	public String urlTo(Model parent, String field) {
+	public Path urlTo(Model parent, String field) {
 		return controller.urlTo(parent, field);
 	}
 
 	@Override
-	public String urlTo(Model parent, String field, Action action) {
+	public Path urlTo(Model parent, String field, Action action) {
 		return controller.urlTo(parent, field, action);
 	}
 
 	@Override
-	public String urlTo(String routeName) {
+	public Path urlTo(String routeName) {
 		return controller.urlTo(routeName);
 	}
 
 	@Override
-	public String urlTo(String routeName, Model model) {
+	public Path urlTo(String routeName, Model model) {
 		return controller.urlTo(routeName, model);
 	}
 
 	@Override
-	public String urlTo(String routeName, Object... params) {
+	public Path urlTo(String routeName, Object... params) {
 		return controller.urlTo(routeName, params);
 	}
 	

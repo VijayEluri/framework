@@ -22,7 +22,7 @@ public interface IPathRouting {
 	 * @param modelClass
 	 * @return
 	 */
-	public abstract String pathTo(Class<? extends Model> modelClass);
+	public abstract Path pathTo(Class<? extends Model> modelClass);
 
 	/**
 	 * @param modelClass the class of model to get the path to
@@ -30,7 +30,7 @@ public interface IPathRouting {
 	 * @return
 	 * @see Action
 	 */
-	public abstract String pathTo(Class<? extends Model> modelClass, Action action);
+	public abstract Path pathTo(Class<? extends Model> modelClass, Action action);
 
 	/**
 	 * Get the path to the show method for the given model.
@@ -39,7 +39,7 @@ public interface IPathRouting {
 	 * @param model
 	 * @return
 	 */
-	public abstract String pathTo(Model model);
+	public abstract Path pathTo(Model model);
 
 	/**
 	 * @param
@@ -47,7 +47,7 @@ public interface IPathRouting {
 	 * @return
 	 * @see Action
 	 */
-	public abstract String pathTo(Model model, Action action);
+	public abstract Path pathTo(Model model, Action action);
 
 	/**
 	 * A convenience method that is the same as calling
@@ -57,7 +57,7 @@ public interface IPathRouting {
 	 * @param parent
 	 * @return
 	 */
-	public abstract String pathTo(Model parent, String field);
+	public abstract Path pathTo(Model parent, String field);
 
 	/**
 	 * @param
@@ -65,21 +65,21 @@ public interface IPathRouting {
 	 * @return
 	 * @see Action
 	 */
-	public abstract String pathTo(Model parent, String field, Action action);
+	public abstract Path pathTo(Model parent, String field, Action action);
 
 	/**
 	 * Get the path to a named route.
 	 * @param routeName the name of the named route, as given with {@link Router#add(String)}
 	 * @return
 	 */
-	public abstract String pathTo(String routeName);
+	public abstract Path pathTo(String routeName);
 
 	/**
 	 * Get the path to a named route, using the given model to resolve any variables in the route.
 	 * @param routeName the name of the named route, as given with {@link Router#add(String)}
 	 * @return
 	 */
-	public abstract String pathTo(String routeName, Model model);
+	public abstract Path pathTo(String routeName, Model model);
 	
 	/**
 	 * Get the path to a named route.
@@ -87,6 +87,6 @@ public interface IPathRouting {
 	 * @param params
 	 * @return
 	 */
-	public abstract String pathTo(String routeName, Object...params);
+	public abstract Path pathTo(String routeName, Object...params);
 	
 }
