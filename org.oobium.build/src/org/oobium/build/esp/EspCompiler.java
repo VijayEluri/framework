@@ -57,6 +57,7 @@ import org.oobium.build.esp.parts.EmbeddedJavaPart;
 import org.oobium.build.esp.parts.EntryPart;
 import org.oobium.build.esp.parts.JavaPart;
 import org.oobium.build.esp.parts.JavaSourcePart;
+import org.oobium.build.esp.parts.ScriptEntryPart;
 import org.oobium.build.esp.parts.ScriptPart;
 import org.oobium.build.esp.parts.StyleEntryPart;
 import org.oobium.build.esp.parts.StylePropertyPart;
@@ -536,7 +537,11 @@ public class EspCompiler {
 						if(instring) {
 							sb.append("\").append(");
 						}
-						sb.append("h(");
+						if(jpart instanceof ScriptEntryPart) {
+							sb.append("j(");
+						} else {
+							sb.append("h(");
+						}
 						EspPart spart = jsspart.getSourcePart();
 						if(spart != null) {
 							addLocation(spart, sb);
@@ -595,7 +600,7 @@ public class EspCompiler {
 							appendEscaped(sb, text, s0, s1);
 						}
 					}
-					sb.append("\").append(h(");
+					sb.append("\").append(j(");
 					EspPart spart = embedded.getSourcePart();
 					if(spart != null) {
 						addLocation(spart, sb);
