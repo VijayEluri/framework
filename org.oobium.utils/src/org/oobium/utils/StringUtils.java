@@ -865,6 +865,31 @@ public class StringUtils {
 		return lkmap;
 	}
 
+	public static String mask(Object value, String mask) {
+		return mask(value, mask, '0');
+	}
+	
+	public static String mask(Object value, String mask, char placeholder) {
+		if(value == null || mask == null) {
+			return "";
+		}
+		char[] ca = value.toString().toCharArray();
+		StringBuilder sb = new StringBuilder();
+		for(int i = mask.length()-1, j = ca.length-1; i >= 0; i--) {
+			char c = mask.charAt(i);
+			if(c == '#') {
+				if(j >= 0) {
+					sb.append(ca[j--]);
+				} else {
+					sb.append(placeholder);
+				}
+			} else {
+				sb.append(c);
+			}
+		}
+		return sb.reverse().toString();
+	}
+	
 	public static String modelName(String tableName) {
 		return camelCase(singular(tableName));
 	}
@@ -1001,6 +1026,10 @@ public class StringUtils {
 	}
 	
 	public static String pad(String string, int length) {
+		return pad(string, length, ' ');
+	}
+	
+	public static String pad(String string, int length, char placeholder) {
 		if(string == null || length <= 0) {
 			return "";
 		}
@@ -1010,7 +1039,7 @@ public class StringUtils {
 		StringBuilder sb = new StringBuilder(length);
 		sb.append(string);
 		while(sb.length() < length) {
-			sb.append(' ');
+			sb.append(placeholder);
 		}
 		return sb.toString();
 	}
