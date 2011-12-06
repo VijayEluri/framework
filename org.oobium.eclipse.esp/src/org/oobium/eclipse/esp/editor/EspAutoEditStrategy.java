@@ -63,6 +63,11 @@ public class EspAutoEditStrategy implements IAutoEditStrategy {
 				skip = true;
 			}
 			break;
+		case '>':
+			if(doc.getChar(cmd.offset) == '>') {
+				skip = true;
+			}
+			break;
 		}
 		if(complete) {
 			cmd.caretOffset = cmd.offset+1;
