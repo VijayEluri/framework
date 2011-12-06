@@ -358,8 +358,9 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 				Class<? extends Model> parentClass = ((Class<?>) map.get("$type")).asSubclass(Model.class);
 				Object id = map.get("$id");
 				String field = (String) map.get("$field");
-				// TODO add a type check using a ModelAdapter
-				return (E) Model.getPersistService(parentClass).find(parentClass, "where id=? include:?", id, field).get(field);
+				String include = coerce(query.get("$include"), String.class);
+				include = (include == null) ? field : ("{" + field + ":" + include + "}");
+				return (E) Model.getPersistService(parentClass).find(parentClass, "id:?,$include:?", id, include).get(field);
 			}
 			else {
 				Connection connection = getConnection();
