@@ -291,6 +291,9 @@ public class EspStyleRanges {
 				addRange(offset, 1, level);
 			}
 			return offset + 1;
+		case JavaPart:
+		case JavaSourcePart:
+			return evaluateJava(offset, element, part);
 		case ScriptPart:
 			EspPart next = part.getNextSubPart(offset);
 			int end = (next != null) ? next.getStart() : part.getEnd();
