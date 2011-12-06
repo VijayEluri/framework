@@ -56,18 +56,23 @@ public class User {
 	
 	@Override
 	public User setPassword(String password) {
-		try {
-			String[] sa = PasswordUtils.encrypt(password);
-			put(PASSWORD, sa[0]);
-			put(PASSWORD_SALT, sa[1]);
-			if(!isActive()) {
-				// user has not been activated - reset activation code too
-				put(ACTIVATION_CODE, UUID.randomUUID().toString());
+		if(password == null || password.trim().length() == 0) {
+			put(PASSWORD, null);
+			put(PASSWORD_SALT, null);
+		} else {
+			try {
+				String[] sa = PasswordUtils.encrypt(password);
+				put(PASSWORD, sa[0]);
+				put(PASSWORD_SALT, sa[1]);
+				if(!isActive()) {
+					// user has not been activated - reset activation code too
+					put(ACTIVATION_CODE, UUID.randomUUID().toString());
+				}
+			} catch (NoSuchAlgorithmException e) {
+				logger.error(e);
+			} catch (UnsupportedEncodingException e) {
+				logger.error(e);
 			}
-		} catch (NoSuchAlgorithmException e) {
-			logger.error(e);
-		} catch (UnsupportedEncodingException e) {
-			logger.error(e);
 		}
 		return this;
 	}
