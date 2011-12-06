@@ -190,11 +190,11 @@ public class ViewGenerator {
 	public String generateShowAllView() {
 		StringBuilder sb = new StringBuilder();
 
-		sb.append("import java.util.Collection\n");
+		sb.append("import java.util.List\n");
 		sb.append("import ").append(Paginator.class.getCanonicalName()).append('\n');
 		sb.append("import ").append(mPkg).append(".*\n");
 		sb.append('\n');
-		sb.append("ShowAll").append(camelCase(mVarPlural)).append("(Collection<").append(mType).append("> ").append(mVarPlural).append(")\n");
+		sb.append("ShowAll").append(camelCase(mVarPlural)).append("(List<").append(mType).append("> ").append(mVarPlural).append(")\n");
 		sb.append("ShowAll").append(camelCase(mVarPlural)).append("(Paginator<").append(mType).append("> paginator)\n");
 		sb.append('\n');
 		sb.append("h1 Listing ").append(titleize(mVarPlural)).append('\n');
