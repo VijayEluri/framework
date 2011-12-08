@@ -20,6 +20,7 @@ import org.eclipse.swt.graphics.Image;
 import org.oobium.build.esp.EspElement;
 import org.oobium.build.esp.EspPart;
 import org.oobium.build.esp.elements.JavaElement;
+import org.oobium.build.esp.elements.ScriptElement;
 import org.oobium.eclipse.esp.EspPlugin;
 
 public class EspLabelProvider extends LabelProvider implements IColorProvider, IFontProvider, ILabelProvider {
@@ -74,6 +75,9 @@ public class EspLabelProvider extends LabelProvider implements IColorProvider, I
 		}
 		if(element instanceof JavaElement) {
 			return ((JavaElement) element).getSource();
+		}
+		if(element instanceof ScriptElement) {
+			return "script";
 		}
 		if(element instanceof EspElement) {
 			String text = ((EspElement) element).getElementText();
