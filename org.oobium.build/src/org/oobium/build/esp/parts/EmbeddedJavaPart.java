@@ -12,12 +12,13 @@ public class EmbeddedJavaPart extends EspPart {
 				EspPart part = new EmbeddedJavaPart(parent, start, end);
 				return part.getEnd() - 1;
 			}
-			else if(Character.isJavaIdentifierStart(ca[start+1])) {
-				if(!Character.isJavaIdentifierPart(ca[start-1]) || ca[start-2] == '\\') {
-					EspPart part = new EmbeddedJavaPart(parent, start, end);
-					return part.getEnd() - 1;
-				}
-			}
+//			note: $ is a valid Java/Javascript char, makes embedding Java vars sloppy - stick with just Java parts for now
+//			else if(Character.isJavaIdentifierStart(ca[start+1])) {
+//				if(!Character.isJavaIdentifierPart(ca[start-1]) || ca[start-2] == '\\') {
+//					EspPart part = new EmbeddedJavaPart(parent, start, end);
+//					return part.getEnd() - 1;
+//				}
+//			}
 		}
 		return start;
 	}
