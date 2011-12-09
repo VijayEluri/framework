@@ -511,10 +511,10 @@ public class ModelDefinition {
 		}
 		
 		if(indexes.size() == 1) {
-			return "@Indexes(" + indexes.get(0) + ")";
+			return "@Indexes(\"" + indexes.get(0) + "\")";
 		}
 		
-		return join("@Indexes({", indexes, "\n})", "\n, ");
+		return join("@Indexes({\"", indexes, "\"\n})", "\"\n, \"");
 	}
 	
 	public String getModelDescriptionAnnotation() {
@@ -1141,8 +1141,8 @@ public class ModelDefinition {
 		
 		Edits edits = new Edits();
 		edits.add(mdstart, mdend, getModelDescriptionAnnotation());
-		edits.add(ixstart, ixend, getIndexesAnnotation());
 		edits.add(mvstart, mvend, getValidationsAnnotation());
+		edits.add(ixstart, ixend, getIndexesAnnotation());
 
 		List<String> imports = new ArrayList<String>();
 		imports.addAll(getModelDescriptionImports());
