@@ -83,6 +83,33 @@ public class DbPersistor {
 	public DbPersistor() {
 	}
 
+	private void addDeferredToCreate(Model model, Map<Model, List<String>> map) throws NoSuchFieldException {
+		ModelAdapter adapter = ModelAdapter.getAdapter(model.getClass());
+
+		for(String field : adapter.getHasManyFields()) {
+			if(model.isSet(field) && !adapter.isManyToOne(field)) {
+				if(!map.containsKey(model)) {
+					map.put(model, new ArrayList<String>());
+				}
+				map.get(model).add(field);
+			}
+		}
+
+	}
+
+	private void addDeferredToUpdate(Model model, Map<Model, List<String>> map) throws NoSuchFieldException {
+		ModelAdapter adapter = ModelAdapter.getAdapter(model.getClass());
+
+		for(String field : adapter.getHasOneFields()) {
+			if(adapter.isOneToOne(field) && !adapter.hasKey(field)) {
+				if(!map.containsKey(model)) {
+					map.put(model, new ArrayList<String>());
+				}
+				map.get(model).add(field);
+			}
+		}
+	}
+
 	private void addModelsToCreate(int pos, Model model, List<Model> models) throws NoSuchFieldException {
 		models.add(pos, model);
 
@@ -268,9 +295,14 @@ public class DbPersistor {
 		List<Model> models = new ArrayList<Model>();
 		addModelsToCreate(0, model, models);
 
-		Map<Model, List<String>> deferredMap = new HashMap<Model, List<String>>();
+		Map<Model, List<String>> deferredCreate = new HashMap<Model, List<String>>();
 		for(Model deferred : models) {
-			deferredMap.putAll(getDeferredToCreate(deferred));
+			addDeferredToCreate(deferred, deferredCreate);
+		}
+		
+		Map<Model, List<String>> deferredUpdate = new HashMap<Model, List<String>>();
+		for(Model deferred : models) {
+			addDeferredToUpdate(deferred, deferredUpdate);
 		}
 
 		for(int i = models.size() - 1; i >= 0; i--) {
@@ -288,10 +320,14 @@ public class DbPersistor {
 			}
 		}
 
-		for(Entry<Model, List<String>> entry : deferredMap.entrySet()) {
+		for(Entry<Model, List<String>> entry : deferredCreate.entrySet()) {
 			doCreateDeferred(connection, entry.getKey(), entry.getValue());
 		}
 
+		for(Entry<Model, List<String>> entry : deferredUpdate.entrySet()) {
+			doUpdateDeferred(connection, entry.getKey(), entry.getValue());
+		}
+		
 		logger.debug("end doCreate");
 		return model.getId(int.class);
 	}
@@ -376,6 +412,19 @@ public class DbPersistor {
 						String[] columns = joinColumns(table1, column1, table2, column2);
 						doUpdateManyToMany(connection, table, columns[0], model.getId(int.class), columns[1], dIds);
 					}
+				}
+			}
+		}
+	}
+
+	private void doUpdateDeferred(Connection connection, Model model, List<String> deferredOne) throws SQLException {
+		ModelAdapter adapter = ModelAdapter.getAdapter(model);
+		
+		for(String field : deferredOne) {
+			if(model.isSet(field)) {
+				Model opposite = (Model) model.get(field);
+				if(opposite != null) {
+					doUpdateOneToOne(connection, adapter, model, field, opposite.getId());
 				}
 			}
 		}
@@ -679,7 +728,7 @@ public class DbPersistor {
 		}
 	}
 
-	private void doUpdateOneToOne(Connection connection, ModelAdapter adapter, Model model, String field, int id) throws SQLException {
+	private void doUpdateOneToOne(Connection connection, ModelAdapter adapter, Model model, String field, Object id) throws SQLException {
 		String table = tableName(adapter.getOppositeType(field));
 		String column = columnName(adapter.getOpposite(field));
 		
@@ -891,23 +940,6 @@ public class DbPersistor {
 
 		logger.debug("end findAll");
 		return list;
-	}
-
-	private Map<Model, List<String>> getDeferredToCreate(Model model) throws NoSuchFieldException {
-		ModelAdapter adapter = ModelAdapter.getAdapter(model.getClass());
-
-		Map<Model, List<String>> deferred = new HashMap<Model, List<String>>();
-
-		for(String field : adapter.getHasManyFields()) {
-			if(model.isSet(field) && !adapter.isManyToOne(field)) {
-				if(!deferred.containsKey(model)) {
-					deferred.put(model, new ArrayList<String>());
-				}
-				deferred.get(model).add(field);
-			}
-		}
-
-		return deferred;
 	}
 
 	private String getField(Object o) {
