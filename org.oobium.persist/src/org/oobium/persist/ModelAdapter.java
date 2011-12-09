@@ -352,8 +352,11 @@ public class ModelAdapter {
 	 * @see #isOneToOne(String)
 	 */
 	public boolean hasKey(String field) {
-		// NOTE: this is the compile-time version of ModelRelation#hasKey(String)
+		// NOTE: this is the run-time version of ModelRelation#hasKey(String)
 		//       make sure to apply updates to both
+		if(isThrough(field)) {
+			return false;
+		}
 		Relation relation = hasOne.get(field);
 		if(relation == null) {
 			return false;

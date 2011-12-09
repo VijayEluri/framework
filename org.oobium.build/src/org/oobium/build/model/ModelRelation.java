@@ -318,6 +318,9 @@ public class ModelRelation {
 	public boolean hasKey() {
 		// NOTE: this is the compile-time version of ModelAdapter#hasKey(String)
 		//       make sure to apply updates to both
+		if(isThrough()) {
+			return false;
+		}
 		if(hasKey) {
 			return true;
 		}
