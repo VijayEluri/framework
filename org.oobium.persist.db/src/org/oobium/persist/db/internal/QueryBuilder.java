@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.oobium.persist.db.internal;
 
+import static org.oobium.utils.literal.*;
 import static java.lang.Character.isLetterOrDigit;
 import static org.oobium.persist.ModelAdapter.getAdapter;
 import static org.oobium.persist.db.internal.Utils.ID;
@@ -610,6 +611,12 @@ public class QueryBuilder {
 			}
 
 			ModelAdapter parentAdapter = query.getAdapter(parentAlias);
+			if(parentAdapter.isThrough(field)) {
+				String[] sa = parentAdapter.getThrough(field);
+				field = blank(where) ? sa[1] : (sa[1] + " where " + where);
+				child = blank(child) ? field : Map(field, child);
+				field = sa[0];
+			}
 			if(parentAdapter.hasOne(field)) {
 				String alias = processInclude(parentAdapter, parentAlias, field, where);
 				if(!blank(child)) {

@@ -40,6 +40,41 @@ import org.oobium.utils.json.JsonUtils;
 
 public abstract class Model implements JsonModel {
 
+	public static class ModelUtils {
+
+		@SuppressWarnings("unchecked")
+		public static <T extends Model> List<T> collectHasManyThrough(List<? extends Model> models, String field, Class<T> type) {
+			List<T> list = new ArrayList<T>();
+			for(Model model : models) {
+				Object value = model.get(field);
+				if(value instanceof List) {
+					list.addAll((List<T>) value);
+				}
+				else if(value != null) {
+					list.add((T) value);
+				}
+			}
+			return list;
+		}
+		
+		@SuppressWarnings("unchecked")
+		public static <T extends Model> List<T> collectHasManyThrough(Model model, String field, Class<T> type) {
+			if(model == null) {
+				return new ArrayList<T>(0);
+			}
+			List<T> list = new ArrayList<T>();
+			Object value = model.get(field);
+			if(value instanceof List) {
+				list.addAll((List<T>) value);
+			}
+			else if(value != null) {
+				list.add((T) value);
+			}
+			return list;
+		}
+
+	}
+	
 	private static final ThreadLocal<Logger> logService = new ThreadLocal<Logger>();
 	private static final ThreadLocal<PersistServiceProvider> persistServiceProvider = new ThreadLocal<PersistServiceProvider>();
 	
@@ -663,8 +698,21 @@ public abstract class Model implements JsonModel {
 		if("id".equals(field)) {
 			return getId();
 		} else {
-			if(fields.containsKey(field)) {
-				Class<?> type = getAdapter(getClass()).getClass(field);
+			ModelAdapter adapter = getAdapter(this);
+			if(adapter.isThrough(field)) {
+				String[] sa = adapter.getThrough(field);
+				Object through = get(sa[0]);
+				if(through instanceof Model) {
+					return ((Model) through).get(sa[1]);
+				}
+				else if(through instanceof List) {
+					return ModelUtils.collectHasManyThrough((List<? extends Model>) through, sa[1], adapter.getRelationClass(field));
+				} else {
+					return adapter.hasMany(field) ? new ArrayList<Object>(0) : null;
+				}
+			}
+			else if(fields.containsKey(field)) {
+				Class<?> type = adapter.getClass(field);
 				if(type == null) {
 					return fields.get(field);
 				} else {
@@ -676,10 +724,9 @@ public abstract class Model implements JsonModel {
 				}
 			} else {
 				if(load && !isNew()) {
-					ModelAdapter adapter = getAdapter(this);
 					if(hasContained(field)) {
 						load();
-					} else if(hasMany(field) || (adapter.isOneToOne(field) && !adapter.hasKey(field))) {
+					} else if(adapter.hasMany(field) || (adapter.isOneToOne(field) && !adapter.hasKey(field))) {
 						try {
 							Class<? extends Model> type = adapter.getRelationClass(field);
 							PersistService p = getPersistor();
@@ -701,7 +748,7 @@ public abstract class Model implements JsonModel {
 					}
 					return get(field, false); // exit through the if(fields.containsKey(field)) block above
 				} else {
-					if(hasMany(field)) { // prevents returning a null for a hasMany field
+					if(adapter.hasMany(field)) { // prevents returning a null for a hasMany field
 						fields.put(field, new ModelList<Model>(this, field));
 					}
 					return fields.get(field);
