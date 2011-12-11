@@ -43,15 +43,17 @@ public abstract class Model implements JsonModel {
 	public static class ModelUtils {
 
 		@SuppressWarnings("unchecked")
-		public static <T extends Model> List<T> collectHasManyThrough(List<? extends Model> models, String field, Class<T> type) {
+		public static <T extends Model> List<T> collectHasManyThrough(List<?> models, String field, Class<T> type) {
 			List<T> list = new ArrayList<T>();
-			for(Model model : models) {
-				Object value = model.get(field);
-				if(value instanceof List) {
-					list.addAll((List<T>) value);
-				}
-				else if(value != null) {
-					list.add((T) value);
+			for(Object o : models) {
+				if(o instanceof Model) {
+					Object value = ((Model) o).get(field);
+					if(value instanceof List) {
+						list.addAll((List<T>) value);
+					}
+					else if(value != null) {
+						list.add((T) value);
+					}
 				}
 			}
 			return list;
@@ -706,7 +708,7 @@ public abstract class Model implements JsonModel {
 					return ((Model) through).get(sa[1]);
 				}
 				else if(through instanceof List) {
-					return ModelUtils.collectHasManyThrough((List<? extends Model>) through, sa[1], adapter.getRelationClass(field));
+					return ModelUtils.collectHasManyThrough((List<?>) through, sa[1], adapter.getRelationClass(field));
 				} else {
 					return adapter.hasMany(field) ? new ArrayList<Object>(0) : null;
 				}
@@ -991,10 +993,6 @@ public abstract class Model implements JsonModel {
 		int hash = String.valueOf(id).hashCode() + 2;
 		hash = (hash * 31) + getClass().getCanonicalName().hashCode();
 		return hash;
-	}
-	
-	private boolean hasMany(String field) {
-		return getAdapter(getClass()).hasMany(field);
 	}
 	
 	@Override
