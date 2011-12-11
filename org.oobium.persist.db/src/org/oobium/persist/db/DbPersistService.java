@@ -20,6 +20,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ import java.util.regex.Pattern;
 import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
+import org.oobium.persist.ModelAdapter;
 import org.oobium.persist.PersistClient;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.ServiceInfo;
@@ -360,7 +362,17 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 				String field = (String) map.get("$field");
 				String include = coerce(query.get("$include"), String.class);
 				include = (include == null) ? field : ("{" + field + ":" + include + "}");
-				return (E) Model.getPersistService(parentClass).find(parentClass, "id:?,$include:?", id, include).get(field);
+				Model parent = Model.getPersistService(parentClass).find(parentClass, "id:?,$include:?", id, include);
+				if(parent == null) {
+					ModelAdapter adapter = ModelAdapter.getAdapter(parentClass);
+					if(adapter.hasMany(field)) {
+						// don't EVER return null when a collection is expected!
+						return (E) new ArrayList<Model>(0);
+					}
+					return null;
+				} else {
+					return (E) parent.get(field);
+				}
 			}
 			else {
 				Connection connection = getConnection();
