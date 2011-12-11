@@ -1817,7 +1817,7 @@ public class RouterTests {
 		assertEquals(PhoneController.class, ch.controllerClass);
 		assertEquals(showAll, ch.action);
 		assertEquals(Member.class, ch.parentClass);
-		assertEquals("phones", ch.hasManyField);
+		assertEquals("phones", ch.parentField);
 		assertEquals("[[member[id], 1]]", asString(ch.params));
 
 		HttpController c = ch.getController(request);
@@ -1884,7 +1884,7 @@ public class RouterTests {
 		assertEquals(CategoryController.class, ch.controllerClass);
 		assertEquals(showNew, ch.action);
 		assertEquals(Account.class, ch.parentClass);
-		assertEquals("categories", ch.hasManyField);
+		assertEquals("categories", ch.parentField);
 		assertEquals("[[category[cAccount], 1]]", asString(ch.params));
 	}
 	
@@ -1935,7 +1935,7 @@ public class RouterTests {
 		assertEquals(PhoneController.class, ch.controllerClass);
 		assertEquals(showAll, ch.action);
 		assertEquals(Member.class, ch.parentClass);
-		assertEquals("phones", ch.hasManyField);
+		assertEquals("phones", ch.parentField);
 		assertEquals("[[member[type], admin]]", asString(ch.params));
 
 		router.removeResources("{id=type:\\w+}{models=Member}", Member.class);
@@ -1995,7 +1995,7 @@ public class RouterTests {
 		assertEquals(CategoryController.class, ch.controllerClass);
 		assertEquals(create, ch.action);
 		assertEquals(Account.class, ch.parentClass);
-		assertEquals("categories", ch.hasManyField);
+		assertEquals("categories", ch.parentField);
 		assertEquals("[[category[cAccount][type], checking]]", asString(ch.params));
 
 		router.removeResources("{id=type:\\w+}{models=Account}", Account.class);

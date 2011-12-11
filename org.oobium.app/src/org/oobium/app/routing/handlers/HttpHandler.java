@@ -25,7 +25,7 @@ public class HttpHandler extends RouteHandler {
 
 	// for a hasMany route
 	public final Class<? extends Model> parentClass;
-	public final String hasManyField;
+	public final String parentField;
 
 	public HttpHandler(Router router, Class<? extends HttpController> controllerClass, Action action,
 						Class<? extends Model> parentClass, String hasManyField, String[][] params) {
@@ -33,7 +33,7 @@ public class HttpHandler extends RouteHandler {
 		this.controllerClass = controllerClass;
 		this.action = action;
 		this.parentClass = parentClass;
-		this.hasManyField = hasManyField;
+		this.parentField = hasManyField;
 	}
 
 	public HttpController getController(Request request) throws Exception {
@@ -41,7 +41,7 @@ public class HttpHandler extends RouteHandler {
 		controller.initialize(router, request, getParamMap());
 		if(parentClass != null) {
 			controller.setParentClass(parentClass);
-			controller.setHasManyField(hasManyField);
+			controller.setParentField(parentField);
 		}
 		return controller;
 	}

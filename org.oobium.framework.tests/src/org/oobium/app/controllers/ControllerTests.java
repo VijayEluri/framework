@@ -56,7 +56,7 @@ public class ControllerTests {
 		HttpController c = new HttpController();
 		c.initialize(null, request, Map("member[id]", (Object) 15));
 		c.setParentClass(Member.class);
-		c.setHasManyField("phones");
+		c.setParentField("phones");
 		
 		Map<String, Object> query = c.getQuery();
 		Object from = query.get("$from");
@@ -82,7 +82,7 @@ public class ControllerTests {
 		HttpController c = new HttpController();
 		c.initialize(null, request, Map(e("member[id]", (Object) 15), e("query", Map("number", "303-555-1212"))));
 		c.setParentClass(Member.class);
-		c.setHasManyField("phones");
+		c.setParentField("phones");
 		
 		Map<String, Object> query = c.getQuery();
 		Object from = query.get("$from");
@@ -112,7 +112,7 @@ public class ControllerTests {
 		HttpController c = new HttpController();
 		c.initialize(null, request, Map(e("member[id]", (Object) 15), e("query", Map("$from", "something"))));
 		c.setParentClass(Member.class);
-		c.setHasManyField("phones");
+		c.setParentField("phones");
 		
 		Map<String, Object> query = c.getQuery();
 		Object from = query.remove("$from");

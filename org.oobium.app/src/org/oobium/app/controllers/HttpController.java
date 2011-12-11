@@ -216,8 +216,8 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	private boolean isRendered;
 	
 	private Class<? extends Model> parentClass;
-	private String hasManyField;
-
+	private String parentField;
+	private Object parentId;
 	
 	public HttpController() {
 		// no args constructor
@@ -657,6 +657,14 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		return params.keySet();
 	}
 	
+	public String getInclude() {
+		Map<String, Object> query = getQuery();
+		if(query == null) {
+			return param("$include");
+		}
+		return (String) query.get("$include");
+	}
+	
 	@SuppressWarnings("unchecked")
 	public Map<String, Object> getQuery() {
 		Map<String, Object> query = (Map<String, Object>) param("query", Map.class);
@@ -664,10 +672,11 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 			if(query == null) {
 				query = new LinkedHashMap<String, Object>();
 			}
+			Object id = (parentId == null) ? param(varName(parentClass) + "[id]") : parentId;
 			query.put("$from", Map(
 						e("$type", parentClass),
-						e("$id", param(varName(parentClass) + "[id]")),
-						e("$field", hasManyField)
+						e("$id", id),
+						e("$field", parentField)
 					));
 		}
 		return query;
@@ -762,7 +771,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	}
 	
 	public boolean hasMany(String field) {
-		return field != null && field.equals(hasManyField);
+		return field != null && field.equals(parentField);
 	}
 
 	@Override
@@ -1529,9 +1538,28 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	public void setFlashWarning(Object value) {
 		setFlash(FLASH_ERROR, value);
 	}
+
+	public void setQueryParent(Class<? extends Model> parentClass, String field) {
+		if(parentClass == null) {
+			this.parentClass = null;
+		} else {
+			this.parentClass = parentClass;
+			parentField = field;
+		}
+	}
 	
-	public void setHasManyField(String hasManyField) {
-		this.hasManyField = hasManyField;
+	public void setQueryParent(Model parent, String field) {
+		if(parent == null) {
+			parentClass = null;
+		} else {
+			parentClass = parent.getClass();
+			parentField = field;
+			parentId = parent.getId();
+		}
+	}
+	
+	public void setParentField(String field) {
+		this.parentField = field;
 	}
 	
 	public void setParam(String name, Object value) {
