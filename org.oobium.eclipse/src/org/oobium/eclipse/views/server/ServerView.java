@@ -504,7 +504,8 @@ public class ServerView extends ViewPart {
 			}
 			runner.setError(new ConsolePrintStream(consolePanel.getConsole().err));
 			runner.setOut(new ConsolePrintStream(consolePanel.getConsole().out));
-			if(runner.getDebug()) {
+			final boolean debugging = runner.getDebug();
+			if(debugging) {
 				try {
 					
 					Thread.sleep(500); // TODO another oobicrap temporary fix...
@@ -549,6 +550,18 @@ public class ServerView extends ViewPart {
 				autoMigAction.setEnabled(false);
 				RunnerService.pauseUpdaters();
 			}
+
+			Display.getDefault().syncExec(new Runnable() {
+				@Override
+				public void run() {
+					if(debugging) {
+						setPartName("Server (debug)");
+					} else {
+						setPartName("Server (run)");
+					}
+				}
+			});
+
 			RunnerService.addListener(errorListener);
 		}
 	}
@@ -580,6 +593,12 @@ public class ServerView extends ViewPart {
 	}
 	
 	public void stop() {
+		Display.getDefault().syncExec(new Runnable() {
+			@Override
+			public void run() {
+				setPartName("Server");
+			}
+		});
 		RunnerService.removeListener(errorListener);
 		if(application != null) {
 			RunnerService.removeListener(runListener);
