@@ -40,7 +40,9 @@ class ModelJsonBuilder {
 	static String buildJson(Collection<? extends Model> models, String include, Object...values) {
 		Model[] ma = models.toArray(new Model[models.size()]);
 		ModelJsonBuilder builder = new ModelJsonBuilder();
-		builder.setInclude(include, values);
+		if(include != null && include.length() > 0) {
+			builder.setInclude(include, values);
+		}
 		return builder.build(ma);
 	}
 	
@@ -51,7 +53,9 @@ class ModelJsonBuilder {
 	
 	static String buildJson(Model model, String include, Object...values) {
 		ModelJsonBuilder builder = new ModelJsonBuilder();
-		builder.setInclude(include, values);
+		if(include != null && include.length() > 0) {
+			builder.setInclude(include, values);
+		}
 		return builder.build(model);
 	}
 	
