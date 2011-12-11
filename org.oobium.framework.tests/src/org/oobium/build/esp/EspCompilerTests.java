@@ -184,14 +184,17 @@ public class EspCompilerTests {
 		assertEquals("__sb__.append(\"<script>\\tif(true) {// comment\\n\\t}</script>\");", html("script\n\tif(true) {// comment\n\t}"));
 		
 		// with Java
-		assertEquals("__sb__.append(\"<script>alert(\").append(h(var)).append(\");</script>\");", html("script alert($var);"));
-		assertEquals("__sb__.append(\"<script>alert(\").append(h(var)).append(\");</script>\");", html("script alert(${var});"));
+		assertEquals("__sb__.append(\"<script>alert(\").append(j(var)).append(\");</script>\");", html("script alert(${var});"));
 
 		// in DOM event with Java
-		assertEquals("__sb__.append(\"<div onclick=\\\"alert(\").append(h(var)).append(\");\\\"></div>\");", html("div(onclick:\"alert($var);\""));
-		assertEquals("__sb__.append(\"<div onclick=\\\"alert(\").append(h(var)).append(\");\\\"></div>\");", html("div(onclick:\"alert(${var});\""));
+		assertEquals("__sb__.append(\"<div onclick=\\\"alert(\").append(j(var)).append(\");\\\"></div>\");", html("div(onclick:\"alert(${var});\""));
 	}
-	
+
+	@Test
+	public void testScriptAttr() throws Exception {
+		assertEquals("__sb__.append(\"<div onmouseover=\\\"alert('\").append(j(v)).append(\"');\\\"></div>\");", html("div(onmouseover:\"alert('${v}');\""));
+	}
+
 	@Test
 	public void testStyle() throws Exception {
 		assertEquals(0, src("style").getMethodCount());
