@@ -15,12 +15,12 @@ public class ScriptPart extends EspPart {
 	protected int commentCheck(EspPart parent, char[] ca, int ix) {
 		if(ix >= 0) {
 			if(ix < end) {
-				if(ca[ix] == '"' || ca[ix] == '\'') {
+				/*if(ca[ix] == '"' || ca[ix] == '\'') {
 					ix = closer(ca, ix, end, true, true);
 					if(ix == -1) {
 						ix = end;
 					}
-				} else if(ca[ix] == '/' && (ix+1) < end && (ca[ix+1] == '*' || ca[ix+1] == '/')) {
+				} else */if(ca[ix] == '/' && (ix+1) < end && (ca[ix+1] == '*' || ca[ix+1] == '/')) {
 					CommentPart comment = new CommentPart(parent, ix);
 					ix = comment.getEnd();
 				}
