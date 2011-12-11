@@ -127,7 +127,12 @@ public class Response extends DefaultHttpResponse {
 	}
 
 	public void setCookie(String name, String value) {
+		setCookie("/", name, value);
+	}
+	
+	public void setCookie(String path, String name, String value) {
 		Cookie cookie = new DefaultCookie(name, value);
+		cookie.setPath(path);
 		addCookie(cookie);
 	}
 	
@@ -136,7 +141,12 @@ public class Response extends DefaultHttpResponse {
 	}
 	
 	public void setCookie(String name, String value, int maxAge) {
+		setCookie("/", name, value, maxAge);
+	}
+	
+	public void setCookie(String path, String name, String value, int maxAge) {
 		Cookie cookie = new DefaultCookie(name, value);
+		cookie.setPath(path);
 		cookie.setMaxAge(maxAge);
 		addCookie(cookie);
 	}
