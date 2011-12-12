@@ -214,6 +214,9 @@ class ModelJsonBuilder {
 	}
 	
 	private String build(Model model) {
+		if(model == null) {
+			return "null";
+		}
 		if(includes == null) {
 			includes = new ArrayList<Object>(0);
 		}
@@ -225,6 +228,9 @@ class ModelJsonBuilder {
 	}
 	
 	private String build(Model[] models) {
+		if(models == null || models.length == 0) {
+			return "[]";
+		}
 		if(includes == null) {
 			includes = new ArrayList<Object>(0);
 		}
