@@ -20,7 +20,8 @@ import org.oobium.build.esp.EspPart;
 public class StyleEntryPart extends EspPart {
 
 	private List<StylePropertyPart> properties;
-
+	private JavaSourcePart jpart;
+	
 	public StyleEntryPart(EspPart parent, int start, int end) {
 		super(parent, Type.StyleEntryPart, start, end);
 		parse();
@@ -32,21 +33,28 @@ public class StyleEntryPart extends EspPart {
 		}
 		properties.add(new StylePropertyPart(this, start, end));
 	}
+
+	public JavaSourcePart getJava() {
+		return jpart;
+	}
 	
-	public boolean isSimple() {
-		return !hasParts();
+	public boolean isJava() {
+		return jpart != null;
 	}
 
 	private int findStart() {
-		int s = start + 1;
-		while(s < end) {
-			if(ca[s] == '{') {
-				return s;
+		if(ca[start] == '"') {
+			int s = start + 1;
+			while(s < end) {
+				if(ca[s] == '{') {
+					return s;
+				}
+				s = skipEmbeddedJava(ca, s, end);
+				s++;
 			}
-			s = skipEmbeddedJava(ca, s, end);
-			s++;
+			return start + 1;
 		}
-		return start + 1;
+		return start;
 	}
 	
 	public List<StylePropertyPart> getProperties() {
@@ -55,25 +63,29 @@ public class StyleEntryPart extends EspPart {
 	
 	protected void parse() {
 		int s1 = findStart();
-		int s2 = s1;
-		while(s2 < end - 1) {
-			s2 = skipEmbeddedJava(ca, s2, end);
-			if(s2 < end) {
-				if(ca[s2] == '}') {
-					break;
-				}
-				if(ca[s2] == ';') {
-					if(s2 > s1) {
-						addProperty(s1, s2);
+		if(s1 == start) {
+			jpart = new JavaSourcePart(parent, Type.JavaSourcePart, start, end);
+		} else {
+			int s2 = s1;
+			while(s2 < end - 1) {
+				s2 = skipEmbeddedJava(ca, s2, end);
+				if(s2 < end) {
+					if(ca[s2] == '}') {
+						break;
 					}
-					s1 = s2 = s2 + 1;
-				} else {
-					s2++;
+					if(ca[s2] == ';') {
+						if(s2 > s1) {
+							addProperty(s1, s2);
+						}
+						s1 = s2 = s2 + 1;
+					} else {
+						s2++;
+					}
 				}
 			}
-		}
-		if(s2 > s1) {
-			addProperty(s1, s2);
+			if(s2 > s1) {
+				addProperty(s1, s2);
+			}
 		}
 	}
 
