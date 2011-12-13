@@ -924,11 +924,11 @@ public class EspCompiler {
 			if(!blank(modelName)) {
 				appendFormFieldName(modelName, date.getArgs());
 			}else {
-				body.append("datetime");
+				body.append("\"datetime\"");
 			}
 		}
 		else {
-			body.append("datetime");
+			body.append("\"datetime\"");
 		}
 		body.append(", ");
 		if(date.hasEntry("format")) {
