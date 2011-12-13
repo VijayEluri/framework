@@ -814,6 +814,7 @@ public class EspCompiler {
 	
 	private void buildClasses(MarkupElement element, String model, List<JavaSourcePart> fields) {
 		if(!"hidden".equals(element.getTag())) {
+			String cssClass = "label".equals(element.getTag()) ? "labelWithErrors" : "fieldWithErrors";
 			if(element.hasClassNames()) {
 				body.append(" class=\\\"");
 				for(Iterator<EspPart> ci = element.getClassNames().iterator(); ci.hasNext(); ) {
@@ -821,11 +822,11 @@ public class EspCompiler {
 					if(ci.hasNext()) body.append(' ');
 				}
 				
-				appendFieldError(model, fields, "fieldWithErrors");
+				appendFieldError(model, fields, cssClass);
 				
 				body.append("\\\"");
 			} else {
-				appendFieldError(model, fields, " class=\\\"fieldWithErrors\\\"");
+				appendFieldError(model, fields, " class=\\\"" + cssClass + "\\\"");
 			}
 		}
 	}
@@ -1564,7 +1565,7 @@ public class EspCompiler {
 			else if("password".equals(tag))	body.append(" type=\\\"password\\\"");
 			else if("text".equals(tag))		body.append(" type=\\\"text\\\"");
 		}
-		buildFormField(input, true);
+		buildFormField(input, !"password".equals(tag));
 		body.append(" />");
 	}
 	
@@ -1988,21 +1989,10 @@ public class EspCompiler {
 			prepForMarkup(sb);
 			
 			if(element.hasArgs()) {
-				for(EspPart arg : element.getArgs()) {
-					String file = arg.getText();
-					if("defaults".equals(file)) {
-						sb.append("<script src='/jquery-1.4.4.js'></script>");
-						sb.append("<script src='/application.js'></script>");
-					} else if("models".equals(file)) {
-						sb.append("<script src='/models.js'></script><script>$Router=new Router(\").append(toJson(controller.getRouter().getModelRouteMap())).append(\");</script>");
-					} else {
-						sb.append("<script src='/");
-						sb.append(file);
-						if(!file.endsWith(".js")) {
-							sb.append(".js");
-						}
-						sb.append("'></script>");
-					}
+				for(JavaSourcePart arg : element.getArgs()) {
+					sb.append("<script src='\").append(");
+					build(arg, sb, true);
+					sb.append(").append(\"'></script>");
 				}
 			}
 			if(element.hasLines()) {

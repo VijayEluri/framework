@@ -22,8 +22,11 @@ a:hover { color: #fff; background-color:#000; }
   display: table;
 }
 
-label.fieldWithErrors {
+.labelWithErrors {
   background-color: red;
+  border: 2px solid red;
+  padding: 2px;
+  display: table;
 }
 
 .errors {
