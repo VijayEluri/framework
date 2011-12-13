@@ -16,8 +16,6 @@ import static org.oobium.utils.CharStreamUtils.forward;
 import static org.oobium.utils.StringUtils.join;
 import static org.oobium.utils.StringUtils.when;
 
-import java.util.List;
-
 import org.oobium.build.BuildBundle;
 import org.oobium.build.esp.elements.CommentElement;
 import org.oobium.build.esp.elements.ConstructorElement;

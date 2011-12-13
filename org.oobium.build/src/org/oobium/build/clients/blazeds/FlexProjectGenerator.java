@@ -3,8 +3,11 @@ package org.oobium.build.clients.blazeds;
 import static org.oobium.build.util.ProjectUtils.getPrefsFileDate;
 import static org.oobium.utils.FileUtils.createFolder;
 import static org.oobium.utils.FileUtils.deleteContents;
-import static org.oobium.utils.FileUtils.*;
-import static org.oobium.utils.StringUtils.*;
+import static org.oobium.utils.FileUtils.writeFile;
+import static org.oobium.utils.StringUtils.getResourceAsString;
+import static org.oobium.utils.StringUtils.join;
+import static org.oobium.utils.StringUtils.source;
+import static org.oobium.utils.StringUtils.varName;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -19,7 +22,6 @@ import java.util.UUID;
 
 import org.oobium.build.gen.model.PropertyDescriptor;
 import org.oobium.build.model.ModelDefinition;
-import org.oobium.build.util.MethodCreator;
 import org.oobium.build.workspace.Module;
 import org.oobium.persist.Binary;
 import org.oobium.persist.Text;
@@ -341,67 +343,6 @@ public class FlexProjectGenerator {
 				" </natures>",
 				"</projectDescription>"
 			).replace("{project}", project.getName()).replace("{builder}", builder));
-	}
-	
-	private void createUserSession(File srcFolder){
-		ActionScriptFile as = new ActionScriptFile();
-		as.packageName = module.packageName(module.models);
-		//as.classMetaTags.add("RemoteClass(alias=\"" + module.packageName(module.models) +".UserSession\")");
-		as.simpleName = "UserSession";
-		as.staticVariables.put("ro", "public static const ro:Object = createRemoteObject()");
-		
-		MethodCreator m0 = new MethodCreator("0UserSession()");
-		m0.addLine("public function UserSession():void{");
-			m0.addLine("ro = new RemoteObject();");
-			m0.addLine("ro.destination = \"UserSessionController\";");
-			m0.addLine("ro.addEventListener(\"fault\", faultHandler);");
-		m0.addLine("}");
-		as.addMethod(m0);
-		
-
-		MethodCreator m1 = new MethodCreator("1login");
-		m1.addLine("public function login(userName:String, password:String, callback:Function):void {");
-			m1.addLine("ro.login.addEventListener(\"result\", callback);");
-			m1.addLine("ro.login(userName, password);");
-		m1.addLine("}");
-		as.addMethod(m1);
-		
-		MethodCreator m2 = new MethodCreator("2logout()");
-		m2.addLine("public function logout(callback:Function):void {");
-			m2.addLine("ro.logout();");
-		m2.addLine("}");
-		as.addMethod(m2);
-		
-		MethodCreator m3 = new MethodCreator("3getUserName()");
-		m3.addLine("public function getUserName(callback:Function):void {");
-			m3.addLine("ro.getUserName.addEventListener(\"result\", callback);");
-			m3.addLine("ro.getUserName();");
-		m3.addLine("}");
-		as.addMethod(m3);
-		
-		MethodCreator m4 = new MethodCreator("4getPassword()");
-		m4.addLine("public function getPassword(callback:Function):void {");
-			m4.addLine("ro.getPassword.addEventListener(\"result\", callback);");
-			m4.addLine("ro.getPassword();");
-		m4.addLine("}");
-		as.addMethod(m4);
-		
-		as.addMethod("5",
-				"public function getSessionId(callback:Function):void {",
-				" ro.getSessionId.addEventListener(\"result\", callback);",
-				" ro.getSessionId();",
-				"}"
-			);
-		
-		//PRIVATE_FUNCTIONS used to make the public functions work
-	
-		MethodCreator m6 = new MethodCreator("6faultHandler()");
-		m6.addLine("private function faultHandler (event:FaultEvent):void {");
-			m6.addLine("Alert.show(event.fault.faultString, 'Error');");
-		m6.addLine("}");
-		as.addMethod(m6);
-		
-		writeFile(srcFolder, as.getFilePath(), as.toSource());
 	}
 	
 	private String flexType(String javaType) {
