@@ -697,66 +697,73 @@ public abstract class Model implements JsonModel {
 	 * @return the value of the field
 	 */
 	public Object get(String field, boolean load) {
+		if(field == null) {
+			return null;
+		}
+		
 		if("id".equals(field)) {
 			return getId();
-		} else {
-			ModelAdapter adapter = getAdapter(this);
-			if(adapter.isThrough(field)) {
-				String[] sa = adapter.getThrough(field);
-				Object through = get(sa[0]);
-				if(through instanceof Model) {
-					return ((Model) through).get(sa[1]);
-				}
-				else if(through instanceof List) {
-					return ModelUtils.collectHasManyThrough((List<?>) through, sa[1], adapter.getRelationClass(field));
-				} else {
-					return adapter.hasMany(field) ? new ArrayList<Object>(0) : null;
-				}
-			}
-			else if(fields.containsKey(field)) {
-				Class<?> type = adapter.getClass(field);
-				if(type == null) {
-					return fields.get(field);
-				} else {
-					Object value = fields.get(field);
-					if(value == null || type.isAssignableFrom(value.getClass())) { // TODO also check if correct type for primitive
-						return value;
-					}
-					return set(field, value, type);
-				}
+		}
+
+		ModelAdapter adapter = getAdapter(this);
+
+		if(fields.containsKey(field)) {
+			Class<?> type = adapter.getClass(field);
+			if(type == null) {
+				return fields.get(field);
 			} else {
-				if(load && !isNew()) {
-					if(hasContained(field)) {
-						load();
-					} else if(adapter.hasMany(field) || (adapter.isOneToOne(field) && !adapter.hasKey(field))) {
-						try {
-							Class<? extends Model> type = adapter.getRelationClass(field);
-							PersistService p = getPersistor();
-							PersistService fp = getPersistService(type);
-							if(p == fp) {
-								p.retrieve(this, field);
-							}
-							else if(adapter.isManyToOne(field)) {
-								Map<String, Object> query = Map(adapter.getOpposite(field), getId());
-								Object value = fp.findAll(type, query);
-								fields.put(field, value);
-							}
-							else {
-								throw new UnsupportedOperationException("only many to one is currently supported for mixed persist services");
-							}
-						} catch(Exception e) {
-							logger.warn("failed to load relation " + field + " in " + asSimpleString(), e);
-						}
-					}
-					return get(field, false); // exit through the if(fields.containsKey(field)) block above
-				} else {
-					if(adapter.hasMany(field)) { // prevents returning a null for a hasMany field
-						fields.put(field, new ModelList<Model>(this, field));
-					}
-					return fields.get(field);
+				Object value = fields.get(field);
+				if(value == null || type.isAssignableFrom(value.getClass())) { // TODO also check if correct type for primitive
+					return value;
 				}
+				return set(field, value, type);
 			}
 		}
+
+		if(adapter.isThrough(field)) {
+			String[] sa = adapter.getThrough(field);
+			Object through = get(sa[0]);
+			if(through instanceof Model) {
+				return ((Model) through).get(sa[1]);
+			}
+			else if(through instanceof List) {
+				return ModelUtils.collectHasManyThrough((List<?>) through, sa[1], adapter.getRelationClass(field));
+			} else {
+				return adapter.hasMany(field) ? new ArrayList<Object>(0) : null;
+			}
+		}
+
+		if(load && !isNew()) {
+			if(hasContained(field)) {
+				load();
+			} else if(adapter.hasMany(field) || (adapter.isOneToOne(field) && !adapter.hasKey(field))) {
+				try {
+					Class<? extends Model> type = adapter.getRelationClass(field);
+					PersistService p = getPersistor();
+					PersistService fp = getPersistService(type);
+					if(p == fp) {
+						p.retrieve(this, field);
+					}
+					else if(adapter.isManyToOne(field)) {
+						Map<String, Object> query = Map(adapter.getOpposite(field), getId());
+						Object value = fp.findAll(type, query);
+						fields.put(field, value);
+					}
+					else {
+						throw new UnsupportedOperationException("only many to one is currently supported for mixed persist services");
+					}
+				} catch(Exception e) {
+					logger.warn("failed to load relation " + field + " in " + asSimpleString(), e);
+				}
+			}
+			return get(field, false); // exit through the if(fields.containsKey(field)) block above
+		}
+
+		if(adapter.hasMany(field)) { // prevent returning a null for a hasMany field
+			fields.put(field, new ModelList<Model>(this, field));
+		}
+		
+		return fields.get(field);
 	}
 	
 	public <T> T get(String field, Class<T> type) {
@@ -1296,6 +1303,16 @@ public abstract class Model implements JsonModel {
 			return list;
 		}
 		return new ArrayList<String>(0);
+	}
+
+	public final boolean resolve() {
+		// to be like load(), except it only loads unresolved fields
+		throw new UnsupportedOperationException("not yet implemented");
+	}
+	
+	public final boolean resolve(String include) {
+		// to be like load(include), except it only loads unresolved fields
+		throw new UnsupportedOperationException("not yet implemented");
 	}
 	
 	private boolean run(String methodName, String field) {
