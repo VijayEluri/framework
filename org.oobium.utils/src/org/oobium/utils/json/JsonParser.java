@@ -134,11 +134,11 @@ public class JsonParser {
 			}
 		}
 		
-		if(find(ca, ',', s1, s2) != -1) {
+		if(findOutside(ca, ',', s1, s2, '\'', '"', '{', '[') != -1) {
 			return toList(s1, s2);
 		}
 		
-		if(find(ca, ':', s1, s2) != -1) {
+		if(findOutside(ca, ':', s1, s2, '\'', '"', '{', '[') != -1) {
 			return toMap(s1, s2);
 		}
 		

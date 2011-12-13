@@ -133,6 +133,7 @@ public class JsonUtilsTests {
 		assertEquals("[1, 2'3]", asString(toObject("1,'2\\'3'")));
 		assertEquals("[{a={b=c}}, d]", asString(toObject("a:{b:c},d")));
 		assertEquals("[{a={b=c}}, d]", asString(toObject("a:b:c,d")));
+		assertEquals("{a={b c=null=[d, e]}}", toObject("a:{'b c=null':[d,e]}").toString());
 	}
 
 	@Test
