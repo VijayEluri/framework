@@ -30,6 +30,7 @@ import org.oobium.build.esp.EspDom;
 import org.oobium.build.esp.EspElement;
 import org.oobium.build.esp.EspPart;
 import org.oobium.build.esp.EspPart.Type;
+import org.oobium.build.esp.parts.StyleEntryPart;
 import org.oobium.eclipse.esp.EspPlugin;
 
 public class EspStyleRanges {
@@ -198,6 +199,11 @@ public class EspStyleRanges {
 			return part.getEnd();
 		case ScriptPart:
 			return evaluateScript(offset, element, part);
+		case StyleEntryPart:
+			if(((StyleEntryPart) part).isJava()) {
+				return evaluateJava(offset, element, part);
+			}
+			break;
 		case StylePropertyNamePart:
 			return evaluateStyle(offset, element, part);
 		case StylePropertyValuePart:
