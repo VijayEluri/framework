@@ -358,6 +358,21 @@ public class QueryBuilder {
 		return false;
 	}
 
+	private String getChildQuerySql(String where, Object child) {
+		if(where == null && child == null) {
+			return "";
+		}
+		else if(where == null) {
+			return "include:" + JsonUtils.toJson(child);
+		}
+		else if(child == null) {
+			return "where " + where;
+		}
+		else {
+			return "where " + where + " include:" + JsonUtils.toJson(child);
+		}
+	}
+	
 	private String getField(Object object) {
 		String field;
 		if(object instanceof Map<?,?>) {
@@ -626,7 +641,7 @@ public class QueryBuilder {
 				String sourceField = query.getField(parentAlias);
 				Class<? extends Model> parentClass = parentAdapter.getModelClass();
 				Class<? extends Model> clazz = parentAdapter.getRelationClass(field);
-				String sql = blank(child) ? "" : ("include:" + JsonUtils.toJson(child));
+				String sql = getChildQuerySql(where, child);
 				Query childQuery = QueryBuilder.build(dbType, sourceField, parentClass, field, clazz, sql);
 				query.addChild(childQuery);
 			} else {
