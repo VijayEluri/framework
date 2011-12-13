@@ -25,6 +25,7 @@ public abstract class EspElement extends EspPart {
 			while(this.start < ca.length) {
 				if(Character.isWhitespace(ca[this.start])) {
 					if(ca[this.start] == '\t') level++;
+					if(ca[this.start] == '\n') level = 0;
 					this.start++;
 				} else {
 					break;
