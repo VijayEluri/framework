@@ -539,7 +539,7 @@ public class MarkupElement extends EspElement {
 			style = ARGS | ENTRIES;
 		} else if("textArea".equals(tag)) {
 			type = Type.MarkupElement;
-			style = ID | CLASSES | ARGS | ENTRIES | STYLES | CLOSING_TAG;
+			style = ID | CLASSES | ARGS | ENTRIES | STYLES | INNER_TEXT | INNER_TEXT_JAVA | CLOSING_TAG;
 		} else if("select".equals(tag)) {
 			type = Type.MarkupElement;
 			style = ID | CLASSES | ARGS | ENTRIES | STYLES | CHILDREN | CLOSING_TAG;
