@@ -268,7 +268,7 @@ public class ProjectGenerator {
 
 		sb.append("title ").append(project.getName()).append(": { titleize(getChild().getClass().getSimpleName()) }\n\n");
 		sb.append("head\n");
-		sb.append("\tscript(defaults)\n");
+		sb.append("\tscript(\"https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js\")\n");
 		sb.append("\tstyle(defaults)\n\n");
 		sb.append("div <- yield\n");
 
