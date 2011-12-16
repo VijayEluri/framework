@@ -10,7 +10,7 @@ public class RemoteTester {
 	public static void main(String[] args) {
 		HttpApiService.getInstance().setDiscoveryUrl("localhost:5000");
 
-		RemoteWorkers.submit(new RemoteWorker<List<Post>>() {
+		Remote.asyncExec(new RemoteRunnable<List<Post>>() {
 			@Override
 			protected List<Post> run() throws Exception {
 				List<Post> posts = Post.findAll();

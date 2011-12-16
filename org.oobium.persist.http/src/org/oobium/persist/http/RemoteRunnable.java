@@ -15,7 +15,7 @@ import java.util.concurrent.Future;
 import org.oobium.logging.LogProvider;
 import org.oobium.persist.Model;
 
-public abstract class RemoteWorker<T> {
+public abstract class RemoteRunnable<T> {
 
 	public enum State { Waiting, Running, Completed, Cancelled }
 	
@@ -31,8 +31,8 @@ public abstract class RemoteWorker<T> {
 	
 	long id;
 	Runnable task;
-	RemoteWorkers workers;
-	Future<RemoteWorker<T>> future;
+	Remote remoteInstance;
+	Future<RemoteRunnable<T>> future;
 	
 	private volatile boolean running;
 	private volatile float done;
@@ -40,20 +40,24 @@ public abstract class RemoteWorker<T> {
 	private T result;
 	private Exception e;
 	
-	public RemoteWorker() {
+	public RemoteRunnable() {
 		this.task = new Runnable() {
 			@Override
 			public void run() {
-				RemoteWorker.this.execute();
+				RemoteRunnable.this.execute();
 			}
 		};
+	}
+
+	public void cancel() {
+		future.cancel(true);
 	}
 	
 	private void execute() {
 		running = true;
-		workers.serviceProvider.openSession("client worker " + id);
+		remoteInstance.serviceProvider.openSession("client worker " + id);
 		Model.setLogger(LogProvider.getLogger(HttpPersistService.class));
-		Model.setPersistServiceProvider(workers.serviceProvider);
+		Model.setPersistServiceProvider(remoteInstance.serviceProvider);
 		try {
 			result = run();
 			onSuccess(result);
@@ -62,12 +66,12 @@ public abstract class RemoteWorker<T> {
 			onError(e);
 		} finally {
 			onComplete(result, e);
-			workers.serviceProvider.closeSession();
+			remoteInstance.serviceProvider.closeSession();
 			Model.setPersistServiceProvider(null);
 			Model.setLogger(null);
 			task = null;
 			future = null;
-			workers.complete(id);
+			remoteInstance.complete(id);
 			running = false;
 		}
 	}
@@ -100,6 +104,14 @@ public abstract class RemoteWorker<T> {
 	
 	public boolean hasException() {
 		return e != null;
+	}
+	
+	public boolean isCanceled() {
+		return future.isCancelled();
+	}
+	
+	public boolean isDone() {
+		return future == null || future.isDone();
 	}
 	
 	/**
@@ -142,7 +154,7 @@ public abstract class RemoteWorker<T> {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Worker ").append(id).append(' ').append('{');
-		if(workers == null) {
+		if(remoteInstance == null) {
 			sb.append(" completed ");
 		}
 		sb.append('}');

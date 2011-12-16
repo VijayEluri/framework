@@ -19,9 +19,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.oobium.persist.PersistServiceProvider;
 import org.oobium.persist.SimplePersistServiceProvider;
 
-public class RemoteWorkers {
+public class Remote {
 
-	private static final RemoteWorkers instance = new RemoteWorkers();
+	private static final Remote instance = new Remote();
 
 	public static void shutdown() {
 		if(instance.executor != null) {
@@ -29,62 +29,71 @@ public class RemoteWorkers {
 		}
 	}
 
-	public static <T> T run(RemoteWorker<T> worker) {
-		if(worker.id == 0) { // non-zero id: worker has already been submitted or run
-			worker.workers = instance;
-			worker.id = instance.workerCount.addAndGet(1);
-			worker.task.run();
-			return worker.getResult();
-		}
-		return null;
-	}
-	
-	public static <T> long submit(RemoteWorker<T> worker) {
+	public static <T> long asyncExec(RemoteRunnable<T> worker) {
 		if(worker.id == 0) { // non-zero id: worker has already been submitted
-			worker.workers = instance;
+			worker.remoteInstance = instance;
 			worker.id = instance.workerCount.addAndGet(1);
 			worker.future = instance.executor.submit(worker.task, worker);
-			if(instance.workers == null) {
-				synchronized(instance) {
-					if(instance.workers == null) {
-						instance.workers = new HashMap<Long, RemoteWorker<?>>();
-					}
-				}
-			}
 			instance.workers.put(worker.id, worker);
 		}
 		return worker.id;
 	}
 
+	public static long asyncExec(final Runnable runnable) {
+		return asyncExec(new RemoteRunnable<Object>() {
+			@Override
+			protected Object run() throws Exception {
+				runnable.run();
+				return null;
+			}
+		});
+	}
+
+	public static <T> T syncExec(RemoteRunnable<T> worker) {
+		asyncExec(worker);
+		while(!worker.isDone()) {
+			Thread.yield();
+		}
+		return worker.getResult();
+	}
 	
+	public static void syncExec(final Runnable runnable) {
+		syncExec(new RemoteRunnable<Object>() {
+			@Override
+			protected Object run() throws Exception {
+				runnable.run();
+				return null;
+			}
+		});
+	}
+
+
 	final HttpPersistService service;
 	final PersistServiceProvider serviceProvider;
 
 	private final ExecutorService executor;
 	private final AtomicLong workerCount;
-	private Map<Long, RemoteWorker<?>> workers;
+	private final Map<Long, RemoteRunnable<?>> workers;
 	
-	private RemoteWorkers() {
+	private Remote() {
 		service = new HttpPersistService();
 		serviceProvider = new SimplePersistServiceProvider(service);
 		executor = Executors.newFixedThreadPool(10);
 		workerCount = new AtomicLong();
+		workers = new HashMap<Long, RemoteRunnable<?>>();
 	}
 	
 	void complete(long id) {
 		if(workers != null) {
-			RemoteWorker<?> worker = workers.remove(id);
+			RemoteRunnable<?> worker = workers.remove(id);
 			if(worker != null) {
-				worker.workers = null;
-			}
-			if(workers.isEmpty()) {
-				synchronized(instance) {
-					if(workers.isEmpty()) {
-						workers = null;
-					}
-				}
+				worker.remoteInstance = null;
 			}
 		}
+	}
+	
+	public RemoteRunnable<?> get(long id) {
+		return workers.get(id);
 	}
 	
 }
