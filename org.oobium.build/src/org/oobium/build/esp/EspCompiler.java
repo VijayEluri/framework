@@ -708,30 +708,49 @@ public class EspCompiler {
 				if(!skipSet.contains(key)) {
 					EspPart value = entry.getValue();
 					if(value != null) {
-						body.append(' ');
-						body.append(key);
-						body.append("=");
-						int pos = body.length();
-						build(value, body);
-						if(pos < body.length()) {
-							if((pos < body.length() && body.charAt(pos) != '\\') || (pos+1 < body.length() && body.charAt(pos+1) != '"')) {
-								body.insert(pos, "\\\"");
-							}
-							if(element.isHidden() && "style".equals(key)) {
-								if(body.charAt(body.length()-1) == '"') {
-									body.delete(body.length()-2, body.length());
-								}
-								body.append(";display:none\\\"");
+						if("disabled".equals(key)) {
+							String txt = value.getText();
+							if("true".equals(txt)) {
+								body.append(" disabled");
+							} else if("false".equals(txt)) {
+								continue;
 							} else {
-								if(body.charAt(body.length()-2) != '\\' || body.charAt(body.length()-1) != '"') {
-									body.append("\\\"");
-								}
+								prepForJava(body);
+								body.append("if(");
+								build(value, body);
+								body.append(") {\n");
+								indent(body);
+								body.append("\t").append(sbName(body)).append(".append(\" disabled\");\n");
+								indent(body);
+								body.append("}\n");
+								prepForMarkup(body);
 							}
 						} else {
-							if(element.isHidden() && "style".equals(key)) {
-								body.append(";display:none\\\"");
+							body.append(' ');
+							body.append(key);
+							body.append("=");
+							int pos = body.length();
+							build(value, body);
+							if(pos < body.length()) {
+								if((pos < body.length() && body.charAt(pos) != '\\') || (pos+1 < body.length() && body.charAt(pos+1) != '"')) {
+									body.insert(pos, "\\\"");
+								}
+								if(element.isHidden() && "style".equals(key)) {
+									if(body.charAt(body.length()-1) == '"') {
+										body.delete(body.length()-2, body.length());
+									}
+									body.append(";display:none\\\"");
+								} else {
+									if(body.charAt(body.length()-2) != '\\' || body.charAt(body.length()-1) != '"') {
+										body.append("\\\"");
+									}
+								}
 							} else {
-								body.append("\\\"\\\"");
+								if(element.isHidden() && "style".equals(key)) {
+									body.append(";display:none\\\"");
+								} else {
+									body.append("\\\"\\\"");
+								}
 							}
 						}
 					}
