@@ -695,6 +695,8 @@ public abstract class Model implements JsonModel {
 	 * @param field the name of the field to be returned
 	 * @param load true to make sure the field is resolved, false otherwise
 	 * @return the value of the field
+	 * @throws IllegalStateException if the field must be resolved and there is no persist service set
+	 * @throws UnsupportedOperationException if the must be resolved from a different persist services and is not a many-to-one relationship
 	 */
 	public Object get(String field, boolean load) {
 		if(field == null) {
@@ -742,9 +744,15 @@ public abstract class Model implements JsonModel {
 					PersistService p = getPersistor();
 					PersistService fp = getPersistService(type);
 					if(p == fp) {
+						if(p == null) {
+							throw new IllegalStateException("no persist service set");
+						}
 						p.retrieve(this, field);
 					}
 					else if(adapter.isManyToOne(field)) {
+						if(fp == null) {
+							throw new IllegalStateException("no persist service set for " + type);
+						}
 						Map<String, Object> query = Map(adapter.getOpposite(field), getId());
 						Object value = fp.findAll(type, query);
 						fields.put(field, value);
