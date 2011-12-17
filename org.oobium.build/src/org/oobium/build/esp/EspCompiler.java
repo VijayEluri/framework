@@ -48,6 +48,7 @@ import org.oobium.build.esp.elements.ConstructorElement;
 import org.oobium.build.esp.elements.ImportElement;
 import org.oobium.build.esp.elements.InnerTextElement;
 import org.oobium.build.esp.elements.JavaElement;
+import org.oobium.build.esp.elements.MarkupCommentElement;
 import org.oobium.build.esp.elements.MarkupElement;
 import org.oobium.build.esp.elements.ScriptElement;
 import org.oobium.build.esp.elements.StyleChildElement;
@@ -820,6 +821,39 @@ public class EspCompiler {
 		body.append(" />");
 	}
 	
+	private void buildChildren(MarkupElement element) {
+		if(element.hasChildren()) {
+			for(EspElement child : element.getChildren()) {
+				if(child.isElementA(JavaElement)) {
+					buildJava((JavaElement) child, true);
+				} else if(child.isElementA(InnerTextElement)) {
+					InnerTextElement innerText = (InnerTextElement) child;
+					if(innerText.hasInnerText()) {
+						if(innerText.isWordGroup()) {
+							if(body.length() > 0 && !Character.isWhitespace(body.charAt(body.length()-1))) {
+								body.append(' ');
+							}
+							appendEscaped(body, innerText.getInnerText().getText());
+						} else if(innerText.isPromptLine()) {
+							appendEscaped(body, h(innerText.getInnerText().getText()));
+							if(body.length() > 1 && (body.charAt(body.length()-2) != '\\' || body.charAt(body.length()-1) != 'n')) {
+								body.append('\\').append('n');
+							}
+						} else if(innerText.isLiteral()) {
+							appendEscaped(body, innerText.getInnerText().getText());
+						} else {
+							build(innerText.getInnerText(), body);
+						}
+					} else if(innerText.isPromptLine()) {
+						body.append('\\').append('n');
+					}
+				} else {
+					buildElement(child);
+				}
+			}
+		}
+	}
+
 	private void buildClasses(MarkupElement element) {
 		if(element.hasClassNames()) {
 			body.append(" class=\\\"");
@@ -848,6 +882,30 @@ public class EspCompiler {
 				appendFieldError(model, fields, " class=\\\"" + cssClass + "\\\"");
 			}
 		}
+	}
+	
+	private void buildComment(MarkupCommentElement comment) {
+		prepForMarkup(body);
+
+		body.append("<!--");
+		if(comment.hasEntryValue("if")) {
+			body.append("[if \").append(");
+			build(comment.getEntryValue("if"), body, true);
+			body.append(").append(\"]>");
+		}
+
+		if(comment.hasInnerText()) {
+			build(comment.getInnerText(), body);
+		}
+
+		buildChildren(comment);
+		
+		if(comment.hasEntryValue("if")) {
+			body.append("<![endif]");
+		}
+		body.append("-->");
+
+		lastIsJava(body, false);
 	}
 	
 	private void buildConstructor(ConstructorElement element) {
@@ -1058,6 +1116,9 @@ public class EspCompiler {
 
 	private void buildElement(EspElement element) {
 		switch(element.getType()) {
+		case MarkupCommentElement:
+			buildComment((MarkupCommentElement) element);
+			break;
 		case MarkupElement:
 			buildHtml((MarkupElement) element);
 			break;
@@ -1460,47 +1521,18 @@ public class EspCompiler {
 			lastBodyIsJava = false;
 		}
 
-		if(element.hasChildren()) {
-			for(EspElement child : element.getChildren()) {
-				if(child.isElementA(JavaElement)) {
-					buildJava((JavaElement) child, true);
-				} else if(child.isElementA(InnerTextElement)) {
-					InnerTextElement innerText = (InnerTextElement) child;
-					if(innerText.hasInnerText()) {
-						if(innerText.isWordGroup()) {
-							if(body.length() > 0 && !Character.isWhitespace(body.charAt(body.length()-1))) {
-								body.append(' ');
-							}
-							appendEscaped(body, innerText.getInnerText().getText());
-						} else if(innerText.isPromptLine()) {
-							appendEscaped(body, h(innerText.getInnerText().getText()));
-							if(body.length() > 1 && (body.charAt(body.length()-2) != '\\' || body.charAt(body.length()-1) != 'n')) {
-								body.append('\\').append('n');
-							}
-						} else if(innerText.isLiteral()) {
-							appendEscaped(body, innerText.getInnerText().getText());
-						} else {
-							build(innerText.getInnerText(), body);
-						}
-					} else if(innerText.isPromptLine()) {
-						body.append('\\').append('n');
-					}
-				} else {
-					buildElement(child);
-				}
-			}
-		}
+		buildChildren(element);
 		
 		if(element.hasClosingTag()) {
 			if(lastBodyIsJava) {
 				indent(body);
 				body.append(sbName).append(".append(\"");
 			}
-			body.append('<').append('/').append(tag.toLowerCase()).append('>');
+			body.append('<').append('/').append(tag).append('>');
 			lastBodyIsJava = false;
 		}
 	}
-
+	
 	private void buildId(MarkupElement element) {
 		if(element.hasId()) {
 			body.append(" id=\\\"");

@@ -24,7 +24,7 @@ public class EspPart implements CharSequence {
 		DOM,
 		ImportElement, ImportPart,
 		ConstructorElement, CtorArgPart, VarTypePart, VarNamePart, DefaultValuePart,
-		MarkupElement, InnerTextElement, YieldElement,
+		MarkupElement, InnerTextElement, MarkupCommentElement, YieldElement,
 		JavaElement, JavaPart, JavaSourcePart,
 		JavaTypePart, TagPart, IdPart, ClassPart, ArgPart, EntryPart, StyleEntryPart, EntryKeyPart, EntryValuePart, InnerTextPart, StylePart,
 		CommentElement, Unknown,

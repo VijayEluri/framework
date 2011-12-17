@@ -146,6 +146,7 @@ public class EspStyleRanges {
 		switch(element.getType()) {
 		case CommentElement:	return evaluateComment(offset, element, part);
 		case ConstructorElement:return evaluateConstructor(offset, element, part);
+		case MarkupCommentElement:
 		case MarkupElement:		return evaluateMarkup(offset, element, part);
 		case ImportElement:		return evaluateImport(offset, element, part);
 		case InnerTextElement:	return evaluateInnerText(offset, element, part);

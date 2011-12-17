@@ -73,6 +73,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 				if(part.isA(DOM)) return computeDomProposals(doc, part, offset);
 			} else {
 				switch(element.getType()) {
+				case MarkupCommentElement:
 				case MarkupElement:
 					return computeHtmlProposals(doc, element, part, offset);
 				case ConstructorElement:
