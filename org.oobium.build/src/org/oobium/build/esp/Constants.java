@@ -149,6 +149,7 @@ public class Constants {
 	    CSS_PROPERTIES.put("z-index", "z-index");
 	    
 	    HTML_TAGS = new TreeMap<String, String>();
+		HTML_TAGS.put("!--", "Specifies an HTML comment");
 		HTML_TAGS.put("a", "Specifies a hyperlink");
 		HTML_TAGS.put("abbr", "Specifies an abbreviation");
 		HTML_TAGS.put("address", "Specifies an address element");
