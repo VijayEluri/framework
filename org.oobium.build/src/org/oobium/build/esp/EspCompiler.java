@@ -917,10 +917,12 @@ public class EspCompiler {
 				sb.append("\tpublic ").append(dom.getName()).append('(');
 				for(int j = 0; j < i; j++) {
 					ConstructorArg arg = args.get(j);
-					String declaration = arg.getVarType() + " " + arg.getVarName();
-					esf.addVariable(arg.getVarName(), declaration);
-					if(j != 0) sb.append(", ");
-					sb.append(declaration);
+					if(arg.hasVarName()) {
+						String declaration = arg.getVarType() + " " + arg.getVarName();
+						esf.addVariable(arg.getVarName(), declaration);
+						if(j != 0) sb.append(", ");
+						sb.append(declaration);
+					}
 				}
 				sb.append(") {\n");
 				for(int j = 0; j < args.size(); j++) {
