@@ -1,5 +1,6 @@
 package org.oobium.eclipse.esp.config;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.oobium.utils.Config.Mode;
@@ -24,7 +25,7 @@ public class ConfigMode {
 				break;
 			}
 		}
-		this.config = tmp;
+		this.config = (tmp != null) ? tmp : new HashMap<Object, Object>(0);
 	}
 	
 	public boolean isEmpty() {
