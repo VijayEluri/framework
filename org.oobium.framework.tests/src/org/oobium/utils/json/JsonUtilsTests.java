@@ -189,7 +189,7 @@ public class JsonUtilsTests {
 		assertEquals("[1]", asString(toList("1")));
 		assertEquals("[1, 2, 3]", asString(toList("[1,2,3]")));
 		assertEquals("[1, 2, 3]", asString(toList("1,2,3")));
-		assertEquals("[1, 2]", asString(toList("[1,2,\"3]")));
+		assertEquals("[1, 2, , 3]", asString(toList("[1,2,\"3]")));
 		assertEquals("[1, 2]", asString(toList("([\n\t1,2\n]);")));
 		assertEquals("[1, 2,3]", asString(toList("[1,'2,3']")));
 		assertEquals("[1, 2,3]", asString(toList("1,'2,3'")));

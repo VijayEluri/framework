@@ -241,16 +241,23 @@ public class JsonParser {
 		int s2 = s;
 
 		while (s1 > -1 && s2 < e) {
-			if (ca[s1] == '{' || ca[s1] == '[' || ca[s1] == '"' || ca[s1] == '\'') {
+			switch(ca[s1]) {
+			case '{':
+			case '[':
+			case '"':
+			case '\'':
 				s2 = closer(ca, s1, e) + 1;
-				if(s2 == 0) break; // invalid format - no closer
-			} else {
-				s2 = find(ca, ',', s1, e);
-				if (s2 == -1) {
-					s2 = e;
-				} else {
-					s2 = reverse(ca, s2-1) + 1;
+				if(s2 == 0) {
+					list.add(getEmptyObject(ca[s1]));
+					s1++;
+					if(s1 >= ca.length) {
+						return list;
+					}
+					s2 = findNext(s1+1, e);
 				}
+				break;
+			default:
+				s2 = findNext(s1, e);
 			}
 			if(stringsOnly) {
 				if(ca[s1] == '\'' || ca[s1] == '"') {
@@ -274,6 +281,16 @@ public class JsonParser {
 		return list;
 	}
 
+	private int findNext(int start, int end) {
+		int s = find(ca, ',', start, end);
+		if (s == -1) {
+			s = end;
+		} else {
+			s = reverse(ca, s-1) + 1;
+		}
+		return s;
+	}
+	
 	private int setChars(String json) {
 		ca = json.toCharArray();
 		int len = ca.length;
@@ -324,6 +341,26 @@ public class JsonParser {
 		}
 		int len = setChars(json);
 		return (Map<String, Object>) toMap(0, len);
+	}
+
+	private Object getEmptyObject(char c) {
+		switch(c) {
+		case '[': return new ArrayList<Object>(0);
+		case '{': return new HashMap<String, Object>(0);
+		case '\'':
+		case '"': return "";
+		default:  return null;
+		}
+	}
+	
+	private Object toObject(char c, int s1, int s2) {
+		switch(c) {
+		case '[': return toList(s1, s2);
+		case '{': return toMap(s1, s2);
+		case '\'':
+		case '"': return toObject(s1, s2);
+		default:  return toObject(s1, s2);
+		}
 	}
 	
 	private Map<String, ?> toMap(int start, int end) {
@@ -389,17 +426,16 @@ public class JsonParser {
 			} else {
 				switch(ca[s1]) {
 				case '[':
-					s2 = closer(ca, s1, e) + 1;
-					value = toList(s1, s2);
-					break;
 				case '{':
-					s2 = closer(ca, s1, e) + 1;
-					value = toMap(s1, s2);
-					break;
 				case '\'':
 				case '"':
 					s2 = closer(ca, s1, e) + 1;
-					value = toObject(s1, s2);
+					if(s2 == 0) {
+						s2 = s1 + 1;
+						value = getEmptyObject(ca[s1]);
+					} else {
+						value = toObject(ca[s1], s1, s2);
+					}
 					break;
 				default:
 					s2 = find(ca, ',', s1, e);
