@@ -16,7 +16,7 @@ public class TimeZoneCoercer extends AbstractCoercer {
 
 	public TimeZone coerce(String tz, Class<?> toType) {
 		if(tz.length() == 0) {
-			return coerceNull();
+			return coerceNull(toType);
 		}
 		if(tz.charAt(0) == '-' || tz.charAt(0) == '+') {
 			return TimeZone.getTimeZone("GMT" + tz);
@@ -25,7 +25,7 @@ public class TimeZoneCoercer extends AbstractCoercer {
 	}
 
 	@Override
-	public TimeZone coerceNull() {
+	public TimeZone coerceNull(Class<?> toType) {
 		return TimeZone.getDefault();
 	}
 

@@ -52,11 +52,6 @@ public class CalendarCoercer extends AbstractCoercer {
 	}
 
 	@Override
-	public Calendar coerceNull() {
-		return null;
-	}
-
-	@Override
 	public Class<?> getType() {
 		return Calendar.class;
 	}

@@ -42,7 +42,7 @@ public class JsonModelCoercer extends AbstractCoercer {
 	}
 
 	@Override
-	public JsonModel coerceNull() {
+	public JsonModel coerceNull(Class<?> toType) {
 		return null;
 	}
 	

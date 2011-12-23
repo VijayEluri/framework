@@ -133,7 +133,7 @@ public class StringCoercer extends AbstractCoercer {
 	}
 
 	@Override
-	public String coerceNull() {
+	public String coerceNull(Class<?> toType) {
 		return null;
 	}
 

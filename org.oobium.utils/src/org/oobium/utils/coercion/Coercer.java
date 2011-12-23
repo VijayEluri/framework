@@ -12,7 +12,7 @@ package org.oobium.utils.coercion;
 
 public interface Coercer {
 	
-	public abstract Object coerceNull();
+	public abstract Object coerceNull(Class<?> toType);
 	
 	public abstract Class<?> getType();
 	

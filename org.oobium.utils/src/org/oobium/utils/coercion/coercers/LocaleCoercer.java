@@ -50,7 +50,7 @@ public class LocaleCoercer extends AbstractCoercer {
 	}
 	
 	@Override
-	public Locale coerceNull() {
+	public Locale coerceNull(Class<?> toType) {
 		return Locale.getDefault();
 	}
 

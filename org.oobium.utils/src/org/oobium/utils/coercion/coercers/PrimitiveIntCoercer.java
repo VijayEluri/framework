@@ -13,7 +13,7 @@ package org.oobium.utils.coercion.coercers;
 public class PrimitiveIntCoercer extends IntegerCoercer {
 
 	@Override
-	public Integer coerceNull() {
+	public Integer coerceNull(Class<?> toType) {
 		return new Integer(0);
 	}
 	

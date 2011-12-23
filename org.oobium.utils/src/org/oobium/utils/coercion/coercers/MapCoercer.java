@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.oobium.utils.coercion.coercers;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -30,6 +31,14 @@ public class MapCoercer extends AbstractCoercer {
 			return JsonUtils.toMap(s, true);
 		}
 		return JsonUtils.toMap(s);
+	}
+	
+	@Override
+	public Object coerceNull(Class<?> toType) {
+		if(toType == LinkedHashMap.class) {
+			return new LinkedHashMap<Object, Object>(0);
+		}
+		return new HashMap<Object, Object>(0);
 	}
 	
 	@Override

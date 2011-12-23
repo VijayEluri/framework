@@ -19,11 +19,6 @@ public class FileCoercer extends AbstractCoercer {
 	}
 
 	@Override
-	public File coerceNull() {
-		return null;
-	}
-
-	@Override
 	public Class<?> getType() {
 		return File.class;
 	}

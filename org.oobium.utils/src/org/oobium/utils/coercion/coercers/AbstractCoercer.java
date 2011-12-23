@@ -15,7 +15,7 @@ import org.oobium.utils.coercion.Coercer;
 public abstract class AbstractCoercer implements Coercer {
 
 	@Override
-	public Object coerceNull() {
+	public Object coerceNull(Class<?> toType) {
 		return null;
 	}
 

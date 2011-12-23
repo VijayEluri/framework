@@ -22,7 +22,7 @@ public class DoubleCoercer extends AbstractCoercer {
 	}
 	
 	public Double coerce(String string, Class<?> toType) {
-		return (string.length() == 0) ? coerceNull() : new Double(string);
+		return (string.length() == 0) ? coerceNull(toType) : new Double(string);
 	}
 	
 	public Double coerce(Date date, Class<?> toType) {
@@ -30,7 +30,7 @@ public class DoubleCoercer extends AbstractCoercer {
 	}
 
 	@Override
-	public Double coerceNull() {
+	public Double coerceNull(Class<?> toType) {
 		return null;
 	}
 

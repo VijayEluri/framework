@@ -44,11 +44,6 @@ public class DateCoercer extends AbstractCoercer {
 	}
 
 	@Override
-	public Date coerceNull() {
-		return null;
-	}
-
-	@Override
 	public Class<?> getType() {
 		return Date.class;
 	}

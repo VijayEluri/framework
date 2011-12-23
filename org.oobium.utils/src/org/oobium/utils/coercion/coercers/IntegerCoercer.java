@@ -31,8 +31,8 @@ public class IntegerCoercer extends AbstractCoercer {
 	}
 	
 	public Integer coerce(String string, Class<?> toType) {
-		if("null".equals(string)) return coerceNull();
-		return (string.length() == 0) ? coerceNull() : new Integer(string);
+		if("null".equals(string)) return coerceNull(toType);
+		return (string.length() == 0) ? coerceNull(toType) : new Integer(string);
 	}
 	
 	public Integer coerce(Enum<?> e, Class<?> toType) {
@@ -49,7 +49,7 @@ public class IntegerCoercer extends AbstractCoercer {
 	}
 
 	@Override
-	public Integer coerceNull() {
+	public Integer coerceNull(Class<?> toType) {
 		return null;
 	}
 

@@ -31,7 +31,7 @@ public class LongCoercer extends AbstractCoercer {
 	}
 	
 	public Long coerce(String string, Class<?> toType) {
-		return (string.length() == 0) ? coerceNull() : new Long(string);
+		return (string.length() == 0) ? coerceNull(toType) : new Long(string);
 	}
 	
 	public Long coerce(Enum<?> e, Class<?> toType) {
@@ -47,7 +47,7 @@ public class LongCoercer extends AbstractCoercer {
 	}
 	
 	@Override
-	public Long coerceNull() {
+	public Long coerceNull(Class<?> toType) {
 		return null;
 	}
 

@@ -73,6 +73,29 @@ public class CollectionCoercer extends AbstractCoercer {
 			}
 		}
 	}
+
+	@Override
+	public Object coerceNull(Class<?> toType) {
+		if(toType.isInterface()) {
+			if(toType == List.class) {
+				return new ArrayList<Object>(0);
+			}
+			if(toType == Set.class) {
+				return new LinkedHashSet<Object>(0);
+			}
+			if(toType == Collection.class) {
+				return new ArrayList<Object>(0);
+			}
+			throw new IllegalArgumentException();
+		} else {
+			try {
+				Constructor<?> ctor = toType.getConstructor(int.class);
+				return (Collection<?>) ctor.newInstance(0);
+			} catch(Exception e) {
+				throw new IllegalArgumentException();
+			}
+		}
+	}
 	
 	@Override
 	public Class<?> getType() {

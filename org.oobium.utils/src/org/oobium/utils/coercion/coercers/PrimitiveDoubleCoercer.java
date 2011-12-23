@@ -13,7 +13,7 @@ package org.oobium.utils.coercion.coercers;
 public class PrimitiveDoubleCoercer extends DoubleCoercer {
 
 	@Override
-	public Double coerceNull() {
+	public Double coerceNull(Class<?> toType) {
 		return new Double(0);
 	}
 

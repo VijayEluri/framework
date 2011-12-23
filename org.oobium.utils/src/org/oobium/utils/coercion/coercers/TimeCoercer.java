@@ -45,11 +45,6 @@ public class TimeCoercer extends AbstractCoercer {
 	}
 	
 	@Override
-	public Time coerceNull() {
-		return null;
-	}
-
-	@Override
 	public Class<?> getType() {
 		return Time.class;
 	}

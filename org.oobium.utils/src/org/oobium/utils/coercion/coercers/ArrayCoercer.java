@@ -77,8 +77,8 @@ public class ArrayCoercer extends AbstractCoercer {
 	}
 
 	@Override
-	public Object coerceNull() {
-		return null;
+	public Object coerceNull(Class<?> toType) {
+		return Array.newInstance(toType.getComponentType(), 0);
 	}
 
 	@Override

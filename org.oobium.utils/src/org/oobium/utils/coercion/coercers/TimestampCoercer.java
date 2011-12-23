@@ -45,11 +45,6 @@ public class TimestampCoercer extends AbstractCoercer {
 	}
 	
 	@Override
-	public Timestamp coerceNull() {
-		return null;
-	}
-
-	@Override
 	public Class<?> getType() {
 		return Timestamp.class;
 	}

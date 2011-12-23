@@ -19,11 +19,13 @@ import static org.oobium.utils.StringUtils.*;
 
 import java.io.File;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -112,6 +114,11 @@ public class TypeCoercerTests {
 	}
 	
 	@Test
+	public void testMap() throws Exception {
+		assertEquals("{}", String.valueOf(coerce(null, Map.class)));
+	}
+	
+	@Test
 	public void testMapToString() throws Exception {
 		// presently coded to be a JSON formatted string
 		assertEquals("{\"a\":\"b\"}", coerce(Collections.singletonMap("a", "b"), String.class));
@@ -122,6 +129,12 @@ public class TypeCoercerTests {
 		assertNull(coerce(singletonMap("a", "b"), JsonModel.class)); // can't instantiate an interface - return null
 		assertNotNull(coerce(singletonMap("a", "b"), Model1.class));
 		assertEquals("b", coerce(singletonMap("a", "b"), Model1.class).get("a"));
+	}
+	
+	@Test
+	public void testArray() throws Exception {
+		assertArrayEquals(new int[] { }, coerce(null, int[].class));
+		assertArrayEquals(new String[] { }, coerce(null, String[].class));
 	}
 	
 	@Test
@@ -144,6 +157,15 @@ public class TypeCoercerTests {
 		assertArrayEquals(new String[] { "1", "2", "3" }, coerce(asList("1", "2", "3"), String[].class));
 		assertArrayEquals(new int[] { 1, 2, 3 }, coerce(asList(1, 2, 3), int[].class));
 		assertArrayEquals(new int[] { 1, 2, 3 }, coerce(asList("1", "2", "3"), int[].class));
+	}
+
+	@Test
+	public void testCollection() throws Exception {
+		assertEquals(ArrayList.class, coerce(null, Collection.class).getClass());
+		assertEquals(ArrayList.class, coerce(null, List.class).getClass());
+		assertEquals(LinkedHashSet.class, coerce(null, Set.class).getClass());
+		assertEquals(ArrayList.class, coerce(null, ArrayList.class).getClass());
+		assertEquals(HashSet.class, coerce(null, HashSet.class).getClass());
 	}
 
 	@Test

@@ -14,7 +14,7 @@ package org.oobium.utils.coercion.coercers;
 public class PrimitiveLongCoercer extends LongCoercer {
 
 	@Override
-	public Long coerceNull() {
+	public Long coerceNull(Class<?> toType) {
 		return new Long(0);
 	}
 

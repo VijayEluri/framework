@@ -13,7 +13,7 @@ package org.oobium.utils.coercion.coercers;
 public class PrimitiveBooleanCoercer extends BooleanCoercer {
 
 	@Override
-	public Boolean coerceNull() {
+	public Boolean coerceNull(Class<?> toType) {
 		return new Boolean(false);
 	}
 	

@@ -31,9 +31,9 @@ public class ObjectIdCoercer implements Coercer {
 	public ObjectId coerce(String s, Class<?> toType) {
 		return new ObjectId(s);
 	}
-	
+
 	@Override
-	public Object coerceNull() {
+	public Object coerceNull(Class<?> toType) {
 		return null;
 	}
 

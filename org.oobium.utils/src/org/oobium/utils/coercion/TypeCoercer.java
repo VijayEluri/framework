@@ -143,7 +143,7 @@ public class TypeCoercer {
 				return null;
 			} else {
 				// this type of cast handles Integer -> int... seems there should be a better way...
-				return (T) coercer.coerceNull();
+				return (T) coercer.coerceNull(type);
 			}
 		}
 		else {
