@@ -35,6 +35,8 @@ import org.oobium.app.response.Response;
 import org.oobium.app.response.StaticResponse;
 import org.oobium.app.routing.AppRouter;
 import org.oobium.app.server.HandlerTask;
+import org.oobium.app.server.Server;
+import org.oobium.app.server.ServerConfig;
 import org.oobium.app.server.Websocket;
 import org.oobium.app.views.View;
 import org.oobium.logging.LogProvider;
@@ -56,7 +58,7 @@ public class AppServerTests {
 		final URL logo = getClass().getResource("/images/logo.png");
 		
 		HttpRequestHandler handler = mock(HttpRequestHandler.class);
-		when(handler.getPort()).thenReturn(5000);
+		when(handler.getServerConfig()).thenReturn(new ServerConfig("*", 5000, true));
 		when(handler.handleRequest(any(Request.class))).thenAnswer(new Answer<Object>() {
 			@Override
 			public Object answer(InvocationOnMock invocation) throws Throwable {
@@ -102,7 +104,7 @@ public class AppServerTests {
 		Logger logger = LogProvider.getLogger();
 		logger.setConsoleLevel(Logger.DEBUG);
 		
-		AppServer server = new AppServer(logger);
+		Server server = new Server(logger);
 		server.addHandler(handler);
 		
 		while(true) {
@@ -166,16 +168,16 @@ public class AppServerTests {
 				router.addRoute("/controller", TestController.class);
 			};
 			@Override
-			protected Config loadConfiguration() {
+			protected void loadConfiguration() {
 				Map<String, Object> map = new HashMap<String, Object>();
 				map.put("host", "localhost");
 				map.put("port", 5000);
-				return new Config(map);
+				config = new Config(map);
 			}
 		};
 		service.startApp();
 
-		AppServer server = new AppServer(logger);
+		Server server = new Server(logger);
 		server.addHandler(service);
 		
 		while(true) {
@@ -288,16 +290,16 @@ public class AppServerTests {
 				router.addRoute("/write?{text:.*}", WriteToLowerCaseController.class);
 			};
 			@Override
-			protected Config loadConfiguration() {
+			protected void loadConfiguration() {
 				String json =
 					"host: ['localhost','192.168.2.7'],\n" +
 					"port: 5000";
-				return new Config(JsonUtils.toMap(json));
+				config = new Config(JsonUtils.toMap(json));
 			}
 		};
 		service.startApp();
 
-		AppServer server = new AppServer(logger);
+		Server server = new Server(logger);
 		server.addHandler(service);
 		
 		while(true) {

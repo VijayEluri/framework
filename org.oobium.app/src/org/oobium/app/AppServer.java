@@ -1,255 +1,145 @@
 package org.oobium.app;
 
-import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelException;
-import org.jboss.netty.channel.group.ChannelGroup;
-import org.jboss.netty.channel.group.DefaultChannelGroup;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
-import org.oobium.app.handlers.Gateway;
-import org.oobium.app.handlers.HttpRequestHandler;
-import org.oobium.app.server.RequestHandlerTrackers;
-import org.oobium.app.server.RequestHandlers;
-import org.oobium.app.server.ServerPipelineFactory;
+import org.oobium.app.handlers.HttpRequest404Handler;
+import org.oobium.app.handlers.HttpRequest500Handler;
+import org.oobium.app.handlers.RequestHandler;
+import org.oobium.app.server.Server;
 import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.osgi.util.tracker.ServiceTracker;
+import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
+@SuppressWarnings("rawtypes")
 public class AppServer implements BundleActivator {
 
-	private static AppServer instance;
-	
-	public static BundleContext getContext() {
-		return instance.context;
-	}
-	
 	private Logger logger;
-	private BundleContext context;
-	
-	private RequestHandlers handlers;
-	private RequestHandlerTrackers trackers;
-	
-	private ServerBootstrap server;
-	private Map<Integer, ChannelGroup> channels;
-	private ExecutorService executors;
-
-	private Thread shutdownHook;
+	private ServiceTracker requestHandlerTracker;
+	private ServiceTracker request404HandlerTracker;
+	private ServiceTracker request500HandlerTracker;
+	private Map<String, Server> servers;
 	
 	public AppServer() {
 		this(LogProvider.getLogger(AppServer.class));
 	}
 	
 	public AppServer(Logger logger) {
-		instance = this;
 		this.logger = logger;
-		this.handlers = new RequestHandlers();
+		this.servers = new HashMap<String, Server>();
 	}
-	
-	public void addChannel(Channel channel) {
-		int port = ((InetSocketAddress) channel.getLocalAddress()).getPort();
-		addChannel(port, channel);
-	}
-	
-	public void addChannel(int port, Channel channel) {
-		// TODO need a way to make sure that this happens for all client connections...
-		ChannelGroup group = channels.get(port);
-		if(group == null) {
-			channels.put(port, group = new DefaultChannelGroup());
+
+	private void closeTrackers() {
+		if(requestHandlerTracker != null) {
+			requestHandlerTracker.close();
+			requestHandlerTracker = null;
 		}
-		group.add(channel);
-	}
-	
-	private void addShutdownHook() {
-		shutdownHook = new Thread() {
-			@Override
-			public void run() {
-				disposeServer();
-			}
-		};
-		try {
-			Runtime.getRuntime().addShutdownHook(shutdownHook);
-		} catch(IllegalStateException e) {
-			// discard - virtual machine is shutting down (yes, this can happen...)
+		if(request404HandlerTracker != null) {
+			request404HandlerTracker.close();
+			request404HandlerTracker = null;
+		}
+		if(request500HandlerTracker != null) {
+			request500HandlerTracker.close();
+			request500HandlerTracker = null;
 		}
 	}
 
-	private void removeShutdownHook() {
-		if(shutdownHook != null) {
-			Thread hook;
-			synchronized(AppServer.class) {
-				hook = shutdownHook;
-				shutdownHook = null;
-			}
-			if(hook != null) {
-				try {
-					Runtime.getRuntime().removeShutdownHook(hook);
-				} catch(IllegalStateException e) {
-					// discard - virtual machine is shutting down anyway
-				}
+	private void disposeServers() {
+		if(servers != null) {
+			for(Server server : servers.values()) {
+				server.dispose();
 			}
 		}
 	}
-	
-	private ServerBootstrap createServer() {
-		channels = new HashMap<Integer, ChannelGroup>();
 
-		server = new ServerBootstrap(
-				new NioServerSocketChannelFactory(
-						Executors.newCachedThreadPool(),
-						Executors.newCachedThreadPool() ));
-
-		executors = Executors.newCachedThreadPool();
-		
-		server.setPipelineFactory(new ServerPipelineFactory(this, logger, handlers, executors));
-
-        server.setOption("child.tcpNoDelay", true);
-        server.setOption("child.keepAlive", true);
-
-        // TODO accept options from the application's config file
-        
-		addShutdownHook();
-		
+	private Server getServer(String name) {
+		Server server = servers.get(name);
+		if(server == null) {
+			servers.put(name, server = new Server(logger));
+		}
 		return server;
 	}
 	
-	private synchronized void disposeServer() {
+	private Object addHandler(RequestHandler handler) {
+		String name = handler.getServerConfig().name();
+		getServer(name).addHandler(handler);
+		return handler;
+	}
+	
+	private void removeHandler(RequestHandler handler) {
+		String name = handler.getServerConfig().name();
+		Server server = servers.get(name);
 		if(server != null) {
-			logger.debug("disposing server...");
-
-			removeShutdownHook();
-			
-			for(ChannelGroup group : channels.values().toArray(new ChannelGroup[channels.size()])) {
-				group.close().awaitUninterruptibly();
-			}
-			server.releaseExternalResources();
-
-			channels = null;
-			server = null;
-			
-			logger.debug("disposed server");
+			server.removeHandler(handler);
 		}
 	}
 	
-	private void startServer(int port) {
-		logger.info("starting server on port " + port);
+	@SuppressWarnings("unchecked")
+	private void openTrackers(final BundleContext context) {
+		requestHandlerTracker = new ServiceTracker(context, RequestHandler.class.getName(), new ServiceTrackerCustomizer() {
+			public Object addingService(ServiceReference reference) {
+				return addHandler((RequestHandler) context.getService(reference));
+			}
+			public void modifiedService(ServiceReference reference, Object service) {
+				// nothing to do
+			}
+			public void removedService(ServiceReference reference, Object service) {
+				removeHandler((RequestHandler) service);
+			}
+		});
+		requestHandlerTracker.open();
 		
-		if(server == null) {
-			server = createServer();
-		}
+		request404HandlerTracker = new ServiceTracker(context, HttpRequest404Handler.class.getName(), new ServiceTrackerCustomizer() {
+			public Object addingService(ServiceReference reference) {
+				String name = String.valueOf(reference.getProperty("name"));
+				return getServer(name).add404Handler((HttpRequest404Handler) context.getService(reference));
+			}
+			public void modifiedService(ServiceReference reference, Object service) {
+				// nothing to do
+			}
+			public void removedService(ServiceReference reference, Object service) {
+				String name = String.valueOf(reference.getProperty("name"));
+				getServer(name).remove404Handler((HttpRequest404Handler) service);
+			}
+		});
+		request404HandlerTracker.open();
 		
-		Channel channel = server.bind(new InetSocketAddress(port));
-		addChannel(port, channel);
-
-		logger.info("started server on port " + port);
-	}
-	
-	private void stopServer(int port) {
-		if(server != null) {
-			ChannelGroup group = channels.get(port);
-			if(group == null) {
-				logger.error("no channels for port {}", port);
-			} else {
-				channels.remove(port);
-				group.close().awaitUninterruptibly();
-				logger.info("closed channels for port {}", port);
+		request500HandlerTracker = new ServiceTracker(context, HttpRequest500Handler.class.getName(), new ServiceTrackerCustomizer() {
+			public Object addingService(ServiceReference reference) {
+				String name = String.valueOf(reference.getProperty("name"));
+				return getServer(name).add500Handler((HttpRequest500Handler) context.getService(reference));
 			}
-		}
-	}
-	
-	public HttpRequestHandler addHandler(HttpRequestHandler handler) {
-		int port = handler.getPort();
-		handlers.addRequestHandler(handler, port);
-		HttpRequestHandler rh = (HttpRequestHandler) addedHandler(handler, port);
-		if(rh == null) {
-			handlers.removeRequestHandler(handler, port);
-		}
-		return rh;
-	}
-	
-	public Gateway addHandler(Gateway handler) {
-		int port = handler.getPort();
-		handlers.addChannelHandler(handler, port);
-		Gateway gateway = (Gateway) addedHandler(handler, port);
-		if(gateway == null) {
-			handlers.removeChannelHandler(handler, port);
-		}
-		return gateway;
-	}
-	
-	private <T> T addedHandler(T handler, int port) {
-		int count = handlers.size(port);
-		if(count == 1) {
-			try {
-				startServer(port);
-				return handler;
-			} catch(ChannelException e) {
-				logger.error(e.getMessage());
-			} catch(Exception e) {
-				if(logger.isLoggingDebug()) {
-					logger.error(e);
-				} else {
-					logger.error(e.getMessage());
-				}
+			public void modifiedService(ServiceReference reference, Object service) {
+				// nothing to do
 			}
-			return null;
-		} else {
-			logger.info("incremented count of port " + port + " to " + count);
-			return handler;
-		}
-	}
-	
-	public void removeHandler(HttpRequestHandler handler) {
-		int port = handler.getPort();
-		if(handlers.removeRequestHandler(handler, port)) {
-			int count = handlers.size(port);
-			if(count == 0) {
-				logger.info("stopping server on port {}", handler.getPort());
-				stopServer(port);
-				logger.info("stopped serving port {}", handler.getPort());
-			} else {
-				logger.info("decremented count of port " + handler.getPort() + " to " + count);
+			public void removedService(ServiceReference reference, Object service) {
+				String name = String.valueOf(reference.getProperty("name"));
+				getServer(name).remove500Handler((HttpRequest500Handler) service);
 			}
-		} else {
-			logger.warn("handler not found: {}", handler);
-		}
+		});
+		request500HandlerTracker.open();
 	}
 	
-	public void start(final BundleContext context) throws Exception {
-		this.context = context;
-		
+	public void start(BundleContext context) throws Exception {
 		logger.setTag(context.getBundle().getSymbolicName());
 		logger.info("Starting server");
 
-		trackers = new RequestHandlerTrackers();
-		trackers.open(this, context, handlers);
+		openTrackers(context);
 		
 		logger.info("Server started");
 	}
 
 	public void stop(BundleContext context) throws Exception {
 		logger.info("Stopping server");
-		trackers.close();
-		trackers = null;
-		handlers.clear();
-		handlers = null;
-		disposeServer();
+		closeTrackers();
+		disposeServers();
 		logger.info("Server stopped");
 		logger.setTag(null);
 		logger = null;
-		
-		this.context = null;
-		instance = null;
-	}
-
-	public int[] getPorts() {
-		return (handlers != null) ? handlers.getPorts() : new int[0];
 	}
 
 }

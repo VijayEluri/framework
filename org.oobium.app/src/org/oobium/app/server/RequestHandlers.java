@@ -1,89 +1,70 @@
 package org.oobium.app.server;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
-import org.jboss.netty.channel.ChannelUpstreamHandler;
+import org.jboss.netty.channel.ChannelHandler;
 import org.oobium.app.handlers.HttpRequest404Handler;
 import org.oobium.app.handlers.HttpRequest500Handler;
 import org.oobium.app.handlers.HttpRequestHandler;
+import org.oobium.app.handlers.RequestHandler;
 import org.oobium.app.request.Request;
 import org.oobium.app.response.Response;
 
-public class RequestHandlers {
+public class RequestHandlers implements Iterable<RequestHandler> {
 
-	private RequestHandlerMap<ChannelUpstreamHandler> channelHandlers;
-	private RequestHandlerMap<HttpRequestHandler> requestHandlers;
-	private RequestHandlerMap<HttpRequest404Handler> request404Handlers;
-	private RequestHandlerMap<HttpRequest500Handler> request500Handlers;
+	private List<RequestHandler> requestHandlers;
+	private List<HttpRequest404Handler> http404Handlers;
+	private List<HttpRequest500Handler> http500Handlers;
+	private int rawHandlerCount;
 
-	public Object addChannelHandler(ChannelUpstreamHandler handler, int port) {
-		if(channelHandlers == null) {
-			channelHandlers = new RequestHandlerMap<ChannelUpstreamHandler>();
-		}
-		channelHandlers.add((ChannelUpstreamHandler) handler, port);
-		return handler;
-	}
-
-	public Object addRequestHandler(HttpRequestHandler handler, int port) {
+	public Object addRequestHandler(RequestHandler handler) {
 		if(requestHandlers == null) {
-			requestHandlers = new RequestHandlerMap<HttpRequestHandler>();
+			requestHandlers = new ArrayList<RequestHandler>();
 		}
-		requestHandlers.add((HttpRequestHandler) handler, port);
+		requestHandlers.add(handler);
+		if(handler instanceof ChannelHandler) {
+			rawHandlerCount++;
+		}
 		return handler;
 	}
 	
-	public Object add404Handler(HttpRequest404Handler handler, int port) {
-		if(request404Handlers == null) {
-			request404Handlers = new RequestHandlerMap<HttpRequest404Handler>();
+	public Object add404Handler(HttpRequest404Handler handler) {
+		if(http404Handlers == null) {
+			http404Handlers = new ArrayList<HttpRequest404Handler>();
 		}
-		request404Handlers.add((HttpRequest404Handler) handler, port);
+		http404Handlers.add((HttpRequest404Handler) handler);
 		return handler;
 	}
 	
-	public Object add500Handler(HttpRequest500Handler handler, int port) {
-		if(request500Handlers == null) {
-			request500Handlers = new RequestHandlerMap<HttpRequest500Handler>();
+	public Object add500Handler(HttpRequest500Handler handler) {
+		if(http500Handlers == null) {
+			http500Handlers = new ArrayList<HttpRequest500Handler>();
 		}
-		request500Handlers.add((HttpRequest500Handler) handler, port);
+		http500Handlers.add((HttpRequest500Handler) handler);
 		return handler;
 	}
 
 	public void clear() {
-		if(channelHandlers != null) {
-			channelHandlers.clear();
-		}
 		if(requestHandlers != null) {
 			requestHandlers.clear();
 		}
-		if(request404Handlers != null) {
-			request404Handlers.clear();
+		if(http404Handlers != null) {
+			http404Handlers.clear();
 		}
-		if(request500Handlers != null) {
-			request500Handlers.clear();
+		if(http500Handlers != null) {
+			http500Handlers.clear();
 		}
+		rawHandlerCount = 0;
 	}
 	
-	public List<ChannelUpstreamHandler> getChannelHandlers(int port) {
-		if(channelHandlers != null) {
-			return channelHandlers.get(port);
-		}
-		return new ArrayList<ChannelUpstreamHandler>(0);
-	}
-
-	public int[] getPorts() {
-		return (requestHandlers != null) ? requestHandlers.getPorts() : ((channelHandlers != null) ? channelHandlers.getPorts() : new int[0]);
-	}
-
 	public Response handle404(Request request) {
-		if(request404Handlers != null) {
-			List<HttpRequest404Handler> handlers = request404Handlers.get(request.getPort());
-			if(handlers != null) {
-				for(HttpRequest404Handler handler : handlers) {
-					Response response = handler.handle404(request);
-					if(response != null) {
-						return response;
-					}
+		if(http404Handlers != null) {
+			for(HttpRequest404Handler handler : http404Handlers) {
+				Response response = handler.handle404(request);
+				if(response != null) {
+					return response;
 				}
 			}
 		}
@@ -91,14 +72,11 @@ public class RequestHandlers {
 	}
 	
 	public Response handle500(Request request, Exception exception) {
-		if(request500Handlers != null) {
-			List<HttpRequest500Handler> handlers = request500Handlers.get(request.getPort());
-			if(handlers != null) {
-				for(HttpRequest500Handler handler : handlers) {
-					Response response = handler.handle500(request, exception);
-					if(response != null) {
-						return response;
-					}
+		if(http500Handlers != null) {
+			for(HttpRequest500Handler handler : http500Handlers) {
+				Response response = handler.handle500(request, exception);
+				if(response != null) {
+					return response;
 				}
 			}
 		}
@@ -107,11 +85,11 @@ public class RequestHandlers {
 	
 	public Object handleRequest(Request request) throws Exception {
 		if(requestHandlers != null) {
-			List<HttpRequestHandler> handlers = requestHandlers.get(request.getPort());
-			if(handlers != null) {
-				for(HttpRequestHandler handler : handlers) {
-					request.setHandler(handler);
-					Object response = handler.handleRequest(request);
+			for(RequestHandler handler : requestHandlers) {
+				if(handler instanceof HttpRequestHandler) {
+					HttpRequestHandler httpHandler = (HttpRequestHandler) handler;
+					request.setHandler(httpHandler);
+					Object response = httpHandler.handleRequest(request);
 					if(response != null) {
 						return response;
 					}
@@ -121,29 +99,40 @@ public class RequestHandlers {
 		return null;
 	}
 	
-	public boolean hasChannelHandlers() {
-		return channelHandlers != null;
-	}
-	
-	public boolean hasPorts() {
-		return (requestHandlers != null) ? requestHandlers.hasPorts() : ((channelHandlers != null) ? channelHandlers.hasPorts() : false);
+	public boolean hasHttpHandlers() {
+		return rawHandlerCount < requestHandlers.size();
 	}
 
-	public boolean removeChannelHandler(ChannelUpstreamHandler handler, int port) {
-		if(channelHandlers != null) {
-			if(channelHandlers.remove(handler, port)) {
-				if(channelHandlers.isEmpty()) {
-					channelHandlers = null;
-				}
-				return true;
-			}
-		}
-		return false;
+	public boolean hasRawHandlers() {
+		return rawHandlerCount > 0;
+	}
+
+	public boolean isEmpty() {
+		return requestHandlers == null;
 	}
 	
-	public boolean removeRequestHandler(HttpRequestHandler handler, int port) {
+	@Override
+	public Iterator<RequestHandler> iterator() {
+		return new Iterator<RequestHandler>() {
+			int index = 0;
+			@Override
+			public void remove() {
+				throw new UnsupportedOperationException("remove is not supported");
+			}
+			@Override
+			public RequestHandler next() {
+				return requestHandlers.get(index++);
+			}
+			@Override
+			public boolean hasNext() {
+				return (requestHandlers != null) && index < requestHandlers.size();
+			}
+		};
+	}
+	
+	public boolean removeRequestHandler(RequestHandler handler) {
 		if(requestHandlers != null) {
-			if(requestHandlers.remove(handler, port)) {
+			if(requestHandlers.remove(handler)) {
 				if(requestHandlers.isEmpty()) {
 					requestHandlers = null;
 				}
@@ -153,11 +142,11 @@ public class RequestHandlers {
 		return false;
 	}
 	
-	public boolean remove404Handler(HttpRequest404Handler handler, int port) {
-		if(request404Handlers != null) {
-			if(request404Handlers.remove(handler, port)) {
-				if(request404Handlers.isEmpty()) {
-					request404Handlers = null;
+	public boolean remove404Handler(HttpRequest404Handler handler) {
+		if(http404Handlers != null) {
+			if(http404Handlers.remove(handler)) {
+				if(http404Handlers.isEmpty()) {
+					http404Handlers = null;
 				}
 				return true;
 			}
@@ -165,11 +154,11 @@ public class RequestHandlers {
 		return false;
 	}
 
-	public boolean remove500Handler(HttpRequest500Handler handler, int port) {
-		if(request500Handlers != null) {
-			if(request500Handlers.remove(handler, port)) {
-				if(request500Handlers.isEmpty()) {
-					request500Handlers = null;
+	public boolean remove500Handler(HttpRequest500Handler handler) {
+		if(http500Handlers != null) {
+			if(http500Handlers.remove(handler)) {
+				if(http500Handlers.isEmpty()) {
+					http500Handlers = null;
 				}
 				return true;
 			}
@@ -177,10 +166,8 @@ public class RequestHandlers {
 		return false;
 	}
 
-	public int size(int port) {
-		int cports = (channelHandlers != null) ? channelHandlers.size(port) : 0;
-		int rports = (requestHandlers != null) ? requestHandlers.size(port) : 0;
-		return cports + rports;
+	public int size() {
+		return (requestHandlers != null) ? requestHandlers.size() : 0;
 	}
 	
 }

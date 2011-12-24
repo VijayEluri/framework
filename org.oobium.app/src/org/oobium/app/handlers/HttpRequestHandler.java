@@ -12,7 +12,7 @@ package org.oobium.app.handlers;
 
 import org.oobium.app.request.Request;
 
-public interface HttpRequestHandler {
+public interface HttpRequestHandler extends RequestHandler {
 
 	/**
 	 * The system unique name for this request handler.
@@ -21,8 +21,6 @@ public interface HttpRequestHandler {
 	 */
 	public abstract String getName();
 
-	public abstract int getPort();
-	
 	/**
 	 * Handle the HTTP request.
 	 * This method MUST be able to handle being called from multiple threads.

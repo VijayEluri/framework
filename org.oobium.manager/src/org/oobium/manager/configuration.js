@@ -1,7 +1,8 @@
 ({
 
-type: "webservice",
-host: "localhost",
-port: 5050
+server: {
+	host: "localhost",
+	port: 5050
+}
 
 });

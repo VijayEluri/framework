@@ -1,46 +1,50 @@
 package org.oobium.app.server;
 
-import java.util.concurrent.ExecutorService;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.handler.codec.http.HttpChunkAggregator;
 import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
+import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
-import org.oobium.app.AppServer;
-import org.oobium.logging.Logger;
 
 public class ServerPipelineFactory implements ChannelPipelineFactory {
 
-	private final AppServer server;
-	private final Logger logger;
-	private final RequestHandlers handlers;
-	private final ExecutorService executors;
+	private final Server server;
+	private final boolean secure;
 	
-	public ServerPipelineFactory(AppServer server, Logger logger, RequestHandlers handlers, ExecutorService executors) {
+	public ServerPipelineFactory(Server server, boolean secure) {
 		this.server = server;
-		this.logger = logger;
-		this.handlers = handlers;
-		this.executors = executors;
+		this.secure = secure;
 	}
 	
 	@Override
 	public ChannelPipeline getPipeline() throws Exception {
 		ChannelPipeline pipeline = Channels.pipeline();
 		
-		if(handlers.hasChannelHandlers()) {
-			pipeline.addLast("gateway", new ServerGatewayHandler(pipeline, handlers));
+		if(secure) {
+			SSLContext context = SslContextFactory.getSslContext(server);
+			SSLEngine engine = context.createSSLEngine();
+			engine.setUseClientMode(false);
+			pipeline.addLast("ssl", new SslHandler(engine));
 		}
 		
-		pipeline.addLast("decoder", new OobiumHttpRequestDecoder());
-		pipeline.addLast("aggregator", new HttpChunkAggregator(1*1024*1024));
-		pipeline.addLast("encoder", new HttpResponseEncoder());
-		pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
-		
-		pipeline.addLast("handler", new ServerHandler(server, logger, handlers, executors));
+		if(server.handlers.hasRawHandlers()) {
+			pipeline.addLast("raw", new RawServerHandler(pipeline, server.handlers));
+		}
+
+		if(server.handlers.hasHttpHandlers()) {
+			pipeline.addLast("decoder", new OobiumHttpRequestDecoder(secure));
+			pipeline.addLast("aggregator", new HttpChunkAggregator(1*1024*1024));
+			pipeline.addLast("encoder", new HttpResponseEncoder());
+			pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
+			pipeline.addLast("handler", new ServerHandler(server, secure));
+		}
 		
 		return pipeline;
 	}
-	
+
 }

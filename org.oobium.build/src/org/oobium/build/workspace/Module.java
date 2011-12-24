@@ -48,6 +48,7 @@ import org.oobium.app.MutableAppConfig;
 import org.oobium.app.controllers.HttpController;
 import org.oobium.app.http.Action;
 import org.oobium.app.persist.ModelNotifier;
+import org.oobium.app.server.ServerConfig;
 import org.oobium.app.server.Websocket;
 import org.oobium.app.sessions.ISession;
 import org.oobium.app.views.ScriptFile;
@@ -1859,8 +1860,16 @@ public class Module extends Bundle {
 		return Config.loadConfiguration(config);
 	}
 
+	public ServerConfig loadServerConfiguration() {
+		return new ServerConfig(name, loadConfiguration().get("server"));
+	}
+
 	public Config loadConfiguration(Mode mode) {
 		return Config.loadConfiguration(config, mode);
+	}
+
+	public ServerConfig loadServerConfiguration(Mode mode) {
+		return new ServerConfig(name, loadConfiguration(mode).get("server"));
 	}
 
 	public boolean removeModelRoute(String modelName, Action action) {

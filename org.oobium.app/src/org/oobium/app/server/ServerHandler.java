@@ -25,7 +25,9 @@ import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.net.URL;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -46,10 +48,10 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameDecoder;
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameEncoder;
+import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedFile;
 import org.jboss.netty.handler.stream.ChunkedStream;
 import org.jboss.netty.util.CharsetUtil;
-import org.oobium.app.AppServer;
 import org.oobium.app.request.Request;
 import org.oobium.app.response.StaticResponse;
 import org.oobium.app.response.WebsocketUpgrade;
@@ -59,16 +61,22 @@ import org.oobium.utils.Config.Mode;
 
 public class ServerHandler extends SimpleChannelUpstreamHandler {
 
-	private final AppServer server;
+	private final Server server;
 	private final Logger logger;
 	private final RequestHandlers handlers;
 	private final ExecutorService executors;
+	private final List<Channel> secureChannels; // TODO: List, Set, or LinkedHashSet?
 	
-	public ServerHandler(AppServer server, Logger logger, RequestHandlers httpRequestHandlers, ExecutorService executors) {
+	public ServerHandler(Server server, boolean secure) {
 		this.server = server;
-		this.logger = logger;
-		this.handlers = httpRequestHandlers;
-		this.executors = executors;
+		this.logger = server.logger;
+		this.handlers = server.handlers;
+		this.executors = server.executors;
+		if(secure) {
+			secureChannels = new ArrayList<Channel>();
+		} else {
+			secureChannels = null;
+		}
 	}
 
 	@Override
@@ -93,12 +101,31 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 	@Override
 	public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
 		logger.trace("channel connected");
+		if(secureChannels != null) {
+			SslHandler handler = ctx.getPipeline().get(SslHandler.class);
+			ChannelFuture future = handler.handshake();
+			future.addListener(new ChannelFutureListener() {
+				@Override
+				public void operationComplete(ChannelFuture f) throws Exception {
+					if(f.isSuccess()) {
+						logger.trace("ssl handshake completed successfully");
+						secureChannels.add(f.getChannel());
+					} else {
+						logger.debug("ssl handshake failed");
+						f.getChannel().close();
+					}
+				}
+			});
+		}
 		super.channelConnected(ctx, e);
 	}
 
 	@Override
 	public void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
 		logger.trace("channel disconnected");
+		if(secureChannels != null) {
+			secureChannels.remove(ctx.getChannel());
+		}
 		super.channelDisconnected(ctx, e);
 	}
 
@@ -120,9 +147,6 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 	}
 
 	private HttpResponse get404Response(Request request) {
-		if(logger.isLoggingInfo()) {
-			logger.info(request.getUri() + " not found");
-		}
 		HttpResponse response = null;
 		try {
 			response = handlers.handle404(request);
@@ -205,7 +229,10 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 		return null;
 	}
 	
-	private void handleHttpRequest(final ChannelHandlerContext ctx, final Request request) {
+	private void handleHttpRequest(final Channel channel, final Request request) {
+		if(logger.isLoggingInfo()) {
+			logger.info("{} {} -> {}", request.getRemoteAddress(), request.getHeader(HttpHeaders.Names.USER_AGENT), request.getUri());
+		}
 		if(logger.isLoggingDebug()) {
 			logger.debug(request.toString());
 		}
@@ -216,7 +243,7 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 				// TODO support HTTP Header: Expect
 				HttpResponse response = new DefaultHttpResponse(HTTP_1_1, EXPECTATION_FAILED);
 				response.setContent(ChannelBuffers.copiedBuffer(EXPECTATION_FAILED.getReasonPhrase(), CharsetUtil.UTF_8));
-				writeResponse(ctx, request, response);
+				writeResponse(channel, request, response);
 				return;
 			}
 			Object attr = request.getParameters().get("_method");
@@ -243,13 +270,13 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 		}
 		
 		if(response == null) {
-			writeResponse(ctx, request, null);
+			writeResponse(channel, request, null);
 		}
 		else if(response instanceof WebsocketUpgrade) {
-			upgradeToWebsocket(ctx, request, (WebsocketUpgrade) response);
+			upgradeToWebsocket(channel, request, (WebsocketUpgrade) response);
 		}
 		else if(response instanceof HttpResponse) {
-			writeResponse(ctx, request, (HttpResponse) response);
+			writeResponse(channel, request, (HttpResponse) response);
 		}
 		else if(response instanceof HandlerTask) {
 			HandlerTask task = (HandlerTask) response;
@@ -257,8 +284,12 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 				@Override
 				public void onComplete(HandlerTask task) {
 					logger.trace("task complete");
-					HttpResponse httpResponse = task.isSuccess() ? task.getResponse() : get500Response(request, task.getCause());
-					writeResponse(ctx, request, httpResponse);
+					if(channel.isConnected()) {
+						HttpResponse httpResponse = task.isSuccess() ? task.getResponse() : get500Response(request, task.getCause());
+						writeResponse(channel, request, httpResponse);
+					} else {
+						logger.debug("skipping write - channel not connected");
+					}
 				}
 			});
 			logger.trace("submitting task");
@@ -298,7 +329,14 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 	
 	@Override
 	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-		handleHttpRequest(ctx, (Request) e.getMessage());
+		Request request = (Request) e.getMessage();
+		if(secureChannels == null) {
+			handleHttpRequest(ctx.getChannel(), request);
+		} else {
+			for(Channel channel : secureChannels) {
+				handleHttpRequest(channel, request);
+			}
+		}
 	}
 
 	private void setContentLength(HttpResponse response) {
@@ -309,8 +347,7 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 		}
 	}
 	
-	private void upgradeToWebsocket(ChannelHandlerContext ctx, Request request, WebsocketUpgrade upgrade) {
-		Channel channel = ctx.getChannel();
+	private void upgradeToWebsocket(Channel channel, Request request, WebsocketUpgrade upgrade) {
 		ChannelPipeline pipeline = channel.getPipeline();
 		pipeline.remove("aggregator");
 		pipeline.replace("decoder", "wsdecoder", new WebSocketFrameDecoder());
@@ -319,7 +356,7 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 		future.addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
 		
 		pipeline.replace("encoder", "wsencoder", new WebSocketFrameEncoder());
-		pipeline.replace("handler", "wshandler", new WebsocketServerHandler(logger, ctx.getChannel(), request, upgrade));
+		pipeline.replace("handler", "wshandler", new WebsocketServerHandler(logger, channel, request, upgrade));
 	}
 	
 	private ChannelFuture writePayload(Channel channel, StaticResponse response) {
@@ -389,11 +426,10 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 		return channel.write(response);
 	}
 
-	private void writeResponse(ChannelHandlerContext ctx, Request request, HttpResponse response) {
+	private void writeResponse(Channel channel, Request request, HttpResponse response) {
 		if(response == null) {
 			response = get404Response(request);
 		}
-		Channel channel = ctx.getChannel();
 		ChannelFuture future;
 		if(isNotModified(request, response)) {
 			response.setStatus(NOT_MODIFIED);

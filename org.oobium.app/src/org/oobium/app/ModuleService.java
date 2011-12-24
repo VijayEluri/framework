@@ -37,9 +37,7 @@ import org.oobium.utils.json.JsonUtils;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
 import org.osgi.framework.Version;
-import org.osgi.service.packageadmin.PackageAdmin;
 
 public abstract class ModuleService implements BundleActivator {
 
@@ -72,6 +70,7 @@ public abstract class ModuleService implements BundleActivator {
 	protected final Logger logger;
 	protected String name;
 	protected BundleContext context;
+	protected Config config;
 	protected Router router;
 
 	protected Class<? extends Model> sessionClass;
@@ -101,46 +100,48 @@ public abstract class ModuleService implements BundleActivator {
 		return JsonUtils.toStringList(StringUtils.getResourceAsString(getClass(), "assets.js"));
 	}
 
-	private Bundle getBundle(PackageAdmin admin, String module) {
-		Bundle[] bundles;
-		int ix = module.lastIndexOf('_');
+	public Bundle getBundle(String fullName) {
+		String name;
+		Version version;
+		int ix = fullName.lastIndexOf('_');
 		if(ix == -1) {
-			bundles = admin.getBundles(module, null);
+			name = fullName;
+			version = null;
 		} else {
-			bundles = admin.getBundles(module.substring(0, ix), module.substring(ix+1));
+			name = fullName.substring(0, ix);
+			version = Version.parseVersion(fullName.substring(ix+1));
 		}
-		if(bundles == null || bundles.length == 0) {
-			return null;
+		for(Bundle bundle : context.getBundles()) {
+			if(name.equals(bundle.getSymbolicName())) {
+				if(version == null || version.equals(bundle.getVersion())) {
+					return bundle;
+				}
+			}
 		}
-		return bundles[0];
+		return null;
 	}
 
+	public Config getConfiguration() {
+		return config;
+	}
+	
 	public BundleContext getContext() {
 		return context;
 	}
-	
+
 	public Class<? extends HttpController> getControllerClass(Class<? extends Model> modelClass) {
-		Config config = loadConfiguration();
 		String controllerName = modelClass.getSimpleName() + "Controller";
 		Class<? extends HttpController> controllerClass = getControllerClass(config, controllerName, context.getBundle());
 		if(controllerClass != null) {
 			return controllerClass;
 		}
-		ServiceReference reference = context.getServiceReference(PackageAdmin.class.getName());
-		if(reference != null) {
-			try {
-				PackageAdmin admin = (PackageAdmin) context.getService(reference);
-				for(String module : config.getModules()) {
-					Bundle bundle = getBundle(admin, module);
-					if(bundle != null) {
-						controllerClass = getControllerClass(config, controllerName, bundle);
-						if(controllerClass != null) {
-							return controllerClass;
-						}
-					}
+		for(String module : config.getModules()) {
+			Bundle bundle = getBundle(module);
+			if(bundle != null) {
+				controllerClass = getControllerClass(config, controllerName, bundle);
+				if(controllerClass != null) {
+					return controllerClass;
 				}
-			} finally {
-				context.ungetService(reference);
 			}
 		}
 		return null;
@@ -159,22 +160,6 @@ public abstract class ModuleService implements BundleActivator {
 			Class<?> clazz = bundle.loadClass(name);
 			if(HttpController.class.isAssignableFrom(clazz)) {
 				return clazz.asSubclass(HttpController.class);
-			}
-		} catch(ClassNotFoundException e) {
-			// discard
-		}
-		return null;
-	}
-
-	Class<? extends View> getViewClass(String name) {
-		int ix = this.name.lastIndexOf('_');
-		String base = (ix == -1) ? this.name : this.name.substring(0, ix);
-		Config config = loadConfiguration();
-		String fullname = config.getPathToViews(base).replace('/', '.') + "." + name;
-		try {
-			Class<?> clazz = context.getBundle().loadClass(fullname);
-			if(View.class.isAssignableFrom(clazz)) {
-				return clazz.asSubclass(View.class);
 			}
 		} catch(ClassNotFoundException e) {
 			// discard
@@ -204,6 +189,21 @@ public abstract class ModuleService implements BundleActivator {
 		return context.getBundle().getSymbolicName();
 	}
 
+	Class<? extends View> getViewClass(String name) {
+		int ix = this.name.lastIndexOf('_');
+		String base = (ix == -1) ? this.name : this.name.substring(0, ix);
+		String fullname = config.getPathToViews(base).replace('/', '.') + "." + name;
+		try {
+			Class<?> clazz = context.getBundle().loadClass(fullname);
+			if(View.class.isAssignableFrom(clazz)) {
+				return clazz.asSubclass(View.class);
+			}
+		} catch(ClassNotFoundException e) {
+			// discard
+		}
+		return null;
+	}
+	
 	/**
 	 * Subclasses may override this method to initialize their own custom
 	 * service trackers. Note that the service trackers for cache, session,
@@ -257,25 +257,25 @@ public abstract class ModuleService implements BundleActivator {
 
 		return classes;
 	}
-	
+
 	/**
 	 * Load the configuration for this bundle.  The default implementation fetches
-	 * the configuration using getClass().  Subclasses should override to implements
+	 * the configuration using getClass().  Subclasses should override to implement
 	 * alternative behavior.
 	 * @return the configuration
 	 */
-	protected Config loadConfiguration() {
-		return Config.loadConfiguration(getClass());
+	protected void loadConfiguration() {
+		config = Config.loadConfiguration(getClass());
 	}
-
+	
 	/**
-	 * Load the configuration for the given bundle.  The default implementation using
+	 * Load the configuration for the given bundle.  The default implementation uses
 	 * the bundle's Activator (as found in the MANIFEST) to load the configuration.
 	 * @param bundle the bundle for which to get the configuration
 	 * @return the configuration
 	 * @throws ClassNotFoundException if the given bundle does have an Activator
 	 */
-	protected Config loadConfiguration(Bundle bundle) throws ClassNotFoundException {
+	public Config loadConfiguration(Bundle bundle) throws ClassNotFoundException {
 		String name = (String) bundle.getHeaders().get("Bundle-Activator");
 		Class<?> clazz = bundle.loadClass(name);
 		return Config.loadConfiguration(clazz);
@@ -377,6 +377,7 @@ public abstract class ModuleService implements BundleActivator {
 	public final void start(BundleContext context) throws Exception {
 		this.context = context;
 		setName(context);
+		loadConfiguration();
 
 		synchronized(activatorsByClass) {
 			activatorsByClass.put(getClass(), this);

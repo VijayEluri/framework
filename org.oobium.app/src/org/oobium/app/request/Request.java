@@ -37,21 +37,24 @@ public class Request extends DefaultHttpRequest {
 	private List<MimeType> accepts;
 	private Map<String, Cookie> cookies;
 	private Map<String, Object> parameters;
+	private final boolean secure;
 
 	private HttpRequestHandler handler;
 	
-	public Request(HttpVersion httpVersion, HttpMethod method, String uri, Channel channel) {
+	public Request(HttpVersion httpVersion, HttpMethod method, String uri, Channel channel, boolean secure) {
 		super(httpVersion, method, uri);
 		InetSocketAddress remote = (InetSocketAddress) channel.getRemoteAddress();
 		remoteAddress = remote.getAddress().getHostAddress();
 		remotePort = remote.getPort();
 		InetSocketAddress local = (InetSocketAddress) channel.getLocalAddress();
 		port = local.getPort();
+		this.secure = secure;
 	}
 	
 	public Request(HttpVersion httpVersion, HttpMethod method, String uri, int port) {
 		super(httpVersion, method, uri);
 		this.port = port;
+		this.secure = false;
 	}
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -209,6 +212,10 @@ public class Request extends DefaultHttpRequest {
 
 	public boolean isHome() {
 		return "/".equals(getPath());
+	}
+	
+	public boolean isSecure() {
+		return secure;
 	}
 	
 	private void loadCookies() {

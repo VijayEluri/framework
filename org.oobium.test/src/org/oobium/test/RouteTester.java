@@ -1,7 +1,6 @@
 package org.oobium.test;
 
-import static org.jboss.netty.handler.codec.http.HttpMethod.*;
-
+import static org.jboss.netty.handler.codec.http.HttpMethod.GET;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -15,14 +14,14 @@ import org.mockito.stubbing.Answer;
 import org.oobium.app.AppService;
 import org.oobium.app.ModuleService;
 import org.oobium.app.controllers.HttpController;
+import org.oobium.app.http.Action;
+import org.oobium.app.request.Request;
 import org.oobium.app.routing.AppRouter;
 import org.oobium.app.routing.IPathRouting;
 import org.oobium.app.routing.IUrlRouting;
 import org.oobium.app.routing.Path;
 import org.oobium.app.routing.RouteHandler;
 import org.oobium.app.routing.Router;
-import org.oobium.app.request.Request;
-import org.oobium.app.http.Action;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.utils.Config;
@@ -166,7 +165,7 @@ public class RouteTester implements IPathRouting, IUrlRouting {
 			}
 		});
 		if(AppService.class.isAssignableFrom(clazz)) {
-			router = new AppRouter(service, config.getHosts(), config.getPort());
+			router = new AppRouter(service);
 			AppService tmp = (AppService) clazz.newInstance();
 			try {
 				clazz.getDeclaredMethod("addRoutes", Config.class, AppRouter.class);
@@ -176,7 +175,7 @@ public class RouteTester implements IPathRouting, IUrlRouting {
 				tmp.addRoutes(config, (Router) router);
 			}
 		} else {
-			router = new AppRouter(null, "nohost", -1);
+			router = new AppRouter(null);
 			ModuleService tmp = clazz.newInstance();
 			clazz.getDeclaredMethod("addRoutes", Config.class, Router.class);
 			tmp.addRoutes(config, (Router) router);
@@ -238,8 +237,8 @@ public class RouteTester implements IPathRouting, IUrlRouting {
 		boolean hasParams = sa.length == 2;
 		
 		Request request = mock(Request.class);
-		when(request.getPort()).thenReturn(router.getPort());
-		when(request.getHost()).thenReturn(router.getHosts()[0]);
+//		when(request.getPort()).thenReturn(router.getPort());
+//		when(request.getHost()).thenReturn(router.getHosts()[0]);
 		when(request.getMethod()).thenReturn(method);
 		when(request.getPath()).thenReturn(path);
 		when(request.getUri()).thenReturn(fullPath);

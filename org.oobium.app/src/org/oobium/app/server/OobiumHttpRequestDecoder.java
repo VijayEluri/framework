@@ -11,7 +11,12 @@ import org.oobium.app.request.Request;
 
 public class OobiumHttpRequestDecoder extends HttpMessageDecoder {
 
+	private final boolean secure;
 	private Channel channel;
+
+	public OobiumHttpRequestDecoder(boolean secure) {
+		this.secure = secure;
+	}
 	
 	@Override
 	protected HttpMessage createMessage(String[] initialLine) throws Exception {
@@ -19,7 +24,7 @@ public class OobiumHttpRequestDecoder extends HttpMessageDecoder {
 		HttpMethod method = HttpMethod.valueOf(initialLine[0]);
 		String uri = initialLine[1];
 		
-		return new Request(version, method, uri, channel);
+		return new Request(version, method, uri, channel, secure);
 	}
 
 	@Override

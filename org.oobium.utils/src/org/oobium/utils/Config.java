@@ -77,6 +77,7 @@ public class Config {
 	public static final String MODULES = "modules";
 	public static final String PERSIST = "persist";
 	public static final String RUNTIME = "runtime";
+	public static final String SERVER = "server";
 	public static final String SESSION = "session";
 	public static final String MAIL_SEND = "mail.send";
 	public static final String MAIL_RETRIEVE = "mail.retrieve";
@@ -223,28 +224,6 @@ public class Config {
 		return getPath("controllers", getPathToApp(base));
 	}
 	
-	public String[] getHosts() {
-		return getHosts(mode);
-	}
-	
-	public String[] getHosts(Mode mode) {
-		String[] hosts;
-		Object o = get(HOST, mode);
-		if(o == null) {
-			hosts = new String[0];
-		} else if(o instanceof List<?>) {
-			List<?> l = (List<?>) o;
-			hosts = new String[l.size()];
-			for(int i = 0; i < hosts.length; i++) {
-				hosts[i] = String.valueOf(l.get(i));
-			}
-		} else {
-			hosts = new String[1];
-			hosts[0] = String.valueOf(o);
-		}
-		return hosts;
-	}
-
 	public String getPathToMailers(String base) {
 		return getPath("mailers", getPathToApp(base));
 	}

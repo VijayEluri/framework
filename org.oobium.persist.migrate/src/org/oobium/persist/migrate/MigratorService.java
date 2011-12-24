@@ -11,13 +11,14 @@
 package org.oobium.persist.migrate;
 
 import static org.jboss.netty.handler.codec.http.HttpMethod.POST;
+import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.utils.literal.Map;
 import static org.oobium.utils.literal.e;
-import static org.oobium.utils.coercion.TypeCoercer.coerce;
 
 import java.util.List;
 
 import org.oobium.app.AppService;
+import org.oobium.app.MutableAppConfig;
 import org.oobium.app.routing.Router;
 import org.oobium.app.workers.Worker;
 import org.oobium.persist.PersistService;
@@ -34,7 +35,6 @@ import org.osgi.framework.Filter;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.Version;
-import org.osgi.service.packageadmin.PackageAdmin;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
@@ -106,26 +106,6 @@ public abstract class MigratorService extends AppService {
 		return migration;
 	}
 	
-	private Bundle getBundle(String symbolicName) {
-		ServiceReference ref = context.getServiceReference(PackageAdmin.class.getName());
-		if(ref == null) {
-			throw new IllegalStateException("Package Admin service is not present");
-		}
-		PackageAdmin admin = (PackageAdmin) getContext().getService(ref);
-		Bundle[] bundles = admin.getBundles(symbolicName, null);
-		if(bundles.length == 0) {
-			throw new IllegalStateException("bundle " + symbolicName + " is not present");
-		} else if(bundles.length == 1) {
-			return bundles[0];
-		} else {
-			throw new IllegalStateException("no more than 2 bundles of " + symbolicName + " may be present");
-		}
-	}
-	
-	public Config getConfig() {
-		return appConfig;
-	}
-
 	protected abstract String getCurrentMigration();
 	
 	protected abstract List<String> getMigrated();
@@ -165,14 +145,17 @@ public abstract class MigratorService extends AppService {
 	}
 	
 	@Override
-	protected Config loadConfiguration() {
-		return new Config(Map(
-				e(Config.PERSIST, appConfig.get(Config.PERSIST)),
-				e(Config.HOST, "localhost"),
-				e(Config.PORT, "5001")
-			));
+	protected void loadConfiguration() {
+		config = new Config(
+				Map(
+					e(Config.PERSIST, appConfig.get(Config.PERSIST)),
+					e(Config.SERVER, Map(
+							e(Config.HOST, "localhost"),
+							e(Config.PORT, "5001")
+					))
+				));
 	}
-	
+
 	public synchronized String migrate() throws Exception {
 		return migrate(null);
 	}

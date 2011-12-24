@@ -32,13 +32,9 @@ public abstract class HandlerTask implements Runnable {
 	private HandlerTaskListener listener;
 
 	public HandlerTask(Request request) {
-		this(request, false);
-	}
-	
-	public HandlerTask(Request request, boolean cancellable) {
 		this.request = request;
 	}
-
+	
 	protected abstract Response handleRequest(Request request) throws Exception;
 	
 	@Override

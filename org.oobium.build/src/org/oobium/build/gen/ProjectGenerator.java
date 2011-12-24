@@ -216,7 +216,7 @@ public class ProjectGenerator {
 		}
 		sb.append('\n');
 		sb.append("dev: {\n");
-		sb.append("\tport: 5000,\n");
+		sb.append("\tserver: 5000,\n");
 		sb.append("\tpersist: {\n");
 		sb.append("\t\tservice: \"org.oobium.persist.db.derby.embedded\",\n");
 		sb.append("\t\tmemory:  true\n");
@@ -228,7 +228,7 @@ public class ProjectGenerator {
 		sb.append("},\n");
 		sb.append('\n');
 		sb.append("test: {\n");
-		sb.append("\tport: 5001,\n");
+		sb.append("\tserver: 5001,\n");
 		sb.append("\tpersist: {\n");
 		sb.append("\t\tservice:  \"org.oobium.persist.db.mysql\",\n");
 		sb.append("\t\tdatabase: \"" + name + "_test\",\n");
@@ -238,7 +238,7 @@ public class ProjectGenerator {
 		sb.append("},\n");
 		sb.append('\n');
 		sb.append("prod: {\n");
-		sb.append("\tport: 80,\n");
+		sb.append("\tserver: 80,\n");
 		sb.append("\tpersist: {\n");
 		sb.append("\t\tservice:  \"org.oobium.persist.db.mysql\",\n");
 		sb.append("\t\tdatabase: \"" + name + "\",\n");

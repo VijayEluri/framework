@@ -25,6 +25,7 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.oobium.app.handlers.HttpRequest404Handler;
 import org.oobium.app.handlers.HttpRequest500Handler;
 import org.oobium.app.handlers.HttpRequestHandler;
+import org.oobium.app.handlers.RequestHandler;
 import org.oobium.app.persist.PersistServices;
 import org.oobium.app.request.Request;
 import org.oobium.app.response.Response;
@@ -33,6 +34,7 @@ import org.oobium.app.routing.RouteHandler;
 import org.oobium.app.routing.Router;
 import org.oobium.app.routing.handlers.HttpHandler;
 import org.oobium.app.server.HandlerTask;
+import org.oobium.app.server.ServerConfig;
 import org.oobium.app.sessions.ISession;
 import org.oobium.app.views.View;
 import org.oobium.app.workers.Worker;
@@ -86,8 +88,8 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 	}
 
 
-	private int port;
-
+	private ServerConfig serverConfig;
+	
 	private PersistServices persistServices;
 	private ServiceTracker moduleTracker;
 
@@ -124,13 +126,13 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 			
 			if(module instanceof HttpRequest404Handler) {
 				request404HandlerRegistration.unregister();
-				request404HandlerRegistration = getContext().registerService(HttpRequest404Handler.class.getName(), module, Dictionary("port", getPort()));
-				logger.info("set port " + getPort() + "'s 404 handler to " + module);
+				request404HandlerRegistration = getContext().registerService(HttpRequest404Handler.class.getName(), module, Dictionary("name", getName()));
+				logger.info("set the 404 handler for '{}' to {}", getName(), module);
 			}
 			if(module instanceof HttpRequest500Handler) {
 				request500HandlerRegistration.unregister();
-				request500HandlerRegistration = getContext().registerService(HttpRequest500Handler.class.getName(), module, Dictionary("port", getPort()));
-				logger.info("set port " + getPort() + "'s 500 handler to " + module);
+				request500HandlerRegistration = getContext().registerService(HttpRequest500Handler.class.getName(), module, Dictionary("name", getName()));
+				logger.info("set the 500 handler for '{}' to {}", getName(), module);
 			}
 			
 			logger.info(module + " initialized successfully");
@@ -165,16 +167,13 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 	public final void startApp() throws Exception {
 		logger.debug("working directory: {}", System.getProperty("user.dir"));
 		logger.info("configuring in {} mode", Mode.getSystemMode().name());
+
+		loadServerConfiguration();
 		
-		Config config = loadConfiguration();
-
-		port = config.getPort();
-		String[] hosts = config.getHosts();
-
 		// allow subclasses to perform custom setup functions
 		setup();
 		
-		router = new AppRouter(this, hosts, port);
+		router = new AppRouter(this);
 		try {
 			logger.info("initializing routes");
 			addRoutes(config, router);
@@ -194,9 +193,9 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 
 		// register handlers
 		if(context != null) {
-			context.registerService(HttpRequestHandler.class.getName(), this, null);
-			request404HandlerRegistration = context.registerService(HttpRequest404Handler.class.getName(), this, Dictionary("port", getPort()));
-			request500HandlerRegistration = context.registerService(HttpRequest500Handler.class.getName(), this, Dictionary("port", getPort()));
+			context.registerService(RequestHandler.class.getName(), this, null);
+			request404HandlerRegistration = context.registerService(HttpRequest404Handler.class.getName(), this, Dictionary("name", getName()));
+			request500HandlerRegistration = context.registerService(HttpRequest500Handler.class.getName(), this, Dictionary("name", getName()));
 		}
 		
 		// allow subclasses to register custom services
@@ -281,16 +280,16 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 	public PersistServiceProvider getPersistServices() {
 		return persistServices;
 	}
-	
-	@Override
-	public int getPort() {
-		return port;
-	}
 
 	public AppRouter getRouter() {
 		return (AppRouter) router;
 	}
 
+	@Override
+	public ServerConfig getServerConfig() {
+		return serverConfig;
+	}
+	
     private ISession getSession(Object id, String uuid, String include) {
 		if(sessionClass != null && !blank(id) && uuid != null) {
 			PersistService service = Model.getPersistService(sessionClass);
@@ -473,6 +472,10 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		}
 	}
 
+	protected void loadServerConfiguration() {
+		serverConfig = new ServerConfig(getSymbolicName(), config.get("server"));
+	}
+
 	private void registerForPersistService(String service, Map<?, ?> options) throws Exception {
 		logger.debug("registering for persist service: {}", service);
 		Hashtable<String, Object> properties = new Hashtable<String, Object>();
@@ -532,13 +535,13 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 
 			if(reference == request404HandlerRegistration.getReference()) {
 				request404HandlerRegistration.unregister();
-				request404HandlerRegistration = getContext().registerService(HttpRequest404Handler.class.getName(), this, Dictionary("port", getPort()));
-				logger.info("set port " + getPort() + "'s 404 handler to " + AppService.this);
+				request404HandlerRegistration = getContext().registerService(HttpRequest404Handler.class.getName(), this, Dictionary("name", getName()));
+				logger.info("set the 404 handler for '{}' to {}", getName(), AppService.this);
 			}
 			if(reference == request500HandlerRegistration.getReference()) {
 				request500HandlerRegistration.unregister();
-				request500HandlerRegistration = getContext().registerService(HttpRequest500Handler.class.getName(), this, Dictionary("port", getPort()));
-				logger.info("set port " + getPort() + "'s 500 handler to " + AppService.this);
+				request500HandlerRegistration = getContext().registerService(HttpRequest500Handler.class.getName(), this, Dictionary("name", getName()));
+				logger.info("set the 500 handler for '{}' to {}", getName(), AppService.this);
 			}
 			
 			logger.info(module + " unloaded successfully");

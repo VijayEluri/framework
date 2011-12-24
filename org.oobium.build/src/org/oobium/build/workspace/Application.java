@@ -13,8 +13,8 @@ package org.oobium.build.workspace;
 import java.io.File;
 import java.util.jar.Manifest;
 
+import org.oobium.app.server.ServerConfig;
 import org.oobium.build.gen.ModelGenerator;
-import org.oobium.utils.Config;
 import org.oobium.utils.Config.Mode;
 
 public class Application extends Module {
@@ -63,26 +63,11 @@ public class Application extends Module {
 	}
 	
 	public String getLocation(Mode mode) {
-		Config config = loadConfiguration(mode);
-		String[] hosts = config.getHosts();
-		if(hosts.length > 0) {
-			return hosts[0] + ":" + config.getPort();
+		ServerConfig config = loadServerConfiguration(mode);
+		if(config.hasHost()) {
+			return config.host() + ":" + config.port();
 		}
-		return "localhost:" + config.getPort();
-	}
-
-	public String[] getLocations(Mode mode) {
-		Config config = loadConfiguration(mode);
-		String[] hosts = config.getHosts();
-		if(hosts.length > 0) {
-			int port = config.getPort();
-			String[] locations = new String[hosts.length];
-			for(int i = 0; i < locations.length; i++) {
-				locations[i] = hosts[i] + ":" + port;
-			}
-			return locations;
-		}
-		return new String[0];
+		return "localhost:" + config.port();
 	}
 
 	public int getPort(Mode mode) {

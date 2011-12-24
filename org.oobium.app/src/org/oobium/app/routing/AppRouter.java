@@ -53,47 +53,21 @@ import org.oobium.app.routing.routes.RtspRoute;
 import org.oobium.app.routing.routes.StaticRoute;
 import org.oobium.app.routing.routes.ViewRoute;
 import org.oobium.app.routing.routes.WebsocketRoute;
+import org.oobium.app.server.ServerConfig;
 import org.oobium.persist.Model;
 
 public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 
-	public static final String ANY_HOST = "*";
 	private static final String API_NAME = "__api__";
 
-	private static boolean anyHost(String[] hosts) {
-		if(hosts == null || hosts.length == 0) {
-			return true;
-		}
-
-		for(int i = 0; i < hosts.length; i++) {
-			if(ANY_HOST.equals(hosts[i])) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-	
-	private final int port;
-	private final String[] hosts;
-	private final boolean anyHost;
+	private final ServerConfig server;
 	private List<Router> moduleRouters;
 	private String apiHeader;
 	
 
-	public AppRouter(AppService service, int port) {
-		this(service, new String[0], port);
-	}
-
-	public AppRouter(AppService service, String host, int port) {
-		this(service, new String[] { host }, port);
-	}
-
-	public AppRouter(AppService service, String[] hosts, int port) {
+	public AppRouter(AppService service) {
 		super(service);
-		this.hosts = hosts;
-		this.port = port;
-		this.anyHost = anyHost(hosts);
+		this.server = service.getServerConfig();
 		setApi(API_NAME, true);
 	}
 
@@ -136,13 +110,12 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 	}
 	
 	private Path asUrl(Path path) {
-		if(hosts == null || hosts.length < 1) {
+		if(server.hasHost()) {
+			path.server(server);
+			return path;
+		} else {
 			logger.warn(new Exception("cannot convert path (" + path + ") to an URL: host has not been set"));
 			return new Path(UNKNOWN_PATH);
-		} else {
-			path.host(hosts[0]);
-			path.port(port);
-			return path;
 		}
 	}
 	
@@ -251,10 +224,6 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 	}
 
 	public RouteHandler getHandler(Request request) {
-		if(port != request.getPort()) {
-			return null;
-		}
-		
 		if(!hasHost(request)) {
 			return null;
 		}
@@ -279,14 +248,6 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		return null;
 	}
 
-	public String getHost() {
-		return hosts[0];
-	}
-
-	public String[] getHosts() {
-		return hosts;
-	}
-	
 	private String[][] getParams(Route cr, Matcher matcher) {
 		String[][] params;
 		String[][] cparams = cr.params();
@@ -467,10 +428,6 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		return null;
 	}
 
-	public int getPort() {
-		return port;
-	}
-	
 	private Route getRoute(Router router, String key) {
 		Route[] routes = (router != null) ? router.routes.get(key) : null;
 		if(routes != null && routes.length > 0) {
@@ -588,18 +545,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 	}
 
 	public boolean hasHost(Request request) {
-		if(anyHost) {
-			return true;
-		}
-		String host = request.getHost();
-		if(host != null && host.length() > 0) {
-			for(String h : hosts) {
-				if(h == ANY_HOST || h.equals(host)) {
-					return true;
-				}
-			}
-		}
-		return false;
+		return server.servesAnyHost() || server.servesHost(request.getHost());
 	}
 
 	private Path pathError(Object obj1, String field) {
