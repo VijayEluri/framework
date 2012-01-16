@@ -64,12 +64,21 @@ public class ServerConfig {
 			ssl = null;
 			options = null;
 		}
-		else {
-			primary = true;
-			this.name = name;
+		else if(input instanceof Map) {
+			Map<?,?> inputMap = (Map<?,?>) input;
 			
-			if(input instanceof Map) {
-				Map<?,?> inputMap = (Map<?,?>) input;
+			if(inputMap.containsKey("extend")) {
+				primary = false;
+				this.name = (String) inputMap.get("extend");
+				hosts = coerce(inputMap.get("host"), String[].class);
+				anyHost = anyHost(hosts);
+				ports = null;
+				securePorts = null;
+				ssl = null;
+				options = null;
+			} else {
+				primary = true;
+				this.name = name;
 	
 				hosts = coerce(inputMap.get("host"), String[].class);
 				anyHost = anyHost(hosts);
@@ -91,15 +100,21 @@ public class ServerConfig {
 				} else {
 					options = Collections.unmodifiableMap(configMap);
 				}
+				
+				if(ports.length == 0 && securePorts.length == 0) {
+					throw new IllegalArgumentException("no port in server config");
+				}
 			}
-			else {
-				hosts = new String[0];
-				anyHost = true;
-				ports = coerce(input, int[].class);
-				securePorts = new int[0];
-				ssl = new HashMap<String, Object>(0);
-				options = new HashMap<String, Object>(0);
-			}
+		}
+		else {
+			primary = true;
+			this.name = name;
+			hosts = new String[0];
+			anyHost = true;
+			ports = coerce(input, int[].class);
+			securePorts = new int[0];
+			ssl = new HashMap<String, Object>(0);
+			options = new HashMap<String, Object>(0);
 			
 			if(ports.length == 0 && securePorts.length == 0) {
 				throw new IllegalArgumentException("no port in server config");
