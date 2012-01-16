@@ -2,7 +2,7 @@
 <feature
       id="org.oobium.framework"
       label="Oobium Framework"
-      version="0.6.0.qualifier"
+      version="0.7.0.qualifier"
       provider-name="Oobium.org">
 
    <description>
@@ -12,7 +12,7 @@ and web connected clients in Java and OSGi.
    </description>
 
    <copyright>
-      Copyright 2010 - Oobium, Inc. - all rights reserved
+      Copyright 2012 - Jeremy Dowdall - all rights reserved
    </copyright>
 
    <license url="http://www.eclipse.org/legal/epl-v10.html">
@@ -24,8 +24,6 @@ and web connected clients in Java and OSGi.
    </url>
 
    <requires>
-      <import feature="org.eclipse.jdt" version="3.6.2.r362_v20101117-0800-7z8XFW6FLFlmjJcvz03jyeFBLS_F"/>
-      <import feature="org.eclipse.pde" version="3.6.2.r362_v20110203-7b7mFL2FET3dhHalh1iNZtL"/>
       <import plugin="org.eclipse.osgi"/>
       <import plugin="org.jboss.netty" version="3.2.4" match="greaterOrEqual"/>
       <import plugin="org.eclipse.core.runtime"/>
@@ -37,12 +35,13 @@ and web connected clients in Java and OSGi.
       <import plugin="org.eclipse.jdt.core"/>
       <import plugin="org.eclipse.ui.ide"/>
       <import plugin="org.eclipse.jdt.ui"/>
-      <import plugin="org.eclipse.osgi.services"/>
       <import plugin="org.junit"/>
       <import plugin="org.mockito"/>
       <import plugin="org.jsoup"/>
       <import plugin="com.sun.mail"/>
       <import plugin="org.apache.derby" version="10.5.3" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.debug.core" version="3.7.0" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.jdt.launching" version="3.6.1" match="greaterOrEqual"/>
       <import plugin="com.jcraft.jsch" version="0.1.41" match="greaterOrEqual"/>
       <import plugin="org.eclipse.swt" version="3.6.0" match="greaterOrEqual"/>
       <import plugin="org.eclipse.ui" version="3.6.1" match="greaterOrEqual"/>
@@ -55,6 +54,21 @@ and web connected clients in Java and OSGi.
       <import plugin="org.mysql.connector" version="5.1.15" match="greaterOrEqual"/>
       <import plugin="org.postgresql.jdbc4"/>
       <import plugin="com.mongodb"/>
+      <import plugin="org.eclipse.gef" version="3.5.0" match="compatible"/>
+      <import plugin="org.eclipse.ui" version="3.2.0" match="compatible"/>
+      <import plugin="org.eclipse.core.runtime" version="3.2.0" match="compatible"/>
+      <import plugin="org.eclipse.core.resources" version="3.2.0" match="compatible"/>
+      <import plugin="org.eclipse.jdt.core" version="3.6.2" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.jdt.ui" version="3.6.2" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.ui.views" version="3.2.0" match="compatible"/>
+      <import plugin="org.eclipse.ui.workbench" version="3.2.0" match="compatible"/>
+      <import plugin="org.eclipse.ui.ide" version="3.2.0" match="compatible"/>
+      <import plugin="org.eclipse.jface" version="3.2.0" match="compatible"/>
+      <import plugin="org.oobium.build" version="0.6.0" match="greaterOrEqual"/>
+      <import plugin="org.oobium.eclipse" version="0.6.0" match="greaterOrEqual"/>
+      <import plugin="org.oobium.utils" version="0.6.0" match="greaterOrEqual"/>
+      <import plugin="org.oobium.build.console" version="0.6.0" match="greaterOrEqual"/>
+      <import plugin="org.oobium.app.common" version="0.6.0" match="greaterOrEqual"/>
    </requires>
 
    <plugin
@@ -262,6 +276,13 @@ and web connected clients in Java and OSGi.
 
    <plugin
          id="org.oobium.persist.mongo"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.oobium.eclipse.designer"
          download-size="0"
          install-size="0"
          version="0.0.0"
