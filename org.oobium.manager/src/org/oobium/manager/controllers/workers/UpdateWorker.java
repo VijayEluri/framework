@@ -22,7 +22,10 @@ public class UpdateWorker extends BundleWorker {
 	
 	public UpdateWorker(Bundle[] bundles, String[] locations) {
 		super(bundles);
-		this.locations = locations;
+		this.locations = new String[locations.length];
+		for(int i = 0; i < locations.length; i++) {
+			this.locations[i] = locations[i].replace(" ", "%20");
+		}
 	}
 
 	@Override

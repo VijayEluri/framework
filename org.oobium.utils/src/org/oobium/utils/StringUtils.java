@@ -433,6 +433,11 @@ public class StringUtils {
 		}
 	}
 	
+	/**
+	 * Convenience method equivalent to URLEncoder.encode(value, "UTF-8")
+	 * @param value
+	 * @return
+	 */
 	public static String encode(String value) {
 		try {
 			return URLEncoder.encode(value, "UTF-8");

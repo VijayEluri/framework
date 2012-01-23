@@ -26,7 +26,6 @@ import org.oobium.manager.controllers.workers.StartWorker;
 import org.oobium.manager.controllers.workers.StopWorker;
 import org.oobium.manager.controllers.workers.UninstallWorker;
 import org.oobium.manager.controllers.workers.UpdateWorker;
-import org.oobium.utils.StringUtils;
 import org.oobium.utils.json.JsonUtils;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -224,7 +223,6 @@ public class BundleController extends HttpController {
 			
 			if(!isRendered()) {
 				String[] locations = param("location", String[].class);
-				System.out.println("locations: " + StringUtils.asString(locations));
 				UpdateWorker worker = new UpdateWorker(bundles, locations);
 				worker.submitTo(ManagerService.class);
 				renderAccepted();
