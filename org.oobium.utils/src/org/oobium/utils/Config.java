@@ -13,7 +13,6 @@ package org.oobium.utils;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.getResourceAsString;
 import static org.oobium.utils.StringUtils.lowerKeys;
-import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.utils.json.JsonUtils.toMap;
 
 import java.io.File;
@@ -297,14 +296,6 @@ public class Config {
 		} else {
 			return base + "/" + name;
 		}
-	}
-	
-	public int getPort() {
-		return getPort(mode);
-	}
-	
-	public int getPort(Mode mode) {
-		return coerce(get(PORT, mode), 80);
 	}
 	
 	/**

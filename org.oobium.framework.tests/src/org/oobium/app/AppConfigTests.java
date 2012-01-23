@@ -56,7 +56,7 @@ public class AppConfigTests {
 						"});";
 		Config config = Config.loadConfiguration(json);
 
-		assertEquals(5000, config.getPort(DEV));
+		fail("out of date");
 	}
 	
 	@Test
@@ -87,7 +87,6 @@ public class AppConfigTests {
 		assertTrue(config.get(MODULES) instanceof List<?>);
 		assertEquals(2, ((List<?>) config.get(MODULES)).size());
 		assertEquals("org.test.dev", ((List<?>) config.get(MODULES)).get(1));
-		assertEquals(5000, config.getPort(DEV));
 		assertEquals("org.test", ((Map<?,?>) ((List<?>) config.get(MODULES)).get(0)).keySet().iterator().next());
 	}
 	

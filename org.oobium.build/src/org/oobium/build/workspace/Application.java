@@ -71,7 +71,7 @@ public class Application extends Module {
 	}
 
 	public int getPort(Mode mode) {
-		return loadConfiguration().getPort(mode);
+		return loadServerConfiguration(mode).port();
 	}
 
 	public Site getSite() {
