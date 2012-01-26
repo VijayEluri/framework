@@ -13,7 +13,6 @@ package org.oobium.eclipse.views.server;
 import static org.oobium.utils.StringUtils.blank;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -29,8 +28,8 @@ public class ConsolePanel extends Composite {
 	private ServerView view;
 	private ConsolePage consolePage;
 
-	public ConsolePanel(SashForm parent, ServerView view) {
-		super(parent, 0);
+	public ConsolePanel(ServerView view) {
+		super(view.getPanel(), 0);
 		this.view = view;
 		createContents();
 	}

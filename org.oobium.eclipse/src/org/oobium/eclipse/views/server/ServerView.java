@@ -18,7 +18,6 @@ import static org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants.ATTR_V
 import static org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants.ID_REMOTE_JAVA_APPLICATION;
 import static org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants.ID_SOCKET_ATTACH_VM_CONNECTOR;
 import static org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants.ID_SOCKET_LISTEN_VM_CONNECTOR;
-import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.utils.literal.Map;
 import static org.oobium.utils.literal.e;
 
@@ -38,9 +37,9 @@ import org.eclipse.jface.action.IStatusLineManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IMemento;
@@ -61,12 +60,9 @@ import org.oobium.eclipse.views.actions.ScrollLockAction;
 import org.oobium.eclipse.views.server.actions.AutoMigrateAction;
 import org.oobium.eclipse.views.server.actions.AutoUpdateAction;
 import org.oobium.eclipse.views.server.actions.DebugAction;
-import org.oobium.eclipse.views.server.actions.LayoutAction;
 import org.oobium.eclipse.views.server.actions.MigrateAction;
 import org.oobium.eclipse.views.server.actions.MigratePurgeAction;
 import org.oobium.eclipse.views.server.actions.MigrateRedoAction;
-import org.oobium.eclipse.views.server.actions.ShowBrowserAction;
-import org.oobium.eclipse.views.server.actions.ShowConsoleAction;
 import org.oobium.eclipse.views.server.actions.StartAction;
 import org.oobium.eclipse.views.server.actions.StopAction;
 import org.oobium.utils.Config.Mode;
@@ -74,18 +70,6 @@ import org.oobium.utils.json.JsonUtils;
 
 public class ServerView extends ViewPart {
 
-	public enum Layout {
-		Horizontal,
-		Vertical;
-		public static Layout coerce(Object value) {
-			try {
-				return Layout.valueOf(String.valueOf(value));
-			} catch(Exception e) {
-				return Horizontal;
-			}
-		}
-	}
-	
 	public static final String ID = ServerView.class.getCanonicalName();
 	
 	
@@ -95,7 +79,7 @@ public class ServerView extends ViewPart {
 	private RunListener errorListener;
 	private RunListener runListener;
 	
-	private SashForm sf;
+	private Composite panel;
 	private BrowserPanel browserPanel;
 	private ConsolePanel consolePanel;
 	
@@ -110,14 +94,6 @@ public class ServerView extends ViewPart {
 	
 	private ClearAction clearAction;
 	private ScrollLockAction scrollLockAction;
-	private ShowBrowserAction showBrowserAction;
-	private ShowConsoleAction showConsoleAction;
-	private LayoutAction layoutAction;
-	
-	private int browserWeight;
-	private boolean browserVisible;
-	private boolean consoleVisible;
-	private Layout layout;
 	
 
 	public ServerView() {
@@ -187,9 +163,6 @@ public class ServerView extends ViewPart {
 	private void createActions() {
 		clearAction = new ClearAction(consolePanel.getConsole());
 		scrollLockAction = new ScrollLockAction(consolePanel.getConsole());
-		showBrowserAction = new ShowBrowserAction(this, browserVisible);
-		showConsoleAction = new ShowConsoleAction(this, consoleVisible);
-		layoutAction = new LayoutAction(this);
 		startAction = new StartAction(this);
 		debugAction = new DebugAction(this);
 		stopAction = new StopAction(this);
@@ -206,24 +179,30 @@ public class ServerView extends ViewPart {
 		manager.add(clearAction);
 		manager.add(scrollLockAction);
 		manager.add(new Separator());
-		manager.add(showBrowserAction);
-		manager.add(showConsoleAction);
-		manager.add(layoutAction);
 		manager.add(new Separator());
 		manager.add(purgeAction);
 		
 		manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
 	}
+
+	Composite getPanel() {
+		return panel;
+	}
 	
 	public void createPartControl(Composite parent) {
-		parent.setLayout(new FillLayout());
+		panel = parent;
+
+		GridLayout layout = new GridLayout();
+		layout.marginWidth = 0;
+		layout.marginHeight = 0;
+		layout.verticalSpacing = 0;
+		panel.setLayout(layout);
+
+		browserPanel = new BrowserPanel(this);
+		browserPanel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
 		
-		sf = new SashForm(parent, SWT.VERTICAL);
-
-		browserPanel = new BrowserPanel(sf, this);
-		consolePanel = new ConsolePanel(sf, this);
-
-		sf.setWeights(new int[] { browserWeight, 100 - browserWeight } );
+		consolePanel = new ConsolePanel(this);
+		consolePanel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 
 //		PlatformUI.getWorkbench().getHelpSystem().setHelp(viewer.getControl(), "org.oobium.eclipse.viewer");
 		createActions();
@@ -246,8 +225,6 @@ public class ServerView extends ViewPart {
 		manager.add(redoAction);
 		manager.add(autoMigAction);
 		manager.add(new Separator());
-		manager.add(showBrowserAction);
-		manager.add(showConsoleAction);
 		manager.add(new Separator());
 		manager.add(clearAction);
 		manager.add(scrollLockAction);
@@ -280,10 +257,6 @@ public class ServerView extends ViewPart {
 		return consolePanel;
 	}
 
-	public Layout getLayout() {
-		return layout;
-	}
-	
 	List<String> getPaths() {
 		if(application != null) {
 			return RunnerService.getPaths(application);
@@ -332,10 +305,6 @@ public class ServerView extends ViewPart {
 	public void init(IViewSite site, IMemento memento) throws PartInitException {
 		applicationName = (memento != null) ? memento.getString("application") : null;
 		properties = (memento != null) ? memento.getString("properties") : null;
-		browserWeight = (memento != null) ? coerce(memento.getInteger("browserWeight"), 75) : 75;
-		browserVisible = (memento != null) ? coerce(memento.getBoolean("browserVisible"), true) : true;
-		consoleVisible = (memento != null) ? coerce(memento.getBoolean("consoleVisible"), true) : true;
-		layout = (memento != null) ? Layout.coerce(memento.getString("layout")) : Layout.Vertical;
 		super.init(site, memento);
 	}
 
@@ -344,23 +313,12 @@ public class ServerView extends ViewPart {
 		super.saveState(memento);
 		memento.putString("application", applicationName);
 		memento.putString("properties", properties);
-		
-		int[] weights = sf.getWeights();
-		int total = 0;
-		for(int weight : weights) {
-			total += weight;
-		}
-		browserWeight = (int) (100 * ((float) weights[0] / total));
-		memento.putInteger("browserWeight", browserWeight);
-		
-		memento.putBoolean("browserVisible", browserVisible);
-		memento.putBoolean("consoleVisible", consoleVisible);
-		memento.putString("layout", layout.name());
 	}
 	
 	public void setApplication(String name) {
 		applicationName = name;
 		application = OobiumPlugin.getWorkspace().getApplication(applicationName);
+		browserPanel.setApplication(name);
 		Display.getDefault().syncExec(new Runnable() {
 			@Override
 			public void run() {
@@ -402,72 +360,12 @@ public class ServerView extends ViewPart {
 		});
 	}
 	
-	public void setBrowserVisible(boolean visible) {
-		if(visible) {
-			if(sf.getWeights()[0] == 0) {
-				sf.setWeights(new int[] { 50, 50 });
-			}
-			if(!showBrowserAction.isChecked()) {
-				showBrowserAction.setChecked(true);
-			}
-		} else {
-			if(sf.getWeights()[0] != 0) {
-				sf.setWeights(new int[] { 0, 100 });
-			}
-			if(showBrowserAction.isChecked()) {
-				showBrowserAction.setChecked(false);
-			}
-		}
-		browserVisible = visible;
-	}
-	
-	public void setConsoleVisible(boolean visible) {
-		if(visible) {
-			if(sf.getWeights()[1] == 0) {
-				sf.setWeights(new int[] { 50, 50 });
-			}
-			if(!showConsoleAction.isChecked()) {
-				showConsoleAction.setChecked(true);
-			}
-		} else {
-			if(sf.getWeights()[1] != 0) {
-				sf.setWeights(new int[] { 100, 0 });
-			}
-			if(showConsoleAction.isChecked()) {
-				showConsoleAction.setChecked(false);
-			}
-		}
-		consoleVisible = visible;
-	}
-	
 	public void setFocus() {
 		if(browserPanel.isVisible()) {
 			browserPanel.setFocus();
 		} else {
 			consolePanel.setFocus();
 		}
-	}
-	
-	public void setLayout(final Layout layout) {
-		Display.getDefault().asyncExec(new Runnable() {
-			@Override
-			public void run() {
-				switch(layout) {
-				case Horizontal:
-					if(sf.getOrientation() != SWT.HORIZONTAL) {
-						sf.setOrientation(SWT.HORIZONTAL);
-					}
-					break;
-				case Vertical:
-					if(sf.getOrientation() != SWT.VERTICAL) {
-						sf.setOrientation(SWT.VERTICAL);
-					}
-					break;
-				default:
-					throw new IllegalArgumentException("don't know how to handle " + layout);
-				}
-			}
-		});
 	}
 	
 	void setStatus(final Image image, final String message) {
