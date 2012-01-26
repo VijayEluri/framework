@@ -82,7 +82,7 @@ public class LogHandler implements LogListener {
 		}
 	}
 
-	private boolean inited;
+	private volatile boolean inited;
 	private String name;
 	private long max;
 	private long count;
@@ -100,7 +100,7 @@ public class LogHandler implements LogListener {
 		}
 	}
 
-	private synchronized void init() {
+	private void init() {
 		try {
 			File path = new File("logs");
 			if(!path.exists() || !path.isDirectory()) {
@@ -131,19 +131,20 @@ public class LogHandler implements LogListener {
 	}
 
 	@Override
-	public synchronized void logged(LogEntry log) {
+	public void logged(LogEntry log) {
 		Bundle bundle = log.getBundle();
 		int level = log.getLevel();
 		boolean isLoggingToConsole = LoggerImpl.isLoggingToConsole(bundle, level);
-		boolean isLoggingToFile = inited && LoggerImpl.isLoggingToFile(bundle, level);
+		boolean isLoggingToFile = LoggerImpl.isLoggingToFile(bundle, level);
+		if(isLoggingToFile) {
+			while(!inited) {
+				Thread.yield();
+			}
+		}
 		if(isLoggingToConsole || isLoggingToFile) {
 			String message = format(bundle.getSymbolicName(), log.getLevel(), log.getMessage(), log.getException());
 			if(isLoggingToConsole) {
-				if(decode(level) <= WARNING) {
-					System.err.print(message);
-				} else {
-					System.out.print(message);
-				}
+				logToConsole(message, level);
 			}
 			if(isLoggingToFile) {
 				logToFile(message);
@@ -151,6 +152,14 @@ public class LogHandler implements LogListener {
 		}
 	}
 
+	private void logToConsole(String message, int level) {
+		if(decode(level) <= WARNING) {
+			System.err.print(message);
+		} else {
+			System.out.print(message);
+		}
+	}
+	
 	private void logToFile(String message) {
 		if((count += message.length()) > max) {
 			rotate();

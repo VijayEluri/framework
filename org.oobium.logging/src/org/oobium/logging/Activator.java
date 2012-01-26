@@ -11,6 +11,7 @@
 package org.oobium.logging;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.osgi.framework.Bundle;
@@ -28,11 +29,14 @@ public class Activator implements BundleActivator {
 	public static Activator instance;
 
 	public static LogService getLogService() {
-		return (LogService) instance.logTracker.getService();
+		if(instance != null && instance.loggerServices != null) {
+			return instance.loggerServices[0];
+		}
+		return null;
 	}
 
 	public static boolean hasLogTracker() {
-		return instance != null && instance.logTracker != null;
+		return instance != null && instance.loggerServices != null;
 	}
 
 	public static boolean isBundle(Bundle bundle) {
@@ -43,7 +47,8 @@ public class Activator implements BundleActivator {
 	private ServiceTracker logTracker;
 	private ServiceTracker logReaderTracker;
 	
-	private List<LogReaderService> services;
+	private LogService[] loggerServices;
+	private List<LogReaderService> readerServices;
 	private LogListener logListener;
 
 	public Activator() {
@@ -51,47 +56,91 @@ public class Activator implements BundleActivator {
 	}
 
 	private void addService(LogReaderService service) {
-		if(services == null) {
-			services = new ArrayList<LogReaderService>();
+		if(readerServices == null) {
+			readerServices = new ArrayList<LogReaderService>();
 		}
-		services.add(service);
+		readerServices.add(service);
 	}
 	
 	private void removeService(LogReaderService service) {
-		if(services != null) {
-			services.remove(service);
-			if(services.isEmpty()) {
-				services = null;
+		if(readerServices != null) {
+			readerServices.remove(service);
+			if(readerServices.isEmpty()) {
+				readerServices = null;
+			}
+		}
+	}
+	
+	private void addService(LogService service) {
+		if(loggerServices == null) {
+			loggerServices = new LogService[1];
+			loggerServices[0] = service;
+		} else {
+			loggerServices = Arrays.copyOf(loggerServices, loggerServices.length + 1);
+			loggerServices[loggerServices.length - 1] = service;
+		}
+	}
+	
+	private void removeService(LogService service) {
+		if(loggerServices != null) {
+			if(loggerServices.length == 1) {
+				loggerServices = null;
+			} else {
+				LogService[] tmp = loggerServices;
+				loggerServices = Arrays.copyOf(loggerServices, loggerServices.length - 1);
+				for(int i = 0; i < loggerServices.length; i++) {
+					if(loggerServices[i] != service) {
+						tmp[i] = loggerServices[i];
+					}
+				}
+				loggerServices = tmp;
 			}
 		}
 	}
 	
 	@Override
+	@SuppressWarnings("unchecked")
 	public void start(final BundleContext context) throws Exception {
 		bundle = context.getBundle();
 
-		logTracker = new ServiceTracker(context, LogService.class.getName(), null);
+		logTracker = new ServiceTracker(context, LogService.class.getName(), new ServiceTrackerCustomizer() {
+			@Override
+			public Object addingService(ServiceReference reference) {
+				LogService service = (LogService) context.getService(reference);
+				addService(service);
+				return service;
+			}
+			@Override
+			public void modifiedService(ServiceReference reference, Object service) {
+				// nothing to do
+			}
+			@Override
+			public void removedService(ServiceReference reference, Object service) {
+				LogService loggerService = (LogService) service;
+				removeService(loggerService);
+			}
+		});
 		logTracker.open();
 
 		logListener = new LogHandler();
 		
 		logReaderTracker = new ServiceTracker(context, LogReaderService.class.getName(), new ServiceTrackerCustomizer() {
 			@Override
-			public Object addingService(ServiceReference arg0) {
-				LogReaderService service = (LogReaderService) context.getService(arg0);
+			public Object addingService(ServiceReference reference) {
+				LogReaderService service = (LogReaderService) context.getService(reference);
 				addService(service);
 				service.addLogListener(logListener);
 				return service;
 			}
 			@Override
-			public void modifiedService(ServiceReference arg0, Object arg1) {
+			public void modifiedService(ServiceReference reference, Object service) {
 				// nothing to do
 			}
 			@Override
-			public void removedService(ServiceReference arg0, Object arg1) {
-				LogReaderService service = (LogReaderService) arg1;
-				service.removeLogListener(logListener);
-				removeService(service);
+			public void removedService(ServiceReference reference, Object service) {
+				LogReaderService readerService = (LogReaderService) service;
+				readerService.removeLogListener(logListener);
+				removeService(readerService);
 			}
 		});
 		logReaderTracker.open();
@@ -104,15 +153,19 @@ public class Activator implements BundleActivator {
 		logTracker.close();
 		logTracker = null;
 
+		if(loggerServices != null) {
+			readerServices = null;
+		}
+
 		logReaderTracker.close();
 		logReaderTracker = null;
 
-		if(services != null) {
-			for(LogReaderService service : services) {
+		if(readerServices != null) {
+			for(LogReaderService service : readerServices) {
 				service.removeLogListener(logListener);
 			}
-			services.clear();
-			services = null;
+			readerServices.clear();
+			readerServices = null;
 		}
 		logListener = null;
 

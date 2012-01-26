@@ -310,12 +310,12 @@ public class LoggerImpl implements Logger {
 	}
 	
 	@Override
-	public synchronized void log(int level, String message, Throwable exception) {
+	public void log(int level, String message, Throwable exception) {
 		log(level, message, exception, new Object[0]);
 	}
 	
 	@Override
-	public synchronized void log(int level, String message, Throwable exception, Object...values) {
+	public void log(int level, String message, Throwable exception, Object...values) {
 		if(isLogging(level)) {
 			
 			if(hasLogTracker()) {
