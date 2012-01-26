@@ -80,7 +80,7 @@ public class DerbyEmbeddedMigrationService extends DbMigrationService {
 			for(String action : new String[] { "INSERT", "UPDATE" }) {
 				String sql =
 					"CREATE TRIGGER " + table.name + "___" + column + "___u_" + action.toLowerCase() + "_trigger" +
-					" NO CASCADE BEFORE " + action + " ON " + getSqlSafe(table.name) +
+					" AFTER " + action + " ON " + getSqlSafe(table.name) +
 					" REFERENCING NEW ROW AS NEWROW" +
 					" FOR EACH ROW" +
 					" CALL APP.CHECK_UNIQUE('" + getSqlSafe(table.name) + "', '" + getSqlSafe(column) + "', NEWROW." + getSqlSafe(column) + ")";

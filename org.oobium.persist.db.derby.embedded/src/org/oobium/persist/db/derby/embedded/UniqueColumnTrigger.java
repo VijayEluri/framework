@@ -13,11 +13,27 @@ public class UniqueColumnTrigger {
 			Connection connection = DriverManager.getConnection("jdbc:default:connection");
 			Statement s = connection.createStatement();
 			
-			String sql = "SELECT 1 FROM " + tableName + " WHERE " + columnName + "=" + id;
+			String sql = "SELECT count(*) FROM " + tableName + " WHERE " + columnName + "=" + id;
 			
 			ResultSet rs = s.executeQuery(sql);
-			if(rs.next()) {
-				throw new SQLException("Duplicate value for " + tableName + "(" + columnName + "): " + id);
+			try {
+				if(rs.next()) {
+					int count = rs.getInt(1);
+					if(count > 1) {
+						throw new SQLException("Duplicate value for " + tableName + "(" + columnName + "): " + id);
+					}
+				}
+			} finally {
+				try {
+					rs.close();
+				} catch(SQLException e) {
+					// discard
+				}
+				try {
+					s.close();
+				} catch(SQLException e) {
+					// discard
+				}
 			}
 		}
 	}
