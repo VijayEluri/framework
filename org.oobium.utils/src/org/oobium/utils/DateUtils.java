@@ -21,6 +21,7 @@ import java.util.TimeZone;
 
 public class DateUtils {
 
+	private static final SimpleDateFormat basicDate			= new SimpleDateFormat("MM/dd/yyyy");
 	private static final SimpleDateFormat httpDate_1123		= new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
 	private static final SimpleDateFormat httpDate_850		= new SimpleDateFormat("EEEE, dd-MMM-yy HH:mm:ss z", Locale.US);
 	private static final SimpleDateFormat httpDate_ASCTIME	= new SimpleDateFormat("EEE, MM  dd HH:mm:ss yyyy", Locale.US);
@@ -43,6 +44,22 @@ public class DateUtils {
 		return cal.getTime();
 	}
 
+	public static Date getDate(String date) throws ParseException {
+		try {
+			return basicDate.parse(date);
+		} catch(Exception e) {
+			throw new ParseException("could not parse date: " + date + " using pattern: MM/dd/yyyy", -1);
+		}
+	}
+	
+	public static Date getDate(String date, String pattern) throws ParseException {
+		try {
+			return new SimpleDateFormat(pattern).parse(date);
+		} catch(Exception e) {
+			throw new ParseException("could not parse date: " + date + " using pattern: " + pattern, -1);
+		}
+	}
+	
 	public static List<Object[]> getSelectDates(String format, int count) {
 		return getSelectDates(format, 0, count);
 	}
