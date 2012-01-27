@@ -15,6 +15,7 @@ import static org.oobium.app.http.Action.showNew;
 import static org.oobium.app.http.MimeType.CSS;
 import static org.oobium.app.http.MimeType.JS;
 import static org.oobium.app.http.MimeType.JSON;
+import static org.oobium.app.sessions.ISession.SESSION_COOKIE;
 import static org.oobium.app.sessions.ISession.SESSION_ID_KEY;
 import static org.oobium.app.sessions.ISession.SESSION_UUID_KEY;
 import static org.oobium.utils.StringUtils.asString;
@@ -27,6 +28,7 @@ import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.utils.json.JsonUtils.format;
 import static org.oobium.utils.json.JsonUtils.toJson;
 import static org.oobium.utils.json.JsonUtils.toMap;
+import static org.oobium.utils.json.JsonUtils.toStringMap;
 import static org.oobium.utils.literal.Map;
 import static org.oobium.utils.literal.e;
 
@@ -37,9 +39,9 @@ import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -70,6 +72,7 @@ import org.oobium.app.routing.handlers.AuthorizationHandler;
 import org.oobium.app.server.netty4.Attribute;
 import org.oobium.app.server.netty4.FileUpload;
 import org.oobium.app.server.netty4.HttpData;
+import org.oobium.app.sessions.CookieSession;
 import org.oobium.app.sessions.ISession;
 import org.oobium.app.sessions.ISessions;
 import org.oobium.app.views.DynamicAsset;
@@ -81,6 +84,7 @@ import org.oobium.cache.CacheObject;
 import org.oobium.cache.CacheService;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
+import org.oobium.persist.NullPersistServiceException;
 import org.oobium.utils.Base64;
 import org.oobium.utils.FileUtils;
 import org.oobium.utils.StringUtils;
@@ -472,14 +476,16 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 			
 			if(session != null) {
 				if(session.isDestroyed()) {
-					response.expireCookie(SESSION_ID_KEY);
-					response.expireCookie(SESSION_UUID_KEY);
+					response.expireCookie(SESSION_COOKIE);
 				} else {
-					Timestamp exp = new Timestamp(System.currentTimeMillis() + 30*60*1000);
-					session.setExpiration(exp);
-					if(session.save()) {
-						response.setCookie(SESSION_ID_KEY, session.getId(), 30*60);
-						response.setCookie(SESSION_UUID_KEY, session.getUuid(), 30*60);
+					if(session.isCookieOnly()) {
+						response.setCookie(SESSION_COOKIE, session.getCookieData(), 30*60);
+					} else {
+						Date exp = new Date(System.currentTimeMillis() + 30*60*1000);
+						session.setExpiration(exp);
+						if(session.save()) {
+							response.setCookie(SESSION_COOKIE, session.getCookieData(), 30*60);
+						}
 					}
 				}
 			}
@@ -1452,19 +1458,25 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	private void resolveSession(String include, boolean create) {
 		if((create && session == null) || (!create && !sessionResolved)) {
 			sessionResolved = true;
-			Cookie cookie = request.getCookie(SESSION_ID_KEY);
+			Cookie cookie = request.getCookie(SESSION_COOKIE);
 			if(cookie != null) {
-				try {
-					int id = Integer.parseInt(cookie.getValue());
-					cookie = request.getCookie(SESSION_UUID_KEY);
-					if(cookie == null) {
-						logger.debug("SESSION_UUID_KEY does not exist");
-					} else {
-						String uuid = cookie.getValue();
+				Map<String, String> cookieData = toStringMap(cookie.getValue());
+				if(cookieData.containsKey(SESSION_ID_KEY) && cookieData.containsKey(SESSION_UUID_KEY)) {
+					try {
+						int id = Integer.parseInt(cookieData.get(SESSION_ID_KEY));
+						String uuid = cookieData.get(SESSION_UUID_KEY);
 						session = handler.getSession(id, uuid, include, create);
+						if(session != null) {
+							session.putCookieData(cookieData);
+						}
+					} catch(NullPersistServiceException e) {
+						session = new CookieSession(cookieData);
+					} catch(NumberFormatException e) {
+						logger.debug("invalid format of SESSION_ID_KEY: '{}'", cookie.getValue());
+						// session will be null
 					}
-				} catch(NumberFormatException e) {
-					logger.debug("invalid format of SESSION_ID_KEY: '{}'", cookie.getValue());
+				} else {
+					session = new CookieSession(cookieData);
 				}
 			}
 			if(session == null && create) {

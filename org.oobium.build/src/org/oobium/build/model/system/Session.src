@@ -17,8 +17,11 @@ import java.util.Map;
 import org.oobium.app.sessions.ISession;
 import org.oobium.persist.Attribute;
 import org.oobium.persist.ModelDescription;
+import org.oobium.persist.NullPersistService;
+import org.oobium.persist.PersistService;
 import org.oobium.persist.Validate;
 import org.oobium.persist.Validations;
+import org.oobium.utils.json.JsonUtils;
 
 @ModelDescription(
 	attrs = {
@@ -32,6 +35,8 @@ import org.oobium.persist.Validations;
 )
 public class Session extends SessionModel implements ISession {
 
+	private Map<String, String> cookieData;
+
 	@Override
 	protected void beforeCreate() {
 		if(!hasUuid()) {
@@ -40,11 +45,34 @@ public class Session extends SessionModel implements ISession {
 	}
 	
 	@Override
+	public void clearCookieData() {
+    	if(cookieData != null) {
+    		cookieData.clear();
+    	}
+	}
+	
+	@Override
 	public void clearData() {
     	Map<String, String> data = getData();
     	if(data != null) {
     		data.clear();
     	}
+	}
+
+	@Override
+	public String getCookieData() {
+		if(cookieData != null) {
+			return JsonUtils.toJson(cookieData);
+			}
+		return "";
+	}
+
+	@Override
+	public String getCookieData(String key) {
+		if(cookieData != null) {
+			return cookieData.get(key);
+		}
+		return null;
 	}
 
 	@Override
@@ -57,11 +85,47 @@ public class Session extends SessionModel implements ISession {
 	}
 
 	@Override
+	public boolean isCookieOnly() {
+		PersistService service = getPersistor();
+		return (service != null && !(service instanceof NullPersistService));
+	}
+
+	@Override
 	public boolean isDestroyed() {
 		Date expiration = (Date) get("expiration");
 		return expiration == null || expiration.before(new Date());
 	}
 	
+	@Override
+	public ISession putCookieData(Map<String, String> data) {
+		if(cookieData == null) {
+			cookieData = new HashMap<String, String>(data);
+		} else {
+			cookieData.putAll(data);
+		}
+		return this;
+	}
+	
+	@Override
+	public ISession putCookieData(String key, String value) {
+		if(cookieData == null) {
+			cookieData = new HashMap<String, String>();
+		}
+		cookieData.put(key, value);
+		return this;
+	}
+	
+	@Override
+	public ISession putData(Map<String, String> data) {
+    	Map<String, String> orig = getData();
+    	if(orig == null) {
+    		orig = new HashMap<String, String>();
+    		put("data", orig);
+    	}
+		orig.putAll(data);
+		return this;
+	}
+
 	@Override
 	public Session putData(String key, Object value) {
 		return putData(key, String.valueOf(value));

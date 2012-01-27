@@ -43,6 +43,7 @@ import org.oobium.cache.CacheService;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.persist.NullPersistService;
+import org.oobium.persist.NullPersistServiceException;
 import org.oobium.persist.PersistClient;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.PersistServiceProvider;
@@ -101,6 +102,8 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 
 	// TODO Workers should be in their own bundle and accessed as a service
 	private Map<AppService, Workers> workersMap;
+	
+	private NullPersistServiceException npse;
 	
 	public AppService() {
 		super();
@@ -295,8 +298,11 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 			PersistService service = Model.getPersistService(sessionClass);
 			if(service != null) {
 				if(service instanceof NullPersistService) {
+					if(npse == null) {
+						npse = new NullPersistServiceException("NullPersistService returned for sessionClass: " + sessionClass);
+					}
 					logger.debug("NullPersistService returned for sessionClass: {}", sessionClass);
-					return null;
+					throw npse;
 				}
 				try {
 					if(!blank(include)) {
