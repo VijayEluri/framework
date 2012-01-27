@@ -113,9 +113,7 @@ public class Request extends DefaultHttpRequest {
 	}
 	
 	public Cookie getCookie(String name) {
-		if(cookies == null) {
-			loadCookies();
-		}
+		loadCookies();
 		return cookies.get(name);
 	}
 	
@@ -206,6 +204,16 @@ public class Request extends DefaultHttpRequest {
 		return remotePort;
 	}
 	
+	public boolean hasCookie(String name) {
+		loadCookies();
+		return cookies.containsKey(name);
+	}
+	
+	public boolean hasCookies() {
+		loadCookies();
+		return !cookies.isEmpty();
+	}
+	
 	public boolean hasParameters() {
 		return !getParameters().isEmpty();
 	}
@@ -219,18 +227,18 @@ public class Request extends DefaultHttpRequest {
 	}
 	
 	private void loadCookies() {
-		cookies = new HashMap<String, Cookie>();
-		for(String header : getHeaders(HttpHeaders.Names.COOKIE)) {
-			for(Cookie cookie : new CookieDecoder().decode(header)) {
-				cookies.put(cookie.getName(), cookie);
+		if(cookies == null) {
+			cookies = new HashMap<String, Cookie>();
+			for(String header : getHeaders(HttpHeaders.Names.COOKIE)) {
+				for(Cookie cookie : new CookieDecoder().decode(header)) {
+					cookies.put(cookie.getName(), cookie);
+				}
 			}
 		}
 	}
 	
 	public void setCookie(Cookie cookie) {
-		if(cookies == null) {
-			loadCookies();
-		}
+		loadCookies();
 		cookies.put(cookie.getName(), cookie);
 	}
 	
