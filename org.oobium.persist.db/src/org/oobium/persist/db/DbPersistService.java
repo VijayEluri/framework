@@ -69,7 +69,6 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	
 	
 	protected final Logger logger;
-	private final DbPersistor persistor;
 	private final Map<String, Database> databases;
 	private final ServiceInfo info;
 	private BundleContext context;
@@ -83,7 +82,6 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 
 	public DbPersistService() {
 		logger = LogProvider.getLogger(DbPersistService.class);
-		persistor = new DbPersistor();
 		databases = new HashMap<String, Database>();
 		lock = new ReentrantReadWriteLock();
 		info = new DbServiceInfo(this);
@@ -206,7 +204,8 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 			Connection connection = getConnection();
 			int dbType = getDbType(connection);
 			Conversion conversion = Conversion.run(dbType, clazz, query, values);
-			return persistor.count(connection, clazz, conversion.getSql(), conversion.getValues());
+			DbPersistor persistor = new DbPersistor(connection, dbType);
+			return persistor.count(clazz, conversion.getSql(), conversion.getValues());
 		}
 		return count(clazz);
 	}
@@ -214,13 +213,14 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	@Override
 	public long count(Class<? extends Model> clazz, String query, Object... values) throws Exception {
 		Connection connection = getConnection();
+		int dbType = getDbType(connection);
 		if(isMapQuery(query)) {
-			int dbType = getDbType(connection);
 			Conversion conversion = Conversion.run(dbType, clazz, query, values);
 			query = conversion.getSql();
 			values = conversion.getValues();
 		}
-		return persistor.count(connection, clazz, query, values);
+		DbPersistor persistor = new DbPersistor(connection, dbType);
+		return persistor.count(clazz, query, values);
 	}
 
 	@Override
@@ -276,22 +276,26 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 
 	public List<Map<String, Object>> executeQuery(String sql, Object...values) throws SQLException {
 		Connection connection = getConnection();
-		return persistor.executeQuery(connection, sql, values);
+		DbPersistor persistor = new DbPersistor(connection);
+		return persistor.executeQuery(sql, values);
 	}
 	
 	public List<List<Object>> executeQueryLists(String sql, Object...values) throws SQLException {
 		Connection connection = getConnection();
-		return persistor.executeQueryLists(connection, sql, values);
+		DbPersistor persistor = new DbPersistor(connection);
+		return persistor.executeQueryLists(sql, values);
 	}
 
 	public Object executeQueryValue(String sql, Object...values) throws SQLException {
 		Connection connection = getConnection();
-		return persistor.executeQueryValue(connection, sql, values);
+		DbPersistor persistor = new DbPersistor(connection);
+		return persistor.executeQueryValue(sql, values);
 	}
 	
 	public int executeUpdate(String sql, Object... values) throws SQLException {
 		Connection connection = getConnection();
-		return persistor.executeUpdate(connection, sql, values);
+		DbPersistor persistor = new DbPersistor(connection);
+		return persistor.executeUpdate(sql, values);
 	}
 	
 	@Override
@@ -302,13 +306,14 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	@Override
 	public <T extends Model> T find(Class<T> clazz, String query, Object...values) throws Exception {
 		Connection connection = getConnection();
+		int dbType = getDbType(connection);
 		if(isMapQuery(query)) {
-			int dbType = getDbType(connection);
 			Conversion conversion = Conversion.run(dbType, clazz, query, values);
 			query = conversion.getSql();
 			values = conversion.getValues();
 		}
-		return persistor.find(connection, clazz, query, values);
+		DbPersistor persistor = new DbPersistor(connection, dbType);
+		return persistor.find(clazz, query, values);
 	}
 
 	@Override
@@ -324,20 +329,22 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 	@Override
 	public <T extends Model> List<T> findAll(Class<T> clazz, String query, Object...values) throws Exception {
 		Connection connection = getConnection();
+		int dbType = getDbType(connection);
 		if(isMapQuery(query)) {
-			int dbType = getDbType(connection);
 			Conversion conversion = Conversion.run(dbType, clazz, query, values);
 			query = conversion.getSql();
 			values = conversion.getValues();
 		}
-		return persistor.findAll(connection, clazz, query, values);
+		DbPersistor persistor = new DbPersistor(connection, dbType);
+		return persistor.findAll(clazz, query, values);
 	}
 	
 	@Override
 	public <T extends Model> T findById(Class<T> clazz, Object id) throws Exception {
 		Connection connection = getConnection();
 		// TODO always an int for now?
-		return persistor.find(connection, clazz, coerce(id, int.class));
+		DbPersistor persistor = new DbPersistor(connection);
+		return persistor.find(clazz, coerce(id, int.class));
 	}
 
 	@Override
@@ -378,10 +385,11 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 				Connection connection = getConnection();
 				int dbType = getDbType(connection);
 				Conversion conversion = Conversion.run(dbType, clazz, query, values);
+				DbPersistor persistor = new DbPersistor(connection, dbType);
 				if(all) {
-					return (E) persistor.findAll(connection, clazz, conversion.getSql(), conversion.getValues());
+					return (E) persistor.findAll(clazz, conversion.getSql(), conversion.getValues());
 				} else {
-					return (E) persistor.find(connection, clazz, conversion.getSql(), conversion.getValues());
+					return (E) persistor.find(clazz, conversion.getSql(), conversion.getValues());
 				}
 			}
 		}
@@ -466,20 +474,21 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		}
 		
 		Connection connection = getConnection();
+		DbPersistor persistor = new DbPersistor(connection);
 		if(task == RETRIEVE) {
-			persistor.retrieve(connection, models);
+			persistor.retrieve(models);
 		} else {
 			try {
 				connection.setAutoCommit(false);
 				switch(task) {
 				case CREATE:
-					persistor.create(connection, models);
+					persistor.create(models);
 					break;
 				case DESTROY:
-					persistor.destroy(connection, models);
+					persistor.destroy(models);
 					break;
 				case UPDATE:
-					persistor.update(connection, models);
+					persistor.update(models);
 					break;
 				}
 				if(getAutoCommit()) {
@@ -565,12 +574,13 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 			retrieve(model);
 		} else {
 			Connection connection = getConnection();
+			DbPersistor persistor = new DbPersistor(connection);
 			Matcher m = includePattern.matcher(options);
 			if(m.matches()) {
-				persistor.retrieve(connection, model, options.substring(m.end(1)).trim());
+				persistor.retrieve(model, options.substring(m.end(1)).trim());
 			}
 			else {
-				persistor.retrieveFields(connection, model, options);
+				persistor.retrieveFields(model, options);
 			}
 		}
 	}

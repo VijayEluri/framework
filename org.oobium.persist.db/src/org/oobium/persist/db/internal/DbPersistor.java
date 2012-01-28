@@ -80,7 +80,16 @@ public class DbPersistor {
 	}
 	
 
-	public DbPersistor() {
+	private final Connection connection;
+	private final int dbType;
+	
+	public DbPersistor(Connection connection) {
+		this(connection, getDbType(connection));
+	}
+	
+	public DbPersistor(Connection connection, int dbType) {
+		this.connection = connection;
+		this.dbType = dbType;
 	}
 
 	private void addDeferredToCreate(Model model, Map<Model, List<String>> map) throws NoSuchFieldException {
@@ -140,7 +149,7 @@ public class DbPersistor {
 		}
 	}
 
-	public int count(Connection connection, Class<? extends Model> clazz, String sql, Object... values) throws SQLException {
+	public int count(Class<? extends Model> clazz, String sql, Object... values) throws SQLException {
 		if(logger.isLoggingDebug()) {
 			logger.debug("start count: " + clazz.getCanonicalName() + join(", " + sql + " <- [", values, "]", ", "));
 		}
@@ -181,39 +190,39 @@ public class DbPersistor {
 		return -1;
 	}
 
-	public void create(Connection connection, Model[] models) throws SQLException, NoSuchFieldException {
+	public void create(Model[] models) throws SQLException, NoSuchFieldException {
 		for(Model model : models) {
-			doCreate(connection, model);
+			doCreate(model);
 		}
 	}
 
-	private void handleDependentDelete(Connection connection, ModelAdapter adapter, Model model, String field) throws SQLException {
+	private void handleDependentDelete(ModelAdapter adapter, Model model, String field) throws SQLException {
 		Object o = model.get(field, false);
 		if(o instanceof Model) {
-			destroy(connection, new Model[] { (Model) o  });
+			destroy(new Model[] { (Model) o  });
 		} else if(o instanceof Collection){
 			Model[] models = ((Collection<?>) o).toArray(new Model[0]);
-			destroy(connection, models);
+			destroy(models);
 		}
 	}
 
-	private void handleDependentNullify(Connection connection, ModelAdapter adapter, Model model, String field) throws SQLException {
+	private void handleDependentNullify(ModelAdapter adapter, Model model, String field) throws SQLException {
 		String table = tableName(adapter.getOppositeType(field));
-		String column = columnName(adapter.getOpposite(field));
+		String column = safeSqlWord(dbType, columnName(adapter.getOpposite(field)));
 
-		exec(connection, "UPDATE " + table + " SET " + column + "=null WHERE " + column + "=" + model.getId());
+		exec("UPDATE " + table + " SET " + column + "=null WHERE " + column + "=" + model.getId());
 	}
 	
-	private void handleDependentNullify(Connection connection, ModelAdapter adapter, Model model, String field, List<String> linkbacks) throws SQLException {
+	private void handleDependentNullify(ModelAdapter adapter, Model model, String field, List<String> linkbacks) throws SQLException {
 		String table = tableName(adapter.getOppositeType(field));
 
 		for(String linkback : linkbacks) {
-			String column = columnName(linkback);
-			exec(connection, "UPDATE " + table + " SET " + column + "=null WHERE " + column + "=" + model.getId());
+			String column = safeSqlWord(dbType, columnName(linkback));
+			exec("UPDATE " + table + " SET " + column + "=null WHERE " + column + "=" + model.getId());
 		}
 	}
 	
-	private void handleDependents(Connection connection, Model model, boolean beforeDestroy) throws SQLException {
+	private void handleDependents(Model model, boolean beforeDestroy) throws SQLException {
 		ModelAdapter adapter = ModelAdapter.getAdapter(model);
 		if(beforeDestroy) {
 			for(String field : adapter.getRelationFields()) {
@@ -221,18 +230,18 @@ public class DbPersistor {
 				switch(relation.dependent()) {
 				case Relation.DELETE:
 					if(adapter.hasMany(field) && adapter.isManyToOne(field)) {
-						handleDependentDelete(connection, adapter, model, field);
+						handleDependentDelete(adapter, model, field);
 					} else {
 						model.get(field); // make sure all DELETE and NULLIFY fields are loaded
 						if(adapter.hasOne(field)) {
 							if(adapter.isOneToOne(field)) {
 								if(!adapter.hasKey(field)) {
-									handleDependentDelete(connection, adapter, model, field);
+									handleDependentDelete(adapter, model, field);
 								}
 							} else {
 								List<String> linkbacks = adapter.getRelationLinkBacks(field);
 								if(!linkbacks.isEmpty()) {
-									handleDependentNullify(connection, adapter, model, field, linkbacks);
+									handleDependentNullify(adapter, model, field, linkbacks);
 								}
 							}
 						}
@@ -240,7 +249,7 @@ public class DbPersistor {
 					break;
 				case Relation.NULLIFY:
 					if(adapter.hasMany(field) && !adapter.isManyToMany(field)) {
-						handleDependentNullify(connection, adapter, model, field);
+						handleDependentNullify(adapter, model, field);
 					} else {
 						model.get(field); // make sure all DELETE and NULLIFY fields are loaded
 					}
@@ -253,11 +262,11 @@ public class DbPersistor {
 				switch(relation.dependent()) {
 				case Relation.DELETE:
 					if(!adapter.isOneToOne(field) || adapter.hasKey(field)) {
-						handleDependentDelete(connection, adapter, model, field);
+						handleDependentDelete(adapter, model, field);
 					}
 					break;
 				case Relation.NULLIFY:
-					handleDependentNullify(connection, adapter, model, field);
+					handleDependentNullify(adapter, model, field);
 					break;
 				}
 			}
@@ -266,26 +275,26 @@ public class DbPersistor {
 				switch(relation.dependent()) {
 				case Relation.DELETE:
 					if(!adapter.isManyToOne(field)) {
-						handleDependentDelete(connection, adapter, model, field);
+						handleDependentDelete(adapter, model, field);
 					}
 					break;
 				case Relation.NULLIFY:
-					handleDependentNullify(connection, adapter, model, field);
+					handleDependentNullify(adapter, model, field);
 					break;
 				}
 			}
 		}
 	}
 	
-	public void destroy(Connection connection, Model[] models) throws SQLException {
+	public void destroy(Model[] models) throws SQLException {
 		for(Model model : models) {
-			handleDependents(connection, model, true);
-			doDestroy(connection, model);
-			handleDependents(connection, model, false);
+			handleDependents(model, true);
+			doDestroy(model);
+			handleDependents(model, false);
 		}
 	}
 
-	private int doCreate(Connection connection, Model model) throws SQLException, NoSuchFieldException {
+	private int doCreate(Model model) throws SQLException, NoSuchFieldException {
 		logger.debug("start doCreate {}", model.asSimpleString());
 
 		if(!model.isNew()) {
@@ -310,7 +319,7 @@ public class DbPersistor {
 			PersistService p1 = model.getPersistor();
 			PersistService p2 = next.getPersistor();
 			if(p1 == p2) {
-				doCreateModel(connection, next);
+				doCreateModel(next);
 			} else {
 				try {
 					p2.create(next);
@@ -321,19 +330,18 @@ public class DbPersistor {
 		}
 
 		for(Entry<Model, List<String>> entry : deferredCreate.entrySet()) {
-			doCreateDeferred(connection, entry.getKey(), entry.getValue());
+			doCreateDeferred(entry.getKey(), entry.getValue());
 		}
 
 		for(Entry<Model, List<String>> entry : deferredUpdate.entrySet()) {
-			doUpdateDeferred(connection, entry.getKey(), entry.getValue());
+			doUpdateDeferred(entry.getKey(), entry.getValue());
 		}
 		
 		logger.debug("end doCreate");
 		return model.getId(int.class);
 	}
 
-	private int doCreate(Connection connection, String table, List<Cell> cells) throws SQLException {
-		int dbType = getDbType(connection);
+	private int doCreate(String table, List<Cell> cells) throws SQLException {
 		StringBuilder sb = new StringBuilder();
 		sb.append("INSERT INTO ").append(table).append('(');
 		for(Iterator<Cell> iter = cells.iterator(); iter.hasNext();) {
@@ -388,7 +396,7 @@ public class DbPersistor {
 		}
 	}
 	
-	private void doCreateDeferred(Connection connection, Model model, List<String> deferredMany) throws NoSuchFieldException, SQLException {
+	private void doCreateDeferred(Model model, List<String> deferredMany) throws NoSuchFieldException, SQLException {
 		ModelAdapter adapter = ModelAdapter.getAdapter(model.getClass());
 		
 		for(String field : deferredMany) {
@@ -398,7 +406,7 @@ public class DbPersistor {
 					List<Integer> dIds = new ArrayList<Integer>();
 					for(Object object : collection) {
 						Model dModel = (Model) object;
-						int dId = dModel.isNew() ? doCreate(connection, dModel) : dModel.getId(int.class);
+						int dId = dModel.isNew() ? doCreate(dModel) : dModel.getId(int.class);
 						dIds.add(dId);
 					}
 					if(adapter.isThrough(field)) {
@@ -410,27 +418,27 @@ public class DbPersistor {
 						String column2 = columnName(adapter.getOpposite(field));
 						String table = joinTable(table1, column1, table2, column2);
 						String[] columns = joinColumns(table1, column1, table2, column2);
-						doUpdateManyToMany(connection, table, columns[0], model.getId(int.class), columns[1], dIds);
+						doUpdateManyToMany(table, columns[0], model.getId(int.class), columns[1], dIds);
 					}
 				}
 			}
 		}
 	}
 
-	private void doUpdateDeferred(Connection connection, Model model, List<String> deferredOne) throws SQLException {
+	private void doUpdateDeferred(Model model, List<String> deferredOne) throws SQLException {
 		ModelAdapter adapter = ModelAdapter.getAdapter(model);
 		
 		for(String field : deferredOne) {
 			if(model.isSet(field)) {
 				Model opposite = (Model) model.get(field);
 				if(opposite != null) {
-					doUpdateOneToOne(connection, adapter, model, field, opposite.getId());
+					doUpdateOneToOne(adapter, model, field, opposite.getId());
 				}
 			}
 		}
 	}
 	
-	private void doCreateModel(Connection connection, Model model) throws SQLException, NoSuchFieldException {
+	private void doCreateModel(Model model) throws SQLException, NoSuchFieldException {
 		if(model.isNew()) {
 			ModelAdapter adapter = ModelAdapter.getAdapter(model);
 
@@ -471,7 +479,7 @@ public class DbPersistor {
 				throw new SQLException("can not create an empty model: " + model);
 			}
 			
-			int id = doCreate(connection, tableName(adapter.getModelClass()), cells);
+			int id = doCreate(tableName(adapter.getModelClass()), cells);
 			model.setId(id);
 
 			if(model.isNew()) {
@@ -480,7 +488,7 @@ public class DbPersistor {
 		}
 	}
 	
-	private int exec(Connection connection, String sql) throws SQLException {
+	private int exec(String sql) throws SQLException {
 		logger.trace(sql);
 		Statement s = null;
 		try {
@@ -497,7 +505,7 @@ public class DbPersistor {
 		}
 	}
 	
-	private void doDestroy(Connection connection, Model model) throws SQLException {
+	private void doDestroy(Model model) throws SQLException {
 		logger.debug("start doDestroy {}", model.asSimpleString());
 
 		ModelAdapter adapter = ModelAdapter.getAdapter(model);
@@ -512,16 +520,16 @@ public class DbPersistor {
 				String table = tableName(table1, column1, table2, column2);
 				String column = joinColumn(table1, column1, table2, column2);
 
-				exec(connection, "DELETE FROM " + table + " WHERE " + column + "=" + model.getId());
+				exec("DELETE FROM " + table + " WHERE " + safeSqlWord(dbType, column) + "=" + model.getId());
 			}
 		}
 
-		exec(connection, "DELETE FROM " + tableName(adapter.getModelClass()) + " WHERE id=" + model.getId());
+		exec("DELETE FROM " + tableName(adapter.getModelClass()) + " WHERE id=" + model.getId());
 
 		logger.debug("end doDestroy");
 	}
 
-	private Statement doExecuteQuery(Connection connection, String sql, Object...values) throws SQLException {
+	private Statement doExecuteQuery(String sql, Object...values) throws SQLException {
 		int limit = -1;
 		int ix = sql.toLowerCase().indexOf(" limit ");
 		if(ix != -1) {
@@ -554,7 +562,7 @@ public class DbPersistor {
 	/**
 	 * @throws SQLException if record does not exist in the database (its relations may have already been saved though)
 	 */
-	private void doUpdate(Connection connection, Model model) throws SQLException, NoSuchFieldException {
+	private void doUpdate(Model model) throws SQLException, NoSuchFieldException {
 		logger.debug("start doUpdate: {}", model.asSimpleString());
 
 		int id = model.getId(int.class);
@@ -578,16 +586,16 @@ public class DbPersistor {
 						Model fModel = (Model) model.get(field);
 						Integer fId = (fModel != null) ? fModel.getId(Integer.class) : null;
 						if(fId != null && fId < 1) {
-							fId = doCreate(connection, fModel);
+							fId = doCreate(fModel);
 						}
 						if(adapter.isOneToOne(field)) {
 							if(adapter.hasKey(field)) {
 								if(fId != null) {
-									clearOneToOne(connection, adapter, field, fId);
+									clearOneToOne(adapter, field, fId);
 								}
 								cells.add(new Cell(columnName(field), Types.INTEGER, fId));
 							} else {
-								doUpdateOneToOne(connection, adapter, model, field, fId);
+								doUpdateOneToOne(adapter, model, field, fId);
 							}
 						} else {
 							cells.add(new Cell(columnName(field), Types.INTEGER, fId));
@@ -600,7 +608,7 @@ public class DbPersistor {
 							if(p == null) {
 								String table = tableName(type);
 								String column = columnName(adapter.getOpposite(field));
-								doUpdateManyToOne(connection, table, column, id, collection);
+								doUpdateManyToOne(table, column, id, collection);
 							} else {
 								// what now? TODO mixed persist services
 							}
@@ -608,7 +616,7 @@ public class DbPersistor {
 							List<Integer> dIds = new ArrayList<Integer>();
 							for(Object object : collection) {
 								Model dModel = (Model) object;
-								int dId = dModel.isNew() ? doCreate(connection, dModel) : dModel.getId(int.class);
+								int dId = dModel.isNew() ? doCreate(dModel) : dModel.getId(int.class);
 								dIds.add(dId);
 							}
 							String table1 = tableName(adapter.getModelClass());
@@ -617,7 +625,7 @@ public class DbPersistor {
 							String column2 = columnName(adapter.getOpposite(field));
 							String table = joinTable(table1, column1, table2, column2);
 							String[] columns = joinColumns(table1, column1, table2, column2);
-							doUpdateManyToMany(connection, table, columns[0], model.getId(int.class), columns[1], dIds);
+							doUpdateManyToMany(table, columns[0], model.getId(int.class), columns[1], dIds);
 						}
 					} else if(adapter.hasAttribute(field)) {
 						String name = columnName(field);
@@ -639,7 +647,7 @@ public class DbPersistor {
 			}
 			
 			if(!cells.isEmpty()) {
-				int result = doUpdate(connection, tableName(clazz), model.getId(int.class), cells);
+				int result = doUpdate(tableName(clazz), model.getId(int.class), cells);
 				if(result < 1) {
 					throw new SQLException("could not update " + model.asSimpleString() + " (does not exist in database)");
 				}
@@ -649,8 +657,7 @@ public class DbPersistor {
 		logger.debug("end doUpdate");
 	}
 
-	private int doUpdate(Connection connection, String table, int id, List<Cell> cells) throws SQLException {
-		int dbType = getDbType(connection);
+	private int doUpdate(String table, int id, List<Cell> cells) throws SQLException {
 		StringBuilder sb = new StringBuilder();
 		sb.append("UPDATE ").append(table).append(" SET ");
 		for(Iterator<Cell> iter = cells.iterator(); iter.hasNext();) {
@@ -699,7 +706,7 @@ public class DbPersistor {
 	 * @param id2s
 	 * @throws SQLException
 	 */
-	private void doUpdateManyToMany(Connection connection, String table, String column1, int id1, String column2, List<Integer> id2s) throws SQLException {
+	private void doUpdateManyToMany(String table, String column1, int id1, String column2, List<Integer> id2s) throws SQLException {
 		Statement s = null;
 		try {
 			s = connection.createStatement();
@@ -728,26 +735,26 @@ public class DbPersistor {
 		}
 	}
 
-	private void doUpdateOneToOne(Connection connection, ModelAdapter adapter, Model model, String field, Object id) throws SQLException {
+	private void doUpdateOneToOne(ModelAdapter adapter, Model model, String field, Object id) throws SQLException {
 		String table = tableName(adapter.getOppositeType(field));
-		String column = columnName(adapter.getOpposite(field));
+		String column = safeSqlWord(dbType, columnName(adapter.getOpposite(field)));
 		
-		exec(connection, "UPDATE " + table + " SET " + column + "=null WHERE " + column + "=" + model.getId());
+		exec("UPDATE " + table + " SET " + column + "=null WHERE " + column + "=" + model.getId());
 		
-		exec(connection, "UPDATE " + table + " SET " + column + "=" + model.getId() + " WHERE " + "id=" + id);
+		exec("UPDATE " + table + " SET " + column + "=" + model.getId() + " WHERE " + "id=" + id);
 	}
 	
-	private void clearOneToOne(Connection connection, ModelAdapter adapter, String field, int id) throws SQLException {
+	private void clearOneToOne(ModelAdapter adapter, String field, int id) throws SQLException {
 		String table = tableName(adapter.getModelClass());
-		String column = columnName(field);
+		String column = safeSqlWord(dbType, columnName(field));
 		
-		exec(connection, "UPDATE " + table + " SET " + column + "=null WHERE " + column + "=" + id);
+		exec("UPDATE " + table + " SET " + column + "=null WHERE " + column + "=" + id);
 	}
 	
 	/**
 	 * Update a Many to One (opposite is NOT required) collection
 	 */
-	private void doUpdateManyToOne(Connection connection, String table, String column, int id, Collection<?> collection) throws SQLException {
+	private void doUpdateManyToOne(String table, String column, int id, Collection<?> collection) throws SQLException {
 		Statement s = null;
 		try {
 			s = connection.createStatement();
@@ -777,7 +784,7 @@ public class DbPersistor {
 		}
 	}
 
-	public void drop(Connection connection, String schema) throws SQLException {
+	public void drop(String schema) throws SQLException {
 		String sql = "select t.tablename, c.constraintname" + " from sys.sysconstraints c, sys.systables t"
 				+ " where c.type = 'F' and t.tableid = c.tableid";
 
@@ -804,14 +811,14 @@ public class DbPersistor {
 		}
 	}
 
-	public List<Map<String, Object>> executeQuery(Connection connection, String sql, Object... values) throws SQLException {
+	public List<Map<String, Object>> executeQuery(String sql, Object... values) throws SQLException {
 		if(logger.isLoggingDebug()) {
 			logger.debug("start executeQuery: " + sql + join(" [", values, "]", ", "));
 		}
 
 		Statement s = null;
 		try {
-			s = doExecuteQuery(connection, sql, values);
+			s = doExecuteQuery(sql, values);
 			return asFieldMaps(s.getResultSet());
 		} finally {
 			logger.debug("end executeQuery");
@@ -821,14 +828,14 @@ public class DbPersistor {
 		}
 	}
 
-	public List<List<Object>> executeQueryLists(Connection connection, String sql, Object... values) throws SQLException {
+	public List<List<Object>> executeQueryLists(String sql, Object... values) throws SQLException {
 		if(logger.isLoggingDebug()) {
 			logger.debug("start executeQueryLists: " + sql + join(" [", values, "]", ", "));
 		}
 		
 		Statement s = null;
 		try {
-			s = doExecuteQuery(connection, sql, values);
+			s = doExecuteQuery(sql, values);
 			return asLists(s.getResultSet(), true);
 		} finally {
 			logger.debug("end executeQueryLists");
@@ -838,7 +845,7 @@ public class DbPersistor {
 		}
 	}
 
-	public Object executeQueryValue(Connection connection, String sql, Object... values) throws SQLException {
+	public Object executeQueryValue(String sql, Object... values) throws SQLException {
 		if(logger.isLoggingDebug()) {
 			logger.debug("start executeQueryValue: " + sql + join(" [", values, "]", ", "));
 		}
@@ -869,7 +876,7 @@ public class DbPersistor {
 		}
 	}
 
-	public int executeUpdate(Connection connection, String sql, Object... values) throws SQLException {
+	public int executeUpdate(String sql, Object... values) throws SQLException {
 		PreparedStatement ps = null;
 		ResultSet rs = null;
 		try {
@@ -899,7 +906,7 @@ public class DbPersistor {
 		}
 	}
 	
-	public <T extends Model> T find(Connection connection, Class<T> clazz, int id) throws SQLException {
+	public <T extends Model> T find(Class<T> clazz, int id) throws SQLException {
 		if(logger.isLoggingDebug()) {
 			logger.debug("start find " + clazz.getCanonicalName() + " id: " + id);
 		}
@@ -908,18 +915,17 @@ public class DbPersistor {
 			return null;
 		}
 
-		T result = find(connection, clazz, "where id=" + id);
+		T result = find(clazz, "where id=" + id);
 
 		logger.debug("end find");
 		return result;
 	}
 
-	public <T extends Model> T find(Connection connection, Class<T> clazz, String sql, Object... values) throws SQLException {
+	public <T extends Model> T find(Class<T> clazz, String sql, Object... values) throws SQLException {
 		if(logger.isLoggingDebug()) {
 			logger.debug("start find: " + clazz.getCanonicalName() + ", " + sql + join(" <- [", values, "]", ", "));
 		}
 
-		int dbType = getDbType(connection);
 		QueryProcessor<T> processor = QueryProcessor.create(dbType, clazz, limit(sql, 1), values);
 		List<T> list = processor.process(connection);
 
@@ -929,12 +935,11 @@ public class DbPersistor {
 		return result;
 	}
 
-	public <T extends Model> List<T> findAll(Connection connection, Class<T> clazz, String sql, Object...values) throws SQLException {
+	public <T extends Model> List<T> findAll(Class<T> clazz, String sql, Object...values) throws SQLException {
 		if(logger.isLoggingDebug()) {
 			logger.debug("start findAll: " + clazz.getCanonicalName() + ", " + sql + join(" <- [", values, "]", ", "));
 		}
 
-		int dbType = getDbType(connection);
 		QueryProcessor<T> processor = QueryProcessor.create(dbType, clazz, sql, values);
 		List<T> list = processor.process(connection);
 
@@ -964,14 +969,13 @@ public class DbPersistor {
 		return UPDATED_AT.equals(cell.column) ||  UPDATED_ON.equals(cell.column);
 	}
 
-	public void retrieve(Connection connection, Model[] models) throws SQLException {
+	public void retrieve(Model[] models) throws SQLException {
 		if(logger.isLoggingDebug()) {
 			logger.debug(join("start retrieve: [", models, "]", ", "));
 		}
 		if(models.length == 0) {
 			return;
 		} else if(models.length == 1) {
-			int dbType = getDbType(connection);
 			QueryProcessor<?> processor = QueryProcessor.create(dbType, models[0].getClass(), "where id=?", models[0].getId());
 			List<?> list = processor.process(connection);
 			if(!list.isEmpty()) {
@@ -997,7 +1001,6 @@ public class DbPersistor {
 					logger.debug("retrieving data from database: " + clazz.getCanonicalName() + StringUtils.join(", id IN (", ids, ")", ", "));
 				}
 
-				int dbType = getDbType(connection);
 				QueryProcessor<? extends Model> processor = QueryProcessor.create(dbType, clazz, StringUtils.join("id IN (", ids, ")", ","));
 				for(Model model : processor.process(connection)) {
 					setFields(modelMap.get(model.getId()), model.getAll());
@@ -1007,10 +1010,9 @@ public class DbPersistor {
 		logger.debug("end retrieve");
 	}
 
-	public void retrieve(Connection connection, Model model, String include) throws SQLException {
+	public void retrieve(Model model, String include) throws SQLException {
 		logger.debug("start retrieve: {}, include: {}", model, include);
 
-		int dbType = getDbType(connection);
 		QueryProcessor<?> processor = QueryProcessor.create(dbType, model.getClass(), "where id=? include:?", model.getId(), include);
 		List<?> list = processor.process(connection);
 		if(!list.isEmpty()) {
@@ -1020,10 +1022,9 @@ public class DbPersistor {
 		logger.debug("end retrieve");
 	}
 
-	public void retrieveFields(Connection connection, Model model, String fields) throws SQLException {
+	public void retrieveFields(Model model, String fields) throws SQLException {
 		logger.debug("start retrieve: {}, fields: {}", model, fields);
 
-		int dbType = getDbType(connection);
 		QueryProcessor<?> processor = QueryProcessor.create(dbType, model.getClass(), "where id=? include:?", model.getId(), fields);
 		List<?> list = processor.process(connection);
 		if(!list.isEmpty()) {
@@ -1044,9 +1045,9 @@ public class DbPersistor {
 		}
 	}
 
-	public void update(Connection connection, Model[] models) throws SQLException, NoSuchFieldException {
+	public void update(Model[] models) throws SQLException, NoSuchFieldException {
 		for(Model model : models) {
-			doUpdate(connection, model);
+			doUpdate(model);
 		}
 	}
 
