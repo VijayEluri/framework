@@ -269,6 +269,7 @@ public class Constants {
 		HTML_TAGS.put("reset", "Specifies an input of style: reset (ESP)");
 		HTML_TAGS.put("submit", "Specifies an input of style: submit (ESP)");
 		HTML_TAGS.put("hidden", "Specifies a hidden form field (ESP)");
+		HTML_TAGS.put("radio", "Specifies an input of style: radio (ESP)");
 		HTML_TAGS.put("text", "Specifies a multiline or single line text box (ESP)");
 		HTML_TAGS.put("number", "Specifies an input of style: text, that can only accept digits (ESP)");
 		HTML_TAGS.put("options", "Specifies an option set belonging to a select element (ESP)");
