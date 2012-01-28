@@ -11,6 +11,10 @@ public class CookieSession implements ISession {
 	private Map<String, String> cookieData;
 	private boolean destroyed;
 
+	public CookieSession() {
+		// default constructor
+	}
+	
 	public CookieSession(Map<String, String> cookieData) {
 		this.cookieData = new HashMap<String, String>(cookieData);
 	}

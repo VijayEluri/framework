@@ -55,6 +55,7 @@ import org.oobium.app.http.Action;
 import org.oobium.app.http.MimeType;
 import org.oobium.app.request.Request;
 import org.oobium.app.routing.routes.DynamicAssetRoute;
+import org.oobium.app.routing.routes.DynamicRoute;
 import org.oobium.app.routing.routes.FileDirectoryRoute;
 import org.oobium.app.routing.routes.HttpRoute;
 import org.oobium.app.routing.routes.RedirectRoute;
@@ -719,6 +720,14 @@ public class Router {
 		
 		throw new IllegalArgumentException("could not locate controller class for " + clazz.getSimpleName());
 	}
+
+	public Route getHome() {
+		Route[] ra = routes.get(HOME);
+		if(ra != null && ra.length > 0) {
+			return ra[0];
+		}
+		return null;
+	}
 	
 	String getKey(Class<? extends Model> parent, String field, Action action) {
 		return parent.getName() + ":" + field + ":" + action;
@@ -1249,6 +1258,14 @@ public class Router {
 		removeResource(null, clazz, action);
 	}
 	
+	public Route getResource(Class<? extends Model> clazz, Action action) {
+		Route[] ra = routes.get(getKey(clazz, action));
+		if(ra != null && ra.length > 0) {
+			return ra[0];
+		}
+		return null;
+	}
+	
 	public void removeResource(String path, Class<? extends Model> clazz, Action action) {
 		String rule = getResourceRule(path, action);
 		removeRoute(getKey(clazz, action), rule, clazz, action);
@@ -1430,6 +1447,12 @@ public class Router {
 		}
 	}
 
+	public Routed setHome(RouteGetter getter) {
+		Route route = new DynamicRoute(GET, "/", getter);
+		addRoute(HOME, route);
+		return new Routed(this, route);
+	}
+	
 	void unpublish(Route route) {
 		if(published != null) {
 			published.remove(route);

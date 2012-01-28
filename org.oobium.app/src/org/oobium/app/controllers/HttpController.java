@@ -91,6 +91,8 @@ import org.oobium.utils.StringUtils;
 
 public class HttpController implements IFlash, IParams, IPathRouting, IUrlRouting, ISessions, IHttp {
 
+	public static final String PARAM_ID = "id";
+	
 	public static final String FLASH_KEY = "oobium_flash";
 	public static final String FLASH_ERROR = "error";
 	public static final String FLASH_NOTICE = "notice";
@@ -172,8 +174,8 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 						Object o = m.get(parts[i]);
 						if(o instanceof Map) {
 							Map<String, Object> tmp = (Map<String, Object>) o;
-							if(!tmp.containsKey("id")) {
-								tmp.put("id", params.get(param)); // see note above
+							if(!tmp.containsKey(PARAM_ID)) {
+								tmp.put(PARAM_ID, params.get(param)); // see note above
 							} // else, skip it
 						} else {
 							m.put(parts[i], params.get(param));
@@ -187,7 +189,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 							m = (Map<String, Object>) o;
 						} else {
 							Map<String, Object> tmp = new LinkedHashMap<String, Object>();
-							tmp.put("id", o); // see note above
+							tmp.put(PARAM_ID, o); // see note above
 							m.put(parts[i], tmp);
 							m = tmp;
 						}
@@ -626,11 +628,11 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	}
 	
 	public Object getId() {
-		return getParam("id");
+		return getParam(PARAM_ID);
 	}
 	
 	public <T> T getId(Class<T> type) {
-		return getParam("id", type);
+		return getParam(PARAM_ID, type);
 	}
 
 	public Logger getLogger() {
@@ -774,6 +776,10 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	@Override
 	public boolean hasFlashWarning() {
 		return hasFlash(FLASH_WARNING);
+	}
+	
+	public boolean hasId() {
+		return getParam(PARAM_ID) != null;
 	}
 	
 	public boolean hasMany(String field) {
@@ -1245,7 +1251,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	public void renderCreated(Object id, String path) {
 		rendering();
 		response = new Response(HttpResponseStatus.CREATED);
-		response.addHeader("id", String.valueOf(id));
+		response.addHeader(PARAM_ID, String.valueOf(id));
 		if(!blank(path)) {
 			response.addHeader(HttpHeaders.Names.LOCATION, path);
 		}

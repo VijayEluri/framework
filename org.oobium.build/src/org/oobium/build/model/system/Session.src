@@ -38,6 +38,12 @@ public class Session extends SessionModel implements ISession {
 	private Map<String, String> cookieData;
 
 	@Override
+	protected void afterCreate() {
+		putCookieData(SESSION_ID_KEY, getId().toString());
+		putCookieData(SESSION_UUID_KEY, getUuid());
+	}
+	
+	@Override
 	protected void beforeCreate() {
 		if(!hasUuid()) {
 			put(UUID, java.util.UUID.randomUUID().toString());
@@ -87,7 +93,7 @@ public class Session extends SessionModel implements ISession {
 	@Override
 	public boolean isCookieOnly() {
 		PersistService service = getPersistor();
-		return (service != null && !(service instanceof NullPersistService));
+		return (service == null || service instanceof NullPersistService);
 	}
 
 	@Override

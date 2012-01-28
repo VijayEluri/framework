@@ -35,6 +35,7 @@ import org.oobium.app.routing.Router;
 import org.oobium.app.routing.handlers.HttpHandler;
 import org.oobium.app.server.HandlerTask;
 import org.oobium.app.server.ServerConfig;
+import org.oobium.app.sessions.CookieSession;
 import org.oobium.app.sessions.ISession;
 import org.oobium.app.views.View;
 import org.oobium.app.workers.Worker;
@@ -292,17 +293,13 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 	public ServerConfig getServerConfig() {
 		return serverConfig;
 	}
-	
+
     private ISession getSession(Object id, String uuid, String include) {
 		if(sessionClass != null && !blank(id) && uuid != null) {
 			PersistService service = Model.getPersistService(sessionClass);
 			if(service != null) {
 				if(service instanceof NullPersistService) {
-					if(npse == null) {
-						npse = new NullPersistServiceException("NullPersistService returned for sessionClass: " + sessionClass);
-					}
-					logger.debug("NullPersistService returned for sessionClass: {}", sessionClass);
-					throw npse;
+					throwNpse();
 				}
 				try {
 					if(!blank(include)) {
@@ -325,13 +322,18 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		}
 		if(session == null && create) {
 			if(sessionClass == null) {
-				logger.warn("cannot create session: sessionClass is null");
+				return new CookieSession();
 			} else {
-				try {
-					session = (ISession) sessionClass.newInstance();
-					session.setExpiration(30*60);
-				} catch(Exception e) {
-					logger.warn("failed to create session: " + e.getLocalizedMessage());
+				PersistService service = Model.getPersistService(sessionClass);
+				if(service != null) {
+					try {
+						session = (ISession) sessionClass.newInstance();
+						session.setExpiration(30*60);
+					} catch(Exception e) {
+						logger.warn("failed to create session: " + e.getLocalizedMessage());
+					}
+				} else {
+					throwNpse();
 				}
 			}
 		}
@@ -612,6 +614,14 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		workers.submit(worker);
 	}
 
+	private void throwNpse() {
+		logger.debug("NullPersistService returned for sessionClass: {}", sessionClass);
+		if(npse == null) {
+			npse = new NullPersistServiceException("NullPersistService returned for sessionClass: " + sessionClass);
+		}
+		throw npse;
+	}
+	
 	@Override
 	public String toString() {
 		return "Application " + getName();

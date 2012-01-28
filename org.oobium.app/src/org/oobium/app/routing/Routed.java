@@ -42,6 +42,14 @@ public class Routed {
 		this(router, toArray(routed));
 	}
 	
+	public Route getRoute() {
+		return routes[0];
+	}
+	
+	public Route[] getRoutes() {
+		return Arrays.copyOf(routes, routes.length);
+	}
+	
 	public Routed publish() {
 		for(Route route : routes) {
 			router.publish(route);

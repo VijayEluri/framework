@@ -46,6 +46,7 @@ import org.oobium.app.routing.handlers.RtspHandler;
 import org.oobium.app.routing.handlers.ViewHandler;
 import org.oobium.app.routing.handlers.WebsocketHandler;
 import org.oobium.app.routing.routes.DynamicAssetRoute;
+import org.oobium.app.routing.routes.DynamicRoute;
 import org.oobium.app.routing.routes.FileDirectoryRoute;
 import org.oobium.app.routing.routes.HttpRoute;
 import org.oobium.app.routing.routes.RedirectRoute;
@@ -190,6 +191,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 					fixedRoute = fixedRoutes.get(request.getPath());
 				}
 				if(fixedRoute != null) {
+					fixedRoute = getRoute(fixedRoute, router, request);
 					switch(fixedRoute.type) {
 					case Route.ASSET:
 						StaticRoute ar = (StaticRoute) fixedRoute;
@@ -398,6 +400,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 				if(route.httpMethod == method) {
 					Matcher matcher = route.matcher(route.matchOnFullPath ? request.getUri() : request.getPath());
 					if(matcher.matches()) {
+						route = getRoute(route, router, request);
 						switch(route.type) {
 						case Route.ASSET:
 						case Route.AUTHORIZATION:
@@ -428,6 +431,13 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 		return null;
 	}
 
+	private Route getRoute(Route route, Router router, Request request) {
+		if(route instanceof DynamicRoute) {
+			return ((DynamicRoute) route).getter.getRoute(router, request);
+		}
+		return route;
+	}
+	
 	private Route getRoute(Router router, String key) {
 		Route[] routes = (router != null) ? router.routes.get(key) : null;
 		if(routes != null && routes.length > 0) {
