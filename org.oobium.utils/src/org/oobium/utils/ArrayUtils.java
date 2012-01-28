@@ -16,64 +16,64 @@ import java.util.List;
 
 public class ArrayUtils {
 
-	public static Object first(Object[] array) {
+	public static <T> T first(T[] array) {
 		if(array != null && array.length > 0) {
 			return array[0];
 		}
 		return null;
 	}
 
-	public static Object first(ArrayList<?> list) {
+	public static <T> T first(ArrayList<T> list) {
 		if(list != null && !list.isEmpty()) {
 			return list.get(0);
 		}
 		return null;
 	}
 
-	public static Object first(LinkedList<?> list) {
+	public static <T> T first(LinkedList<T> list) {
 		if(list != null && !list.isEmpty()) {
 			return list.getFirst();
 		}
 		return null;
 	}
 
-	public static Object first(List<?> list) {
+	public static <T> T first(List<T> list) {
 		if(list instanceof ArrayList) {
-			return first((ArrayList<?>) list);
+			return first((ArrayList<T>) list);
 		}
 		if(list instanceof LinkedList) {
-			return first((LinkedList<?>) list);
+			return first((LinkedList<T>) list);
 		}
 		return null;
 	}
 
-	public static Object last(Object[] array) {
+	public static <T> T last(T[] array) {
 		if(array != null && array.length > 0) {
 			return array[array.length-1];
 		}
 		return null;
 	}
 
-	public static Object last(ArrayList<?> list) {
+	public static <T> T last(ArrayList<T> list) {
 		if(list != null && !list.isEmpty()) {
 			return list.get(list.size()-1);
 		}
 		return null;
 	}
 
-	public static Object last(LinkedList<?> list) {
+	public static <T> T last(LinkedList<T> list) {
 		if(list != null && !list.isEmpty()) {
 			return list.getLast();
 		}
 		return null;
 	}
 
-	public static Object last(List<?> list) {
+	public static <T> T last(List<T> list) {
 		if(list instanceof ArrayList) {
-			return last((ArrayList<?>) list);
+			return last((ArrayList<T>) list);
 		}
 		if(list instanceof LinkedList) {
-			return last((LinkedList<?>) list);
+			return last((LinkedList<T>) list);
 		}
 		return null;
 	}
