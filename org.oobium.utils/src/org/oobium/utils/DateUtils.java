@@ -32,6 +32,29 @@ public class DateUtils {
 		httpDate_ASCTIME.setTimeZone(tz);
 	}
 
+	private static Date add(Date date, int field, int amount) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(date);
+		cal.add(field, amount);
+		return cal.getTime();
+	}
+	
+	public static Date addDays(Date date, int amount) {
+		return add(date, Calendar.DATE, amount);
+	}
+	
+	public static Date addHours(Date date, int amount) {
+		return add(date, Calendar.HOUR_OF_DAY, amount);
+	}
+	
+	public static Date addMinutes(Date date, int amount) {
+		return add(date, Calendar.MINUTE, amount);
+	}
+	
+	public static Date addWeeks(Date date, int amount) {
+		return add(date, Calendar.WEEK_OF_YEAR, amount);
+	}
+
 	public static Date dateFromNow(int amount, int calendarField) {
 		Calendar cal = Calendar.getInstance();
 		cal.add(calendarField, amount);
@@ -76,6 +99,12 @@ public class DateUtils {
 		return dates;
 	}
 	
+	public static Date hoursFromNow(int amount) {
+		Calendar cal = Calendar.getInstance();
+		cal.add(Calendar.HOUR_OF_DAY, amount);
+		return cal.getTime();
+	}
+
 	public static String httpDate() {
 		return httpDate(new Date());
 	}
@@ -108,6 +137,12 @@ public class DateUtils {
 		}
 	}
 	
+	public static Date minutesFromNow(int amount) {
+		Calendar cal = Calendar.getInstance();
+		cal.add(Calendar.MINUTE, amount);
+		return cal.getTime();
+	}
+
 	public static Date monthsFromNow(int amount) {
 		Calendar cal = Calendar.getInstance();
 		cal.add(Calendar.MONTH, amount);
@@ -148,12 +183,44 @@ public class DateUtils {
 		return c1.get(Calendar.YEAR) == c2.get(Calendar.YEAR);
 	}
 	
+	public static boolean sameWeek(Date date1, Date date2)  {
+		Calendar c1 = Calendar.getInstance();
+		Calendar c2 = Calendar.getInstance();
+		c1.setTime(date1);
+		c2.setTime(date2);
+		return c1.get(Calendar.WEEK_OF_YEAR) == c2.get(Calendar.WEEK_OF_YEAR);
+	}
+	
 	public static Date weeksFromNow(int amount) {
 		Calendar cal = Calendar.getInstance();
 		cal.add(Calendar.WEEK_OF_YEAR, amount);
 		return cal.getTime();
 	}
+
+	public static Date startOfWeek(Date date) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(date);
+		cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
+		return cal.getTime();
+	}
 	
+	public static String startOfWeek(Date date, String format) {
+		SimpleDateFormat sdf = new SimpleDateFormat(format);
+		return sdf.format(startOfWeek(date));
+	}
+
+	public static Date endOfWeek(Date date) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(date);
+		cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek() + 6);
+		return cal.getTime();
+	}
+	
+	public static String endOfWeek(Date date, String format) {
+		SimpleDateFormat sdf = new SimpleDateFormat(format);
+		return sdf.format(endOfWeek(date));
+	}
+
 	private DateUtils() {
 		// static methods only
 	}

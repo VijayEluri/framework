@@ -94,4 +94,35 @@ public class ArrayUtils {
 		return obj == last(list);
 	}
 
+	private static <T> void swap(T[] array, int i, int len) {
+		T tmp = array[i];
+		array[i] = array[len-i-1];
+		array[len-i-1] = tmp;
+	}
+	
+	private static <T> void swap(List<T> list, int i, int len) {
+		T tmp = list.get(i);
+		list.set(i, list.get(len-i-1));
+		list.set(len-i-1, tmp);
+	}
+	
+	public static <T> T[] reverse(T[] array) {
+		if(array != null && array.length > 1) {
+			for(int i = 0; i < array.length/2; i++) {
+				swap(array, i, array.length);
+			}
+		}
+		return array;
+	}
+	
+	public static <T> List<T> reverse(List<T> list) {
+		int len = list.size();
+		if(list != null && len > 1) {
+			for(int i = 0; i < len/2; i++) {
+				swap(list, i, len);
+			}
+		}
+		return list;
+	}
+	
 }
