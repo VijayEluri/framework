@@ -48,20 +48,24 @@ class UpdaterThread extends Thread {
 				handleEvent("/migrate");
 			}
 		}
-		protected void handleEvent(String command) {
+		protected void handleEvent(final String command) {
 			RunnerService.removeListener(this);
 			RunnerService.notifyListeners(Type.Migrate, application);
-			ClientResponse response = Client.client(migratorHost, migratorPort).post(command);
-			if(response.isSuccess()) {
-				logger.info(response.getBody());
-			} else {
-				if(response.exceptionThrown()) {
-					logger.warn("migrator at {}:{} threw an exception: {}", migratorHost, migratorPort, response.getException().getLocalizedMessage());
-				} else {
-					logger.warn("migrator at {}:{} completed with errors: {}", migratorHost, migratorPort, response.getBody());
-				}
-			}
-			RunnerService.notifyListeners(Type.Migrated, application);
+			new Thread() {
+				public void run() {
+					ClientResponse response = Client.client(migratorHost, migratorPort).post(command);
+					if(response.isSuccess()) {
+						logger.info(response.getBody());
+					} else {
+						if(response.exceptionThrown()) {
+							logger.warn("migrator at {}:{} threw an exception: {}", migratorHost, migratorPort, response.getException().getLocalizedMessage());
+						} else {
+							logger.warn("migrator at {}:{} completed with errors: {}", migratorHost, migratorPort, response.getBody());
+						}
+					}
+					RunnerService.notifyListeners(Type.Migrated, application);
+				};
+			}.start();
 		}
 	}
 
