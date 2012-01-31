@@ -86,6 +86,7 @@ import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
 import org.oobium.persist.NullPersistServiceException;
 import org.oobium.utils.Base64;
+import org.oobium.utils.Config.Mode;
 import org.oobium.utils.FileUtils;
 import org.oobium.utils.StringUtils;
 
@@ -407,21 +408,30 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	}
 	
 	private CacheObject doGetCache(String key) {
-		CacheService cache = handler.getCacheService();
-		if(cache != null) {
-			return cache.get(key);
-		} else {
-			logger.warn("cache service is not available");
+		if(Mode.isDEV()) {
+			logger.debug("skipping getCache({}) in DEV mode", key);
 			return null;
+		} else {
+			CacheService cache = handler.getCacheService();
+			if(cache != null) {
+				return cache.get(key);
+			} else {
+				logger.warn("cache service is not available");
+				return null;
+			}
 		}
 	}
 	
 	private void doSetCache(String key, byte[] content) {
-		CacheService cache = handler.getCacheService();
-		if(cache != null) {
-			cache.set(key, content);
+		if(Mode.isDEV()) {
+			logger.debug("skipping setCache({}) in DEV mode", key);
 		} else {
-			logger.warn("cache service is not available");
+			CacheService cache = handler.getCacheService();
+			if(cache != null) {
+				cache.set(key, content);
+			} else {
+				logger.warn("cache service is not available");
+			}
 		}
 	}
 	
