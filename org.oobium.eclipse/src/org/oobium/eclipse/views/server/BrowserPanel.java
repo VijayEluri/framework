@@ -29,6 +29,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
+import org.oobium.eclipse.OobiumPlugin;
 import org.oobium.eclipse.views.server.actions.browser.LaunchExternalBrowserAction;
 import org.oobium.eclipse.views.server.actions.browser.RefreshPathsAction;
 
@@ -37,6 +38,7 @@ public class BrowserPanel extends Composite {
 	private ServerView view;
 
 	private String app;
+	private Label appImg;
 	private Label appLbl;
 	private ToolItem appItem;
 	
@@ -68,12 +70,25 @@ public class BrowserPanel extends Composite {
 			@Override
 			public void fill(ToolBar parent, int index) {
 				appItem = new ToolItem(parent, SWT.SEPARATOR);
-				appLbl = new Label(parent, SWT.NONE);
+				Composite comp = new Composite(parent, SWT.NONE);
+				GridLayout layout = new GridLayout(2, false);
+				layout.marginWidth = 5;
+				layout.marginHeight = 0;
+				comp.setLayout(layout);
+
+				appImg = new Label(comp, SWT.NONE);
+				appImg.setImage(OobiumPlugin.getImage("/icons/application.png"));
+				appImg.setToolTipText("Active Application");
+				appImg.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, false, false));
+
+				appLbl = new Label(comp, SWT.NONE);
+				appLbl.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, true));
 				if(app != null) {
 					appLbl.setText(app);
 				}
-				appItem.setControl(appLbl);
-				appItem.setWidth(appLbl.computeSize(-1, -1).x);
+
+				appItem.setControl(comp);
+				appItem.setWidth(comp.computeSize(-1, -1).x);
 			}
 		};
 		
@@ -146,7 +161,7 @@ public class BrowserPanel extends Composite {
 		app = name;
 		if(appLbl != null) {
 			appLbl.setText(app);
-			appItem.setWidth(appLbl.computeSize(-1, -1).x);
+			appItem.setWidth(appLbl.getParent().computeSize(-1, -1).x);
 			layout(true, true);
 		}
 	}
