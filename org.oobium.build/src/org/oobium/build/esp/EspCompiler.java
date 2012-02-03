@@ -209,7 +209,7 @@ public class EspCompiler {
 		body.append("var f = document.createElement('form');");
 		body.append("f.style.display = 'none';");
 		body.append("this.parentNode.appendChild(f);");
-		body.append("f.method = 'POST';");
+		body.append("f.method = 'post';");
 		body.append("f.action = '\").append(pathTo(");
 		build(target, body, true);
 		body.append(", create)).append(\"';");
@@ -241,7 +241,7 @@ public class EspCompiler {
 		body.append("var f = document.createElement('form');");
 		body.append("f.style.display = 'none';");
 		body.append("this.parentNode.appendChild(f);");
-		body.append("f.method = 'POST';");
+		body.append("f.method = 'post';");
 		body.append("f.action = '\").append(pathTo(");
 		build(target, body, true);
 		body.append(", destroy)).append(\"';");
@@ -266,7 +266,7 @@ public class EspCompiler {
 		body.append("var f = document.createElement('form');");
 		body.append("f.style.display = 'none';");
 		body.append("this.parentNode.appendChild(f);");
-		body.append("f.method = 'POST';");
+		body.append("f.method = 'post';");
 		body.append("f.action = '\").append(");
 		body.append(target);
 		body.append(").append(\"';");
@@ -359,7 +359,7 @@ public class EspCompiler {
 		body.append("var f = document.createElement('form');");
 		body.append("f.style.display = 'none';");
 		body.append("this.parentNode.appendChild(f);");
-		body.append("f.method = 'POST';");
+		body.append("f.method = 'post';");
 		body.append("f.action = '\").append(pathTo(");
 		build(target, body, true);
 		body.append(", update)).append(\"';");
@@ -1375,7 +1375,7 @@ public class EspCompiler {
 			if(method == null) {
 				esf.addImport(Action.class.getCanonicalName());
 				body.append(" action=\\\"\").append(pathTo(").append(model).append(", ").append(model).append(".isNew() ? Action.create : Action.update)).append(\"\\\"");
-				body.append(" method=\\\"POST\\\"");
+				body.append(" method=\\\"post\\\"");
 			} else {
 				body.append(" method=\\\"").append(method).append("\\\"");
 			}
@@ -1495,6 +1495,7 @@ public class EspCompiler {
 			} else if("date".equals(tag)) {
 				buildDateInputs(element);
 			} else if("textArea".equals(tag)) {
+				tag = "textarea";
 				buildTextArea(element);
 			} else if("check".equals(tag)) {
 				buildCheck(element);
@@ -2195,13 +2196,17 @@ public class EspCompiler {
 						String model = getFormModel(element);
 						if(!blank(model)) {
 							List<JavaSourcePart> fields = ((MarkupElement) element.getParent()).getArgs();
-							body.append(", ").append(model).append(".isRequired(");
-							lastBodyIsJava = true;
-							for(int i = 0; i < fields.size(); i++) {
-								if(i != 0) body.append(", ");
-								build(fields.get(i), body);
+							if(fields == null) {
+								body.append("));\n");
+							} else {
+								body.append(", ").append(model).append(".isRequired(");
+								lastBodyIsJava = true;
+								for(int i = 0; i < fields.size(); i++) {
+									if(i != 0) body.append(", ");
+									build(fields.get(i), body);
+								}
+								body.append(")));\n");
 							}
-							body.append(")));\n");
 						} else {
 							body.append("));\n");
 						}
