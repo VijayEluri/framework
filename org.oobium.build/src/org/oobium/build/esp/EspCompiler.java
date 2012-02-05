@@ -2243,11 +2243,16 @@ public class EspCompiler {
 			
 			if(element.hasArgs()) {
 				for(EspPart arg : element.getArgs()) {
+					sb.append("<link rel='stylesheet' type='text/css'");
+					if(element.hasEntryValue("media")) {
+						sb.append(" media=");
+						appendAttr("media", element.getEntryValue("media"));
+					}
 					String file = arg.getText();
 					if("defaults".equals(file)) {
-						sb.append("<link rel='stylesheet' type='text/css' href='/application.css' />");
+						sb.append(" href='/application.css' />");
 					} else {
-						sb.append("<link rel='stylesheet' type='text/css' href='/").append(file);
+						sb.append(" href='/").append(file);
 						if(file.endsWith(".css")) {
 							sb.append("' />");
 						} else {
@@ -2260,7 +2265,13 @@ public class EspCompiler {
 				boolean firstChild = true;
 				List<EspElement> children = element.getChildren();
 				if(!dom.isEss()) {
-					sb.append("<style>");
+					if(element.hasEntryValue("media")) {
+						sb.append("<style media=");
+						appendAttr("media", element.getEntryValue("media"));
+						sb.append(">");
+					} else {
+						sb.append("<style>");
+					}
 				}
 				for(EspElement childElement : children) {
 					StyleChildElement child = (StyleChildElement) childElement;
