@@ -419,8 +419,9 @@ public class ValidatorTests {
 	
 	@Validations({ @Validate(with=TestValidator.class) })
 	public static class TestWith extends Model { }
+
 	public static class TestValidator implements Validator<TestWith> { 
-		public void validate(TestWith model) { 
+		public void validate(TestWith model, int on) { 
 			if(!"bob".equals(model.get("name"))) {
 				model.addError("name", "not bob");
 			}

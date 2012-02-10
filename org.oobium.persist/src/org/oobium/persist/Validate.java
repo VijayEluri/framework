@@ -144,10 +144,9 @@ public @interface Validate {
 
 	/**
 	 * Validate this model with the Validator specified by the given class.
-	 * <p>The given class <b>MUST</b> be of type {@link Validator}.</p>
 	 * <p><b>This validation cannot be mixed with other validations.</b></p>
 	 */
-	Class<?> with() default Object.class;
+	Class<? extends Validator> with() default Validator.class;
 	
 	/**
 	 * Validate this field with the method returned by this property. The given method must

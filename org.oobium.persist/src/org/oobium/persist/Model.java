@@ -1354,7 +1354,7 @@ public abstract class Model implements JsonModel {
 		return pass;
 	}
 	
-	private void runValidation(Validate validate, boolean onUpdate) {
+	private void runValidation(Validate validate, boolean onUpdate, int on) {
 		if(!blank(validate.when()) && !run(validate.when(), validate.field())) {
 			return;
 		}
@@ -1368,8 +1368,8 @@ public abstract class Model implements JsonModel {
 			return;
 		}
 		
-		if(validate.with() != Object.class) {
-			runValidator(validate.with());
+		if(validate.with() != Validator.class) {
+			runValidator(validate.with(), on);
 			return;
 		}
 		
@@ -1449,7 +1449,7 @@ public abstract class Model implements JsonModel {
 			boolean onUpdate = (on == Validate.UPDATE);
 			for(Validate validate : validations.value()) {
 				if((validate.on() & on) != 0) {
-					runValidation(validate, onUpdate);
+					runValidation(validate, onUpdate, on);
 				}
 			}
 			if(on == Validate.DESTROY) {
@@ -1462,10 +1462,10 @@ public abstract class Model implements JsonModel {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private void runValidator(Class<?> validatorClass) {
+	private void runValidator(Class<?> validatorClass, int on) {
 		try {
 			Validator validator = (Validator) validatorClass.newInstance();
-			validator.validate(this);
+			validator.validate(this, on);
 		} catch(InstantiationException e) {
 			logger.warn("could not run validator: " + validatorClass);
 		} catch(IllegalAccessException e) {
