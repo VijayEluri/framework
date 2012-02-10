@@ -21,14 +21,21 @@ public class Conversion {
 		operators = new HashMap<String, String>();
 		operators.put("is", "=");
 		operators.put("not", "!=");
+		operators.put("$ne", "!=");
 		operators.put("lt", "<");
+		operators.put("$lt", "<");
 		operators.put("lte", "<=");
+		operators.put("$lte", "<=");
 		operators.put("gt", ">");
+		operators.put("$gt", ">");
 		operators.put("gte", ">=");
+		operators.put("$gte", ">=");
 		operators.put("in", " IN ");
 		operators.put("nin", " NOT IN ");
 		operators.put("or", " OR ");
+		operators.put("$or", " OR ");
 		operators.put("and", " AND ");
+		operators.put("$and", " AND ");
 		operators.put("like", " LIKE ");
 		operators.put("nlike", " NOT LIKE ");
 	}
