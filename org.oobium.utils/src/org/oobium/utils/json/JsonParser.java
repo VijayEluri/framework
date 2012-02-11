@@ -409,41 +409,45 @@ public class JsonParser {
 			Object value = null;
 
 			s1 = forward(ca, s+1, e);
-			if(stringsOnly) {
-				s2 = findOutside(ca, ',', s1, e, '\'', '"', '[', '{');
-				if(s2 < 0 || s2 >= e) {
-					s2 = reverse(ca, e-1);
-				} else {
-					s2--;
-				}
-				if(ca[s1] == '\'' || ca[s1] == '"') {
-					s1++;
-				}
-				if(ca[s2] == '\'' || ca[s2] == '"') {
-					s2--;
-				}
-				value = new String(ca, s1, s2-s1+1);
+			if(s1 == -1) {
+				s2 = e;
 			} else {
-				switch(ca[s1]) {
-				case '[':
-				case '{':
-				case '\'':
-				case '"':
-					s2 = closer(ca, s1, e) + 1;
-					if(s2 == 0) {
-						s2 = s1 + 1;
-						value = getEmptyObject(ca[s1]);
-					} else {
-						value = toObject(ca[s1], s1, s2);
-					}
-					break;
-				default:
-					s2 = find(ca, ',', s1, e);
+				if(stringsOnly) {
+					s2 = findOutside(ca, ',', s1, e, '\'', '"', '[', '{');
 					if(s2 < 0 || s2 >= e) {
-						s2 = reverse(ca, e-1) + 1;
+						s2 = reverse(ca, e-1);
+					} else {
+						s2--;
 					}
-					value = toObject(s1, s2);
-					break;
+					if(ca[s1] == '\'' || ca[s1] == '"') {
+						s1++;
+					}
+					if(ca[s2] == '\'' || ca[s2] == '"') {
+						s2--;
+					}
+					value = new String(ca, s1, s2-s1+1);
+				} else {
+					switch(ca[s1]) {
+					case '[':
+					case '{':
+					case '\'':
+					case '"':
+						s2 = closer(ca, s1, e) + 1;
+						if(s2 == 0) {
+							s2 = s1 + 1;
+							value = getEmptyObject(ca[s1]);
+						} else {
+							value = toObject(ca[s1], s1, s2);
+						}
+						break;
+					default:
+						s2 = find(ca, ',', s1, e);
+						if(s2 < 0 || s2 >= e) {
+							s2 = reverse(ca, e-1) + 1;
+						}
+						value = toObject(s1, s2);
+						break;
+					}
 				}
 			}
 			
