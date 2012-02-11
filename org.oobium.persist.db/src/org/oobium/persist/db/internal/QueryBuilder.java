@@ -252,15 +252,19 @@ public class QueryBuilder {
 
 	private void appendAliasIfNeeded(StringBuilder sb, String field) {
 		String column = safeSqlWord(dbType, columnName(field));
-		int ln = column.length();
 		int ix = sb.indexOf(column);
 		while(ix != -1) {
-			if( (ix == 0 || (!isLetterOrDigit(sb.charAt(ix-1)) && sb.charAt(ix-1) != '.')) && 
-					(ix+ln == sb.length() || (!isLetterOrDigit(sb.charAt(ix+ln)) && sb.charAt(ix+ln) != '.')) ) {
+			int ln = column.length();
+			char c1 = (ix == 0) ? 0 : sb.charAt(ix-1);
+			char c2 = (ix+ln == sb.length()) ? 0 : sb.charAt(ix+ln);
+			if( (c1 == 0 || (!isLetterOrDigit(c1) && c1 != '.' && c1 != '_')) && 
+					(c2 == 0 || (!isLetterOrDigit(c2) && c2 != '.' && c2 != '_')) ) {
 				sb.insert(ix, '.');
 				sb.insert(ix, alias);
+				ix = sb.indexOf(column, 1+alias.length()+ix+ln);
+			} else {
+				ix = sb.indexOf(column, ix+ln);
 			}
-			ix = sb.indexOf(column, ix+alias.length()+field.length()+1);
 		}
 	}
 
