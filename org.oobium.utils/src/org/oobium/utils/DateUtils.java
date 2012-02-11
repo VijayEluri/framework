@@ -67,6 +67,18 @@ public class DateUtils {
 		return cal.getTime();
 	}
 
+	public static Date endOfWeek(Date date) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(date);
+		cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek() + 6);
+		return cal.getTime();
+	}
+	
+	public static String endOfWeek(Date date, String format) {
+		SimpleDateFormat sdf = new SimpleDateFormat(format);
+		return sdf.format(endOfWeek(date));
+	}
+	
 	public static Date getDate(String date) throws ParseException {
 		try {
 			return basicDate.parse(date);
@@ -83,20 +95,105 @@ public class DateUtils {
 		}
 	}
 	
-	public static List<Object[]> getSelectDates(String format, int count) {
-		return getSelectDates(format, 0, count);
+	public static List<Date> getDates(Date from, Date to) {
+		return getDates(from, to, Calendar.DATE, 1);
 	}
 	
-	public static List<Object[]> getSelectDates(String format, int start, int end) {
-		SimpleDateFormat sdf = new SimpleDateFormat(format);
+	public static List<Date> getDates(Date from, Date to, int dateStep) {
+		return getDates(from, to, Calendar.DATE, dateStep);
+	}
+	
+	public static List<Date> getDates(Date from, Date to, int dateField, int dateStep) {
 		Calendar cal = Calendar.getInstance();
-		List<Object[]> dates = new ArrayList<Object[]>();
-		for(int i = start; i < end; i++) {
-				Date date = cal.getTime();
-				dates.add(new Object[] { sdf.format(date), date.getTime() });
-				cal.add(Calendar.DATE, 1);
+		cal.setTime(from);
+		List<Date> dates = new ArrayList<Date>();
+		while(true) {
+			Date date = cal.getTime();
+			dates.add(date);
+			cal.add(dateField, dateStep);
+			if(cal.getTime().after(to)) {
+				break;
+			}
 		}
 		return dates;
+	}
+
+	public static List<Date> getDates(Date from, int count) {
+		return getDates(from, 0, count, 1);
+	}
+
+	public static List<Date> getDates(Date from, int count, int dateStep) {
+		return getDates(from, 0, count, dateStep);
+	}
+	
+	public static List<Date> getDates(Date from, int start, int end, int dateStep) {
+		return getDates(from, start, end, Calendar.DATE, dateStep);
+	}
+
+	public static List<Date> getDates(Date from, int start, int end, int dateField, int dateStep) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(from);
+		List<Date> dates = new ArrayList<Date>();
+		for(int i = start; i < end; i++) {
+			Date date = cal.getTime();
+			dates.add(date);
+			cal.add(dateField, dateStep);
+		}
+		return dates;
+	}
+	
+	public static List<Date> getDates(int count) {
+		return getDates(new Date(), 0, count, 1);
+	}
+
+	public static List<Date> getDates(int count, int dateStep) {
+		return getDates(new Date(), 0, count, dateStep);
+	}
+	
+	public static List<Object[]> getSelectDates(String format, Date from, Date to) {
+		return getSelectDates(format, from, to, Calendar.DATE, 1);
+	}
+
+	public static List<Object[]> getSelectDates(String format, Date from, Date to, int dateStep) {
+		return getSelectDates(format, from, to, Calendar.DATE, dateStep);
+	}
+	
+	public static List<Object[]> getSelectDates(String format, Date from, Date to, int dateField, int dateStep) {
+		SimpleDateFormat sdf = new SimpleDateFormat(format);
+		List<Object[]> selectDates = new ArrayList<Object[]>();
+		for(Date date : getDates(from, to, dateField, dateStep)) {
+			selectDates.add(new Object[] { sdf.format(date), date.getTime() });
+		}
+		return selectDates;
+	}
+
+	public static List<Object[]> getSelectDates(String format, Date from, int count) {
+		return getSelectDates(format, from, 0, count, Calendar.DATE, 1);
+	}
+
+	public static List<Object[]> getSelectDates(String format, Date from, int count, int dateStep) {
+		return getSelectDates(format, from, 0, count, Calendar.DATE, dateStep);
+	}
+
+	public static List<Object[]> getSelectDates(String format, Date from, int start, int end, int dateStep) {
+		return getSelectDates(format, from, start, end, Calendar.DATE, dateStep);
+	}
+	
+	public static List<Object[]> getSelectDates(String format, Date from, int start, int end, int dateField, int dateStep) {
+		SimpleDateFormat sdf = new SimpleDateFormat(format);
+		List<Object[]> selectDates = new ArrayList<Object[]>();
+		for(Date date : getDates(from, start, end, dateField, dateStep)) {
+			selectDates.add(new Object[] { sdf.format(date), date.getTime() });
+		}
+		return selectDates;
+	}
+
+	public static List<Object[]> getSelectDates(String format, int count) {
+		return getSelectDates(format, new Date(), 0, count, Calendar.DATE, 1);
+	}
+
+	public static List<Object[]> getSelectDates(String format, int count, int dateStep) {
+		return getSelectDates(format, new Date(), 0, count, Calendar.DATE, dateStep);
 	}
 	
 	public static Date hoursFromNow(int amount) {
@@ -104,7 +201,7 @@ public class DateUtils {
 		cal.add(Calendar.HOUR_OF_DAY, amount);
 		return cal.getTime();
 	}
-
+	
 	public static String httpDate() {
 		return httpDate(new Date());
 	}
@@ -116,7 +213,7 @@ public class DateUtils {
 	public static String httpDate(long dateInMillis) {
 		return httpDate_1123.format(new Date(dateInMillis));
 	}
-	
+
 	public static Date httpDate(String date) throws ParseException {
 		try {
 			try {
@@ -142,7 +239,7 @@ public class DateUtils {
 		cal.add(Calendar.MINUTE, amount);
 		return cal.getTime();
 	}
-
+	
 	public static Date monthsFromNow(int amount) {
 		Calendar cal = Calendar.getInstance();
 		cal.add(Calendar.MONTH, amount);
@@ -175,6 +272,14 @@ public class DateUtils {
 		return c1.get(Calendar.YEAR) == c2.get(Calendar.YEAR) && c1.get(Calendar.MONTH) == c2.get(Calendar.MONTH);
 	}
 	
+	public static boolean sameWeek(Date date1, Date date2)  {
+		Calendar c1 = Calendar.getInstance();
+		Calendar c2 = Calendar.getInstance();
+		c1.setTime(date1);
+		c2.setTime(date2);
+		return c1.get(Calendar.WEEK_OF_YEAR) == c2.get(Calendar.WEEK_OF_YEAR);
+	}
+
 	public static boolean sameYear(Date date1, Date date2)  {
 		Calendar c1 = Calendar.getInstance();
 		Calendar c2 = Calendar.getInstance();
@@ -183,42 +288,22 @@ public class DateUtils {
 		return c1.get(Calendar.YEAR) == c2.get(Calendar.YEAR);
 	}
 	
-	public static boolean sameWeek(Date date1, Date date2)  {
-		Calendar c1 = Calendar.getInstance();
-		Calendar c2 = Calendar.getInstance();
-		c1.setTime(date1);
-		c2.setTime(date2);
-		return c1.get(Calendar.WEEK_OF_YEAR) == c2.get(Calendar.WEEK_OF_YEAR);
-	}
-	
-	public static Date weeksFromNow(int amount) {
-		Calendar cal = Calendar.getInstance();
-		cal.add(Calendar.WEEK_OF_YEAR, amount);
-		return cal.getTime();
-	}
-
 	public static Date startOfWeek(Date date) {
 		Calendar cal = Calendar.getInstance();
 		cal.setTime(date);
 		cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
 		return cal.getTime();
 	}
-	
+
 	public static String startOfWeek(Date date, String format) {
 		SimpleDateFormat sdf = new SimpleDateFormat(format);
 		return sdf.format(startOfWeek(date));
 	}
-
-	public static Date endOfWeek(Date date) {
-		Calendar cal = Calendar.getInstance();
-		cal.setTime(date);
-		cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek() + 6);
-		return cal.getTime();
-	}
 	
-	public static String endOfWeek(Date date, String format) {
-		SimpleDateFormat sdf = new SimpleDateFormat(format);
-		return sdf.format(endOfWeek(date));
+	public static Date weeksFromNow(int amount) {
+		Calendar cal = Calendar.getInstance();
+		cal.add(Calendar.WEEK_OF_YEAR, amount);
+		return cal.getTime();
 	}
 
 	private DateUtils() {
