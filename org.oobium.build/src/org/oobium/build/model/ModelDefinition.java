@@ -310,9 +310,13 @@ public class ModelDefinition {
 		int end = annotation.length() - 1;
 		Map<String, String> entries = getJavaEntries(ca, start, end);
 		
-		String[] fields = getString(entries.remove("field")).split("\\s*,\\s*");
-		for(String field : fields) {
-			addValidation(field, entries);
+		if(entries.containsKey("field")) {
+			String[] fields = getString(entries.remove("field")).split("\\s*,\\s*");
+			for(String field : fields) {
+				addValidation(field, entries);
+			}
+		} else {
+			addValidation(null, entries);
 		}
 	}
 
