@@ -166,6 +166,42 @@ class UpdaterThread extends Thread {
 	}
 	
 	private long getLastModified(Bundle bundle) {
+		long modified;
+		
+		if(bundle.isJar) {
+			modified = bundle.file.lastModified();
+		} else {
+			if(bundle instanceof Module) {
+				Module module = (Module) bundle;
+				File[] src = FileUtils.findFiles(bundle.src, ".esp", ".emt", ".ess", ".ejs");
+				if(src.length == 0) {
+					modified = FileUtils.getLastModified(module.bin, module.assets);
+				} else {
+					File[] bin = module.getBinEFiles(src);
+					long binMod = FileUtils.getLastModified(bin);
+					long mod = FileUtils.getLastModified(module.bin);
+					if(mod > binMod) {
+						modified = mod;
+					} else {
+						long srcMod = FileUtils.getLastModified(src);
+						if(srcMod > binMod) {
+							modified = 0; // hasn't been compiled yet - don't update!
+						} else {
+							// bin may be newer than the src because the src hasn't been saved,
+							//  but the bin is saved on each edit
+							modified = srcMod;
+						}
+					}
+				}
+			} else {
+				modified = FileUtils.getLastModified(bundle.bin);
+			}
+		}
+
+		return modified;
+	}
+
+	private long getLastModified1(Bundle bundle) {
 		if(bundle.isJar) {
 			return bundle.file.lastModified();
 		}
