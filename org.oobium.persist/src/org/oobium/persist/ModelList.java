@@ -18,6 +18,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
+import org.oobium.utils.ArrayUtils;
+
 public class ModelList<E extends Model> implements List<E> {
 
 	private static final int MANY_TO_NONE = 0;
@@ -186,7 +188,7 @@ public class ModelList<E extends Model> implements List<E> {
 	public boolean retainAll(Collection<?> c) {
 		throw new UnsupportedOperationException("retainAll is not currently supported");
 	}
-
+	
 	@SuppressWarnings("unchecked")
 	private void setOpposite(Model object) {
 		if(object == null) {
@@ -292,7 +294,6 @@ public class ModelList<E extends Model> implements List<E> {
 		// TODO
 		return null;
 	}
-
 	
 	public E first() {
 		return members.isEmpty() ? null : members.get(0);
@@ -302,6 +303,12 @@ public class ModelList<E extends Model> implements List<E> {
 		return members.isEmpty() ? null : members.get(members.size()-1);
 	}
 
+	public ModelList<E> reverse() {
+		if(members != null) {
+			ArrayUtils.reverse(members);
+		}
+		return this;
+	}
 
 	public void add(int index, E e) {
 		members.add(index, e);
