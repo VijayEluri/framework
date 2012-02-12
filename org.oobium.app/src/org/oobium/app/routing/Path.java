@@ -16,19 +16,21 @@ public class Path {
 	private Integer port;
 	private String path;
 	private Map<String, String> parameters;
+	private String anchor;
 	
 	public Path(String path) {
 		this.path = path;
 	}
+
+	public String anchor() {
+		return anchor;
+	}
 	
-	public Path add(String key, Object value) {
-		if(parameters == null) {
-			parameters = new LinkedHashMap<String, String>();
-		}
-		parameters.put(key, String.valueOf(value));
+	public Path anchor(String anchor) {
+		this.anchor = anchor;
 		return this;
 	}
-
+	
 	public String host() {
 		return (host != null) ? host : ((server != null) ? server.host() : null);
 	}
@@ -39,7 +41,15 @@ public class Path {
 	}
 	
 	public Path include(String include) {
-		add("query", "$include:" + include);
+		param("query", "$include:" + include);
+		return this;
+	}
+
+	public Path param(String key, Object value) {
+		if(parameters == null) {
+			parameters = new LinkedHashMap<String, String>();
+		}
+		parameters.put(key, String.valueOf(value));
 		return this;
 	}
 
@@ -89,8 +99,8 @@ public class Path {
 	public String toString() {
 		String path = path();
 		String host = host();
+		StringBuilder sb = new StringBuilder();
 		if(host != null && host.length() > 0) {
-			StringBuilder sb = new StringBuilder();
 			sb.append(protocol()).append("://").append(host);
 			int port = port();
 			if(port > 0 && port != 80) {
@@ -108,13 +118,16 @@ public class Path {
 			else if(parameters != null) {
 				sb.append('?').append(attrsEncode(parameters));
 			}
-			return sb.toString();
 		} else {
 			if(parameters == null) {
 				return path;
 			}
-			return path + ((path.indexOf('?') == -1) ? "?" : "&") + attrsEncode(parameters);
+			sb.append(path).append(((path.indexOf('?') == -1) ? "?" : "&")).append(attrsEncode(parameters));
 		}
+		if(anchor != null) {
+			sb.append('#').append(anchor);
+		}
+		return sb.toString();
 	}
 	
 }
