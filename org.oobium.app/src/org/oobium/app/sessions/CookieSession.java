@@ -53,7 +53,7 @@ public class CookieSession implements ISession {
 	}
 
 	@Override
-	public String getData(String key) {
+	public Object getData(String key) {
 		throw new UnsupportedOperationException("session only has cookie data");
 	}
 
@@ -102,7 +102,7 @@ public class CookieSession implements ISession {
 	}
 
 	@Override
-	public ISession putData(Map<String, String> data) {
+	public ISession putData(Map<String, Object> data) {
 		throw new UnsupportedOperationException("session only has cookie data");
 	}
 
@@ -112,12 +112,7 @@ public class CookieSession implements ISession {
 	}
 
 	@Override
-	public ISession putData(String key, String value) {
-		throw new UnsupportedOperationException("session only has cookie data");
-	}
-
-	@Override
-	public String removeData(String key) {
+	public Object removeData(String key) {
 		throw new UnsupportedOperationException("session only has cookie data");
 	}
 

@@ -59,7 +59,7 @@ public class Session extends SessionModel implements ISession {
 	
 	@Override
 	public void clearData() {
-    	Map<String, String> data = getData();
+    	Map<String, Object> data = getData();
     	if(data != null) {
     		data.clear();
     	}
@@ -82,8 +82,8 @@ public class Session extends SessionModel implements ISession {
 	}
 
 	@Override
-	public String getData(String key) {
-    	Map<String, String> data = getData();
+	public Object getData(String key) {
+    	Map<String, Object> data = getData();
     	if(data != null) {
     		return data.get(key);
     	}
@@ -122,10 +122,10 @@ public class Session extends SessionModel implements ISession {
 	}
 	
 	@Override
-	public ISession putData(Map<String, String> data) {
-    	Map<String, String> orig = getData();
+	public ISession putData(Map<String, Object> data) {
+    	Map<String, Object> orig = getData();
     	if(orig == null) {
-    		orig = new HashMap<String, String>();
+    		orig = new HashMap<String, Object>();
     		put("data", orig);
     	}
 		orig.putAll(data);
@@ -134,14 +134,9 @@ public class Session extends SessionModel implements ISession {
 
 	@Override
 	public Session putData(String key, Object value) {
-		return putData(key, String.valueOf(value));
-	}
-	
-	@Override
-	public Session putData(String key, String value) {
-    	Map<String, String> data = getData();
+    	Map<String, Object> data = getData();
     	if(data == null) {
-    		data = new HashMap<String, String>();
+    		data = new HashMap<String, Object>();
     		put("data", data);
     	}
 		data.put(key, value);
@@ -149,8 +144,8 @@ public class Session extends SessionModel implements ISession {
 	}
 	
 	@Override
-	public String removeData(String key) {
-    	Map<String, String> data = getData();
+	public Object removeData(String key) {
+    	Map<String, Object> data = getData();
     	if(data != null) {
     		return data.remove(key);
     	}

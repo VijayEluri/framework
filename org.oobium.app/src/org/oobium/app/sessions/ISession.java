@@ -19,7 +19,7 @@ public interface ISession {
 	
 	public abstract String getCookieData(String key);
 	
-	public abstract String getData(String key);
+	public abstract Object getData(String key);
 
 	public abstract Date getExpiration();
 
@@ -35,13 +35,11 @@ public interface ISession {
 	
 	public abstract ISession putCookieData(String key, String value);
 
-	public abstract ISession putData(Map<String, String> data);
+	public abstract ISession putData(Map<String, Object> data);
 	
 	public abstract ISession putData(String key, Object value);
 
-	public abstract ISession putData(String key, String value);
-
-	public abstract String removeData(String key);
+	public abstract Object removeData(String key);
 
 	public abstract boolean save();
 	

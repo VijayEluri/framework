@@ -17,8 +17,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.oobium.utils.json.JsonUtils;
-
 
 public class AttributeBuilder extends PropertyBuilder {
 
@@ -29,8 +27,9 @@ public class AttributeBuilder extends PropertyBuilder {
 	private String getGetterMethod() {
 		StringBuilder sb = new StringBuilder();
 		if("Map".equals(descriptor.type())) {
-			sb.append("public Map<String, String> ").append(descriptor.getterName()).append("() {\n");
-			sb.append("\treturn JsonUtils.toStringMap(get(").append(descriptor.enumProp()).append(", String.class));\n");
+			sb.append("@SuppressWarnings(\"unchecked\")\n");
+			sb.append("public Map<String, Object> ").append(descriptor.getterName()).append("() {\n");
+			sb.append("\treturn (Map<String, Object>) get(").append(descriptor.enumProp()).append(", Map.class);\n");
 			sb.append("}");
 		}
 		else {
@@ -66,10 +65,11 @@ public class AttributeBuilder extends PropertyBuilder {
 		if(descriptor.hasImport()) {
 			String fullType = descriptor.fullType();
 			imports.add(fullType);
-			if("Map".equals(descriptor.type())) {
-				imports.add(JsonUtils.class.getCanonicalName());
-			}
-			else if("Date".equals(descriptor.type())) {
+//			if("Map".equals(descriptor.type())) {
+//				imports.add(JsonUtils.class.getCanonicalName());
+//			}
+//			else 
+			if("Date".equals(descriptor.type())) {
 				imports.add(SimpleDateFormat.class.getCanonicalName());
 			}
 		}
@@ -102,7 +102,7 @@ public class AttributeBuilder extends PropertyBuilder {
 		String type = descriptor.modelType();
 		String prop = descriptor.enumProp();
 		String var = descriptor.variable();
-		String varType = "Map".equals(descriptor.type()) ? "Map<String, String>" : descriptor.type();
+		String varType = "Map".equals(descriptor.type()) ? "Map<String, Object>" : descriptor.type();
 		StringBuilder sb = new StringBuilder();
 		sb.append("public ").append(type).append(' ').append(descriptor.setterName()).append("(").append(varType).append(" ").append(var).append(") {\n");
 		if(descriptor.hasCheck()) {
