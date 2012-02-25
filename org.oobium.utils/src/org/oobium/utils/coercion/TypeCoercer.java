@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.oobium.utils.coercion.coercers.ArrayCoercer;
@@ -112,7 +113,7 @@ public class TypeCoercer {
 			}
 		}
 	}
-	
+
 	/**
 	 * Creates a new object that represents the given object once it
 	 * has been coerced into the given type.
@@ -214,6 +215,33 @@ public class TypeCoercer {
 			}
 		}
 		throw new IllegalArgumentException("defaultValue cannot be null");
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static Map<String, Object> coerceToMap(Object object) {
+		return (Map<String, Object>) coerce(object, Map.class);
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <V> Map<String, V> coerceToMap(Object object, Class<V> valueType) {
+		Map<String, Object> map = coerceToMap(object);
+		if(valueType != Object.class) {
+			for(Entry<String, Object> e : map.entrySet()) {
+				map.put(e.getKey(), coerce(e.getValue(), valueType));
+			}
+		}
+		return (Map<String, V>) map;
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <K, V> Map<K, V> coerceToMap(Object object, Class<K> keyType, Class<V> valueType) {
+		Map<Object, Object> map = coerce(object, Map.class);
+		if(keyType != String.class || valueType != Object.class) {
+			for(Entry<Object, Object> e : map.entrySet()) {
+				map.put(coerce(e.getKey(), keyType), coerce(e.getValue(), valueType));
+			}
+		}
+		return (Map<K, V>) map;
 	}
 
 	private static Coercer getCoercer(Class<?> type) {
