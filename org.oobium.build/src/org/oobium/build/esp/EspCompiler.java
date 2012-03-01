@@ -169,15 +169,48 @@ public class EspCompiler {
 			titleLocations.add(location);
 		}
 	}
+
+	private StringBuilder appendAttr(String name, EntryPart entry) {
+		return appendAttr(name, entry, false);
+	}
 	
 	/**
-	 * append an HTML attribute, ensuring that double quotes are around the value, whether is a simple string or Java expression
+	 * append an HTML attribute, ensuring that double quotes are around the value,
+	 * whether it is a simple string or Java expression
 	 */
-	private void appendAttr(String name, EspPart value) {
-		body.append(' ').append(name).append('=');
-		int q1 = body.length();
-		build(value, body);
-		ensureQuotes(body, q1, true);
+	private StringBuilder appendAttr(String name, EntryPart entry, boolean hidden) {
+		if(entry.isConditional()) {
+			prepForJava(body);
+			body.append("if(");
+			build(entry.getCondition(), body);
+			body.append(") {\n");
+			indent(body).append("\t").append(sbName(body)).append(".append(\" ");
+			appendAttr(name, entry.getValue(), hidden).append("\");\n");
+			indent(body).append("}\n");
+			prepForMarkup(body);
+		}
+		else {
+			appendAttr(name, entry.getValue(), hidden);
+		}
+		return body;
+	}
+	
+	private StringBuilder appendAttr(String name, EspPart value) {
+		return appendAttr(name, value, false);
+	}
+	
+	private StringBuilder appendAttr(String name, EspPart value, boolean hidden) {
+		body.append(' ').append(name);
+		if(value != null) {
+			body.append('=');
+			int q1 = body.length();
+			build(value, body);
+			ensureQuotes(body, q1, true);
+			if(hidden && "style".equals(name)) {
+				body.insert(body.length()-2, ";display:none");
+			}
+		}
+		return body;
 	}
 	
 	private void appendConfirmCloser(MarkupElement element) {
@@ -701,66 +734,20 @@ public class EspCompiler {
 	}
 	
 	private void buildAttrs(MarkupElement element, String...skip) {
+		boolean hidden = element.isHidden();
 		Set<String> skipSet = Set(skip);
 		if(element.hasEntries()) {
 			Map<String, EntryPart> entries = element.getEntries();
 			for(EntryPart entry : entries.values()) {
 				String key = entry.getKey().getText().trim();
 				if(!skipSet.contains(key)) {
-					EspPart value = entry.getValue();
-					if(value != null) {
-						if("disabled".equals(key)) {
-							String txt = value.getText();
-							if("true".equals(txt)) {
-								body.append(" disabled");
-							} else if("false".equals(txt)) {
-								continue;
-							} else {
-								prepForJava(body);
-								body.append("if(");
-								build(value, body);
-								body.append(") {\n");
-								indent(body);
-								body.append("\t").append(sbName(body)).append(".append(\" disabled\");\n");
-								indent(body);
-								body.append("}\n");
-								prepForMarkup(body);
-							}
-						} else {
-							body.append(' ');
-							body.append(key);
-							body.append("=");
-							int pos = body.length();
-							build(value, body);
-							if(pos < body.length()) {
-								if((pos < body.length() && body.charAt(pos) != '\\') || (pos+1 < body.length() && body.charAt(pos+1) != '"')) {
-									body.insert(pos, "\\\"");
-								}
-								if(element.isHidden() && "style".equals(key)) {
-									if(body.charAt(body.length()-1) == '"') {
-										body.delete(body.length()-2, body.length());
-									}
-									body.append(";display:none\\\"");
-								} else {
-									if(body.charAt(body.length()-2) != '\\' || body.charAt(body.length()-1) != '"') {
-										body.append("\\\"");
-									}
-								}
-							} else {
-								if(element.isHidden() && "style".equals(key)) {
-									body.append(";display:none\\\"");
-								} else {
-									body.append("\\\"\\\"");
-								}
-							}
-						}
-					}
+					appendAttr(key, entry, hidden);
 				}
 			}
-			if(element.isHidden() && !entries.containsKey("style")) {
+			if(hidden && !entries.containsKey("style")) {
 				body.append(" style=\\\"display:none\\\"");
 			}
-		} else if(element.isHidden()) {
+		} else if(hidden) {
 			body.append(" style=\\\"display:none\\\"");
 		}
 	}
@@ -1446,7 +1433,7 @@ public class EspCompiler {
 				body.append("\\\"");
 				if(hasValue) {
 					if(input.hasEntry("value")) {
-						appendAttr("value", input.getEntryValue("value"));
+						appendAttr("value", input.getEntry("value"));
 					} else {
 						body.append(" value=\\\"\").append(f(");
 						appendValueGetter(model, fields);
@@ -1550,7 +1537,7 @@ public class EspCompiler {
 		buildClasses(image);
 		buildAttrs(image, "src");
 		if(image.hasEntry("src")) {
-			appendAttr("src", image.getEntryValue("src"));
+			appendAttr("src", image.getEntry("src"));
 		} else if(image.hasArgs()) {
 			appendAttr("src", image.getArgs().get(0));
 		}
@@ -1610,7 +1597,7 @@ public class EspCompiler {
 	private void buildInput(String tag, MarkupElement input) {
 		body.append("<input");
 		if(input.hasEntry("type")) {
-			appendAttr("type", input.getEntry("type").getValue());
+			appendAttr("type", input.getEntry("type"));
 		} else {
 			if("hidden".equals(tag))		body.append(" type=\\\"hidden\\\"");
 			else if("radio".equals(tag))	body.append(" type=\\\"radio\\\"");
@@ -2888,10 +2875,11 @@ public class EspCompiler {
 		return "isSet(" + text + ")";
 	}
 
-	private void indent(StringBuilder sb) {
+	private StringBuilder indent(StringBuilder sb) {
 		for(int i = 0; i < level(sb)+2; i++) {
 			sb.append('\t');
 		}
+		return sb;
 	}
 	
 	private boolean isInHead(EspElement element) {

@@ -11,7 +11,8 @@
 package org.oobium.build.esp.parts;
 
 import static org.oobium.build.esp.Constants.DOM_EVENTS;
-import static org.oobium.utils.CharStreamUtils.find;
+import static org.oobium.utils.CharStreamUtils.closer;
+import static org.oobium.utils.CharStreamUtils.findAny;
 import static org.oobium.utils.CharStreamUtils.forward;
 import static org.oobium.utils.CharStreamUtils.reverse;
 
@@ -22,12 +23,17 @@ public class EntryPart extends EspPart {
 
 	private EspPart key;
 	private EspPart value;
+	private EspPart condition;
 	
 	public EntryPart(EspPart parent, int start, int end) {
 		super(parent, Type.EntryPart, start, end);
 		parse();
 	}
 
+	public EspPart getCondition() {
+		return condition;
+	}
+	
 	public EspPart getKey() {
 		return key;
 	}
@@ -36,11 +42,30 @@ public class EntryPart extends EspPart {
 		return value;
 	}
 
+	public boolean isConditional() {
+		return condition != null;
+	}
+	
 	protected void parse() {
-		int ix = find(ca, ':', start, end);
+		// due to MarkupElement#parseArgs, we will always have at least a ':' at this point
+		int ix = findAny(ca, start, end, ':', '(');
 		int s1 = forward(ca, start, end);
 		if(s1 < ix) {
 			key = new EspPart(this, Type.EntryKeyPart, s1, reverse(ca, ix-1) + 1);
+			if(ca[ix] == '(') {
+				s1 = forward(ca, ix+1, end);
+				if(s1 != -1) {
+					ix = closer(ca, ix, end);
+					if(ix == -1) {
+						ix = end;
+					}
+					int s2 = reverse(ca, ix-1) + 1;
+					if(s1 < s2) {
+						condition = new JavaSourcePart(this, Type.JavaSourcePart, s1, s2);
+					}
+				}
+				ix++;
+			}
 		}
 		s1 = forward(ca, ix+1, end);
 		if(s1 != -1) {
