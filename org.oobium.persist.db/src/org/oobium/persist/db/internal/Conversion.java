@@ -16,12 +16,17 @@ import org.oobium.utils.json.JsonUtils;
 
 public class Conversion {
 
+	private static final String IS = "=";
+	private static final String NOT = "!=";
+
 	private static final Map<String, String> operators;
 	static {
 		operators = new HashMap<String, String>();
-		operators.put("is", "=");
-		operators.put("not", "!=");
-		operators.put("$ne", "!=");
+		operators.put("is", IS);
+		operators.put("$is", IS);
+		operators.put("not", NOT);
+		operators.put("$not", NOT);
+		operators.put("$ne", NOT);
 		operators.put("lt", "<");
 		operators.put("$lt", "<");
 		operators.put("lte", "<=");
@@ -31,13 +36,17 @@ public class Conversion {
 		operators.put("gte", ">=");
 		operators.put("$gte", ">=");
 		operators.put("in", " IN ");
+		operators.put("$in", " IN ");
 		operators.put("nin", " NOT IN ");
+		operators.put("$nin", " NOT IN ");
 		operators.put("or", " OR ");
 		operators.put("$or", " OR ");
 		operators.put("and", " AND ");
 		operators.put("$and", " AND ");
 		operators.put("like", " LIKE ");
+		operators.put("$like", " LIKE ");
 		operators.put("nlike", " NOT LIKE ");
+		operators.put("$nlike", " NOT LIKE ");
 	}
 	
 	public static Conversion run(int dbType, Class<? extends Model> modelType, Map<String, Object> map, Object...values) throws Exception {
@@ -74,12 +83,22 @@ public class Conversion {
 	private void add(String field, String key, Object value) throws Exception {
 		checkField(field);
 		
-		sb.append(column(field)).append(operators.get(key)).append('?');
-		
-		if("?".equals(value)) {
-			list.add(inValues[v++]);
+		if(value == null) {
+			String s = operators.get(key);
+			if(s == IS) {
+				sb.append(column(field)).append(" is null");
+			} else if(s == NOT) {
+				sb.append(column(field)).append(" is not null");
+			} else {
+				throw new Exception("cannot perform operation '" + key + "' on a null value");
+			}
 		} else {
-			list.add(value);
+			sb.append(column(field)).append(operators.get(key)).append('?');
+			if(value.equals("?")) {
+				list.add(inValues[v++]);
+			} else {
+				list.add(value);
+			}
 		}
 	}
 

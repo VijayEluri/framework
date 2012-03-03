@@ -94,6 +94,22 @@ public class ConversionTests {
 	}
 	
 	@Test
+	public void testIsNull() throws Exception {
+		Conversion conversion = new Conversion(DERBY, toMap("id:{$is:null}"));
+		conversion.run();
+		assertEquals("WHERE id is null", conversion.getSql());
+		assertEquals(0, conversion.getValues().length);
+	}
+	
+	@Test
+	public void testIsNotNull() throws Exception {
+		Conversion conversion = new Conversion(DERBY, toMap("id:{$not:null}"));
+		conversion.run();
+		assertEquals("WHERE id is not null", conversion.getSql());
+		assertEquals(0, conversion.getValues().length);
+	}
+	
+	@Test
 	public void testLessThan() throws Exception {
 		Conversion conversion = new Conversion(DERBY, toMap("id:{lt:1234}"));
 		conversion.run();
