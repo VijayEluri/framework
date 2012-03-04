@@ -183,10 +183,11 @@ public class EspCompiler {
 			prepForJava(body);
 			body.append("if(");
 			build(entry.getCondition(), body);
-			body.append(") {\n");
-			indent(body).append("\t").append(sbName(body)).append(".append(\" ");
-			appendAttr(name, entry.getValue(), hidden).append("\");\n");
-			indent(body).append("}\n");
+			body.append(") {\n\t");
+			prepForMarkup(body);
+			appendAttr(name, entry.getValue(), hidden);
+			prepForJava(body);
+			body.append("}\n");
 			prepForMarkup(body);
 		}
 		else {
