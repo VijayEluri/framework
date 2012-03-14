@@ -70,6 +70,9 @@ public class Utils {
 		if(name.contains(".derby.")) {
 			return SqlUtils.DERBY;
 		}
+		if(connection.toString().contains(".postgresql.")) { // it's a proxy wrapping a PGConnection
+			return SqlUtils.POSTGRESQL;
+		}
 		throw new IllegalArgumentException("unknown database type: " + name);
 	}
 	
