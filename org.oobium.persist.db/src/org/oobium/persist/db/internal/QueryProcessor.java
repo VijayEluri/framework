@@ -225,16 +225,18 @@ public class QueryProcessor<E extends Model> {
 	@SuppressWarnings("unchecked")
 	private void processQuery(Connection connection, Query parentQuery, Query query, List<? extends Model> models) throws SQLException {
 		String sql = query.getSql(models);
-		
-		List<Map<String, Map<String, Object>>> results = executeQuery(connection, sql, query.getValues());
-		List<E> objects = createModels(query, results);
-		if(!objects.isEmpty() && query.hasChildren()) {
-			for(Query child : query.getChildren()) {
-				processQuery(connection, query, child, objects);
+		// may be null if previous query did not return any models, or those models do not contain the sourceField
+		if(sql != null) {
+			List<Map<String, Map<String, Object>>> results = executeQuery(connection, sql, query.getValues());
+			List<E> objects = createModels(query, results);
+			if(!objects.isEmpty() && query.hasChildren()) {
+				for(Query child : query.getChildren()) {
+					processQuery(connection, query, child, objects);
+				}
 			}
-		}
-		for(Model model : models) { // makes sure that the field is set for all models, even if no results (empty set)
-			model.get(query.getField(), false);
+			for(Model model : models) { // makes sure that the field is set for all models, even if no results (empty set)
+				model.get(query.getField(), false);
+			}
 		}
 	}
 	

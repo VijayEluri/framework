@@ -10,9 +10,10 @@
  ******************************************************************************/
 package org.oobium.persist.db.internal;
 
+import static org.oobium.utils.StringUtils.join;
+
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -94,19 +95,16 @@ public class Query {
 	}
 	
 	String getSql(List<? extends Model> models) {
-		StringBuilder sb = new StringBuilder();
-		for(Iterator<? extends Model> iter = models.iterator(); iter.hasNext(); ) {
-			Model model = iter.next();
+		List<Object> ids = new ArrayList<Object>();
+		for(Model model : models) {
 			if(sourceField != null) {
 				model = (Model) model.get(sourceField);
 			}
-			sb.append(model.getId());
-			if(iter.hasNext()) {
-				sb.append(',');
+			if(model != null) {
+				ids.add(model.getId());
 			}
 		}
-
-		return sql.replace(ID_MARKER, sb.toString());
+		return ids.isEmpty() ? null : sql.replace(ID_MARKER, join(ids, ','));
 	}
 	
 	Class<? extends Model> getType() {
