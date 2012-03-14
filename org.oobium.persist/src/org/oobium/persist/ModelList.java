@@ -14,6 +14,8 @@ import static java.util.Arrays.asList;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -22,6 +24,9 @@ import org.oobium.utils.ArrayUtils;
 
 public class ModelList<E extends Model> implements List<E> {
 
+	public static final int ASC = 1;
+	public static final int DESC = -1;
+	
 	private static final int MANY_TO_NONE = 0;
 	private static final int MANY_TO_ONE  = 1;
 	private static final int MANY_TO_MANY = 2;
@@ -293,6 +298,38 @@ public class ModelList<E extends Model> implements List<E> {
 		return members.size();
 	}
 
+	public ModelList<E> sortBy(String field) {
+		return sortBy(field, ASC);
+	}
+	
+	/**
+	 * @see #ASC
+	 * @see #DESC
+	 */
+	public ModelList<E> sortBy(final String field, final int direction) {
+		Collections.sort(members, new Comparator<E>() {
+			@SuppressWarnings("unchecked")
+			public int compare(E m1, E m2) {
+				Object o1 = m1.get(field);
+				Object o2 = m2.get(field);
+				if(o1 == o2) { // covers (null == null)
+					return 0;
+				}
+				if(o1 == null) {
+					return -1 * direction;
+				}
+				if(o2 == null) {
+					return 1 * direction;
+				}
+				if(o1 instanceof Comparable) {
+					return ((Comparable<Object>) o1).compareTo(o2) * direction;
+				}
+				return String.valueOf(o1).compareTo(String.valueOf(o2)) * direction;
+			};
+		});
+		return this;
+	}
+	
 	@Override
 	public List<E> subList(int fromIndex, int toIndex) {
 		// TODO create a new ModelList?
