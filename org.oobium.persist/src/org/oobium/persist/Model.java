@@ -546,9 +546,7 @@ public abstract class Model implements JsonModel {
 				for(String field : fields) {
 					if(!isSet(field)) {
 						// at least one is not set - load, but replace all that are currently set
-						Map<String, Object> orig = new HashMap<String, Object>(this.fields);
-						load();
-						this.fields.putAll(orig);
+						load(true);
 						// only need to do this once, so exit
 						break;
 					}
@@ -737,7 +735,7 @@ public abstract class Model implements JsonModel {
 
 		if(load && !isNew()) {
 			if(hasContained(field)) {
-				load();
+				load(true);
 			} else if(adapter.hasMany(field) || (adapter.isOneToOne(field) && !adapter.hasKey(field))) {
 				try {
 					Class<? extends Model> type = adapter.getRelationClass(field);
@@ -1096,6 +1094,18 @@ public abstract class Model implements JsonModel {
 			logger.warn("failed to load {}", e, asSimpleString());
 		}
 		return false;
+	}
+	
+	public final boolean load(boolean maintainExisting) {
+		boolean result;
+		if(maintainExisting) {
+			Map<String, Object> tmp = new HashMap<String, Object>(fields);
+			result = load();
+			fields.putAll(tmp);
+		} else {
+			result = load();
+		}
+		return result;
 	}
 	
 	public final boolean load(String fields) {
