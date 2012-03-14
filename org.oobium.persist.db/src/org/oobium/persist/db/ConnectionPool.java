@@ -38,12 +38,18 @@ public class ConnectionPool {
 	private Semaphore semaphore;
 	private int timeout; // in seconds
 	private ConnectionEventListener connectionListener;
+
+	private boolean skipValidityCheck;
 	
 	public ConnectionPool(String client, Map<String, Object> properties, ConnectionPoolDataSource dataSource, Logger logger) {
 		this.client = client;
 		this.logger = logger;
 		this.ds = dataSource;
 
+		if(dataSource.getClass().getCanonicalName().contains(".postgresql.")) {
+			skipValidityCheck = true;
+		}
+		
 		int maxConnections = coerce(properties.get("maxConnections"), int.class);
 		if(maxConnections < 1) {
 			maxConnections = 10;
@@ -161,7 +167,7 @@ public class ConnectionPool {
 		pc.addConnectionEventListener(connectionListener);
 		try {
 			Connection connection = pc.getConnection();
-			if(connection.isValid(1)) {
+			if(skipValidityCheck || connection.isValid(1)) {
 				return connection;
 			}
 			// fall through
