@@ -2375,7 +2375,9 @@ public class EspCompiler {
 					
 					prepForJava(body);
 
-					body.append("for(").append(itype).append(' ').append(var).append(" : ").append(part.getValue().getText()).append(") {\n");
+					EspPart value = part.getValue();
+					String val = (value != null) ? value.getText() : "";
+					body.append("for(").append(itype).append(' ').append(var).append(" : ").append(val).append(") {\n");
 					indent(body);
 					body.append("\tyield(new ");
 					build(view.getJavaTypePart(), body);
