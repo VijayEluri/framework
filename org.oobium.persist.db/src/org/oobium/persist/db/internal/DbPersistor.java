@@ -739,9 +739,18 @@ public class DbPersistor {
 		String table = tableName(adapter.getOppositeType(field));
 		String column = safeSqlWord(dbType, columnName(adapter.getOpposite(field)));
 		
-		exec("UPDATE " + table + " SET " + column + "=null WHERE " + column + "=" + model.getId());
-		
-		exec("UPDATE " + table + " SET " + column + "=" + model.getId() + " WHERE " + "id=" + id);
+		exec(
+			("UPDATE {table}" +
+			" SET {column} = CASE" +
+			"   WHEN id={id} THEN {mId}" +
+			"   ELSE null" +
+			"  END" +
+			" WHERE id = {id} OR {column} = {mId}")
+			.replace("{table}", table)
+			.replace("{column}", column)
+			.replace("{id}", String.valueOf(model.getId()))
+			.replace("{mId}", String.valueOf(id))
+		);
 	}
 	
 	private void clearOneToOne(ModelAdapter adapter, String field, int id) throws SQLException {
