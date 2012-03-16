@@ -437,10 +437,16 @@ public class DbPersistor {
 			}
 		}
 	}
+
+	private Cell createCell(Model model, String field) {
+		Model value = (Model) (model.isSet(field) ? model.get(field) : null);
+		return new Cell(columnName(field), Types.INTEGER, (value != null) ? value.getId() : null);
+	}
 	
 	private void doCreateModel(Model model) throws SQLException, NoSuchFieldException {
 		if(model.isNew()) {
 			ModelAdapter adapter = ModelAdapter.getAdapter(model);
+			String table = tableName(adapter.getModelClass());
 
 			boolean needsCreatedAt, needsCreatedOn, needsUpdatedAt, needsUpdatedOn;
 			needsCreatedAt = needsUpdatedAt = adapter.isTimeStamped();
@@ -461,9 +467,15 @@ public class DbPersistor {
 			}
 			
 			for(String field : adapter.getHasOneFields()) {
-				if(!adapter.isThrough(field) && (!adapter.isOneToOne(field) || adapter.hasKey(field))) {
-					Model value = (Model) (model.isSet(field) ? model.get(field) : null);
-					cells.add(new Cell(columnName(field), Types.INTEGER, (value != null) ? value.getId() : null));
+				if(adapter.isOneToOne(field)) {
+					if(adapter.hasKey(field)) {
+						Cell cell = createCell(model, field);
+						exec("UPDATE " + table + " SET " + cell.column + "=null WHERE " + cell.column + "=" + cell.value);
+						cells.add(cell);
+					} // else, skip it
+				}
+				else if(!adapter.isThrough(field)/* && (!adapter.isOneToOne(field) || adapter.hasKey(field))*/) {
+					cells.add(createCell(model, field));
 				}
 			}
 			
@@ -479,7 +491,7 @@ public class DbPersistor {
 				throw new SQLException("can not create an empty model: " + model);
 			}
 			
-			int id = doCreate(tableName(adapter.getModelClass()), cells);
+			int id = doCreate(table, cells);
 			model.setId(id);
 
 			if(model.isNew()) {

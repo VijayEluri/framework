@@ -3,6 +3,8 @@ package org.oobium.persist.db;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
+import java.sql.Timestamp;
+
 import org.junit.Ignore;
 import org.junit.Test;
 import org.oobium.framework.tests.dyn.DynModel;
@@ -209,7 +211,32 @@ public class CreateTests extends BaseDbTestCase {
 		
 		verify(a, never()).create();
 	}
-	
+
+	@Test
+	public void testHasOneToOne_OverwriteExisting() throws Exception {
+		DynModel am = DynClasses.getModel(pkg, "AModel").timestamps().addHasOne("bModel", "BModel.class", "opposite=\"aModel\"");
+		DynModel bm = DynClasses.getModel(pkg, "BModel").timestamps().addHasOne("aModel", "AModel.class", "opposite=\"bModel\"");
+
+		migrate(am, bm);
+
+		persistService.executeUpdate("INSERT INTO b_models(created_at) VALUES(?)", new Timestamp(System.currentTimeMillis()));
+		persistService.executeUpdate("INSERT INTO a_models(b_model) VALUES(?)", 1);
+
+		Model b = spy(bm.newInstance());
+		b.setId(1);
+		Model a = am.newInstance();
+		a.set("bModel", b);
+		a.create();
+		
+		assertFalse(a.getErrors().toString(), a.hasErrors());
+
+		assertNull(persistService.executeQueryValue("SELECT b_model from a_models where id=?", 1));
+		assertEquals(1, persistService.executeQueryValue("SELECT b_model from a_models where id=?", 2));
+		assertEquals(1, count("b_models"));
+		
+		verify(b, never()).create();
+	}
+
 	@Test
 	public void testHasOneToMany() throws Exception {
 		DynModel am = DynClasses.getModel(pkg, "AModel").timestamps().addHasOne("bModel", "BModel.class", "opposite=\"aModels\"");
