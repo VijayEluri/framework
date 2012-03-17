@@ -799,13 +799,33 @@ public abstract class Model implements JsonModel {
 	public Map<String, Object> getAll() {
 		return new HashMap<String, Object>(fields);
 	}
-	
+
 	public String getError(int index) {
 		return getError(null, index);
 	}
 	
 	public String getError(String subject) {
 		return getError(subject, 0);
+	}
+	
+	public String getError(String...fields) {
+		if(fields.length == 0) {
+			return null;
+		}
+		if(fields.length == 1) {
+			return getError(fields[0]);
+		}
+		Model model = null;
+		for(int i = 0; i < fields.length - 1; i++) {
+			Object o = get(fields[i]);
+			if(o instanceof Model) {
+				model = (Model) o;
+			} else {
+				// only models have an errors list
+				return null;
+			}
+		}
+		return model.getError(fields[fields.length-1]);
 	}
 	
 	public String getError(String subject, int index) {
