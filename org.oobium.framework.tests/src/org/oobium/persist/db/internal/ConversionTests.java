@@ -17,7 +17,7 @@ public class ConversionTests {
 	public void testSingleNonString() throws Exception {
 		Conversion conversion = new Conversion(DERBY, toMap("id:1234"));
 		conversion.run();
-		assertEquals("WHERE id=?", conversion.getSql());
+		assertEquals("where id=?", conversion.getSql());
 		assertEquals("[1234]", asString(conversion.getValues()));
 	}
 	
@@ -25,7 +25,7 @@ public class ConversionTests {
 	public void testSingleString() throws Exception {
 		Conversion conversion = new Conversion(DERBY, toMap("name:'bob'"));
 		conversion.run();
-		assertEquals("WHERE name=?", conversion.getSql());
+		assertEquals("where name=?", conversion.getSql());
 		assertEquals("[bob]", asString(conversion.getValues()));
 	}
 	
@@ -33,7 +33,7 @@ public class ConversionTests {
 	public void testSingleValue() throws Exception {
 		Conversion conversion = new Conversion(DERBY, toMap("name:?"), "bob");
 		conversion.run();
-		assertEquals("WHERE name=?", conversion.getSql());
+		assertEquals("where name=?", conversion.getSql());
 		assertEquals("[bob]", asString(conversion.getValues()));
 	}
 	
@@ -41,7 +41,7 @@ public class ConversionTests {
 	public void testSingleValue_ReservedWord() throws Exception {
 		Conversion conversion = new Conversion(DERBY, toMap("user:?"), "bob");
 		conversion.run();
-		assertEquals("WHERE " + safeSqlWord(DERBY, "user") + "=?", conversion.getSql());
+		assertEquals("where " + safeSqlWord(DERBY, "user") + "=?", conversion.getSql());
 		assertEquals("[bob]", asString(conversion.getValues()));
 	}
 	
@@ -49,7 +49,7 @@ public class ConversionTests {
 	public void testTwo() throws Exception {
 		Conversion conversion = new Conversion(DERBY, toMap("name:bob,active:true"));
 		conversion.run();
-		assertEquals("WHERE name=? AND active=?", conversion.getSql());
+		assertEquals("where name=? and active=?", conversion.getSql());
 		assertEquals("[bob, true]", asString(conversion.getValues()));
 	}
 	
@@ -57,7 +57,7 @@ public class ConversionTests {
 	public void testTwoWithValues() throws Exception {
 		Conversion conversion = new Conversion(DERBY, toMap("name:?,active:?"), "bob", true);
 		conversion.run();
-		assertEquals("WHERE name=? AND active=?", conversion.getSql());
+		assertEquals("where name=? and active=?", conversion.getSql());
 		assertEquals("[bob, true]", asString(conversion.getValues()));
 	}
 	
@@ -65,7 +65,7 @@ public class ConversionTests {
 	public void testTwoWithFirstValue() throws Exception {
 		Conversion conversion = new Conversion(DERBY, toMap("name:bob,active:?"), true);
 		conversion.run();
-		assertEquals("WHERE name=? AND active=?", conversion.getSql());
+		assertEquals("where name=? and active=?", conversion.getSql());
 		assertEquals("[bob, true]", asString(conversion.getValues()));
 	}
 	
@@ -73,7 +73,7 @@ public class ConversionTests {
 	public void testTwoWithSecondValue() throws Exception {
 		Conversion conversion = new Conversion(DERBY, toMap("name:?,active:true"), "bob");
 		conversion.run();
-		assertEquals("WHERE name=? AND active=?", conversion.getSql());
+		assertEquals("where name=? and active=?", conversion.getSql());
 		assertEquals("[bob, true]", asString(conversion.getValues()));
 	}
 	
@@ -81,7 +81,7 @@ public class ConversionTests {
 	public void testSingleNotEquals() throws Exception {
 		Conversion conversion = new Conversion(DERBY, toMap("id:{not:1234}"));
 		conversion.run();
-		assertEquals("WHERE id!=?", conversion.getSql());
+		assertEquals("where id!=?", conversion.getSql());
 		assertEquals("[1234]", asString(conversion.getValues()));
 	}
 	
@@ -89,7 +89,7 @@ public class ConversionTests {
 	public void testTwoNotEquals() throws Exception {
 		Conversion conversion = new Conversion(DERBY, toMap("id:{not:1234},name:{not:bob}"));
 		conversion.run();
-		assertEquals("WHERE id!=? AND name!=?", conversion.getSql());
+		assertEquals("where id!=? and name!=?", conversion.getSql());
 		assertEquals("[1234, bob]", asString(conversion.getValues()));
 	}
 	
@@ -97,7 +97,7 @@ public class ConversionTests {
 	public void testIsNull() throws Exception {
 		Conversion conversion = new Conversion(DERBY, toMap("id:{$is:null}"));
 		conversion.run();
-		assertEquals("WHERE id is null", conversion.getSql());
+		assertEquals("where id is null", conversion.getSql());
 		assertEquals(0, conversion.getValues().length);
 	}
 	
@@ -105,7 +105,7 @@ public class ConversionTests {
 	public void testIsNotNull() throws Exception {
 		Conversion conversion = new Conversion(DERBY, toMap("id:{$not:null}"));
 		conversion.run();
-		assertEquals("WHERE id is not null", conversion.getSql());
+		assertEquals("where id is not null", conversion.getSql());
 		assertEquals(0, conversion.getValues().length);
 	}
 	
@@ -113,7 +113,7 @@ public class ConversionTests {
 	public void testLessThan() throws Exception {
 		Conversion conversion = new Conversion(DERBY, toMap("id:{lt:1234}"));
 		conversion.run();
-		assertEquals("WHERE id<?", conversion.getSql());
+		assertEquals("where id<?", conversion.getSql());
 		assertEquals("[1234]", asString(conversion.getValues()));
 	}
 	
@@ -121,7 +121,7 @@ public class ConversionTests {
 	public void testRange() throws Exception {
 		Conversion conversion = new Conversion(DERBY, toMap("id:{gt:1,lt:10}"));
 		conversion.run();
-		assertEquals("WHERE (id>? AND id<?)", conversion.getSql());
+		assertEquals("where (id>? and id<?)", conversion.getSql());
 		assertEquals("[1, 10]", asString(conversion.getValues()));
 	}
 	
@@ -129,7 +129,7 @@ public class ConversionTests {
 	public void testTwoAnded() throws Exception {
 		Conversion conversion = new Conversion(DERBY, toMap("and:{name:bob,active:true}", true));
 		conversion.run();
-		assertEquals("WHERE name=? AND active=?", conversion.getSql());
+		assertEquals("where name=? and active=?", conversion.getSql());
 		assertEquals("[bob, true]", asString(conversion.getValues()));
 	}
 	
@@ -137,7 +137,7 @@ public class ConversionTests {
 	public void testTwoOred() throws Exception {
 		Conversion conversion = new Conversion(DERBY, toMap("or:{name:bob,active:true}", true));
 		conversion.run();
-		assertEquals("WHERE name=? OR active=?", conversion.getSql());
+		assertEquals("where name=? or active=?", conversion.getSql());
 		assertEquals("[bob, true]", asString(conversion.getValues()));
 	}
 	
@@ -145,7 +145,7 @@ public class ConversionTests {
 	public void testOneAndedWithTwoOrs() throws Exception {
 		Conversion conversion = new Conversion(DERBY, toMap("name:bob,or:{name:joe,active:true}", true));
 		conversion.run();
-		assertEquals("WHERE name=? AND (name=? OR active=?)", conversion.getSql());
+		assertEquals("where name=? and (name=? or active=?)", conversion.getSql());
 		assertEquals("[bob, joe, true]", asString(conversion.getValues()));
 	}
 
@@ -153,7 +153,7 @@ public class ConversionTests {
 	public void testSingleWithLimit() throws Exception {
 		Conversion conversion = new Conversion(DERBY, toMap("name:bob,$limit:'1,2'"));
 		conversion.run();
-		assertEquals("WHERE name=? LIMIT 1,2", conversion.getSql());
+		assertEquals("where name=? limit 1,2", conversion.getSql());
 		assertEquals("[bob]", asString(conversion.getValues()));
 	}
 
@@ -161,28 +161,28 @@ public class ConversionTests {
 	public void testLimitOnly() throws Exception {
 		Conversion conversion = new Conversion(DERBY, toMap("$limit:1"));
 		conversion.run();
-		assertEquals("LIMIT 1", conversion.getSql());
+		assertEquals("limit 1", conversion.getSql());
 	}
 
 	@Test
 	public void testLimitAndOffset() throws Exception {
 		Conversion conversion = new Conversion(DERBY, toMap("$limit:'1,2'"));
 		conversion.run();
-		assertEquals("LIMIT 1,2", conversion.getSql());
+		assertEquals("limit 1,2", conversion.getSql());
 	}
 	
 	@Test
 	public void testLimitOnly_AsParameter() throws Exception {
 		Conversion conversion = new Conversion(DERBY, toMap("$limit:?", 1));
 		conversion.run();
-		assertEquals("LIMIT 1", conversion.getSql());
+		assertEquals("limit 1", conversion.getSql());
 	}
 
 	@Test
 	public void testLimitAndOffset_AsParameter() throws Exception {
 		Conversion conversion = new Conversion(DERBY, toMap("$limit:?", "1,2"));
 		conversion.run();
-		assertEquals("LIMIT 1,2", conversion.getSql());
+		assertEquals("limit 1,2", conversion.getSql());
 	}
 	
 	@Test(expected=Exception.class)
@@ -217,7 +217,7 @@ public class ConversionTests {
 		Conversion conversion = new Conversion(DERBY, toMap("name:bob"));
 		conversion.setModelType(TestClass.class);
 		conversion.run();
-		assertEquals("WHERE name=?", conversion.getSql());
+		assertEquals("where name=?", conversion.getSql());
 		assertEquals("[bob]", asString(conversion.getValues()));
 	}
 	
@@ -230,7 +230,7 @@ public class ConversionTests {
 
 	@Test
 	public void testInvalidJsonMap() throws Exception {
-		Conversion conversion = new Conversion(DERBY, toMap("blah LIMIT 1"));
+		Conversion conversion = new Conversion(DERBY, toMap("blah limit 1"));
 		conversion.setModelType(TestClass.class);
 		try {
 			conversion.run();

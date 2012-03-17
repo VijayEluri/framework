@@ -35,18 +35,18 @@ public class Conversion {
 		operators.put("$gt", ">");
 		operators.put("gte", ">=");
 		operators.put("$gte", ">=");
-		operators.put("in", " IN ");
-		operators.put("$in", " IN ");
-		operators.put("nin", " NOT IN ");
-		operators.put("$nin", " NOT IN ");
-		operators.put("or", " OR ");
-		operators.put("$or", " OR ");
-		operators.put("and", " AND ");
-		operators.put("$and", " AND ");
-		operators.put("like", " LIKE ");
-		operators.put("$like", " LIKE ");
-		operators.put("nlike", " NOT LIKE ");
-		operators.put("$nlike", " NOT LIKE ");
+		operators.put("in", " in ");
+		operators.put("$in", " in ");
+		operators.put("nin", " not in ");
+		operators.put("$nin", " not in ");
+		operators.put("or", " or ");
+		operators.put("$or", " or ");
+		operators.put("and", " and ");
+		operators.put("$and", " and ");
+		operators.put("like", " like ");
+		operators.put("$like", " like ");
+		operators.put("nlike", " not like ");
+		operators.put("$nlike", " not like ");
 	}
 	
 	public static Conversion run(int dbType, Class<? extends Model> modelType, Map<String, Object> map, Object...values) throws Exception {
@@ -104,7 +104,7 @@ public class Conversion {
 
 	private void and(Object value) throws Exception {
 		if(value instanceof Map) {
-			handle((Map<?,?>) value, " AND ");
+			handle((Map<?,?>) value, " and ");
 		}
 		else if(value instanceof List) {
 			throw new Exception("'and' not yet supported on a List");
@@ -126,13 +126,13 @@ public class Conversion {
 		}
 		if(include != null) {
 			first = first(sb, first);
-			sb.append("INCLUDE:").append(include);
+			sb.append("include:").append(include);
 			if("?".equals(include)) list.add(inValues[v++]);
 		}
 	}
 
 	private void applyLimit(StringBuilder sb, Object limit) throws Exception {
-		sb.append("LIMIT ");
+		sb.append("limit ");
 		String value = String.valueOf("?".equals(limit) ? inValues[v++] : limit); 
 		String[] sa = value.trim().split("\\s*,\\s*");
 		if(sa.length == 1) {
@@ -158,7 +158,7 @@ public class Conversion {
 	}
 
 	private void applyOrder(StringBuilder sb, Object order) throws Exception {
-		sb.append("ORDER BY ");
+		sb.append("order by ");
 		String value = String.valueOf("?".equals(order) ? inValues[v++] : order); 
 		String[] sa1 = String.valueOf(value).trim().split("\\s*,\\s*");
 		for(int i = 0; i < sa1.length; i++) {
@@ -171,10 +171,10 @@ public class Conversion {
 			else if(sa2.length > 1) {
 				sb.append(column(sa2[0]));
 				if("DESC".equalsIgnoreCase(sa2[1])) {
-					sb.append(" DESC");
+					sb.append(" desc");
 				}
 				else if("ASC".equalsIgnoreCase(sa2[1])) {
-					sb.append(" ASC");
+					sb.append(" asc");
 				}
 				else {
 					throw new Exception("unknown direction in ORDER BY clause: " + value);
@@ -256,7 +256,7 @@ public class Conversion {
 							Object val = e.getValue();
 							add(field, key, val);
 							if(i.hasNext()) {
-								sb.append(" AND ");
+								sb.append(" and ");
 							}
 						}
 						sb.append(")");
@@ -275,7 +275,7 @@ public class Conversion {
 	
 	private void or(Object value) throws Exception {
 		if(value instanceof Map) {
-			handle((Map<?,?>) value, " OR ");
+			handle((Map<?,?>) value, " or ");
 		}
 		else if(value instanceof List) {
 			throw new Exception("'or' not yet supported on a List");
@@ -300,7 +300,7 @@ public class Conversion {
 		if(inQuery.isEmpty()) {
 			apply(sb, order, limit, include);
 		} else {
-			sb.append("WHERE ");
+			sb.append("where ");
 			and(inQuery);
 			apply(sb, order, limit, include);
 		}
