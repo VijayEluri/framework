@@ -338,9 +338,18 @@ public class EspCompiler {
 		}
 		body.append(")) {\n");
 		indent(body);
-		body.append('\t').append(sbName).append(".append(\"").append(str).append("\");\n");
+		body.append('\t').append(sbName).append(".append(\"").append(str);
+		body.append(" error=\\\"\").append(");
+		body.append(model).append(".getError(");
+		for(int i = 0; i < fields.size(); i++) {
+			if(i != 0) body.append(", ");
+			build(fields.get(i), body);
+		}
+		body.append("));\n");
 		indent(body);
 		body.append("}\n");
+		indent(body);
+		body.append(sbName).append(".append(\"\\\"\");\n");
 		prepForMarkup(body);
 	}
 	
@@ -855,7 +864,7 @@ public class EspCompiler {
 	
 	private void buildClasses(MarkupElement element, String model, List<JavaSourcePart> fields) {
 		if(!"hidden".equals(element.getTag())) {
-			String cssClass = "label".equals(element.getTag()) ? "labelWithErrors" : "fieldWithErrors";
+			String cssClass = "label".equals(element.getTag()) ? "labelWithErrors\\\"" : "fieldWithErrors\\\"";
 			if(element.hasClassNames()) {
 				body.append(" class=\\\"");
 				for(Iterator<EspPart> ci = element.getClassNames().iterator(); ci.hasNext(); ) {
@@ -863,11 +872,9 @@ public class EspCompiler {
 					if(ci.hasNext()) body.append(' ');
 				}
 				
-				appendFieldError(model, fields, cssClass);
-				
-				body.append("\\\"");
+				appendFieldError(model, fields, " " + cssClass);
 			} else {
-				appendFieldError(model, fields, " class=\\\"" + cssClass + "\\\"");
+				appendFieldError(model, fields, " class=\\\"" + cssClass);
 			}
 		}
 	}
