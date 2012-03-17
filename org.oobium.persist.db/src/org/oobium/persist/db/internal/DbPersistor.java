@@ -470,7 +470,8 @@ public class DbPersistor {
 				if(adapter.isOneToOne(field)) {
 					if(adapter.hasKey(field)) {
 						Cell cell = createCell(model, field);
-						exec("UPDATE " + table + " SET " + cell.column + "=null WHERE " + cell.column + "=" + cell.value);
+						String column = safeSqlWord(dbType, cell.column);
+						exec("UPDATE " + table + " SET " + column + "=null WHERE " + column + "=" + cell.value);
 						cells.add(cell);
 					} // else, skip it
 				}
