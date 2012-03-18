@@ -329,7 +329,7 @@ public class EspCompiler {
 		}
 	}
 	
-	private void appendFieldError(String model, List<JavaSourcePart> fields, String str) {
+	private void appendFieldError(String model, List<JavaSourcePart> fields, String str, boolean newAttr) {
 		prepForJava(body);
 		body.append("if(").append(model).append(".hasErrors(");
 		for(int i = 0; i < fields.size(); i++) {
@@ -345,11 +345,17 @@ public class EspCompiler {
 			if(i != 0) body.append(", ");
 			build(fields.get(i), body);
 		}
-		body.append("));\n");
-		indent(body);
-		body.append("}\n");
-		indent(body);
-		body.append(sbName).append(".append(\"\\\"\");\n");
+		if(newAttr) {
+			body.append(")).append(\"\\\"\");\n");
+			indent(body);
+			body.append("}\n");
+		} else {
+			body.append("));\n");
+			indent(body);
+			body.append("}\n");
+			indent(body);
+			body.append(sbName).append(".append(\"\\\"\");\n");
+		}
 		prepForMarkup(body);
 	}
 	
@@ -872,9 +878,9 @@ public class EspCompiler {
 					if(ci.hasNext()) body.append(' ');
 				}
 				
-				appendFieldError(model, fields, " " + cssClass);
+				appendFieldError(model, fields, " " + cssClass, false);
 			} else {
-				appendFieldError(model, fields, " class=\\\"" + cssClass);
+				appendFieldError(model, fields, " class=\\\"" + cssClass, true);
 			}
 		}
 	}
