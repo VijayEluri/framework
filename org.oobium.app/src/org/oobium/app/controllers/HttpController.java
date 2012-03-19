@@ -1050,62 +1050,67 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		redirectTo("/", notice);
 	}
 	
-	public void render(Collection<? extends Model> models) {
-		render(JSON, models);
+	public Response render(Collection<? extends Model> models) {
+		return render(JSON, models);
 	}
 
-	public void render(Collection<? extends Model> models, String include, Object...values) {
-		render(JSON, models, include, values);
+	public Response render(Collection<? extends Model> models, String include, Object...values) {
+		return render(JSON, models, include, values);
 	}
 
-	public void render(File file) {
+	public Response render(File file) {
 		rendering();
 		response = new StaticResponse(file);
+		return response;
 	}
 	
-	public void render(HttpResponseStatus status) {
-		render(status, wants(), status.getReasonPhrase());
+	public Response render(HttpResponseStatus status) {
+		return render(status, wants(), status.getReasonPhrase());
 	}
 
-	public void render(HttpResponseStatus status, MimeType contentType, String body) {
+	public Response render(HttpResponseStatus status, MimeType contentType, String body) {
 		rendering();
 		response = new Response(status);
 		response.setContentType(contentType);
 		response.setContent(body);
+		return response;
 	}
 	
-	public void render(HttpResponseStatus status, String body) {
-		render(status, wants(), body);
+	public Response render(HttpResponseStatus status, String body) {
+		return render(status, wants(), body);
 	}
 	
-	public void render(MimeType type, byte[] data) {
+	public Response render(MimeType type, byte[] data) {
 		rendering();
 		response = new Response();
 		response.setContentType(type);
 		response.setContent(ChannelBuffers.wrappedBuffer(data));
+		return response;
 	}
 	
-	private void render(MimeType type, CacheObject cache) {
+	private Response render(MimeType type, CacheObject cache) {
 		rendering();
 		response = new StaticResponse(type, cache.payload(), cache.contentLength(), cache.lastModified());
+		return response;
 	}
 	
-	public void render(MimeType type, Collection<? extends Model> models) {
-		render(type, (models == null) ? "null" : Model.toJson(models));
+	public Response render(MimeType type, Collection<? extends Model> models) {
+		return render(type, (models == null) ? "null" : Model.toJson(models));
 	}
 	
-	public void render(MimeType type, Collection<? extends Model> models, String include, Object...values) {
-		render(type, (models == null) ? "null" : Model.toJson(models, include, values));
+	public Response render(MimeType type, Collection<? extends Model> models, String include, Object...values) {
+		return render(type, (models == null) ? "null" : Model.toJson(models, include, values));
 	}
 	
-	private void render(MimeType type, DynamicAsset asset) {
+	private Response render(MimeType type, DynamicAsset asset) {
 		rendering();
 		response = new Response();
 		response.setContentType(type);
 		response.setContent(asset.getContent());
+		return response;
 	}
 	
-	public void render(MimeType type, String body) {
+	public Response render(MimeType type, String body) {
 		rendering();
 		response = new Response();
 		response.setContentType(type);
@@ -1114,58 +1119,57 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		} else {
 			response.setContent(body);
 		}
+		return response;
 	}
 	
-	public void render(Model model) {
-		render(JSON, (model == null) ? "null" : model.toJson());
+	public Response render(Model model) {
+		return render(JSON, (model == null) ? "null" : model.toJson());
 	}
 	
-	public void render(Model model, String include, Object...values) {
-		render(JSON, (model == null) ? "null" : model.toJson(include, values));
+	public Response render(Model model, String include, Object...values) {
+		return render(JSON, (model == null) ? "null" : model.toJson(include, values));
 	}
 	
 	/**
 	 * Convenience method for render(String.valueOf(object))
 	 * @param object
 	 */
-	public void render(Object object) {
+	public Response render(Object object) {
 		if(object instanceof ScriptFile) {
-			render((ScriptFile) object);
+			return render((ScriptFile) object);
 		}
-		else if(object instanceof StyleSheet) {
-			render((StyleSheet) object);
+		if(object instanceof StyleSheet) {
+			return render((StyleSheet) object);
 		}
-		else if(object instanceof Model) {
-			render((Model) object);
+		if(object instanceof Model) {
+			return render((Model) object);
 		}
-		else if(object instanceof View) {
-			render((View) object);
+		if(object instanceof View) {
+			return render((View) object);
 		}
-		else if(object instanceof HttpResponseStatus) {
-			render((HttpResponseStatus) object);
+		if(object instanceof HttpResponseStatus) {
+			return render((HttpResponseStatus) object);
 		}
-		else {
-			render(String.valueOf(object));
-		}
+		return render(String.valueOf(object));
 	}
 	
-	public void render(ScriptFile sf) {
-		render(JS, sf);
+	public Response render(ScriptFile sf) {
+		return render(JS, sf);
 	}
 	
-	public void render(String body) {
+	public Response render(String body) {
 		rendering();
 		response = new Response();
 		response.setContentType(wants());
 		response.setContent(body);
+		return response;
 	}
 
-	public void render(String body, Collection<?> values) {
+	public Response render(String body, Collection<?> values) {
 		if(values == null || values.isEmpty()) {
-			render(body);
-		} else {
-			render(body, values.toArray());
+			return render(body);
 		}
+		return render(body, values.toArray());
 	}
 
 	/**
@@ -1177,22 +1181,22 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	 * @param body
 	 * @param values
 	 */
-	public void render(String body, Map<String, Object> values) {
+	public Response render(String body, Map<String, Object> values) {
 		if(values == null || values.isEmpty()) {
-			render(body);
-		} else {
-			StringBuilder sb = new StringBuilder(body);
-			Pattern pattern = Pattern.compile("$\\{(\\w+)}");
-			Matcher matcher = pattern.matcher(sb);
-			for(int start = 0; matcher.find(start); ) {
-				String key = matcher.group(1);
-				Object val = values.containsKey(key) ? values.get(key) : ("#{" + key + ": *** UNKNOWN ***}");
-				sb.replace(matcher.start(), matcher.end(), String.valueOf(val));
-				start = matcher.end();
-				matcher = pattern.matcher(sb);
-			}
-			render(sb);
+			return render(body);
 		}
+		
+		StringBuilder sb = new StringBuilder(body);
+		Pattern pattern = Pattern.compile("$\\{(\\w+)}");
+		Matcher matcher = pattern.matcher(sb);
+		for(int start = 0; matcher.find(start); ) {
+			String key = matcher.group(1);
+			Object val = values.containsKey(key) ? values.get(key) : ("#{" + key + ": *** UNKNOWN ***}");
+			sb.replace(matcher.start(), matcher.end(), String.valueOf(val));
+			start = matcher.end();
+			matcher = pattern.matcher(sb);
+		}
+		return render(sb);
 	}
 	
 	/**
@@ -1203,23 +1207,22 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	 * @param body
 	 * @param values
 	 */
-	public void render(String body, Object...values) {
+	public Response render(String body, Object...values) {
 		if(values.length == 0) {
-			render(body);
-		} else {
-			render(StringUtils.replace(body, values));
+			return render(body);
 		}
+		return render(StringUtils.replace(body, values));
 	}
 
-	public void render(StyleSheet ss) {
-		render(CSS, ss);
+	public Response render(StyleSheet ss) {
+		return render(CSS, ss);
 	}
 	
-	public void render(View view) {
-		render(view, isXhr());
+	public Response render(View view) {
+		return render(view, isXhr());
 	}
 	
-	public void render(View view, boolean partial) {
+	public Response render(View view, boolean partial) {
 		if(view == null) {
 			throw new IllegalArgumentException("view cannot be null");
 		}
@@ -1239,26 +1242,28 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		} finally {
 			view.setRenderer(null);
 		}
+
 		logger.debug("end render of view");
+		return response;
 	}
 	
-	public void renderAccepted() {
-		render(HttpResponseStatus.ACCEPTED, wantsJS() ? "[]" : HttpResponseStatus.ACCEPTED.getReasonPhrase());
+	public Response renderAccepted() {
+		return render(HttpResponseStatus.ACCEPTED, wantsJS() ? "[]" : HttpResponseStatus.ACCEPTED.getReasonPhrase());
 	}
 	
-	public void renderCreated(int id) {
-		renderCreated((long) id);
+	public Response renderCreated(int id) {
+		return renderCreated((long) id);
 	}
 
-	public void renderCreated(long id) {
-		renderCreated(id, null);
+	public Response renderCreated(long id) {
+		return renderCreated(id, null);
 	}
 	
-	public void renderCreated(Model model) {
-		renderCreated(model.getId(), pathTo(model).toString());
+	public Response renderCreated(Model model) {
+		return renderCreated(model.getId(), pathTo(model).toString());
 	}
 
-	public void renderCreated(Object id, String path) {
+	public Response renderCreated(Object id, String path) {
 		rendering();
 		response = new Response(HttpResponseStatus.CREATED);
 		response.addHeader(PARAM_ID, String.valueOf(id));
@@ -1269,26 +1274,27 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 			response.setContentType(wants());
 			response.setContent("null");
 		}
+		return response;
 	}
 
-	public void renderDestroyed(Model model) {
+	public Response renderDestroyed(Model model) {
 		rendering();
 		response = new Response();
 		if(wantsJS()) {
 			response.setContentType(wants());
 			response.setContent("null");
 		}
+		return response;
 	}
 
-	public void renderErrors(List<String> errors) {
+	public Response renderErrors(List<String> errors) {
 		if(errors != null) {
-			renderErrors(errors.toArray(new String[errors.size()]));
-		} else {
-			renderErrors(new String[0]);
+			return renderErrors(errors.toArray(new String[errors.size()]));
 		}
+		return renderErrors(new String[0]);
 	}
 	
-	public void renderErrors(Model...models) {
+	public Response renderErrors(Model...models) {
 		rendering();
 		response = new Response(HttpResponseStatus.CONFLICT);
 		response.setContentType(MimeType.JSON);
@@ -1309,9 +1315,10 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 			errors.put("errors", list);
 			response.setContent(toJson(errors));
 		}
+		return response;
 	}
 	
-	public void renderErrors(String...errors) {
+	public Response renderErrors(String...errors) {
 		rendering();
 		response = new Response(HttpResponseStatus.CONFLICT);
 		response.setContentType(MimeType.JSON);
@@ -1322,9 +1329,10 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 			map.put("errors", errors);
 			response.setContent(toJson(errors));
 		}
+		return response;
 	}
 
-	public void renderView(Object...args) {
+	public Response renderView(Object...args) {
 		String model = getClass().getSimpleName();
 		if(model.endsWith("Controller")) {
 			model = model.substring(0, model.length() - 10);
@@ -1361,6 +1369,8 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 				logger.warn(e.getMessage());
 			}
 		}
+		
+		return response;
 	}
 	
 	private void rendering() {
@@ -1370,17 +1380,16 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		isRendered = true;
 	}
 	
-	public void renderJson(Collection<? extends Model> models, String include, Object...values) {
+	public Response renderJson(Collection<? extends Model> models, String include, Object...values) {
 		if(blank(models)) {
-			render(MimeType.JSON, "[]");
-		} else {
-			String json = Model.toJson(models, include, values);
-			render(MimeType.JSON, json);
+			return render(MimeType.JSON, "[]");
 		}
+		String json = Model.toJson(models, include, values);
+		return render(MimeType.JSON, json);
 	}
 
-	public void renderJson(Object object) {
-		render(MimeType.JSON, format(toJson(object)));
+	public Response renderJson(Object object) {
+		return render(MimeType.JSON, format(toJson(object)));
 	}
 	
 	/**
@@ -1390,28 +1399,27 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	 * See http://api.jquery.com/jQuery.ajax/ for more details.</p>
 	 * @param object the object to be rendered as JSON data
 	 */
-	public void renderJsonP(Object object) {
+	public Response renderJsonP(Object object) {
 		String callbackName = param("callback", String.class); // standard JQuery jsonp implementation
 		if(callbackName == null) {
 			logger.warn("error in renderJsonP: no 'callback' parameter in request");
-			render(JS, "alert('error in renderJsonP: no callback parameter in request')");
-		} else {
-			String json = format(toJson(object));
-			String callback = callbackName + "(" + json + ");";
-			render(MimeType.JS, callback);
+			return render(JS, "alert('error in renderJsonP: no callback parameter in request')");
 		}
+		String json = format(toJson(object));
+		String callback = callbackName + "(" + json + ");";
+		return render(MimeType.JS, callback);
 	}
 
-	public void renderOK() {
-		render(HttpResponseStatus.OK, wantsJS() ? "[]" : HttpResponseStatus.OK.getReasonPhrase());
+	public Response renderOK() {
+		return render(HttpResponseStatus.OK, wantsJS() ? "[]" : HttpResponseStatus.OK.getReasonPhrase());
 	}
 	
-	public void renderPage(String text) {
-		renderPage("", text);
+	public Response renderPage(String text) {
+		return renderPage("", text);
 	}
 
-	public void renderPage(String title, String text) {
-		render(MimeType.PLAIN,
+	public Response renderPage(String title, String text) {
+		return render(MimeType.PLAIN,
 				"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" " +
 				"\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n" +
 				"<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">\n" +
