@@ -254,11 +254,27 @@ public abstract class Model implements JsonModel {
 		}
 	}
 	
+	private void addFieldTypeError(String field) {
+		ModelAdapter adapter = ModelAdapter.getAdapter(this);
+		Class<?> clazz = adapter.getClass(field);
+		if(Number.class.isAssignableFrom(clazz)) {
+			addError(field, "is not a number");
+		}
+		// TODO lots of other cases to handle...
+		else {
+			addError(field, "invalid format");
+		}
+	}
+	
 	protected void afterCreate() {
 		// sublcasses to implement
 	}
 	
 	protected void afterDestroy(Object id) {
+		// sublcasses to implement
+	}
+	
+	protected void afterSave() {
 		// sublcasses to implement
 	}
 	
@@ -330,6 +346,10 @@ public abstract class Model implements JsonModel {
 		// sublcasses to implement
 	}
 	
+	protected void beforeSave() {
+		// sublcasses to implement
+	}
+
 	protected void beforeUpdate() {
 		// sublcasses to implement
 	}
@@ -569,11 +589,13 @@ public abstract class Model implements JsonModel {
 	
 		if(!hasErrors()) {
 			try {
+				beforeSave();
 				beforeCreate();
 				PersistService service = getPersistor();
 				service.create(this);
 				saved = true;
 				afterCreate();
+				afterSave();
 				if(!(service instanceof RemotePersistService)) {
 					Observer.runAfterCreate(this);
 				}
@@ -615,11 +637,13 @@ public abstract class Model implements JsonModel {
 		
 		if(!hasErrors()) {
 			try {
+				beforeSave();
 				beforeUpdate();
 				PersistService service = getPersistor();
 				service.update(this);
 				saved = true;
 				afterUpdate();
+				afterSave();
 				if(!(service instanceof RemotePersistService)) {
 					Observer.runAfterUpdate(this);
 				}
@@ -1384,7 +1408,7 @@ public abstract class Model implements JsonModel {
 		return pass;
 	}
 	
-	private void runValidation(Validate validate, boolean onUpdate, int on) {
+	private void runValidation(Validate validate, int on, Set<String> invalidFields) {
 		if(!blank(validate.when()) && !run(validate.when(), validate.field())) {
 			return;
 		}
@@ -1403,8 +1427,15 @@ public abstract class Model implements JsonModel {
 			return;
 		}
 		
+		boolean onUpdate = (on == Validate.UPDATE);
+		List<String> fields = new ArrayList<String>();
+		for(String field : validate.field().split("\\s*,\\s*")) {
+			if(!invalidFields.contains(field)) {
+				fields.add(field);
+			}
+		}
+		
 		if(!blank(validate.withMethod())) {
-			String[] fields = validate.field().split("\\s*,\\s*");
 			for(String field : fields) {
 				if(!onUpdate || isSet(field)) {
 					if(!run(validate.withMethod(), field)) {
@@ -1415,7 +1446,6 @@ public abstract class Model implements JsonModel {
 			return;
 		}
 		
-		String[] fields = validate.field().split("\\s*,\\s*");
 		for(String field : fields) {
 			if(onUpdate && !isSet(field)) {
 				continue;
@@ -1474,20 +1504,20 @@ public abstract class Model implements JsonModel {
 	}
 	
 	private void runValidations(int on, Set<Model> validated) {
+		Set<String> invalidFields = validateFieldTypes();
 		Validations validations = getClass().getAnnotation(Validations.class);
 		if(validations != null) {
-			boolean onUpdate = (on == Validate.UPDATE);
 			for(Validate validate : validations.value()) {
 				if((validate.on() & on) != 0) {
-					runValidation(validate, onUpdate, on);
+					runValidation(validate, on, invalidFields);
 				}
 			}
 			if(on == Validate.DESTROY) {
-				validateDependentsOnDestroy();
+				validateDependentsOnDestroy(invalidFields);
 			}
 		}
 		if(on != Validate.DESTROY) {
-			validateRelatedModelsToBeCreated(validated);
+			validateRelatedModelsToBeCreated(validated, invalidFields);
 		}
 	}
 
@@ -1748,22 +1778,37 @@ public abstract class Model implements JsonModel {
 	 * validated set is used to make sure a model is validated only once,
 	 * thereby preventing infinite loops
 	 */
-	private void validateRelatedModelsToBeCreated(Set<Model> validated) {
+	private void validateRelatedModelsToBeCreated(Set<Model> validated, Set<String> invalidFields) {
 		ModelAdapter adapter = ModelAdapter.getAdapter(this);
 		for(String field : fields.keySet()) {
-			if(adapter.hasOne(field)) {
-				Model model = (Model) get(field, false);
-				validateRelatedModelsToBeCreated(model, validated);
-			}
-			else if(adapter.hasMany(field)) {
-				for(Object o : (Iterable<?>) get(field, false)) {
-					Model model = (Model) o;
+			if(!invalidFields.contains(field)) {
+				if(adapter.hasOne(field)) {
+					Model model = (Model) get(field, false);
 					validateRelatedModelsToBeCreated(model, validated);
+				}
+				else if(adapter.hasMany(field)) {
+					for(Object o : (Iterable<?>) get(field, false)) {
+						Model model = (Model) o;
+						validateRelatedModelsToBeCreated(model, validated);
+					}
 				}
 			}
 		}
 	}
 
+	private Set<String> validateFieldTypes() {
+		Set<String> invalids = new HashSet<String>();
+		for(String field : fields.keySet()) {
+			try {
+				get(field);
+			} catch(Exception e) {
+				addFieldTypeError(field);
+				invalids.add(field);
+			}
+		}
+		return invalids;
+	}
+	
 	private void validateRelatedModelsToBeCreated(Model model, Set<Model> validated) {
 		if(model == null || validated.contains(model)) {
 			return;
@@ -1776,24 +1821,26 @@ public abstract class Model implements JsonModel {
 		}
 	}
 	
-	private void validateDependentsOnDestroy() {
+	private void validateDependentsOnDestroy(Set<String> invalidFields) {
 		ModelAdapter adapter = ModelAdapter.getAdapter(this);
 		for(String field : adapter.getRelationFields()) {
-			Relation relation = adapter.getRelation(field);
-			if(relation.dependent() == Relation.DESTROY) {
-				if(adapter.hasOne(field)) {
-					Model related = (Model) get(field);
-					if(related != null) {
-						if(!related.canDestroy()) {
-							addError(field, "is preventing this model from being destroyed");
+			if(!invalidFields.contains(field)) {
+				Relation relation = adapter.getRelation(field);
+				if(relation.dependent() == Relation.DESTROY) {
+					if(adapter.hasOne(field)) {
+						Model related = (Model) get(field);
+						if(related != null) {
+							if(!related.canDestroy()) {
+								addError(field, "is preventing this model from being destroyed");
+							}
 						}
-					}
-				} else {
-					Collection<?> related = (Collection<?>) get(field);
-					for(Object o : related) {
-						if(!((Model) o).canDestroy()) {
-							addError(field, "are preventing this model from being destroyed");
-							break;
+					} else {
+						Collection<?> related = (Collection<?>) get(field);
+						for(Object o : related) {
+							if(!((Model) o).canDestroy()) {
+								addError(field, "are preventing this model from being destroyed");
+								break;
+							}
 						}
 					}
 				}
