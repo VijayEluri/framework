@@ -56,6 +56,9 @@ public class AppServerTests {
 		final File js = FileUtils.writeFile(folder, "application.js", "// nothing to see here");
 		final URL jquery = getClass().getResource("/scripts/jquery_1.4.4.js");
 		final URL logo = getClass().getResource("/images/logo.png");
+
+		final Logger logger = LogProvider.getLogger();
+		logger.setConsoleLevel(Logger.DEBUG);
 		
 		HttpRequestHandler handler = mock(HttpRequestHandler.class);
 		when(handler.getServerConfig()).thenReturn(new ServerConfig("*", 5000, true));
@@ -65,7 +68,7 @@ public class AppServerTests {
 				Request request = (Request) invocation.getArguments()[0];
 				String path = request.getPath();
 				if("/".equals(path)) {
-					return new HandlerTask(request) {
+					return new HandlerTask(logger, request) {
 						@Override
 						protected Response handleRequest(Request request) throws Exception {
 							try {
@@ -101,9 +104,6 @@ public class AppServerTests {
 			}
 		});
 
-		Logger logger = LogProvider.getLogger();
-		logger.setConsoleLevel(Logger.DEBUG);
-		
 		Server server = new Server(logger);
 		server.addHandler(handler);
 		

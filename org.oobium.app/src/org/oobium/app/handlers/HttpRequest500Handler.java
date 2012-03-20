@@ -28,6 +28,6 @@ public interface HttpRequest500Handler {
 	 * @param request
 	 * @return
 	 */
-	public abstract Response handle500(Request request, Exception exception);
+	public abstract Response handle500(Request request, Throwable cause);
 	
 }

@@ -49,12 +49,12 @@ public class AppDevActivator extends ModuleService implements HttpRequest500Hand
 	}
 
 	@Override
-	public Response handle500(Request request, Exception exception) {
+	public Response handle500(Request request, Throwable cause) {
 		try {
 			try {
 				StringWriter sw = new StringWriter();
 				PrintWriter pw = new PrintWriter(sw);
-				exception.printStackTrace(pw);
+				cause.printStackTrace(pw);
 				pw.close();
 
 				String html = 
@@ -68,7 +68,7 @@ public class AppDevActivator extends ModuleService implements HttpRequest500Hand
 					" <script src='/jquery-1.4.2.dev.min.js'></script>\n" +
 					"</head>\n" +
 					"<body>\n" +
-					" <h2 class=\"trace\">" + exception.getLocalizedMessage() + "</h2>\n" +
+					" <h2 class=\"trace\">" + cause.getLocalizedMessage() + "</h2>\n" +
 					" <div class=\"trace\">" +
 					"{trace}\n" +
 					" </div>\n" +

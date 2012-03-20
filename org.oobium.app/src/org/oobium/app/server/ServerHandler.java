@@ -162,7 +162,7 @@ public class ServerHandler extends SimpleChannelUpstreamHandler {
 		return response;
 	}
 
-	private HttpResponse get500Response(Request request, Exception cause) {
+	private HttpResponse get500Response(Request request, Throwable cause) {
 		logger.warn(cause);
 		HttpResponse response = null;
 		try {

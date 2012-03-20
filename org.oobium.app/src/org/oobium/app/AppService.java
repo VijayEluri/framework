@@ -371,7 +371,7 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 	}
 
 	@Override
-	public Response handle500(Request request, Exception exception) {
+	public Response handle500(Request request, Throwable cause) {
 		if(getRouter().hasHost(request)) {
 			if(errorClass500 != null) {
 				try{
@@ -394,7 +394,7 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		if(handler != null) {
 			handler.setLogger(logger);
 			if(handler instanceof HttpHandler) {
-				return new HandlerTask(request) {
+				return new HandlerTask(logger, request) {
 					@Override
 					protected Response handleRequest(Request request) throws Exception {
 						if(!running) return null;

@@ -17,6 +17,7 @@ package org.oobium.app.server;
 
 import org.oobium.app.request.Request;
 import org.oobium.app.response.Response;
+import org.oobium.logging.Logger;
 
 
 /**
@@ -24,14 +25,16 @@ import org.oobium.app.response.Response;
  */
 public abstract class HandlerTask implements Runnable {
 
+	private final Logger logger;
 	private final Request request;
 
 	private volatile boolean done;
 	private volatile Response response;
-	private volatile Exception cause;
+	private volatile Throwable cause;
 	private HandlerTaskListener listener;
 
-	public HandlerTask(Request request) {
+	public HandlerTask(Logger logger, Request request) {
+		this.logger = logger;
 		this.request = request;
 	}
 	
@@ -41,7 +44,7 @@ public abstract class HandlerTask implements Runnable {
 	public void run() {
 		try {
 			response = handleRequest(request);
-		} catch(Exception e) {
+		} catch(Throwable e) {
 			cause = e;
 		} finally {
 			setDone();
@@ -60,7 +63,7 @@ public abstract class HandlerTask implements Runnable {
 		return done && cause == null;
 	}
 
-	public Exception getCause() {
+	public Throwable getCause() {
 		return cause;
 	}
 
@@ -97,7 +100,7 @@ public abstract class HandlerTask implements Runnable {
 		try {
 			listener.onComplete(this);
 		} catch(Throwable t) {
-//			logger.warn("An exception was thrown by " + ChannelFutureListener.class.getSimpleName() + ".", t);
+			logger.warn(t);
 		}
 	}
 

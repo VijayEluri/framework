@@ -71,10 +71,10 @@ public class RequestHandlers implements Iterable<RequestHandler> {
 		return null;
 	}
 	
-	public Response handle500(Request request, Exception exception) {
+	public Response handle500(Request request, Throwable cause) {
 		if(http500Handlers != null) {
 			for(HttpRequest500Handler handler : http500Handlers) {
-				Response response = handler.handle500(request, exception);
+				Response response = handler.handle500(request, cause);
 				if(response != null) {
 					return response;
 				}
