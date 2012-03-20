@@ -1038,7 +1038,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		if(notice != null && notice.length() > 0) {
 			setFlashNotice(notice);
 		}
-		response = new Response(HttpResponseStatus.FOUND);
+		response = new Response(HttpResponseStatus.SEE_OTHER);
 		response.addHeader(HttpHeaders.Names.LOCATION, path);
 	}
 	
