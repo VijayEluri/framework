@@ -1745,7 +1745,9 @@ public class EspCompiler {
 						String text = jpart.getText();
 						body.append(titleize(text.substring(1, text.length()-1)));
 					} else {
-						build(jpart, body);
+						body.append("\").append(h(titleize(");
+						build(jpart, body, true);
+						body.append("))).append(\"");
 					}
 				}
 				if(label.hasInnerText()) {
