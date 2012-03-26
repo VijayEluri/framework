@@ -18,6 +18,7 @@ import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
+import org.eclipse.jface.text.contentassist.ICompletionProposalExtension4;
 import org.eclipse.jface.text.contentassist.ICompletionProposalExtension6;
 import org.eclipse.jface.text.contentassist.IContextInformation;
 import org.eclipse.jface.viewers.StyledString;
@@ -25,27 +26,8 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 
 
-public class EspCompletionProposal implements Comparable<EspCompletionProposal>, ICompletionProposal, ICompletionProposalExtension6 {
+public class EspCompletionProposal implements Comparable<EspCompletionProposal>, ICompletionProposal, ICompletionProposalExtension4, ICompletionProposalExtension6 {
 
-	public static EspCompletionProposal createPackageCompletion(CompletionProposal completion, int start, int end) {
-		String text;
-		char[] ca = completion.getCompletion();
-		if(ca.length > 0 && ca[ca.length-1] == ';') {
-			text = new String(ca, 0, ca.length-1);
-		} else {
-			text = new String(ca);
-		}
-		
-		Image image = getImage(completion);
-		
-		System.out.println(completion.getKind());
-		
-		EspCompletionProposal proposal = new EspCompletionProposal(text, start, end-start, text.length(), image, text);
-		proposal.relevance = completion.getRelevance();
-
-		return proposal;
-	}
-	
 	public static EspCompletionProposal createJavaCompletion(CompletionProposal completion, int start, int end) {
 		String rstr = new String(completion.getCompletion());
 		
@@ -70,6 +52,25 @@ public class EspCompletionProposal implements Comparable<EspCompletionProposal>,
 		dstr.append(" - " + dsig, StyledString.QUALIFIER_STYLER);
 
 		EspCompletionProposal proposal = new EspCompletionProposal(rstr, start, end-start, rstr.length(), image, dstr);
+		proposal.relevance = completion.getRelevance();
+
+		return proposal;
+	}
+	
+	public static EspCompletionProposal createPackageCompletion(CompletionProposal completion, int start, int end) {
+		String text;
+		char[] ca = completion.getCompletion();
+		if(ca.length > 0 && ca[ca.length-1] == ';') {
+			text = new String(ca, 0, ca.length-1);
+		} else {
+			text = new String(ca);
+		}
+		
+		Image image = getImage(completion);
+		
+		System.out.println(completion.getKind());
+		
+		EspCompletionProposal proposal = new EspCompletionProposal(text, start, end-start, text.length(), image, text);
 		proposal.relevance = completion.getRelevance();
 
 		return proposal;
@@ -110,9 +111,14 @@ public class EspCompletionProposal implements Comparable<EspCompletionProposal>,
 	protected String additionalProposalInfo;
 	
 	protected int relevance;
+	protected boolean autoInsertable;
 
 	public EspCompletionProposal(String replacementString, int replacementOffset, int replacementLength, int cursorPosition, Image image, String displayString) {
 		this(replacementString, replacementOffset, replacementLength, cursorPosition, image, displayString, null, null);
+	}
+
+	public EspCompletionProposal(String replacementString, int replacementOffset, int replacementLength, int cursorPosition, Image image, String displayString, IContextInformation contextInformation, String additionalProposalInfo) {
+		this(replacementString, replacementOffset, replacementLength, cursorPosition, image, (displayString == null) ? null : new StyledString(displayString), contextInformation, additionalProposalInfo);
 	}
 
 	/**
@@ -126,10 +132,6 @@ public class EspCompletionProposal implements Comparable<EspCompletionProposal>,
 	 */
 	public EspCompletionProposal(String replacementString, int replacementOffset, int replacementLength, int cursorPosition, Image image, StyledString displayString) {
 		this(replacementString, replacementOffset, replacementLength, cursorPosition, image, displayString, null, null);
-	}
-
-	public EspCompletionProposal(String replacementString, int replacementOffset, int replacementLength, int cursorPosition, Image image, String displayString, IContextInformation contextInformation, String additionalProposalInfo) {
-		this(replacementString, replacementOffset, replacementLength, cursorPosition, image, (displayString == null) ? null : new StyledString(displayString), contextInformation, additionalProposalInfo);
 	}
 	
 	/**
@@ -171,11 +173,21 @@ public class EspCompletionProposal implements Comparable<EspCompletionProposal>,
 		}
 	}
 
+	@Override
+	public int compareTo(EspCompletionProposal o) {
+		int r1 = relevance;
+		int r2 = o.relevance;
+		if(r1 == r2) {
+			return getDisplayString().compareTo(o.getDisplayString());
+		}
+		return r2 - r1;
+	}
+
 	/*
-	 * @see ICompletionProposal#getSelection(IDocument)
+	 * @see ICompletionProposal#getAdditionalProposalInfo()
 	 */
-	public Point getSelection(IDocument document) {
-		return new Point(replacementOffset + cursorPosition, 0);
+	public String getAdditionalProposalInfo() {
+		return additionalProposalInfo;
 	}
 
 	/*
@@ -183,13 +195,6 @@ public class EspCompletionProposal implements Comparable<EspCompletionProposal>,
 	 */
 	public IContextInformation getContextInformation() {
 		return contextInformation;
-	}
-
-	/*
-	 * @see ICompletionProposal#getImage()
-	 */
-	public Image getImage() {
-		return image;
 	}
 
 	/*
@@ -202,25 +207,31 @@ public class EspCompletionProposal implements Comparable<EspCompletionProposal>,
 	}
 
 	/*
-	 * @see ICompletionProposal#getAdditionalProposalInfo()
+	 * @see ICompletionProposal#getImage()
 	 */
-	public String getAdditionalProposalInfo() {
-		return additionalProposalInfo;
+	public Image getImage() {
+		return image;
 	}
 	
+	/*
+	 * @see ICompletionProposal#getSelection(IDocument)
+	 */
+	public Point getSelection(IDocument document) {
+		return new Point(replacementOffset + cursorPosition, 0);
+	}
+
 	@Override
 	public StyledString getStyledDisplayString() {
 		return displayString;
 	}
-
+	
 	@Override
-	public int compareTo(EspCompletionProposal o) {
-		int r1 = relevance;
-		int r2 = o.relevance;
-		if(r1 == r2) {
-			return getDisplayString().compareTo(o.getDisplayString());
-		}
-		return r2 - r1;
+	public boolean isAutoInsertable() {
+		return autoInsertable;
+	}
+	
+	public void setAutoInsertable(boolean autoInsertable) {
+		this.autoInsertable = autoInsertable;
 	}
 	
 }

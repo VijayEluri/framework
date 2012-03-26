@@ -74,6 +74,27 @@ public class EspDom extends EspPart {
 		return null;
 	}
 	
+	public String getFileName() {
+		if(name == null) {
+			throw new IllegalArgumentException("name has not been set");
+		}
+		if(type == null) {
+			throw new IllegalArgumentException("DocType has not been set for " + new String(name));
+		}
+		
+		StringBuilder sb = new StringBuilder().append(name);
+		switch(type) {
+		case ESP:	return sb.append(".esp").toString();
+		case EMT:	return sb.append(".emt").toString();
+		case ESS:	return sb.append(".ess").toString();
+		case EJS:	return sb.append(".ejs").toString();
+		case CSS:	return sb.append(".css").toString();
+		case JS:	return sb.append(".js").toString();
+		default:
+			throw new IllegalArgumentException("don't know how to parse DocType: " + type);
+		}
+	}
+	
 	public int getNextImportOffset() {
 		EspPart part = null;
 		for(int i = 0; i < parts.size(); i++) {
@@ -130,6 +151,9 @@ public class EspDom extends EspPart {
 	}
 	
 	private void parse() {
+		if(type == null) {
+			throw new IllegalArgumentException("DocType has not been set for " + new String(name));
+		}
 		switch(type) {
 		case ESP:	parseEsp(); break;
 		case EMT:	parseEsp(); break; // no difference now, will change in the future...
@@ -276,7 +300,7 @@ public class EspDom extends EspPart {
 			this.name = new char[0];
 			this.type = DocType.ESP;
 		} else {
-			int ix = name.indexOf('.');
+			int ix = name.lastIndexOf('.');
 			if(ix == -1) {
 				this.name = name.toCharArray();
 				this.type = DocType.ESP;

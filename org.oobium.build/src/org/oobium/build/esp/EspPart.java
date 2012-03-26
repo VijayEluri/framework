@@ -86,7 +86,7 @@ public class EspPart implements CharSequence {
 	
 	@Override
 	public char charAt(int index) {
-		return ca[index];
+		return ca[start+index];
 	}
 	
 	protected int commentCheck(EspPart parent, char[] ca, int ix) {
@@ -184,7 +184,7 @@ public class EspPart implements CharSequence {
 	}
 
 	public List<EspPart> getParts() {
-		return new ArrayList<EspPart>(parts);
+		return (parts != null) ? new ArrayList<EspPart>(parts) : new ArrayList<EspPart>(0);
 	}
 	
 	public int getStart() {
@@ -221,17 +221,21 @@ public class EspPart implements CharSequence {
 		return getLength();
 	}
 	
+	public boolean startsWith(String prefix) {
+		return CharStreamUtils.isNext(ca, start, prefix.toCharArray());
+	}
+	
 	@Override
 	public CharSequence subSequence(int start, int end) {
-		return new String(ca, start, end-start);
+		return new String(ca, this.start+start, end-start);
 	}
 
 	public String substring(int beginIndex) {
-		return new String(ca, beginIndex, end-beginIndex);
+		return new String(ca, start+beginIndex, end-(start+beginIndex));
 	}
 
 	public String substring(int beginIndex, int endIndex) {
-		return new String(ca, beginIndex, endIndex-beginIndex);
+		return new String(ca, start+beginIndex, endIndex-beginIndex);
 	}
 
 	@Override

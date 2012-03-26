@@ -22,7 +22,10 @@ import org.eclipse.swt.graphics.Point;
 import org.oobium.build.esp.Constants;
 import org.oobium.build.esp.EspPart;
 import org.oobium.build.esp.EspPart.Type;
+import org.oobium.build.esp.elements.StyleChildElement;
+import org.oobium.build.esp.parts.StylePropertyPart;
 import org.oobium.eclipse.esp.EspCore;
+import org.oobium.eclipse.esp.EssCore;
 import org.oobium.utils.StringUtils;
 
 public class EspTextHover implements ITextHover {
@@ -75,18 +78,13 @@ public class EspTextHover implements ITextHover {
 					}
 				}
 				if(part != null) {
-					String name = StringUtils.titleize(part.getType().name());
-					String text = part.getText();
-					String info = name + ": \"" + text + "\"";
-					if(part.isA(Type.TagPart)) {
-						String description = Constants.HTML_TAGS.get(text);
-						if(description == null) {
-							return info + " - Unknown HTML Tag";
-						} else {
-							return info + " - " + description;
-						}
-					} else {
-						return info;
+					switch(part.getType()) {
+					case ClassPart:
+						return getCssClassHover(part);
+					case IdPart:
+						return getCssIdHover(part);
+					default:
+						return getDefaultHover(part);
 					}
 				} else {
 					return doc.get(offset, region.getLength());
@@ -95,6 +93,50 @@ public class EspTextHover implements ITextHover {
 			}
 		}
 		return EspEditorMessages.getString("JavaTextHover.emptySelection"); //$NON-NLS-1$
+	}
+
+	private String getCssClassHover(EspPart part) {
+		EspPart selector = EssCore.getCssClass(part.getDom(), part.getText());
+		if(selector == null) {
+			return "";
+		} else {
+			return getCssSelectorHover(selector);
+		}
+	}
+	
+	private String getCssIdHover(EspPart part) {
+		EspPart selector = EssCore.getCssId(part.getDom(), part.getText());
+		if(selector == null) {
+			return "";
+		} else {
+			return getCssSelectorHover(selector);
+		}
+	}
+	
+	private String getCssSelectorHover(EspPart selector) {
+		StringBuilder hover = new StringBuilder();
+		hover.append(selector.getText()).append(" (").append(selector.getDom().getName()).append(") {");
+		for(StylePropertyPart prop : ((StyleChildElement) selector.getParent()).getProperties()) {
+			hover.append("\n  ").append(prop);
+		}
+		hover.append("\n}");
+		return hover.toString();
+	}
+	
+	private String getDefaultHover(EspPart part) {
+		String name = StringUtils.titleize(part.getType().name());
+		String text = part.getText();
+		String info = name + ": \"" + text + "\"";
+		if(part.isA(Type.TagPart)) {
+			String description = Constants.HTML_TAGS.get(text);
+			if(description == null) {
+				return info + " - Unknown HTML Tag";
+			} else {
+				return info + " - " + description;
+			}
+		} else {
+			return info;
+		}
 	}
 	
 	public IRegion getHoverRegion(ITextViewer textViewer, int offset) {

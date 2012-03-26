@@ -47,52 +47,50 @@ public class StylePropertyPart extends EspPart {
 	}
 	
 	private void parse() {
-		int s1 = forward(ca, start, end);
+		int s1 = start;
+		s1 = commentCheck(this, s1); // before comment
+		s1 = forward(ca, s1, end);
 		if(s1 != -1) {
-			s1 = commentCheck(this, s1); // before comment
-			s1 = forward(ca, s1, end);
-			if(s1 != -1) {
-				for(int s = s1; s < end; s++) {
-					s = commentCheck(this, s);
-					if(s < end) {
-						if(ca[s] == ':') {
-							int s2 = reverse(ca, s-1) + 1;
-							if(s2 > s1) {
-								name = new EspPart(this, Type.StylePropertyNamePart, s1, s2);
-							}
-							s1 = forward(ca, s+1, end);
-							if(s1 != -1) {
-								s2 = reverse(ca, end-1) + 1;
-								if(s2 > s1) {
-									value = new StylePropertyValuePart(this, s1, s2);
-								}
-							}
-							return;
+			for(int s = s1; s < end; s++) {
+				s = commentCheck(this, s);
+				if(s < end) {
+					if(ca[s] == ':') {
+						int s2 = reverse(ca, s-1) + 1;
+						if(s2 > s1) {
+							name = new EspPart(this, Type.StylePropertyNamePart, s1, s2);
 						}
+						s1 = forward(ca, s+1, end);
+						if(s1 != -1) {
+							s2 = reverse(ca, end-1) + 1;
+							if(s2 > s1) {
+								value = new StylePropertyValuePart(this, s1, s2);
+							}
+						}
+						return;
 					}
 				}
-				
-				// no ':' found
-				int s2 = s1;
-				while(s2 < end) {
-					if(Character.isWhitespace(ca[s2])) {
-						name = new EspPart(this, Type.StylePropertyNamePart, s1, s2);
-						break;
-					}
-					if(s2 == (end-1)) {
-						name = new EspPart(this, Type.StylePropertyNamePart, s1, s2+1);
-						break;
-					}
-					s2 = commentCheck(this, s2);
-					if(s2 >= end) {
-						name = new EspPart(this, Type.StylePropertyNamePart, s1, end);
-						break;
-					}
-					s2++;
-				}
-				
-				commentCheck(this, s2+1); // after comment
 			}
+			
+			// no ':' found
+			int s2 = s1;
+			while(s2 < end) {
+				if(Character.isWhitespace(ca[s2])) {
+					name = new EspPart(this, Type.StylePropertyNamePart, s1, s2);
+					break;
+				}
+				if(s2 == (end-1)) {
+					name = new EspPart(this, Type.StylePropertyNamePart, s1, s2+1);
+					break;
+				}
+				s2 = commentCheck(this, s2);
+				if(s2 >= end) {
+					name = new EspPart(this, Type.StylePropertyNamePart, s1, end);
+					break;
+				}
+				s2++;
+			}
+			
+			commentCheck(this, s2+1); // after comment
 		}
 	}
 

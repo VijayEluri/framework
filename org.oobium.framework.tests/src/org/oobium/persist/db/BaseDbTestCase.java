@@ -28,9 +28,9 @@ import org.oobium.utils.SqlUtils;
 
 public class BaseDbTestCase {
 
-	protected final int dbType = SqlUtils.DERBY;
+//	protected final int dbType = SqlUtils.DERBY;
 //	protected final int dbType = SqlUtils.MYSQL;
-//	protected final int dbType = SqlUtils.POSTGRESQL;
+	protected final int dbType = SqlUtils.POSTGRESQL;
 
 	protected static final Logger logger = LogProvider.getLogger(DbPersistService.class);
 	protected static final String client = "testClient";
@@ -68,11 +68,11 @@ public class BaseDbTestCase {
 			migrationService = new DerbyEmbeddedMigrationService(client, logger);
 			break;
 		case SqlUtils.MYSQL:
-			persistService = new MySqlPersistService(client, "root:password@localhost/testDatabase");
+			persistService = new MySqlPersistService(client, "root:@localhost/testDatabase");
 			migrationService = new MySqlMigrationService(client, logger);
 			break;
 		case SqlUtils.POSTGRESQL:
-			persistService = new PostgreSqlPersistService(client, "postgres:password@localhost/testDatabase");
+			persistService = new PostgreSqlPersistService(client, "postgres:sepultra@localhost/testDatabase");
 			migrationService = new PostgreSqlMigrationService(client, logger);
 			break;
 		default:

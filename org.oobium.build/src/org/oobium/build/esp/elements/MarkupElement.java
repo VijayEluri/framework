@@ -18,6 +18,7 @@ import static org.oobium.utils.CharStreamUtils.isWhitespace;
 import static org.oobium.utils.CharStreamUtils.reverse;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -177,7 +178,7 @@ public class MarkupElement extends EspElement {
 	}
 	
 	public List<JavaSourcePart> getArgs() {
-		return args;
+		return (args != null) ? args : new ArrayList<JavaSourcePart>(0);
 	}
 	
 	public EspElement getChild(int index) {
@@ -185,11 +186,11 @@ public class MarkupElement extends EspElement {
 	}
 	
 	public List<EspElement> getChildren() {
-		return children;
+		return (children != null) ? children : new ArrayList<EspElement>(0);
 	}
 
 	public List<EspPart> getClassNames() {
-		return classNames;
+		return (classNames != null) ? classNames : new ArrayList<EspPart>(0);
 	}
 	
 	@Override
@@ -211,7 +212,7 @@ public class MarkupElement extends EspElement {
 	}
 	
 	public Map<String, EntryPart> getEntries() {
-		return entries;
+		return (entries != null) ? entries : new HashMap<String, EntryPart>(0);
 	}
 	
 	public EntryPart getEntry(String name) {

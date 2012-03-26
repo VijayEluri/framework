@@ -10,12 +10,17 @@
  ******************************************************************************/
 package org.oobium.eclipse.workspace;
 
+import static java.util.Arrays.asList;
+import static org.oobium.utils.FileUtils.*;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -51,13 +56,13 @@ import org.oobium.build.workspace.Bundle;
 import org.oobium.build.workspace.Module;
 import org.oobium.build.workspace.Workspace;
 import org.oobium.eclipse.OobiumPlugin;
-import org.oobium.logging.Logger;
 import org.oobium.logging.LogProvider;
+import org.oobium.logging.Logger;
+import org.oobium.utils.FileUtils;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-
 public class OobiumCore {
 
 	private static final Logger logger = LogProvider.getLogger(OobiumPlugin.class);
@@ -84,6 +89,24 @@ public class OobiumCore {
 		} catch(Exception e) {
 			logger.warn(e);
 		}
+	}
+
+	public static List<File> getStyleSheets(IProject project) {
+		try {
+			File dir = project.getLocation().toFile();
+			Bundle bundle = OobiumPlugin.getWorkspace().getBundle(dir);
+			if(bundle != null) {
+				List<File> files = new ArrayList<File>();
+				files.addAll(asList(findFiles(bundle.src, ".css", ".ess")));
+				if(bundle instanceof Module) {
+					files.addAll(asList(findFiles(((Module) bundle).assets, ".css", ".ess")));
+				}
+				return files;
+			}
+		} catch(Exception e) {
+			logger.warn(e);
+		}
+		return new ArrayList<File>(0);
 	}
 
 	public static boolean isEFile(IResource resource) {

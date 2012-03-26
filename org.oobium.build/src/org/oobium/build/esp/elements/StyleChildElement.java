@@ -45,15 +45,11 @@ public class StyleChildElement extends EspElement {
 			s2 = skipEmbeddedJava(ca, s2, eol);
 			if(s2 < eol) {
 				if(ca[s2] == '}') {
-					if(s2 > s1) {
-						addProperty(s1, s2);
-					}
+					addProperty(s1, s2);
 					return s2 + 1;
 				}
 				if(ca[s2] == ';') {
-					if(s2 > s1) {
-						addProperty(s1, s2);
-					}
+					addProperty(s1, s2);
 					s1 = s2 = s2 + 1;
 				} else {
 					int s = commentCheck(this, s2);
@@ -66,17 +62,19 @@ public class StyleChildElement extends EspElement {
 				}
 			}
 		}
-		if(s2 > s1) {
-			addProperty(s1, s2);
-		}
+		addProperty(s1, s2);
 		return s2;
 	}
 	
 	private void addProperty(int start, int end) {
-		if(properties == null) {
-			properties = new ArrayList<StylePropertyPart>();
+		if(end > start && !isWhitespace(ca, start, end)) {
+			if(properties == null) {
+				properties = new ArrayList<StylePropertyPart>();
+			}
+			start = forward(ca, start, end);
+			end = reverse(ca, end-1) + 1;
+			properties.add(new StylePropertyPart(this, start, end));
 		}
-		properties.add(new StylePropertyPart(this, start, end));
 	}
 	
 	private void addSelectorGroup(int start, int end) {

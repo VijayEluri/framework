@@ -251,11 +251,11 @@ public class EspStyleRanges {
 		
 		int end = part.getEnd();
 		for(int s1 = offset; s1 < end; s1++) {
-			while(s1 < end && !Character.isLetter(part.charAt(s1))) {
-				if(part.charAt(s1) == '"') {
+			while(s1 < end && !Character.isLetter(dom.charAt(s1))) {
+				if(dom.charAt(s1) == '"') {
 					int s = s1 + 1;
 					while(s < end) {
-						if(part.charAt(s) == '"' && part.charAt(s-1) != '\\') {
+						if(dom.charAt(s) == '"' && dom.charAt(s-1) != '\\') {
 							break;
 						}
 						s++;
@@ -276,10 +276,10 @@ public class EspStyleRanges {
 			}
 			if(s1 < end) {
 				int s2 = s1;
-				while(s2 < end && Character.isLetter(part.charAt(s2))) {
+				while(s2 < end && Character.isLetter(dom.charAt(s2))) {
 					s2++;
 				}
-				if(JAVA_KEYWORDS.contains(part.subSequence(s1, s2))) {
+				if(JAVA_KEYWORDS.contains(part.getDom().subSequence(s1, s2))) {
 					s1 = addRange(s1, s2-s1, javaKeyword);
 				} else {
 					s1 = s2;
@@ -294,7 +294,7 @@ public class EspStyleRanges {
 		case TagPart:
 			return addRange(offset, part.getEnd()-offset, htmlTag);
 		case ScriptElement:
-			if(part.charAt(offset) == '\t' && part.charAt(offset-1) == '\n') {
+			if(dom.charAt(offset) == '\t' && dom.charAt(offset-1) == '\n') {
 				addRange(offset, 1, level);
 			}
 			return offset + 1;
@@ -305,16 +305,16 @@ public class EspStyleRanges {
 			EspPart next = part.getNextSubPart(offset);
 			int end = (next != null) ? next.getStart() : part.getEnd();
 			if(!element.isA(ScriptElement)) {
-				if(part.charAt(offset) == '"') offset++;
-				if(part.charAt(end-1) == '"') end--;
+				if(dom.charAt(offset) == '"') offset++;
+				if(dom.charAt(end-1) == '"') end--;
 			}
 			for(int s1 = offset; s1 < end; s1++) {
-				while(s1 < end && !Character.isLetter(part.charAt(s1))) {
-					char c = part.charAt(s1);
-					if(c == '\t' && part.charAt(s1-1) == '\n') {
+				while(s1 < end && !Character.isLetter(dom.charAt(s1))) {
+					char c = dom.charAt(s1);
+					if(c == '\t' && dom.charAt(s1-1) == '\n') {
 						int s = s1 + 1;
 						while(s < end && (s-s1) < element.getLevel() + 1) {
-							if(part.charAt(s) != '\t') {
+							if(dom.charAt(s) != '\t') {
 								break;
 							}
 							s++;
@@ -326,7 +326,7 @@ public class EspStyleRanges {
 					} else if(c == '"' || c == '\'') {
 						int s = s1 + 1;
 						while(s < end) {
-							if(part.charAt(s) == c && part.charAt(s-1) != '\\') {
+							if(dom.charAt(s) == c && dom.charAt(s-1) != '\\') {
 								break;
 							}
 							s++;
@@ -339,10 +339,10 @@ public class EspStyleRanges {
 				}
 				if(s1 < end) {
 					int s2 = s1;
-					while(s2 < end && Character.isLetter(part.charAt(s2))) {
+					while(s2 < end && Character.isLetter(dom.charAt(s2))) {
 						s2++;
 					}
-					if(JS_KEYWORDS.contains(part.subSequence(s1, s2))) {
+					if(JS_KEYWORDS.contains(part.getDom().subSequence(s1, s2))) {
 						s1 = addRange(s1, s2-s1, javaKeyword);
 					} else {
 						s1 = s2;

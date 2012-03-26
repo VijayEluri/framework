@@ -397,6 +397,10 @@ public class EspEditor extends TextEditor {
 		return null;
 	}
 	
+	public IProject getProject() {
+		return getEResource().getProject();
+	}
+	
 	@Override
 	protected void handleCursorPositionChanged() {
 		super.handleCursorPositionChanged();
