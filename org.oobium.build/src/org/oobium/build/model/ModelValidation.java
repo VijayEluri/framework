@@ -1,7 +1,9 @@
 package org.oobium.build.model;
 
+import static org.oobium.persist.Validate.*;
 import static org.oobium.utils.coercion.TypeCoercer.coerce;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,6 +12,41 @@ import org.oobium.persist.Validate;
 
 public class ModelValidation {
 
+	public static String getOnConstant(int dependent) {
+		switch(dependent) {
+		case CREATE:  return "CREATE";
+		case UPDATE:  return "UPDATE";
+		case DESTROY: return "DESTROY";
+		default:
+			throw new IllegalArgumentException("unknown dependent constant: " + dependent);
+		}
+	}
+
+	private int getOn(String on, int defaultValue) {
+		try {
+			return coerce(on, defaultValue);
+		} catch(Exception e) {
+			String constant;
+			String type;
+			int ix = on.lastIndexOf('.');
+			if(ix == -1) {
+				constant = on;
+				type = model.getType(constant);
+			} else {
+				constant = on.substring(ix+1);
+				type = model.getType(on.substring(0, ix));
+			}
+			try {
+				Class<?> c = Class.forName(type);
+				Field f = c.getField(constant);
+				return f.getInt(c);
+			} catch(Exception e2) {
+				return defaultValue;
+			}
+		}
+	}
+
+	
 	private ModelDefinition model;
 	
 	private String field;
@@ -81,7 +118,7 @@ public class ModelValidation {
 		message(ModelUtils.getString(entries.get("message")));
 		min(ModelUtils.getString(entries.get("min")));
 		minLength(coerce(entries.get("minLength"), -1));
-		on(coerce(entries.get("on"), -1));
+		on(getOn(ModelUtils.getString(entries.get("on")), -1));
 		tokenizer(ModelUtils.getString(entries.get("tokenizer")));
 		unless(ModelUtils.getString(entries.get("unless")));
 		unlessBlank(coerce(entries.get("unlessBlank"), false));
