@@ -12,10 +12,7 @@ package org.oobium.build.esp.elements;
 
 import static org.oobium.build.esp.parts.EmbeddedJavaPart.*;
 import static org.oobium.build.esp.elements.StyleElement.findEOL;
-import static org.oobium.utils.CharStreamUtils.closer;
-import static org.oobium.utils.CharStreamUtils.forward;
-import static org.oobium.utils.CharStreamUtils.isWhitespace;
-import static org.oobium.utils.CharStreamUtils.reverse;
+import static org.oobium.utils.CharStreamUtils.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,14 +26,29 @@ public class StyleChildElement extends EspElement {
 
 	private List<EspPart> selectorGroups;
 	private List<StylePropertyPart> properties;
+	private List<EspElement> children;
 	
 	public StyleChildElement(StyleElement parent, int start) {
+		this((EspElement) parent, start);
+	}
+
+	public StyleChildElement(StyleChildElement parent, int start) {
+		this((EspElement) parent, start);
+	}
+
+	private StyleChildElement(EspElement parent, int start) {
 		super(parent, start);
 		type = Type.StyleChildElement;
+		if(start > 0) { // start == 0 if 1st selector is the 1st char of an ESS file
+			level = 0;
+			for(int i = start; ca[i-1] != '\n'; i--) {
+				level++;
+			}
+		}
 		parse();
 	}
 
-	private int addProperties(int start) {
+	private int addChildrenAndProperties(int start) {
 		int s1 = start;
 		int s2 = start;
 		// static CSS files don't use levels
@@ -45,41 +57,54 @@ public class StyleChildElement extends EspElement {
 			s2 = skipEmbeddedJava(ca, s2, eol);
 			if(s2 < eol) {
 				if(ca[s2] == '}') {
-					addProperty(s1, s2);
-					return s2 + 1;
+					return addChildOrProperty(s1, s2) + 1;
 				}
 				if(ca[s2] == ';') {
-					addProperty(s1, s2);
-					s1 = s2 = s2 + 1;
+					s1 = s2 = addChildOrProperty(s1, s2) + 1;
 				} else {
 					int s = commentCheck(this, s2);
 					if(s >= eol) {
-						addProperty(s1, s2);
-						return s;
+						return addChildOrProperty(s1, s2);
 					} else {
 						s2 = s + 1;
 					}
 				}
 			}
 		}
-		addProperty(s1, s2);
-		return s2;
+		return addChildOrProperty(s1, s2);
 	}
 	
-	private void addProperty(int start, int end) {
-		if(end > start && !isWhitespace(ca, start, end)) {
-			if(properties == null) {
-				properties = new ArrayList<StylePropertyPart>();
+	private int addChildOrProperty(int start, int end) {
+		int s1 = forward(ca, start, end);
+		int s2 = reverse(ca, end-1) + 1;
+		if(s1 != -1 && s2 > s1) {
+			int ix = find(ca, ':', s1, s2);
+			if(ix != -1) {
+				if(ix == s1 || (ix+1 < ca.length && ix == s1+1 && ca[s1] == '&')) {
+					ix = -1; // it's a pseudo-class: treat as if ':' wasn't found
+				}
 			}
-			start = forward(ca, start, end);
-			end = reverse(ca, end-1) + 1;
-			properties.add(new StylePropertyPart(this, start, end));
+			if(ix == -1) {
+				StyleChildElement child = new StyleChildElement(this, s1);
+				if(children == null) {
+					children = new ArrayList<EspElement>();
+				}
+				children.add(child);
+				return child.getEnd();
+			} else {
+				if(properties == null) {
+					properties = new ArrayList<StylePropertyPart>();
+				}
+				properties.add(new StylePropertyPart(this, s1, s2));
+			}
 		}
+		return end;
 	}
 	
 	private void addSelectorGroup(int start, int end) {
+		start = forward(ca, start, end);
 		end = reverse(ca, end-1) + 1;
-		if(end > start && !isWhitespace(ca, start, end)) {
+		if(start != -1 && end > start) {
 			if(selectorGroups == null) {
 				selectorGroups = new ArrayList<EspPart>();
 			}
@@ -104,10 +129,18 @@ public class StyleChildElement extends EspElement {
 		return ix;
 	}
 	
+	public List<EspElement> getChildren() {
+		return children;
+	}
+	
 	public EspElement getElement() {
 		return (EspElement) parent;
 	}
 
+	public String getLastSelectorText() {
+		return selectorGroups.get(selectorGroups.size()-1).getText();
+	}
+	
 	public List<StylePropertyPart> getProperties() {
 		return properties;
 	}
@@ -116,12 +149,27 @@ public class StyleChildElement extends EspElement {
 		return selectorGroups;
 	}
 	
+	public boolean hasChildren() {
+		return children != null;
+	}
+	
 	public boolean hasProperties() {
 		return properties != null;
 	}
 	
 	public boolean hasSelectors() {
 		return selectorGroups != null;
+	}
+
+	public boolean isMixin() {
+		return (parent instanceof StyleChildElement)
+				&& !hasProperties() && !hasChildren()
+				&& selectorGroups != null && selectorGroups.size() == 1
+				&& (selectorGroups.get(0).charAt(0) == '.' || selectorGroups.get(0).charAt(0) == '#');
+	}
+	
+	public boolean isNestedChild() {
+		return (parent instanceof StyleChildElement) && (hasProperties() || hasChildren());
 	}
 	
 	private void parse() {
@@ -161,7 +209,7 @@ public class StyleChildElement extends EspElement {
 						s2 = ca.length;
 					}
 				} else {
-					s1 = addProperties(s1+1);
+					s1 = addChildrenAndProperties(s1+1);
 					if(ca[s1-1] == '}') { // element has been completed
 						end = s1;
 						return;
@@ -180,7 +228,7 @@ public class StyleChildElement extends EspElement {
 					end = ca.length;
 					return;
 				}
-				s1 = addProperties(s1+1);
+				s1 = addChildrenAndProperties(s1+1);
 				if(ca[s1-1] == '}') { // element has been completed, ignore the rest of line
 					end = findEOL(ca, s1);
 					return;
@@ -193,7 +241,7 @@ public class StyleChildElement extends EspElement {
 					level++;
 				}
 				if(this.level < level) {
-					s1 = addProperties(s1+1+level);
+					s1 = addChildrenAndProperties(s1+1+level);
 				} else {
 					break;
 				}

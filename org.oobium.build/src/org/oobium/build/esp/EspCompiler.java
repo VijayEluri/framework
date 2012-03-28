@@ -2265,7 +2265,6 @@ public class EspCompiler {
 				}
 			}
 			if(element.hasChildren()) {
-				boolean firstChild = true;
 				List<EspElement> children = element.getChildren();
 				if(!dom.isEss()) {
 					if(element.hasEntryValue("media")) {
@@ -2276,36 +2275,7 @@ public class EspCompiler {
 						sb.append("<style>");
 					}
 				}
-				for(EspElement childElement : children) {
-					StyleChildElement child = (StyleChildElement) childElement;
-					if(child.hasSelectors() && child.hasProperties()) {
-						if(firstChild) firstChild = false;
-						else sb.append(' ');
-						List<EspPart> selectors = child.getSelectorGroups();
-						for(int j = 0; j < selectors.size(); j++) {
-							if(j != 0) sb.append(',');
-							sb.append(selectors.get(j).getText());
-						}
-						sb.append('{');
-						boolean firstProperty = true;
-						for(StylePropertyPart property : child.getProperties()) {
-							if(property.hasName() && property.hasValue()) {
-								if(firstProperty) {
-									firstProperty = false;
-								} else {
-									sb.append(';');
-								}
-								sb.append(property.getName().getText());
-								EspPart value = property.getValue();
-								if(value != null) {
-									sb.append(':');
-									build(value, sb);
-								}
-							}
-						}
-						sb.append('}');
-					}
-				}
+				buildStyleChildren(sb, children);
 				if(!dom.isEss()) {
 					sb.append("</style>");
 				}
@@ -2315,6 +2285,57 @@ public class EspCompiler {
 		}
 	}
 
+	private void buildStyleChildren(StringBuilder sb, List<EspElement> children) {
+		for(EspElement childElement : children) {
+			StyleChildElement child = (StyleChildElement) childElement;
+			if(child.hasSelectors()) {
+				if(child.hasProperties()) {
+					buildStyleProperties(sb, child);
+				}
+				if(child.hasChildren()) {
+					buildStyleChildren(sb, child.getChildren());
+				}
+			}
+		}
+	}
+
+	private void buildStyleProperties(StringBuilder sb, StyleChildElement child) {
+		List<EspPart> selectors = child.getSelectorGroups();
+		for(int j = 0; j < selectors.size(); j++) {
+			if(j != 0) sb.append(',');
+			int ix = sb.length();
+			String selector = selectors.get(j).getText();
+			boolean space = selector.charAt(0) != '&';
+			sb.append(space ? selector : selector.substring(1));
+			EspPart parent = child.getParent();
+			while(parent instanceof StyleChildElement) {
+				selector = ((StyleChildElement) parent).getLastSelectorText();
+				if(space) sb.insert(ix, ' ');
+				sb.insert(ix, (selector.charAt(0) != '&') ? selector : selector.substring(1));
+				space = selector.charAt(0) != '&';
+				parent = parent.getParent();
+			}
+		}
+		sb.append('{');
+		boolean firstProperty = true;
+		for(StylePropertyPart property : child.getProperties()) {
+			if(property.hasName() && property.hasValue()) {
+				if(firstProperty) {
+					firstProperty = false;
+				} else {
+					sb.append(';');
+				}
+				sb.append(property.getName().getText());
+				EspPart value = property.getValue();
+				if(value != null) {
+					sb.append(':');
+					build(value, sb);
+				}
+			}
+		}
+		sb.append('}');
+	}
+	
 	private void buildSubmit(MarkupElement element) {
 		body.append("<input");
 		body.append(" type=\\\"submit\\\"");
