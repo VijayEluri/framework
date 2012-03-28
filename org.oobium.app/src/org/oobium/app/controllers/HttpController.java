@@ -436,9 +436,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	}
 	
 	public void execute(Action action) throws Exception {
-		if(logger.isLoggingDebug()) {
-			logger.debug("start controller#execute - " + getControllerName() + "#" + ((action != null) ? action : "handleRequest"));
-		}
+		logger.debug("start controller#execute - {}#{}", getControllerName(), ((action != null) ? action : "handleRequest"));
 		if(!isRendered) {
 			this.action = action;
 			callFilters(true);
@@ -1226,9 +1224,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		if(view == null) {
 			throw new IllegalArgumentException("view cannot be null");
 		}
-		if(logger.isLoggingDebug()) {
-			logger.debug("start render of view " + view.getClass().getCanonicalName());
-		}
+		logger.debug("start render of view {}", view.getClass().getCanonicalName());
 		rendering();
 		
 		try {
