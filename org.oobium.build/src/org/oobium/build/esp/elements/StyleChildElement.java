@@ -10,9 +10,12 @@
  ******************************************************************************/
 package org.oobium.build.esp.elements;
 
-import static org.oobium.build.esp.parts.EmbeddedJavaPart.*;
 import static org.oobium.build.esp.elements.StyleElement.findEOL;
-import static org.oobium.utils.CharStreamUtils.*;
+import static org.oobium.build.esp.parts.EmbeddedJavaPart.skipEmbeddedJava;
+import static org.oobium.utils.CharStreamUtils.closer;
+import static org.oobium.utils.CharStreamUtils.find;
+import static org.oobium.utils.CharStreamUtils.forward;
+import static org.oobium.utils.CharStreamUtils.reverse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,34 +23,74 @@ import java.util.List;
 import org.oobium.build.esp.EspElement;
 import org.oobium.build.esp.EspPart;
 import org.oobium.build.esp.parts.CommentPart;
-import org.oobium.build.esp.parts.StylePropertyPart;
+import org.oobium.build.esp.parts.StylePropertyValuePart;
 
 public class StyleChildElement extends EspElement {
 
 	private List<EspPart> selectorGroups;
-	private List<StylePropertyPart> properties;
+	private List<StyleChildElement> properties;
 	private List<EspElement> children;
 	
-	public StyleChildElement(StyleElement parent, int start) {
-		this((EspElement) parent, start);
-	}
-
-	public StyleChildElement(StyleChildElement parent, int start) {
-		this((EspElement) parent, start);
-	}
-
-	private StyleChildElement(EspElement parent, int start) {
+	private EspPart name;
+	private StylePropertyValuePart value;
+	
+	private StyleChildElement(EspElement parent, int start, int end) {
 		super(parent, start);
-		type = Type.StyleChildElement;
-		if(start > 0) { // start == 0 if 1st selector is the 1st char of an ESS file
-			level = 0;
-			for(int i = start; ca[i-1] != '\n'; i--) {
-				level++;
+		if(end == -1) {
+			type = Type.StyleChildElement;
+			if(start > 0) { // start == 0 if 1st selector is the 1st char of an ESS file
+				level = 0;
+				for(int i = start; ca[i-1] != '\n'; i--) {
+					level++;
+				}
 			}
+		} else {
+			type = Type.StylePropertyPart;
+			this.end = end;
 		}
 		parse();
 	}
 
+	public StyleChildElement(StyleChildElement parent, int start) {
+		this((EspElement) parent, start, -1);
+	}
+	
+	public StyleChildElement(StyleChildElement parent, int start, int end) {
+		this((EspElement) parent, start, end);
+	}
+
+	public StyleChildElement(StyleElement parent, int start) {
+		this((EspElement) parent, start, -1);
+	}
+
+	private int addChildOrProperty(int start, int end) {
+		int s1 = forward(ca, start, end);
+		int s2 = reverse(ca, end-1) + 1;
+		if(s1 != -1 && s2 > s1) {
+			int ix = find(ca, ':', s1, s2);
+			if(ix != -1) {
+				if(ix == s1 || (ix+1 < ca.length && ix == s1+1 && ca[s1] == '&')) {
+					ix = -1; // it's a pseudo-class: treat as if ':' wasn't found
+				}
+			}
+			boolean isProperty = (ix != -1);
+			StyleChildElement child = new StyleChildElement(this, s1, isProperty ? s2 : -1);
+			if(isProperty || child.isMixin()) {
+				if(properties == null) {
+					properties = new ArrayList<StyleChildElement>();
+				}
+				properties.add(child);
+			} else {
+				if(children == null) {
+					children = new ArrayList<EspElement>();
+				}
+				children.add(child);
+				return child.getEnd();
+			}			
+		}
+		return end;
+	}
+	
 	private int addChildrenAndProperties(int start) {
 		int s1 = start;
 		int s2 = start;
@@ -72,33 +115,6 @@ public class StyleChildElement extends EspElement {
 			}
 		}
 		return addChildOrProperty(s1, s2);
-	}
-	
-	private int addChildOrProperty(int start, int end) {
-		int s1 = forward(ca, start, end);
-		int s2 = reverse(ca, end-1) + 1;
-		if(s1 != -1 && s2 > s1) {
-			int ix = find(ca, ':', s1, s2);
-			if(ix != -1) {
-				if(ix == s1 || (ix+1 < ca.length && ix == s1+1 && ca[s1] == '&')) {
-					ix = -1; // it's a pseudo-class: treat as if ':' wasn't found
-				}
-			}
-			if(ix == -1) {
-				StyleChildElement child = new StyleChildElement(this, s1);
-				if(children == null) {
-					children = new ArrayList<EspElement>();
-				}
-				children.add(child);
-				return child.getEnd();
-			} else {
-				if(properties == null) {
-					properties = new ArrayList<StylePropertyPart>();
-				}
-				properties.add(new StylePropertyPart(this, s1, s2));
-			}
-		}
-		return end;
 	}
 	
 	private void addSelectorGroup(int start, int end) {
@@ -141,7 +157,11 @@ public class StyleChildElement extends EspElement {
 		return selectorGroups.get(selectorGroups.size()-1).getText();
 	}
 	
-	public List<StylePropertyPart> getProperties() {
+	public EspPart getName() {
+		return name;
+	}
+	
+	public List<StyleChildElement> getProperties() {
 		return properties;
 	}
 	
@@ -149,8 +169,16 @@ public class StyleChildElement extends EspElement {
 		return selectorGroups;
 	}
 	
+	public StylePropertyValuePart getValue() {
+		return value;
+	}
+	
 	public boolean hasChildren() {
 		return children != null;
+	}
+
+	public boolean hasName() {
+		return name != null;
 	}
 	
 	public boolean hasProperties() {
@@ -160,7 +188,11 @@ public class StyleChildElement extends EspElement {
 	public boolean hasSelectors() {
 		return selectorGroups != null;
 	}
-
+	
+	public boolean hasValue() {
+		return value != null;
+	}
+	
 	public boolean isMixin() {
 		return (parent instanceof StyleChildElement)
 				&& !hasProperties() && !hasChildren()
@@ -172,7 +204,19 @@ public class StyleChildElement extends EspElement {
 		return (parent instanceof StyleChildElement) && (hasProperties() || hasChildren());
 	}
 	
+	public boolean isProperty() {
+		return name != null && value != null;
+	}
+
 	private void parse() {
+		if(type == Type.StylePropertyPart) {
+			parseAsProperty();
+		} else {
+			parseAsChild();
+		}
+	}
+
+	private void parseAsChild() {
 		int s1 = start;
 		int eol = findEOL(ca, s1);
 		
@@ -249,6 +293,54 @@ public class StyleChildElement extends EspElement {
 		}
 		
 		end = (s1 < ca.length) ? s1 : ca.length;
+	}
+	
+	private void parseAsProperty() {
+		int s1 = start;
+		s1 = commentCheck(this, s1); // before comment
+		s1 = forward(ca, s1, end);
+		if(s1 != -1) {
+			for(int s = s1; s < end; s++) {
+				s = commentCheck(this, s);
+				if(s < end) {
+					if(ca[s] == ':') {
+						int s2 = reverse(ca, s-1) + 1;
+						if(s2 > s1) {
+							name = new EspPart(this, Type.StylePropertyNamePart, s1, s2);
+						}
+						s1 = forward(ca, s+1, end);
+						if(s1 != -1) {
+							s2 = reverse(ca, end-1) + 1;
+							if(s2 > s1) {
+								value = new StylePropertyValuePart(this, s1, s2);
+							}
+						}
+						return;
+					}
+				}
+			}
+			
+			// no ':' found
+			int s2 = s1;
+			while(s2 < end) {
+				if(Character.isWhitespace(ca[s2])) {
+					name = new EspPart(this, Type.StylePropertyNamePart, s1, s2);
+					break;
+				}
+				if(s2 == (end-1)) {
+					name = new EspPart(this, Type.StylePropertyNamePart, s1, s2+1);
+					break;
+				}
+				s2 = commentCheck(this, s2);
+				if(s2 >= end) {
+					name = new EspPart(this, Type.StylePropertyNamePart, s1, end);
+					break;
+				}
+				s2++;
+			}
+			
+			commentCheck(this, s2+1); // after comment
+		}
 	}
 	
 }

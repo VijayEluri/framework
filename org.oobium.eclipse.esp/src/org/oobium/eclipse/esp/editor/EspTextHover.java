@@ -17,13 +17,17 @@ import java.util.TreeSet;
 
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.jface.text.*;
+import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.text.IRegion;
+import org.eclipse.jface.text.ITextHover;
+import org.eclipse.jface.text.ITextViewer;
+import org.eclipse.jface.text.Region;
 import org.eclipse.swt.graphics.Point;
 import org.oobium.build.esp.Constants;
 import org.oobium.build.esp.EspPart;
 import org.oobium.build.esp.EspPart.Type;
 import org.oobium.build.esp.elements.StyleChildElement;
-import org.oobium.build.esp.parts.StylePropertyPart;
 import org.oobium.eclipse.esp.EspCore;
 import org.oobium.eclipse.esp.EssCore;
 import org.oobium.utils.StringUtils;
@@ -116,7 +120,7 @@ public class EspTextHover implements ITextHover {
 	private String getCssSelectorHover(EspPart selector) {
 		StringBuilder hover = new StringBuilder();
 		hover.append(selector.getText()).append(" (").append(selector.getDom().getName()).append(") {");
-		for(StylePropertyPart prop : ((StyleChildElement) selector.getParent()).getProperties()) {
+		for(StyleChildElement prop : ((StyleChildElement) selector.getParent()).getProperties()) {
 			hover.append("\n  ").append(prop);
 		}
 		hover.append("\n}");

@@ -50,7 +50,6 @@ import org.oobium.build.esp.EspElement;
 import org.oobium.build.esp.EspPart;
 import org.oobium.build.esp.EspPart.Type;
 import org.oobium.build.esp.elements.StyleChildElement;
-import org.oobium.build.esp.parts.StylePropertyPart;
 import org.oobium.eclipse.esp.EspCore;
 import org.oobium.eclipse.esp.EspPlugin;
 import org.oobium.eclipse.esp.EssCore;
@@ -291,7 +290,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 				int length = rtext.length();
 				StringBuilder extra = new StringBuilder();
 				extra.append(selector.getText()).append(" (").append(selector.getDom().getFileName()).append(") {");
-				for(StylePropertyPart prop : ((StyleChildElement) selector.getParent()).getProperties()) {
+				for(StyleChildElement prop : ((StyleChildElement) selector.getParent()).getProperties()) {
 					extra.append("\n  ").append(prop);
 				}
 				extra.append("\n}");

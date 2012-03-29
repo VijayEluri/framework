@@ -21,7 +21,11 @@ public class EssTests {
 	
 	private String css(String src) throws Exception {
 		EspDom dom = new EspDom("Test"+(count++)+".ess", src);
+		EspResolver resolver = new EspResolver();
+		resolver.add(dom);
+		
 		EspCompiler ec = new EspCompiler(pkg, dom);
+		ec.setResolver(resolver);
 		ESourceFile sf = ec.compile();
 		sf.getSource();
 
@@ -113,6 +117,59 @@ public class EssTests {
 				 "    &[type=password]\n" +
 				 "      &:hover\n" +
 				 "        text-decoration: none").replace("  ", "\t");
+
+		assertEquals(css, css(ess));
+	}
+	
+	@Test
+	public void testMixin_MissingClass() throws Exception {
+		String css =
+				"#menu a{" +
+				  "color:#111" +
+				"}" +
+				".post a{" +
+				  "color:red" +
+				"}";
+
+		String ess =
+				("#menu a\n" +
+				 "  color: #111\n" +
+				 "  .bordered\n" +
+				 ".post a\n" +
+				 "  color: red\n" +
+				 "  .bordered").replace("  ", "\t");
+
+		assertEquals(css, css(ess));
+	}
+	
+	@Test
+	public void testMixin() throws Exception {
+		String css =
+				".bordered{" +
+				  "border-top:dotted 1px black;" +
+				  "border-bottom:solid 2px black" +
+				"}" +
+				"#menu a{" +
+				  "color:#111;" +
+				  "border-top:dotted 1px black;" +
+				  "border-bottom:solid 2px black" +
+				"}" +
+				".post a{" +
+				  "color:red;" +
+				  "border-top:dotted 1px black;" +
+				  "border-bottom:solid 2px black" +
+				"}";
+
+		String ess =
+				(".bordered\n" +
+				 "  border-top: dotted 1px black\n" +
+				 "  border-bottom: solid 2px black\n" +
+				 "#menu a\n" +
+				 "  color: #111\n" +
+				 "  .bordered\n" +
+				 ".post a\n" +
+				 "  color: red\n" +
+				 "  .bordered").replace("  ", "\t");
 
 		assertEquals(css, css(ess));
 	}

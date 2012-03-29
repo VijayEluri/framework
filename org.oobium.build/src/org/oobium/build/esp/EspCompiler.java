@@ -146,6 +146,7 @@ public class EspCompiler {
 	
 	private String contentName;
 	
+	private EspResolver resolver;
 	
 	public EspCompiler(String packageName, EspDom dom) {
 		this.pkg = packageName;
@@ -2290,7 +2291,7 @@ public class EspCompiler {
 			StyleChildElement child = (StyleChildElement) childElement;
 			if(child.hasSelectors()) {
 				if(child.hasProperties()) {
-					buildStyleProperties(sb, child);
+					buildStyleChild(sb, child);
 				}
 				if(child.hasChildren()) {
 					buildStyleChildren(sb, child.getChildren());
@@ -2299,15 +2300,15 @@ public class EspCompiler {
 		}
 	}
 
-	private void buildStyleProperties(StringBuilder sb, StyleChildElement child) {
-		List<EspPart> selectors = child.getSelectorGroups();
+	private void buildStyleChild(StringBuilder sb, StyleChildElement element) {
+		List<EspPart> selectors = element.getSelectorGroups();
 		for(int j = 0; j < selectors.size(); j++) {
 			if(j != 0) sb.append(',');
 			int ix = sb.length();
 			String selector = selectors.get(j).getText();
 			boolean space = selector.charAt(0) != '&';
 			sb.append(space ? selector : selector.substring(1));
-			EspPart parent = child.getParent();
+			EspPart parent = element.getParent();
 			while(parent instanceof StyleChildElement) {
 				selector = ((StyleChildElement) parent).getLastSelectorText();
 				if(space) sb.insert(ix, ' ');
@@ -2317,23 +2318,31 @@ public class EspCompiler {
 			}
 		}
 		sb.append('{');
-		boolean firstProperty = true;
-		for(StylePropertyPart property : child.getProperties()) {
-			if(property.hasName() && property.hasValue()) {
-				if(firstProperty) {
-					firstProperty = false;
-				} else {
+		buildStyleProperties(sb, element);
+		sb.append('}');
+	}
+
+	private void buildStyleProperties(StringBuilder sb, StyleChildElement child) {
+		for(StyleChildElement element : child.getProperties()) {
+			if(element.isProperty()) {
+				if(sb.charAt(sb.length()-1) != '{') {
 					sb.append(';');
 				}
-				sb.append(property.getName().getText());
-				EspPart value = property.getValue();
+				sb.append(element.getName().getText());
+				EspPart value = element.getValue();
 				if(value != null) {
 					sb.append(':');
 					build(value, sb);
 				}
 			}
+			else if(element.isMixin()) {
+				EspPart selector = resolver.getCssSelector(element.getLastSelectorText());
+				if(selector != null) {
+					StyleChildElement mixin = (StyleChildElement) selector.getParent();
+					buildStyleProperties(sb, mixin);
+				}
+			}
 		}
-		sb.append('}');
 	}
 	
 	private void buildSubmit(MarkupElement element) {
@@ -2991,6 +3000,10 @@ public class EspCompiler {
 	private String sbName(StringBuilder sb) {
 		if(sb == body) return sbName;
 		return SBNAME;
+	}
+	
+	public void setResolver(EspResolver resolver) {
+		this.resolver = resolver;
 	}
 	
 	private void startCapture(MarkupElement capture) {
