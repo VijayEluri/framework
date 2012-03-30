@@ -237,4 +237,24 @@ public class EssTests {
 		assertEquals(css, css(ess));
 	}
 	
+	@Test
+	public void testParamMixin_Empty() throws Exception {
+		String css =
+				".button{" +
+				  "border-radius:6px;" +
+				  "-moz-border-radius:6px;" +
+				  "-webkit-border-radius:6px" +
+				"}";
+
+		String ess =
+				(".border-radius()\n" +
+				 "  border-radius: 6px\n" +
+				 "  -moz-border-radius: 6px\n" +
+				 "  -webkit-border-radius: 6px\n" +
+				 ".button\n" +
+				 "  .border-radius()").replace("  ", "\t");
+
+		assertEquals(css, css(ess));
+	}
+
 }
