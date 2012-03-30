@@ -50,10 +50,11 @@ import org.oobium.build.esp.elements.InnerTextElement;
 import org.oobium.build.esp.elements.JavaElement;
 import org.oobium.build.esp.elements.MarkupCommentElement;
 import org.oobium.build.esp.elements.MarkupElement;
+import org.oobium.build.esp.elements.MethodSignatureElement;
 import org.oobium.build.esp.elements.ScriptElement;
 import org.oobium.build.esp.elements.StyleChildElement;
 import org.oobium.build.esp.elements.StyleElement;
-import org.oobium.build.esp.parts.ConstructorArg;
+import org.oobium.build.esp.parts.MethodSignatureArg;
 import org.oobium.build.esp.parts.EmbeddedJavaPart;
 import org.oobium.build.esp.parts.EntryPart;
 import org.oobium.build.esp.parts.JavaPart;
@@ -908,80 +909,6 @@ public class EspCompiler {
 		body.append("-->");
 
 		lastIsJava(body, false);
-	}
-	
-	private void buildConstructor(ConstructorElement element) {
-		StringBuilder sb;
-		List<ConstructorArg> args = element.hasArgs() ? element.getArgs() : new ArrayList<ConstructorArg>(0);
-		for(int i = 0; i < args.size(); i++) {
-			if(args.get(i).hasDefaultValue()) {
-				sb = new StringBuilder();
-				sb.append("\tpublic ").append(dom.getName()).append('(');
-				for(int j = 0; j < i; j++) {
-					ConstructorArg arg = args.get(j);
-					if(arg.hasVarName()) {
-						String declaration = arg.getVarType() + " " + arg.getVarName();
-						esf.addVariable(arg.getVarName(), declaration);
-						if(j != 0) sb.append(", ");
-						sb.append(declaration);
-					}
-				}
-				sb.append(") {\n");
-				for(int j = 0; j < args.size(); j++) {
-					ConstructorArg arg = args.get(j);
-					sb.append("\t\tthis.").append(arg.getVarName()).append(" = ");
-					if(j < i) {
-						sb.append(arg.getVarName());
-					} else {
-						sb.append(arg.getDefaultValue());
-					}
-					sb.append(";\n");
-				}
-				sb.append("\t}");
-				esf.addConstructor(new JavaSource(sb.toString()));
-			}
-		}
-
-		List<EspLocation> locations = new ArrayList<EspLocation>();
-		sb = new StringBuilder();
-		sb.append("\tpublic ");
-		locations.add(new EspLocation(sb.length(), element));
-		sb.append(dom.getName()).append('(');
-		for(int j = 0; j < args.size(); j++) {
-			ConstructorArg arg = args.get(j);
-			if(j != 0) sb.append(", ");
-			locations.add(new EspLocation(sb.length(), arg));
-			if(arg.hasVarType()) {
-				String vtype = arg.getVarType();
-				locations.add(new EspLocation(sb.length(), arg.getVarTypePart()));
-				sb.append(vtype);
-				if(arg.isVarArgs()) {
-					vtype = vtype + "[]";
-					sb.append('.').append('.').append('.');
-				} else {
-					sb.append(' ');
-				}
-				if(arg.hasVarName()) {
-					locations.add(new EspLocation(sb.length(), arg.getVarNamePart()));
-					String name = arg.getVarName();
-					sb.append(name);
-					esf.addVariable(name, "public " + vtype + " " + name);
-				}
-			}
-		}
-		sb.append(") {\n");
-		for(int j = 0; j < args.size(); j++) {
-			ConstructorArg arg = args.get(j);
-			sb.append("\t\tthis.").append(arg.getVarName()).append(" = ");
-			if(j <= args.size()) {
-				sb.append(arg.getVarName());
-			} else {
-				sb.append(arg.getDefaultValue());
-			}
-			sb.append(";\n");
-		}
-		sb.append("\t}");
-		esf.addConstructor(new JavaSource(sb.toString(), locations));
 	}
 	
 	private void buildDateInputs(MarkupElement date) {
@@ -1924,6 +1851,17 @@ public class EspCompiler {
 		lastBodyIsJava = true;
 	}
 
+	private void buildMethod(StyleChildElement element) {
+		StringBuilder sb = isInHead(element) ? style : body;
+		sb.append("\").append(h(");
+		sb.append(element.getMethodName()).append('(');
+		for(JavaSourcePart arg : element.getArgs()) {
+			if(sb.charAt(sb.length()-1) != '(') sb.append(", ");
+			build(arg, sb, true);
+		}
+		sb.append("))).append(\"");
+	}
+	
 	private void buildMethod(StringBuilder sb, String name, String sig, List<EspLocation> locations, boolean lastIsJava) {
 		String s = sb.toString();
 		if(("\t\t" + SBNAME + ".append(\"").equals(s)) {
@@ -1940,6 +1878,125 @@ public class EspCompiler {
 				location.offset += sig.length();
 			}
 			esf.addMethod(name, sb.toString(), locations);
+		}
+	}
+
+	private boolean canBuildPartMethodSignatures(List<MethodSignatureArg> args) {
+		for(MethodSignatureArg arg : args) {
+			if(!arg.hasVarType() || !arg.hasVarName()) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	private void buildMethodSignature(MethodSignatureElement element) {
+		String rtype = element.getReturnType();
+		String mname = element.getMethodName();
+		boolean ctor = (element instanceof ConstructorElement);
+		
+		StringBuilder sb;
+		List<MethodSignatureArg> args = element.hasSignatureArgs() ? element.getSignatureArgs() : new ArrayList<MethodSignatureArg>(0);
+		if(canBuildPartMethodSignatures(args)) {
+			for(int i = 0; i < args.size(); i++) {
+				if(args.get(i).hasDefaultValue()) {
+					sb = new StringBuilder();
+					sb.append("\tpublic ");
+					if(element.isStatic()) sb.append("static ");
+					sb.append(rtype).append(' ').append(mname).append('(');
+					for(int j = 0; j < i; j++) {
+						MethodSignatureArg arg = args.get(j);
+						String declaration = arg.getVarType() + " " + arg.getVarName();
+						if(j != 0) sb.append(", ");
+						sb.append(declaration);
+					}
+					sb.append(") {\n\t\t");
+					if(ctor) {
+						sb.append("this");
+					} else {
+						if(rtype != null && rtype.length() > 0) {
+							sb.append("return ");
+						}
+						sb.append(mname);
+					}
+					sb.append("(");
+					for(int j = 0; j < args.size(); j++) {
+						MethodSignatureArg arg = args.get(j);
+						if(j != 0) sb.append(", ");
+						if(j < i) {
+							sb.append(arg.getVarName());
+						} else {
+							sb.append(arg.getDefaultValue());
+						}
+					}
+					sb.append(");\n");
+					sb.append("\t}");
+					JavaSource source = new JavaSource(sb.toString());
+					if(ctor) {
+						esf.addConstructor(source);
+					} else {
+						esf.addMethod(mname + i, source);
+					}
+				}
+			}
+		}
+
+		List<EspLocation> locations = new ArrayList<EspLocation>();
+		sb = new StringBuilder();
+		sb.append("\tpublic ");
+		if(element.isStatic()) sb.append("static ");
+		sb.append(rtype).append(' ');
+		locations.add(new EspLocation(sb.length(), element));
+		sb.append(mname).append('(');
+		for(int i = 0; i < args.size(); i++) {
+			MethodSignatureArg arg = args.get(i);
+			if(i != 0) sb.append(", ");
+			locations.add(new EspLocation(sb.length(), arg));
+			if(arg.hasVarType()) {
+				String vtype = arg.getVarType();
+				locations.add(new EspLocation(sb.length(), arg.getVarTypePart()));
+				sb.append(vtype);
+				if(arg.isVarArgs()) {
+					vtype = vtype + "[]";
+					sb.append('.').append('.').append('.');
+				} else {
+					sb.append(' ');
+				}
+				if(arg.hasVarName()) {
+					locations.add(new EspLocation(sb.length(), arg.getVarNamePart()));
+					String name = arg.getVarName();
+					sb.append(name);
+					if(ctor) esf.addVariable(name, "public " + vtype + " " + name);
+				}
+			}
+		}
+		sb.append(") {\n");
+		if(ctor) {
+			for(int j = 0; j < args.size(); j++) {
+				MethodSignatureArg arg = args.get(j);
+				sb.append("\t\tthis.").append(arg.getVarName()).append(" = ");
+				if(j <= args.size()) {
+					sb.append(arg.getVarName());
+				} else {
+					sb.append(arg.getDefaultValue());
+				}
+				sb.append(";\n");
+			}
+		} else {
+			sb.append("\t\tStringBuilder __sb__ = new StringBuilder();\n");
+			sb.append("\t\t__sb__.append(\"");
+			int pos = sb.length();
+			buildStyleProperties(sb, (StyleChildElement) element);
+			sb.deleteCharAt(pos); // delete leading ';'
+			sb.append("\");\n");
+			sb.append("\t\treturn __sb__.toString();\n");
+		}
+		sb.append("\t}");
+		JavaSource source = new JavaSource(sb.toString(), locations);
+		if(ctor) {
+			esf.addConstructor(source);
+		} else {
+			esf.addMethod(mname + args.size(), source);
 		}
 	}
 	
@@ -2266,7 +2323,6 @@ public class EspCompiler {
 				}
 			}
 			if(element.hasChildren()) {
-				List<EspElement> children = element.getChildren();
 				if(!dom.isEss()) {
 					if(element.hasEntryValue("media")) {
 						sb.append("<style media=");
@@ -2276,7 +2332,7 @@ public class EspCompiler {
 						sb.append("<style>");
 					}
 				}
-				buildStyleChildren(sb, children);
+				buildStyleChildren(sb, element.getChildren());
 				if(!dom.isEss()) {
 					sb.append("</style>");
 				}
@@ -2290,11 +2346,15 @@ public class EspCompiler {
 		for(EspElement childElement : children) {
 			StyleChildElement child = (StyleChildElement) childElement;
 			if(child.hasSelectors()) {
-				if(child.hasProperties()) {
-					buildStyleChild(sb, child);
-				}
-				if(child.hasChildren()) {
-					buildStyleChildren(sb, child.getChildren());
+				if(child.isParameterized()) {
+					buildMethodSignature(child);
+				} else {
+					if(child.hasProperties()) {
+						buildStyleChild(sb, child);
+					}
+					if(child.hasChildren()) {
+						buildStyleChildren(sb, child.getChildren());
+					}
 				}
 			}
 		}
@@ -2336,10 +2396,14 @@ public class EspCompiler {
 				}
 			}
 			else if(element.isMixin()) {
-				EspPart selector = resolver.getCssSelector(element.getLastSelectorText());
-				if(selector != null) {
-					StyleChildElement mixin = (StyleChildElement) selector.getParent();
-					buildStyleProperties(sb, mixin);
+				if(element.isParameterized()) {
+					buildMethod(element);
+				} else {
+					EspPart selector = resolver.getCssSelector(element.getLastSelectorText());
+					if(selector != null) {
+						StyleChildElement mixin = (StyleChildElement) selector.getParent();
+						buildStyleProperties(sb, mixin);
+					}
 				}
 			}
 		}
@@ -2508,7 +2572,7 @@ public class EspCompiler {
 			while(ix < parts.size()) {
 				EspPart part = parts.get(ix);
 				if(part.isA(ConstructorElement)) {
-					buildConstructor((ConstructorElement) part);
+					buildMethodSignature((ConstructorElement) part);
 					ix++;
 				} else {
 					break;
@@ -2572,7 +2636,7 @@ public class EspCompiler {
 			while(ix < parts.size()) {
 				EspPart part = parts.get(ix);
 				if(part.isA(ConstructorElement)) {
-					buildConstructor((ConstructorElement) part);
+					buildMethodSignature((ConstructorElement) part);
 					ix++;
 				} else {
 					break;
@@ -2647,7 +2711,7 @@ public class EspCompiler {
 			while(ix < parts.size()) {
 				EspPart part = parts.get(ix);
 				if(part.isA(ConstructorElement)) {
-					buildConstructor((ConstructorElement) part);
+					buildMethodSignature((ConstructorElement) part);
 					ix++;
 				} else {
 					break;
@@ -2705,7 +2769,7 @@ public class EspCompiler {
 			while(ix < parts.size()) {
 				EspPart part = parts.get(ix);
 				if(part.isA(ConstructorElement)) {
-					buildConstructor((ConstructorElement) part);
+					buildMethodSignature((ConstructorElement) part);
 					ix++;
 				} else {
 					break;

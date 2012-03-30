@@ -97,6 +97,11 @@ public class ESourceFile {
 		}
 	}
 	
+	public void addMethod(String name, JavaSource source) {
+		checkSource();
+		methods.put(name, source);
+	}
+	
 	public void addMethod(String name, String source) {
 		checkSource();
 		methods.put(name, new JavaSource(source));

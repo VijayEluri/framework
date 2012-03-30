@@ -16,6 +16,7 @@ import static org.oobium.utils.CharStreamUtils.closer;
 import static org.oobium.utils.CharStreamUtils.find;
 import static org.oobium.utils.CharStreamUtils.forward;
 import static org.oobium.utils.CharStreamUtils.reverse;
+import static org.oobium.utils.StringUtils.camelCase;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,10 +24,14 @@ import java.util.List;
 import org.oobium.build.esp.EspElement;
 import org.oobium.build.esp.EspPart;
 import org.oobium.build.esp.parts.CommentPart;
+import org.oobium.build.esp.parts.JavaSourcePart;
 import org.oobium.build.esp.parts.StylePropertyValuePart;
 
-public class StyleChildElement extends EspElement {
+public class StyleChildElement extends MethodSignatureElement {
 
+	private boolean isParameterized; // used for both args and signatureArgs (in super)
+	private List<JavaSourcePart> args;
+	
 	private List<EspPart> selectorGroups;
 	private List<StyleChildElement> properties;
 	private List<EspElement> children;
@@ -63,6 +68,13 @@ public class StyleChildElement extends EspElement {
 		this((EspElement) parent, start, -1);
 	}
 
+	protected void addArg(int start, int end) {
+		if(args == null) {
+			args = new ArrayList<JavaSourcePart>();
+		}
+		args.add(new JavaSourcePart(this, Type.JavaSourcePart, start, end));
+	}
+
 	private int addChildOrProperty(int start, int end) {
 		int s1 = forward(ca, start, end);
 		int s2 = reverse(ca, end-1) + 1;
@@ -90,7 +102,7 @@ public class StyleChildElement extends EspElement {
 		}
 		return end;
 	}
-	
+
 	private int addChildrenAndProperties(int start) {
 		int s1 = start;
 		int s2 = start;
@@ -127,6 +139,7 @@ public class StyleChildElement extends EspElement {
 			selectorGroups.add(new EspPart(this, Type.StyleSelectorPart, start, end));
 		}
 	}
+
 	
 	protected int commentCheck(EspPart parent, char[] ca, int ix) {
 		if(ix >= 0) {
@@ -145,6 +158,10 @@ public class StyleChildElement extends EspElement {
 		return ix;
 	}
 	
+	public List<JavaSourcePart> getArgs() {
+		return (args != null) ? args : new ArrayList<JavaSourcePart>(0);
+	}
+	
 	public List<EspElement> getChildren() {
 		return children;
 	}
@@ -152,17 +169,29 @@ public class StyleChildElement extends EspElement {
 	public EspElement getElement() {
 		return (EspElement) parent;
 	}
-
+	
 	public String getLastSelectorText() {
 		return selectorGroups.get(selectorGroups.size()-1).getText();
 	}
 	
+	@Override
+	public String getMethodName() {
+		String s = selectorGroups.get(0).getText().replace('-', '_');
+		s = ((s.charAt(0) == '.') ? "class" : "id") + camelCase(s.substring(1));
+		return s;
+	}
+
 	public EspPart getName() {
 		return name;
 	}
 	
 	public List<StyleChildElement> getProperties() {
 		return properties;
+	}
+	
+	@Override
+	public String getReturnType() {
+		return "String";
 	}
 	
 	public List<EspPart> getSelectorGroups() {
@@ -173,10 +202,14 @@ public class StyleChildElement extends EspElement {
 		return value;
 	}
 	
+	public boolean hasArgs() {
+		return args != null && !args.isEmpty();
+	}
+
 	public boolean hasChildren() {
 		return children != null;
 	}
-
+	
 	public boolean hasName() {
 		return name != null;
 	}
@@ -188,7 +221,7 @@ public class StyleChildElement extends EspElement {
 	public boolean hasSelectors() {
 		return selectorGroups != null;
 	}
-	
+
 	public boolean hasValue() {
 		return value != null;
 	}
@@ -204,19 +237,59 @@ public class StyleChildElement extends EspElement {
 		return (parent instanceof StyleChildElement) && (hasProperties() || hasChildren());
 	}
 	
+	public boolean isParameterized() {
+		return isParameterized;
+	}
+
 	public boolean isProperty() {
 		return name != null && value != null;
 	}
 
+	@Override
+	public boolean isStatic() {
+		return true;
+	}
+	
 	private void parse() {
 		if(type == Type.StylePropertyPart) {
 			parseAsProperty();
 		} else {
-			parseAsChild();
+			parseAsElement();
 		}
 	}
+	
+	private int parseArgs(int start, int end) {
+		int eoa = closer(ca, start, end);
+		if(eoa == -1) {
+			eoa = end;
+		}
+		
+		int s1 = forward(ca, start+1, eoa);
+		if(s1 != -1) {
+			for(int s = s1; s1 != -1 && s < eoa; s++) {
+				if(ca[s] == '"' || ca[s] == '{' || ca[s] == '(') {
+					int s2 = closer(ca, s, eoa, true);
+					if(s2 == -1) {
+						s2 = eoa;
+					}
+					s = s2;
+					if(s >= eoa-1) {
+						addArg(s1, reverse(ca, eoa-1) + 1);
+					}
+				} else if(ca[s] == ',') {
+					if(s != 0) {
+						addArg(s1, reverse(ca, s-1) + 1);
+						s1 = forward(ca, s + 1, eoa);
+					}
+				} else if(s == eoa-1) {
+					addArg(s1, reverse(ca, s) + 1);
+				}
+			}
+		}
+		return eoa + 1;
+	}
 
-	private void parseAsChild() {
+	private void parseAsElement() {
 		int s1 = start;
 		int eol = findEOL(ca, s1);
 		
@@ -235,7 +308,23 @@ public class StyleChildElement extends EspElement {
 				} else {
 					s2 = s1;
 				}
-			} else {
+			}
+			else if(ca[s2] == '(') {
+				isParameterized = true;
+				addSelectorGroup(s1, s2);
+				if(parent instanceof StyleElement) {
+					s1 = parseSignatureArgs(ca, s2, eol);
+				} else {
+					s1 = parseArgs(s2, eol);
+				}
+				s1 = forward(ca, s1, eol);
+				if(s1 == -1) {
+					s2 = eol;
+				} else {
+					s2 = s1;
+				}
+			}
+			else {
 				s2 = commentCheck(this, s2);
 				if(s2 >= eol) {
 					s2 = eol;
@@ -294,7 +383,7 @@ public class StyleChildElement extends EspElement {
 		
 		end = (s1 < ca.length) ? s1 : ca.length;
 	}
-	
+
 	private void parseAsProperty() {
 		int s1 = start;
 		s1 = commentCheck(this, s1); // before comment

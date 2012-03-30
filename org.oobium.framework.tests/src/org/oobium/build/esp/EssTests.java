@@ -27,9 +27,11 @@ public class EssTests {
 		EspCompiler ec = new EspCompiler(pkg, dom);
 		ec.setResolver(resolver);
 		ESourceFile sf = ec.compile();
-		sf.getSource();
-
-		Class<?> clazz = SimpleDynClass.getClass(sf.getCanonicalName(), sf.getSource());
+		
+		String java = sf.getSource();
+		System.out.println(java);
+		
+		Class<?> clazz = SimpleDynClass.getClass(sf.getCanonicalName(), java);
 		StyleSheet ss = (StyleSheet) clazz.newInstance();
 		
 		String css = ss.getContent();
@@ -170,6 +172,67 @@ public class EssTests {
 				 ".post a\n" +
 				 "  color: red\n" +
 				 "  .bordered").replace("  ", "\t");
+
+		assertEquals(css, css(ess));
+	}
+	
+	@Test
+	public void testParamMixin() throws Exception {
+		String css =
+				"#header{" +
+				  "border-radius:4px;" +
+				  "-moz-border-radius:4px;" +
+				  "-webkit-border-radius:4px" +
+				"}" +
+				".button{" +
+				  "border-radius:6px;" +
+				  "-moz-border-radius:6px;" +
+				  "-webkit-border-radius:6px" +
+				"}";
+
+		String ess =
+				(".border-radius(int radius)\n" +
+				 "  border-radius: ${radius}px\n" +
+				 "  -moz-border-radius: ${radius}px\n" +
+				 "  -webkit-border-radius: ${radius}px\n" +
+				 "#header\n" +
+				 "  .border-radius(4)\n" +
+				 ".button\n" +
+				 "  .border-radius(6)").replace("  ", "\t");
+
+		assertEquals(css, css(ess));
+	}
+	
+	@Test
+	public void testParamMixinWithDefault() throws Exception {
+		String css =
+				"#header{" +
+				  "border-radius:4px;" +
+				  "-moz-border-radius:4px;" +
+				  "-webkit-border-radius:4px" +
+				"}" +
+				"#footer{" +
+				  "border-radius:5px;" +
+				  "-moz-border-radius:5px;" +
+				  "-webkit-border-radius:5px" +
+				"}" +
+				".button{" +
+				  "border-radius:6px;" +
+				  "-moz-border-radius:6px;" +
+				  "-webkit-border-radius:6px" +
+				"}";
+
+		String ess =
+				(".border-radius(int radius = 5)\n" +
+				 "  border-radius: ${radius}px\n" +
+				 "  -moz-border-radius: ${radius}px\n" +
+				 "  -webkit-border-radius: ${radius}px\n" +
+				 "#header\n" +
+				 "  .border-radius(4)\n" +
+				 "#footer\n" +
+				 "  .border-radius()\n" +
+				 ".button\n" +
+				 "  .border-radius(6)").replace("  ", "\t");
 
 		assertEquals(css, css(ess));
 	}

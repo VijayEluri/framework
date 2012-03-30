@@ -10,19 +10,14 @@
  ******************************************************************************/
 package org.oobium.build.esp.elements;
 
-import static org.oobium.utils.CharStreamUtils.*;
+import static org.oobium.utils.CharStreamUtils.find;
+import static org.oobium.utils.CharStreamUtils.findEOL;
+import static org.oobium.utils.CharStreamUtils.forward;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.oobium.build.esp.EspElement;
 import org.oobium.build.esp.EspPart;
-import org.oobium.build.esp.parts.ConstructorArg;
 
-public class ConstructorElement extends EspElement {
+public class ConstructorElement extends MethodSignatureElement {
 
-	private List<ConstructorArg> args;
-	
 	public ConstructorElement(EspPart parent, int start) {
 		super(parent, start);
 		this.type = Type.ConstructorElement;
@@ -31,19 +26,19 @@ public class ConstructorElement extends EspElement {
 		parse();
 	}
 
-	private void addArg(int start, int end) {
-		if(args == null) {
-			args = new ArrayList<ConstructorArg>();
-		}
-		args.add(new ConstructorArg(this, start, end));
+	@Override
+	public String getMethodName() {
+		return dom.getName();
 	}
 	
-	public List<ConstructorArg> getArgs() {
-		return args;
+	@Override
+	public String getReturnType() {
+		return "";
 	}
 	
-	public boolean hasArgs() {
-		return args != null && !args.isEmpty();
+	@Override
+	public boolean isStatic() {
+		return false;
 	}
 	
 	private void parse() {
@@ -55,46 +50,7 @@ public class ConstructorElement extends EspElement {
 		
 		int start = find(ca, '(', this.start, this.end);
 		if(start != -1) {
-			int end = closer(ca, start, this.end);
-			if(end == -1) {
-				end = this.end;
-			}
-			
-			int s1 = forward(ca, start+1, end-1);
-			if(s1 != -1) {
-				int s = s1;
-				if(s != -1) {
-					while(s < end) {
-						switch(ca[s]) {
-						case '<':
-						case '"':
-							s = closer(ca, s, end) + 1;
-							if(s == 0) {
-								s = end;
-							}
-							break;
-						case ',':
-							int s2 = reverse(ca, s-1) + 1;
-							addArg(s1, s2);
-							s = forward(ca, s+1, end);
-							if(s == -1) {
-								s = end;
-							}
-							s1 = s;
-							break;
-						default:
-							s++;
-						}
-					}
-					if(s > s1) {
-						int s2 = reverse(ca, s);
-						if(s2 == -1) {
-							s2 = end;
-						}
-						addArg(s1, s2);
-					}
-				}
-			}
+			parseSignatureArgs(ca, start, this.end);
 		}
 	}
 

@@ -15,14 +15,14 @@ import static org.oobium.utils.CharStreamUtils.*;
 import org.oobium.build.esp.EspPart;
 
 
-public class ConstructorArg extends EspPart {
+public class MethodSignatureArg extends EspPart {
 
 	private EspPart varType;
 	private EspPart varName;
 	private EspPart defaultValue;
 	private boolean isVarArgs;
 	
-	public ConstructorArg(EspPart parent, int start, int end) {
+	public MethodSignatureArg(EspPart parent, int start, int end) {
 		super(parent, Type.CtorArgPart, start, end);
 		parse();
 	}
