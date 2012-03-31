@@ -152,7 +152,9 @@ public class EspStyleRanges {
 		case InnerTextElement:	return evaluateInnerText(offset, element, part);
 		case JavaElement:		return evaluateJava(offset, element, part);
 		case ScriptElement:		return evaluateScript(offset, element, part);
-		case StyleElement:		return evaluateStyle(offset, element, part);
+		case StyleElement:
+		case StyleChildElement:
+								return evaluateStyle(offset, element, part);
 		case YieldElement:		return evaluateYield(offset, element, part);
 		default:				return offset + 1;
 		}
