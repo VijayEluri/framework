@@ -293,6 +293,8 @@ public class StyleChildElement extends MethodSignatureElement {
 		int s1 = start;
 		int eol = findEOL(ca, s1);
 		
+		boolean simple = true;
+		
 		int s2 = s1;
 		while(s2 < eol) {
 			if(ca[s2] == '{') {
@@ -308,8 +310,9 @@ public class StyleChildElement extends MethodSignatureElement {
 				} else {
 					s2 = s1;
 				}
+				simple = true; // reset
 			}
-			else if(ca[s2] == '(') {
+			else if(simple && ca[s2] == '(') {
 				isParameterized = true;
 				addSelectorGroup(s1, s2);
 				if(parent instanceof StyleElement) {
@@ -331,6 +334,7 @@ public class StyleChildElement extends MethodSignatureElement {
 				} else {
 					s2++;
 				}
+				simple = Character.isLetterOrDigit(ca[s2]) || ca[s2] == '_' || ca[s2] == '-';
 			}
 		}
 		
