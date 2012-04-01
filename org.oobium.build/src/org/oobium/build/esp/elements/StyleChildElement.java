@@ -10,10 +10,10 @@
  ******************************************************************************/
 package org.oobium.build.esp.elements;
 
+import static org.oobium.build.esp.EspPart.Type.StyleChildElement;
 import static org.oobium.build.esp.elements.StyleElement.findEOL;
 import static org.oobium.build.esp.parts.EmbeddedJavaPart.skipEmbeddedJava;
 import static org.oobium.utils.CharStreamUtils.closer;
-import static org.oobium.utils.CharStreamUtils.find;
 import static org.oobium.utils.CharStreamUtils.forward;
 import static org.oobium.utils.CharStreamUtils.reverse;
 import static org.oobium.utils.StringUtils.camelCase;
@@ -29,6 +29,26 @@ import org.oobium.build.esp.parts.StylePropertyValuePart;
 
 public class StyleChildElement extends MethodSignatureElement {
 
+	private static boolean isSimpleClassOrId(char[] ca, int start, int end) {
+		if(start+1 > end) {
+			return false;
+		}
+		if(ca[start] != '.' && ca[start] != '#') {
+			return false;
+		}
+		if(!Character.isLetter(ca[start+1]) && ca[start+1] != '_') {
+			return false;
+		}
+		for(int i = start+2; i < end; i++) {
+			if(!Character.isLetterOrDigit(ca[i]) && ca[i] != '_' && ca[i] != '-') {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+
+	private final boolean topLevel;
 	private boolean isParameterized; // used for both args and signatureArgs (in super)
 	private List<JavaSourcePart> args;
 	
@@ -39,33 +59,17 @@ public class StyleChildElement extends MethodSignatureElement {
 	private EspPart name;
 	private StylePropertyValuePart value;
 	
-	private StyleChildElement(EspElement parent, int start, int end) {
+	public StyleChildElement(StyleChildElement parent, int start, int end) {
 		super(parent, start);
-		if(end == -1) {
-			type = Type.StyleChildElement;
-			if(start > 0) { // start == 0 if 1st selector is the 1st char of an ESS file
-				level = 0;
-				for(int i = start; ca[i-1] != '\n'; i--) {
-					level++;
-				}
-			}
-		} else {
-			type = Type.StylePropertyPart;
-			this.end = end;
-		}
+		this.topLevel = false;
+		this.end = end;
 		parse();
 	}
 
-	public StyleChildElement(StyleChildElement parent, int start) {
-		this((EspElement) parent, start, -1);
-	}
-	
-	public StyleChildElement(StyleChildElement parent, int start, int end) {
-		this((EspElement) parent, start, end);
-	}
-
 	public StyleChildElement(StyleElement parent, int start) {
-		this((EspElement) parent, start, -1);
+		super(parent, start);
+		this.topLevel = true;
+		parse();
 	}
 
 	protected void addArg(int start, int end) {
@@ -79,15 +83,8 @@ public class StyleChildElement extends MethodSignatureElement {
 		int s1 = forward(ca, start, end);
 		int s2 = reverse(ca, end-1) + 1;
 		if(s1 != -1 && s2 > s1) {
-			int ix = find(ca, ':', s1, s2);
-			if(ix != -1) {
-				if(ix == s1 || (ix+1 < ca.length && ix == s1+1 && ca[s1] == '&')) {
-					ix = -1; // it's a pseudo-class: treat as if ':' wasn't found
-				}
-			}
-			boolean isProperty = (ix != -1);
-			StyleChildElement child = new StyleChildElement(this, s1, isProperty ? s2 : -1);
-			if(isProperty || child.isMixin()) {
+			StyleChildElement child = new StyleChildElement(this, s1, s2);
+			if(child.isProperty() || child.isMixin()) {
 				if(properties == null) {
 					properties = new ArrayList<StyleChildElement>();
 				}
@@ -111,11 +108,11 @@ public class StyleChildElement extends MethodSignatureElement {
 		while(s2 < eol) {
 			s2 = skipEmbeddedJava(ca, s2, eol);
 			if(s2 < eol) {
-				if(ca[s2] == '}') {
-					return addChildOrProperty(s1, s2) + 1;
+				if(ca[s2] == '}') { // should only happen after the LAST property
+					return addChildOrProperty(s1, s2+1);
 				}
 				if(ca[s2] == ';') {
-					s1 = s2 = addChildOrProperty(s1, s2) + 1;
+					s1 = s2 = addChildOrProperty(s1, s2+1);
 				} else {
 					int s = commentCheck(this, s2);
 					if(s >= eol) {
@@ -170,8 +167,20 @@ public class StyleChildElement extends MethodSignatureElement {
 		return (EspElement) parent;
 	}
 	
+	public EspPart getFirstSelector() {
+		return selectorGroups.get(0);
+	}
+	
+	public String getFirstSelectorText() {
+		return getFirstSelector().getText();
+	}
+	
+	public EspPart getLastSelector() {
+		return selectorGroups.get(selectorGroups.size()-1);
+	}
+	
 	public String getLastSelectorText() {
-		return selectorGroups.get(selectorGroups.size()-1).getText();
+		return getLastSelector().getText();
 	}
 	
 	@Override
@@ -186,7 +195,7 @@ public class StyleChildElement extends MethodSignatureElement {
 	}
 	
 	public List<StyleChildElement> getProperties() {
-		return properties;
+		return (properties != null) ? properties : new ArrayList<StyleChildElement>(0);
 	}
 	
 	@Override
@@ -227,14 +236,11 @@ public class StyleChildElement extends MethodSignatureElement {
 	}
 	
 	public boolean isMixin() {
-		return (parent instanceof StyleChildElement)
-				&& !hasProperties() && !hasChildren()
-				&& selectorGroups != null && selectorGroups.size() == 1
-				&& (selectorGroups.get(0).charAt(0) == '.' || selectorGroups.get(0).charAt(0) == '#');
+		return type == Type.StyleMixinPart;
 	}
 	
 	public boolean isNestedChild() {
-		return (parent instanceof StyleChildElement) && (hasProperties() || hasChildren());
+		return topLevel && (hasProperties() || hasChildren());
 	}
 	
 	public boolean isParameterized() {
@@ -249,60 +255,29 @@ public class StyleChildElement extends MethodSignatureElement {
 	public boolean isStatic() {
 		return true;
 	}
-	
+
 	private void parse() {
-		if(type == Type.StylePropertyPart) {
-			parseAsProperty();
-		} else {
-			parseAsElement();
-		}
-	}
-	
-	private int parseArgs(int start, int end) {
-		int eoa = closer(ca, start, end);
-		if(eoa == -1) {
-			eoa = end;
-		}
+		type = StyleChildElement; // will be overwritten if this turns out to be a property
 		
-		int s1 = forward(ca, start+1, eoa);
-		if(s1 != -1) {
-			for(int s = s1; s1 != -1 && s < eoa; s++) {
-				if(ca[s] == '"' || ca[s] == '{' || ca[s] == '(') {
-					int s2 = closer(ca, s, eoa, true);
-					if(s2 == -1) {
-						s2 = eoa;
-					}
-					s = s2;
-					if(s >= eoa-1) {
-						addArg(s1, reverse(ca, eoa-1) + 1);
-					}
-				} else if(ca[s] == ',') {
-					if(s != 0) {
-						addArg(s1, reverse(ca, s-1) + 1);
-						s1 = forward(ca, s + 1, eoa);
-					}
-				} else if(s == eoa-1) {
-					addArg(s1, reverse(ca, s) + 1);
-				}
+		if(start > 0 && !dom.isStatic()) { // start == 0 if 1st selector is the 1st char of an ESS file
+			level = 0;
+			for(int i = start; i > 0 && ca[i-1] != '\n' && ca[i-1] != '{' && ca[i-1] != ';'; i--) {
+				level++;
 			}
 		}
-		return eoa + 1;
-	}
 
-	private void parseAsElement() {
 		int s1 = start;
 		int eol = findEOL(ca, s1);
 		
-		boolean simple = true;
-		
 		int s2 = s1;
 		while(s2 < eol) {
-			if(ca[s2] == '{') {
+			if(ca[s2] == '{' || ca[s2] == ';' || ca[s2] == '}') {
 				addSelectorGroup(s1, s2);
 				s1 = s2;
 				break;
 			}
-			if(ca[s2] == ',') {
+			else if(ca[s2] == ',' && topLevel) {
+				// only allow multiple selectors in top-level elements 
 				addSelectorGroup(s1, s2);
 				s1 = forward(ca, s2+1, eol);
 				if(s1 == -1) {
@@ -310,12 +285,11 @@ public class StyleChildElement extends MethodSignatureElement {
 				} else {
 					s2 = s1;
 				}
-				simple = true; // reset
 			}
-			else if(simple && ca[s2] == '(') {
+			else if(ca[s2] == '(' && isSimpleClassOrId(ca, s1, s2)) {
 				isParameterized = true;
 				addSelectorGroup(s1, s2);
-				if(parent instanceof StyleElement) {
+				if(topLevel) {
 					s1 = parseSignatureArgs(ca, s2, eol);
 				} else {
 					s1 = parseArgs(s2, eol);
@@ -334,13 +308,12 @@ public class StyleChildElement extends MethodSignatureElement {
 				} else {
 					s2++;
 				}
-				simple = Character.isLetterOrDigit(ca[s2]) || ca[s2] == '_' || ca[s2] == '-';
 			}
 		}
 		
 		if(s1 != -1) {
 			if(ca[s1] == '{') {
-				if(ca[s2-1] == '$') {
+				if(ca[s1-1] == '$') {
 					s2 = closer(ca, s2, ca.length, true);
 					if(s2 == -1) {
 						s2 = ca.length;
@@ -352,6 +325,11 @@ public class StyleChildElement extends MethodSignatureElement {
 						return;
 					}
 				}
+			} else if(ca[s1] == ';' || ca[s1] == '}') {
+				end = s1;
+				parseAsProperty();
+				end++;
+				return;
 			} else if(s2 > s1) {
 				addSelectorGroup(s1, s2);
 			}
@@ -384,11 +362,57 @@ public class StyleChildElement extends MethodSignatureElement {
 				}
 			}
 		}
-		
+
 		end = (s1 < ca.length) ? s1 : ca.length;
+		
+		if(!topLevel) {
+			if(children == null && properties == null && selectorGroups != null && selectorGroups.size() == 1) {
+				EspPart selector = selectorGroups.get(0);
+				if(isSimpleClassOrId(ca, selector.getStart(), selector.getEnd())) {
+					type = Type.StyleMixinPart;
+					selector.setType(Type.StyleMixinNamePart);
+				} else {
+					selector.dispose();
+					parseAsProperty();
+				}
+			}
+		}
+	}
+
+	private int parseArgs(int start, int end) {
+		int eoa = closer(ca, start, end);
+		if(eoa == -1) {
+			eoa = end;
+		}
+		
+		int s1 = forward(ca, start+1, eoa);
+		if(s1 != -1) {
+			for(int s = s1; s1 != -1 && s < eoa; s++) {
+				if(ca[s] == '"' || ca[s] == '{' || ca[s] == '(') {
+					int s2 = closer(ca, s, eoa, true);
+					if(s2 == -1) {
+						s2 = eoa;
+					}
+					s = s2;
+					if(s >= eoa-1) {
+						addArg(s1, reverse(ca, eoa-1) + 1);
+					}
+				} else if(ca[s] == ',') {
+					if(s != 0) {
+						addArg(s1, reverse(ca, s-1) + 1);
+						s1 = forward(ca, s + 1, eoa);
+					}
+				} else if(s == eoa-1) {
+					addArg(s1, reverse(ca, s) + 1);
+				}
+			}
+		}
+		return eoa + 1;
 	}
 
 	private void parseAsProperty() {
+		type = Type.StylePropertyPart;
+
 		int s1 = start;
 		s1 = commentCheck(this, s1); // before comment
 		s1 = forward(ca, s1, end);

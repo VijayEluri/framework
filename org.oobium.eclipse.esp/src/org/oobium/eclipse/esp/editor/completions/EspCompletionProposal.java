@@ -26,57 +26,9 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 
 
-public class EspCompletionProposal implements Comparable<EspCompletionProposal>, ICompletionProposal, ICompletionProposalExtension4, ICompletionProposalExtension6 {
+public class EspCompletionProposal implements ICompletionProposal, ICompletionProposalExtension4, ICompletionProposalExtension6 {
 
-	public static EspCompletionProposal createJavaCompletion(CompletionProposal completion, int start, int end) {
-		String rstr = new String(completion.getCompletion());
-		
-		Image image = getImage(completion);
-		StyledString dstr = new StyledString(new String(completion.getName()));
-		dstr.append('(');
-//		completion.get
-		dstr.append(')');
-		dstr.append(" : return type", StyledString.QUALIFIER_STYLER);
-		
-		System.out.println(completion.getSignature());
-		
-		String dsig = new String(completion.getDeclarationSignature());
-		int ix = dsig.lastIndexOf('.');
-		if(ix != -1) {
-			dsig = dsig.substring(ix + 1);
-		}
-		if(dsig.endsWith("Model;")) {
-			dsig = dsig.substring(0, dsig.length() - 6);
-		}
-
-		dstr.append(" - " + dsig, StyledString.QUALIFIER_STYLER);
-
-		EspCompletionProposal proposal = new EspCompletionProposal(rstr, start, end-start, rstr.length(), image, dstr);
-		proposal.relevance = completion.getRelevance();
-
-		return proposal;
-	}
-	
-	public static EspCompletionProposal createPackageCompletion(CompletionProposal completion, int start, int end) {
-		String text;
-		char[] ca = completion.getCompletion();
-		if(ca.length > 0 && ca[ca.length-1] == ';') {
-			text = new String(ca, 0, ca.length-1);
-		} else {
-			text = new String(ca);
-		}
-		
-		Image image = getImage(completion);
-		
-		System.out.println(completion.getKind());
-		
-		EspCompletionProposal proposal = new EspCompletionProposal(text, start, end-start, text.length(), image, text);
-		proposal.relevance = completion.getRelevance();
-
-		return proposal;
-	}
-
-	private static Image getImage(CompletionProposal completion) {
+	public static Image getImage(CompletionProposal completion) {
 		switch(completion.getKind()) {
 		case CompletionProposal.PACKAGE_REF: return JavaUI.getSharedImages().getImage(ISharedImages.IMG_OBJS_PACKAGE);
 		case CompletionProposal.TYPE_REF:
@@ -108,9 +60,9 @@ public class EspCompletionProposal implements Comparable<EspCompletionProposal>,
 	/** The context information of this proposal. */
 	protected IContextInformation contextInformation;
 	/** The additional info of this proposal. */
-	protected String additionalProposalInfo;
+	protected String additionalInfo;
 	
-	protected int relevance;
+	protected int relevance = 50;
 	protected boolean autoInsertable;
 
 	public EspCompletionProposal(String replacementString, int replacementOffset, int replacementLength, int cursorPosition, Image image, String displayString) {
@@ -159,7 +111,7 @@ public class EspCompletionProposal implements Comparable<EspCompletionProposal>,
 		this.image= image;
 		this.displayString= displayString;
 		this.contextInformation= contextInformation;
-		this.additionalProposalInfo= additionalProposalInfo;
+		this.additionalInfo= additionalProposalInfo;
 	}
 
 	/*
@@ -173,21 +125,11 @@ public class EspCompletionProposal implements Comparable<EspCompletionProposal>,
 		}
 	}
 
-	@Override
-	public int compareTo(EspCompletionProposal o) {
-		int r1 = relevance;
-		int r2 = o.relevance;
-		if(r1 == r2) {
-			return getDisplayString().compareTo(o.getDisplayString());
-		}
-		return r2 - r1;
-	}
-
 	/*
 	 * @see ICompletionProposal#getAdditionalProposalInfo()
 	 */
 	public String getAdditionalProposalInfo() {
-		return additionalProposalInfo;
+		return additionalInfo;
 	}
 
 	/*
@@ -212,6 +154,10 @@ public class EspCompletionProposal implements Comparable<EspCompletionProposal>,
 	public Image getImage() {
 		return image;
 	}
+
+	public int getRelevance() {
+		return relevance;
+	}
 	
 	/*
 	 * @see ICompletionProposal#getSelection(IDocument)
@@ -230,8 +176,24 @@ public class EspCompletionProposal implements Comparable<EspCompletionProposal>,
 		return autoInsertable;
 	}
 	
+	public void setAdditionalInfo(String additionalInfo) {
+		this.additionalInfo = additionalInfo;
+	}
+	
 	public void setAutoInsertable(boolean autoInsertable) {
 		this.autoInsertable = autoInsertable;
+	}
+
+	public void setDisplayString(StyledString displayString) {
+		this.displayString = displayString;
+	}
+	
+	public void setImage(Image image) {
+		this.image = image;
+	}
+	
+	public void setRelevance(int relevance) {
+		this.relevance = relevance;
 	}
 	
 }

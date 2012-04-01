@@ -18,10 +18,6 @@ public class EspResolver {
 		return true;
 	}
 	
-	private static boolean isSimple(String s) {
-		return isSimple(s.toCharArray());
-	}
-
 	
 	private List<EspDom> doms;
 	

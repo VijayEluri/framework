@@ -29,6 +29,7 @@ import static org.oobium.utils.coercion.TypeCoercer.coerce;
 import static org.oobium.utils.literal.Set;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -156,7 +157,9 @@ public class EspCompiler {
 		this.captureLevel = -1;
 	}
 
-	private void addLocation(EspPart part, StringBuilder sb) {
+	private Map<StringBuilder, List<EspLocation>> locationsMap = new HashMap<StringBuilder, List<EspLocation>>();
+	
+	private EspLocation addLocation(EspPart part, StringBuilder sb) {
 		EspLocation location = new EspLocation(sb.length(), part);
 		if(sb == body) {
 			bodyLocations.add(location);
@@ -169,7 +172,13 @@ public class EspCompiler {
 		}
 		else if(sb == title) {
 			titleLocations.add(location);
+		} else {
+			List<EspLocation> locations = locationsMap.get(sb);
+			if(locations != null) {
+				locations.add(location);
+			}
 		}
+		return location;
 	}
 
 	private StringBuilder appendAttr(String name, EntryPart entry) {
@@ -1854,7 +1863,9 @@ public class EspCompiler {
 	private void buildMethod(StyleChildElement element) {
 		StringBuilder sb = isInHead(element) ? style : body;
 		sb.append("\").append(h(");
-		sb.append(element.getMethodName()).append('(');
+		String mname = element.getMethodName();
+		addLocation(element.getFirstSelector(), sb).length = mname.length();
+		sb.append(mname).append('(');
 		for(JavaSourcePart arg : element.getArgs()) {
 			if(sb.charAt(sb.length()-1) != '(') sb.append(", ");
 			build(arg, sb, true);
@@ -1941,20 +1952,20 @@ public class EspCompiler {
 			}
 		}
 
-		List<EspLocation> locations = new ArrayList<EspLocation>();
 		sb = new StringBuilder();
+		locationsMap.put(sb, new ArrayList<EspLocation>());
 		sb.append("\tpublic ");
 		if(element.isStatic()) sb.append("static ");
-		sb.append(rtype).append(' ');
-		locations.add(new EspLocation(sb.length(), element));
+		if(!blank(rtype)) sb.append(rtype).append(' ');
+		addLocation(element, sb);
 		sb.append(mname).append('(');
 		for(int i = 0; i < args.size(); i++) {
 			MethodSignatureArg arg = args.get(i);
 			if(i != 0) sb.append(", ");
-			locations.add(new EspLocation(sb.length(), arg));
+			addLocation(arg, sb);
 			if(arg.hasVarType()) {
 				String vtype = arg.getVarType();
-				locations.add(new EspLocation(sb.length(), arg.getVarTypePart()));
+				addLocation(arg.getVarTypePart(), sb);
 				sb.append(vtype);
 				if(arg.isVarArgs()) {
 					vtype = vtype + "[]";
@@ -1963,7 +1974,7 @@ public class EspCompiler {
 					sb.append(' ');
 				}
 				if(arg.hasVarName()) {
-					locations.add(new EspLocation(sb.length(), arg.getVarNamePart()));
+					addLocation(arg.getVarNamePart(), sb);
 					String name = arg.getVarName();
 					sb.append(name);
 					if(ctor) esf.addVariable(name, "public " + vtype + " " + name);
@@ -1983,16 +1994,20 @@ public class EspCompiler {
 				sb.append(";\n");
 			}
 		} else {
-			sb.append("\t\tStringBuilder __sb__ = new StringBuilder();\n");
-			sb.append("\t\t__sb__.append(\"");
-			int pos = sb.length();
-			buildStyleProperties(sb, (StyleChildElement) element);
-			sb.deleteCharAt(pos); // delete leading ';'
-			sb.append("\");\n");
-			sb.append("\t\treturn __sb__.toString();\n");
+			offsetLocations(sb, mname.startsWith("id") ? 1 : 4);
+			StyleChildElement sce = (StyleChildElement) element;
+			if(sce.hasProperties()) {
+				sb.append("\t\tStringBuilder __sb__ = new StringBuilder();\n");
+				sb.append("\t\t__sb__.append(\"");
+				buildStyleProperties(sb, sce);
+				sb.append("\");\n");
+				sb.append("\t\treturn __sb__.toString();\n");
+			} else {
+				sb.append("\t\treturn \"\";\n");
+			}
 		}
 		sb.append("\t}");
-		JavaSource source = new JavaSource(sb.toString(), locations);
+		JavaSource source = new JavaSource(sb.toString(), locationsMap.remove(sb));
 		if(ctor) {
 			esf.addConstructor(source);
 		} else {
@@ -2383,9 +2398,15 @@ public class EspCompiler {
 	}
 
 	private void buildStyleProperties(StringBuilder sb, StyleChildElement child) {
+		buildStyleProperties(sb, child, true);
+	}
+	
+	private boolean buildStyleProperties(StringBuilder sb, StyleChildElement child, boolean isFirst) {
 		for(StyleChildElement element : child.getProperties()) {
 			if(element.isProperty()) {
-				if(sb.charAt(sb.length()-1) != '{') {
+				if(isFirst) {
+					isFirst = false;
+				} else {
 					sb.append(';');
 				}
 				sb.append(element.getName().getText());
@@ -2399,14 +2420,18 @@ public class EspCompiler {
 				if(element.isParameterized()) {
 					buildMethod(element);
 				} else {
-					EspPart selector = resolver.getCssSelector(element.getLastSelectorText());
-					if(selector != null) {
+					String name = element.getLastSelectorText();
+					EspPart selector = (resolver != null) ? resolver.getCssSelector(name) : null;
+					if(selector == null) {
+						// TODO create warning
+					} else {
 						StyleChildElement mixin = (StyleChildElement) selector.getParent();
-						buildStyleProperties(sb, mixin);
+						buildStyleProperties(sb, mixin, isFirst);
 					}
 				}
 			}
 		}
+		return isFirst;
 	}
 	
 	private void buildSubmit(MarkupElement element) {
@@ -3031,6 +3056,12 @@ public class EspCompiler {
 		return 0;
 	}
 
+	private void offsetLocations(StringBuilder sb, int offset) {
+		for(EspLocation location : locationsMap.get(sb)) {
+			location.offset += offset;
+		}
+	}
+	
 	private void prepForJava(StringBuilder sb) {
 		if(lastIsJava(sb)) {
 			indent(sb);

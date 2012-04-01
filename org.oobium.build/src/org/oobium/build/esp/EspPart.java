@@ -29,7 +29,7 @@ public class EspPart implements CharSequence {
 		JavaTypePart, TagPart, IdPart, ClassPart, ArgPart, EntryPart, StyleEntryPart, EntryKeyPart, EntryValuePart, InnerTextPart, StylePart,
 		CommentElement, Unknown,
 		ScriptElement, ScriptPart,
-		StyleElement, StyleChildElement, StyleSelectorPart, StylePropertyPart, StylePropertyNamePart, StylePropertyValuePart,
+		StyleElement, StyleChildElement, StyleSelectorPart, StylePropertyPart, StylePropertyNamePart, StylePropertyValuePart, StyleMixinPart, StyleMixinNamePart,
 		CommentPart
 	}
 
@@ -131,6 +131,10 @@ public class EspPart implements CharSequence {
 		return ix;
 	}
 	
+	public void dispose() {
+		parent.removePart(this);
+	}
+	
 	public EspDom getDom() {
 		return dom;
 	}
@@ -219,6 +223,16 @@ public class EspPart implements CharSequence {
 	@Override
 	public int length() {
 		return getLength();
+	}
+	
+	protected void removePart(EspPart part) {
+		if(parts != null) {
+			parts.remove(part);
+		}
+	}
+	
+	public void setType(Type type) {
+		this.type = type;
 	}
 	
 	public boolean startsWith(String prefix) {

@@ -14,11 +14,7 @@ import static org.oobium.build.esp.Constants.CSS_PROPERTIES;
 import static org.oobium.build.esp.Constants.HTML_TAGS;
 import static org.oobium.build.esp.Constants.JAVA_KEYWORDS;
 import static org.oobium.build.esp.Constants.JS_KEYWORDS;
-import static org.oobium.build.esp.EspPart.Type.CommentPart;
-import static org.oobium.build.esp.EspPart.Type.ImportPart;
-import static org.oobium.build.esp.EspPart.Type.JavaPart;
-import static org.oobium.build.esp.EspPart.Type.ScriptElement;
-import static org.oobium.build.esp.EspPart.Type.TagPart;
+import static org.oobium.build.esp.EspPart.Type.*;
 
 import java.util.Arrays;
 
@@ -361,6 +357,12 @@ public class EspStyleRanges {
 		switch(part.getType()) {
 		case TagPart:
 			return addRange(offset, part.getEnd()-offset, htmlTag);
+		case VarNamePart:
+			return part.getEnd();
+		case StyleMixinPart:
+		case DefaultValuePart:
+		case VarTypePart:
+			return evaluateJava(offset, element, part);
 		case StyleSelectorPart:
 			return part.getEnd();
 		case StylePropertyNamePart:

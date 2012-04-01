@@ -454,7 +454,7 @@ public class EspEditor extends TextEditor {
 					if(jmarker.isSubtypeOf(IMarker.PROBLEM)) {
 						try {
 							String message = String.valueOf(jmarker.getAttribute(IMarker.MESSAGE));
-							if(message != null && !message.endsWith(" is never used")) {
+							if(message != null && !message.endsWith(" is never used") && !message.endsWith(" changed lines ")) {
 								int start = jf.getEspOffset((Integer) jmarker.getAttribute(IMarker.CHAR_START));
 								int end = jf.getEspOffset((Integer) jmarker.getAttribute(IMarker.CHAR_END) - 1) + 1;
 	
@@ -469,7 +469,7 @@ public class EspEditor extends TextEditor {
 								}
 								marker.setAttribute(IMarker.SEVERITY, jmarker.getAttribute(IMarker.SEVERITY));
 								marker.setAttribute(IMarker.PRIORITY, IMarker.PRIORITY_HIGH);//jmarker.getAttribute(IMarker.PRIORITY));
-								marker.setAttribute(IMarker.MESSAGE, jmarker.getAttribute(IMarker.MESSAGE));
+								marker.setAttribute(IMarker.MESSAGE, message);
 							}
 						} catch(ClassCastException e) {
 							e.printStackTrace();

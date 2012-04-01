@@ -119,11 +119,10 @@ public class EspTextHover implements ITextHover {
 	
 	private String getCssSelectorHover(EspPart selector) {
 		StringBuilder hover = new StringBuilder();
-		hover.append(selector.getText()).append(" (").append(selector.getDom().getName()).append(") {");
 		for(StyleChildElement prop : ((StyleChildElement) selector.getParent()).getProperties()) {
-			hover.append("\n  ").append(prop);
+			hover.append(prop).append('\n');
 		}
-		hover.append("\n}");
+		hover.deleteCharAt(hover.length()-1);
 		return hover.toString();
 	}
 	

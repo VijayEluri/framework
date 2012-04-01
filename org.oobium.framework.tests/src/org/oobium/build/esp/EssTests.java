@@ -105,24 +105,47 @@ public class EssTests {
 	public void testNestedStyle() throws Exception {
 		String css =
 				"#header{color:black}" +
-				"#header .navigation{font-size:12px}" +
-				"#header.logo{width:300px}" +
-				"#header.logo[type=password]:hover{text-decoration:none}";
+				"#header .navigation{font-size:12px}";
 
 		String ess =
 				("#header\n" +
 				 "  color: black\n" +
 				 "  .navigation\n" +
-				 "    font-size: 12px\n" +
-				 "  &.logo\n" +
-				 "    width: 300px\n" +
-				 "    &[type=password]\n" +
-				 "      &:hover\n" +
-				 "        text-decoration: none").replace("  ", "\t");
+				 "    font-size: 12px\n").replace("  ", "\t");
 
 		assertEquals(css, css(ess));
 	}
 	
+	@Test
+	public void testNestedStyle_Continuous() throws Exception {
+		String css =
+				"#header{color:black}" +
+				"#header.logo{width:300px}";
+
+		String ess =
+				("#header\n" +
+				 "  color: black\n" +
+				 "  &.logo\n" +
+				 "    width: 300px").replace("  ", "\t");
+
+		assertEquals(css, css(ess));
+	}
+	
+	@Test
+	public void testNestedStyle_Continuous_PsuedoClass() throws Exception {
+		String css =
+				"#header{color:black}" +
+				"#header:hover{text-decoration:none}";
+
+		String ess =
+				("#header\n" +
+				 "  color: black\n" +
+				 "  &:hover\n" +
+				 "    text-decoration: none").replace("  ", "\t");
+
+		assertEquals(css, css(ess));
+	}
+
 	@Test
 	public void testMixin_MissingClass() throws Exception {
 		String css =

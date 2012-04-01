@@ -24,6 +24,7 @@ public class ESourceFile {
 		int length;
 		EspPart part;
 		public EspLocation(int offset, EspPart part) { this.offset = offset; this.part = part; this.length = this.part.getLength(); }
+		public EspLocation(int offset, EspPart part, int length) { this.offset = offset; this.part = part; this.length = length; }
 		public String toString() { return "offset: " + offset + ", part: " + part; }
 	}
 	
