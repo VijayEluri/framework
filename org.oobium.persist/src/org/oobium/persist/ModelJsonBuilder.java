@@ -17,6 +17,7 @@ import static org.oobium.utils.json.JsonUtils.toObject;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -205,10 +206,9 @@ class ModelJsonBuilder {
 			map.put("errors", model.getErrorsList());
 		}
 		ModelAdapter adapter = ModelAdapter.getAdapter(model);
-		for(Entry<String, Object> entry : model.getAll().entrySet()) {
-			String field = entry.getKey();
+		for(String field : model.getAll().keySet()) {
 			if(adapter.isJson(field)) {
-				handleField(map, field, entry.getValue(), include);
+				handleField(map, field, model.get(field), include);
 			}
 		}
 	}
@@ -342,6 +342,9 @@ class ModelJsonBuilder {
 		}
 		else if(object.getClass().isArray()) {
 			handleArray(map, field, object, include);
+		}
+		else if(object instanceof Date) {
+			map.put(field, "/Date(" + ((Date) object).getTime() + ")/");
 		}
 		else {
 			map.put(field, object);
