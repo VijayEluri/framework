@@ -1500,10 +1500,11 @@ public class EspCompiler {
 	
 	private void buildImport(ImportElement element) {
 		if(element.hasImport()) {
+			JavaSource source = new JavaSource(element.getImport(), element.getImportPart());
 			if(element.isStatic()) {
-				esf.addStaticImport(new JavaSource(element.getImport(), element.getImportPart()));
+				esf.addStaticImport(source);
 			} else {
-				esf.addImport(new JavaSource(element.getImport(), element.getImportPart()));
+				esf.addImport(source);
 			}
 		}
 	}
