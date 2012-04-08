@@ -77,8 +77,18 @@ public class JQueryClientGenerator {
 				sb.append('\n');
 				sb.append(name).append(".findAll = function(success, error) {\n");
 				sb.append("\tModel.findAll( { 'type': this.type, 'plural': this.plural, 'success': success, 'error': error } );\n");
+				sb.append("}\n");
+
+				sb.append('\n');
+				sb.append(name).append(".prototype.getId = function() {\n");
+				sb.append("\treturn this.id;\n");
+				sb.append("}\n");
+				sb.append('\n');
+				sb.append(name).append(".prototype.setId = function(id) {\n");
+				sb.append("\tthis.id = id;\n");
+				sb.append("\treturn this;\n");
 				sb.append("}");
-				
+
 				Pattern p = Pattern.compile("@Attribute\\([^\\)]*name\\=\"(\\w+)\"[^\\)]+\\)");
 				Matcher m = p.matcher(src);
 				while(m.find()) {

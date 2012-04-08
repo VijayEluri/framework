@@ -7,6 +7,85 @@ function $Extend(clazz, superClass) {
 	clazz.superClass = superClass.prototype;
 }
 
+function Monitor(interval) {
+	var self = this;
+	var commitInterval = interval || 0;
+	var operations = [];
+	var timerId = null;
+
+	this.add = function(request) {
+		startTimer();
+		var op;
+		for(var i in operations) {
+			var r = operations[i].req;
+			if(r.type == request.type && r.url == request.url) {
+				op = operations[i];
+				break;
+			}
+		}
+		if(op) {
+			$.extend(true, op.req.data, request.data);
+		} else {
+			op = {
+					dfd: $.Deferred(),
+					fnc: function() {
+						$.ajax(this.req).always( this.dfd.resolve );
+					},
+					req: request
+			};
+			operations.push(op);
+		}
+		return op.dfd.promise();
+	};
+
+	var clearTimer = function() {
+		if(timerId) {
+			clearTimeout(timerId);
+		}
+	};
+	
+	this.commit = function() {
+		var deferreds = [];
+		for(var i in operations) {
+			var op = operations[i];
+			op.fnc();
+			deferreds.push(op.dfd);
+		}
+		$.when.apply($, deferreds)
+			.then(function() {
+				alert('all operations done');
+			});
+		operations = [];
+		clearTimer();
+	};
+
+	this.isAuto = function() {
+		return commitInterval > 0;
+	};
+	
+	this.setInterval = function(interval) {
+		if(interval) {
+			commitInterval = parseInt(interval);
+			if(operations.length > 0) {
+				startTimer();
+			}
+		} else {
+			clearTimer();
+		}
+	};
+	
+	var startTimer = function() {
+		clearTimer();
+		if(commitInterval > 0) {
+			timerId = setTimeout(self.commit, commitInterval);
+		}
+	};
+	
+}
+
+// TEMP
+var $Monitor = new Monitor(3000);
+
 function Router(modelRoutes) {
 	if(modelRoutes) {
 		this.modelRoutes = modelRoutes;
@@ -57,18 +136,25 @@ Router.prototype.getPath = function(action, model, plural, id) {
 }
 
 function Model(params) {
+	this.data = {};
 	if(typeof params == 'number' || typeof params == 'string' ) {
 		this.id = params;
-		this.data = {};
 	} else {
 		if(params) {
 			if(params.id) {
-				id = params.id;
+				this.id = params.id;
 				delete params.id;
 			}
-			this.data = params;
-		} else {
-			this.data = {};
+			for(var key in params) {
+				if(params.hasOwnProperty(key)) {
+					var val = params[key];				
+					if(typeof val == 'string' && val.indexOf('/Date(') == 0) {
+						this.data[key] = new Date(parseInt(val.substring(6, val.length-2)));
+					} else {
+						this.data[key] = val;
+					}
+				}
+			}
 		}
 	}
 }
@@ -112,27 +198,31 @@ Model.findAll = function(params) {
 	$.ajax(request);
 }
 
-Model.prototype.create = function(success, error) {
+/**
+ * @return the jqXHR object (see JQuery $.ajax for more information)
+ */
+Model.prototype.create = function() {
 	var model = this;
 	var request = {};
 	request.type = $Router.getType('create', model);
 	request.url = $Router.getPath('create', model),
 	request.data = {};
-	request.data[model.varName] = model.data;
+	request.data[model.varName] = model.getJsonData();
 	request.dataType = 'json';
 	request.success = function(data, status, xhr) {
 		model.id = xhr.getResponseHeader('id');
-		if(success) success(model, status, xhr);
 	}
-	if(error) {
-		request.error = function(data, status, xhr) {
-			error(data, status, xhr);
-		}
+	if($Monitor && $Monitor.isAuto() > 0) {
+		return $Monitor.add(request);
+	} else {
+		return $.ajax(request).promise();
 	}
-	$.ajax(request);
 }
 
-Model.prototype.destroy = function(success, error) {
+/**
+ * @return a Promise object
+ */
+Model.prototype.destroy = function() {
 	var model = this;
 	var request = {};
 	request.type = $Router.getType('destroy', model);
@@ -142,21 +232,30 @@ Model.prototype.destroy = function(success, error) {
 		model.id = 0;
 		model.data = null;
 		model.destroyed = true;
-		if(success) success(model, status, xhr);
 	}
-	if(error) {
-		request.error = function(data, status, xhr) {
-			error(data, status, xhr);
+	return $.ajax(request);
+}
+
+Model.prototype.getJsonData = function() {
+	var jdata = {};
+	for(var key in this.data) {
+		if(this.data.hasOwnProperty(key)) {
+			var val = this.data[key];				
+			if(val instanceof Date) {
+				jdata[key] = '/Date(' + val.getTime() + ')/';
+			} else {
+				jdata[key] = val;
+			}
 		}
 	}
-	$.ajax(request);
+	return jdata;
 }
 
 Model.prototype.retrieve = function(success, error) {
 	var model = this;
 	var request = {};
-	request.type = $Router.getType('show', model);
-	request.url = $Router.getPath('show', model),
+	request.type = $Router.getType('show', this);
+	request.url = $Router.getPath('show', this),
 	request.dataType = 'json';
 	request.success = function(data, status, xhr) {
 		model.data = data;
@@ -170,31 +269,26 @@ Model.prototype.retrieve = function(success, error) {
 	$.ajax(request);
 }
 
-Model.prototype.update = function(success, error) {
-	var model = this;
+/**
+ * @return a Promise object
+ */
+Model.prototype.update = function() {
 	var request = {};
-	request.type = $Router.getType('update', model);
-	request.url = $Router.getPath('update', model),
+	request.type = $Router.getType('update', this);
+	request.url = $Router.getPath('update', this),
 	request.data = {};
-	request.data[model.varName] = model.data;
+	request.data[this.varName] = this.getJsonData();
 	request.dataType = 'json';
-	if(success) {
-		request.success = function(data, status, xhr) {
-			success(model, status, xhr);
-		}
+	if($Monitor && $Monitor.isAuto() > 0) {
+		return $Monitor.add(request);
+	} else {
+		return $.ajax(request).promise();
 	}
-	if(error) {
-		request.error = function(data, status, xhr) {
-			error(data, status, xhr);
-		}
-	}
-	$.ajax(request);
 }
 
-Model.prototype.save = function(success, error) {
-	if(this.id == 0) {
-		this.create(success, error);
-	} else {
-		this.update(success, error);
-	}
+/**
+ * @return a Promise object
+ */
+Model.prototype.save = function() {
+	return (this.id == 0) ? this.create() : this.update();
 }
