@@ -61,10 +61,27 @@ public class DateUtils {
 		return cal.getTime();
 	}
 	
+	public static Date daysFrom(Date date, int amount) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(date);
+		cal.add(Calendar.DATE, amount);
+		return cal.getTime();
+	}
+
+	public static String daysFrom(Date date, int amount, String format) {
+		SimpleDateFormat sdf = new SimpleDateFormat(format);
+		return sdf.format(daysFrom(date, amount));
+	}
+
 	public static Date daysFromNow(int amount) {
 		Calendar cal = Calendar.getInstance();
 		cal.add(Calendar.DATE, amount);
 		return cal.getTime();
+	}
+
+	public static String daysFromNow(int amount, String format) {
+		SimpleDateFormat sdf = new SimpleDateFormat(format);
+		return sdf.format(daysFromNow(amount));
 	}
 
 	public static Date endOfWeek(Date date) {
@@ -195,13 +212,36 @@ public class DateUtils {
 	public static List<Object[]> getSelectDates(String format, int count, int dateStep) {
 		return getSelectDates(format, new Date(), 0, count, Calendar.DATE, dateStep);
 	}
+
+	public static int hourOfDay(Date date) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(date);
+		return cal.get(Calendar.HOUR_OF_DAY);
+	}
 	
+	public static Date hoursFrom(Date date, int amount) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(date);
+		cal.add(Calendar.HOUR_OF_DAY, amount);
+		return cal.getTime();
+	}
+
+	public static String hoursFrom(Date date, int amount, String format) {
+		SimpleDateFormat sdf = new SimpleDateFormat(format);
+		return sdf.format(hoursFrom(date, amount));
+	}
+
 	public static Date hoursFromNow(int amount) {
 		Calendar cal = Calendar.getInstance();
 		cal.add(Calendar.HOUR_OF_DAY, amount);
 		return cal.getTime();
 	}
-	
+
+	public static String hoursFromNow(int amount, String format) {
+		SimpleDateFormat sdf = new SimpleDateFormat(format);
+		return sdf.format(hoursFromNow(amount));
+	}
+
 	public static String httpDate() {
 		return httpDate(new Date());
 	}
@@ -232,6 +272,28 @@ public class DateUtils {
 		} catch(Exception e) {
 			throw new ParseException("could not parse http date: " + date, -1);
 		}
+	}
+
+	public static long duration(Date date1, Date date2) {
+		return date2.getTime() - date1.getTime();
+	}
+	
+	public static int seconds(Date date1, Date date2) {
+		return (int) (duration(date1, date2) / 1000);
+	}
+	
+	public static int minutes(Date date1, Date date2) {
+		return (int) (duration(date1, date2) / 60000);
+	}
+	
+	public static int hours(Date date1, Date date2) {
+		return (int) (duration(date1, date2) / 360000);
+	}
+
+	public static int minute(Date date) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(date);
+		return cal.get(Calendar.MINUTE);
 	}
 	
 	public static Date minutesFromNow(int amount) {
@@ -288,6 +350,55 @@ public class DateUtils {
 		return c1.get(Calendar.YEAR) == c2.get(Calendar.YEAR);
 	}
 	
+	public static Date startOfDay() {
+		return startOfDay(new Date());
+	}
+	
+	public static Date startOfDay(Date date) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(date);
+		cal.set(Calendar.HOUR_OF_DAY, 0);
+		cal.set(Calendar.MINUTE, 0);
+		cal.set(Calendar.SECOND, 0);
+		cal.set(Calendar.MILLISECOND, 0);
+		return cal.getTime();
+	}
+
+	public static String startOfDay(String format) {
+		return startOfDay(new Date(), format);
+	}
+	
+	public static String startOfDay(Date date, String format) {
+		SimpleDateFormat sdf = new SimpleDateFormat(format);
+		return sdf.format(startOfDay(date));
+	}
+	
+	public static Date startOfHour() {
+		return startOfHour(new Date());
+	}
+	
+	public static Date startOfHour(Date date) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(date);
+		cal.set(Calendar.MINUTE, 0);
+		cal.set(Calendar.SECOND, 0);
+		cal.set(Calendar.MILLISECOND, 0);
+		return cal.getTime();
+	}
+
+	public static String startOfHour(String format) {
+		return startOfHour(new Date(), format);
+	}
+	
+	public static String startOfHour(Date date, String format) {
+		SimpleDateFormat sdf = new SimpleDateFormat(format);
+		return sdf.format(startOfHour(date));
+	}
+	
+	public static Date startOfWeek() {
+		return startOfWeek(new Date());
+	}
+	
 	public static Date startOfWeek(Date date) {
 		Calendar cal = Calendar.getInstance();
 		cal.setTime(date);
@@ -295,6 +406,10 @@ public class DateUtils {
 		return cal.getTime();
 	}
 
+	public static String startOfWeek(String format) {
+		return startOfWeek(new Date(), format);
+	}
+	
 	public static String startOfWeek(Date date, String format) {
 		SimpleDateFormat sdf = new SimpleDateFormat(format);
 		return sdf.format(startOfWeek(date));
@@ -304,6 +419,11 @@ public class DateUtils {
 		Calendar cal = Calendar.getInstance();
 		cal.add(Calendar.WEEK_OF_YEAR, amount);
 		return cal.getTime();
+	}
+
+	public static String weeksFromNow(int amount, String format) {
+		SimpleDateFormat sdf = new SimpleDateFormat(format);
+		return sdf.format(weeksFromNow(amount));
 	}
 
 	private DateUtils() {
