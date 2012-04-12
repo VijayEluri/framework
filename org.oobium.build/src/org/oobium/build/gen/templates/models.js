@@ -11,9 +11,18 @@ function Monitor(interval) {
 	var self = this;
 	var commitInterval = interval || 0;
 	var operations = [];
+	var waiting = false;
 	var timerId = null;
-
+	var callbacks = {
+		queue: $.Callbacks(),
+		start: $.Callbacks(),
+		complete: $.Callbacks()
+	}
+	
 	this.add = function(request) {
+		if(operations.length == 0) {
+			fire('queue');
+		}
 		startTimer();
 		var op;
 		for(var i in operations) {
@@ -38,6 +47,10 @@ function Monitor(interval) {
 		return op.dfd.promise();
 	};
 
+	this.auto = function() {
+		return commitInterval > 0;
+	};
+	
 	var clearTimer = function() {
 		if(timerId) {
 			clearTimeout(timerId);
@@ -45,22 +58,40 @@ function Monitor(interval) {
 	};
 	
 	this.commit = function() {
-		var deferreds = [];
-		for(var i in operations) {
-			var op = operations[i];
-			op.fnc();
-			deferreds.push(op.dfd);
-		}
-		$.when.apply($, deferreds)
-			.then(function() {
-				alert('all operations done');
-			});
-		operations = [];
 		clearTimer();
+		if(operations.length > 0) {
+			var deferreds = [];
+			for(var i in operations) {
+				var op = operations[i];
+				op.fnc();
+				deferreds.push(op.dfd);
+			}
+			$.when.apply($, deferreds)
+				.then(function() {
+					fire('complete');
+				});
+			operations = [];
+			fire('start');
+		} else {
+			fire('start');
+			fire('complete');
+		}
 	};
 
-	this.isAuto = function() {
-		return commitInterval > 0;
+	this.complete = function(callback) {
+		callbacks.complete.add(callback);
+	};
+	
+	this.dirty = function() {
+		return operations.length > 0;
+	};
+
+	var fire = function(eventName) {
+		callbacks[eventName].fire(self);
+	}
+	
+	this.queue = function(callback) {
+		callbacks.queue.add(callback);
 	};
 	
 	this.setInterval = function(interval) {
@@ -74,11 +105,23 @@ function Monitor(interval) {
 		}
 	};
 	
+	this.start = function(callback) {
+		callbacks.start.add(callback);
+	};
+	
 	var startTimer = function() {
 		clearTimer();
 		if(commitInterval > 0) {
 			timerId = setTimeout(self.commit, commitInterval);
 		}
+	};
+	
+	this.subscribe = function(eventName, callback) {
+		callbacks[eventName].add(callback);
+	};
+	
+	this.unsubscribe = function(eventName, callback) {
+		callbacks[eventName].remove(callback);
 	};
 	
 }
@@ -212,7 +255,7 @@ Model.prototype.create = function() {
 	request.success = function(data, status, xhr) {
 		model.id = xhr.getResponseHeader('id');
 	}
-	if($Monitor && $Monitor.isAuto() > 0) {
+	if($Monitor && $Monitor.auto()) {
 		return $Monitor.add(request);
 	} else {
 		return $.ajax(request).promise();
@@ -279,7 +322,7 @@ Model.prototype.update = function() {
 	request.data = {};
 	request.data[this.varName] = this.getJsonData();
 	request.dataType = 'json';
-	if($Monitor && $Monitor.isAuto() > 0) {
+	if($Monitor && $Monitor.auto() > 0) {
 		return $Monitor.add(request);
 	} else {
 		return $.ajax(request).promise();
