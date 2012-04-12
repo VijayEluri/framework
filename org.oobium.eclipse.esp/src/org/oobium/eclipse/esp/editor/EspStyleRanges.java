@@ -260,12 +260,12 @@ public class EspStyleRanges {
 					}
 					EspPart sub = part.getNextSubPart(s1 + 1);
 					while(sub != null && sub.getStart() < s) {
-						addRange(s1, sub.getStart()-s1, javaString);
+						addRange(s1, sub.getStart()-s1+1, javaString);
 						s1 = evaluateJava(sub.getStart(), element, sub);
 						sub = part.getNextSubPart(s1);
 					}
 					if(s > s1) {
-						addRange(s1, s-s1, javaString);
+						addRange(s1, s-s1+1, javaString);
 						s1 = s + 1;
 					}
 				} else {
@@ -329,7 +329,7 @@ public class EspStyleRanges {
 							}
 							s++;
 						}
-						addRange(s1, s-s1, javaString);
+						addRange(s1, s-s1+1, javaString);
 						s1 = s + 1;
 					} else {
 						s1++;
@@ -357,6 +357,9 @@ public class EspStyleRanges {
 		switch(part.getType()) {
 		case TagPart:
 			return addRange(offset, part.getEnd()-offset, htmlTag);
+		case JavaPart:
+		case JavaSourcePart:
+			return evaluateJava(offset, element, part);
 		case VarNamePart:
 			return part.getEnd();
 		case StyleMixinPart:
