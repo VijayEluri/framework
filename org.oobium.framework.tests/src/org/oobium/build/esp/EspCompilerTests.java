@@ -229,15 +229,15 @@ public class EspCompilerTests {
 	@Test
 	public void testStyle() throws Exception {
 		assertEquals(0, src("style").getMethodCount());
-		assertEquals("__body__.append(\"<div></div>\");", render("div <- style"));
-		assertEquals("__body__.append(\"<style>.myClass{color:red}</style>\");", render("style .myClass { color: red; }"));
-		assertEquals("__body__.append(\"<style>.myClass{color:red}</style>\");", render("style\n\t.myClass { color: red; }"));
-		assertEquals("__body__.append(\"<div><style>.myClass{color:red}</style></div>\");", render("div <- style .myClass { color: red; }"));
-		assertEquals("__body__.append(\"<div><style>.myClass{color:red}</style></div>\");", render("div\n\tstyle .myClass { color: red; }"));
-		assertEquals("__body__.append(\"<div><style>.myClass{color:red}</style></div>\");", render("div\n\tstyle\n\t\t.myClass { color: red; }"));
+		assertEquals("<div></div>", body("div <- style"));
+		assertEquals("<style>.myClass{color:red}</style>", body("style .myClass { color: red; }"));
+		assertEquals("<style>.myClass{color:red}</style>", body("style\n\t.myClass { color: red; }"));
+		assertEquals("<div><style>.myClass{color:red}</style></div>", body("div <- style .myClass { color: red; }"));
+		assertEquals("<div><style>.myClass{color:red}</style></div>", body("div\n\tstyle .myClass { color: red; }"));
+		assertEquals("<div><style>.myClass{color:red}</style></div>", body("div\n\tstyle\n\t\t.myClass { color: red; }"));
 
 		// multiline (does require properties to be indented... is this ok?)
-		assertEquals("__body__.append(\"<div><style>.myClass{color:red}</style></div>\");", render("div\n\tstyle\n\t\t.myClass {\n\t\t\tcolor: red;\n\t\t}"));
+		assertEquals("<div><style>.myClass{color:red}</style></div>", body("div\n\tstyle\n\t\t.myClass {\n\t\t\tcolor: red;\n\t\t}"));
 		
 		// with java
 		assertEquals("__body__.append(\"<div><style>.myClass{width:\").append(h(height * 2)).append(\"px}</style></div>\");",
@@ -246,18 +246,25 @@ public class EspCompilerTests {
 				render("- String pageWidth = \"860px\";\ndiv\n\tstyle\n\t\t.myClass\n\t\t\twidth: ${pageWidth}\n\t\t\tcolor: red"));
 
 		// with standard comment
-		assertEquals("__body__.append(\"<style>.myClass{color:red}</style>\");", render("style .myClass { /* color:blue; */ color: red; }"));
-		assertEquals("__body__.append(\"<style>.myClass{color:red}</style>\");", render("style .myClass { /*\ncolor:blue;\n*/ color: red; }"));
+		assertEquals("__body__.append(\"<style>.myClass{color:red}</style>\");",
+				render("style .myClass { /* color:blue; */ color: red; }"));
+		assertEquals("__body__.append(\"<style>.myClass{color:red}</style>\");",
+				render("style .myClass { /*\ncolor:blue;\n*/ color: red; }"));
 
 		// after java line
-		assertEquals("if(true)\n\t__body__.append(\"<style>td{border:0}</style>\");", render("-if(true)\n\tstyle td { border: 0 }"));
+		assertEquals("if(true)\n\t__body__.append(\"<style>td{border:0}</style>\");",
+				render("-if(true)\n\tstyle td { border: 0 }"));
 
 		// including an ESS file
-		assertEquals("__body__.append(\"<style>\");\nMyStyles myStyles$0 = new MyStyles();\nmyStyles$0.render(__body__);\n__body__.append(\"</style>\");", render("style<MyStyles>"));
+		assertEquals("String path$0 = underscored(MyStyles.class.getName()).replace('.', '/');\n" +
+		             "__head__.append(\"<link rel='stylesheet' type='text/css' href='/\").append(path$0).append(\".css' />\");",
+				render("style<MyStyles>"));
 
 		// in DOM with Java
-		assertEquals("__body__.append(\"<div style=\\\"color:\").append(h(var)).append(\"\\\"></div>\");", render("div(style:\"color: ${var}\""));
-		assertEquals("__body__.append(\"<div style=\\\"color:\").append(h(blue * 2)).append(\"\\\"></div>\");", render("div(style:\"color: ${blue * 2}\""));
+		assertEquals("__body__.append(\"<div style=\\\"color:\").append(h(var)).append(\"\\\"></div>\");",
+				render("div(style:\"color: ${var}\""));
+		assertEquals("__body__.append(\"<div style=\\\"color:\").append(h(blue * 2)).append(\"\\\"></div>\");",
+				render("div(style:\"color: ${blue * 2}\""));
 	}
 
 	@Test

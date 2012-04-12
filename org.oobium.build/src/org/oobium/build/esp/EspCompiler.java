@@ -1111,7 +1111,11 @@ public class EspCompiler {
 		build(type, sb);
 		sb.append(".class.getName()).replace('.', '/');\n");
 		prepForMarkup(sb);
+		boolean revertSection = prepForHead();
 		sb.append("<link rel='stylesheet' type='text/css' href='/\").append(path$").append(pos).append(").append(\".css' />");
+		if(revertSection) {
+			prepForBody();
+		}
 	}
 
 	private void buildFields(MarkupElement fields) {
@@ -1807,7 +1811,35 @@ public class EspCompiler {
 			if(lastIsJava) {
 				sb.append("\t}");
 			} else {
-				sb.append("\");\n\t}");
+				int pos = sb.length()-1;
+				boolean empty = true;
+				char[] ca = ".append(\"".toCharArray();
+				for(int i = ca.length-1; empty && i >= 0; i--, pos--) {
+					if(ca[i] != sb.charAt(pos)) {
+						empty = false;
+					}
+				}
+				if(empty) {
+					ca = sbName.toCharArray();
+					for(int i = ca.length-1; empty && i >= 0; i--, pos--) {
+						if(ca[i] != sb.charAt(pos)) {
+							empty = false;
+						}
+					}
+					pos++;
+					if(empty) { // delete the previous section
+						while(pos >= 0 && sb.charAt(pos) != '\n') {
+							pos--;
+						}
+						sb.delete(pos+1, sb.length());
+					} else { // delete the previous start and close the section
+						sb.delete(pos, sb.length());
+						sb.append(";\n");
+					}
+				} else { // close the section
+					sb.append("\");\n");
+				}
+				sb.append("\t}");
 			}
 			for(EspLocation location : locations) {
 				location.offset += sig.length();
@@ -2238,6 +2270,7 @@ public class EspCompiler {
 			prepForMarkup(body);
 			
 			if(element.hasArgs()) {
+				boolean revertSection = prepForHead();
 				for(EspPart arg : element.getArgs()) {
 					body.append("<link rel='stylesheet' type='text/css'");
 					if(element.hasEntryValue("media")) {
@@ -2255,6 +2288,9 @@ public class EspCompiler {
 							body.append(".css' />");
 						}
 					}
+				}
+				if(revertSection) {
+					prepForBody();
 				}
 			}
 			if(element.hasChildren()) {
@@ -2981,7 +3017,7 @@ public class EspCompiler {
 		}
 	}
 	
-	private void prepFor(String section) {
+	private boolean prepFor(String section) {
 		if(sbName != section) {
 			sbName = section;
 			
@@ -3004,7 +3040,7 @@ public class EspCompiler {
 				if(empty) {
 					// just change the section name and exit
 					body.replace(pos, pos+section.length(), section);
-					return;
+					return true;
 				} else {
 					// delete the previous start, close the section and fall through
 					body.delete(pos, body.length());
@@ -3016,15 +3052,17 @@ public class EspCompiler {
 			}
 			indent(body);
 			body.append(sbName).append(".append(\"");
+			return true;
 		}
+		return false;
 	}
 	
-	private void prepForBody() {
-		prepFor(SBBODY);
+	private boolean prepForBody() {
+		return prepFor(SBBODY);
 	}
 	
-	private void prepForHead() {
-		prepFor(SBHEAD);
+	private boolean prepForHead() {
+		return prepFor(SBHEAD);
 	}
 	
 	private void prepForJava(StringBuilder sb) {

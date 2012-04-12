@@ -10,9 +10,10 @@
  ******************************************************************************/
 package org.oobium.build.esp.elements;
 
+import static java.lang.Math.*;
 import static org.oobium.build.esp.EspPart.Type.StyleChildElement;
 import static org.oobium.build.esp.elements.StyleElement.findEOL;
-import static org.oobium.build.esp.parts.EmbeddedJavaPart.skipEmbeddedJava;
+import static org.oobium.build.esp.parts.EmbeddedJavaPart.*;
 import static org.oobium.utils.CharStreamUtils.closer;
 import static org.oobium.utils.CharStreamUtils.forward;
 import static org.oobium.utils.CharStreamUtils.reverse;
@@ -268,9 +269,13 @@ public class StyleChildElement extends MethodSignatureElement {
 
 		int s1 = start;
 		int eol = findEOL(ca, s1);
+		if(end > 0 && eol > end) {
+			eol = end;
+		}
 		
 		int s2 = s1;
 		while(s2 < eol) {
+			s2 = skipEmbeddedJava(ca, s2, eol);
 			if(ca[s2] == '{' || ca[s2] == ';' || ca[s2] == '}') {
 				addSelectorGroup(s1, s2);
 				s1 = s2;
