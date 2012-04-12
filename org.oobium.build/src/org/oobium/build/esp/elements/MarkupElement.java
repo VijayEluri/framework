@@ -124,6 +124,8 @@ public class MarkupElement extends EspElement {
 				element = new StyleElement(this, offset);
 			} else if(Character.isLowerCase(ca[start])) {
 				element = new MarkupElement(this, offset);
+			} else if(isNext(start, '!', '-', '-')) {
+				element = new MarkupCommentElement(this, offset);
 			} else {
 				return findEOL(ca, offset);
 			}
