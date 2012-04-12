@@ -22,27 +22,17 @@ public class ShowAllPersistServices extends View {
 	}
 
 	@Override
-	public void doRenderBody(StringBuilder __sb__) throws Exception {
+	public void render(StringBuilder __head__, StringBuilder __body__) throws Exception {
 		List<String> list = services.getServiceNames();
 		if(list.isEmpty()) {
-			__sb__.append("<div>No Persist Services</div>");
+			__body__.append("<div>No Persist Services</div>");
 		} else {
-			__sb__.append("<style>.alt{background-color:cyan}</style><table><tr><th>id</th><th>service</th></tr>");
+			__body__.append("<style>.alt{background-color:cyan}</style><table><tr><th>id</th><th>service</th></tr>");
 			for(int i = 0; i < list.size(); i++) {
-				__sb__.append("<tr class=\"").append(h(alt())).append("\"><td>").append(h(i+1)).append("</td><td><a href=\"").append(pathTo("persist_service", i+1)).append("\">").append(h(list.get(i))).append("</a></td></tr>");
+				__body__.append("<tr class=\"").append(h(alt())).append("\"><td>").append(h(i+1)).append("</td><td><a href=\"").append(pathTo("persist_service", i+1)).append("\">").append(h(list.get(i))).append("</a></td></tr>");
 			}
-			__sb__.append("</table>");
+			__body__.append("</table>");
 		}
-	}
-
-	@Override
-	protected void doRenderTitle(StringBuilder __sb__) {
-		__sb__.append("Persist Services");
-	}
-
-	@Override
-	public boolean hasTitle() {
-		return true;
 	}
 
 }

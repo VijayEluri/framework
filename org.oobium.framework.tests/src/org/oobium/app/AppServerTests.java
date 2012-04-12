@@ -132,27 +132,17 @@ public class AppServerTests {
 
 	public static class TestView extends View {
 		@Override
-		protected void doRenderBody(StringBuilder sb) throws Exception {
-			sb.append(
-				"<body>\n" +
-				"<img src='/logo.png' />\n" +
-				"<div>thread: " + Thread.currentThread().getName() + "</div>\n" +
-				"<div>count: " + Thread.activeCount() + "</div>\n" +
-				"<a href=\"/controller\">controller</a>\n" +
-				"</body>"
-			);
-		}
-		@Override
-		protected void doRenderScript(StringBuilder sb) {
-			sb.append(
+		protected void render(StringBuilder __head__, StringBuilder __body__) throws Exception {
+			__head__.append(
+				"<link rel='stylesheet' type='text/css' href='/application.css' />" +
 				"<script src='jquery.js'></script>" +
 				"<script src='application.js'></script>"
 			);
-		}
-		@Override
-		protected void doRenderStyle(StringBuilder sb) {
-			sb.append(
-				"<link rel='stylesheet' type='text/css' href='/application.css' />"
+			__body__.append(
+				"<img src='/logo.png' />\n" +
+				"<div>thread: " + Thread.currentThread().getName() + "</div>\n" +
+				"<div>count: " + Thread.activeCount() + "</div>\n" +
+				"<a href=\"/controller\">controller</a>\n"
 			);
 		}
 	}
@@ -187,41 +177,39 @@ public class AppServerTests {
 
 	public static class WebsocketsView extends View {
 		@Override
-		protected void doRenderBody(StringBuilder sb) throws Exception {
-			sb.append(
-					"<body>\n" +
-					"<script type=\"text/javascript\">\n" +
-					"var lowercase;\n" +
-					"var uppercase;\n" +
-					"if (window.WebSocket) {\n" +
-					"  lowercase = new WebSocket(\"ws://localhost:5000/lowercase\");\n" +
-					"  lowercase.onmessage = function(event) { alert(event.data); };\n" +
-					"  lowercase.onopen = function(event) { alert(\"LowerCase Web Socket opened!\"); };\n" +
-					"  lowercase.onclose = function(event) { alert(\"LowerCase Web Socket closed.\"); };\n" +
-					"  uppercase = new WebSocket(\"ws://localhost:5000/uppercase\");\n" +
-					"  uppercase.onmessage = function(event) { alert(event.data); };\n" +
-					"  uppercase.onopen = function(event) { alert(\"UpperCase Web Socket opened!\"); };\n" +
-					"  uppercase.onclose = function(event) { alert(\"UpperCase Web Socket closed.\"); };\n" +
-					"} else {\n" +
-					"  alert(\"Your browser does not support Web Socket.\");\n" +
-					"}\n" +
-					"\n" +
-					"function send(socket, message) {\n" +
-					"  if (!window.WebSocket) { return; }\n" +
-					"  if (socket.readyState == WebSocket.OPEN) {\n" +
-					"    socket.send(message);\n" +
-					"  } else {\n" +
-					"    alert(\"The socket is not open.\");\n" +
-					"  }\n" +
-					"}\n" +
-					"</script>\n" +
-					"<form onsubmit=\"return false;\">\n" +
-					"<input type=\"text\" name=\"message\" value=\"Hello, World!\"/>" +
-					"<input type=\"button\" value=\"Send LowerCase Data\" onclick=\"send(lowercase, this.form.message.value)\" />\n" +
-					"<input type=\"button\" value=\"Register LowerCase\" onclick=\"send(lowercase, 'registration:{name:lowercase}')\" />\n" +
-					"<input type=\"button\" value=\"Send UpperCase Data\" onclick=\"send(uppercase, this.form.message.value)\" />\n" +
-					"</form>\n" +
-					"</body>"
+		protected void render(StringBuilder __head__, StringBuilder __body__) throws Exception {
+			__body__.append(
+				"<script type=\"text/javascript\">\n" +
+				"var lowercase;\n" +
+				"var uppercase;\n" +
+				"if (window.WebSocket) {\n" +
+				"  lowercase = new WebSocket(\"ws://localhost:5000/lowercase\");\n" +
+				"  lowercase.onmessage = function(event) { alert(event.data); };\n" +
+				"  lowercase.onopen = function(event) { alert(\"LowerCase Web Socket opened!\"); };\n" +
+				"  lowercase.onclose = function(event) { alert(\"LowerCase Web Socket closed.\"); };\n" +
+				"  uppercase = new WebSocket(\"ws://localhost:5000/uppercase\");\n" +
+				"  uppercase.onmessage = function(event) { alert(event.data); };\n" +
+				"  uppercase.onopen = function(event) { alert(\"UpperCase Web Socket opened!\"); };\n" +
+				"  uppercase.onclose = function(event) { alert(\"UpperCase Web Socket closed.\"); };\n" +
+				"} else {\n" +
+				"  alert(\"Your browser does not support Web Socket.\");\n" +
+				"}\n" +
+				"\n" +
+				"function send(socket, message) {\n" +
+				"  if (!window.WebSocket) { return; }\n" +
+				"  if (socket.readyState == WebSocket.OPEN) {\n" +
+				"    socket.send(message);\n" +
+				"  } else {\n" +
+				"    alert(\"The socket is not open.\");\n" +
+				"  }\n" +
+				"}\n" +
+				"</script>\n" +
+				"<form onsubmit=\"return false;\">\n" +
+				"<input type=\"text\" name=\"message\" value=\"Hello, World!\"/>" +
+				"<input type=\"button\" value=\"Send LowerCase Data\" onclick=\"send(lowercase, this.form.message.value)\" />\n" +
+				"<input type=\"button\" value=\"Register LowerCase\" onclick=\"send(lowercase, 'registration:{name:lowercase}')\" />\n" +
+				"<input type=\"button\" value=\"Send UpperCase Data\" onclick=\"send(uppercase, this.form.message.value)\" />\n" +
+				"</form>\n"
 			);
 		}
 	}

@@ -31,27 +31,27 @@ public class ShowQueryResults extends View {
 	}
 
 	@Override
-	public void doRenderBody(StringBuilder __sb__) throws Exception {
+	public void render(StringBuilder __head__, StringBuilder __body__) throws Exception {
 		if(hasFlashError()) {
-			messagesBlock(__sb__);
+			messagesBlock(__body__);
 		} else if(results.isEmpty()) {
-			__sb__.append("<div>Empty result set</div>");
+			__body__.append("<div>Empty result set</div>");
 		} else {
-			__sb__.append("<style>.alt{background-color:cyan}</style><table><tr>");
+			__body__.append("<style>.alt{background-color:cyan}</style><table><tr>");
 			for(String k : results.get(0).keySet()) {
-				__sb__.append("<th>").append(h(k)).append("</th>");
+				__body__.append("<th>").append(h(k)).append("</th>");
 			}
-			__sb__.append("</tr>");
+			__body__.append("</tr>");
 			for(Map<String, Object> map : results) {
-				__sb__.append("<tr class=\"").append(h(alt())).append("\">");
+				__body__.append("<tr class=\"").append(h(alt())).append("\">");
 				for(Object v : map.values()) {
-					__sb__.append("<td>").append(h(v)).append("</td>");
+					__body__.append("<td>").append(h(v)).append("</td>");
 				}
-				__sb__.append("</tr>");
+				__body__.append("</tr>");
 			}
-			__sb__.append("</table>");
+			__body__.append("</table>");
 		}
-		yield(new Query(id, query), __sb__);
+		yield(new Query(id, query), __body__);
 	}
 
 }

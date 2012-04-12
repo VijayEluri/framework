@@ -74,27 +74,9 @@ import org.oobium.utils.json.JsonUtils;
 
 public class EspCompiler {
 
-	private static final String SBNAME = "__sb__";
+	private static final String SBHEAD = "__head__";
+	private static final String SBBODY = "__body__";
 
-	
-	private void appendEscaped(StringBuilder sb, String text) {
-		appendEscaped(sb, text, 0, text.length());
-	}
-	
-	private void appendEscaped(StringBuilder sb, String text, int start, int end) {
-		if(lastIsJava(sb)) {
-			sb.append(text, start, end);
-		} else {
-			for(int i = start; i < end; i++) {
-				char c = text.charAt(i);
-				switch(c) {
-				case '"':	if(i == 0 || text.charAt(i-1) != '\\') { sb.append("\\\""); } break;
-				case '\t':	if(i == 0 || text.charAt(i-1) != '\\') { sb.append("\\t"); } break;
-				default:	sb.append(c); break;
-				}
-			}
-		}
-	}
 	
 	private static String getFormModelNameVar(int start) {
 		return "formModelName$" + start;
@@ -125,53 +107,38 @@ public class EspCompiler {
 	}
 	
 	
+	private EspResolver resolver;
+	
 	private final String pkg;
 	private final EspDom dom;
 	private ESourceFile esf;
 	private StringBuilder body;
 	private List<EspLocation> bodyLocations;
-	private StringBuilder script;
-	private List<EspLocation> scriptLocations;
-	private StringBuilder style;
-	private List<EspLocation> styleLocations;
-	private StringBuilder meta;
-	private StringBuilder title;
-	private List<EspLocation> titleLocations;
-	private boolean lastBodyIsJava;
-	private int javaBodyLevel;
-	private boolean lastScriptIsJava;
-	private int javaScriptLevel;
-	private boolean lastStyleIsJava;
-	private int javaStyleLevel;
+	private boolean inJava;
+	private int javaLevel;
 	private String sbName;
 	private int captureLevel;
 	
 	private String contentName;
 	
-	private EspResolver resolver;
+	private Map<StringBuilder, List<EspLocation>> locationsMap = new HashMap<StringBuilder, List<EspLocation>>();
 	
-	public EspCompiler(String packageName, EspDom dom) {
+	public EspCompiler(EspResolver resolver, String packageName, EspDom dom) {
+		this.resolver = resolver;
 		this.pkg = packageName;
 		this.dom = dom;
-		this.sbName = SBNAME;
+		this.sbName = SBBODY;
 		this.captureLevel = -1;
 	}
 
-	private Map<StringBuilder, List<EspLocation>> locationsMap = new HashMap<StringBuilder, List<EspLocation>>();
+	public EspCompiler(String packageName, EspDom dom) {
+		this(null, packageName, dom);
+	}
 	
 	private EspLocation addLocation(EspPart part, StringBuilder sb) {
 		EspLocation location = new EspLocation(sb.length(), part);
 		if(sb == body) {
 			bodyLocations.add(location);
-		}
-		else if(sb == script) {
-			scriptLocations.add(location);
-		}
-		else if(sb == style) {
-			styleLocations.add(location);
-		}
-		else if(sb == title) {
-			titleLocations.add(location);
 		} else {
 			List<EspLocation> locations = locationsMap.get(sb);
 			if(locations != null) {
@@ -340,6 +307,25 @@ public class EspCompiler {
 		}
 	}
 	
+	private void appendEscaped(StringBuilder sb, String text) {
+		appendEscaped(sb, text, 0, text.length());
+	}
+	
+	private void appendEscaped(StringBuilder sb, String text, int start, int end) {
+		if(inJava) {
+			sb.append(text, start, end);
+		} else {
+			for(int i = start; i < end; i++) {
+				char c = text.charAt(i);
+				switch(c) {
+				case '"':	if(i == 0 || text.charAt(i-1) != '\\') { sb.append("\\\""); } break;
+				case '\t':	if(i == 0 || text.charAt(i-1) != '\\') { sb.append("\\t"); } break;
+				default:	sb.append(c); break;
+				}
+			}
+		}
+	}
+	
 	private void appendFieldError(String model, List<JavaSourcePart> fields, String str, boolean newAttr) {
 		prepForJava(body);
 		body.append("if(").append(model).append(".hasErrors(");
@@ -371,7 +357,7 @@ public class EspCompiler {
 	}
 	
 	private void appendFormFieldName(String name, List<JavaSourcePart> fields) {
-		if(lastIsJava(body)) {
+		if(inJava) {
 			body.append(name).append(" + \"");
 		} else {
 			body.append("\").append(").append(name).append(").append(\"");
@@ -386,7 +372,7 @@ public class EspCompiler {
 			}
 			body.append(']');
 		}
-		if(lastIsJava(body)) {
+		if(inJava) {
 			body.append("\"");
 		}
 	}
@@ -472,7 +458,7 @@ public class EspCompiler {
 	}
 	
 	/**
-	 * @param forceLastIsJava if true, then will behave as if lastIsJava(sb) returns true
+	 * @param forceLastIsJava if true, then will behave as if inJava == true
 	 */
 	private void build(EspPart part, StringBuilder sb, boolean forceLastIsJava) {
 		if(part instanceof JavaSourcePart) {
@@ -562,7 +548,7 @@ public class EspCompiler {
 		}
 		String text = jpart.getText();
 		if(jpart.isSimple()) {
-			if(forceLastIsJava || lastIsJava(sb)) {
+			if(forceLastIsJava || inJava) {
 				addLocation(jpart, sb);
 				sb.append(text);
 			} else {
@@ -581,7 +567,7 @@ public class EspCompiler {
 						int s2 = s1 + jsspart.getLength();
 						if(i == 0) {
 							if(s1 > 0) {
-								if(forceLastIsJava || lastIsJava(sb)) {
+								if(forceLastIsJava || inJava) {
 									sb.append('"');
 								}
 								appendEscaped(sb, text, 0, s1);
@@ -613,7 +599,7 @@ public class EspCompiler {
 							if(s2 < text.length()) {
 								sb.append(").append(\"");
 								appendEscaped(sb, text, s2, text.length());
-								if(forceLastIsJava || lastIsJava(sb)) {
+								if(forceLastIsJava || inJava) {
 									sb.append('"');
 								}
 							}
@@ -623,7 +609,7 @@ public class EspCompiler {
 					}
 				}
 			} else {
-				if(forceLastIsJava || lastIsJava(sb)) {
+				if(forceLastIsJava || inJava) {
 					addLocation(jpart, sb);
 					sb.append(text);
 				} else {
@@ -817,10 +803,10 @@ public class EspCompiler {
 				body.append("if(");
 				appendValueGetter(model, fields);
 				body.append(") {\n");
-				javaBodyLevel++;
+				javaLevel++;
 				indent(body);
 				body.append(sbName).append(".append(\" CHECKED\");\n");
-				javaBodyLevel--;
+				javaLevel--;
 				indent(body);
 				body.append("}\n");
 				indent(body);
@@ -917,7 +903,7 @@ public class EspCompiler {
 		}
 		body.append("-->");
 
-		lastIsJava(body, false);
+		inJava = false;
 	}
 	
 	private void buildDateInputs(MarkupElement date) {
@@ -926,7 +912,7 @@ public class EspCompiler {
 		body.append(">\");\n");
 		indent(body);
 		body.append(sbName).append(".append(dateTimeTags(");
-		lastIsJava(body, true);
+		inJava = true;
 		if(date.hasEntry("name")) {
 			build(date.getEntryValue("name"), body);
 		}
@@ -965,7 +951,7 @@ public class EspCompiler {
 		body.append("));\n");
 		indent(body);
 		body.append(sbName).append(".append(\"</span>");
-		lastIsJava(body, false);
+		inJava = false;
 	}
 	
 	private void buildDecimal(MarkupElement input) {
@@ -1070,7 +1056,7 @@ public class EspCompiler {
 			break;
 		case YieldElement:
 			buildYield((MarkupElement) element);
-			lastBodyIsJava = true;
+			inJava = true;
 			break;
 		}
 	}
@@ -1105,57 +1091,7 @@ public class EspCompiler {
 		
 		body.append(");\n");
 		
-		lastBodyIsJava = true;
-	}
-	
-	private void buildEspMethods() {
-		buildMethod(
-				body,
-				"doRender",
-				"\t@Override\n\tpublic void doRenderBody(StringBuilder " + SBNAME + ") throws Exception {\n",
-				bodyLocations,
-				lastBodyIsJava
-		);
-
-		buildMethod(
-				script,
-				"doRenderScript",
-				"\t@Override\n\tprotected void doRenderScript(StringBuilder " + SBNAME + ") {\n",
-				scriptLocations,
-				lastScriptIsJava
-		);
-		if(script.length() > 0) {
-			esf.addMethod("hasScript", "\t@Override\n\tpublic boolean hasScript() {\n\t\treturn true;\n\t}");
-		}
-
-		buildMethod(
-				style,
-				"doRenderStyle",
-				"\t@Override\n\tprotected void doRenderStyle(StringBuilder " + SBNAME + ") {\n",
-				styleLocations,
-				lastStyleIsJava
-		);
-		if(style.length() > 0) {
-			esf.addMethod("hasStyle", "\t@Override\n\tpublic boolean hasStyle() {\n\t\treturn true;\n\t}");
-		}
-
-		if(meta.length() > 0) {
-			meta.insert(0, "\t@Override\n\tprotected void doRenderMeta(StringBuilder " + SBNAME + ") {\n\t\t" + SBNAME + ".append(\"");
-			meta.append("\");\n\t}");
-			esf.addMethod("doRenderMeta", meta.toString());
-			esf.addMethod("hasMeta", "\t@Override\n\tpublic boolean hasMeta() {\n\t\treturn true;\n\t}");
-		}
-
-		if(title.length() > 0) {
-			String s0 = "\t@Override\n\tprotected void doRenderTitle(StringBuilder " + SBNAME + ") {\n\t\t" + SBNAME + ".append(\"";
-			title.insert(0, s0);
-			title.append("\");\n\t}");
-			for(EspLocation location : titleLocations) {
-				location.offset += s0.length();
-			}
-			esf.addMethod("doRenderTitle", title.toString(), titleLocations);
-			esf.addMethod("hasTitle", "\t@Override\n\tpublic boolean hasTitle() {\n\t\treturn true;\n\t}");
-		}
+		inJava = true;
 	}
 	
 	private void buildExternalEjs(StringBuilder sb, JavaSourcePart type, ScriptElement element) {
@@ -1459,18 +1395,18 @@ public class EspCompiler {
 					build(element.getInnerText(), body);
 				}
 			}
-			lastBodyIsJava = false;
+			inJava = false;
 		}
 
 		buildChildren(element);
 		
 		if(element.hasClosingTag()) {
-			if(lastBodyIsJava) {
+			if(inJava) {
 				indent(body);
 				body.append(sbName).append(".append(\"");
 			}
 			body.append('<').append('/').append(tag).append('>');
-			lastBodyIsJava = false;
+			inJava = false;
 		}
 	}
 	
@@ -1569,11 +1505,11 @@ public class EspCompiler {
 			addLocation(element.getSourcePart(), body);
 			buildJavaLine(source, body);
 			body.append("\n");
-			lastBodyIsJava = true;
+			inJava = true;
 		}
 
 		if(element.hasChildren()) {
-			javaBodyLevel++;
+			javaLevel++;
 			for(EspElement child : element.getChildren()) {
 				if(child.isElementA(JavaElement)) {
 					buildJava((JavaElement) child, true);
@@ -1581,12 +1517,12 @@ public class EspCompiler {
 					buildElement(child);
 				}
 			}
-			javaBodyLevel--;
+			javaLevel--;
 		}
 
-		if(!lastBodyIsJava) {
+		if(!inJava) {
 			body.append("\");\n");
-			lastBodyIsJava = true;
+			inJava = true;
 		}
 	}
 
@@ -1645,7 +1581,7 @@ public class EspCompiler {
 	
 	private void buildLabel(MarkupElement label) {
 		prepForMarkup(body);
-		lastIsJava(body, false); // set true below if necessary
+		inJava = false; // set true below if necessary
 		body.append("<label");
 		buildId(label);
 		if(label.hasArgs()) {
@@ -1699,7 +1635,7 @@ public class EspCompiler {
 					build(label.getEntry("required").getValue(), body, true);
 				} else {
 					body.append(model).append(".isRequired(");
-					lastIsJava(body, true);
+					inJava = true;
 					for(int i = 0; i < fields.size(); i++) {
 						if(i != 0) body.append(", ");
 						build(fields.get(i), body);
@@ -1718,7 +1654,7 @@ public class EspCompiler {
 				}
 				indent(body);
 				body.append("}\n");
-				lastIsJava(body, true);
+				inJava = true;
 			}
 		} else {
 			buildClasses(label);
@@ -1747,7 +1683,7 @@ public class EspCompiler {
 				}
 				indent(body);
 				body.append("}\n");
-				lastIsJava(body, true);
+				inJava = true;
 			}
 		}
 	}
@@ -1858,25 +1794,12 @@ public class EspCompiler {
 
 		body.append("messagesBlock(").append(sbName).append(");\n");
 		
-		lastBodyIsJava = true;
+		inJava = true;
 	}
 
-	private void buildMethod(StyleChildElement element) {
-		StringBuilder sb = isInHead(element) ? style : body;
-		sb.append("\").append(h(");
-		String mname = element.getMethodName();
-		addLocation(element.getFirstSelector(), sb).length = mname.length();
-		sb.append(mname).append('(');
-		for(JavaSourcePart arg : element.getArgs()) {
-			if(sb.charAt(sb.length()-1) != '(') sb.append(", ");
-			build(arg, sb, true);
-		}
-		sb.append("))).append(\"");
-	}
-	
 	private void buildMethod(StringBuilder sb, String name, String sig, List<EspLocation> locations, boolean lastIsJava) {
 		String s = sb.toString();
-		if(("\t\t" + SBNAME + ".append(\"").equals(s)) {
+		if(("\t\t" + SBBODY + ".append(\"").equals(s)) {
 			sb.delete(0, sb.length());
 		} else {
 			sb = new StringBuilder(sig.length() + s.length() + 15);
@@ -1892,16 +1815,20 @@ public class EspCompiler {
 			esf.addMethod(name, sb.toString(), locations);
 		}
 	}
-
-	private boolean canBuildPartMethodSignatures(List<MethodSignatureArg> args) {
-		for(MethodSignatureArg arg : args) {
-			if(!arg.hasVarType() || !arg.hasVarName()) {
-				return false;
-			}
-		}
-		return true;
-	}
 	
+	private void buildMethod(StyleChildElement element) {
+		prepFor(element);
+		body.append("\").append(h(");
+		String mname = element.getMethodName();
+		addLocation(element.getFirstSelector(), body).length = mname.length();
+		body.append(mname).append('(');
+		for(JavaSourcePart arg : element.getArgs()) {
+			if(body.charAt(body.length()-1) != '(') body.append(", ");
+			build(arg, body, true);
+		}
+		body.append("))).append(\"");
+	}
+
 	private void buildMethodSignature(MethodSignatureElement element) {
 		String rtype = element.getReturnType();
 		String mname = element.getMethodName();
@@ -1915,7 +1842,10 @@ public class EspCompiler {
 					sb = new StringBuilder();
 					sb.append("\tpublic ");
 					if(element.isStatic()) sb.append("static ");
-					sb.append(rtype).append(' ').append(mname).append('(');
+					if(rtype != null && rtype.length() > 0) {
+						sb.append(rtype).append(' ');
+					}
+					sb.append(mname).append('(');
 					for(int j = 0; j < i; j++) {
 						MethodSignatureArg arg = args.get(j);
 						String declaration = arg.getVarType() + " " + arg.getVarName();
@@ -2085,7 +2015,7 @@ public class EspCompiler {
 		}
 		body.append(" />");
 	}
-
+	
 	private void buildResetInput(MarkupElement element) {
 		body.append("<input");
 		body.append(" type=\\\"reset\\\"");
@@ -2097,51 +2027,48 @@ public class EspCompiler {
 		}
 		body.append(" />");
 	}
-	
+
 	private void buildScript(ScriptElement element) {
-		StringBuilder sb = isInHead(element) ? script : body;
+		prepFor(element);
 		
 		JavaSourcePart type = element.getJavaTypePart();
 		if(type != null) {
-			if(sb == body) {
-				if("false".equals(element.getEntryText("inline"))) {
-					buildExternalEjs(sb, type, element);
-				} else {
-					buildInlineEjs(sb, type, element);
-				}
+			if("true".equals(element.getEntryText("inline"))) {
+				buildInlineEjs(body, type, element);
 			} else {
-				if("true".equals(element.getEntryText("inline"))) {
-					buildInlineEjs(sb, type, element);
-				} else {
-					buildExternalEjs(sb, type, element);
-				}
+				buildExternalEjs(body, type, element);
 			}
 		} else {
-			prepForMarkup(sb);
+			prepForMarkup(body);
 			
 			if(element.hasArgs()) {
 				for(JavaSourcePart arg : element.getArgs()) {
-					sb.append("<script src='\").append(");
-					build(arg, sb, true);
-					sb.append(").append(\"'></script>");
+					if(arg.isSimple()) {
+						String txt = arg.getText();
+						body.append("<script src='").append(txt.substring(1, txt.length()-1)).append("'></script>");
+					} else {
+						body.append("<script src='\").append(");
+						build(arg, body, true);
+						body.append(").append(\"'></script>");
+					}
 				}
 			}
 			if(element.hasLines()) {
 				List<ScriptPart> lines = element.getLines();
 				if(!dom.isEjs()) {
-					sb.append("<script>");
+					body.append("<script>");
 				}
 				for(int i = 0; i < lines.size(); i++) {
 					ScriptPart line = lines.get(i);
-					if(i != 0) sb.append("\\n");
-					build(line, sb);
+					if(i != 0) body.append("\\n");
+					build(line, body);
 				}
 				if(!dom.isEjs()) {
-					sb.append("</script>");
+					body.append("</script>");
 				}
 			}
 			
-			lastIsJava(sb, false);
+			inJava = false;
 		}
 	}
 	
@@ -2277,7 +2204,7 @@ public class EspCompiler {
 								body.append("));\n");
 							} else {
 								body.append(", ").append(model).append(".isRequired(");
-								lastBodyIsJava = true;
+								inJava = true;
 								for(int i = 0; i < fields.size(); i++) {
 									if(i != 0) body.append(", ");
 									build(fields.get(i), body);
@@ -2293,47 +2220,39 @@ public class EspCompiler {
 				}
 			}
 
-			lastBodyIsJava = true;
+			inJava = true;
 		}
 	}
-
+	
 	private void buildStyle(StyleElement element) {
-		StringBuilder sb = isInHead(element) ? style : body;
+		prepFor(element);
 		
 		JavaSourcePart type = element.getJavaTypePart();
 		if(type != null) {
-			if(sb == body) {
-				if("false".equals(element.getEntryText("inline"))) {
-					buildExternalEss(sb, type, element);
-				} else {
-					buildInlineEss(sb, type, element);
-				}
+			if("true".equals(element.getEntryText("inline"))) {
+				buildInlineEss(body, type, element);
 			} else {
-				if("true".equals(element.getEntryText("inline"))) {
-					buildInlineEss(sb, type, element);
-				} else {
-					buildExternalEss(sb, type, element);
-				}
+				buildExternalEss(body, type, element);
 			}
 		} else {
-			prepForMarkup(sb);
+			prepForMarkup(body);
 			
 			if(element.hasArgs()) {
 				for(EspPart arg : element.getArgs()) {
-					sb.append("<link rel='stylesheet' type='text/css'");
+					body.append("<link rel='stylesheet' type='text/css'");
 					if(element.hasEntryValue("media")) {
-						sb.append(" media=");
+						body.append(" media=");
 						appendAttr("media", element.getEntryValue("media"));
 					}
 					String file = arg.getText();
 					if("defaults".equals(file)) {
-						sb.append(" href='/application.css' />");
+						body.append(" href='/application.css' />");
 					} else {
-						sb.append(" href='/").append(file);
+						body.append(" href='/").append(file);
 						if(file.endsWith(".css")) {
-							sb.append("' />");
+							body.append("' />");
 						} else {
-							sb.append(".css' />");
+							body.append(".css' />");
 						}
 					}
 				}
@@ -2341,38 +2260,20 @@ public class EspCompiler {
 			if(element.hasChildren()) {
 				if(!dom.isEss()) {
 					if(element.hasEntryValue("media")) {
-						sb.append("<style media=");
+						body.append("<style media=");
 						appendAttr("media", element.getEntryValue("media"));
-						sb.append(">");
+						body.append(">");
 					} else {
-						sb.append("<style>");
+						body.append("<style>");
 					}
 				}
-				buildStyleChildren(sb, element.getChildren());
+				buildStyleChildren(body, element.getChildren());
 				if(!dom.isEss()) {
-					sb.append("</style>");
+					body.append("</style>");
 				}
 			}
 			
-			lastIsJava(sb, false);
-		}
-	}
-
-	private void buildStyleChildren(StringBuilder sb, List<EspElement> children) {
-		for(EspElement childElement : children) {
-			StyleChildElement child = (StyleChildElement) childElement;
-			if(child.hasSelectors()) {
-				if(child.isParameterized()) {
-					buildMethodSignature(child);
-				} else {
-					if(child.hasProperties()) {
-						buildStyleChild(sb, child);
-					}
-					if(child.hasChildren()) {
-						buildStyleChildren(sb, child.getChildren());
-					}
-				}
-			}
+			inJava = false;
 		}
 	}
 
@@ -2398,10 +2299,28 @@ public class EspCompiler {
 		sb.append('}');
 	}
 
+	private void buildStyleChildren(StringBuilder sb, List<EspElement> children) {
+		for(EspElement childElement : children) {
+			StyleChildElement child = (StyleChildElement) childElement;
+			if(child.hasSelectors()) {
+				if(child.isParameterized()) {
+					buildMethodSignature(child);
+				} else {
+					if(child.hasProperties()) {
+						buildStyleChild(sb, child);
+					}
+					if(child.hasChildren()) {
+						buildStyleChildren(sb, child.getChildren());
+					}
+				}
+			}
+		}
+	}
+
 	private void buildStyleProperties(StringBuilder sb, StyleChildElement child) {
 		buildStyleProperties(sb, child, true);
 	}
-	
+
 	private boolean buildStyleProperties(StringBuilder sb, StyleChildElement child, boolean isFirst) {
 		for(StyleChildElement element : child.getProperties()) {
 			if(element.isProperty()) {
@@ -2481,24 +2400,18 @@ public class EspCompiler {
 			}
 		}
 	}
-
-	private void buildTitle(MarkupElement element) {
-		if(element.hasInnerText()) {
-			EspPart part = element.getInnerText();
-			if(part.getText().startsWith("+= ")) {
-				int ix = title.length();
-				title.append(' ');
-				build(part, title);
-				title.delete(ix, ix+3);
-			} else {
-				if(title.length() > 0) {
-					title = new StringBuilder();
-				}
-				build(part, title);
-			}
-		}
-	}
 	
+	private void buildTitle(MarkupElement element) {
+		prepForMarkup(body);
+		prepForHead();
+
+		body.append("<title>");
+		if(element.hasInnerText()) {
+			build(element.getInnerText(), body);
+		}
+		body.append("</title>");
+	}
+
 	private void buildView(MarkupElement view) {
 		if(view.hasJavaType()) {
 			if(view.hasEntries()) {
@@ -2516,11 +2429,11 @@ public class EspCompiler {
 					indent(body);
 					body.append("\tyield(new ");
 					build(view.getJavaTypePart(), body);
-					body.append('(').append(var).append("), ").append(sbName).append(");\n");
+					body.append('(').append(var).append("));\n");
 					indent(body);
 					body.append("}\n");
 					
-					lastBodyIsJava = true;
+					inJava = true;
 				}
 			} else {
 				prepForJava(body);
@@ -2532,11 +2445,11 @@ public class EspCompiler {
 						build(iter.next(), body);
 						if(iter.hasNext()) body.append(',').append(' ');
 					}
-					body.append("), ").append(sbName).append(");\n");
+					body.append("));\n");
 				} else {
-					body.append("(), ").append(sbName).append(");\n");
+					body.append("());\n");
 				}
-				lastBodyIsJava = true;
+				inJava = true;
 			}
 		}
 	}
@@ -2548,15 +2461,35 @@ public class EspCompiler {
 			if(element.hasArgs()) {
 				body.append("yield(");
 				build(element.getArg(0), body);
-				body.append(", ").append(sbName).append(");\n");
+				if(captureLevel >= 0) {
+					body.append(", ").append(sbName);
+				}
+				body.append(");\n");
 			} else {
-				body.append("yield(").append(sbName).append(");\n");
+				body.append("yield(");
+				if(captureLevel >= 0) {
+					body.append(sbName);
+				}
+				body.append(");\n");
 			}
 		} else {
-			body.append("yield(").append(sbName).append(");\n");
+			body.append("yield(");
+			if(captureLevel >= 0) {
+				body.append(sbName);
+			}
+			body.append(");\n");
 		}
 
-		lastBodyIsJava = true;
+		inJava = true;
+	}
+	
+	private boolean canBuildPartMethodSignatures(List<MethodSignatureArg> args) {
+		for(MethodSignatureArg arg : args) {
+			if(!arg.hasVarType() || !arg.hasVarName()) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	public ESourceFile compile() {
@@ -2605,7 +2538,7 @@ public class EspCompiler {
 				}
 			}
 
-			body.append("\t\t").append(SBNAME).append(".append(\"");
+			body.append("\t\t").append(SBBODY).append(".append(\"");
 			for( ; ix < parts.size(); ix++) {
 				EspElement element = (EspElement) parts.get(ix);
 				if(element.isA(JavaElement)) {
@@ -2618,9 +2551,9 @@ public class EspCompiler {
 			buildMethod(
 					body,
 					"doRender",
-					"\t@Override\n\tpublic void doRender(StringBuilder " + SBNAME + ") throws Exception {\n",
+					"\t@Override\n\tprotected void doRender(StringBuilder " + SBBODY + ") throws Exception {\n",
 					bodyLocations,
-					lastBodyIsJava
+					inJava
 			);
 		}
 		
@@ -2669,7 +2602,7 @@ public class EspCompiler {
 				}
 			}
 
-			body.append("\t\t").append(SBNAME).append(".append(\"");
+			body.append("\t\t").append(SBBODY).append(".append(\"");
 			for( ; ix < parts.size(); ix++) {
 				EspElement element = (EspElement) parts.get(ix);
 				if(element.isA(JavaElement)) {
@@ -2682,9 +2615,9 @@ public class EspCompiler {
 			buildMethod(
 					body,
 					"doRender",
-					"\t@Override\n\tpublic void doRender(StringBuilder " + SBNAME + ") throws Exception {\n",
+					"\t@Override\n\tprotected void doRender(StringBuilder " + SBBODY + ") throws Exception {\n",
 					bodyLocations,
-					lastBodyIsJava
+					inJava
 			);
 		}
 		
@@ -2696,17 +2629,8 @@ public class EspCompiler {
 	private ESourceFile compileEsp() {
 		esf = new ESourceFile();
 		body = new StringBuilder();
-		body.append("\t\t").append(SBNAME).append(".append(\"");
+		body.append("\t\t").append(SBBODY).append(".append(\"");
 		bodyLocations = new ArrayList<EspLocation>();
-		script = new StringBuilder();
-		script.append("\t\t").append(SBNAME).append(".append(\"");
-		scriptLocations = new ArrayList<EspLocation>();
-		style = new StringBuilder();
-		style.append("\t\t").append(SBNAME).append(".append(\"");
-		styleLocations = new ArrayList<EspLocation>();
-		meta = new StringBuilder();
-		title = new StringBuilder();
-		titleLocations = new ArrayList<EspLocation>();
 
 		esf.setPackage(pkg);
 		esf.addStaticImport(ArrayUtils.class.getCanonicalName() + ".*");
@@ -2759,7 +2683,13 @@ public class EspCompiler {
 				stopCapture();
 			}
 
-			buildEspMethods();
+			buildMethod(
+					body,
+					"render",
+					"\t@Override\n\tprotected void render(StringBuilder " + SBHEAD + ", StringBuilder " + SBBODY + ") throws Exception {\n",
+					bodyLocations,
+					inJava
+			);
 		}
 		
 		esf.finalizeSource();
@@ -2802,7 +2732,7 @@ public class EspCompiler {
 				}
 			}
 
-			body.append("\t\t").append(SBNAME).append(".append(\"");
+			body.append("\t\t").append(SBBODY).append(".append(\"");
 			for( ; ix < parts.size(); ix++) {
 				EspElement element = (EspElement) parts.get(ix);
 				if(element.isA(JavaElement)) {
@@ -2815,9 +2745,9 @@ public class EspCompiler {
 			buildMethod(
 					body,
 					"doRender",
-					"\t@Override\n\tpublic void doRender(StringBuilder " + SBNAME + ") throws Exception {\n",
+					"\t@Override\n\tprotected void doRender(StringBuilder " + SBBODY + ") throws Exception {\n",
 					bodyLocations,
-					lastBodyIsJava
+					inJava
 			);
 		}
 		
@@ -3014,7 +2944,7 @@ public class EspCompiler {
 	}
 
 	private StringBuilder indent(StringBuilder sb) {
-		for(int i = 0; i < level(sb)+2; i++) {
+		for(int i = 0; i < javaLevel+2; i++) {
 			sb.append('\t');
 		}
 		return sb;
@@ -3037,37 +2967,71 @@ public class EspCompiler {
 		return false;
 	}
 	
-	private boolean lastIsJava(StringBuilder sb) {
-		if(sb == body) return lastBodyIsJava;
-		if(sb == script) return lastScriptIsJava;
-		if(sb == style) return lastStyleIsJava;
-		return false;
-	}
-	
-	private void lastIsJava(StringBuilder sb, boolean lastIsJava) {
-		if(sb == body) lastBodyIsJava = lastIsJava;
-		if(sb == script) lastScriptIsJava = lastIsJava;
-		if(sb == style) lastStyleIsJava = lastIsJava;
-	}
-	
-	private int level(StringBuilder sb) {
-		if(sb == body) return javaBodyLevel;
-		if(sb == script) return javaScriptLevel;
-		if(sb == style) return javaStyleLevel;
-		return 0;
-	}
-
 	private void offsetLocations(StringBuilder sb, int offset) {
 		for(EspLocation location : locationsMap.get(sb)) {
 			location.offset += offset;
 		}
 	}
 	
+	private void prepFor(EspElement element) {
+		if(isInHead(element)) {
+			prepForHead();
+		} else {
+			prepForBody();
+		}
+	}
+	
+	private void prepFor(String section) {
+		if(sbName != section) {
+			sbName = section;
+			
+			int pos = body.length()-1;
+			boolean empty = true;
+			char[] ca = ".append(\"".toCharArray();
+			for(int i = ca.length-1; empty && i >= 0; i--, pos--) {
+				if(ca[i] != body.charAt(pos)) {
+					empty = false;
+				}
+			}
+			if(empty) {
+				ca = ((section == SBBODY) ? SBHEAD : SBBODY).toCharArray();
+				for(int i = ca.length-1; empty && i >= 0; i--, pos--) {
+					if(ca[i] != body.charAt(pos)) {
+						empty = false;
+					}
+				}
+				pos++;
+				if(empty) {
+					// just change the section name and exit
+					body.replace(pos, pos+section.length(), section);
+					return;
+				} else {
+					// delete the previous start, close the section and fall through
+					body.delete(pos, body.length());
+					body.append(";\n");
+				}
+			} else {
+				// close the section and fall through
+				body.append("\");\n");
+			}
+			indent(body);
+			body.append(sbName).append(".append(\"");
+		}
+	}
+	
+	private void prepForBody() {
+		prepFor(SBBODY);
+	}
+	
+	private void prepForHead() {
+		prepFor(SBHEAD);
+	}
+	
 	private void prepForJava(StringBuilder sb) {
-		if(lastIsJava(sb)) {
+		if(inJava) {
 			indent(sb);
 		} else {
-			lastIsJava(sb, true);
+			inJava = true;
 			String s = sbName + ".append(\"";
 			if(sb.length() < s.length()) {
 				sb.append("\");\n");
@@ -3086,16 +3050,16 @@ public class EspCompiler {
 	}
 	
 	private void prepForMarkup(StringBuilder sb) {
-		if(lastIsJava(sb)) {
+		if(inJava) {
 			indent(sb);
 			sb.append(sbName(sb)).append(".append(\"");
-			lastIsJava(sb, false);
+			inJava = false;
 		}
 	}
 	
 	private String sbName(StringBuilder sb) {
 		if(sb == body) return sbName;
-		return SBNAME;
+		return SBBODY;
 	}
 	
 	public void setResolver(EspResolver resolver) {
@@ -3113,7 +3077,7 @@ public class EspCompiler {
 
 		captureLevel = capture.getLevel();
 		
-		lastBodyIsJava = true;
+		inJava = true;
 	}
 	
 	private void startContent(MarkupElement content) {
@@ -3134,7 +3098,7 @@ public class EspCompiler {
 
 		captureLevel = content.getLevel();
 		
-		lastBodyIsJava = true;
+		inJava = true;
 	}
 	
 	private void stopCapture() {
@@ -3149,9 +3113,9 @@ public class EspCompiler {
 			body.append(sbName).append(" = null;\n");
 			
 			captureLevel = -1;
-			sbName = SBNAME;
+			sbName = SBBODY;
 			
-			lastBodyIsJava = true;
+			inJava = true;
 		}
 	}
 	
@@ -3164,9 +3128,9 @@ public class EspCompiler {
 		
 		captureLevel = -1;
 		contentName = null;
-		sbName = SBNAME;
+		sbName = SBBODY;
 		
-		lastBodyIsJava = true;
+		inJava = true;
 	}
 
 	/**

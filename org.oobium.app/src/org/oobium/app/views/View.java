@@ -122,26 +122,6 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 		return base;
 	}
 	
-	protected void doRenderBody(StringBuilder sb) throws Exception {
-		// subclasses to override if necessary
-	}
-	
-	protected void doRenderMeta(StringBuilder sb) {
-		// subclasses to override if necessary
-	}
-	
-	protected void doRenderScript(StringBuilder sb) {
-		// subclasses to override if necessary
-	}
-	
-	protected void doRenderStyle(StringBuilder sb) {
-		// subclasses to override if necessary
-	}
-	
-	protected void doRenderTitle(StringBuilder sb) {
-		// subclasses to override if necessary
-	}
-	
 	protected void errorsBlock(StringBuilder sb, Model model, String title, String message) {
 		if(model.hasErrors()) {
 			List<String> errors = model.getErrorsList();
@@ -239,7 +219,11 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 		Class<?> layout = this.layout;
 		
 		if(layout == null) {
-			String pname = getClass().getPackage().getName();
+			Package pkg = getClass().getPackage();
+			if(pkg == null) {
+				return null; // probably a dynamic class in a unit test
+			}
+			String pname = pkg.getName();
 			int ix = pname.lastIndexOf('.');
 			if(layoutName != null) {
 				try {
@@ -318,12 +302,6 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 		return controller.getSession(include, create);
 	}
 	
-	public String getTitle() {
-		StringBuilder sb = new StringBuilder();
-		renderTitle(sb);
-		return sb.toString();
-	}
-	
 	public boolean hasChild() {
 		return child != null;
 	}
@@ -352,10 +330,6 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 		return controller.hasFlashWarning();
 	}
 	
-	public boolean hasMeta() {
-		return false;
-	}
-	
 	public boolean hasMany(String field) {
 		return field != null && field.equals(getParam("hasMany"));
 	}
@@ -370,21 +344,9 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 		return controller.hasParams();
 	}
 	
-	public boolean hasScript() {
-		return false;
-	}
-	
 	@Override
 	public boolean hasSession() {
 		return controller.hasSession();
-	}
-	
-	public boolean hasStyle() {
-		return false;
-	}
-	
-	public boolean hasTitle() {
-		return false;
 	}
 	
 	@Override
@@ -543,14 +505,8 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 	}
 
 	void render() {
-		render(renderer.body);
-	}
-	
-	private void render(StringBuilder body) {
 		try {
-			doRenderStyle(renderer.style);
-			doRenderScript(renderer.script);
-			doRenderBody(body);
+			render(renderer.head, renderer.body);
 		} catch(Exception e) {
 			if(e instanceof RuntimeException) {
 				throw (RuntimeException) e;
@@ -560,24 +516,12 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 		}
 	}
 
-	public void renderMeta(StringBuilder sb) {
-		doRenderMeta(sb);
-		if(hasChild()) {
-			child.renderMeta(sb);
-		}
+	protected void render(StringBuilder __head__, StringBuilder __body__) throws Exception {
+		// subclasses to implement
 	}
-
-	public void renderTitle(StringBuilder sb) {
-		if(hasChild() && child.hasTitle()) {
-			child.renderTitle(sb);
-		} else {
-			doRenderTitle(sb);
-		}
-	}
-
+	
 	public View setChild(View child) {
 		this.child = child;
-		this.child.setRenderer(renderer);
 		return this;
 	}
 
@@ -664,26 +608,36 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 		return controller.wants(type);
 	}
 
-	protected void yield(StringBuilder body) {
-		if(hasChild()) {
-			child.render(body);
+	protected void yield() {
+		yield(child);
+	}
+	
+	protected void yield(String name) {
+		if(name != null && name.length() > 0) {
+			renderer.addPosition(name);
 		}
 	}
 	
-	protected void yield(String name, StringBuilder body) {
-		if(body != renderer.body) {
-			logger.warn(new IllegalStateException("named yields cannot be inside contentFor or capture elements"));
-		} else {
-			if(name != null && name.length() > 0) {
-				renderer.addPosition(name);
-			}
-		}
+	protected void yield(StringBuilder __body__) {
+		yield(child, __body__);
 	}
 	
-	protected void yield(View view, StringBuilder body) {
+	protected void yield(View view) {
 		if(view != null) {
 			view.setRenderer(renderer);
-			view.render(body);
+			view.render();
+		}
+	}
+	
+	protected void yield(View view, StringBuilder __body__) {
+		try {
+			render(new StringBuilder(0), __body__);
+		} catch(Exception e) {
+			if(e instanceof RuntimeException) {
+				throw (RuntimeException) e;
+			} else {
+				throw new RuntimeException("Exception thrown during render", e);
+			}
 		}
 	}
 	

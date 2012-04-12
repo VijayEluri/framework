@@ -26,8 +26,8 @@ public class Query extends View {
 	}
 
 	@Override
-	public void doRenderBody(StringBuilder __sb__) throws Exception {
-		__sb__.append("<script src='/jquery-1.4.4.js'></script><script src='/application.js'></script><div style=\"margin-top: 15px\"><form action=\"").append(h(pathTo("persist_service", id))).append("\" method=\"get\"><label for=\"q\">Query:</label><input type=\"text\" name=\"q\" style=\"width: 500px\" value=\"").append(h(query)).append("\" /><input type=\"submit\" id=\"submit\" onclick=\"$('#submit').hide();$('#executing').show();\" value=\"Submit\" /><img id=\"executing\" style=\"display:none\" src=\"/executing.gif\"></img></form></div>");
+	public void render(StringBuilder __head__, StringBuilder __body__) throws Exception {
+		__body__.append("<script src='/jquery-1.4.4.js'></script><script src='/application.js'></script><div style=\"margin-top: 15px\"><form action=\"").append(h(pathTo("persist_service", id))).append("\" method=\"get\"><label for=\"q\">Query:</label><input type=\"text\" name=\"q\" style=\"width: 500px\" value=\"").append(h(query)).append("\" /><input type=\"submit\" id=\"submit\" onclick=\"$('#submit').hide();$('#executing').show();\" value=\"Submit\" /><img id=\"executing\" style=\"display:none\" src=\"/executing.gif\"></img></form></div>");
 	}
 
 }

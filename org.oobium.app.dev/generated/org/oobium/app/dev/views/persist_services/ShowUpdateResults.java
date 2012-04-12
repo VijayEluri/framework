@@ -25,9 +25,9 @@ public class ShowUpdateResults extends View {
 	}
 
 	@Override
-	public void doRenderBody(StringBuilder __sb__) throws Exception {
-		__sb__.append("<div>The command returned a value of: ").append(h(results)).append("</div>");
-		yield(new Query(id, query), __sb__);
+	public void render(StringBuilder __head__, StringBuilder __body__) throws Exception {
+		__body__.append("<div>The command returned a value of: ").append(h(results)).append("</div>");
+		yield(new Query(id, query), __body__);
 	}
 
 }
