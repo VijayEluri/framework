@@ -243,8 +243,7 @@ public class CharStreamUtils {
 	 * containing the given offset.  Checks for both
 	 * unix style line endings (\n) as well as
 	 * windows style (\r\n).
-	 * If no line ending is found, returns the position
-	 * of the length the array (ca.length()).
+	 * If no line ending is found, returns the length the array (ca.length).
 	 */
 	public static int findEOL(char[] ca, int offset) {
 		for(int i = offset; i < ca.length; i++) {
