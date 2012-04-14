@@ -10,7 +10,9 @@
  ******************************************************************************/
 package org.oobium.build.esp.elements;
 
-import static org.oobium.utils.CharStreamUtils.*;
+import static org.oobium.build.esp.parts.CommentPart.findEnd;
+import static org.oobium.utils.CharStreamUtils.forward;
+import static org.oobium.utils.CharStreamUtils.reverse;
 
 import org.oobium.build.esp.EspElement;
 import org.oobium.build.esp.EspPart;
@@ -23,30 +25,18 @@ public class CommentElement extends EspElement {
 	public CommentElement(EspPart parent, int start) {
 		super(parent, start);
 		type = Type.CommentElement;
-		end = findEnd();
+		end = findEnd(ca, start);
 		commentStart = forward(ca, start+2, end);
 		commentEnd = reverse(ca, end-1) + 1;
 	}
 
-	private int findEnd() {
-		if(ca[start+1] == '/') {
-			return findEOL(ca, start);
-		} else {
-			// ca[start+1] == '*'
-			//  only when the entire element is commented out this way
-			int s = start + 2;
-			while(s < ca.length) {
-				if(ca[s] == '/' && ca[s-1] == '*') {
-					return s + 1;
-				}
-				s++;
-			}
-			return ca.length;
-		}
-	}
-	
 	public String getComment() {
 		return new String(ca, commentStart, commentEnd-commentStart);
+	}
+
+	public boolean isJavadoc() {
+		int s = start + 2;
+		return (s < ca.length && ca[s] == '*');
 	}
 	
 }

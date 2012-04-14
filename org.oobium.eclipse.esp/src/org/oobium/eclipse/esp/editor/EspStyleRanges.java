@@ -26,6 +26,8 @@ import org.oobium.build.esp.EspDom;
 import org.oobium.build.esp.EspElement;
 import org.oobium.build.esp.EspPart;
 import org.oobium.build.esp.EspPart.Type;
+import org.oobium.build.esp.elements.CommentElement;
+import org.oobium.build.esp.parts.CommentPart;
 import org.oobium.build.esp.parts.StyleEntryPart;
 import org.oobium.eclipse.esp.EspPlugin;
 
@@ -38,6 +40,7 @@ public class EspStyleRanges {
 	private static final StyleRange javaString = new StyleRange(-1, -1, color(0, 0, 128), null);
 	private static final StyleRange operator = new StyleRange(-1, -1, color(128, 32, 32), null);
 	private static final StyleRange comment = new StyleRange(-1, -1, color(32, 128, 32), null);
+	private static final StyleRange javadoc = new StyleRange(-1, -1, color(63, 95, 191), null);
 	private static final StyleRange taskTag = new StyleRange(-1, -1, color(127, 159, 191), null, SWT.BOLD);
 	private static final StyleRange innerText = new StyleRange(-1, -1, color(128, 128, 128), null);
 
@@ -119,7 +122,7 @@ public class EspStyleRanges {
 				EspPart part = dom.getPart(offset);
 				if(part != null) {
 					if(part.isA(CommentPart)) {
-						offset = evaluateComment(offset, null, part);
+						offset = evaluateComment(offset, part);
 						continue;
 					} else {
 						EspElement element = part.getElement();
@@ -140,7 +143,7 @@ public class EspStyleRanges {
 	
 	private int evaluate(int offset, EspElement element, EspPart part) {
 		switch(element.getType()) {
-		case CommentElement:	return evaluateComment(offset, element, part);
+		case CommentElement:	return evaluateComment(offset, part);
 		case ConstructorElement:return evaluateConstructor(offset, element, part);
 		case MarkupCommentElement:
 		case MarkupElement:		return evaluateMarkup(offset, element, part);
@@ -156,12 +159,22 @@ public class EspStyleRanges {
 		}
 	}
 	
-	private int evaluateComment(int offset, EspElement element, EspPart part) {
+	private boolean isJavadoc(EspPart part) {
+		switch(part.getType()) {
+		case CommentElement: return ((CommentElement) part).isJavadoc();
+		case CommentPart:    return ((CommentPart) part).isJavadoc();
+		default:
+			throw new IllegalArgumentException("only CommentElement or CommentPart are valid here");
+		}
+	}
+	
+	private int evaluateComment(int offset, EspPart part) {
+		StyleRange style = isJavadoc(part) ? javadoc : comment;
 		int end = part.getEnd();
 		for(int i = offset; i < end; i++) {
 			for(int j = 0; j < TASK_TAGS.length; j++) {
 				if(part.isNext(i, TASK_TAGS[j])) {
-					addRange(offset, i-offset, comment);
+					addRange(offset, i-offset, style);
 					i = addRange(i, TASK_TAGS[j].length, taskTag);
 					offset = i;
 					break;
@@ -169,7 +182,7 @@ public class EspStyleRanges {
 			}
 		}
 		if(offset < end) {
-			addRange(offset, end-offset, comment);
+			addRange(offset, end-offset, style);
 		}
 		return end+1;
 	}
