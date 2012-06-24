@@ -4,19 +4,17 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 import org.oobium.app.persist.PersistServicesTests;
-import org.oobium.build.esp.CssDomTests;
 import org.oobium.build.esp.EjsCompilerTests;
 import org.oobium.build.esp.EspCompilerPositionTests;
 import org.oobium.build.esp.EspCompilerTests;
-import org.oobium.build.esp.EspDomTests;
 import org.oobium.build.esp.EssCompilerTests;
 import org.oobium.build.views.dom.html_elements.InputTests;
 import org.oobium.build.workspace.BundleTests;
 import org.oobium.build.workspace.ModuleTests;
 import org.oobium.console.ParametersTests;
 import org.oobium.mailer.MailerTests;
-import org.oobium.persist.SessionCacheTests;
 import org.oobium.persist.ModelTests;
+import org.oobium.persist.SessionCacheTests;
 import org.oobium.persist.ValidatorTests;
 import org.oobium.persist.db.FindAllTests;
 import org.oobium.persist.db.FindTests;
@@ -33,11 +31,9 @@ import org.oobium.utils.json.JsonUtilsTests;
 @RunWith(Suite.class)
 @SuiteClasses({
 	// org.oobium.build.tests
-	CssDomTests.class,
 	EjsCompilerTests.class,
 	EspCompilerPositionTests.class,
 	EspCompilerTests.class,
-	EspDomTests.class,
 	EssCompilerTests.class,
 	InputTests.class,
 	BundleTests.class,

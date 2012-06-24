@@ -54,11 +54,11 @@ import org.eclipse.ui.editors.text.TextEditor;
 import org.eclipse.ui.texteditor.ITextEditorActionDefinitionIds;
 import org.eclipse.ui.texteditor.TextOperationAction;
 import org.eclipse.ui.views.contentoutline.IContentOutlinePage;
-import org.oobium.build.esp.ESourceFile;
-import org.oobium.build.esp.EspDom;
-import org.oobium.build.esp.EspElement;
-import org.oobium.build.esp.EspPart;
-import org.oobium.build.esp.EspPart.Type;
+import org.oobium.build.esp.compiler.ESourceFile;
+import org.oobium.build.esp.dom.EspDom;
+import org.oobium.build.esp.dom.EspElement;
+import org.oobium.build.esp.dom.EspPart;
+import org.oobium.build.esp.dom.EspPart.Type;
 import org.oobium.build.workspace.Module;
 import org.oobium.eclipse.esp.EspCore;
 import org.oobium.eclipse.esp.config.ConfigOutlinePage;
@@ -126,7 +126,7 @@ public class EspEditor extends TextEditor {
 						try {
 //							setHighlightRange(offset, length, true);
 							int start = element.getStart();
-							int length = element.getElementText().length();
+							int length = element.length();
 							selectAndReveal(start, length);
 						} catch(IllegalArgumentException x) {
 							resetHighlightRange();
@@ -306,7 +306,7 @@ public class EspEditor extends TextEditor {
 			if(ix != -1) {
 				name = name.substring(0, ix);
 			}
-			EspCore.get(document).setName(name);
+			EspCore.create(name, document);
 		} else {
 			document = null;
 		}
@@ -408,9 +408,9 @@ public class EspEditor extends TextEditor {
 			EspDom dom = EspCore.get(document);
 			int offset = textWidget.getCaretOffset();
 			EspPart part = dom.getPart(offset);
-			if(part != null && !part.isA(Type.StyleSelectorPart)) {
-				part = part.getElement();
-			}
+//			if(part != null && !part.isA(Type.StyleSelectorPart)) {
+//				part = part.getElement();
+//			}
 
 			outlinePage.removeSelectionChangedListener(selListener);
 			outlinePage.setSelection((part == null) ? new StructuredSelection() : new StructuredSelection(part));
@@ -459,7 +459,7 @@ public class EspEditor extends TextEditor {
 								int end = jf.getEspOffset((Integer) jmarker.getAttribute(IMarker.CHAR_END) - 1) + 1;
 	
 								IMarker marker = file.createMarker(jmarker.getType());
-								if(start != -1 && end != -1) {
+								if(start >= 0 && end > start) {
 									marker.setAttribute(IMarker.CHAR_START, start);
 									marker.setAttribute(IMarker.CHAR_END, end);
 									ranges.add(start);

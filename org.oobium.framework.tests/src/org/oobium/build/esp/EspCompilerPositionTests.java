@@ -13,16 +13,17 @@ package org.oobium.build.esp;
 import static org.junit.Assert.*;
 
 import org.junit.Test;
-import org.oobium.build.esp.EspCompiler;
-import org.oobium.build.esp.EspDom;
-import org.oobium.build.esp.ESourceFile;
+import org.oobium.build.esp.compiler.ESourceFile;
+import org.oobium.build.esp.compiler.EspCompiler;
+import org.oobium.build.esp.dom.EspDom;
+import org.oobium.build.esp.parser.EspBuilder;
 
 public class EspCompilerPositionTests {
 
 	private ESourceFile jf(String esp) {
-		EspDom dom = new EspDom("MyClass", esp);
-		EspCompiler compiler = new EspCompiler("com.domain", dom);
-		return compiler.compile();
+		EspDom dom = EspBuilder.newEspBuilder("MyClass").parse(esp);
+		EspCompiler compiler = EspCompiler.newEspCompiler("com.domain");
+		return compiler.compile(dom);
 	}
 	
 	@Test

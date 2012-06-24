@@ -54,7 +54,7 @@ import org.oobium.app.sessions.ISession;
 import org.oobium.app.views.ScriptFile;
 import org.oobium.app.views.StyleSheet;
 import org.oobium.app.views.View;
-import org.oobium.build.esp.ESourceFile;
+import org.oobium.build.esp.compiler.ESourceFile;
 import org.oobium.build.gen.ControllerGenerator;
 import org.oobium.build.gen.EFileGenerator;
 import org.oobium.build.gen.Generator;
@@ -1115,7 +1115,7 @@ public class Module extends Bundle {
 	 * @param efile the EFile; null will simply return null
 	 * @return the Java source file, if it could be generated; null otherwise
 	 */
-	public File generate(File efile) {
+	public List<File> generate(File efile) {
 		return EFileGenerator.generate(this, efile);
 	}
 	
@@ -1219,11 +1219,11 @@ public class Module extends Bundle {
 		return MailerGenerator.generate(this, mailer);
 	}
 	
-	public File generateMailerTemplate(File template) {
+	public List<File> generateMailerTemplate(File template) {
 		if(template.isFile()) {
 			return EFileGenerator.generate(this, template);
 		}
-		return null;
+		return new ArrayList<File>(0);
 	}
 	
 	/**
@@ -1269,25 +1269,25 @@ public class Module extends Bundle {
 		return new ArrayList<File>(0);
 	}
 
-	public File generateScriptFile(File script) {
+	public List<File> generateScriptFile(File script) {
 		if(script.exists()) {
 			return EFileGenerator.generate(this, script);
 		}
-		return null;
+		return new ArrayList<File>(0);
 	}
 	
-	public File generateStyleSheet(File style) {
+	public List<File> generateStyleSheet(File style) {
 		if(style.exists()) {
 			return EFileGenerator.generate(this, style);
 		}
-		return null;
+		return new ArrayList<File>(0);
 	}
 
-	public File generateView(File view) {
+	public List<File> generateView(File view) {
 		if(view.exists()) {
 			return EFileGenerator.generate(this, view);
 		}
-		return null;
+		return new ArrayList<File>(0);
 	}
 
 	public File getControllerCache(String name) {

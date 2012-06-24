@@ -31,8 +31,9 @@ public class StyleCommand extends BuilderCommand {
 		
 		File style = module.getStyleSheet(param(0));
 		if(style.isFile()) {
-			File genStyle = module.generateStyleSheet(style);
-			Eclipse.refresh(module.file, genStyle);
+			for(File genStyle : module.generateStyleSheet(style)) {
+				Eclipse.refresh(module.file, genStyle);
+			}
 		} else {
 			console.err.println("style sheet does not exist: " + param(0));
 		}

@@ -381,6 +381,11 @@ public class StringUtils {
 	
 	public static String dateTimeTags(String prefix, DateFormat df, Date selection) {
 		StringBuilder sb = new StringBuilder();
+		dateTimeTags(sb, prefix, df, selection);
+		return sb.toString();
+	}
+	
+	public static void dateTimeTags(StringBuilder sb, String prefix, DateFormat df, Date selection) {
 		for(String pattern : getPatternComponents(df)) {
 			char c = pattern.charAt(0);
 			if(c == '\'') {
@@ -398,7 +403,6 @@ public class StringUtils {
 				}
 			}
 		}
-		return sb.toString();
 	}
 	
 	public static String dateTimeTags(String prefix, String format) {
@@ -407,6 +411,10 @@ public class StringUtils {
 	
 	public static String dateTimeTags(String prefix, String format, Date selection) {
 		return dateTimeTags(prefix, new SimpleDateFormat(format), selection);
+	}
+	
+	public static void dateTimeTags(StringBuilder sb, String prefix, String format, Date selection) {
+		dateTimeTags(sb, prefix, new SimpleDateFormat(format), selection);
 	}
 	
 	private static void dateTimeTags(StringBuilder sb, String pattern, int field, Date selection) {

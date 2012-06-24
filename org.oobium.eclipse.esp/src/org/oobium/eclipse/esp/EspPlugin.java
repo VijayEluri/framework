@@ -25,7 +25,7 @@ public class EspPlugin extends AbstractUIPlugin {
 	public static final String ID = EspPlugin.class.getCanonicalName();
 	public static final String ESP_PARTITIONING = "__esp_partitioning"; //$NON-NLS-1$
 
-	public static final String IMG_HTML_TAG       = "/icons/html_tag.gif";
+	public static final String IMG_HTML_TAG  = "/icons/html_tag.gif";
 	public static final String IMG_META_TAG  = "/icons/meta_tag.gif";
 	public static final String IMG_IMPORTS   = "/icons/imports.gif";
 	public static final String IMG_IMPORT    = "/icons/import.gif";

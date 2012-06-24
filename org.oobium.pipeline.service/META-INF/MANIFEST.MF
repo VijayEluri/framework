@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Asset Pipeline Service
+Bundle-SymbolicName: org.oobium.pipeline.service
+Bundle-Version: 1.0.0.qualifier
+Bundle-Activator: org.oobium.pipeline.service.Activator
+Bundle-Vendor: Oobium.org
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Import-Package: org.oobium.app.http,
+ org.oobium.client,
+ org.oobium.pipeline,
+ org.oobium.utils,
+ org.osgi.framework;version="1.3.0"
+Export-Package: org.oobium.pipeline.service

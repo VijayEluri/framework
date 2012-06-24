@@ -18,11 +18,16 @@ import java.util.Set;
 import org.eclipse.jface.text.DocumentEvent;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IDocumentListener;
-import org.oobium.build.esp.EspDom;
+import org.oobium.build.esp.dom.EspDom;
+import org.oobium.build.esp.parser.EspBuilder;
 
 public class EspCore {
 
 	private static EspCore instance = new EspCore();
+
+	public static void create(String name, IDocument document) {
+		instance.createDom(name, document);
+	}
 	
 	public static EspDom get(IDocument document) {
 		return instance.getDom(document);
@@ -33,9 +38,9 @@ public class EspCore {
 	}
 	
 	
-	private Map<IDocument, EspDom> domMap;
-	private Set<IDocument> changed;
-	private IDocumentListener listener;
+	private final Map<IDocument, EspDom> domMap;
+	private final Set<IDocument> changed;
+	private final IDocumentListener listener;
 	
 	private EspCore() {
 		domMap = new HashMap<IDocument, EspDom>();
@@ -56,16 +61,19 @@ public class EspCore {
 		changed.add(document);
 	}
 	
+	private synchronized void createDom(String name, IDocument document) {
+		EspBuilder builder = EspBuilder.newEspBuilder(name);
+		EspDom dom = builder.parse(document.get());
+		domMap.put(document, dom);
+		document.addPrenotifiedDocumentListener(listener);
+	}
+	
 	private synchronized EspDom getDom(IDocument document) {
 		EspDom dom = domMap.get(document);
-		if(dom == null) {
-			dom = new EspDom(null, document.get());
-			document.addPrenotifiedDocumentListener(listener);
+		if(changed.remove(document)) {
+			EspBuilder builder = EspBuilder.newEspBuilder(dom.getName());
+			dom = builder.parse(document.get());
 			domMap.put(document, dom);
-		} else {
-			if(changed.remove(document)) {
-				dom.setSource(document.get());
-			}
 		}
 		return dom;
 	}

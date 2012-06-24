@@ -13,7 +13,7 @@ package org.oobium.eclipse.esp.outline;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.oobium.build.esp.EspElement;
+import org.oobium.build.esp.dom.EspElement;
 
 public class Imports {
 

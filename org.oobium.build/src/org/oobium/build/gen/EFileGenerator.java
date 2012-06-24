@@ -17,9 +17,10 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.oobium.build.esp.EspCompiler;
-import org.oobium.build.esp.EspDom;
-import org.oobium.build.esp.ESourceFile;
+import org.oobium.build.esp.compiler.ESourceFile;
+import org.oobium.build.esp.compiler.EspCompiler;
+import org.oobium.build.esp.dom.EspDom;
+import org.oobium.build.esp.parser.EspBuilder;
 import org.oobium.build.workspace.Module;
 
 public class EFileGenerator {
@@ -27,10 +28,7 @@ public class EFileGenerator {
 	public static List<File> generate(Module module, List<File> efiles) {
 		List<File> genFiles = new ArrayList<File>();
 		for(File efile : efiles) {
-			File genFile = generate(module, efile);
-			if(genFile != null) {
-				genFiles.add(genFile);
-			}
+			genFiles.addAll(generate(module, efile));
 		}
 		return genFiles;
 	}
@@ -42,22 +40,29 @@ public class EFileGenerator {
 	 * @param efile a File object pointing to the EFile whose Java source is to be generated.
 	 * @return a File object pointing to the Java source, if it could be generated; null otherwise.
 	 */
-	public static File generate(Module module, File efile) {
+	public static List<File> generate(Module module, File efile) {
 		if(!efile.exists()) {
-			return null;
+			return new ArrayList<File>(0);
 		}
+		
+		List<File> generated = new ArrayList<File>();
 
 		String name = efile.getName();
 		String packageName = module.packageName(efile.getParentFile());
 		
-		EspDom dom = new EspDom(name, readFile(efile));
-		EspCompiler compiler = new EspCompiler(packageName, dom);
-		ESourceFile esf = compiler.compile();
+		EspDom dom = EspBuilder.newEspBuilder(name).parse(readFile(efile));
+		EspCompiler compiler = EspCompiler.newEspCompiler(packageName);
+		ESourceFile esf = compiler.compile(dom);
 		
 		File genFile = module.getGenFile(efile);
-		writeFile(genFile, esf.getSource());
+		generated.add(writeFile(genFile, esf.getSource()));
 
-		return genFile;
+		for(String asset : esf.getAssets()) {
+			String source = esf.getAsset(asset);
+			generated.add(writeFile(module.assets, asset, source));
+		}
+		
+		return generated;
 	}
 
 	/**
@@ -74,11 +79,11 @@ public class EFileGenerator {
 
 		String name = efile.getName();
 		String packageName = module.packageName(efile.getParentFile());
-		
-		EspDom dom = new EspDom(name, source);
-		EspCompiler compiler = new EspCompiler(packageName, dom);
-		ESourceFile esf = compiler.compile();
-		
+
+		EspDom dom = EspBuilder.newEspBuilder(name).parse(source);
+		EspCompiler compiler = EspCompiler.newEspCompiler(packageName);
+		ESourceFile esf = compiler.compile(dom);
+
 		File genFile = module.getGenFile(efile);
 		writeFile(genFile, esf.getSource());
 

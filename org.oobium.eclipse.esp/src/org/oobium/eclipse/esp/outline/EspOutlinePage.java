@@ -20,12 +20,14 @@ import org.eclipse.ui.texteditor.IDocumentProvider;
 import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.ui.views.contentoutline.ContentOutlinePage;
 import org.oobium.eclipse.esp.editor.ISortableOutlinePage;
+import org.oobium.eclipse.esp.outline.actions.CollapseAllAction;
 import org.oobium.eclipse.esp.outline.actions.SortAction;
 
 public class EspOutlinePage extends ContentOutlinePage implements ISortableOutlinePage {
 
 	private IDocument document;
 	private EspContentProvider contentProvider;
+	private CollapseAllAction collapseAllAction;
 	private SortAction sortAction;
 
 	public EspOutlinePage(IDocumentProvider provider, ITextEditor editor) {
@@ -33,6 +35,8 @@ public class EspOutlinePage extends ContentOutlinePage implements ISortableOutli
 	}
 
 	private void createActions() {
+		collapseAllAction = new CollapseAllAction(this);
+		
 		sortAction = new SortAction(this);
 		sortAction.setChecked(true);
 	}
@@ -58,6 +62,7 @@ public class EspOutlinePage extends ContentOutlinePage implements ISortableOutli
 	private void createToolBar() {
 		IToolBarManager manager = getSite().getActionBars().getToolBarManager();
 
+		manager.add(collapseAllAction);
 		manager.add(sortAction);
 		
 		manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));

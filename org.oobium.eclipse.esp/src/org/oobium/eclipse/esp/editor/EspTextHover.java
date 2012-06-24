@@ -25,9 +25,10 @@ import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.Region;
 import org.eclipse.swt.graphics.Point;
 import org.oobium.build.esp.Constants;
-import org.oobium.build.esp.EspPart;
-import org.oobium.build.esp.EspPart.Type;
-import org.oobium.build.esp.elements.StyleChildElement;
+import org.oobium.build.esp.dom.EspPart;
+import org.oobium.build.esp.dom.EspPart.Type;
+import org.oobium.build.esp.dom.parts.style.Property;
+import org.oobium.build.esp.dom.parts.style.Selector;
 import org.oobium.eclipse.esp.EspCore;
 import org.oobium.eclipse.esp.EssCore;
 import org.oobium.utils.StringUtils;
@@ -41,7 +42,7 @@ public class EspTextHover implements ITextHover {
 	}
 	
 	public String getHoverInfo(ITextViewer viewer, IRegion region) {
-		if (region != null) {
+		if(region != null) {
 			try {
 				IDocument doc = viewer.getDocument();
 				int offset = region.getOffset();
@@ -83,9 +84,9 @@ public class EspTextHover implements ITextHover {
 				}
 				if(part != null) {
 					switch(part.getType()) {
-					case ClassPart:
+					case MarkupClass:
 						return getCssClassHover(part);
-					case IdPart:
+					case MarkupId:
 						return getCssIdHover(part);
 					default:
 						return getDefaultHover(part);
@@ -100,7 +101,7 @@ public class EspTextHover implements ITextHover {
 	}
 
 	private String getCssClassHover(EspPart part) {
-		EspPart selector = EssCore.getCssClass(part.getDom(), part.getText());
+		Selector selector = EssCore.getCssClass(part.getDom(), part.getText());
 		if(selector == null) {
 			return "";
 		} else {
@@ -109,7 +110,7 @@ public class EspTextHover implements ITextHover {
 	}
 	
 	private String getCssIdHover(EspPart part) {
-		EspPart selector = EssCore.getCssId(part.getDom(), part.getText());
+		Selector selector = EssCore.getCssId(part.getDom(), part.getText());
 		if(selector == null) {
 			return "";
 		} else {
@@ -117,10 +118,10 @@ public class EspTextHover implements ITextHover {
 		}
 	}
 	
-	private String getCssSelectorHover(EspPart selector) {
+	private String getCssSelectorHover(Selector selector) {
 		StringBuilder hover = new StringBuilder();
-		for(StyleChildElement prop : ((StyleChildElement) selector.getParent()).getProperties()) {
-			hover.append(prop).append('\n');
+		for(Property property : selector.getDeclaration().getProperties()) {
+			hover.append(property.getText()).append('\n');
 		}
 		hover.deleteCharAt(hover.length()-1);
 		return hover.toString();
@@ -129,8 +130,8 @@ public class EspTextHover implements ITextHover {
 	private String getDefaultHover(EspPart part) {
 		String name = StringUtils.titleize(part.getType().name());
 		String text = part.getText();
-		String info = name + ": \"" + text + "\"";
-		if(part.isA(Type.TagPart)) {
+		String info = part.isA(Type.JavaString) ? (name + ": " + text) : (name + ": \"" + text + "\"");
+		if(part.isA(Type.MarkupTag)) {
 			String description = Constants.HTML_TAGS.get(text);
 			if(description == null) {
 				return info + " - Unknown HTML Tag";

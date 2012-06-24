@@ -13,6 +13,7 @@ package org.oobium.app;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.literal.Dictionary;
 
+import java.io.File;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.oobium.app.handlers.HttpRequest404Handler;
 import org.oobium.app.handlers.HttpRequest500Handler;
@@ -29,6 +31,7 @@ import org.oobium.app.handlers.RequestHandler;
 import org.oobium.app.persist.PersistServices;
 import org.oobium.app.request.Request;
 import org.oobium.app.response.Response;
+import org.oobium.app.response.StaticResponse;
 import org.oobium.app.routing.AppRouter;
 import org.oobium.app.routing.RouteHandler;
 import org.oobium.app.routing.Router;
@@ -48,6 +51,8 @@ import org.oobium.persist.NullPersistServiceException;
 import org.oobium.persist.PersistClient;
 import org.oobium.persist.PersistService;
 import org.oobium.persist.PersistServiceProvider;
+import org.oobium.pipeline.AssetPipeline;
+import org.oobium.pipeline.PipelinedAsset;
 import org.oobium.utils.Config;
 import org.oobium.utils.Config.Mode;
 import org.oobium.utils.StringUtils;
@@ -61,6 +66,7 @@ import org.osgi.framework.ServiceRegistration;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
+@SuppressWarnings({ "rawtypes", "unchecked" })
 public class AppService extends ModuleService implements HttpRequestHandler, HttpRequest404Handler, HttpRequest500Handler, PersistClient {
 
 	private static final ThreadLocal<AppService> appService = new ThreadLocal<AppService>();
@@ -94,6 +100,9 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 	
 	private PersistServices persistServices;
 	private ServiceTracker moduleTracker;
+	
+	private AssetPipeline pipeline;
+	private ServiceTracker pipelineTracker;
 
 	private ServiceRegistration request404HandlerRegistration;
 	private ServiceRegistration request500HandlerRegistration;
@@ -168,66 +177,6 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		addRoutes(config, (AppRouter) router);
 	}
 	
-	public final void startApp() throws Exception {
-		logger.debug("working directory: {}", System.getProperty("user.dir"));
-		logger.info("configuring in {} mode", Mode.getSystemMode().name());
-
-		loadServerConfiguration();
-		
-		// allow subclasses to perform custom setup functions
-		setup();
-		
-		router = new AppRouter(this);
-		try {
-			logger.info("initializing routes");
-			addRoutes(config, router);
-			logger.info("routes initialized successfully");
-		} catch(Exception e) {
-			if(logger.isLoggingDebug()) {
-				logger.error("Error adding routes: " + e.getMessage(), e);
-			} else {
-				logger.error("Error adding routes: " + e.getMessage());
-			}
-		}
-
-		loadModels(config);
-		loadObservers(config);
-		loadControllerCaches(this, config);
-		setErrorViewClasses(config);
-
-		// register handlers
-		if(context != null) {
-			context.registerService(RequestHandler.class.getName(), this, null);
-			request404HandlerRegistration = context.registerService(HttpRequest404Handler.class.getName(), this, Dictionary("name", getName()));
-			request500HandlerRegistration = context.registerService(HttpRequest500Handler.class.getName(), this, Dictionary("name", getName()));
-		}
-		
-		// allow subclasses to register custom services
-		registerServices(config);
-
-		// initialize trackers
-		initializePersistServices(config);
-		initializeModulesTracker(config);
-		
-		// allow subclasses to initialize custom trackers
-		initializeServiceTrackers(config);
-	}
-	
-	public final void stopApp() throws Exception {
-		if(persistServices != null) {
-			persistServices.close();
-			persistServices = null;
-		}
-		
-		if(moduleTracker != null) {
-			moduleTracker.close();
-			moduleTracker = null;
-		}
-		
-		router.clear();
-		router = null;
-	}
-	
 	private Filter createModulesFilter(List<String> modules) throws InvalidSyntaxException {
 		StringBuilder sb = new StringBuilder();
 		sb.append("(&(").append(Constants.OBJECTCLASS).append('=').append(ModuleService.class.getName()).append(')');
@@ -245,7 +194,7 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		Filter filter = context.createFilter(sb.toString());
 		return filter;
 	}
-
+	
 	public CacheService getCacheService() {
 		ServiceReference ref = context.getServiceReference(CacheService.class.getName());
 		if(ref != null) {
@@ -253,7 +202,7 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		}
 		return null;
 	}
-
+	
 	@Override
 	public String getPersistClientName() {
 		return getName();
@@ -269,7 +218,7 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		}
 		return null;
 	}
-	
+
 	/**
 	 * Get the persist service for the given class from this application's PersistServices
 	 * @return the persist service, or null if PersistServices is null
@@ -280,11 +229,15 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		}
 		return null;
 	}
-	
+
 	public PersistServiceProvider getPersistServices() {
 		return persistServices;
 	}
-
+	
+	public AssetPipeline getPipelineService() {
+		return pipeline;
+	}
+	
 	public AppRouter getRouter() {
 		return (AppRouter) router;
 	}
@@ -294,7 +247,7 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		return serverConfig;
 	}
 
-    private ISession getSession(Object id, String uuid, String include) {
+	private ISession getSession(Object id, String uuid, String include) {
 		if(sessionClass != null && !blank(id) && uuid != null) {
 			PersistService service = Model.getPersistService(sessionClass);
 			if(service != null) {
@@ -339,8 +292,8 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		}
 		return session;
 	}
-	
-	@Override
+
+    @Override
 	public Class<? extends View> getViewClass(String name) {
 		Class<? extends View> viewClass = super.getViewClass(name);
 		if(viewClass == null) {
@@ -369,7 +322,7 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		}
 		return null;
 	}
-
+	
 	@Override
 	public Response handle500(Request request, Throwable cause) {
 		if(getRouter().hasHost(request)) {
@@ -385,15 +338,27 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		}
 		return null;
 	}
-	
+
 	@Override
 	public Object handleRequest(Request request) throws Exception {
 		logger.debug("start handleRequest - {}: {}", getName(), request.getPath());
+		
+		// TODO rethink external routers
+		if(pipeline != null) {
+			if(request.getMethod() == HttpMethod.GET) {
+				PipelinedAsset asset = pipeline.getAsset(request.getPath());
+				if(asset != null && asset.isFile()) {
+					return new StaticResponse((File) asset.getPayload());
+				}
+			}
+		}
+		
 		AppRouter router = getRouter();
-		final RouteHandler handler = router.getHandler(request);
+		RouteHandler handler = router.getHandler(request);
 		if(handler != null) {
 			handler.setLogger(logger);
 			if(handler instanceof HttpHandler) {
+				final HttpHandler httpHandler = (HttpHandler) handler;
 				return new HandlerTask(logger, request) {
 					@Override
 					protected Response handleRequest(Request request) throws Exception {
@@ -403,7 +368,7 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 						Model.setLogger(logger);
 						Model.setPersistServiceProvider(persistServices);
 						try {
-							Response response = handler.routeRequest(request);
+							Response response = httpHandler.routeRequest(request);
 							if(running) {
 								getRouter().applyHeaders(request, response);
 							}
@@ -479,6 +444,55 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 			}
 		}
 	}
+	
+	protected final void initializePersistServices(Config config) throws Exception {
+		if(persistServices != null) {
+			logger.debug("skipping configured PersistServices - already set");
+		} else {
+			Object persist = config.get(Config.PERSIST);
+			persistServices = new PersistServices(getContext(), persist);
+			List<String> services = persistServices.getServiceNames();
+			if(services.isEmpty()) {
+				logger.debug("no presist services configured - skipping registration");
+			} else {
+				registerForPersistServices(persist);
+			}
+		}
+	}
+
+	private void addPipeline(AssetPipeline pipeline) {
+		if(pipeline == this.pipeline) {
+			removePipeline(this.pipeline);
+		}
+		this.pipeline = pipeline;
+	}
+	
+	private void removePipeline(AssetPipeline pipeline) {
+		if(pipeline == this.pipeline) {
+			this.pipeline = null;
+		}
+	}
+	
+	protected final void initializePipelineTracker(final Config config) throws Exception {
+		pipelineTracker = new ServiceTracker(context, AssetPipeline.class.getName(), new ServiceTrackerCustomizer() {
+			@Override
+			public Object addingService(ServiceReference reference) {
+				AssetPipeline service = (AssetPipeline) context.getService(reference);
+				addPipeline(service);
+				return service;
+			}
+			@Override
+			public void modifiedService(ServiceReference reference, Object service) {
+				// do nothing
+			}
+			@Override
+			public void removedService(ServiceReference reference, Object service) {
+				removePipeline((AssetPipeline) service);
+			}
+		});
+		pipelineTracker.open();
+		logger.info("pipelineTracker started");
+	}
 
 	protected void loadServerConfiguration() {
 		serverConfig = new ServerConfig(getSymbolicName(), config.get("server"));
@@ -508,21 +522,6 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 			Map<?,?> options = (Map<?,?>) persist;
 			String service = (String) options.remove(PersistService.SERVICE);
 			registerForPersistService(service, options);
-		}
-	}
-	
-	protected final void initializePersistServices(Config config) throws Exception {
-		if(persistServices != null) {
-			logger.debug("skipping configured PersistServices - already set");
-		} else {
-			Object persist = config.get(Config.PERSIST);
-			persistServices = new PersistServices(getContext(), persist);
-			List<String> services = persistServices.getServiceNames();
-			if(services.isEmpty()) {
-				logger.debug("no presist services configured - skipping registration");
-			} else {
-				registerForPersistServices(persist);
-			}
 		}
 	}
 	
@@ -557,7 +556,7 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 			logger.error("Error removing " + module + ": " + e2.getMessage(), e2);
 		}
 	}
-	
+
 	private void setErrorViewClasses(Config config) {
 		BundleContext context = getContext();
 		if(context == null) {
@@ -600,6 +599,72 @@ public class AppService extends ModuleService implements HttpRequestHandler, Htt
 		} else {
 			persistServices.set(service);
 		}
+	}
+	
+	public final void startApp() throws Exception {
+		logger.debug("working directory: {}", System.getProperty("user.dir"));
+		logger.info("configuring in {} mode", Mode.getSystemMode().name());
+
+		loadServerConfiguration();
+		
+		// allow subclasses to perform custom setup functions
+		setup();
+		
+		router = new AppRouter(this);
+		try {
+			logger.info("initializing routes");
+			addRoutes(config, router);
+			logger.info("routes initialized successfully");
+		} catch(Exception e) {
+			if(logger.isLoggingDebug()) {
+				logger.error("Error adding routes: " + e.getMessage(), e);
+			} else {
+				logger.error("Error adding routes: " + e.getMessage());
+			}
+		}
+
+		loadModels(config);
+		loadObservers(config);
+		loadControllerCaches(this, config);
+		setErrorViewClasses(config);
+
+		// register handlers
+		if(context != null) {
+			context.registerService(RequestHandler.class.getName(), this, null);
+			request404HandlerRegistration = context.registerService(HttpRequest404Handler.class.getName(), this, Dictionary("name", getName()));
+			request500HandlerRegistration = context.registerService(HttpRequest500Handler.class.getName(), this, Dictionary("name", getName()));
+		}
+		
+		// allow subclasses to register custom services
+		registerServices(config);
+
+		// initialize trackers
+		initializePersistServices(config);
+		initializeModulesTracker(config);
+		initializePipelineTracker(config);
+		
+		// allow subclasses to initialize custom trackers
+		initializeServiceTrackers(config);
+	}
+
+	public final void stopApp() throws Exception {
+		if(persistServices != null) {
+			persistServices.close();
+			persistServices = null;
+		}
+		
+		if(moduleTracker != null) {
+			moduleTracker.close();
+			moduleTracker = null;
+		}
+
+		if(pipelineTracker != null) {
+			pipelineTracker.close();
+			pipelineTracker = null;
+		}
+		
+		router.clear();
+		router = null;
 	}
 
 	public synchronized void submit(Worker worker) {

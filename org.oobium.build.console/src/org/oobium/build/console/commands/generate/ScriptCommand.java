@@ -31,8 +31,9 @@ public class ScriptCommand extends BuilderCommand {
 		
 		File script = module.getScriptFile(param(0));
 		if(script.isFile()) {
-			File genScript = module.generateScriptFile(script);
-			Eclipse.refresh(module.file, genScript);
+			for(File genScript : module.generateScriptFile(script)) {
+				Eclipse.refresh(module.file, genScript);
+			}
 		} else {
 			console.err.println("script file does not exist: " + param(0));
 		}

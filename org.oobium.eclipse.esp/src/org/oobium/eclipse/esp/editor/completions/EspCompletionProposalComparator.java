@@ -17,7 +17,13 @@ public class EspCompletionProposalComparator implements Comparator<ICompletionPr
 		if(diff != 0) {
 			return diff;
 		}
-		return getSortKey(p1).compareToIgnoreCase(getSortKey(p2));
+		boolean o1 = p1.toString().contains(" org.oobium.");
+		boolean o2 = p2.toString().contains(" org.oobium.");
+		if(o1 == o2) {
+			return getSortKey(p1).compareToIgnoreCase(getSortKey(p2));
+		}
+		if(o1) return -1;
+		return 1;
 	}
 
 	private String getSortKey(ICompletionProposal p) {

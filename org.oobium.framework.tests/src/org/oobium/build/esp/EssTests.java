@@ -5,6 +5,11 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.oobium.app.views.StyleSheet;
+import org.oobium.build.esp.compiler.ESourceFile;
+import org.oobium.build.esp.compiler.EspCompiler;
+import org.oobium.build.esp.dom.EspDom;
+import org.oobium.build.esp.dom.EspResolver;
+import org.oobium.build.esp.parser.EspBuilder;
 import org.oobium.framework.tests.dyn.DynClasses;
 import org.oobium.framework.tests.dyn.SimpleDynClass;
 
@@ -19,19 +24,28 @@ public class EssTests {
 		pkg = "com.test" + count++;
 	}
 	
-	private String css(String src) throws Exception {
-		EspDom dom = new EspDom("Test"+(count++)+".ess", src);
+	private ESourceFile esf(String src) throws Exception {
+		EspDom dom = EspBuilder.newEspBuilder("Test"+(count++)+".ess").parse(src);
 		EspResolver resolver = new EspResolver();
 		resolver.add(dom);
 		
-		EspCompiler ec = new EspCompiler(pkg, dom);
+		EspCompiler ec = EspCompiler.newEspCompiler(pkg);
 		ec.setResolver(resolver);
-		ESourceFile sf = ec.compile();
+		ESourceFile esf = ec.compile(dom);
 		
-		String java = sf.getSource();
+		String java = esf.getSource();
+		System.out.println(java);
+
+		return esf;
+	}
+
+	private String css(String src) throws Exception {
+		ESourceFile esf = esf(src);
+		
+		String java = esf.getSource();
 		System.out.println(java);
 		
-		Class<?> clazz = SimpleDynClass.getClass(sf.getCanonicalName(), java);
+		Class<?> clazz = SimpleDynClass.getClass(esf.getCanonicalName(), java);
 		StyleSheet ss = (StyleSheet) clazz.newInstance();
 		
 		String css = ss.getContent();
