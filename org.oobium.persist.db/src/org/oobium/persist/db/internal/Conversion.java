@@ -285,17 +285,34 @@ public class Conversion {
 		}
 	}
 	
+	private Object removeInclude() {
+		Object order = inQuery.remove("$include");
+		if(order == null) order = inQuery.remove("include");
+		return order;
+	}
+	
+	private Object removeLimit() {
+		Object order = inQuery.remove("$limit");
+		if(order == null) order = inQuery.remove("limit");
+		return order;
+	}
+	
+	private Object removeSort() {
+		Object order = inQuery.remove("$sort");
+		if(order == null) order = inQuery.remove("sort");
+		if(order == null) order = inQuery.remove("$order");
+		if(order == null) order = inQuery.remove("order");
+		return order;
+	}
+	
 	public void run() throws Exception {
 		v = 0;
 		sb = new StringBuilder();
 		list = new ArrayList<Object>();
 
-		Object order = inQuery.remove("$sort");
-		if(order == null) {
-			order = inQuery.remove("$order");
-		}
-		Object limit = inQuery.remove("$limit");
-		Object include = inQuery.remove("$include");
+		Object order = removeSort();
+		Object limit = removeLimit();
+		Object include = removeInclude();
 
 		if(inQuery.isEmpty()) {
 			apply(sb, order, limit, include);
