@@ -10,10 +10,10 @@
  ******************************************************************************/
 package org.oobium.utils;
 
-import static org.oobium.utils.Utils.isEqual;
-import static org.oobium.utils.json.JsonUtils.toObject;
 import static java.lang.Character.isLowerCase;
 import static java.lang.Character.isUpperCase;
+import static org.oobium.utils.Utils.isEqual;
+import static org.oobium.utils.json.JsonUtils.toObject;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -381,6 +381,11 @@ public class StringUtils {
 	
 	public static String dateTimeTags(String prefix, DateFormat df, Date selection) {
 		StringBuilder sb = new StringBuilder();
+		dateTimeTags(sb, prefix, df, selection);
+		return sb.toString();
+	}
+	
+	public static void dateTimeTags(StringBuilder sb, String prefix, DateFormat df, Date selection) {
 		for(String pattern : getPatternComponents(df)) {
 			char c = pattern.charAt(0);
 			if(c == '\'') {
@@ -398,7 +403,6 @@ public class StringUtils {
 				}
 			}
 		}
-		return sb.toString();
 	}
 	
 	public static String dateTimeTags(String prefix, String format) {
@@ -407,6 +411,10 @@ public class StringUtils {
 	
 	public static String dateTimeTags(String prefix, String format, Date selection) {
 		return dateTimeTags(prefix, new SimpleDateFormat(format), selection);
+	}
+	
+	public static void dateTimeTags(StringBuilder sb, String prefix, String format, Date selection) {
+		dateTimeTags(sb, prefix, new SimpleDateFormat(format), selection);
 	}
 	
 	private static void dateTimeTags(StringBuilder sb, String pattern, int field, Date selection) {
@@ -893,6 +901,22 @@ public class StringUtils {
 			}
 		}
 		return sb.reverse().toString();
+	}
+	
+	public static String methodName(String input) {
+		char[] ca = input.toCharArray();
+		StringBuilder sb = new StringBuilder(ca.length + 5);
+		for(int i = 0; i < ca.length; i++) {
+			if(sb.length() == 0) {
+				if(Character.isJavaIdentifierStart(ca[i])) sb.append(ca[i]);
+				else sb.append('_');
+			} else {
+				if(Character.isJavaIdentifierPart(ca[i])) sb.append(ca[i]);
+				else sb.append('_');
+			}
+		}
+		if(ca[0] == '.') sb.append("_class");
+		return varName(sb.toString());
 	}
 	
 	public static String modelName(String tableName) {

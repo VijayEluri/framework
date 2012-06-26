@@ -106,6 +106,30 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 	public boolean accepts(MimeType type) {
 		return controller.accepts(type);
 	}
+
+	public void addExternalScript(Class<? extends ScriptFile> asset) {
+		renderer.addExternalScript(asset);
+	}
+	
+	public void addExternalScript(String src) {
+		renderer.addExternalScript(src);
+	}
+	
+	public void addExternalScript(ScriptFile asset) {
+		renderer.addExternalScript(asset);
+	}
+	
+	public void addExternalStyle(Class<? extends StyleSheet> asset) {
+		renderer.addExternalStyle(asset);
+	}
+	
+	public void addExternalStyle(String href) {
+		renderer.addExternalStyle(href);
+	}
+	
+	public void addExternalStyle(StyleSheet asset) {
+		renderer.addExternalStyle(asset);
+	}
 	
 	public String alt() {
 		return alt("alt");
@@ -349,6 +373,10 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 		return controller.hasSession();
 	}
 	
+	protected void includeScriptEnvironment() {
+		renderer.includeScriptEnvironment = true;
+	}
+	
 	@Override
 	public boolean isAction(Action action) {
 		return controller.isAction(action);
@@ -546,6 +574,10 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 			logger = controller.getLogger();
 			request = controller.getRequest();
 		}
+	}
+	
+	protected void setTitle(String title) {
+		renderer.setTitle(title);
 	}
 	
 	@Override

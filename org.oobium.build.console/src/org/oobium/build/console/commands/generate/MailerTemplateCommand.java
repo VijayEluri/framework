@@ -31,8 +31,9 @@ public class MailerTemplateCommand extends BuilderCommand {
 		
 		File template = module.getMailerTemplate(param(0));
 		if(template.isFile()) {
-			File genTemplate = module.generateMailerTemplate(template);
-			Eclipse.refresh(module.file, genTemplate);
+			for(File genTemplate : module.generateMailerTemplate(template)) {
+				Eclipse.refresh(module.file, genTemplate);
+			}
 		} else {
 			console.err.println("mailer template does not exist: " + param(0));
 		}

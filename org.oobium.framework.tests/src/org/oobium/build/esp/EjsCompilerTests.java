@@ -12,80 +12,83 @@ package org.oobium.build.esp;
 
 import static org.junit.Assert.*;
 
+import org.junit.Before;
 import org.junit.Test;
-import org.oobium.build.esp.EspCompiler;
-import org.oobium.build.esp.EspDom;
-import org.oobium.build.esp.ESourceFile;
 
-public class EjsCompilerTests {
+public class EjsCompilerTests extends BaseEspTester {
 
-	private String body(String method) {
-		int s1 = 0;
-		while(s1 < method.length() && method.charAt(s1) != '{') {
-			s1++;
-		}
-		s1++;
-		while(s1 < method.length() && Character.isWhitespace(method.charAt(s1))) {
-			s1++;
-		}
-		return method.substring(s1, method.length() - 3).replace("\n\t\t", "\n");
+	@Before
+	public void setup() {
+		trimComments(true);
 	}
 	
-	private String js(String ejs) {
-		ESourceFile src = src(ejs);
-		String str = body(src.getMethod("doRender"));
-		System.out.println(src.getMethod("doRender").replace("\n\t", "\n"));
-		return str;
+	@Override
+	protected String getFileName() {
+		return "MyEjs.ejs";
 	}
 	
-	private ESourceFile src(String ejs) {
-		EspDom dom = new EspDom("MyEss.ejs", ejs);
-		EspCompiler e2j = new EspCompiler("com.mydomain", dom);
-		return e2j.compile();
-	}
-
 	@Test
 	public void testEmpty() throws Exception {
-		assertFalse(src("").hasMethod("render"));
+		assertFalse(esf("").hasMethod("render"));
 	}
 	
 	@Test
 	public void testImport() throws Exception {
-		assertTrue(src("import com.mydomain.MyClass").hasImport("com.mydomain.MyClass"));
+		assertTrue(esf("import com.mydomain.MyClass").hasImport("com.mydomain.MyClass"));
 	}
 	
 	@Test
 	public void testConstructor() throws Exception {
 		String esp;
-		esp = "MyEss(String arg1)";
-		assertTrue(src(esp).hasVariable("arg1"));
-		assertEquals("public String arg1", src(esp).getVariable("arg1"));
-		assertEquals(1, src(esp).getConstructorCount());
-		assertTrue(src(esp).hasConstructor(0));
-		assertEquals("\tpublic MyEss(String arg1) {\n\t\tthis.arg1 = arg1;\n\t}", src(esp).getConstructor(0));
+		esp = "MyEjs(String arg1)";
+		assertTrue(esf(esp).hasVariable("arg1"));
+		assertEquals("public String arg1", esf(esp).getVariable("arg1"));
+		assertEquals(1, esf(esp).getConstructorCount());
+		assertTrue(esf(esp).hasConstructor(0));
+		assertEquals("\tpublic MyEjs(String arg1) {\n\t\tthis.arg1 = arg1;\n\t}", esf(esp).getConstructor(0));
 	}
 	
 	@Test
 	public void testJsOnly() throws Exception {
-		String ejs;
-		ejs = "alert('hello');";
-		assertEquals("__sb__.append(\"alert('hello');\");", js(ejs));
+		assertEquals(
+				"",
+				erndr("alert('hello');"));
+		assertEquals(
+				"alert('hello');",
+				asset("alert('hello');"));
 
-		ejs = "if(true) {\n\talert('hello');\n}";
-		assertEquals("__sb__.append(\"if(true) {\\n\\talert('hello');\\n}\");", js(ejs));
+		assertEquals(
+				"",
+				erndr("if(true) {\n\talert('hello');\n}"));
+		assertEquals(
+				"if(true) {\n\talert('hello');\n}",
+				asset("if(true) {\n\talert('hello');\n}"));
 	}
 
 	@Test
-	public void testJava() throws Exception {
-		String ejs;
-		ejs = "var size = { height: 100, width: ${height * 2} };";
-		assertEquals("__sb__.append(\"var size = { height: 100, width: \").append(h(height * 2)).append(\" };\");", js(ejs));
-		
-		ejs = "-int width = 10;\n\nvar size = { height: 100, width: ${width * 2} };";
-		assertEquals("int width = 10;\n__sb__.append(\"var size = { height: 100, width: \").append(h(width * 2)).append(\" };\");", js(ejs));
+	public void testWithJava() throws Exception {
+		assertEquals(
+				"int width = 10;\n" +
+				"__body__.append(\"$oobenv.myEjsVar50 = \").append(j(width * 2)).append(\";\");",
+				erndr("-int width = 10;\nvar size = { height: 100, width: ${width * 2} };"));
+		assertEquals(
+				"var size = { height: 100, width: $oobenv.myEjsVar50 };",
+				asset("-int width = 10;\nvar size = { height: 100, width: ${width * 2} };"));
 
-		ejs = "var height = ${width * 2};";
-		assertEquals("__sb__.append(\"var height = \").append(h(width * 2)).append(\";\");", js(ejs));
+		assertEquals(
+				"__body__.append(\"$oobenv.myEjsVar13 = \").append(j(width * 2)).append(\";\");",
+				erndr("var height = ${width * 2};"));
+		assertEquals(
+				"var height = $oobenv.myEjsVar13;",
+				asset("var height = ${width * 2};"));
+
+		assertEquals(
+				"String msg = \"hello\";\n" +
+				"__body__.append(\"$oobenv.myEjsVar30 = \").append(j(msg)).append(\";\");",
+				erndr("-String msg = \"hello\";\n\nalert(${msg});"));
+		assertEquals(
+				"alert($oobenv.myEjsVar30);",
+				asset("-String msg = \"hello\";\n\nalert(${msg});"));
 	}
 
 }

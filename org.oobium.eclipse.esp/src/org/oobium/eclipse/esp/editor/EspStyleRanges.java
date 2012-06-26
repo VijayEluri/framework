@@ -14,7 +14,8 @@ import static org.oobium.build.esp.Constants.CSS_PROPERTIES;
 import static org.oobium.build.esp.Constants.HTML_TAGS;
 import static org.oobium.build.esp.Constants.JAVA_KEYWORDS;
 import static org.oobium.build.esp.Constants.JS_KEYWORDS;
-import static org.oobium.build.esp.EspPart.Type.*;
+import static org.oobium.build.esp.dom.EspPart.Type.Comment;
+import static org.oobium.build.esp.dom.EspPart.Type.MarkupTag;
 
 import java.util.Arrays;
 
@@ -22,13 +23,10 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.graphics.Color;
-import org.oobium.build.esp.EspDom;
-import org.oobium.build.esp.EspElement;
-import org.oobium.build.esp.EspPart;
-import org.oobium.build.esp.EspPart.Type;
-import org.oobium.build.esp.elements.CommentElement;
-import org.oobium.build.esp.parts.CommentPart;
-import org.oobium.build.esp.parts.StyleEntryPart;
+import org.oobium.build.esp.dom.EspDom;
+import org.oobium.build.esp.dom.EspElement;
+import org.oobium.build.esp.dom.EspPart;
+import org.oobium.build.esp.dom.EspPart.Type;
 import org.oobium.eclipse.esp.EspPlugin;
 
 public class EspStyleRanges {
@@ -45,9 +43,9 @@ public class EspStyleRanges {
 	private static final StyleRange innerText = new StyleRange(-1, -1, color(128, 128, 128), null);
 
 	private static final char[][] TASK_TAGS = {
-		"TASK".toCharArray(),
-		"TODO".toCharArray(),
-		"XXX".toCharArray()
+		" TASK ".toCharArray(),
+		" TODO ".toCharArray(),
+		" XXX ".toCharArray()
 	};
 
 	private static Color color(int r, int g, int b) {
@@ -64,7 +62,7 @@ public class EspStyleRanges {
 		evaluate();
 	}
 
-	private int addRange(int offset, EspPart part, StyleRange style) {
+	private int addRange(EspPart part, int offset, StyleRange style) {
 		EspPart next = part.getNextSubPart(offset);
 		int end = (next != null) ? next.getStart() : part.getEnd();
 		return addRange(offset, end-offset, style);
@@ -121,17 +119,8 @@ public class EspStyleRanges {
 			} else {
 				EspPart part = dom.getPart(offset);
 				if(part != null) {
-					if(part.isA(CommentPart)) {
-						offset = evaluateComment(offset, part);
-						continue;
-					} else {
-						EspElement element = part.getElement();
-						current = element;
-						if(element != null) {
-							offset = evaluate(offset, element, part);
-							continue;
-						}
-					}
+					offset = evaluate(part, offset);
+					continue;
 				}
 				offset++;
 			}
@@ -140,32 +129,29 @@ public class EspStyleRanges {
 		styles = Arrays.copyOf(styles, styleCount);
 		ranges = Arrays.copyOf(ranges, styleCount*2);
 	}
-	
-	private int evaluate(int offset, EspElement element, EspPart part) {
-		switch(element.getType()) {
-		case CommentElement:	return evaluateComment(offset, part);
-		case ConstructorElement:return evaluateConstructor(offset, element, part);
-		case MarkupCommentElement:
-		case MarkupElement:		return evaluateMarkup(offset, element, part);
-		case ImportElement:		return evaluateImport(offset, element, part);
-		case InnerTextElement:	return evaluateInnerText(offset, element, part);
-		case JavaElement:		return evaluateJava(offset, element, part);
-		case ScriptElement:		return evaluateScript(offset, element, part);
-		case StyleElement:
-		case StyleChildElement:
-								return evaluateStyle(offset, element, part);
-		case YieldElement:		return evaluateYield(offset, element, part);
-		default:				return offset + 1;
+
+	private int evaluate(EspPart part, int offset) {
+		switch(part.getType()) {
+		case Comment:
+		case MarkupComment:     return evaluateComment(offset, part);
+		case JavaKeyword:       return addRange(part, offset, javaKeyword);
+		case JavaContainer:     return addRange(part, offset, javaKeyword);
+		case JavaSource:        return evaluateJava(part, offset);
+		case JavaString:        return addRange(part, offset, javaString);
+		case MarkupTag:         return evaluateMarkupTag(part, offset);
+		case ScriptPart:        return evaluateScript(part, offset);
+		case StylePropertyName: return evaluateStylePropertyName(part, offset);
+		case YieldElement:      return evaluateYield(part, offset);
+		case InnerTextPart:     return evaluateInnerText(part, offset);
+		default:                return offset + 1;
 		}
 	}
 	
 	private boolean isJavadoc(EspPart part) {
-		switch(part.getType()) {
-		case CommentElement: return ((CommentElement) part).isJavadoc();
-		case CommentPart:    return ((CommentPart) part).isJavadoc();
-		default:
-			throw new IllegalArgumentException("only CommentElement or CommentPart are valid here");
+		if(part.isA(Comment)) {
+			return part.startsWith("/**");
 		}
+		return false;
 	}
 	
 	private int evaluateComment(int offset, EspPart part) {
@@ -173,9 +159,9 @@ public class EspStyleRanges {
 		int end = part.getEnd();
 		for(int i = offset; i < end; i++) {
 			for(int j = 0; j < TASK_TAGS.length; j++) {
-				if(part.isNext(i, TASK_TAGS[j])) {
+				if(part.startsWith(TASK_TAGS[j], i)) {
 					addRange(offset, i-offset, style);
-					i = addRange(i, TASK_TAGS[j].length, taskTag);
+					i = addRange(i+1, TASK_TAGS[j].length-2, taskTag);
 					offset = i;
 					break;
 				}
@@ -187,104 +173,27 @@ public class EspStyleRanges {
 		return end+1;
 	}
 
-	private int evaluateConstructor(int offset, EspElement element, EspPart part) {
-		switch(part.getType()) {
-		case TagPart:
-			return addRange(part.getStart(), part.getLength(), javaKeyword);
-		case VarNamePart:
-			return part.getEnd();
-		case DefaultValuePart:
-		case VarTypePart:
-			return evaluateJava(offset, element, part);
+	private int evaluateMarkupTag(EspPart part, int offset) {
+		String tag = part.getText();
+		if(HTML_TAGS.containsKey(tag)) {
+			return addRange(part, offset, htmlTag);
 		}
-		return offset + 1;
+		else if("import".equals(tag)) {
+			return addRange(part, offset, javaKeyword);
+		}
+		else {
+			// TODO some kind of warning/unknown style... ?
+			return part.getEnd();
+		}
+	}
+	
+	private int evaluateInnerText(EspPart part, int offset) {
+		return addRange(part, offset, innerText);
 	}
 
-	private int evaluateMarkup(int offset, EspElement element, EspPart part) {
-		switch(part.getType()) {
-		case InnerTextPart:
-			return evaluateInnerText(offset, element, part);
-		case JavaPart:
-		case JavaSourcePart:
-			return evaluateJava(offset, element, part);
-		case JavaTypePart:
-			return part.getEnd();
-		case ScriptPart:
-			return evaluateScript(offset, element, part);
-		case StyleEntryPart:
-			if(((StyleEntryPart) part).isJava()) {
-				return evaluateJava(offset, element, part);
-			}
-			break;
-		case StylePropertyNamePart:
-			return evaluateStyle(offset, element, part);
-		case StylePropertyValuePart:
-			return part.getEnd();
-		case StylePart:
-			if(part.getLength() == 4 && "hide".equals(part.getText())) {
-				return addRange(offset, 4, operator);
-			}
-			return part.getEnd();
-		case TagPart:
-			if(HTML_TAGS.containsKey(part.getText())) {
-				return addRange(offset, part.getEnd()-offset, htmlTag);
-			} else {
-				break;
-			}
-		case YieldElement:
-			return addRange(offset, part.getEnd()-offset, javaKeyword);
-		}
-		
-		return offset + 1;
-	}
-
-	private int evaluateImport(int offset, EspElement element, EspPart part) {
-		if(part.isA(ImportPart)) {
-			String s = part.getText();
-			if("import".equals(s) || "static".equals(s)) {
-				return addRange(offset, part.getEnd()-offset, javaKeyword);
-			}
-		}
-		return offset + 1;
-	}
-
-	private int evaluateInnerText(int offset, EspElement element, EspPart part) {
-		if(part.isA(JavaPart)) {
-			return evaluateJava(offset, element, part);
-		}
-		return addRange(offset, part, innerText);
-	}
-
-	private int evaluateJava(int offset, EspElement element, EspPart part) {
-		if(part.isA(Type.JavaElement)) {
-			return offset + 1;
-		}
-		
+	private int evaluateJava(EspPart part, int offset) {
 		int end = part.getEnd();
 		for(int s1 = offset; s1 < end; s1++) {
-			while(s1 < end && !Character.isLetter(dom.charAt(s1))) {
-				if(dom.charAt(s1) == '"') {
-					int s = s1 + 1;
-					while(s < end) {
-						if(dom.charAt(s) == '"' && dom.charAt(s-1) != '\\') {
-							break;
-						}
-						s++;
-					}
-					EspPart sub = part.getNextSubPart(s1 + 1);
-					while(sub != null && sub.getStart() < s) {
-						addRange(s1, sub.getStart()-s1+1, javaString);
-						s1 = evaluateJava(sub.getStart(), element, sub);
-						sub = part.getNextSubPart(s1);
-					}
-					if(s > s1) {
-						addRange(s1, s-s1+1, javaString);
-						s1 = s + 1;
-					}
-				} else {
-					s1++;
-				}
-			}
 			if(s1 < end) {
 				int s2 = s1;
 				while(s2 < end && Character.isLetter(dom.charAt(s2))) {
@@ -300,104 +209,45 @@ public class EspStyleRanges {
 		return end;
 	}
 
-	private int evaluateScript(int offset, EspElement element, EspPart part) {
-		switch(part.getType()) {
-		case TagPart:
-			return addRange(offset, part.getEnd()-offset, htmlTag);
-		case ScriptElement:
-			if(dom.charAt(offset) == '\t' && dom.charAt(offset-1) == '\n') {
-				addRange(offset, 1, level);
-			}
-			return offset + 1;
-		case JavaPart:
-		case JavaSourcePart:
-			return evaluateJava(offset, element, part);
-		case ScriptPart:
-			EspPart next = part.getNextSubPart(offset);
-			int end = (next != null) ? next.getStart() : part.getEnd();
-			if(!element.isA(ScriptElement)) {
-				if(dom.charAt(offset) == '"') offset++;
-				if(dom.charAt(end-1) == '"') end--;
-			}
-			for(int s1 = offset; s1 < end; s1++) {
-				while(s1 < end && !Character.isLetter(dom.charAt(s1))) {
-					char c = dom.charAt(s1);
-					if(c == '\t' && dom.charAt(s1-1) == '\n') {
-						int s = s1 + 1;
-						while(s < end && (s-s1) < element.getLevel() + 1) {
-							if(dom.charAt(s) != '\t') {
-								break;
-							}
-							s++;
-						}
-						if(!dom.isScript()) {
-							addRange(s1, s-s1, level);
-						}
-						s1 = s;
-					} else if(c == '"' || c == '\'') {
-						int s = s1 + 1;
-						while(s < end) {
-							if(dom.charAt(s) == c && dom.charAt(s-1) != '\\') {
-								break;
-							}
-							s++;
-						}
-						addRange(s1, s-s1+1, javaString);
-						s1 = s + 1;
-					} else {
-						s1++;
-					}
+	private int evaluateScript(EspPart part, int offset) {
+		EspPart next = part.getNextSubPart(offset);
+		int end = (next != null) ? next.getStart() : part.getEnd();
+		for(int s1 = offset; s1 < end; s1++) {
+			if(dom.charAt(s1) == '\n') {
+				int s2 = s1 + 1;
+				while(s2 < end && dom.charAt(s2) == '\t') {
+					s2++;
 				}
-				if(s1 < end) {
-					int s2 = s1;
-					while(s2 < end && Character.isLetter(dom.charAt(s2))) {
-						s2++;
-					}
-					if(JS_KEYWORDS.contains(part.getDom().subSequence(s1, s2))) {
-						s1 = addRange(s1, s2-s1, javaKeyword);
-					} else {
-						s1 = s2;
-					}
+				addRange(s1, s2-s1, level);
+				s1 = s2;
+			}
+			if(s1 < end) {
+				int s2 = s1;
+				while(s2 < end && Character.isLetter(dom.charAt(s2))) {
+					s2++;
+				}
+				if(JS_KEYWORDS.contains(part.getDom().subSequence(s1, s2))) {
+					s1 = addRange(s1, s2-s1, javaKeyword);
+				} else {
+					s1 = s2;
 				}
 			}
-			return (next != null) ? next.getStart() : part.getEnd();
 		}
-
-		return offset + 1;
+		return end;
 	}
 	
-	private int evaluateStyle(int offset, EspElement element, EspPart part) {
-		switch(part.getType()) {
-		case TagPart:
-			return addRange(offset, part.getEnd()-offset, htmlTag);
-		case JavaPart:
-		case JavaSourcePart:
-			return evaluateJava(offset, element, part);
-		case VarNamePart:
-			return part.getEnd();
-		case StyleMixinPart:
-		case DefaultValuePart:
-		case VarTypePart:
-			return evaluateJava(offset, element, part);
-		case StyleSelectorPart:
-			return part.getEnd();
-		case StylePropertyNamePart:
-			if(CSS_PROPERTIES.containsKey(part.getText())) {
-				return addRange(offset, part.getEnd()-offset, cssPropertyName);
-			}
-			break;
-		case StylePropertyValuePart:
-			return part.getEnd();
+	private int evaluateStylePropertyName(EspPart part, int offset) {
+		if(CSS_PROPERTIES.containsKey(part.getText())) {
+			return addRange(part, offset, cssPropertyName);
 		}
-
-		return offset + 1;
+		return part.getEnd();
 	}
 
-	private int evaluateYield(int offset, EspElement element, EspPart part) {
-		if(part.getType() == TagPart) {
-			return addRange(offset, part.getEnd()-offset, javaKeyword);
+	private int evaluateYield(EspPart part, int offset) {
+		if(part.getType() == MarkupTag) {
+			return addRange(part, offset, javaKeyword);
 		}
-		return element.getEnd();
+		return part.getEnd();
 	}
 	
 }

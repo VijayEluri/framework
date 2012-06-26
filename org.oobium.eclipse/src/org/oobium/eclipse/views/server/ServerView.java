@@ -382,6 +382,8 @@ public class ServerView extends ViewPart {
 		start(false);
 	}
 	
+	private boolean debuggerAttached = false;
+	
 	public void start(boolean debug) {
 		if(application != null) {
 			Display.getDefault().syncExec(new Runnable() {
@@ -403,7 +405,8 @@ public class ServerView extends ViewPart {
 			runner.setError(new ConsolePrintStream(consolePanel.getConsole().err));
 			runner.setOut(new ConsolePrintStream(consolePanel.getConsole().out));
 			final boolean debugging = runner.getDebug();
-			if(debugging) {
+			if(debugging && !debuggerAttached) {
+				debuggerAttached = true;
 				try {
 					
 					Thread.sleep(500); // TODO another oobicrap temporary fix...
@@ -491,6 +494,7 @@ public class ServerView extends ViewPart {
 	}
 	
 	public void stop() {
+		debuggerAttached = false;
 		Display.getDefault().syncExec(new Runnable() {
 			@Override
 			public void run() {

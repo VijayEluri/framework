@@ -31,8 +31,9 @@ public class ViewCommand extends BuilderCommand {
 		
 		File view = module.getView(param(0));
 		if(view.isFile()) {
-			File genView = module.generateView(view);
-			Eclipse.refresh(module.file, genView);
+			for(File genView : module.generateView(view)) {
+				Eclipse.refresh(module.file, genView);
+			}
 		} else {
 			console.err.println("view does not exist: " + param(0));
 		}

@@ -11,7 +11,7 @@
 package org.oobium.eclipse.workspace;
 
 import static java.util.Arrays.asList;
-import static org.oobium.utils.FileUtils.*;
+import static org.oobium.utils.FileUtils.findFiles;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -20,12 +20,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -43,13 +40,10 @@ import org.eclipse.jdt.core.formatter.CodeFormatter;
 import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
-import org.eclipse.jface.text.DocumentEvent;
 import org.eclipse.jface.text.IDocument;
-import org.eclipse.jface.text.IDocumentListener;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
-import org.oobium.build.esp.ESourceFile;
-import org.oobium.build.esp.EspDom;
+import org.oobium.build.esp.compiler.ESourceFile;
 import org.oobium.build.runner.RunnerService;
 import org.oobium.build.workspace.Application;
 import org.oobium.build.workspace.Bundle;
@@ -58,157 +52,15 @@ import org.oobium.build.workspace.Workspace;
 import org.oobium.eclipse.OobiumPlugin;
 import org.oobium.logging.LogProvider;
 import org.oobium.logging.Logger;
-import org.oobium.utils.FileUtils;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+
 public class OobiumCore {
 
 	private static final Logger logger = LogProvider.getLogger(OobiumPlugin.class);
 	private static final Map<String, String> formatterOptions = createFormatterOptions();
-	private static final OobiumCore instance = new OobiumCore();
-
-	public static void editing(IFile ifile, boolean editing) {
-		if(isEFile(ifile)) {
-			File project = new File(ifile.getProject().getLocationURI().getPath());
-			File file = new File(ifile.getLocationURI().getPath());
-			RunnerService.editing(project, file, editing);
-		}
-	}
-	
-	public static void generateAssetList(IProject project, IProgressMonitor monitor) {
-		logger.debug("generating asset list");
-		try {
-			File dir = project.getLocation().toFile();
-			Bundle bundle = OobiumPlugin.getWorkspace().getBundle(dir);
-			if(bundle instanceof Module) {
-				File genFile = ((Module) bundle).generateAssetList();
-				refresh(project, genFile, monitor);
-			}
-		} catch(Exception e) {
-			logger.warn(e);
-		}
-	}
-
-	public static List<File> getStyleSheets(IProject project) {
-		try {
-			File dir = project.getLocation().toFile();
-			Bundle bundle = OobiumPlugin.getWorkspace().getBundle(dir);
-			if(bundle != null) {
-				List<File> files = new ArrayList<File>();
-				files.addAll(asList(findFiles(bundle.src, ".css", ".ess")));
-				if(bundle instanceof Module) {
-					files.addAll(asList(findFiles(((Module) bundle).assets, ".css", ".ess")));
-				}
-				return files;
-			}
-		} catch(Exception e) {
-			logger.warn(e);
-		}
-		return new ArrayList<File>(0);
-	}
-
-	public static boolean isEFile(IResource resource) {
-		return resource != null && isEFile(resource.getFileExtension());
-	}
-	
-	public static boolean isEFile(String ext) {
-		return "esp".equalsIgnoreCase(ext)
-			|| "emt".equalsIgnoreCase(ext)
-			|| "ess".equalsIgnoreCase(ext)
-			|| "ejs".equalsIgnoreCase(ext);
-	}
-
-	public static void generate(IFile file, IProgressMonitor monitor) {
-		if(logger.isLoggingDebug()) logger.debug("generating: " + file);
-		try {
-			File efile = file.getLocation().toFile();
-			File projectDir = file.getProject().getLocation().toFile();
-			Bundle bundle = OobiumPlugin.getWorkspace().getBundle(projectDir);
-			if(bundle instanceof Module) {
-				File genFile = ((Module) bundle).generate(efile);
-				IResource resource = getResource(file.getProject(), genFile);
-				format(resource, monitor);
-				refresh(file.getProject(), genFile.getParentFile(), monitor);
-			}
-		} catch(Exception e) {
-			logger.warn(e);
-		}
-	}
-
-	public static ESourceFile generate(IFile file, String source) {
-		File efile = file.getLocation().toFile();
-		File projectDir = file.getProject().getLocation().toFile();
-		Bundle bundle = OobiumPlugin.getWorkspace().getBundle(projectDir);
-		if(bundle instanceof Module) {
-			return ((Module) bundle).generate(efile, source);
-		}
-		return null;
-	}
-
-	public static void generateMailer(IFile file, IProgressMonitor monitor) {
-		if(logger.isLoggingDebug()) logger.debug("generating mailer: " + file);
-		try {
-			File mailer = file.getLocation().toFile();
-			File projectDir = file.getProject().getLocation().toFile();
-			Bundle bundle = OobiumPlugin.getWorkspace().getBundle(projectDir);
-			if(bundle instanceof Module) {
-				Module module = (Module) bundle;
-				module.generateMailer(mailer);
-				refresh(file.getProject(), module.genMain, monitor);
-			}
-		} catch(Exception e) {
-			logger.warn(e);
-		}
-	}
-
-	public static void generateModel(IFile file, IProgressMonitor monitor) {
-		if(logger.isLoggingDebug()) logger.debug("generating model: " + file);
-		try {
-			File model = file.getLocation().toFile();
-			File projectDir = file.getProject().getLocation().toFile();
-			Bundle bundle = OobiumPlugin.getWorkspace().getBundle(projectDir);
-			if(bundle instanceof Module) {
-				Workspace workspace = OobiumPlugin.getWorkspace();
-				Module module = (Module) bundle;
-				List<File> modified = module.generateModel(workspace, model);
-				if(module.isApplication()) {
-					File schema = ((Application) module).createInitialMigration(workspace, workspace.getMode());
-					if(schema != null) { // there might not be a migrator project
-						IProject migrator = ResourcesPlugin.getWorkspace().getRoot().getProject(module.migratorName);
-						if(migrator.isOpen()) {
-							refresh(migrator, schema, monitor);
-						}
-					}
-				}
-				for(File mfile : modified) {
-					refresh(file.getProject(), mfile, monitor);
-				}
-			}
-		} catch(Exception e) {
-			logger.warn(e);
-		}
-	}
-
-	public static void generateViews(IFile file, IProgressMonitor monitor) {
-		if(logger.isLoggingDebug()) logger.debug("generating views for: " + file);
-		try {
-			File model = file.getLocation().toFile();
-			File projectDir = file.getProject().getLocation().toFile();
-			Bundle bundle = OobiumPlugin.getWorkspace().getBundle(projectDir);
-			if(bundle instanceof Module) {
-				Workspace workspace = OobiumPlugin.getWorkspace();
-				Module module = (Module) bundle;
-				File[] modified = module.createForModel(workspace, model, Module.VIEW);
-				for(File mfile : modified) {
-					refresh(file.getProject(), mfile, monitor);
-				}
-			}
-		} catch(Exception e) {
-			logger.warn(e);
-		}
-	}
 
 	@SuppressWarnings("unchecked")
 	private static Map<String, String> createFormatterOptions() {
@@ -244,10 +96,18 @@ public class OobiumCore {
 		return DefaultCodeFormatterConstants.getEclipseDefaultSettings();
 	}
 	
+	public static void editing(IFile ifile, boolean editing) {
+		if(isEFile(ifile)) {
+			File project = new File(ifile.getProject().getLocationURI().getPath());
+			File file = new File(ifile.getLocationURI().getPath());
+			RunnerService.editing(project, file, editing);
+		}
+	}
+
 	public static void format(IProject project, File file, IProgressMonitor monitor) {
 		format(getResource(project, file));
 	}
-	
+
 	private static void format(IResource resource) {
 		if(!(resource instanceof IFile)) {
 			return;
@@ -300,7 +160,39 @@ public class OobiumCore {
 			}
 		}
 	}
-	
+
+	public static void generate(IFile file, IProgressMonitor monitor) {
+		if(logger.isLoggingDebug()) logger.debug("generating: " + file);
+		try {
+			File efile = file.getLocation().toFile();
+			File projectDir = file.getProject().getLocation().toFile();
+			Bundle bundle = OobiumPlugin.getWorkspace().getBundle(projectDir);
+			if(bundle instanceof Module) {
+				Module module = (Module) bundle;
+				for(File genFile : module.generate(efile)) {
+//					IResource resource = getResource(file.getProject(), genFile);
+//					format(resource, monitor);
+					refresh(file.getProject(), genFile.getParentFile(), monitor);
+				}
+				if("ejs".equals(file.getFileExtension())) {
+					generateAssetList(file.getProject(), monitor);
+				}
+			}
+		} catch(Exception e) {
+			logger.warn(e);
+		}
+	}
+
+	public static ESourceFile generate(IFile file, String source) {
+		File efile = file.getLocation().toFile();
+		File projectDir = file.getProject().getLocation().toFile();
+		Bundle bundle = OobiumPlugin.getWorkspace().getBundle(projectDir);
+		if(bundle instanceof Module) {
+			return ((Module) bundle).generate(efile, source);
+		}
+		return null;
+	}
+
 	public static void generate(IProject project, IProgressMonitor monitor) {
 		File dir = project.getLocation().toFile();
 		Module module = OobiumPlugin.getWorkspace().getModule(dir);
@@ -314,9 +206,82 @@ public class OobiumCore {
 			}
 		}
 	}
+
+	public static void generateAssetList(IProject project, IProgressMonitor monitor) {
+		logger.debug("generating asset list");
+		try {
+			File dir = project.getLocation().toFile();
+			Bundle bundle = OobiumPlugin.getWorkspace().getBundle(dir);
+			if(bundle instanceof Module) {
+				File genFile = ((Module) bundle).generateAssetList();
+				refresh(project, genFile, monitor);
+			}
+		} catch(Exception e) {
+			logger.warn(e);
+		}
+	}
+
+	public static void generateMailer(IFile file, IProgressMonitor monitor) {
+		if(logger.isLoggingDebug()) logger.debug("generating mailer: " + file);
+		try {
+			File mailer = file.getLocation().toFile();
+			File projectDir = file.getProject().getLocation().toFile();
+			Bundle bundle = OobiumPlugin.getWorkspace().getBundle(projectDir);
+			if(bundle instanceof Module) {
+				Module module = (Module) bundle;
+				module.generateMailer(mailer);
+				refresh(file.getProject(), module.genMain, monitor);
+			}
+		} catch(Exception e) {
+			logger.warn(e);
+		}
+	}
+
+	public static void generateModel(IFile file, IProgressMonitor monitor) {
+		if(logger.isLoggingDebug()) logger.debug("generating model: " + file);
+		try {
+			File model = file.getLocation().toFile();
+			File projectDir = file.getProject().getLocation().toFile();
+			Bundle bundle = OobiumPlugin.getWorkspace().getBundle(projectDir);
+			if(bundle instanceof Module) {
+				Workspace workspace = OobiumPlugin.getWorkspace();
+				Module module = (Module) bundle;
+				List<File> modified = module.generateModel(workspace, model);
+				if(module.isApplication()) {
+					File schema = ((Application) module).createInitialMigration(workspace, workspace.getMode());
+					if(schema != null) { // there might not be a migrator project
+						IProject migrator = ResourcesPlugin.getWorkspace().getRoot().getProject(module.migratorName);
+						if(migrator.isOpen()) {
+							refresh(migrator, schema, monitor);
+						}
+					}
+				}
+				for(File mfile : modified) {
+					refresh(file.getProject(), mfile, monitor);
+				}
+			}
+		} catch(Exception e) {
+			logger.warn(e);
+		}
+	}
 	
-	public static EspDom get(IDocument document) {
-		return instance.getDom(document);
+	public static void generateViews(IFile file, IProgressMonitor monitor) {
+		if(logger.isLoggingDebug()) logger.debug("generating views for: " + file);
+		try {
+			File model = file.getLocation().toFile();
+			File projectDir = file.getProject().getLocation().toFile();
+			Bundle bundle = OobiumPlugin.getWorkspace().getBundle(projectDir);
+			if(bundle instanceof Module) {
+				Workspace workspace = OobiumPlugin.getWorkspace();
+				Module module = (Module) bundle;
+				File[] modified = module.createForModel(workspace, model, Module.VIEW);
+				for(File mfile : modified) {
+					refresh(file.getProject(), mfile, monitor);
+				}
+			}
+		} catch(Exception e) {
+			logger.warn(e);
+		}
 	}
 	
 	public static Module getModule(IFile file) {
@@ -343,6 +308,35 @@ public class OobiumCore {
 		return null;
 	}
 	
+	public static List<File> getStyleSheets(IProject project) {
+		try {
+			File dir = project.getLocation().toFile();
+			Bundle bundle = OobiumPlugin.getWorkspace().getBundle(dir);
+			if(bundle != null) {
+				List<File> files = new ArrayList<File>();
+				files.addAll(asList(findFiles(bundle.src, ".css", ".ess")));
+				if(bundle instanceof Module) {
+					files.addAll(asList(findFiles(((Module) bundle).assets, ".css", ".ess")));
+				}
+				return files;
+			}
+		} catch(Exception e) {
+			logger.warn(e);
+		}
+		return new ArrayList<File>(0);
+	}
+	
+	public static boolean isEFile(IResource resource) {
+		return resource != null && isEFile(resource.getFileExtension());
+	}
+	
+	public static boolean isEFile(String ext) {
+		return "esp".equalsIgnoreCase(ext)
+			|| "emt".equalsIgnoreCase(ext)
+			|| "ess".equalsIgnoreCase(ext)
+			|| "ejs".equalsIgnoreCase(ext);
+	}
+	
 	public static void refresh(IProject project, File file, IProgressMonitor monitor) {
 		IResource resource = getResource(project, file);
 		try {
@@ -352,10 +346,6 @@ public class OobiumCore {
 		}
 	}
 	
-	public static EspDom remove(IDocument document) {
-		return instance.removeDom(document);
-	}
-
 	public static void remove(IFile file, IProgressMonitor monitor) {
 		if(logger.isLoggingDebug()) logger.debug("removing generated file for: " + file);
 		try {
@@ -375,47 +365,4 @@ public class OobiumCore {
 		}
 	}
 	
-	private Map<IDocument, EspDom> domMap;
-	private Set<IDocument> changed;
-	private IDocumentListener listener;
-	
-	private OobiumCore() {
-		domMap = new HashMap<IDocument, EspDom>();
-		changed = new HashSet<IDocument>();
-		listener = new IDocumentListener() {
-			@Override
-			public void documentAboutToBeChanged(DocumentEvent event) {
-				addChanged(event.getDocument());
-			}
-			@Override
-			public void documentChanged(DocumentEvent event) {
-				// nothing to do
-			}
-		};
-	}
-
-	private synchronized void addChanged(IDocument document) {
-		changed.add(document);
-	}
-	
-	private synchronized EspDom getDom(IDocument document) {
-		EspDom dom = domMap.get(document);
-		if(dom == null) {
-			dom = new EspDom(null, document.get());
-			document.addPrenotifiedDocumentListener(listener);
-			domMap.put(document, dom);
-		} else {
-			if(changed.remove(document)) {
-				dom.setSource(document.get());
-			}
-		}
-		return dom;
-	}
-	
-	private synchronized EspDom removeDom(IDocument document) {
-		document.removeDocumentListener(listener);
-		changed.remove(document);
-		return domMap.remove(document);
-	}
-
 }

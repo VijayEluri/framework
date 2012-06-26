@@ -10,8 +10,10 @@
  ******************************************************************************/
 package org.oobium.eclipse.esp.outline;
 
-import static org.oobium.build.esp.EspPart.Type.ConstructorElement;
-import static org.oobium.build.esp.EspPart.Type.*;
+import static org.oobium.build.esp.dom.EspPart.Type.Comment;
+import static org.oobium.build.esp.dom.EspPart.Type.Constructor;
+import static org.oobium.build.esp.dom.EspPart.Type.ImportElement;
+import static org.oobium.build.esp.dom.EspPart.Type.StyleElement;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -30,19 +32,18 @@ import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.widgets.Display;
-import org.oobium.build.esp.EspDom;
-import org.oobium.build.esp.EspElement;
-import org.oobium.build.esp.EspPart;
-import org.oobium.build.esp.elements.ImportElement;
-import org.oobium.build.esp.elements.JavaElement;
-import org.oobium.build.esp.elements.MarkupElement;
-import org.oobium.build.esp.elements.StyleChildElement;
-import org.oobium.build.esp.elements.StyleElement;
+import org.oobium.build.esp.dom.EspDom;
+import org.oobium.build.esp.dom.EspElement;
+import org.oobium.build.esp.dom.EspPart;
+import org.oobium.build.esp.dom.elements.ImportElement;
+import org.oobium.build.esp.dom.elements.JavaElement;
+import org.oobium.build.esp.dom.elements.MarkupElement;
+import org.oobium.build.esp.dom.elements.StyleElement;
+import org.oobium.build.esp.dom.parts.StylePart;
+import org.oobium.build.esp.dom.parts.style.Ruleset;
+import org.oobium.build.esp.dom.parts.style.Selector;
 import org.oobium.eclipse.esp.EspCore;
 
-/**
- * Divides the editor's document into ten segments and provides elements for them.
- */
 class EspContentProvider implements ITreeContentProvider, PropertyChangeListener {
 
 	private Comparator<Object> sorter = new Comparator<Object>() {
@@ -77,8 +78,9 @@ class EspContentProvider implements ITreeContentProvider, PropertyChangeListener
 	public Object[] getChildren(Object element) {
 		if(element instanceof StyleElement) {
 			List<Object> selectors = new ArrayList<Object>();
-			for(EspElement child : ((MarkupElement) element).getChildren()) {
-				for(EspPart selector : ((StyleChildElement) child).getSelectorGroups()) {
+			StylePart style = ((StyleElement) element).getAsset();
+			for(Ruleset rule : style.getRules()) {
+				for(Selector selector : rule.getSelectorGroup().getSelectors()) {
 					selectors.add(selector);
 				}
 			}
@@ -102,30 +104,27 @@ class EspContentProvider implements ITreeContentProvider, PropertyChangeListener
 			List<Object> elements = new ArrayList<Object>();
 			imports = null;
 			EspDom dom = EspCore.get(document);
-			for(int i = 0; i < dom.size(); i++) {
-				EspElement e = dom.get(i);
-				if(e.isA(ImportElement)) {
+			for(EspPart part : dom) {
+				if(part.isA(ImportElement)) {
 					if(imports == null) imports = new Imports();
-					imports.addChild(e);
+					imports.addChild((EspElement) part);
 				}
-				else if(e.isA(ConstructorElement)) {
-					ctors.add(e);
+				else if(part.isA(Constructor)) {
+					ctors.add(part);
 				}
-				else if(e.isA(CommentElement)) {
+				else if(part.isA(Comment)) {
 					continue;
 				}
 				else {
-					int level = e.getLevel();
-					if(level == 0) {
-						elements.add(e);
-					} else if(level < 1 && e instanceof StyleElement) { // CSS or ESS file
-						for(EspElement child : ((StyleElement) e).getChildren()) {
-							for(EspPart selector : ((StyleChildElement) child).getSelectorGroups()) {
-								if(!selector.getText().trim().startsWith("//")) { // TODO implement real comment handling
-									elements.add(selector);
-								}
+					if(part.isA(StyleElement) && dom.isStyle()) {
+						StylePart style = ((StyleElement) part).getAsset();
+						for(Ruleset rule : style.getRules()) {
+							for(Selector selector : rule.getSelectorGroup().getSelectors()) {
+								elements.add(selector);
 							}
 						}
+					} else {
+						elements.add(part);
 					}
 				}
 			}
@@ -147,11 +146,8 @@ class EspContentProvider implements ITreeContentProvider, PropertyChangeListener
 		if(element instanceof ImportElement) {
 			return imports;
 		}
-		if(element instanceof EspElement) {
-			return ((EspElement) element).getParent();
-		}
 		if(element instanceof EspPart) {
-			return ((EspPart) element).getElement();
+			return ((EspPart) element).getParent();
 		}
 		if(element instanceof Imports) {
 			return imports;

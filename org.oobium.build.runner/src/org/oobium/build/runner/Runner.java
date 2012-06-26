@@ -155,6 +155,10 @@ public class Runner {
 				exporter.setClean(true);
 				exporter.setProperties(properties);
 				exporter.setIncludeMigrator(true);
+				
+				Bundle ps = workspace.getBundle("org.oobium.pipeline.service");
+				exporter.addStart(ps);
+				
 				exporter.export();
 			} catch(IOException e) {
 				return false;

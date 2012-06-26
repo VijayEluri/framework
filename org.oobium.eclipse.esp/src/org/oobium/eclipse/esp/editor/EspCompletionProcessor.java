@@ -10,9 +10,7 @@
  ******************************************************************************/
 package org.oobium.eclipse.esp.editor;
 
-import static org.oobium.build.esp.EspPart.Type.*;
-import static org.oobium.build.esp.EspPart.Type.DOM;
-import static org.oobium.build.esp.EspPart.Type.ImportElement;
+import static org.oobium.build.esp.dom.EspPart.Type.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,12 +38,13 @@ import org.eclipse.jface.text.contentassist.IContextInformationValidator;
 import org.eclipse.jface.viewers.StyledString;
 import org.eclipse.swt.graphics.Image;
 import org.oobium.build.esp.Constants;
-import org.oobium.build.esp.ESourceFile;
-import org.oobium.build.esp.EspDom;
-import org.oobium.build.esp.EspElement;
-import org.oobium.build.esp.EspPart;
-import org.oobium.build.esp.EspPart.Type;
-import org.oobium.build.esp.elements.StyleChildElement;
+import org.oobium.build.esp.compiler.ESourceFile;
+import org.oobium.build.esp.dom.EspDom;
+import org.oobium.build.esp.dom.EspElement;
+import org.oobium.build.esp.dom.EspPart;
+import org.oobium.build.esp.dom.EspPart.Type;
+import org.oobium.build.esp.dom.parts.style.Property;
+import org.oobium.build.esp.dom.parts.style.Selector;
 import org.oobium.eclipse.esp.EspCore;
 import org.oobium.eclipse.esp.EspPlugin;
 import org.oobium.eclipse.esp.EssCore;
@@ -68,53 +67,40 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 		IDocument doc = viewer.getDocument();
 		EspPart part = EspCore.get(doc).getPart(offset);
 		if(part != null) {
-			List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
-			if(part.isA(DOM) && offset > 0) {
+			if((part.isA(DOM) || (part instanceof EspElement)) && offset > 0) {
 				EspPart prev = part.getPart(offset-1);
-				if(prev != null && !prev.isA(DOM)) {
+				if(prev != null && prev != part) {
 					part = prev;
+					offset--;
 				}
 			}
-			EspElement element = part.getElement();
-			if(element == null) {
-				if(part.isA(DOM)) {
-					proposals.addAll(computeDomProposals(doc, part, offset));
-				}
-			} else {
-				switch(element.getType()) {
-				case MarkupCommentElement:
-				case MarkupElement:
-					proposals.addAll(computeMarkupProposals(doc, element, part, offset));
-					break;
-				case ConstructorElement:
-				case ImportElement:
-				case JavaElement:
-					proposals.addAll(computeJavaProposals(doc, element, part, offset));
-					break;
-				case StyleElement:
-					if(part.isA(TagPart)) {
-						proposals.addAll(computeMarkupProposals(doc, element, part, offset));
-						break;
-					} // else, fall through
-				case StyleChildElement:
-					proposals.addAll(computeStyleProposals(element, part, offset));
-					break;
-				default:
-					switch(part.getType()) {
-					case TagPart:
-						proposals.addAll(computeMarkupProposals(doc, element, part, offset));
-						break;
-					case JavaPart:
-					case JavaSourcePart:
-						proposals.addAll(computeJavaProposals(doc, element, part, offset));
-						break;
-					}
-					break;
-				}
-			}
+			List<ICompletionProposal> proposals = computeCompletionProposals(doc, part, offset);
 			return sorted(proposals);
 		}
 		return new ICompletionProposal[0];
+	}
+
+	private List<ICompletionProposal> computeCompletionProposals(IDocument doc, EspPart part, int offset) {
+		switch(part.getType()) {
+		case DOM:
+			return computeDomProposals(doc, part, offset);
+		case JavaElement:
+		case JavaContainer:
+		case JavaSource:
+			return computeJavaProposals(doc, part, offset);
+		case MarkupElement:
+		case MarkupComment:
+			return computeMarkupProposals(doc, part, offset);
+		case MarkupTag:
+			return computeMarkupTagProposals(doc, part, offset);
+		case MarkupId:
+			return computeMarkupIdProposals(part, offset);
+		case MarkupClass:
+			return computeMarkupClassProposals(part, offset);
+		case StylePropertyName:
+			return computeStylePropertyNameProposals(part, offset);
+		}
+		return new ArrayList<ICompletionProposal>(0);
 	}
 
 	public IContextInformation[] computeContextInformation(ITextViewer viewer, int documentOffset) {
@@ -126,16 +112,16 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 		return result;
 	}
 	
-	private List<ICompletionProposal> computeCssClassProposals(EspPart part, int offset) {
+	private List<ICompletionProposal> computeMarkupClassProposals(EspPart part, int offset) {
 		return computeCssSelectorProposals(part, offset, ".", EssCore.getCssClasses(editor.getProject(), part.getDom()));
 	}
 	
-	private List<ICompletionProposal> computeCssIdProposals(EspPart part, int offset) {
+	private List<ICompletionProposal> computeMarkupIdProposals(EspPart part, int offset) {
 		return computeCssSelectorProposals(part, offset, "#", EssCore.getCssIds(editor.getProject(), part.getDom()));
 	}
 
-	private List<ICompletionProposal> computeCssPropertyNameProposals(EspPart part, int offset) {
-		if(part.isA(Type.StylePropertyNamePart)) {
+	private List<ICompletionProposal> computeStylePropertyNameProposals(EspPart part, int offset) {
+		if(part.isA(Type.StylePropertyName)) {
 			List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
 			Set<String> tags = new TreeSet<String>(Constants.CSS_PROPERTIES.keySet());
 			int endIndex = offset - part.getStart();
@@ -149,7 +135,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 			}
 			if(!tags.isEmpty()) {
 				for(String tag : tags) {
-					int rlength = part.getLength();
+					int rlength = part.length();
 					int length = tag.length();
 					ICompletionProposal proposal = 
 						new EspCompletionProposal(
@@ -167,7 +153,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 			}
 			results.addAll(computeMixinProposals(part, offset));
 			return results;
-		} else if(part.isA(Type.StyleEntryPart)) {
+		} else if(part.isA(Type.StyleProperty)) {
 			EspDom dom = part.getDom();
 			int i = offset-1;
 			while(i >= 0 && dom.charAt(i) != '"' && Character.isWhitespace(dom.charAt(i))) {
@@ -199,7 +185,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 		return new ArrayList<ICompletionProposal>(0);
 	}
 	
-	private List<ICompletionProposal> computeCssSelectorProposals(EspPart part, int offset, String prefix, List<EspPart> selectors) {
+	private List<ICompletionProposal> computeCssSelectorProposals(EspPart part, int offset, String prefix, List<Selector> selectors) {
 		if(selectors.isEmpty()) {
 			return new ArrayList<ICompletionProposal>(0);
 		}
@@ -207,10 +193,10 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 		int startIndex = offset;
 		int endIndex = offset - part.getStart();
 		if(endIndex > 0) {
-			if(part.isA(Type.ClassPart) || part.isA(Type.IdPart)) {
+			if(part.isA(Type.MarkupClass) || part.isA(Type.MarkupId)) {
 				prefix += part.getText().substring(0, endIndex);
 			}
-			for(Iterator<EspPart> iter = selectors.iterator(); iter.hasNext(); ) {
+			for(Iterator<Selector> iter = selectors.iterator(); iter.hasNext(); ) {
 				if(!iter.next().startsWith(prefix)) {
 					iter.remove();
 				}
@@ -222,17 +208,17 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 			return new ArrayList<ICompletionProposal>(0);
 		} else {
 			List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
-			for(EspPart selector : selectors) {
+			for(Selector selector : selectors) {
 				String rstr = selector.substring(1);
-				int rlength = part.getLength();
+				int rlength = part.length();
 				int length = rstr.length();
 
 				StyledString dstr = new StyledString(selector.getText());
-				dstr.append(" - " + selector.getDom().getFileName(), StyledString.QUALIFIER_STYLER);
+				dstr.append(" - " + selector.getDom().getName(), StyledString.QUALIFIER_STYLER);
 
 				StringBuilder info = new StringBuilder();
 				info.append(selector.getText()).append(" {");
-				for(StyleChildElement prop : ((StyleChildElement) selector.getParent()).getProperties()) {
+				for(Property prop : selector.getDeclaration().getProperties()) {
 					info.append("\n  ").append(prop);
 				}
 				info.append("\n}");
@@ -258,7 +244,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 	private List<ICompletionProposal> computeDomProposals(IDocument doc, EspPart part, int offset) {
 		EspDom dom = part.getDom();
 		String imp = "import";
-		String ctor = dom.getName();
+		String ctor = dom.getSimpleName();
 		List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
 		try {
 			int lineStart = doc.getLineOffset(doc.getLineOfOffset(offset));
@@ -274,7 +260,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 						}
 						return proposals;
 					}
-					if(next.getElement().isA(ConstructorElement)) {
+					if(next.getElement().isA(Constructor)) {
 						if(offset == lineStart) {
 							Image image = JavaUI.getSharedImages().getImage(ISharedImages.IMG_OBJS_PACKAGE);
 							EspCompletionProposal proposal = new EspCompletionProposal("import ", offset, 0, 7, image, "import", null, "add a new import statement");
@@ -298,7 +284,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 					i++;
 				}
 				while(i < parts.size() && parts.get(i).getEnd() < offset) {
-					if(!parts.get(i).isA(ConstructorElement)) {
+					if(!parts.get(i).isA(Constructor)) {
 						ctor = null;
 						break;
 					}
@@ -338,7 +324,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 					}
 					return results;
 				} else {
-					String s = dom.substring(lineStart, offset).toLowerCase();
+					String s = dom.subSequence(lineStart, offset).toLowerCase();
 					if(imp != null && "import".startsWith(s)) {
 						Image image = JavaUI.getSharedImages().getImage(ISharedImages.IMG_OBJS_PACKAGE);
 						proposals.add(new EspCompletionProposal("import ", lineStart, offset-lineStart, 7, image, "import", null, "add a new import statement"));
@@ -355,18 +341,22 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 		return proposals;
 	}
 
-	private List<ICompletionProposal> computeJavaProposals(IDocument doc, EspElement element, EspPart part, int espOffset) {
+	private List<ICompletionProposal> computeJavaProposals(IDocument doc, EspPart part, int offset) {
 		EspDom dom = part.getDom();
-		int i = espOffset - 1;
+		int i = offset-1;
 		while(i >= part.getStart() && Character.isJavaIdentifierPart(dom.charAt(i))) {
 			i--;
 		}
 		if(i > part.getStart() && Character.isJavaIdentifierStart(dom.charAt(i))) {
 			i--;
 		}
-		int start = i + 1;
+		int start = i;
 		ESourceFile jf = editor.getEspJavaFile();
-		int javaOffset = jf.getJavaOffset(espOffset);
+		int javaOffset = jf.getJavaOffset(offset-1) + 1;
+		if(javaOffset == 0) {
+			System.out.println("javaOffset not found");
+			return new ArrayList<ICompletionProposal>(0);
+		}
 		
 		InputStream in = null;
 		try {
@@ -375,9 +365,8 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 			char c;
 			while((c = (char) in.read()) != -1) {
 				if(i == javaOffset) {
-					System.out.print('{');
+					System.out.print('^');
 					System.out.print(c);
-					System.out.print('}');
 				}
 				else if(i > javaOffset-20 && i < javaOffset+20) {
 					System.out.print(c);
@@ -390,6 +379,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
+		System.out.println();
 		try {
 			if(in != null) in.close();
 		} catch(IOException e1) {
@@ -399,7 +389,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 		ICompilationUnit cu = (ICompilationUnit) JavaCore.create(editor.getJavaResource());
 		
 		try {
-			EspJavaProposalCollector collector = new EspJavaProposalCollector(cu, start);
+			EspJavaProposalCollector collector = new EspJavaProposalCollector(cu, start+1);
 			cu.codeComplete(javaOffset, collector);
 			ICompletionProposal[] proposals = collector.getJavaCompletionProposals();
 			return Arrays.asList(proposals);
@@ -410,54 +400,18 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 		return new ArrayList<ICompletionProposal>(0);
 	}
 
-	private List<ICompletionProposal> computeMarkupProposals(IDocument doc, EspElement element, EspPart part, int offset) {
-		switch(part.getType()) {
-		case ClassPart:
-			return computeCssClassProposals(part, offset);
-		case IdPart:
-			return computeCssIdProposals(part, offset);
-		case JavaPart:
-		case JavaSourcePart:
-		case JavaTypePart:
-			return computeJavaProposals(doc, element, part, offset);
-		case MarkupElement:
-			if(offset > 0) {
-				char c = part.getDom().charAt(offset-1);
-				switch(c) {
-				case '.': return computeCssClassProposals(part, offset);
-				case '#': return computeCssIdProposals(part, offset);
-				// default: fall through
-				}
-				if(!Character.isWhitespace(c)) {
-					EspPart prev = part.getPart(offset-1);
-					if(prev != part) {
-						return computeMarkupProposals(doc, element, prev, offset);
-					} // else, fall through
-				}
-			} // else, fall through
-		case TagPart:
-			return computeMarkupTagProposals(doc, part, offset);
-		case StyleElement:
-		case StyleChildElement:
-			return computeStyleProposals(element, part, offset);
-		case StylePart:
-			return new ArrayList<ICompletionProposal>(0); // TODO style part completion
-		case StyleEntryPart:
-		case StylePropertyPart:
-		case StylePropertyNamePart:
-			return computeCssPropertyNameProposals(part, offset);
-		}
+	private List<ICompletionProposal> computeMarkupProposals(IDocument doc, EspPart part, int offset) {
 		return new ArrayList<ICompletionProposal>(0);
 	}
 
 	private List<ICompletionProposal> computeMarkupTagProposals(IDocument doc, EspPart part, int offset) {
 		EspDom dom = part.getDom();
-		if(part.isA(Type.TagPart)) {
+		if(part.isA(Type.MarkupTag)) {
 			List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
 			int endIndex = offset - part.getStart();
 			String prefix = part.getText().substring(0, endIndex);
 
-			String ctor = dom.getName();
+			String ctor = dom.getSimpleName();
 			String imp = "import";
 			if(dom.hasParts()) {
 				int i = 0;
@@ -470,7 +424,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 					i++;
 				}
 				while(i < parts.size() && parts.get(i).getEnd() < offset) {
-					if(!parts.get(i).isA(ConstructorElement)) {
+					if(!parts.get(i).isA(Constructor)) {
 						ctor = null;
 						break;
 					}
@@ -483,7 +437,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 				while(start < part.getEnd() && Character.isWhitespace(dom.charAt(start))) {
 					start++;
 				}
-				String s = dom.substring(start, offset).toLowerCase();
+				String s = dom.subSequence(start, offset).toLowerCase();
 				if(imp != null && "import".startsWith(s)) {
 					Image image = JavaUI.getSharedImages().getImage(ISharedImages.IMG_OBJS_PACKAGE);
 					proposals.add(new EspCompletionProposal("import ", start, offset-start, 7, image, "import", null, "add a new import statement"));
@@ -506,7 +460,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 			if(!tags.isEmpty()) {
 				Image image = EspPlugin.getImage(EspPlugin.IMG_HTML_TAG);
 				for(String tag : tags) {
-					int rlength = part.getLength();
+					int rlength = part.length();
 					int length = tag.length();
 					ICompletionProposal proposal = 
 						new EspCompletionProposal(tag, offset - prefix.length(), rlength, length, image, tag, null, Constants.HTML_TAGS.get(tag));
@@ -517,7 +471,6 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 				return proposals;
 			}
 		} else {
-			
 			int i = offset-1;
 			while(i >= 0 && dom.charAt(i) != '\n' && Character.isWhitespace(dom.charAt(i))) {
 				i--;
@@ -538,34 +491,14 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 	private List<ICompletionProposal> computeMixinProposals(EspPart part, int offset) {
 		List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
 		if(part.charAt(0) == '.') {
-			proposals.addAll(computeCssClassProposals(part, offset));
+			proposals.addAll(computeMarkupClassProposals(part, offset));
 		}
 		if(part.charAt(0) == '#') {
-			proposals.addAll(computeCssIdProposals(part, offset));
+			proposals.addAll(computeMarkupIdProposals(part, offset));
 		}
 		return proposals;
 	}
 
-	private List<ICompletionProposal> computeStyleProposals(EspElement element, EspPart part, int offset) {
-		switch(part.getType()) {
-		case StyleMixinNamePart:
-			return computeMixinProposals(part, offset);
-		case StyleElement:
-		case StylePropertyPart:
-			EspPart prev = part.getPart(offset-1);
-			if(prev.isA(StyleMixinNamePart)) {
-				return computeMixinProposals(prev, offset);
-			} // else, fall through
-			if(prev.isA(StylePropertyNamePart)) {
-				return computeCssPropertyNameProposals(prev, offset);
-			} // else, fall through
-		case StyleChildElement:
-		case StylePropertyNamePart:
-			return computeCssPropertyNameProposals(part, offset);
-		}
-		return new ArrayList<ICompletionProposal>(0);
-	}
-	
 	public char[] getCompletionProposalAutoActivationCharacters() {
 		return null;
 	}

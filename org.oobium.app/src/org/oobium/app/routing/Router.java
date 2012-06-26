@@ -106,6 +106,12 @@ public class Router {
 		}
 	}
 
+	public static String getAssetName(Class<? extends DynamicAsset> clazz) {
+		String name = "/" + underscored(clazz.getCanonicalName());
+		name = name.replace('.', '/') + "." + DynamicAsset.getFileExtension(clazz);
+		return name;
+	}
+
 	
 	protected final ModuleService service;
 	protected final Logger logger;
@@ -699,12 +705,6 @@ public class Router {
 		return null;
 	}
 	
-	private String getAssetName(Class<? extends DynamicAsset> clazz) {
-		String name = "/" + underscored(clazz.getCanonicalName());
-		name = name.replace('.', '/') + "." + DynamicAsset.getFileExtension(clazz);
-		return name;
-	}
-
 	private Class<? extends HttpController> getControllerClass(Class<?> clazz) {
 		Class<? extends HttpController> controllerClass = null;
 		if(Model.class.isAssignableFrom(clazz)) {

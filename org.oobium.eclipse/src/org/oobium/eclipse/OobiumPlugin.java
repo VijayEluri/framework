@@ -53,10 +53,10 @@ public class OobiumPlugin extends AbstractUIPlugin {
 	
 	public static final String PREFERENCES = "org.oobium.eclipse.preferences";
 	
-	public static final String IMG_ADD = "/icons/add.png";
+	public static final String IMG_ADD        = "/icons/add.png";
 	public static final String IMG_ARROW_DOWN = "/icons/arrow_down.gif";
-	public static final String IMG_ARROW_UP = "/icons/arrow_up.gif";
-	public static final String IMG_DELETE = "/icons/delete.png";
+	public static final String IMG_ARROW_UP   = "/icons/arrow_up.gif";
+	public static final String IMG_DELETE     = "/icons/delete.png";
 	
 	
 	private static OobiumPlugin instance;

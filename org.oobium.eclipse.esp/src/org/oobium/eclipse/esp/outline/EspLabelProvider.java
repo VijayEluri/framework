@@ -17,10 +17,10 @@ import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
-import org.oobium.build.esp.EspElement;
-import org.oobium.build.esp.EspPart;
-import org.oobium.build.esp.elements.JavaElement;
-import org.oobium.build.esp.elements.ScriptElement;
+import org.oobium.build.esp.dom.EspElement;
+import org.oobium.build.esp.dom.EspPart;
+import org.oobium.build.esp.dom.elements.JavaElement;
+import org.oobium.build.esp.dom.elements.MarkupElement;
 import org.oobium.eclipse.esp.EspPlugin;
 
 public class EspLabelProvider extends LabelProvider implements IColorProvider, IFontProvider, ILabelProvider {
@@ -51,12 +51,13 @@ public class EspLabelProvider extends LabelProvider implements IColorProvider, I
 			EspElement espElement = (EspElement) element;
 			switch(espElement.getType()) {
 			case ImportElement: return EspPlugin.getImage(EspPlugin.IMG_IMPORT);
-			case ConstructorElement: return EspPlugin.getImage(EspPlugin.IMG_CTOR);
+			case Constructor: return EspPlugin.getImage(EspPlugin.IMG_CTOR);
 			case JavaElement: return EspPlugin.getImage(EspPlugin.IMG_JAVA_LINE);
 			case ScriptElement: return EspPlugin.getImage(EspPlugin.IMG_SCRIPT);
 			case StyleElement: return EspPlugin.getImage(EspPlugin.IMG_STYLE);
 			case MarkupElement:
-				if(espElement.getElementText().startsWith("title ")) {
+				MarkupElement markup = (MarkupElement) element;
+				if("title".equals(markup.getTag().getText())) {
 					return EspPlugin.getImage(EspPlugin.IMG_TITLE);
 				}
 				return EspPlugin.getImage(EspPlugin.IMG_HTML_TAG);
@@ -70,26 +71,26 @@ public class EspLabelProvider extends LabelProvider implements IColorProvider, I
 
 	@Override
 	public String getText(Object element) {
-		if(element instanceof Imports) {
-			return "imports declarations";
-		}
-		if(element instanceof JavaElement) {
-			return ((JavaElement) element).getSource();
-		}
-		if(element instanceof ScriptElement) {
-			return "script";
-		}
-		if(element instanceof EspElement) {
-			String text = ((EspElement) element).getElementText();
-			if(text.startsWith("title ")) {
-				return text.substring(6);
-			}
-			return text;
-		}
 		if(element instanceof EspPart) {
-			return ((EspPart) element).getText();
+			EspPart part = (EspPart) element;
+			switch(part.getType()) {
+			case JavaElement:   return ((JavaElement) part).getSource().getText();
+			case ScriptElement: return "script";
+			case StyleElement:  return "style";
+			case MarkupElement:
+				MarkupElement markup = (MarkupElement) element;
+				if("title".equals(markup.getTag().getText())) {
+					return "title: " + markup.getInnerText().getText();
+				}
+			default:
+				String s = part.getText();
+				int i1 = s.indexOf("<-");
+				int i2 = s.indexOf('\n');
+				int ix = (i1 == -1) ? i2 : Math.min(i1, i2);
+				return ((ix == -1) ? s : s.substring(0, ix)).trim();
+			}
 		}
-		return element.toString();
+		return String.valueOf(element);
 	}
 
 }

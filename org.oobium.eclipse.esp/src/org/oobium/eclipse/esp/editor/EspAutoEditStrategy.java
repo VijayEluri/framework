@@ -1,6 +1,6 @@
 package org.oobium.eclipse.esp.editor;
 
-import static org.oobium.build.esp.EspPart.Type.*;
+import static org.oobium.build.esp.dom.EspPart.Type.*;
 
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.DocumentCommand;
@@ -8,9 +8,9 @@ import org.eclipse.jface.text.IAutoEditStrategy;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.TextUtilities;
-import org.oobium.build.esp.EspDom;
-import org.oobium.build.esp.EspElement;
-import org.oobium.build.esp.EspPart;
+import org.oobium.build.esp.dom.EspDom;
+import org.oobium.build.esp.dom.EspElement;
+import org.oobium.build.esp.dom.EspPart;
 import org.oobium.eclipse.esp.EspCore;
 
 public class EspAutoEditStrategy implements IAutoEditStrategy {
