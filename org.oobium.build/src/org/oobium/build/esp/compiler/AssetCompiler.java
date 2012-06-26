@@ -3,10 +3,8 @@ package org.oobium.build.esp.compiler;
 import static org.oobium.utils.StringUtils.varName;
 
 import java.util.Iterator;
-import java.util.List;
 
 import org.oobium.build.esp.dom.EspPart;
-import org.oobium.build.esp.dom.EspPart.Type;
 import org.oobium.build.esp.dom.elements.MarkupElement;
 import org.oobium.build.esp.dom.elements.ScriptElement;
 import org.oobium.build.esp.dom.elements.StyleElement;

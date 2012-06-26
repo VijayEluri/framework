@@ -1,6 +1,6 @@
 package org.oobium.build.esp;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -8,7 +8,6 @@ import org.oobium.app.views.StyleSheet;
 import org.oobium.build.esp.compiler.ESourceFile;
 import org.oobium.build.esp.compiler.EspCompiler;
 import org.oobium.build.esp.dom.EspDom;
-import org.oobium.build.esp.dom.EspResolver;
 import org.oobium.build.esp.parser.EspBuilder;
 import org.oobium.framework.tests.dyn.DynClasses;
 import org.oobium.framework.tests.dyn.SimpleDynClass;
@@ -26,11 +25,7 @@ public class EssTests {
 	
 	private ESourceFile esf(String src) throws Exception {
 		EspDom dom = EspBuilder.newEspBuilder("Test"+(count++)+".ess").parse(src);
-		EspResolver resolver = new EspResolver();
-		resolver.add(dom);
-		
 		EspCompiler ec = EspCompiler.newEspCompiler(pkg);
-		ec.setResolver(resolver);
 		ESourceFile esf = ec.compile(dom);
 		
 		String java = esf.getSource();

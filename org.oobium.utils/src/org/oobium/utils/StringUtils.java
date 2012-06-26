@@ -417,6 +417,10 @@ public class StringUtils {
 		dateTimeTags(sb, prefix, new SimpleDateFormat(format), selection);
 	}
 	
+	public static void dateTimeTags(StringBuilder sb, String prefix, String format, Date selection) {
+		dateTimeTags(sb, prefix, new SimpleDateFormat(format), selection);
+	}
+	
 	private static void dateTimeTags(StringBuilder sb, String pattern, int field, Date selection) {
 		Calendar cal = GregorianCalendar.getInstance();
 		int min = (field == Calendar.YEAR) ? (cal.get(Calendar.YEAR) - 100) : cal.getMinimum(field);
