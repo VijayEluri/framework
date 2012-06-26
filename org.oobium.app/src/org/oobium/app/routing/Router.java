@@ -108,7 +108,7 @@ public class Router {
 
 	public static String getAssetName(Class<? extends DynamicAsset> clazz) {
 		String name = "/" + underscored(clazz.getCanonicalName());
-		name = name.replace('.', '/') + "." + DynamicAsset.getFileExtension(clazz);
+		name = name.replace('.', '/') + ".e." + DynamicAsset.getFileExtension(clazz);
 		return name;
 	}
 
@@ -232,12 +232,19 @@ public class Router {
 					sa[0] = sa[0].substring(7);
 				}
 
+				Route route;
 				int ix = assetPath.lastIndexOf('.');
-				String ext = (ix != -1) ? assetPath.substring(ix+1) : null;
-
-				MimeType type = MimeType.getFromExtension(ext, MimeType.HTML);
-
-				Route route = new StaticRoute(checkRule(sa[0]), assetPath, type, sa[1], sa[2]);
+				int len = assetPath.length();
+				if(ix != -1 && len > 6 && assetPath.charAt(len-5) == 'e' && assetPath.charAt(len-6) == '.') {
+					String className = assetPath.substring(1, ix-2).replace('/', '.');
+					Class<? extends DynamicAsset> clazz = service.getClass(className).asSubclass(DynamicAsset.class);
+					String rule = getAssetName(clazz);
+					route = new DynamicAssetRoute(GET, rule, clazz);
+				} else {
+					String ext = (ix != -1) ? assetPath.substring(ix+1) : null;
+					MimeType type = MimeType.getFromExtension(ext, MimeType.HTML);
+					route = new StaticRoute(checkRule(sa[0]), assetPath, type, sa[1], sa[2]);
+				}
 				routes.add(route);
 				addRoute(key, route);
 				if(sa.length == 4) {

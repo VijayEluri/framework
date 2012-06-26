@@ -16,7 +16,6 @@ import static org.oobium.utils.Config.CACHE;
 import static org.oobium.utils.Config.MODULES;
 import static org.oobium.utils.Config.PERSIST;
 import static org.oobium.utils.Config.SESSION;
-import static org.oobium.utils.DateUtils.httpDate;
 import static org.oobium.utils.FileUtils.findFiles;
 import static org.oobium.utils.FileUtils.readFile;
 import static org.oobium.utils.FileUtils.writeFile;
@@ -1164,55 +1163,7 @@ public class Module extends Bundle {
 	 * @see DateUtils#httpDate(java.util.Date)
 	 */
 	public File generateAssetList() {
-		if(assets != null && assets.exists()) {
-			ArrayList<String> realms = new ArrayList<String>();
-			ArrayList<String> paths = new ArrayList<String>();
-
-			int len = assets.getPath().length();
-
-			// get all files in the assets folder and its subfolders
-			// note that each folder may contain a special "authentication.realm" file
-			//   this file contains the name of the realm that is allowed access to the files in the folder
-			for(File file : findFiles(assets)) {
-				if(file.getName().equals("authentication.realm")) {
-					realms.add(file.getParent().substring(len).replace('\\', '/') + File.separator + "|" + readFile(file));
-				} else {
-					paths.add(file.getPath().substring(len).replace('\\', '/') + "|" + file.length() + "|" + httpDate(file.lastModified()));
-				}
-			}
-
-			if(!realms.isEmpty()) {
-				for(String s : realms) {
-					String[] sa = s.split("|");
-					for(int i = 0; i < paths.size(); i++) {
-						String path = paths.get(i);
-						if(path.startsWith(sa[0])) {
-							paths.set(i, path + "|" + sa[1]);
-						}
-					}
-				}
-			}
-			
-			Collections.sort(paths);
-
-			len = 10;
-			for(String path : paths) {
-				len += path.length();
-				len += 5;
-			}
-			
-			StringBuilder sb = new StringBuilder(len);
-			sb.append("([");
-			for(int i = 0; i < paths.size(); i++) {
-				if(i != 0) sb.append(',');
-				sb.append('\n').append('\t').append('"').append(paths.get(i)).append('"');
-			}
-			sb.append("\n]);\n");
-			
-			writeFile(assetList, sb.toString());
-			return assetList;
-		}
-		return null;
+		return new AssetList(this).load().writeFile();
 	}
 
 	public List<File> generateMailer(File mailer) {

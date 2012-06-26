@@ -129,6 +129,26 @@ public abstract class ModuleService implements BundleActivator {
 		return context;
 	}
 
+	public Class<?> getClass(String className) {
+		Class<?> clazz = null;
+		try {
+			clazz = context.getBundle().loadClass(className);
+		} catch(ClassNotFoundException e) {
+			// fall through
+		}
+		for(String module : config.getModules()) {
+			Bundle bundle = getBundle(module);
+			if(bundle != null) {
+				try {
+					return context.getBundle().loadClass(className);
+				} catch(ClassNotFoundException e) {
+					// fall through
+				}
+			}
+		}
+		return clazz;
+	}
+	
 	public Class<? extends HttpController> getControllerClass(Class<? extends Model> modelClass) {
 		String controllerName = modelClass.getSimpleName() + "Controller";
 		Class<? extends HttpController> controllerClass = getControllerClass(config, controllerName, context.getBundle());
