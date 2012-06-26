@@ -7,7 +7,6 @@ import org.oobium.app.persist.PersistServicesTests;
 import org.oobium.build.esp.EjsCompilerTests;
 import org.oobium.build.esp.EspCompilerPositionTests;
 import org.oobium.build.esp.EspCompilerTests;
-import org.oobium.build.esp.EssCompilerTests;
 import org.oobium.build.views.dom.html_elements.InputTests;
 import org.oobium.build.workspace.BundleTests;
 import org.oobium.build.workspace.ModuleTests;
@@ -34,7 +33,6 @@ import org.oobium.utils.json.JsonUtilsTests;
 	EjsCompilerTests.class,
 	EspCompilerPositionTests.class,
 	EspCompilerTests.class,
-	EssCompilerTests.class,
 	InputTests.class,
 	BundleTests.class,
 	ModuleTests.class,

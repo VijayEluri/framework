@@ -156,6 +156,23 @@ public class EssTests {
 	}
 
 	@Test
+	public void testMultipleNested() throws Exception {
+		String css =
+				"#header{}" +
+				"#header .class1{color:red}" +
+				"#header .class2{color:green}";
+
+		String ess =
+				("#header\n" +
+				 "  .class1\n" +
+				 "    color: red\n" +
+				 "  .class2\n" +
+				 "    color: green").replace("  ", "\t");
+
+		assertEquals(css, css(ess));
+	}
+
+	@Test
 	public void testMixin_MissingClass() throws Exception {
 		String css =
 				"#menu a{" +

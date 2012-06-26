@@ -47,7 +47,7 @@ public class StyleBuilder extends MarkupBuilder {
 			} else {
 				scanner.setContainmentToEOE();
 			}
-			do {
+			while(true) {
 				if(scanner.isChar(';')) {
 					scanner.next();
 				}
@@ -61,9 +61,7 @@ public class StyleBuilder extends MarkupBuilder {
 				else {
 					parseProperty(declaration);
 				}
-			} while(scanner.isChar(';', ' '));
-			scanner.next();
-			scanner.pop(declaration);
+			}
 		} catch(EspEndException e) {
 			if(scanner.isChar('}')) {
 				scanner.move(1);
@@ -160,6 +158,7 @@ public class StyleBuilder extends MarkupBuilder {
 		scanner.setContainmentToEOE();
 		try {
 			parseDeclaration(rule);
+			scanner.pop(rule);
 		} catch(EspException e) {
 			scanner.pop(rule, e.getOffset());
 		}

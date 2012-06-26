@@ -89,7 +89,9 @@ public class Ruleset extends EspPart implements MethodSignature {
 	}
 	
 	public Ruleset getParentRuleset() {
-		return (parent instanceof Declaration) ? ((Declaration) parent).getParent() : null;
+		if(parent instanceof Ruleset) return (Ruleset) parent;
+		if(parent instanceof Declaration) return ((Declaration) parent).getParent();
+		return null;
 	}
 	
 	public Selector getSelector() {
