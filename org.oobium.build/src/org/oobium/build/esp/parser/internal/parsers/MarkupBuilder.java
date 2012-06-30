@@ -158,9 +158,13 @@ public class MarkupBuilder extends Builder {
 			try {
 				scanner.findCloser();
 			} catch(EspEndException e) {
-				scanner.popTo(element.getJavaType());
-				scanner.next();
-				scanner.pop(element.getJavaType());
+				if(scanner.isChar('>')) {
+					scanner.popTo(element.getJavaType());
+					scanner.next();
+					scanner.pop(element.getJavaType(), scanner.getOffset());
+				} else {
+					scanner.pop(element.getJavaType(), e.getOffset());
+				}
 			}
 		}
 	}
