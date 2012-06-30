@@ -715,9 +715,9 @@ public class EspCompiler {
 			if(containers.size() > 0) {
 				prepForMarkup(body);
 				for(EspPart container : containers) {
-					body.append(getCodeVar(container)).append(" = ");
+					body.append(getCodeVar(container)).append(" = \\\"");
 					build(container, body);
-					body.append(';');
+					body.append("\\\";");
 				}
 			}
 		}

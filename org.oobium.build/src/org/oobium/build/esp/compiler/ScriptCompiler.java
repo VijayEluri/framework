@@ -67,9 +67,9 @@ public class ScriptCompiler extends AssetCompiler {
 				sb.append("<script>");
 				if(containers.size() > 0) {
 					for(EspPart container : containers) {
-						sb.append(parent.getCodeVar(container)).append(" = ");
+						sb.append(parent.getCodeVar(container)).append(" = \\\"");
 						parent.build(container, sb);
-						sb.append(";");
+						sb.append("\\\";");
 					}
 				}
 				build(script, sb);

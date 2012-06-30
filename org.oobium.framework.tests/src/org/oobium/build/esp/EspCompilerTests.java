@@ -287,24 +287,24 @@ public class EspCompilerTests {
 		assertEquals(
 				"int width = 10;\n" +
 				"includeScriptEnvironment();\n" +
-				"__body__.append(\"<script>$oobenv.myEspVar57 = \");\n" +
+				"__body__.append(\"<script>$oobenv.myEspVar57 = \\\"\");\n" +
 				"__body__.append(j(width * 2));\n" +
-				"__body__.append(\";var size = { height: 100, width: $oobenv.myEspVar57 };</script>\");",
+				"__body__.append(\"\\\";var size = { height: 100, width: $oobenv.myEspVar57 };</script>\");",
 				render("-int width = 10;\nscript var size = { height: 100, width: ${width * 2} };"));
 
 		assertEquals(
 				"int var = 10;\n" +
 				"includeScriptEnvironment();\n" +
-				"__body__.append(\"<script>$oobenv.myEspVar28 = \");\n" +
+				"__body__.append(\"<script>$oobenv.myEspVar28 = \\\"\");\n" +
 				"__body__.append(j(var));\n" +
-				"__body__.append(\";alert($oobenv.myEspVar28);</script>\");",
+				"__body__.append(\"\\\";alert($oobenv.myEspVar28);</script>\");",
 				render("-int var = 10;\nscript alert(${var});"));
 		
 		assertEquals(
 				"<!DOCTYPE html><html>" +
 				"<head><script>window.$oobenv = {};</script></head>" +
 				"<body><script>" +
-				"$oobenv.myEspVar28 = 10;" +
+				"$oobenv.myEspVar28 = \"10\";" +
 				"alert($oobenv.myEspVar28);" +
 				"</script></body>" +
 				"</html>",
