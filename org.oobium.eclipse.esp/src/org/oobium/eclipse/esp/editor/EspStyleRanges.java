@@ -11,11 +11,11 @@
 package org.oobium.eclipse.esp.editor;
 
 import static org.oobium.build.esp.Constants.CSS_PROPERTIES;
+import static org.oobium.build.esp.Constants.DOM_EVENTS;
 import static org.oobium.build.esp.Constants.HTML_TAGS;
 import static org.oobium.build.esp.Constants.JAVA_KEYWORDS;
 import static org.oobium.build.esp.Constants.JS_KEYWORDS;
 import static org.oobium.build.esp.dom.EspPart.Type.Comment;
-import static org.oobium.build.esp.dom.EspPart.Type.MarkupTag;
 
 import java.util.Arrays;
 
@@ -33,7 +33,7 @@ public class EspStyleRanges {
 
 	private static final StyleRange level = new StyleRange(-1, -1, color(0, 0, 0), color(225, 225, 225));
 	private static final StyleRange htmlTag = new StyleRange(-1, -1, color(0, 0, 128), null);
-	private static final StyleRange cssPropertyName = new StyleRange(-1, -1, color(0, 64, 128), null);
+	private static final StyleRange propertyName = new StyleRange(-1, -1, color(0, 64, 128), null);
 	private static final StyleRange javaKeyword = new StyleRange(-1, -1, color(128, 0, 86), null, SWT.BOLD);
 	private static final StyleRange javaString = new StyleRange(-1, -1, color(0, 0, 128), null);
 	private static final StyleRange operator = new StyleRange(-1, -1, color(128, 32, 32), null);
@@ -133,7 +133,7 @@ public class EspStyleRanges {
 	private int evaluate(EspPart part, int offset) {
 		switch(part.getType()) {
 		case Comment:
-		case MarkupComment:     return evaluateComment(offset, part);
+		case MarkupComment:     return evaluateComment(part, offset);
 		case JavaKeyword:       return addRange(part, offset, javaKeyword);
 		case JavaContainer:     return addRange(part, offset, javaKeyword);
 		case JavaSource:        return evaluateJava(part, offset);
@@ -141,20 +141,14 @@ public class EspStyleRanges {
 		case MarkupTag:         return evaluateMarkupTag(part, offset);
 		case ScriptPart:        return evaluateScript(part, offset);
 		case StylePropertyName: return evaluateStylePropertyName(part, offset);
-		case YieldElement:      return evaluateYield(part, offset);
+		case StylePart:			return addRange(part, offset, propertyName);
+		case VarName:			return evaluateVarName(part, offset);
 		case InnerTextPart:     return evaluateInnerText(part, offset);
 		default:                return offset + 1;
 		}
 	}
 	
-	private boolean isJavadoc(EspPart part) {
-		if(part.isA(Comment)) {
-			return part.startsWith("/**");
-		}
-		return false;
-	}
-	
-	private int evaluateComment(int offset, EspPart part) {
+	private int evaluateComment(EspPart part, int offset) {
 		StyleRange style = isJavadoc(part) ? javadoc : comment;
 		int end = part.getEnd();
 		for(int i = offset; i < end; i++) {
@@ -172,25 +166,11 @@ public class EspStyleRanges {
 		}
 		return end+1;
 	}
-
-	private int evaluateMarkupTag(EspPart part, int offset) {
-		String tag = part.getText();
-		if(HTML_TAGS.containsKey(tag)) {
-			return addRange(part, offset, htmlTag);
-		}
-		else if("import".equals(tag)) {
-			return addRange(part, offset, javaKeyword);
-		}
-		else {
-			// TODO some kind of warning/unknown style... ?
-			return part.getEnd();
-		}
-	}
 	
 	private int evaluateInnerText(EspPart part, int offset) {
 		return addRange(part, offset, innerText);
 	}
-
+	
 	private int evaluateJava(EspPart part, int offset) {
 		int end = part.getEnd();
 		for(int s1 = offset; s1 < end; s1++) {
@@ -207,6 +187,21 @@ public class EspStyleRanges {
 			}
 		}
 		return end;
+	}
+	
+	private int evaluateMarkupTag(EspPart part, int offset) {
+		String tag = part.getText();
+		if("import".equals(tag)) {
+			return addRange(part, offset, javaKeyword);
+		}
+		else if("yield".equals(tag)) {
+			return addRange(part, offset, javaKeyword);
+		}
+		else if(HTML_TAGS.containsKey(tag)) {
+			return addRange(part, offset, htmlTag);
+		}
+		// TODO some kind of 'unknown tag' style... ?
+		return startOfNext(part, offset);
 	}
 
 	private int evaluateScript(EspPart part, int offset) {
@@ -235,19 +230,31 @@ public class EspStyleRanges {
 		}
 		return end;
 	}
-	
+
 	private int evaluateStylePropertyName(EspPart part, int offset) {
 		if(CSS_PROPERTIES.containsKey(part.getText())) {
-			return addRange(part, offset, cssPropertyName);
+			return addRange(part, offset, propertyName);
 		}
-		return part.getEnd();
+		return startOfNext(part, offset);
 	}
-
-	private int evaluateYield(EspPart part, int offset) {
-		if(part.getType() == MarkupTag) {
-			return addRange(part, offset, javaKeyword);
+	
+	private int evaluateVarName(EspPart part, int offset) {
+		if(DOM_EVENTS.contains(part.getText())) {
+			return addRange(part, offset, propertyName);
 		}
-		return part.getEnd();
+		return startOfNext(part, offset);
+	}
+	
+	private boolean isJavadoc(EspPart part) {
+		if(part.isA(Comment)) {
+			return part.startsWith("/**");
+		}
+		return false;
+	}
+	
+	private int startOfNext(EspPart part, int offset) {
+		EspPart next = part.getNextSubPart(offset);
+		return (next == null) ? part.getEnd() : next.getStart();
 	}
 	
 }

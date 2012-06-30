@@ -14,7 +14,7 @@ public class EspPart implements CharSequence {
 		 MethodSigArgs, MethodSigArg,
 		 MethodArgs, MethodArg,
 		 VarName, // <- variable name, attribute name, method argument name, etc... 
-		 InnerTextElement, MarkupComment, YieldElement,
+		 InnerTextElement, MarkupComment,
 
 		JavaElement,
 		JavaContainer,
