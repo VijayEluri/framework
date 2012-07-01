@@ -534,6 +534,7 @@ public class FormCompiler {
 				body.append("\\\" />");
 			}
 		} else {
+			parent.prepForMarkup(body);
 			body.append('<').append(form.getTag().getText());
 			parent.buildId(form);
 			parent.buildClasses(form);
@@ -545,6 +546,8 @@ public class FormCompiler {
 	public void buildForm(MarkupElement form) {
 		this.form = form;
 		buildForm();
+		parent.buildChildren(form);
+		parent.buildClosingTag("form");
 		this.form = null;
 	}
 	
@@ -717,6 +720,8 @@ public class FormCompiler {
 				body.append("}\n");
 			}
 		}
+		
+		parent.buildClosingTag("label");
 	}
 	
 	public void buildNumber(MarkupElement input) {

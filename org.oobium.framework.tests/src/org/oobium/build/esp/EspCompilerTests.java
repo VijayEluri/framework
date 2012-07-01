@@ -288,7 +288,7 @@ public class EspCompilerTests {
 				"int width = 10;\n" +
 				"includeScriptEnvironment();\n" +
 				"__body__.append(\"<script>$oobenv.myEspVar57 = \");\n" +
-				"__body__.append(j(width * 2));\n" +
+				"__body__.append(h(width * 2));\n" +
 				"__body__.append(\";var size = { height: 100, width: $oobenv.myEspVar57 };</script>\");",
 				render("-int width = 10;\nscript var size = { height: 100, width: ${width * 2} };"));
 
@@ -296,7 +296,7 @@ public class EspCompilerTests {
 				"int var = 10;\n" +
 				"includeScriptEnvironment();\n" +
 				"__body__.append(\"<script>$oobenv.myEspVar28 = \");\n" +
-				"__body__.append(j(var));\n" +
+				"__body__.append(h(var));\n" +
 				"__body__.append(\";alert($oobenv.myEspVar28);</script>\");",
 				render("-int var = 10;\nscript alert(${var});"));
 		
@@ -304,7 +304,7 @@ public class EspCompilerTests {
 				"<!DOCTYPE html><html>" +
 				"<head><script>window.$oobenv = {};</script></head>" +
 				"<body><script>" +
-				"$oobenv.myEspVar28 = '10';" +
+				"$oobenv.myEspVar28 = 10;" +
 				"alert($oobenv.myEspVar28);" +
 				"</script></body>" +
 				"</html>",
@@ -325,7 +325,7 @@ public class EspCompilerTests {
 	public void testScriptInDomEvent() throws Exception {
 		assertEquals(
 				"__body__.append(\"<div onclick=\\\"\");\n" +
-				"__body__.append(j(\"alert(\" + (exp) + \");\"));\n" +
+				"__body__.append(h(\"alert(\" + (exp) + \");\"));\n" +
 				"__body__.append(\"\\\"></div>\");", 
 				render("div(onclick:\"alert(${exp});\""));
 	}
@@ -334,7 +334,7 @@ public class EspCompilerTests {
 	public void testScriptAttr() throws Exception {
 		assertEquals(
 				"__body__.append(\"<div onmouseover=\\\"\");\n" +
-				"__body__.append(j(\"alert('\" + (exp) + \"');\"));\n" +
+				"__body__.append(h(\"alert('\" + (exp) + \"');\"));\n" +
 				"__body__.append(\"\\\"></div>\");", 
 				render("div(onmouseover:\"alert('${exp}');\""));
 	}
@@ -978,13 +978,13 @@ public class EspCompilerTests {
 				"__body__.append(\"<input type=\\\"hidden\\\" name=\\\"\").append(formModelName$0).append(\"[id]\\\" value=\\\"\");\n" +
 				"__body__.append(f(post));\n" +
 				"__body__.append(\"\\\" /><span id=\\\"\").append(formModelName$0).append(\"[\");\n" +
-				"__body__.append(h(publishedAt));\n" +
+				"__body__.append(f(publishedAt));\n" +
 				"__body__.append(\"]\\\"\");\n" +
 				"if(post.hasErrors(publishedAt)) {\n" +
 				"\t__body__.append(\" class=\\\"fieldWithErrors\\\" error=\\\"\").append(post.getError(publishedAt)).append(\"\\\"\");\n" +
 				"}\n" +
 				"__body__.append(\" name=\\\"\").append(formModelName$0).append(\"[\");\n" +
-				"__body__.append(h(publishedAt));\n" +
+				"__body__.append(f(publishedAt));\n" +
 				"__body__.append(\"]\\\">\");\n" +
 				"dateTimeTags(__body__, h(formModelName$0 + \"[\" + publishedAt + \"]\"), \"MMM/dd/yyyy\", post.get(publishedAt));\n" +
 				"__body__.append(\"</span></form>\");",
@@ -1025,7 +1025,7 @@ public class EspCompilerTests {
 				"__body__.append(\"\\\" />\");\n" +
 				"String formModelName$14 = \"parent\";\n" +
 				"__body__.append(\"<input type=\\\"hidden\\\" name=\\\"\").append(formModelName$14).append(\"[id]\\\" value=\\\"\");\n" +
-				"__body__.append(h(parent));\n" +
+				"__body__.append(f(parent));\n" +
 				"__body__.append(\"\\\" /></form>\");",
 			render("form(member)\n\tfields(parent)"));
 
@@ -1040,15 +1040,15 @@ public class EspCompilerTests {
 				"__body__.append(\"\\\" />\");\n" +
 				"String formModelName$14 = \"parent\";\n" +
 				"__body__.append(\"<input type=\\\"hidden\\\" name=\\\"\").append(formModelName$14).append(\"[id]\\\" value=\\\"\");\n" +
-				"__body__.append(h(parent));\n" +
+				"__body__.append(f(parent));\n" +
 				"__body__.append(\"\\\" /><input type=\\\"text\\\" id=\\\"\").append(formModelName$14).append(\"[\");\n" +
-				"__body__.append(h(name));\n" +
+				"__body__.append(f(name));\n" +
 				"__body__.append(\"]\\\"\");\n" +
 				"if(parent.hasErrors(name)) {\n" +
 				"\t__body__.append(\" class=\\\"fieldWithErrors\\\" error=\\\"\").append(parent.getError(name)).append(\"\\\"\");\n" +
 				"}\n" +
 				"__body__.append(\" name=\\\"\").append(formModelName$14).append(\"[\");\n" +
-				"__body__.append(h(name));\n" +
+				"__body__.append(f(name));\n" +
 				"__body__.append(\"]\\\" value=\\\"\");\n" +
 				"__body__.append(f(parent.get(name)));\n" +
 				"__body__.append(\"\\\" /></form>\");",
@@ -1350,7 +1350,7 @@ public class EspCompilerTests {
 				"\t__body__.append(\" class=\\\"labelWithErrors\\\" error=\\\"\").append(member.getError(firstName)).append(\"\\\"\");\n" +
 				"}\n" +
 				"__body__.append(\" for=\\\"\").append(formModelName$0).append(\"[\");\n" +
-				"__body__.append(h(firstName));\n" +
+				"__body__.append(f(firstName));\n" +
 				"__body__.append(\"]\\\">\");\n" +
 				"__body__.append(h(titleize(firstName)));\n" +
 				"if(member.isRequired(firstName)) {\n" +
@@ -1638,7 +1638,7 @@ public class EspCompilerTests {
 				"\t__body__.append(\" class=\\\"fieldWithErrors\\\" error=\\\"\").append(member.getError(\"firstName\")).append(\"\\\"\");\n" +
 				"}\n" +
 				"__body__.append(\" name=\\\"\").append(formModelName$0).append(\"[firstName]\\\" value=\\\"\");\n" +
-				"__body__.append(h(value));\n" +
+				"__body__.append(f(value));\n" +
 				"__body__.append(\"\\\" /></form>\");",
 				render("form(member, create)\n\ttext(\"firstName\", value: value)"));
 	}

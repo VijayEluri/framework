@@ -500,7 +500,7 @@ public class EspCompiler {
 		}
 	}
 	
-	private void buildChildren(MarkupElement element) {
+	void buildChildren(MarkupElement element) {
 		if(element.hasChildren()) {
 			for(EspElement child : element.getChildren()) {
 				if(child.isA(JavaElement)) {
@@ -542,6 +542,15 @@ public class EspCompiler {
 				appendFieldError(model, fields, " class=\\\"" + cssClass, true);
 			}
 		}
+	}
+	
+	void buildClosingTag(String tag) {
+		if(inJava) {
+			indent(body);
+			body.append(sbName).append(".append(\"");
+		}
+		body.append('<').append('/').append(tag).append('>');
+		inJava = false;
 	}
 	
 	private void buildComment(MarkupComment comment) {
@@ -603,29 +612,20 @@ public class EspCompiler {
 		else {
 			if("textarea".equalsIgnoreCase(tag)) tag = "textarea";
 	
-			buildHtmlOpener(tag, element);
-			buildChildren(element);
-			
-			if(hasClosingTag(tag)) {
-				if(inJava) {
-					indent(body);
-					body.append(sbName).append(".append(\"");
-				}
-				body.append('<').append('/').append(tag).append('>');
-				inJava = false;
-			}
+			buildHtml(tag, element);
 		}
 	}
 
-	private void buildHtmlOpener(String tag, MarkupElement element) {
-		if("view".equals(tag))       { buildView(element);                       return; }
-		if("title".equals(tag))      { buildTitle(element);                      return; }
-		if("options".equals(tag))    { formCompiler.buildSelectOptions(element); return; }
-		if("label".equals(tag))      { formCompiler.buildLabel(element);         return; }
-		if("errors".equals(tag))     { formCompiler.buildErrors(element);        return; }
-		if("messages".equals(tag))   { buildMessages(element);                   return; }
-		if("!--".equals(tag))        { buildComment((MarkupComment) element);    return; }
-		if("yield".equals(tag))      { buildYield((MarkupElement) element);      return; }
+	private void buildHtml(String tag, MarkupElement element) {
+		if("!--".equals(tag))      { buildComment((MarkupComment) element);    return; }
+		if("errors".equals(tag))   { formCompiler.buildErrors(element);        return; }
+		if("form".equals(tag))     { formCompiler.buildForm(element);          return; }
+		if("label".equals(tag))    { formCompiler.buildLabel(element);         return; }
+		if("messages".equals(tag)) { buildMessages(element);                   return; }
+		if("options".equals(tag))  { formCompiler.buildSelectOptions(element); return; }
+		if("title".equals(tag))    { buildTitle(element);                      return; }
+		if("view".equals(tag))     { buildView(element);                       return; }
+		if("yield".equals(tag))    { buildYield((MarkupElement) element);      return; }
 
 		prepForMarkup(body);
 		
@@ -635,7 +635,6 @@ public class EspCompiler {
 		else if("img".equals(tag))      { buildImage(element);                     }
 		else if("number".equals(tag))   { formCompiler.buildNumber(element);       }
 		else if("decimal".equals(tag))  { formCompiler.buildDecimal(element);      }
-		else if("form".equals(tag))     { formCompiler.buildForm(element);         }
 		else if("fields".equals(tag))   { formCompiler.buildFields(element);       }
 		else if("date".equals(tag))     { formCompiler.buildDateInputs(element);   }
 		else if("textarea".equals(tag)) { formCompiler.buildTextArea(element);     }
@@ -651,7 +650,7 @@ public class EspCompiler {
 		else if("submit".equals(tag))   { formCompiler.buildSubmit(element);       }
 		else if("reset".equals(tag))    { formCompiler.buildResetInput(element);   }
 		else if("option".equals(tag))   { formCompiler.buildSelectOption(element); }
-		else if(!"head".equals(tag)) {
+		else if(!"head".equals(tag)) {	
 			body.append('<').append(tag);
 			buildId(element);
 			buildClasses(element);
@@ -662,6 +661,12 @@ public class EspCompiler {
 			}
 		}
 		inJava = false;
+		
+		buildChildren(element);
+		
+		if(hasClosingTag(tag)) {
+			buildClosingTag(tag);
+		}
 	}
 	
 	void buildId(MarkupElement element) {
@@ -1496,7 +1501,7 @@ public class EspCompiler {
 			return getEscapeChar(text, 1);
 		}
 		if(text.length() < 3) {
-			return /*inScript ? 'j' :*/ 'h'; // no room for an escape char (return default)
+			return inForm() ? 'f' : 'h'; // no room for an escape char (return default)
 		}
 
 		return getEscapeChar(text, 0);
@@ -1513,8 +1518,7 @@ public class EspCompiler {
 				case 'r': return 0;   // raw (aka none)
 				}
 			}
-//			if(inScript()) return 'j';
-			if(inForm())   return 'f';
+			if(inForm()) return 'f';
 			return 'h';
 		}
 		return 0;
