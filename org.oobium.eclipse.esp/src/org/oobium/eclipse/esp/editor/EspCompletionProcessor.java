@@ -72,8 +72,8 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 		case MarkupElement:
 		case MarkupComment:     return computeMarkupProposals(doc, part, offset);
 		case MarkupTag:         return computeMarkupTagProposals(doc, part, offset);
-		case MarkupId:          return computeMarkupIdProposals(part, offset);
-		case MarkupClass:       return computeMarkupClassProposals(part, offset);
+		case MarkupId:          return computeCssSelectorProposals(part, offset);
+		case MarkupClass:       return computeCssSelectorProposals(part, offset);
 		case MethodArg:         return computeVarNameProposals(part, offset);
 		case StylePropertyName: return computeStylePropertyNameProposals(part, offset);
 		case VarName:           return computeVarNameProposals(part, offset);
@@ -101,31 +101,26 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 		return result;
 	}
 	
-	private List<ICompletionProposal> computeCssSelectorProposals(EspPart part, int offset, String prefix, List<Selector> selectors) {
-		if(selectors.isEmpty()) {
+	private List<ICompletionProposal> computeCssSelectorProposals(EspPart part, int offset) {
+		int endIndex = offset - part.getStart() + 1;
+		if(endIndex <= 0) {
 			return new ArrayList<ICompletionProposal>(0);
 		}
 		
-		int startIndex = offset;
-		int endIndex = offset - part.getStart();
-		if(endIndex > 0) {
-			if(part.isA(Type.MarkupClass) || part.isA(Type.MarkupId)) {
-				prefix += part.getText().substring(0, endIndex);
-			}
-			for(Iterator<Selector> iter = selectors.iterator(); iter.hasNext(); ) {
-				if(!iter.next().startsWith(prefix)) {
-					iter.remove();
-				}
-			}
-			startIndex = startIndex - prefix.length() + 1;
+		List<Selector> selectors;
+		if(part.charAt(0) == '#') {
+			selectors = EssCore.getCssIds(editor.getProject(), part.getDom());
+		} else if(part.charAt(0) == '.') {
+			selectors = EssCore.getCssClasses(editor.getProject(), part.getDom());
+		} else {
+			selectors = EssCore.getCssSelectors(editor.getProject(), part.getDom());
 		}
 
-		if(selectors.isEmpty()) {
-			return new ArrayList<ICompletionProposal>(0);
-		} else {
-			List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
-			for(Selector selector : selectors) {
-				String rstr = selector.substring(1);
+		List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
+		String prefix = part.substring(0, endIndex);
+		for(Selector selector : selectors) {
+			if(selector.startsWith(prefix)) {
+				String rstr = selector.getText();
 				int rlength = part.length();
 				int length = rstr.length();
 
@@ -140,21 +135,14 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 				info.append("\n}");
 
 				EspCompletionProposal proposal =
-					new EspCompletionProposal(
-							rstr,
-							startIndex,
-							rlength,
-							length,
-							null,
-							dstr,
-							null,
-							info.toString()
-						);
+					new EspCompletionProposal(rstr, part.getStart(), rlength, length, null, dstr, null, info.toString());
 				proposal.setAutoInsertable(false);
+				
 				results.add(proposal);
 			}
-			return results;
 		}
+		
+		return results;
 	}
 	
 	private List<ICompletionProposal> computeDomProposals(IDocument doc, EspPart part, int offset) {
@@ -316,14 +304,6 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 		return new ArrayList<ICompletionProposal>(0);
 	}
 	
-	private List<ICompletionProposal> computeMarkupClassProposals(EspPart part, int offset) {
-		return computeCssSelectorProposals(part, offset, ".", EssCore.getCssClasses(editor.getProject(), part.getDom()));
-	}
-	
-	private List<ICompletionProposal> computeMarkupIdProposals(EspPart part, int offset) {
-		return computeCssSelectorProposals(part, offset, "#", EssCore.getCssIds(editor.getProject(), part.getDom()));
-	}
-
 	private List<ICompletionProposal> computeMarkupProposals(IDocument doc, EspPart part, int offset) {
 		return new ArrayList<ICompletionProposal>(0);
 	}
@@ -407,22 +387,11 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 		return new ArrayList<ICompletionProposal>(0);
 	}
 
-	private List<ICompletionProposal> computeMixinProposals(EspPart part, int offset) {
-		List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
-		if(part.charAt(0) == '.') {
-			proposals.addAll(computeMarkupClassProposals(part, offset));
-		}
-		if(part.charAt(0) == '#') {
-			proposals.addAll(computeMarkupIdProposals(part, offset));
-		}
-		return proposals;
-	}
-
 	private List<ICompletionProposal> computeStylePropertyNameProposals(EspPart part, int offset) {
 		if(part.isA(Type.StylePropertyName)) {
 			List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
 			Set<String> tags = new TreeSet<String>(Constants.CSS_PROPERTIES.keySet());
-			int endIndex = offset - part.getStart();
+			int endIndex = offset - part.getStart() + 1;
 			String prefix = part.getText().substring(0, endIndex);
 			if(endIndex > 0) {
 				for(Iterator<String> iter = tags.iterator(); iter.hasNext(); ) {
@@ -438,7 +407,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 					ICompletionProposal proposal = 
 						new EspCompletionProposal(
 								tag, 
-								offset - prefix.length(), 
+								part.getStart(), 
 								rlength, 
 								length, 
 								null, 
@@ -449,7 +418,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 					results.add(proposal);
 				}
 			}
-			results.addAll(computeMixinProposals(part, offset));
+			results.addAll(computeCssSelectorProposals(part, offset));
 			return results;
 		} else if(part.isA(Type.StyleProperty)) {
 			EspDom dom = part.getDom();
