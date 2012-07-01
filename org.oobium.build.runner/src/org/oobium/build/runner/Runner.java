@@ -157,7 +157,11 @@ public class Runner {
 				exporter.setIncludeMigrator(true);
 				
 				Bundle ps = workspace.getBundle("org.oobium.pipeline.service");
-				exporter.addStart(ps);
+				if(ps != null) {
+					exporter.addStart(ps);
+				} else {
+					logger.warn("pipeline service not found: launching without it");
+				}
 				
 				exporter.export();
 			} catch(IOException e) {
