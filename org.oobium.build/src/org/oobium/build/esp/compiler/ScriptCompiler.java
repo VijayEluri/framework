@@ -25,8 +25,10 @@ public class ScriptCompiler extends AssetCompiler {
 	private void build() {
 		StringBuilder sb = parent.getBody();
 		if(parent.getDom().is(EJS)) {
+			parent.inAsset(true);
 			parent.prepForMarkup(sb);
 			parent.build(element.getAsset().getPart(), sb);
+			parent.inAsset(false);
 			return;
 		}
 		
@@ -67,9 +69,9 @@ public class ScriptCompiler extends AssetCompiler {
 				sb.append("<script>");
 				if(containers.size() > 0) {
 					for(EspPart container : containers) {
-						sb.append(parent.getCodeVar(container)).append(" = \\\"");
+						sb.append(parent.getCodeVar(container)).append(" = ");
 						parent.build(container, sb);
-						sb.append("\\\";");
+						sb.append(";");
 					}
 				}
 				build(script, sb);

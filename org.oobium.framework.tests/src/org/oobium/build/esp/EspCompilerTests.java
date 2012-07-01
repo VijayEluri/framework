@@ -287,28 +287,38 @@ public class EspCompilerTests {
 		assertEquals(
 				"int width = 10;\n" +
 				"includeScriptEnvironment();\n" +
-				"__body__.append(\"<script>$oobenv.myEspVar57 = \\\"\");\n" +
+				"__body__.append(\"<script>$oobenv.myEspVar57 = \");\n" +
 				"__body__.append(j(width * 2));\n" +
-				"__body__.append(\"\\\";var size = { height: 100, width: $oobenv.myEspVar57 };</script>\");",
+				"__body__.append(\";var size = { height: 100, width: $oobenv.myEspVar57 };</script>\");",
 				render("-int width = 10;\nscript var size = { height: 100, width: ${width * 2} };"));
 
 		assertEquals(
 				"int var = 10;\n" +
 				"includeScriptEnvironment();\n" +
-				"__body__.append(\"<script>$oobenv.myEspVar28 = \\\"\");\n" +
+				"__body__.append(\"<script>$oobenv.myEspVar28 = \");\n" +
 				"__body__.append(j(var));\n" +
-				"__body__.append(\"\\\";alert($oobenv.myEspVar28);</script>\");",
+				"__body__.append(\";alert($oobenv.myEspVar28);</script>\");",
 				render("-int var = 10;\nscript alert(${var});"));
 		
 		assertEquals(
 				"<!DOCTYPE html><html>" +
 				"<head><script>window.$oobenv = {};</script></head>" +
 				"<body><script>" +
-				"$oobenv.myEspVar28 = \"10\";" +
+				"$oobenv.myEspVar28 = '10';" +
 				"alert($oobenv.myEspVar28);" +
 				"</script></body>" +
 				"</html>",
 				page("-int var = 10;\nscript alert(${var});"));
+
+		assertEquals(
+				"<!DOCTYPE html><html>" +
+				"<head><script>window.$oobenv = {};</script></head>" +
+				"<body><script>" +
+				"$oobenv.myEspVar28 = {\"k\": 10};" +
+				"alert($oobenv.myEspVar28);" +
+				"</script></body>" +
+				"</html>",
+				page("-int var = 10;\nscript alert(${\"{\\\"k\\\": 10}\"});"));
 	}
 	
 	@Test
@@ -858,8 +868,6 @@ public class EspCompilerTests {
 				"__body__.append(\"<a href=\\\"http://mydomain.com/home\\\"></a>\");", 
 				render("a(href:\"http://mydomain.com/home\")"));
 
-		// one var - undefined...
-		
 		// two vars - convert to pathTo form (convenience for html forms)
 		assertEquals(
 				"__body__.append(\"<a href=\\\"\").append(pathTo(member, showNew)).append(\"\\\">New Member</a>\");", 
@@ -876,6 +884,13 @@ public class EspCompilerTests {
 
 		// unknown action for second variable - pass it through so we get a compiler error and can fix it
 		assertEquals("__body__.append(\"<a href=\\\"\").append(pathTo(member, new)).append(\"\\\">New</a>\");", render("a(member, new) New"));
+	}
+
+	@Test
+	public void testLinkWithDeleteMethod() throws Exception {
+		assertEquals(
+				"__body__.append(\"<a href=\\\"/logout\\\" onclick=\\\"var f = document.createElement('form');f.style.display = 'none';this.parentNode.appendChild(f);f.method = 'post';f.action = '\").append(\"/logout\").append(\"';var m = document.createElement('input');m.setAttribute('type', 'hidden');m.setAttribute('name', '_method');m.setAttribute('value', 'delete');f.appendChild(m);f.submit();return false;\\\">/logout</a>\");", 
+				render("a(\"/logout\", method: \"delete\")"));
 	}
 
 	@Test

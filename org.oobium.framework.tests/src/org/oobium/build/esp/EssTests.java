@@ -49,8 +49,13 @@ public class EssTests {
 	}
 	
 	@Test
-	public void testX() throws Exception {
+	public void testOneLine() throws Exception {
 		assertEquals("#header{color:red}", css("#header { color: red; }"));
+	}
+	
+	@Test
+	public void testSelectorWithNotCondition() throws Exception {
+		assertEquals("input:not([type=checkbox]){color:red}", css("input:not([type=checkbox]) { color: red; }"));
 	}
 
 	@Test

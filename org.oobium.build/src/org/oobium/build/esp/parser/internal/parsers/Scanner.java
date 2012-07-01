@@ -646,10 +646,19 @@ public class Scanner {
 	}
 	
 	public Scanner findEndOfStyleSelector() throws EspEndException {
+		boolean stopOnParen = true;
 		while(offset < ca.length) {
 			switch(ca[offset]) {
-			case ',': case '{': case '(':
+			case ',': case '{':
 				return this;
+			case ':':
+				stopOnParen = false;
+				break;
+			case '(':
+				if(stopOnParen) {
+					return this;
+				}
+				break;
 			case '[':
 				try {
 					findCloser();

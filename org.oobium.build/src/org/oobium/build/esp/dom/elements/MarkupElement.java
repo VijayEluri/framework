@@ -74,6 +74,14 @@ public class MarkupElement extends EspElement implements MethodPart {
 		return (entries != null) ? entries.get(name) : null;
 	}
 
+	public EspPart getEntryValue(String name) {
+		if(entries != null) {
+			MethodArg arg = entries.get(name);
+			if(arg != null) return arg.getValue();
+		}
+		return null;
+	}
+
 	public EspPart getId() {
 		return id;
 	}
@@ -108,6 +116,14 @@ public class MarkupElement extends EspElement implements MethodPart {
 	
 	public boolean hasEntry(String name) {
 		return entries != null && entries.get(name) != null;
+	}
+
+	public boolean hasEntryValue(String name) {
+		if(entries != null) {
+			MethodArg arg = entries.get(name);
+			if(arg != null) return arg.hasValue();
+		}
+		return false;
 	}
 
 	public boolean hasId() {

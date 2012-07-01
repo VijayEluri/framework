@@ -134,6 +134,7 @@ public class EspStyleRanges {
 		switch(part.getType()) {
 		case Comment:
 		case MarkupComment:     return evaluateComment(part, offset);
+		case JavaEscape:        return addRange(part, offset, operator);
 		case JavaKeyword:       return addRange(part, offset, javaKeyword);
 		case JavaContainer:     return addRange(part, offset, javaKeyword);
 		case JavaSource:        return evaluateJava(part, offset);
@@ -208,7 +209,7 @@ public class EspStyleRanges {
 		EspPart next = part.getNextSubPart(offset);
 		int end = (next != null) ? next.getStart() : part.getEnd();
 		for(int s1 = offset; s1 < end; s1++) {
-			if(dom.charAt(s1) == '\n') {
+			if( ! dom.isScript() && dom.charAt(s1) == '\n') {
 				int s2 = s1 + 1;
 				while(s2 < end && dom.charAt(s2) == '\t') {
 					s2++;

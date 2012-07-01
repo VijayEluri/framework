@@ -161,8 +161,6 @@ public class EspCompiler {
 	 * whether it is a simple string or Java expression
 	 */
 	private StringBuilder appendAttr(String name, MethodArg entry, boolean hidden) {
-		inScript = DOM_EVENTS.contains(name);
-		inStyle = "style".equals(name);
 		if(entry.hasCondition()) {
 			prepForJava(body);
 			body.append("if(");
@@ -178,7 +176,6 @@ public class EspCompiler {
 		else {
 			appendAttr(name, entry.getValue(), hidden);
 		}
-		inScript = inStyle = false;
 		return body;
 	}
 	
@@ -492,13 +489,7 @@ public class EspCompiler {
 			for(MethodArg entry : element.getEntries().values()) {
 				String name = entry.getName().getText().trim();
 				if(!skipSet.contains(name)) {
-					if(DOM_EVENTS.contains(name)) {
-						inScript = true;
-					} else if("style".equals(name)) {
-						inStyle = true;
-					}
 					appendAttr(name, entry, hidden);
-					inScript = inStyle = false;
 				}
 			}
 			if(hidden && !element.hasEntry("style")) {
@@ -715,9 +706,9 @@ public class EspCompiler {
 			if(containers.size() > 0) {
 				prepForMarkup(body);
 				for(EspPart container : containers) {
-					body.append(getCodeVar(container)).append(" = \\\"");
+					body.append(getCodeVar(container)).append(" = ");
 					build(container, body);
-					body.append("\\\";");
+					body.append(';');
 				}
 			}
 		}
@@ -836,8 +827,8 @@ public class EspCompiler {
 			target = link.getArg(0);
 			if(link.getArgs().size() == 1) {
 				appendAttr("href", target);
-				if(link.hasEntry("method")) {
-					String method = link.getEntry("method").getText();
+				if(link.hasEntryValue("method")) {
+					String method = link.getEntryValue("method").getText();
 					if("\"delete\"".equalsIgnoreCase(method)) {
 						appendDeleteJs(link, target.getText());
 					}
@@ -1102,17 +1093,13 @@ public class EspCompiler {
 	}
 
 	private void buildScript(ScriptElement element) {
-		inScript = true;
 		ScriptCompiler compiler = new ScriptCompiler(this);
 		compiler.compile(element);
-		inScript = false;
 	}
 	
 	private void buildStyle(StyleElement element) {
-		inStyle = true;
 		StyleCompiler compiler = new StyleCompiler(this);
 		compiler.buildStyle(element);
-		inStyle = false;
 	}
 
 	private void buildTitle(MarkupElement element) {
@@ -1277,8 +1264,7 @@ public class EspCompiler {
 
 		esf.finalizeSource();
 
-		
-		String asset = pkg.replace('.','/') + "/" + dom.getSimpleName() + ".js";
+		String asset = underscored(pkg.replace('.','/')+"/"+dom.getSimpleName()) + ".js";
 		body = new StringBuilder();
 		body.append("/**\n");
 		body.append(" * Auto-generated from ").append(pkg).append('.').append(dom.getSimpleName()).append(".ejs\n");
@@ -1510,7 +1496,7 @@ public class EspCompiler {
 			return getEscapeChar(text, 1);
 		}
 		if(text.length() < 3) {
-			return inScript ? 'j' : 'h'; // no room for an escape char (return default)
+			return /*inScript ? 'j' :*/ 'h'; // no room for an escape char (return default)
 		}
 
 		return getEscapeChar(text, 0);
@@ -1527,7 +1513,7 @@ public class EspCompiler {
 				case 'r': return 0;   // raw (aka none)
 				}
 			}
-			if(inScript()) return 'j';
+//			if(inScript()) return 'j';
 			if(inForm())   return 'f';
 			return 'h';
 		}
@@ -1648,6 +1634,10 @@ public class EspCompiler {
 	
 	private boolean inAsset() {
 		return inAsset;
+	}
+	
+	void inAsset(boolean inAsset) {
+		this.inAsset = inAsset;
 	}
 	
 	private boolean inScript() {

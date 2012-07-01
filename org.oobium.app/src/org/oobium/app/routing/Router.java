@@ -107,9 +107,8 @@ public class Router {
 	}
 
 	public static String getAssetName(Class<? extends DynamicAsset> clazz) {
-		String name = "/" + underscored(clazz.getCanonicalName());
-		name = name.replace('.', '/') + ".e." + DynamicAsset.getFileExtension(clazz);
-		return name;
+		String name = clazz.getCanonicalName().replace('.','/');
+		return "/" + underscored(name) + "." + DynamicAsset.getFileExtension(clazz);
 	}
 
 	

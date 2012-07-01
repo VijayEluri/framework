@@ -67,7 +67,7 @@ public class AssetList {
 	private void loadDynamicFromViewsFolder() {
 		if(module.views != null && module.views.isDirectory()) {
 			int len = module.src.getPath().length();
-			for(File file : findFiles(module.views, ".ejs", ".ess")) {
+			for(File file : findFiles(module.views, ".ess")) {
 				String path = file.getPath();
 				path = path.substring(len, path.length()-3) + (path.endsWith(".ejs") ? "e.js" : "e.css");
 				paths.add(path.replace('\\', '/') + "|" + file.length() + "|" + httpDate(file.lastModified()));
