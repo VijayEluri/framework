@@ -13,6 +13,8 @@ package org.oobium.utils;
 import static org.junit.Assert.*;
 import static org.oobium.utils.StringUtils.*;
 
+import java.text.SimpleDateFormat;
+
 import org.junit.Test;
 
 public class StringUtilsTests {
@@ -117,6 +119,17 @@ public class StringUtilsTests {
 	public void testOptions() throws Exception {
 		assertEquals("<option title=\"1\" value=\"1\">1</option><option title=\"2\" value=\"2\">2</option>", optionTags(new int[] { 1, 2 }));
 		assertEquals("<option title=\"1\" value=\"1\">1</option><option title=\"2\" value=\"2\" selected>2</option>", optionTags(new int[] { 1, 2 }, 2));
+	}
+	
+	@Test
+	public void testDatePatternComponents() throws Exception {
+		assertEquals(
+				"[MM, /, dd, /, yy]",
+				asString(getPatternComponents(new SimpleDateFormat("MM/dd/yy"))));
+		
+		assertEquals(
+				"[MM, /, dd, /, yy,  at , hh, :, mm]",
+				asString(getPatternComponents(new SimpleDateFormat("MM/dd/yy 'at' hh:mm"))));
 	}
 	
 }

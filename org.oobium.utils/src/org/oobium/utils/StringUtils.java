@@ -541,18 +541,30 @@ public class StringUtils {
 			} else {
 				char c = pattern.charAt(i);
 				if(c == '\'') {
-					sb.append(pattern.charAt(i++));
+					boolean prevWS = i > 0 && Character.isWhitespace(pattern.charAt(i-1));
+					if(!prevWS) {
+						components.add(sb.toString());
+						sb = new StringBuilder();
+					}
+					i++;
 					while(i < pattern.length()) {
-						sb.append(pattern.charAt(i));
 						if(pattern.charAt(i) == '\'') {
+							while(prevWS && i+1 < pattern.length()) {
+								if(Character.isWhitespace(pattern.charAt(i+1))) {
+									sb.append(pattern.charAt(i+1));
+									i++;
+								}
+								else break;
+							}
 							break;
 						}
+						sb.append(pattern.charAt(i));
 						i++;
 					}
 					components.add(sb.toString());
 					sb = new StringBuilder();
 				} else {
-					if(i > 0 && (c != pattern.charAt(i-1))) {
+					if(sb.length() > 0 && (c != pattern.charAt(i-1))) {
 						components.add(sb.toString());
 						sb = new StringBuilder();
 					}
