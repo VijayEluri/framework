@@ -77,11 +77,6 @@ public class EspTextHover implements ITextHover {
 
 				// if no message from markers, return info about the part
 				EspPart part = EspCore.get(doc).getPart(offset);
-				if(region.getLength() > 0) {
-					if(part != EspCore.get(doc).getPart(offset)) {
-						part = null;
-					}
-				}
 				if(part != null) {
 					switch(part.getType()) {
 					case MarkupClass:
@@ -102,20 +97,18 @@ public class EspTextHover implements ITextHover {
 
 	private String getCssClassHover(EspPart part) {
 		Selector selector = EssCore.getCssClass(part.getDom(), part.getText());
-		if(selector == null) {
-			return "";
-		} else {
+		if(selector != null) {
 			return getCssSelectorHover(selector);
 		}
+		return getDefaultHover(part);
 	}
 	
 	private String getCssIdHover(EspPart part) {
 		Selector selector = EssCore.getCssId(part.getDom(), part.getText());
-		if(selector == null) {
-			return "";
-		} else {
+		if(selector != null) {
 			return getCssSelectorHover(selector);
 		}
+		return getDefaultHover(part);
 	}
 	
 	private String getCssSelectorHover(Selector selector) {
