@@ -187,13 +187,12 @@ public class EspPart implements CharSequence {
 		if((start+offset+prefix.length) >= dom.ca.length) {
 			return false;
 		}
-		for(int i = start+offset; i < start+offset+prefix.length; i++) {
-			for(int j = 0; j < prefix.length; j++) {
-				if(prefix[j] == dom.ca[i] || (prefix[j] == ' ' && Character.isWhitespace(dom.ca[i]))) {
-					continue;
-				}
-				return false;
+		int o = start+offset;
+		for(int i = 0; i < prefix.length; i++) {
+			if(prefix[i] == dom.ca[o+i] || (prefix[i] == ' ' && Character.isWhitespace(dom.ca[o+i]))) {
+				continue;
 			}
+			return false;
 		}
 		return true;
 	}
