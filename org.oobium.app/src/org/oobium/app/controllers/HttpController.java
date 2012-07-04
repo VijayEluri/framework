@@ -706,8 +706,8 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		return response;
 	}
 	
-	public AppRouter getRouter() {
-		return appRouter;
+	public Router getRouter() {
+		return (appRouter != null) ? appRouter : router;
 	}
 
 	@Override
