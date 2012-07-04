@@ -45,7 +45,6 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.oobium.app.AppService;
 import org.oobium.app.controllers.HttpController;
-import org.oobium.app.handlers.HttpRequestHandler;
 import org.oobium.app.http.Action;
 import org.oobium.app.request.Request;
 import org.oobium.app.routing.handlers.AssetHandler;
@@ -94,7 +93,7 @@ public class RouterTests {
 	public static class PhoneController extends HttpController { }
 
 	public static class AccountStyles extends StyleSheet { }
-	public static class AccountScripts extends ScriptFile { }
+	public static class AccountScripts extends ScriptFile { public boolean hasInitializer() { return false; } }
 	
 	
 	private AppService service;
