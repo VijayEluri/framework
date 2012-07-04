@@ -180,7 +180,7 @@ public class ModuleCompiler {
 				for(Entry<String, File> e : map.entrySet()) {
 					String path = e.getValue().getAbsolutePath();
 					String name = e.getKey().substring(1, e.getKey().length()-5).replaceAll(File.separator, ".");
-					logger.trace("compiling: <a href=\"open file " + path + "\">" + name + "</a>");
+					logger.trace("compiling: <a href=\"open file \"" + path + "\"\">" + name + "</a>");
 				}
 			}
 			

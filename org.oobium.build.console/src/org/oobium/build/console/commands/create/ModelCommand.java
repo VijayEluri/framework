@@ -114,7 +114,7 @@ public class ModelCommand extends BuilderCommand {
 					console.out.println("modified <a href=\"open manifest\">MANIFEST.MF</a>");
 					break;
 				default:
-					console.out.println("modified file <a href=\"open file " + file + "\">" + file.getName() + "</a>");
+					console.out.println("modified file <a href=\"open file \"" + file + "\"\">" + file.getName() + "</a>");
 				}
 			}
 			
@@ -156,7 +156,7 @@ public class ModelCommand extends BuilderCommand {
 					for(File test : tests) {
 						String name = test.getName();
 						name = name.substring(0, name.length() - 5);
-						console.out.println("created test case <a href=\"open file " + test + "\">" + name + "</a>");
+						console.out.println("created test case <a href=\"open file \"" + test + "\"\">" + name + "</a>");
 					}
 					Eclipse.refreshProject(testSuite.name);
 				}

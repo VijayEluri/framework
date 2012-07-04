@@ -54,7 +54,7 @@ public class ApplicationCommand extends BuilderCommand {
 			exporter.setIncludeMigrator(true);
 			File exportDir = exporter.export();
 			
-			String msg = "exported <a href=\"open file " + exportDir + "\">" + app.name() + "</a>";
+			String msg = "exported <a href=\"open file \"" + exportDir + "\"\">" + app.name() + "</a>";
 			if(flag('v')) {
 				console.out.println(msg + " in " + (System.currentTimeMillis() - start) + "ms");
 			} else {

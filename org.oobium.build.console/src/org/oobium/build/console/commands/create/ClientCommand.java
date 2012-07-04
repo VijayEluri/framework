@@ -38,7 +38,7 @@ public class ClientCommand extends BuilderCommand {
 		
 		StringBuilder sb = new StringBuilder(file.getAbsolutePath());
 		sb.setCharAt(app.file.getAbsolutePath().length(), '#');
-		console.out.println("created client <a href=\"open file " + sb.toString() + "\">models.js</a>");
+		console.out.println("created client <a href=\"open file \"" + sb.toString() + "\"\">models.js</a>");
 
 		Eclipse.refresh(app.file, scripts);
 	}

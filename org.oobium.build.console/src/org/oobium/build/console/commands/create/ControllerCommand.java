@@ -59,7 +59,7 @@ public class ControllerCommand extends BuilderCommand {
 			File test = gen.createControllerTests(module, controller);
 			String testName = test.getName();
 			testName = testName.substring(0, testName.length() - 5);
-			console.out.println("created test case <a href=\"open file " + test + "\">" + testName + "</a>");
+			console.out.println("created test case <a href=\"open file \"" + test + "\"\">" + testName + "</a>");
 			Eclipse.refreshProject(testSuite.name);
 		}
 		

@@ -122,14 +122,19 @@ class Parameters {
 			}
 			throw new IllegalStateException("error parsing flags");
 		} else {
+			boolean escaped = false;
 			int ix = -1;
 			for(int i = start; i < ca.length; i++) {
 				if(ca[i] == '"') {
 					i = escape(ca, i+1);
-				} else if(ca[i] == ':' || ca[i] == '=') {
+					escaped = true;
+				}
+				if(ca[i] == ':' || ca[i] == '=') {
 					if(ix == -1) ix = i;
 				} else if(ca[i] == ' ' || i == ca.length-1) {
 					String s = (ca[i] == ' ') ? new String(ca, start, i-start) : new String(ca, start, i-start+1);
+					if(escaped) s = s.replace("\"", "");
+					escaped = false;
 					if(ix == -1) {
 						if(map.isEmpty()) {
 							list.add(s);

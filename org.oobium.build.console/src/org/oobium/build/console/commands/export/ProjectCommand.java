@@ -78,7 +78,7 @@ public class ProjectCommand extends ApplicationCommand {
 				}
 				
 				
-				String msg = "exported <a href=\"open file " + wd + "\">" + blaze.name + "</a>";
+				String msg = "exported <a href=\"open file \"" + wd + "\"\">" + blaze.name + "</a>";
 				if(flag('v')) {
 					console.out.println(msg + " in " + (System.currentTimeMillis() - start) + "ms");
 				} else {

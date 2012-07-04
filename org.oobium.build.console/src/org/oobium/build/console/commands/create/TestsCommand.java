@@ -57,7 +57,7 @@ public class TestsCommand extends BuilderCommand {
 			name = name.substring(0, name.length() - 5);
 			StringBuilder sb = new StringBuilder(file.getAbsolutePath());
 			sb.setCharAt(testSuite.file.getAbsolutePath().length(), '#');
-			console.out.println("created test case <a href=\"open file " + sb.toString() + "\">" + name + "</a>");
+			console.out.println("created test case <a href=\"open file \"" + sb.toString() + "\"\">" + name + "</a>");
 		}
 
 		Eclipse.refreshProject(testSuite.name);

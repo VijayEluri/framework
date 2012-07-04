@@ -50,7 +50,7 @@ public class BlazeClientCommand extends BuilderCommand {
 				blaze.create();
 				
 				File blazeProject = blaze.getProject();
-				console.out.println("created blaze client project <a href=\"open file " + blazeProject + "\">" + blazeProject.getName() + "</a>");
+				console.out.println("created blaze client project <a href=\"open file \"" + blazeProject + "\"\">" + blazeProject.getName() + "</a>");
 				Eclipse.importProjects(blazeProject);
 			}
 
@@ -61,7 +61,7 @@ public class BlazeClientCommand extends BuilderCommand {
 				flex.create();
 				
 				File flexProject = flex.getProject();
-				console.out.println("created blaze flex client project <a href=\"open file " + flexProject + "\">" + flexProject.getName() + "</a>");
+				console.out.println("created blaze flex client project <a href=\"open file \"" + flexProject + "\"\">" + flexProject.getName() + "</a>");
 				Eclipse.importProjects(flexProject);
 			}
 			
@@ -72,7 +72,7 @@ public class BlazeClientCommand extends BuilderCommand {
 				test.create();
 	
 				File testProject = test.getProject();
-				console.out.println("created flex test project <a href=\"open file " + testProject + "\">" + testProject.getName() + "</a>");
+				console.out.println("created flex test project <a href=\"open file \"" + testProject + "\"\">" + testProject.getName() + "</a>");
 				Eclipse.importProjects(testProject);
 			}
 		} catch(Exception e) {

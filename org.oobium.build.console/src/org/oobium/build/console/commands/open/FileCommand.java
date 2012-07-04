@@ -28,8 +28,9 @@ public class FileCommand extends BuilderCommand {
 	
 	@Override
 	public void run() {
-		path = options;
-		if(path == null) {
+		if(hasParam(0)) {
+			path = param(0);
+		} else {
 			console.getDisplay().syncExec(new Runnable() {
 				@Override
 				public void run() {
@@ -41,7 +42,7 @@ public class FileCommand extends BuilderCommand {
 			if(path == null) {
 				console.out.println("operation canceled");
 				return;
-			}
+			} // else; fall through
 		}
 		
 		int ix = path.indexOf('#');

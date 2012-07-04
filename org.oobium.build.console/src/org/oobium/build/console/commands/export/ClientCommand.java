@@ -86,13 +86,13 @@ public class ClientCommand extends BuilderCommand {
 			File[] jars = exporter.export();
 			for(File jar : jars) {
 				if(target == null) {
-					console.out.println("exported <a href=\"open file " + jar.getAbsolutePath() + "\">" + jar.getName() + "</a>" +
-							" to <a href=\"open file " + workspace.getExportDir().getAbsolutePath() + "\">Export Directory</a>");
+					console.out.println("exported <a href=\"open file \"" + jar.getAbsolutePath() + "\"\">" + jar.getName() + "</a>" +
+							" to <a href=\"open file \"" + workspace.getExportDir().getAbsolutePath() + "\"\">Export Directory</a>");
 				} else {
 					int len = target.file.getAbsolutePath().length();
 					String name = target.name + ": " + jar.getParent().substring(len);
-					console.out.println("exported <a href=\"open file " + jar.getAbsolutePath() + "\">" + jar.getName() + "</a>" +
-							" to <a href=\"open file " + jar.getParent() + "\">" + name + "</a>");
+					console.out.println("exported <a href=\"open file \"" + jar.getAbsolutePath() + "\"\">" + jar.getName() + "</a>" +
+							" to <a href=\"open file \"" + jar.getParent() + "\"\">" + name + "</a>");
 				}
 			}
 
@@ -111,7 +111,7 @@ public class ClientCommand extends BuilderCommand {
 					for(File file : files) {
 						int len = target.file.getAbsolutePath().length();
 						String path = target.file.getAbsolutePath() + "#" + file.getAbsolutePath().substring(len+1);
-						console.out.println("  exported <a href=\"open file " + path + "\">" + file.getName() + "</a>");
+						console.out.println("  exported <a href=\"open file \"" + path + "\"\">" + file.getName() + "</a>");
 					}
 
 					File[] ma = android.getMainActivities();
@@ -124,10 +124,10 @@ public class ClientCommand extends BuilderCommand {
 							if(layout != null) {
 								int len = target.file.getAbsolutePath().length();
 								String path = target.file.getAbsolutePath() + "#" + ma[0].getAbsolutePath().substring(len+1);
-								console.out.println("  modified activity <a href=\"open file " + path + "\">" + ma[0].getName() + "</a>");
+								console.out.println("  modified activity <a href=\"open file \"" + path + "\"\">" + ma[0].getName() + "</a>");
 								
 								path = target.file.getAbsolutePath() + "#" + layout.getAbsolutePath().substring(len+1);
-								console.out.println("  modified layout <a href=\"open file " + path + "\">" + layout.getName() + "</a>");
+								console.out.println("  modified layout <a href=\"open file \"" + path + "\"\">" + layout.getName() + "</a>");
 							}
 						}
 					}

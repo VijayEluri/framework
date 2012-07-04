@@ -10,6 +10,9 @@
  ******************************************************************************/
 package org.oobium.console;
 
+import java.util.ArrayList;
+import java.util.List;
+
 class CommandRunner extends Thread {
 
 	private Command command;
@@ -17,22 +20,22 @@ class CommandRunner extends Thread {
 	
 	CommandRunner(Command rootCommand, String command) {
 		this.command = rootCommand;
-		String[] sa = command.split(" +");
-		for(int i = 0; i < sa.length; i++) {
+		List<String> cmds = split(command.trim());
+		for(String cmd : cmds) {
 			if(options != null) {
-				options += (" " + sa[i]);
+				options += (" " + cmd);
 			} else {
-				Command c = this.command.get(sa[i]);
+				Command c = this.command.get(cmd);
 				if(c != null) {
 					this.command = c;
 				} else {
-					this.options = sa[i];
+					this.options = cmd;
 				}
 			}
 		}
 		if(this.command == rootCommand) {
 			this.command = null;
-			rootCommand.console.err.println("Unknown command: \"" + sa[0] + "\".  Use \"<a href=\"help\">help</a>\" to see a list of commands.");
+			rootCommand.console.err.println("Unknown command: \"" + cmds.get(0) + "\".  Use \"<a href=\"help\">help</a>\" to see a list of commands.");
 		}
 	}
 	
@@ -45,6 +48,28 @@ class CommandRunner extends Thread {
 				command.console.err.print(e);
 			}
 		}
+	}
+	
+	private List<String> split(String command) {
+		List<String> commands = new ArrayList<String>();
+		boolean instr = false;
+		int s1 = 0, s2 = 0;
+		for( ; s2 < command.length(); s2++) {
+			char c = command.charAt(s2);
+			if(c == '"') {
+				instr = !instr;
+			}
+			else if(!instr && c == ' ') {
+				commands.add(command.substring(s1,s2));
+				while(++s2 < command.length() && command.charAt(s2) == ' ');
+				s1 = s2;
+				if(command.charAt(s2) == '"') instr = true;
+			}
+		}
+		if(s2 > s1) {
+			commands.add(command.substring(s1,s2));
+		}
+		return commands;
 	}
 
 }
