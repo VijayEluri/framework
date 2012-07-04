@@ -125,7 +125,7 @@ public class EspTextHover implements ITextHover {
 		String text = part.getText();
 		String info = part.isA(Type.JavaString) ? (name + ": " + text) : (name + ": \"" + text + "\"");
 		if(part.isA(Type.MarkupTag)) {
-			String description = Constants.HTML_TAGS.get(text);
+			String description = Constants.MARKUP_TAGS.get(text);
 			if(description == null) {
 				return info + " - Unknown HTML Tag";
 			} else {

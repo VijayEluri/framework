@@ -863,19 +863,8 @@ public class StringUtils {
 	}
 	
 	public static String jsonEscape(Object obj) {
-		if(obj == null) {
-			return "";
-		} else {
-			String s = obj.toString().replaceAll("&", "\u0026").replaceAll(">", "\u003E").replaceAll("<", "\u003C");
-			if(s.length() > 1) {
-				char c1 = s.charAt(0);
-				char c2 = s.charAt(s.length()-1);
-				if(c1 == '{' && c2 == '}')   return s;
-				if(c1 == '"' && c2 == '"')   return s;
-				if(c1 == '\'' && c2 == '\'') return s;
-			}
-			return "'" + s + "'";
-		}
+		String json = JsonUtils.toJson(obj);
+		return json.replaceAll("&", "\u0026").replaceAll(">", "\u003E").replaceAll("<", "\u003C");
 	}
 	
 	public static Map<String, Object> lowerKeys(Map<?, ?> map) {

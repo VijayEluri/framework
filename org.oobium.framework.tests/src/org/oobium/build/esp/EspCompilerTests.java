@@ -21,6 +21,7 @@ import org.oobium.app.AppService;
 import org.oobium.app.http.Action;
 import org.oobium.app.request.Request;
 import org.oobium.app.response.Response;
+import org.oobium.app.routing.AppRouter;
 import org.oobium.app.views.View;
 import org.oobium.build.esp.compiler.ESourceFile;
 import org.oobium.build.esp.compiler.EspCompiler;
@@ -54,6 +55,14 @@ public class EspCompilerTests {
 	}
 	
 	private String page(String src, boolean partial) throws Exception {
+		return page(null, src, partial);
+	}
+	
+	private String page(AppRouter router, String src) throws Exception {
+		return page(router, src, false);
+	}
+	
+	private String page(AppRouter router, String src, boolean partial) throws Exception {
 		EspBuilder builder = EspBuilder.newEspBuilder("MyEsp.esp");
 		EspDom dom = builder.parse(src);
 		
@@ -77,7 +86,10 @@ public class EspCompilerTests {
 			when(request.getHeader("X-Requested-With")).thenReturn("XMLHttpRequest");
 		}
 		
-		Response response = View.render(view, request);
+		Response response = 
+				(router == null) ? 
+						View.render(view, request) : 
+							View.render(router, view, request);
 		
 		String html = response.getContentAsString();
 		System.out.println(html);
@@ -245,22 +257,14 @@ public class EspCompilerTests {
 	@Test
 	public void testScriptWithEjs() throws Exception {
 		assertEquals(
-				"MyScripts myScripts$0 = new MyScripts();\n" +
-				"addExternalScript(myScripts$0);\n" +
-				"__body__.append(\"<style>\");\n" +
-				"myScripts$0.render(__body__);\n" +
-				"__body__.append(\"</style>\");",
+				"addExternalScript(new MyScripts());",
 				render("script<MyScripts>"));
 	}
 	
 	@Test
 	public void testScriptWithEjsParamaterized() throws Exception {
 		assertEquals(
-				"MyScripts myScripts$0 = new MyScripts(arg1, arg2);\n" +
-				"addExternalScript(myScripts$0);\n" +
-				"__body__.append(\"<style>\");\n" +
-				"myScripts$0.render(__body__);\n" +
-				"__body__.append(\"</style>\");",
+				"addExternalScript(new MyScripts(arg1, arg2));",
 				render("script<MyScripts>(arg1, arg2)"));
 	}
 	
@@ -280,15 +284,43 @@ public class EspCompilerTests {
 	}
 
 	@Test
+	public void testModels() throws Exception {
+		assertEquals(
+				"includeScriptModels();",
+				render("models"));
+
+		
+		AppRouter router = mock(AppRouter.class);
+		when(router.getModelRouteMap()).thenReturn(null);
+		
+		assertEquals(
+				"<!DOCTYPE html><html>" +
+				"<head>" +
+				"<script>window.$Router = new Router(null);</script>" +
+				"</head>" +
+				"<body></body>" +
+				"</html>",
+				page(router, "models"));
+	}
+
+	@Test
 	public void testScriptWithJava() throws Exception {
 		
 		// only qualifies by simple name - is this enough?
 		
 		assertEquals(
+				"Object obj = null;\n" +
+				"includeScriptEnvironment();\n" +
+				"__body__.append(\"<script>$oobenv.myEspVar37 = \");\n" +
+				"__body__.append(j(obj));\n" +
+				"__body__.append(\";var obj = $oobenv.myEspVar37;</script>\");",
+				render("-Object obj = null;\nscript var obj = ${obj};"));
+
+		assertEquals(
 				"int width = 10;\n" +
 				"includeScriptEnvironment();\n" +
 				"__body__.append(\"<script>$oobenv.myEspVar57 = \");\n" +
-				"__body__.append(h(width * 2));\n" +
+				"__body__.append(j(width * 2));\n" +
 				"__body__.append(\";var size = { height: 100, width: $oobenv.myEspVar57 };</script>\");",
 				render("-int width = 10;\nscript var size = { height: 100, width: ${width * 2} };"));
 
@@ -296,9 +328,17 @@ public class EspCompilerTests {
 				"int var = 10;\n" +
 				"includeScriptEnvironment();\n" +
 				"__body__.append(\"<script>$oobenv.myEspVar28 = \");\n" +
-				"__body__.append(h(var));\n" +
+				"__body__.append(j(var));\n" +
 				"__body__.append(\";alert($oobenv.myEspVar28);</script>\");",
 				render("-int var = 10;\nscript alert(${var});"));
+		
+		assertEquals(
+				"int var = 10;\n" +
+				"includeScriptEnvironment();\n" +
+				"__body__.append(\"<script>$oobenv.myEspVar29 = \");\n" +
+				"__body__.append(j(var));\n" +
+				"__body__.append(\";alert($oobenv.myEspVar29);</script>\");",
+				render("-int var = 10;\nscript\n\talert(${var});"));
 		
 		assertEquals(
 				"<!DOCTYPE html><html>" +
@@ -311,6 +351,24 @@ public class EspCompilerTests {
 				page("-int var = 10;\nscript alert(${var});"));
 
 		assertEquals(
+				"String var = \"10\";\n" +
+				"includeScriptEnvironment();\n" +
+				"__body__.append(\"<script>$oobenv.myEspVar34 = \");\n" +
+				"__body__.append(j(var));\n" +
+				"__body__.append(\";alert($oobenv.myEspVar34);</script>\");",
+				render("-String var = \"10\";\nscript\n\talert(${var});"));
+		
+		assertEquals(
+				"<!DOCTYPE html><html>" +
+				"<head><script>window.$oobenv = {};</script></head>" +
+				"<body><script>" +
+				"$oobenv.myEspVar33 = \"10\";" +
+				"alert($oobenv.myEspVar33);" +
+				"</script></body>" +
+				"</html>",
+				page("-String var = \"10\";\nscript alert(${var});"));
+
+		assertEquals(
 				"<!DOCTYPE html><html>" +
 				"<head><script>window.$oobenv = {};</script></head>" +
 				"<body><script>" +
@@ -319,6 +377,16 @@ public class EspCompilerTests {
 				"</script></body>" +
 				"</html>",
 				page("-int var = 10;\nscript alert(${\"{\\\"k\\\": 10}\"});"));
+
+		assertEquals(
+				"<!DOCTYPE html><html>" +
+				"<head><script>window.$oobenv = {};</script></head>" +
+				"<body><script>" +
+				"$oobenv.myEspVar34 = true;" +
+				"alert($oobenv.myEspVar34);" +
+				"</script></body>" +
+				"</html>",
+				page("-boolean var = true;\nscript alert(${var});"));
 	}
 	
 	@Test
@@ -448,11 +516,7 @@ public class EspCompilerTests {
 	@Test
 	public void testScriptInHeadWithEjs() throws Exception {
 		assertEquals(
-				"MyScripts myScripts$8 = new MyScripts();\n" +
-				"addExternalScript(myScripts$8);\n" +
-				"__head__.append(\"<style>\");\n" +
-				"myScripts$8.render(__head__);\n" +
-				"__head__.append(\"</style>\");",
+				"addExternalScript(new MyScripts());",
 				render("head <- script<MyScripts>"));
 	}
 	

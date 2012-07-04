@@ -77,6 +77,19 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 	 * @param router the router from which resolution of pathTo requests will begin
 	 * @param view the view to be rendered
 	 * @param request the request to use while rendering the view
+	 * @return the rendered Response object
+	 * @throws Exception this will run user generated content - be prepared for anything.
+	 */
+	public static Response render(Router router, View view, Request request) throws Exception {
+		return render(router, view, request, new HashMap<String, Object>(0));
+	}
+	
+	/**
+	 * Render the given view for the given request. Any pathTo requests will be resolved from the perspective of 
+	 * the given Router.
+	 * @param router the router from which resolution of pathTo requests will begin
+	 * @param view the view to be rendered
+	 * @param request the request to use while rendering the view
 	 * @param params a map of parameters that are to be available to the view
 	 * @return the rendered Response object
 	 * @throws Exception this will run user generated content - be prepared for anything.
@@ -107,10 +120,6 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 		return controller.accepts(type);
 	}
 
-	public void addExternalScript(Class<? extends ScriptFile> asset) {
-		renderer.addExternalScript(asset);
-	}
-	
 	public void addExternalScript(String src) {
 		renderer.addExternalScript(src);
 	}
@@ -375,6 +384,12 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 	
 	protected void includeScriptEnvironment() {
 		renderer.includeScriptEnvironment = true;
+	}
+	
+	protected void includeScriptModels() {
+		renderer.includeScriptEnvironment = true;
+		renderer.includeScriptModels = true;
+		addExternalScript("/models.js");
 	}
 	
 	@Override

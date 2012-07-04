@@ -11,6 +11,8 @@
 package org.oobium.app.views;
 
 
-public class ScriptFile extends DynamicAsset {
+public abstract class ScriptFile extends DynamicAsset {
 
+	public abstract boolean hasInitializer();
+	
 }

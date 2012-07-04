@@ -1,9 +1,11 @@
 package org.oobium.app.views;
 
+import static org.oobium.utils.StringUtils.*;
 import static org.oobium.app.http.MimeType.CSS;
 import static org.oobium.app.http.MimeType.JS;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -51,7 +53,9 @@ public class ViewRenderer {
 	private Map<String, String> contentMap;
 
 	boolean includeScriptEnvironment;
+	boolean includeScriptModels;
 	private LinkedHashSet<String> externalScripts;
+	private List<ScriptFile> externalScriptFiles;
 	private LinkedHashSet<String> externalStyles;
 
 	public ViewRenderer(HttpController controller, View view) {
@@ -59,20 +63,27 @@ public class ViewRenderer {
 		this.controller = controller;
 		this.view = view;
 	}
-
-	void addExternalScript(Class<? extends ScriptFile> asset) {
-		addExternalScript(Router.getAssetName(asset));
-	}
 	
+	void addExternalScript(ScriptFile script) {
+		addExternalScript(Router.getAssetName(script.getClass()));
+		if(script.hasInitializer()) {
+			includeScriptEnvironment = true;
+			addExternalScriptFile(script);
+		}
+	}
+
 	void addExternalScript(String src) {
 		if(externalScripts == null) {
 			externalScripts = new LinkedHashSet<String>();
 		}
 		externalScripts.add(src);
 	}
-	
-	void addExternalScript(ScriptFile asset) {
-		addExternalScript(Router.getAssetName(asset.getClass()));
+
+	private void addExternalScriptFile(ScriptFile asset) {
+		if(externalScriptFiles == null) {
+			externalScriptFiles = new ArrayList<ScriptFile>();
+		}
+		externalScriptFiles.add(asset);
 	}
 	
 	void addExternalStyle(Class<? extends StyleSheet> asset) {
@@ -145,6 +156,24 @@ public class ViewRenderer {
 		}
 	}
 	
+	private void appendScriptEnvironment(StringBuilder sb) {
+		if(includeScriptEnvironment) {
+			sb.append("<script>window.$oobenv = {};");
+			if(includeScriptModels) {
+				sb.append("\n$oobenv.routes = ");
+				sb.append(j(controller.getRouter().getModelRouteMap()));
+				sb.append(';');
+			}
+			if(externalScriptFiles != null) {
+				for(ScriptFile script : externalScriptFiles) {
+					sb.append('\n');
+					script.render(sb);
+				}
+			}
+			sb.append("</script>");
+		}
+	}
+	
 	private void applyNamedContent() {
 		if(positions != null && !positions.isEmpty()) {
 			if(contentMap != null && !contentMap.isEmpty()) {
@@ -170,7 +199,7 @@ public class ViewRenderer {
 		return null;
 	}
 	
-	private List<String> getUrls(LinkedHashSet<String> assets) {
+	private List<String> getUrls(Collection<String> assets) {
 		List<String> urls = new ArrayList<String>(assets);
 		for(int i = 0; i < urls.size(); i++) {
 			String url = urls.get(i);
@@ -235,9 +264,7 @@ public class ViewRenderer {
 		if(title != null) {
 			sb.append("<title>").append(title).append("</title>");
 		}
-		if(includeScriptEnvironment) {
-			sb.append("<script>window.$oobenv = {};</script>");
-		}
+		appendScriptEnvironment(sb);
 		appendExternalStyles(sb);
 		appendExternalScripts(sb);
 		if(head.length() > 0) {

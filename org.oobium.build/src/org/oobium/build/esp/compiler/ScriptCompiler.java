@@ -5,7 +5,7 @@ import static org.oobium.build.esp.dom.EspDom.DocType.EJS;
 import java.util.List;
 
 import org.oobium.build.esp.dom.EspPart;
-import org.oobium.build.esp.dom.EspPart.Type;
+import org.oobium.build.esp.dom.common.AssetPart;
 import org.oobium.build.esp.dom.elements.ScriptElement;
 import org.oobium.build.esp.dom.parts.ScriptPart;
 
@@ -17,9 +17,14 @@ public class ScriptCompiler extends AssetCompiler {
 		super(parent);
 	}
 
+	public boolean inScript() {
+		return element != null;
+	}
+	
 	public void compile(ScriptElement element) {
 		this.element = element;
 		build();
+		this.element = null;
 	}
 	
 	private void build() {
@@ -87,33 +92,55 @@ public class ScriptCompiler extends AssetCompiler {
 		}
 
 		String text = part.getText();
-
-		if( ! part.hasParts()) {
-			parent.appendEscaped(sb, text);
-		}
+		List<EspPart> containers = part.getJavaContainers();
 		
-		List<EspPart> parts = part.getParts();
-		for(int i = 0; i < parts.size(); i++) {
-			EspPart sub = parts.get(i);
-			int s1 = sub.getStart() - part.getStart();
-			int s2 = s1 + sub.length();
-			if(i == 0) { // if first
-				if(s1 > 0) parent.appendEscaped(sb, text, 0, s1);
-			} else {
-				int s0 = parts.get(i-1).getEnd() - part.getStart();
-				if(s0 < s1) parent.appendEscaped(sb, text, s0, s1);
-			}
-			if(sub.isA(Type.JavaContainer)) {
+		if(containers.isEmpty()) {
+			parent.appendEscaped(sb, text);
+		} else {
+			for(int i = 0; i < containers.size(); i++) {
+				EspPart sub = containers.get(i);
+				int s1 = sub.getStart() - part.getStart();
+				int s2 = s1 + sub.length();
+				if(i == 0) { // if first
+					if(s1 > 0) parent.appendEscaped(sb, text, 0, s1);
+				} else {
+					int s0 = containers.get(i-1).getEnd() - part.getStart();
+					if(s0 < s1) parent.appendEscaped(sb, text, s0, s1);
+				}
 				sb.append(parent.getCodeVar(sub));
-			} else {
-				parent.appendEscaped(sb, text, s1, s2);
-			}
-			if(i == parts.size() - 1) { // if last
-				if(s2 < text.length()) {
-					parent.appendEscaped(sb, text, s2, text.length());
+				if(i == containers.size() - 1) { // if last
+					if(s2 < text.length()) {
+						parent.appendEscaped(sb, text, s2, text.length());
+					}
 				}
 			}
 		}
+	}
+
+	public boolean buildInitializer(ScriptElement element) {
+		if(element.hasAsset()) {
+			AssetPart code = element.getAsset();
+			List<EspPart> containers = code.getJavaContainers();
+			if(containers.size() > 0) {
+				this.element = element;
+				StringBuilder body = parent.getBody();
+				parent.prepForMarkup(body);
+				for(EspPart container : containers) {
+					body.append(parent.getCodeVar(container)).append(" = ");
+					parent.build(container, body);
+					body.append(';');
+				}
+				this.element = null;
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public void buildModels() {
+		StringBuilder body = parent.getBody();
+		parent.prepForJava(body);
+		body.append("includeScriptModels();\n");
 	}
 
 }

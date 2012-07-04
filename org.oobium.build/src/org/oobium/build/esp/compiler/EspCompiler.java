@@ -10,7 +10,6 @@
  ******************************************************************************/
 package org.oobium.build.esp.compiler;
 
-import static org.oobium.build.esp.Constants.DOM_EVENTS;
 import static org.oobium.build.esp.dom.EspDom.DocType.EMT;
 import static org.oobium.build.esp.dom.EspDom.DocType.ESP;
 import static org.oobium.build.esp.dom.EspPart.Type.Constructor;
@@ -49,8 +48,6 @@ import org.oobium.build.esp.dom.EspElement;
 import org.oobium.build.esp.dom.EspPart;
 import org.oobium.build.esp.dom.EspPart.Type;
 import org.oobium.build.esp.dom.EspResolver;
-import org.oobium.build.esp.dom.common.AssetElement;
-import org.oobium.build.esp.dom.common.AssetPart;
 import org.oobium.build.esp.dom.common.MethodSignature;
 import org.oobium.build.esp.dom.elements.Constructor;
 import org.oobium.build.esp.dom.elements.ImportElement;
@@ -89,6 +86,7 @@ public class EspCompiler {
 	
 	private EspResolver resolver;
 	private FormCompiler formCompiler;
+	private ScriptCompiler scriptCompiler;
 	
 	private String pkg;
 	private EspDom dom;
@@ -97,12 +95,7 @@ public class EspCompiler {
 	private List<EspLocation> bodyLocations;
 	
 	private boolean inJava;
-	private boolean inJavaElement;
-	private boolean inJavaPart;
-	
 	private boolean inAsset;
-	private boolean inScript;
-	private boolean inStyle;
 	
 	private int javaLevel;
 	private String sbName;
@@ -119,6 +112,7 @@ public class EspCompiler {
 		this.enableEscaping = true;
 		this.locationsMap = new HashMap<StringBuilder, List<EspLocation>>();
 		this.formCompiler = new FormCompiler(this);
+		this.scriptCompiler = new ScriptCompiler(this);
 	}
 
 	public EspCompiler setLogger(Logger logger) {
@@ -588,7 +582,7 @@ public class EspCompiler {
 			buildHtml((MarkupElement) element);
 			break;
 		case ScriptElement:
-			buildScript((ScriptElement) element);
+			scriptCompiler.compile((ScriptElement) element);
 			break;
 		case StyleElement:
 			buildStyle((StyleElement) element);
@@ -608,6 +602,9 @@ public class EspCompiler {
 			startContent(element);
 			buildChildren(element);
 			stopContent();
+		}
+		else if("models".equals(tag)) {
+			scriptCompiler.buildModels();
 		}
 		else {
 			if("textarea".equalsIgnoreCase(tag)) tag = "textarea";
@@ -704,21 +701,6 @@ public class EspCompiler {
 		}
 	}
 
-	private void buildInitializer(AssetElement element) {
-		if(element.hasAsset()) {
-			AssetPart code = element.getAsset();
-			List<EspPart> containers = code.getJavaContainers();
-			if(containers.size() > 0) {
-				prepForMarkup(body);
-				for(EspPart container : containers) {
-					body.append(getCodeVar(container)).append(" = ");
-					build(container, body);
-					body.append(';');
-				}
-			}
-		}
-	}
-	
 	private void buildInnerText(EspElement element) {
 		InnerText innerText = (InnerText) element;
 		if(innerText.hasInnerText()) {
@@ -1096,11 +1078,6 @@ public class EspCompiler {
 			esf.addMethod(mname + args.size(), source);
 		}
 	}
-
-	private void buildScript(ScriptElement element) {
-		ScriptCompiler compiler = new ScriptCompiler(this);
-		compiler.compile(element);
-	}
 	
 	private void buildStyle(StyleElement element) {
 		StyleCompiler compiler = new StyleCompiler(this);
@@ -1255,12 +1232,21 @@ public class EspCompiler {
 				break;
 			}
 		}
+		
+		boolean hasInitializer = false;
 		for(int i = ix; i < parts.size(); i++) {
 			EspPart part = parts.get(ix);
 			if(part.isA(ScriptElement)) {
-				buildInitializer((ScriptElement) part);
+				if(scriptCompiler.buildInitializer((ScriptElement) part)) {
+					hasInitializer = true;
+				}
 			}
 		}
+		
+		esf.addMethod(
+				"hasInitializer",
+				"\t@Override\n\tpublic boolean hasInitializer() {\n\t\treturn " + hasInitializer + ";\n\t}"
+		);
 		
 		buildMethod(
 				"doRender",
@@ -1489,7 +1475,7 @@ public class EspCompiler {
 	}
 	
 	private char getEscapeChar(EspPart container) {
-		if(inJava || inJavaElement) {
+		if(inJava) {
 			return 0;
 		}
 		
@@ -1500,8 +1486,10 @@ public class EspCompiler {
 		if(text.charAt(0) ==  '$') {
 			return getEscapeChar(text, 1);
 		}
-		if(text.length() < 3) {
-			return inForm() ? 'f' : 'h'; // no room for an escape char (return default)
+		if(text.length() < 3) { // no room for an escape char (return default)
+			if(inForm())   return 'f';
+			if(inScript()) return 'j';
+			return 'h';
 		}
 
 		return getEscapeChar(text, 0);
@@ -1518,7 +1506,8 @@ public class EspCompiler {
 				case 'r': return 0;   // raw (aka none)
 				}
 			}
-			if(inForm()) return 'f';
+			if(inForm())   return 'f';
+			if(inScript()) return 'j';
 			return 'h';
 		}
 		return 0;
@@ -1645,7 +1634,7 @@ public class EspCompiler {
 	}
 	
 	private boolean inScript() {
-		return inScript;
+		return scriptCompiler.inScript();
 	}
 	
 	private void offsetLocations(StringBuilder sb, int offset) {

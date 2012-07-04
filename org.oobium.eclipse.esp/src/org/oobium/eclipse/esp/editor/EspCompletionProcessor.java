@@ -208,9 +208,9 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 					proposal.setRelevance(90);
 					proposals.add(proposal);
 				}
-				for(String tag : Constants.HTML_TAGS.keySet()) {
+				for(String tag : Constants.MARKUP_TAGS.keySet()) {
 					Image image = EspPlugin.getImage(EspPlugin.IMG_HTML_TAG);
-					EspCompletionProposal proposal = new EspCompletionProposal(tag, offset, 0, tag.length(), image, tag, null, Constants.HTML_TAGS.get(tag));
+					EspCompletionProposal proposal = new EspCompletionProposal(tag, offset, 0, tag.length(), image, tag, null, Constants.MARKUP_TAGS.get(tag));
 					proposal.setRelevance(50);
 					proposals.add(proposal);
 				}
@@ -223,8 +223,8 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 				if(c == '\n' || (c == '-' && i > 0 && dom.charAt(i-1) == '<')) {
 					List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
 					Image image = EspPlugin.getImage(EspPlugin.IMG_HTML_TAG);
-					for(String tag : Constants.HTML_TAGS.keySet()) {
-						results.add(new EspCompletionProposal(tag, offset, 0, tag.length(), image, tag, null, Constants.HTML_TAGS.get(tag)));
+					for(String tag : Constants.MARKUP_TAGS.keySet()) {
+						results.add(new EspCompletionProposal(tag, offset, 0, tag.length(), image, tag, null, Constants.MARKUP_TAGS.get(tag)));
 					}
 					return results;
 				} else {
@@ -354,12 +354,12 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 			}
 			
 			Image image = EspPlugin.getImage(EspPlugin.IMG_HTML_TAG);
-			for(String tag : Constants.HTML_TAGS.keySet()) {
+			for(String tag : Constants.MARKUP_TAGS.keySet()) {
 				if(tag.startsWith(prefix)) {
 					int rstart = part.getStart();
 					int rlength = part.length();
 					int length = tag.length();
-					String description = Constants.HTML_TAGS.get(tag);
+					String description = Constants.MARKUP_TAGS.get(tag);
 					ICompletionProposal proposal = 
 						new EspCompletionProposal(tag, rstart, rlength, length, image, tag, null, description);
 					proposals.add(proposal);
@@ -378,8 +378,8 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 			if(c == '\n' || (c == '-' && i > 0 && dom.charAt(i-1) == '<')) {
 				Image image = EspPlugin.getImage(EspPlugin.IMG_HTML_TAG);
 				List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
-				for(String tag : Constants.HTML_TAGS.keySet()) {
-					proposals.add(new EspCompletionProposal(tag, offset, 0, tag.length(), image, tag, null, Constants.HTML_TAGS.get(tag)));
+				for(String tag : Constants.MARKUP_TAGS.keySet()) {
+					proposals.add(new EspCompletionProposal(tag, offset, 0, tag.length(), image, tag, null, Constants.MARKUP_TAGS.get(tag)));
 				}
 				return proposals;
 			}

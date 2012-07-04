@@ -22,17 +22,10 @@ public class AssetCompiler {
 	protected void buildExternalEjs(ScriptElement element) {
 		StringBuilder sb = parent.getBody();
 		parent.prepForJava(sb);
-		 String varName = buildDynamicAssetVar(sb, element);
-		 parent.indent(sb);
-		 sb.append("addExternalScript(").append(varName).append(");\n");
-		 parent.prepForMarkup(sb);
-		String prev = parent.prepFor(element);
-		 sb.append("<style>");
-		 parent.prepForJava(sb);
-		 sb.append(varName).append(".render(" + parent.sbName(sb) + ");\n");
-		 parent.prepForMarkup(sb);
-		 sb.append("</style>");
-		 parent.prepFor(prev);
+		parent.indent(sb);
+		sb.append("addExternalScript(");
+		buildNewDynamicAsset(element, sb);
+		sb.append(");\n");
 	}
 	
 	protected void buildExternalEss(StyleElement element) {
@@ -43,23 +36,30 @@ public class AssetCompiler {
 		sb.append(".class);\n");
 	}
 	
-	private String buildDynamicAssetVar(StringBuilder sb, MarkupElement element) {
+	private String buildDynamicAssetVar(MarkupElement element, StringBuilder sb) {
 		EspPart type = element.getJavaType();
 		String typeName = parent.getJavaTypeName(type);
 		String varName = varName(typeName) + "$" + element.getStart();
+		sb.append(typeName).append(' ').append(varName).append(" = ");
+		buildNewDynamicAsset(element, sb);
+		sb.append(";\n");
+		return varName;
+	}
+	
+	private void buildNewDynamicAsset(MarkupElement element, StringBuilder sb) {
+		EspPart type = element.getJavaType();
+		sb.append("new ");
 		parent.build(type, sb);
-		sb.append(' ').append(varName).append(" = new ").append(typeName);
 		if(element.hasArgs()) {
 			sb.append("(");
 			for(Iterator<MethodArg> iter = element.getArgs().iterator(); iter.hasNext(); ) {
 				parent.build(iter.next(), sb);
 				if(iter.hasNext()) sb.append(',').append(' ');
 			}
-			sb.append(");\n");
+			sb.append(")");
 		} else {
-			sb.append("();\n");
+			sb.append("()");
 		}
-		return varName;
 	}
 	
 	protected void buildInlineEjs(MethodArg type, ScriptElement element) {
@@ -68,7 +68,7 @@ public class AssetCompiler {
 		String prev = parent.prepFor(element);
 		sb.append("<script>");
 		parent.prepForJava(sb);
-		buildDynamicAssetVar(sb, element);
+		buildDynamicAssetVar(element, sb);
 		parent.prepForMarkup(sb);
 		sb.append("</script>");
 		parent.prepFor(prev);
@@ -80,7 +80,7 @@ public class AssetCompiler {
 		String prev = parent.prepFor(element);
 		sb.append("<style>");
 		parent.prepForJava(sb);
-		String varName = buildDynamicAssetVar(sb, element);
+		String varName = buildDynamicAssetVar(element, sb);
 		parent.indent(sb);
 		sb.append(varName).append(".render(" + parent.sbName(sb) + ");\n");
 		parent.prepForMarkup(sb);

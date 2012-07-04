@@ -12,7 +12,7 @@ package org.oobium.eclipse.esp.editor;
 
 import static org.oobium.build.esp.Constants.CSS_PROPERTIES;
 import static org.oobium.build.esp.Constants.DOM_EVENTS;
-import static org.oobium.build.esp.Constants.HTML_TAGS;
+import static org.oobium.build.esp.Constants.MARKUP_TAGS;
 import static org.oobium.build.esp.Constants.JAVA_KEYWORDS;
 import static org.oobium.build.esp.Constants.JS_KEYWORDS;
 import static org.oobium.build.esp.dom.EspPart.Type.Comment;
@@ -32,7 +32,7 @@ import org.oobium.eclipse.esp.EspPlugin;
 public class EspStyleRanges {
 
 	private static final StyleRange level = new StyleRange(-1, -1, color(0, 0, 0), color(225, 225, 225));
-	private static final StyleRange htmlTag = new StyleRange(-1, -1, color(0, 0, 128), null);
+	private static final StyleRange markupTag = new StyleRange(-1, -1, color(0, 0, 128), null);
 	private static final StyleRange propertyName = new StyleRange(-1, -1, color(0, 64, 128), null);
 	private static final StyleRange javaKeyword = new StyleRange(-1, -1, color(128, 0, 86), null, SWT.BOLD);
 	private static final StyleRange javaString = new StyleRange(-1, -1, color(0, 0, 128), null);
@@ -198,8 +198,8 @@ public class EspStyleRanges {
 		else if("yield".equals(tag)) {
 			return addRange(part, offset, javaKeyword);
 		}
-		else if(HTML_TAGS.containsKey(tag)) {
-			return addRange(part, offset, htmlTag);
+		else if(MARKUP_TAGS.containsKey(tag)) {
+			return addRange(part, offset, markupTag);
 		}
 		// TODO some kind of 'unknown tag' style... ?
 		return startOfNext(part, offset);

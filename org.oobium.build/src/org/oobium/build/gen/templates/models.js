@@ -126,57 +126,58 @@ function Monitor(interval) {
 	
 }
 
-// TEMP
-var $Monitor = new Monitor(3000);
+var $Monitor = new Monitor($oobenv.commitInterval || 3000);
 
-function Router(modelRoutes) {
-	if(modelRoutes) {
-		this.modelRoutes = modelRoutes;
-	} else {
+
+var $Router = {
+	routesUrl: '/',
+	
+	loadRoutes: function() {
 		$.ajax({
 			type: 'HEAD',
 			async: true,
-			url: '/',
+			url: routesUrl,
 			complete: function(xhr, status) {
 				if('success'.equals(status)) {
 					var api = xhr.getResponseHeader('API-Location');
 					if(api) {
 						$.getJSON(api, function(data) {
-							modelRoutes = data;
+							$oobenv.routes = data;
 						});
 						return;
 					}
 				}
-				alert('error');
+				alert('error loading routes');
 			}
 		});
-	}
-}
-
-Router.prototype.getType = function(action, model) {
-	return this.modelRoutes[model.type || model][action]['method'];
-}
-
-Router.prototype.getPath = function(action, model, plural, id) {
-	var modelType, modelPlural, modelId;
-	if(plural) {
-		modelType = model;
-		modelPlural = plural;
-		modelId = id;
-	} else {
-		modelType = model.type;
-		modelPlural = model.plural;
-		modelId = model.id;
-	}
-	var route = this.modelRoutes[modelType][action];
-	var path = route['path'];
-	if(route['fixed']) {
+	},
+	
+	getType: function(action, model) {
+		return $oobenv.routes[model.type || model][action]['method'];
+	},
+	
+	getPath: function(action, model, plural, id) {
+		var modelType, modelPlural, modelId;
+		if(plural) {
+			modelType = model;
+			modelPlural = plural;
+			modelId = id;
+		} else {
+			modelType = model.type;
+			modelPlural = model.plural;
+			modelId = model.id;
+		}
+		var route = $oobenv.routes[modelType][action];
+		var path = route['path'];
+		if(route['fixed']) {
+			return path;
+		}
+		path = path.replace("{models}", modelPlural);
+		path = path.replace("{id}", modelId);
 		return path;
 	}
-	path = path.replace("{models}", modelPlural);
-	path = path.replace("{id}", modelId);
-	return path;
 }
+
 
 function Model(params) {
 	this.data = {};
