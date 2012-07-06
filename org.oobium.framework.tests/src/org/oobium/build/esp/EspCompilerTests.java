@@ -994,6 +994,13 @@ public class EspCompilerTests {
 	}
 
 	@Test
+	public void testData() throws Exception {
+		assertEquals(
+				"__body__.append(\"<div data-test=\\\"value\\\"></div>\");",
+				render("div(data-test: \"value\""));
+	}
+	
+	@Test
 	public void testDate() throws Exception {
 		assertEquals(
 				"__body__.append(\"<span>\");\n" +
