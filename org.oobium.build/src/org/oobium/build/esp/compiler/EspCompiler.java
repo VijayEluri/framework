@@ -871,6 +871,10 @@ public class EspCompiler {
 					body.append(")).append(\"\\\"");
 				}
 			}
+		} else if(link.getEntryCount() == 1 && link.hasEntry("onclick")) {
+			body.append(" href=\\\"#\\\" onclick=\\\"");
+			build(link.getEntry("onclick"), body);
+			body.append(";return false;\\\"");
 		} else {
 			buildAttrs(link);
 		}
