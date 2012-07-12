@@ -75,7 +75,6 @@ import org.oobium.app.server.netty4.HttpData;
 import org.oobium.app.sessions.CookieSession;
 import org.oobium.app.sessions.ISession;
 import org.oobium.app.sessions.ISessions;
-import org.oobium.app.views.DynamicAsset;
 import org.oobium.app.views.ScriptFile;
 import org.oobium.app.views.StyleSheet;
 import org.oobium.app.views.View;
@@ -1100,14 +1099,6 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 		return render(type, (models == null) ? "null" : Model.toJson(models, include, values));
 	}
 	
-	private Response render(MimeType type, DynamicAsset asset) {
-		rendering();
-		response = new Response();
-		response.setContentType(type);
-		response.setContent(asset.getContent());
-		return response;
-	}
-	
 	public Response render(MimeType type, String body) {
 		rendering();
 		response = new Response();
@@ -1149,10 +1140,6 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 			return render((HttpResponseStatus) object);
 		}
 		return render(String.valueOf(object));
-	}
-	
-	public Response render(ScriptFile sf) {
-		return render(JS, sf);
 	}
 	
 	public Response render(String body) {
@@ -1213,7 +1200,11 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	}
 
 	public Response render(StyleSheet ss) {
-		return render(CSS, ss);
+		rendering();
+		response = new Response();
+		response.setContentType(CSS);
+		response.setContent(ss.getContent());
+		return response;
 	}
 	
 	public Response render(View view) {

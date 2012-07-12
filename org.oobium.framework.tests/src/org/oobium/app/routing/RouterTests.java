@@ -93,7 +93,10 @@ public class RouterTests {
 	public static class PhoneController extends HttpController { }
 
 	public static class AccountStyles extends StyleSheet { }
-	public static class AccountScripts extends ScriptFile { public boolean hasInitializer() { return false; } }
+	public static class AccountScripts extends ScriptFile {
+		protected void doRender(StringBuilder sb) throws Exception { /*do nothing*/ }
+		public boolean hasInitializer() { return false; }
+	}
 	
 	
 	private AppService service;

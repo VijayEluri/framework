@@ -66,7 +66,7 @@ public class ViewRenderer {
 	}
 	
 	void addExternalScript(ScriptFile script) {
-		addExternalScript(Router.getAssetName(script.getClass()));
+		addExternalScript(Router.getAssetName(script.getClass(), "js"));
 		if(script.hasInitializer()) {
 			includeScriptEnvironment = true;
 			addExternalScriptFile(script);
@@ -88,7 +88,7 @@ public class ViewRenderer {
 	}
 	
 	void addExternalStyle(Class<? extends StyleSheet> asset) {
-		addExternalStyle(Router.getAssetName(asset));
+		addExternalStyle(Router.getAssetName(asset, "css"));
 	}
 	
 	void addExternalStyle(String href) {
@@ -99,7 +99,7 @@ public class ViewRenderer {
 	}
 	
 	void addExternalStyle(StyleSheet asset) {
-		addExternalStyle(Router.getAssetName(asset.getClass()));
+		addExternalStyle(Router.getAssetName(asset.getClass(), "css"));
 	}
 	
 	void addPosition(String name) {
@@ -168,7 +168,7 @@ public class ViewRenderer {
 			if(externalScriptFiles != null) {
 				for(ScriptFile script : externalScriptFiles) {
 					sb.append('\n');
-					script.render(sb);
+					script.render(this, sb);
 				}
 			}
 			sb.append("</script>");

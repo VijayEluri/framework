@@ -54,17 +54,16 @@ import org.oobium.app.controllers.WebsocketController;
 import org.oobium.app.http.Action;
 import org.oobium.app.http.MimeType;
 import org.oobium.app.request.Request;
-import org.oobium.app.routing.routes.StyleSheetRoute;
 import org.oobium.app.routing.routes.DynamicRoute;
 import org.oobium.app.routing.routes.FileDirectoryRoute;
 import org.oobium.app.routing.routes.HttpRoute;
 import org.oobium.app.routing.routes.RedirectRoute;
 import org.oobium.app.routing.routes.RtspRoute;
 import org.oobium.app.routing.routes.StaticRoute;
+import org.oobium.app.routing.routes.StyleSheetRoute;
 import org.oobium.app.routing.routes.ViewRoute;
 import org.oobium.app.routing.routes.WebsocketRoute;
 import org.oobium.app.server.Websocket;
-import org.oobium.app.views.DynamicAsset;
 import org.oobium.app.views.StyleSheet;
 import org.oobium.app.views.View;
 import org.oobium.logging.Logger;
@@ -107,9 +106,9 @@ public class Router {
 		}
 	}
 
-	public static String getAssetName(Class<? extends DynamicAsset> clazz) {
+	public static String getAssetName(Class<?> clazz, String extension) {
 		String name = clazz.getCanonicalName().replace('.','/');
-		return "/" + underscored(name) + "." + DynamicAsset.getFileExtension(clazz);
+		return "/" + underscored(name) + "." + extension;
 	}
 
 	
@@ -209,7 +208,7 @@ public class Router {
 	
 	public Routed addStyleSheet(Class<? extends StyleSheet> clazz) {
 		checkClass(clazz);
-		String name = getAssetName(clazz);
+		String name = getAssetName(clazz, "css");
 		Route route = new StyleSheetRoute(GET, name, clazz);
 		addRoute(name, route);
 		return new Routed(this, route);
@@ -236,7 +235,7 @@ public class Router {
 				if(assetPath.endsWith(".e.css")) {
 					String className = assetPath.substring(1, assetPath.length()-6).replace('/', '.');
 					Class<? extends StyleSheet> clazz = service.getClass(className).asSubclass(StyleSheet.class);
-					String rule = getAssetName(clazz);
+					String rule = getAssetName(clazz, "css");
 					route = new StyleSheetRoute(GET, rule, clazz);
 				} else {
 					int ix = assetPath.lastIndexOf('.');
@@ -1167,7 +1166,7 @@ public class Router {
 	}
 
 	public void removeStyleSheet(Class<? extends StyleSheet> clazz) {
-		String name = getAssetName(clazz);
+		String name = getAssetName(clazz, "css");
 		Route route = new StyleSheetRoute(GET, name, clazz);
 		removeRoute(name, route);
 	}

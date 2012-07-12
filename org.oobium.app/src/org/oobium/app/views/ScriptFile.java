@@ -13,17 +13,21 @@ package org.oobium.app.views;
 import org.oobium.persist.Model;
 
 
-public abstract class ScriptFile extends DynamicAsset {
+public abstract class ScriptFile {
 
-	public abstract boolean hasInitializer();
+	private ViewRenderer renderer;
+	
+	public void addExternalScript(ScriptFile asset) {
+		renderer.addExternalScript(asset);
+	}
 	
 	public void addExternalScript(String src) {
 		renderer.addExternalScript(src);
 	}
 	
-	public void addExternalScript(ScriptFile asset) {
-		renderer.addExternalScript(asset);
-	}
+	protected abstract void doRender(StringBuilder sb) throws Exception;
+	
+	public abstract boolean hasInitializer();
 	
 	protected void includeScriptModel(Class<? extends Model> modelClass) {
 		includeScriptModel(modelClass, false);
@@ -40,4 +44,20 @@ public abstract class ScriptFile extends DynamicAsset {
 	protected void includeScriptModels(boolean includeHasMany) {
 		renderer.includeScriptModel(Model.class, includeHasMany);
 	}
+
+	public void render(ViewRenderer renderer, StringBuilder sb) {
+		this.renderer = renderer;
+		try {
+			doRender(sb);
+		} catch(Exception e) {
+			if(e instanceof RuntimeException) {
+				throw (RuntimeException) e;
+			} else {
+				throw new RuntimeException("Exception thrown during render", e);
+			}
+		} finally {
+			this.renderer = null;
+		}
+	}
+	
 }

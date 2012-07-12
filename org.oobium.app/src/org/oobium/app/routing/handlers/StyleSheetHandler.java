@@ -14,7 +14,6 @@ import org.oobium.app.request.Request;
 import org.oobium.app.response.Response;
 import org.oobium.app.routing.RouteHandler;
 import org.oobium.app.routing.Router;
-import org.oobium.app.views.DynamicAsset;
 import org.oobium.app.views.StyleSheet;
 
 public class StyleSheetHandler extends RouteHandler {
@@ -28,8 +27,8 @@ public class StyleSheetHandler extends RouteHandler {
 
 	@Override
 	public Response routeRequest(Request request) throws Exception {
-		DynamicAsset asset = assetClass.newInstance();
-		return DynamicAsset.render(router, asset, request, getParamMap());
+		StyleSheet asset = assetClass.newInstance();
+		return StyleSheet.render(router, asset, request, getParamMap());
 	}
 	
 	@Override
