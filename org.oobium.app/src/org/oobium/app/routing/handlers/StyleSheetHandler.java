@@ -15,12 +15,13 @@ import org.oobium.app.response.Response;
 import org.oobium.app.routing.RouteHandler;
 import org.oobium.app.routing.Router;
 import org.oobium.app.views.DynamicAsset;
+import org.oobium.app.views.StyleSheet;
 
-public class DynamicAssetHandler extends RouteHandler {
+public class StyleSheetHandler extends RouteHandler {
 
-	public final Class<? extends DynamicAsset> assetClass;
+	public final Class<? extends StyleSheet> assetClass;
 	
-	public DynamicAssetHandler(Router router, Class<? extends DynamicAsset> assetClass, String[][] params) {
+	public StyleSheetHandler(Router router, Class<? extends StyleSheet> assetClass, String[][] params) {
 		super(router, params);
 		this.assetClass = assetClass;
 	}

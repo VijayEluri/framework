@@ -15,14 +15,14 @@ import java.util.List;
 
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.oobium.app.routing.Route;
-import org.oobium.app.views.DynamicAsset;
+import org.oobium.app.views.StyleSheet;
 
-public class DynamicAssetRoute extends Route {
+public class StyleSheetRoute extends Route {
 
-	public final Class<? extends DynamicAsset> assetClass;
+	public final Class<? extends StyleSheet> assetClass;
 	public final String[][] params;
 	
-	public DynamicAssetRoute(HttpMethod method, String rule, Class<? extends DynamicAsset> assetClass) {
+	public StyleSheetRoute(HttpMethod method, String rule, Class<? extends StyleSheet> assetClass) {
 		super(Route.DYNAMIC_ASSET, method, rule);
 		this.assetClass = assetClass;
 

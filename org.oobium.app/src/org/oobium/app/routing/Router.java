@@ -54,7 +54,7 @@ import org.oobium.app.controllers.WebsocketController;
 import org.oobium.app.http.Action;
 import org.oobium.app.http.MimeType;
 import org.oobium.app.request.Request;
-import org.oobium.app.routing.routes.DynamicAssetRoute;
+import org.oobium.app.routing.routes.StyleSheetRoute;
 import org.oobium.app.routing.routes.DynamicRoute;
 import org.oobium.app.routing.routes.FileDirectoryRoute;
 import org.oobium.app.routing.routes.HttpRoute;
@@ -65,6 +65,7 @@ import org.oobium.app.routing.routes.ViewRoute;
 import org.oobium.app.routing.routes.WebsocketRoute;
 import org.oobium.app.server.Websocket;
 import org.oobium.app.views.DynamicAsset;
+import org.oobium.app.views.StyleSheet;
 import org.oobium.app.views.View;
 import org.oobium.logging.Logger;
 import org.oobium.persist.Model;
@@ -206,10 +207,10 @@ public class Router {
 		}
 	}
 	
-	public Routed addAsset(Class<? extends DynamicAsset> clazz) {
+	public Routed addStyleSheet(Class<? extends StyleSheet> clazz) {
 		checkClass(clazz);
 		String name = getAssetName(clazz);
-		Route route = new DynamicAssetRoute(GET, name, clazz);
+		Route route = new StyleSheetRoute(GET, name, clazz);
 		addRoute(name, route);
 		return new Routed(this, route);
 	}
@@ -232,14 +233,13 @@ public class Router {
 				}
 
 				Route route;
-				int ix = assetPath.lastIndexOf('.');
-				int len = assetPath.length();
-				if(ix != -1 && len > 6 && assetPath.charAt(len-5) == 'e' && assetPath.charAt(len-6) == '.') {
-					String className = assetPath.substring(1, ix-2).replace('/', '.');
-					Class<? extends DynamicAsset> clazz = service.getClass(className).asSubclass(DynamicAsset.class);
+				if(assetPath.endsWith(".e.css")) {
+					String className = assetPath.substring(1, assetPath.length()-6).replace('/', '.');
+					Class<? extends StyleSheet> clazz = service.getClass(className).asSubclass(StyleSheet.class);
 					String rule = getAssetName(clazz);
-					route = new DynamicAssetRoute(GET, rule, clazz);
+					route = new StyleSheetRoute(GET, rule, clazz);
 				} else {
+					int ix = assetPath.lastIndexOf('.');
 					String ext = (ix != -1) ? assetPath.substring(ix+1) : null;
 					MimeType type = MimeType.getFromExtension(ext, MimeType.HTML);
 					route = new StaticRoute(checkRule(sa[0]), assetPath, type, sa[1], sa[2]);
@@ -752,62 +752,95 @@ public class Router {
 	 * @return the Map of model routes
 	 */
 	public Map<String, Map<String, Map<String, String>>> getModelRouteMap() {
-		return getModelRouteMap(getRoutes());
+		return getModelRouteMap(getRoutes(), null);
 	}
-	
+
+	public Map<String, Map<String, Map<String, String>>> getModelRouteMap(Map<Class<? extends Model>, Boolean> modelClasses) {
+		return getModelRouteMap(getRoutes(), modelClasses);
+	}
+
 	/**
 	 * Get a Map of all model routes that are routed by the provided Collection of routes.
 	 * @param routes the routes to check for models
 	 * @return the Map of model routes
 	 */
 	public Map<String, Map<String, Map<String, String>>> getModelRouteMap(Collection<Route> routes) {
+		return getModelRouteMap(routes, null);
+	}
+	
+	private Map<String, Map<String, Map<String, String>>> getModelRouteMap(
+			Collection<Route> routes, Map<Class<? extends Model>, Boolean> modelClasses) {
+		
+		boolean includeAll;
+		boolean includeHasMany;
+		Map<Class<? extends Model>, Boolean> filter;
+		
+		if(modelClasses == null) {
+			includeAll = true;
+			includeHasMany = true;
+			filter = null;
+		}
+		else if(modelClasses.containsKey(Model.class)) {
+			includeAll = true;
+			includeHasMany = modelClasses.get(Model.class);
+			filter = null;
+		}
+		else {
+			includeAll = includeHasMany = false;
+			filter = modelClasses;
+		}
+		
 		Map<String, Map<String, Map<String, String>>> results = new TreeMap<String, Map<String, Map<String, String>>>();
 
 		for(Route route : routes) {
 			if(route instanceof HttpRoute) {
 				HttpRoute hr = (HttpRoute) route;
 				if(hr.parentClass != null) {
-					Class<?> c = hr.parentClass;
-					String f = hr.hasManyField;
-					Action a = hr.action;
-					if(c != null && a != null) {
-						Map<String, String> map = new LinkedHashMap<String, String>();
-						map.put("method", route.httpMethod.getName());
-						if(route.isFixed()) {
-							map.put("path", route.path);
-							map.put("fixed", "true");
-						} else {
-							map.put("path", route.rule);
+					Class<? extends Model> c = hr.parentClass;
+					if(includeHasMany || (filter.containsKey(c) && filter.get(c))) {
+						String f = hr.hasManyField;
+						Action a = hr.action;
+						if(c != null && a != null) {
+							Map<String, String> map = new LinkedHashMap<String, String>();
+							map.put("method", route.httpMethod.getName());
+							if(route.isFixed()) {
+								map.put("path", route.path);
+								map.put("fixed", "true");
+							} else {
+								map.put("path", route.rule);
+							}
+	
+							String name = c.getName();
+							Map<String, Map<String, String>> model = results.get(name);
+							if(model == null) {
+								model = new TreeMap<String, Map<String, String>>();
+								results.put(name, model);
+							}
+							model.put(a.name() + ":" + f, map);
 						}
-
-						String name = c.getName();
-						Map<String, Map<String, String>> model = results.get(name);
-						if(model == null) {
-							model = new TreeMap<String, Map<String, String>>();
-							results.put(name, model);
-						}
-						model.put(a.name() + ":" + f, map);
 					}
 				} else {
-					Class<?> c = hr.modelClass;
-					Action a = hr.action;
-					if(c != null && a != null) {
-						Map<String, String> map = new LinkedHashMap<String, String>();
-						map.put("method", route.httpMethod.getName());
-						if(route.isFixed()) {
-							map.put("path", route.path);
-							map.put("fixed", "true");
-						} else {
-							map.put("path", route.rule);
+					Class<? extends Model> c = hr.modelClass;
+					if(includeAll || filter.containsKey(c)) {
+						Action a = hr.action;
+						if(c != null && a != null) {
+							Map<String, String> map = new LinkedHashMap<String, String>();
+							map.put("method", route.httpMethod.getName());
+							if(route.isFixed()) {
+								map.put("path", route.path);
+								map.put("fixed", "true");
+							} else {
+								map.put("path", route.rule);
+							}
+	
+							String name = c.getName();
+							Map<String, Map<String, String>> model = results.get(name);
+							if(model == null) {
+								model = new TreeMap<String, Map<String, String>>();
+								results.put(name, model);
+							}
+							model.put(a.name(), map);
 						}
-
-						String name = c.getName();
-						Map<String, Map<String, String>> model = results.get(name);
-						if(model == null) {
-							model = new TreeMap<String, Map<String, String>>();
-							results.put(name, model);
-						}
-						model.put(a.name(), map);
 					}
 				}
 			}
@@ -1133,9 +1166,9 @@ public class Router {
 		}
 	}
 
-	public void removeAsset(Class<? extends DynamicAsset> clazz) {
+	public void removeStyleSheet(Class<? extends StyleSheet> clazz) {
 		String name = getAssetName(clazz);
-		Route route = new DynamicAssetRoute(GET, name, clazz);
+		Route route = new StyleSheetRoute(GET, name, clazz);
 		removeRoute(name, route);
 	}
 	

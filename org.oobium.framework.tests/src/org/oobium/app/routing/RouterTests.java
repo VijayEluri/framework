@@ -49,7 +49,7 @@ import org.oobium.app.http.Action;
 import org.oobium.app.request.Request;
 import org.oobium.app.routing.handlers.AssetHandler;
 import org.oobium.app.routing.handlers.AuthorizationHandler;
-import org.oobium.app.routing.handlers.DynamicAssetHandler;
+import org.oobium.app.routing.handlers.StyleSheetHandler;
 import org.oobium.app.routing.handlers.HttpHandler;
 import org.oobium.app.routing.handlers.RedirectHandler;
 import org.oobium.app.routing.handlers.ViewHandler;
@@ -2462,29 +2462,15 @@ public class RouterTests {
 
 	@Test
 	public void testRouteStyleSheet() throws Exception {
-		router.addAsset(AccountStyles.class);
+		router.addStyleSheet(AccountStyles.class);
 		assertEquals(1, router.getRoutes().size());
 		assertEquals("[GET] /org/oobium/app/routing/router_tests/account_styles.css -> AccountStyles", router.getRoutes().get(0).toString());
 
 		RouteHandler handler = router.getHandler(request("[GET] /org/oobium/app/routing/router_tests/account_styles.css"));
 		assertNotNull(handler);
-		assertEquals(DynamicAssetHandler.class, handler.getClass());
-		DynamicAssetHandler dah = (DynamicAssetHandler) handler;
+		assertEquals(StyleSheetHandler.class, handler.getClass());
+		StyleSheetHandler dah = (StyleSheetHandler) handler;
 		assertEquals(AccountStyles.class, dah.assetClass);
-		assertEquals("null", asString(dah.params));
-	}
-	
-	@Test
-	public void testRouteScriptFile() throws Exception {
-		router.addAsset(AccountScripts.class);
-		assertEquals(1, router.getRoutes().size());
-		assertEquals("[GET] /org/oobium/app/routing/router_tests/account_scripts.js -> AccountScripts", router.getRoutes().get(0).toString());
-
-		RouteHandler handler = router.getHandler(request("[GET] /org/oobium/app/routing/router_tests/account_scripts.js"));
-		assertNotNull(handler);
-		assertEquals(DynamicAssetHandler.class, handler.getClass());
-		DynamicAssetHandler dah = (DynamicAssetHandler) handler;
-		assertEquals(AccountScripts.class, dah.assetClass);
 		assertEquals("null", asString(dah.params));
 	}
 	
@@ -2529,7 +2515,7 @@ public class RouterTests {
 	@Test
 	public void testPublish() throws Exception {
 		router.setApi("paths");
-		router.addAsset(AccountScripts.class).publish();
+		router.addStyleSheet(AccountStyles.class).publish();
 	}
 
 	@Test

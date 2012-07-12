@@ -38,14 +38,14 @@ import org.oobium.app.request.Request;
 import org.oobium.app.response.Response;
 import org.oobium.app.routing.handlers.AssetHandler;
 import org.oobium.app.routing.handlers.AuthorizationHandler;
-import org.oobium.app.routing.handlers.DynamicAssetHandler;
+import org.oobium.app.routing.handlers.StyleSheetHandler;
 import org.oobium.app.routing.handlers.FileDirectoryHandler;
 import org.oobium.app.routing.handlers.HttpHandler;
 import org.oobium.app.routing.handlers.RedirectHandler;
 import org.oobium.app.routing.handlers.RtspHandler;
 import org.oobium.app.routing.handlers.ViewHandler;
 import org.oobium.app.routing.handlers.WebsocketHandler;
-import org.oobium.app.routing.routes.DynamicAssetRoute;
+import org.oobium.app.routing.routes.StyleSheetRoute;
 import org.oobium.app.routing.routes.DynamicRoute;
 import org.oobium.app.routing.routes.FileDirectoryRoute;
 import org.oobium.app.routing.routes.HttpRoute;
@@ -202,8 +202,8 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 						HttpRoute cr = (HttpRoute) fixedRoute;
 						return new HttpHandler(router, cr.controllerClass, cr.action, cr.parentClass, cr.hasManyField, cr.params);
 					case Route.DYNAMIC_ASSET:
-						DynamicAssetRoute dar = (DynamicAssetRoute) fixedRoute;
-						return new DynamicAssetHandler(router, dar.assetClass, dar.params);
+						StyleSheetRoute dar = (StyleSheetRoute) fixedRoute;
+						return new StyleSheetHandler(router, dar.assetClass, dar.params);
 					case Route.REDIRECT:
 						RedirectRoute rr = (RedirectRoute) fixedRoute;
 						return new RedirectHandler(router, rr.to);
