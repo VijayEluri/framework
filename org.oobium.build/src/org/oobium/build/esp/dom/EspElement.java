@@ -23,15 +23,17 @@ public class EspElement extends EspPart {
 		return (children != null) ? children : new ArrayList<EspElement>(0);
 	}
 	
+	public EspElement getElement() {
+		return (EspElement) parent;
+	}
+
 	public boolean hasChildren() {
 		return children != null && !children.isEmpty();
 	}
 	
 	private EspElement removeElement(EspElement element) {
 		if(children != null) {
-			if(children.remove(element)) {
-				element.element = null;
-			}
+			children.remove(element);
 		}
 		return this;
 	}
@@ -42,15 +44,21 @@ public class EspElement extends EspPart {
 	}
 	
 	@Override
-	public EspElement setElement(EspElement newElement) {
-		if(element != null) {
-			element.removeElement(this);
+	public EspPart setParent(EspPart newParent) {
+		if(newParent != null && !(newParent instanceof EspElement)) {
+			throw new IllegalArgumentException("parent of an element must also be an element; not " + newParent);
 		}
-		element = newElement;
-		if(element != null) {
-			element.addElement(this);
+		
+		EspElement oldElement = (EspElement) parent;
+		if(oldElement != null) {
+			oldElement.removeElement(this);
 		}
-		return this;
+		EspElement newElement = (EspElement) newParent;
+		if(newElement != null) {
+			newElement.addElement(this);
+		}
+		
+		return super.setParent(newParent);
 	}
-
+	
 }

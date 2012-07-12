@@ -41,7 +41,6 @@ public class EspPart implements CharSequence {
 
 	protected EspDom dom;
 	protected EspPart parent;
-	protected EspElement element;
 	protected Type type;
 	protected int start;
 	protected int end;
@@ -70,7 +69,14 @@ public class EspPart implements CharSequence {
 	}
 	
 	public EspElement getElement() {
-		return element;
+		EspPart parent = this.parent;
+		while( ! (parent instanceof EspElement) && parent != null) {
+			parent = parent.parent;
+		}
+		if(parent instanceof EspElement) {
+			return (EspElement) parent;
+		}
+		return null;
 	}
 	
 	public int getEnd() {
@@ -154,11 +160,6 @@ public class EspPart implements CharSequence {
 
 	public EspPart setEnd(int end) {
 		this.end = end;
-		return this;
-	}
-	
-	public EspPart setElement(EspElement element) {
-		this.element = element;
 		return this;
 	}
 	

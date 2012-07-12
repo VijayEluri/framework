@@ -5,7 +5,7 @@ import static org.oobium.build.esp.dom.EspPart.Type.ImportElement;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-public class EspDom extends EspPart implements Iterable<EspPart> {
+public class EspDom extends EspElement implements Iterable<EspPart> {
 
 	public enum DocType {
 		ESP, // Dynamic HTML (Elemental Server Page)
