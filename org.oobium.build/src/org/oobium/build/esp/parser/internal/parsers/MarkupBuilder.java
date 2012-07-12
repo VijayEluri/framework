@@ -77,7 +77,7 @@ public class MarkupBuilder extends Builder {
 						if(scanner.isNextEntry()) {
 							scanner.forward();
 							arg.setName(scanner.push(Type.VarName));
-							scanner.findEndOfWord();
+							scanner.findEndOfMarkupAttr();
 							if(scanner.isChar('(')) {
 								scanner.pop(arg.getName());
 								arg.setCondition(scanner.push(Type.JavaContainer));
@@ -174,7 +174,7 @@ public class MarkupBuilder extends Builder {
 			scanner.setContainmentToEOL();
 			scanner.next();
 			EspPart part = scanner.push(Type.StylePart);
-			if(scanner.check('h','i','d','e') && scanner.move(4).isChar('(',' ')) {
+			if(scanner.isCharSequence('h','i','d','e') && scanner.move(4).isChar('(',' ')) {
 				element.setHidden(true);
 			}
 			scanner.findEndOfWord();

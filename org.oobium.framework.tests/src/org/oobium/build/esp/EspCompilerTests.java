@@ -296,13 +296,63 @@ public class EspCompilerTests {
 		assertEquals(
 				"<!DOCTYPE html><html>" +
 				"<head>" +
-				"<script>window.$Router = new Router(null);</script>" +
+				"<script>window.$oobenv = {};\n" +
+				"$oobenv.routes = {};</script>" +
+				"<script type='text/javascript' src='/models.js'></script>" +
 				"</head>" +
 				"<body></body>" +
 				"</html>",
 				page(router, "models"));
 	}
 
+	@Test
+	public void testDataBinding() throws Exception {
+		assertEquals(
+				"__body__.append(\"<div data-model=\\\"\");\n" +
+				"includeScriptModel((member).getClass());\n" +
+				"__body__.append((member).getClass().getName());\n" +
+				"__body__.append(' ');\n" +
+				"__body__.append(h((member).toJson()));\n" +
+				"__body__.append(\"\\\"></div>\");",
+				render("div(data-model: member)"));
+
+		assertEquals(
+				"__body__.append(\"<div data-model=\\\"\");\n" +
+				"includeScriptModel((member).getClass());\n" +
+				"__body__.append((member).getClass().getName());\n" +
+				"__body__.append(' ');\n" +
+				"__body__.append(h((member).toJson(\"name\")));\n" +
+				"__body__.append(\"\\\"><div data-field=\\\"name\\\"></div></div>\");",
+				render("div(data-model: member) <- div(data-field: \"name\")"));
+
+		assertEquals(
+				"__body__.append(\"<div data-model=\\\"\");\n" +
+				"includeScriptModel((member).getClass());\n" +
+				"__body__.append((member).getClass().getName());\n" +
+				"__body__.append(' ');\n" +
+				"__body__.append(h((member).toJson(\"name\", \"age\")));\n" +
+				"__body__.append(\"\\\"><div data-field=\\\"name\\\"><div data-field=\\\"age\\\"></div></div></div>\");",
+				render("div(data-model: member) <- div(data-field: \"name\") <- div(data-field: \"age\")"));
+
+		assertEquals(
+				"__body__.append(\"<div data-model=\\\"\");\n" +
+				"includeScriptModel((member).getClass());\n" +
+				"__body__.append((member).getClass().getName());\n" +
+				"__body__.append(' ');\n" +
+				"__body__.append(h((member).toJson(\"name\")));\n" +
+				"__body__.append(\"\\\"><div data-field=\\\"name\\\"><div data-model=\\\"\");\n" +
+				"includeScriptModel((account).getClass());\n" +
+				"__body__.append((account).getClass().getName());\n" +
+				"__body__.append(' ');\n" +
+				"__body__.append(h((account).toJson(\"value\")));\n" +
+				"__body__.append(\"\\\"><div data-field=\\\"value\\\"></div></div></div></div>\");",
+				render(
+						"div(data-model: member)\n" +
+						"\tdiv(data-field: \"name\")\n" +
+						"\t\tdiv(data-model: account)\n" +
+						"\t\t\tdiv(data-field: \"value\")"));
+	}
+	
 	@Test
 	public void testScriptWithJava() throws Exception {
 		
@@ -609,6 +659,14 @@ public class EspCompilerTests {
 				"}\n" +
 				"__body__.append(\"></div>\");",
 				render("div(attr(test): \"value\")"));
+
+		assertEquals(
+				"__body__.append(\"<div\");\n" +
+				"if(test) {\n" +
+				"\t__body__.append(\" data-attr=\\\"value\\\"\");\n" +
+				"}\n" +
+				"__body__.append(\"></div>\");",
+				render("div(data-attr(test): \"value\")"));
 	}
 
 	@Test

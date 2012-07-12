@@ -58,12 +58,20 @@ public class MarkupElement extends EspElement implements MethodPart {
 		return (args != null) ? args.get(ix) : null;
 	}
 	
+	public int getArgCount() {
+		return (args != null) ? args.size() : 0;
+	}
+	
 	public List<MethodArg> getArgs() {
 		return args;
 	}
 	
 	public List<EspPart> getClasses() {
 		return classes;
+	}
+
+	public int getEntryCount() {
+		return (entries != null) ? entries.size() : 0;
 	}
 	
 	public Map<String, MethodArg> getEntries() {

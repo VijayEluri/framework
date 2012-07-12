@@ -75,7 +75,7 @@ public abstract class BaseEspTester {
 		return "";
 	}
 	
-	protected String erndr(String src) {
+	protected String render(String src) {
 		ESourceFile esf = esf(src);
 		return body(esf.getMethod("doRender"));
 	}
@@ -87,10 +87,6 @@ public abstract class BaseEspTester {
 	
 	protected ESourceFile esf(String src) {
 		EspDom dom = EspBuilder.newEspBuilder(getFileName()).parse(src);
-		
-		EspResolver resolver = new EspResolver();
-		resolver.add(dom);
-
 		EspCompiler e2j = EspCompiler.newEspCompiler("com.mydomain");
 		ESourceFile esf = e2j.compile(dom);
 		

@@ -5,7 +5,6 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 import org.oobium.app.persist.PersistServicesTests;
 import org.oobium.build.esp.EjsCompilerTests;
-import org.oobium.build.esp.EspCompilerPositionTests;
 import org.oobium.build.esp.EspCompilerTests;
 import org.oobium.build.views.dom.html_elements.InputTests;
 import org.oobium.build.workspace.BundleTests;
@@ -31,7 +30,6 @@ import org.oobium.utils.json.JsonUtilsTests;
 @SuiteClasses({
 	// org.oobium.build.tests
 	EjsCompilerTests.class,
-	EspCompilerPositionTests.class,
 	EspCompilerTests.class,
 	InputTests.class,
 	BundleTests.class,

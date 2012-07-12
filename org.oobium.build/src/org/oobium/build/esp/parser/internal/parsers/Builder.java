@@ -54,7 +54,7 @@ public class Builder {
 		scanner.pop(arg.getVarType());
 
 		scanner.forward();
-		if(scanner.check('.','.','.')) {
+		if(scanner.isCharSequence('.','.','.')) {
 			arg.setVarArgs(true);
 			scanner.move(4);
 		}

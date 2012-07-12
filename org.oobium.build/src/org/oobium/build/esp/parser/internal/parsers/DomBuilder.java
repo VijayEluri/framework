@@ -45,10 +45,10 @@ public class DomBuilder extends Builder {
 				if(scanner.isChar('-')) {
 					scanner.parseJavaElement();
 				}
-				else if(scanner.check('i', 'm', 'p', 'o', 'r', 't')) {
+				else if(scanner.isCharSequence('i', 'm', 'p', 'o', 'r', 't')) {
 					scanner.parseImportElement();
 				}
-				else if(scanner.check(name)) {
+				else if(scanner.isCharSequence(name)) {
 					scanner.parseConstructorElement();
 				}
 				else {
@@ -68,19 +68,19 @@ public class DomBuilder extends Builder {
 				if(scanner.isChar('-')) {
 					scanner.parseJavaElement();
 				}
-				else if(scanner.check('i', 'm', 'p', 'o', 'r', 't')) {
+				else if(scanner.isCharSequence('i', 'm', 'p', 'o', 'r', 't')) {
 					scanner.parseImportElement();
 				}
-				else if(scanner.check(name)) {
+				else if(scanner.isCharSequence(name)) {
 					scanner.parseConstructorElement();
 				}
-				else if(scanner.check('s', 'c', 'r', 'i', 'p', 't')) {
+				else if(scanner.isCharSequence('s', 'c', 'r', 'i', 'p', 't')) {
 					scanner.parseScriptElement();
 				}
-				else if(scanner.check('s', 't', 'y', 'l', 'e')) {
+				else if(scanner.isCharSequence('s', 't', 'y', 'l', 'e')) {
 					scanner.parseStyleElement();
 				}
-				else if(scanner.check('!', '-', '-')) {
+				else if(scanner.isCharSequence('!', '-', '-')) {
 					scanner.parseMarkupComment();
 				}
 				else {
@@ -100,10 +100,10 @@ public class DomBuilder extends Builder {
 				if(scanner.isChar('-')) {
 					scanner.parseJavaElement();
 				}
-				else if(scanner.check('i', 'm', 'p', 'o', 'r', 't')) {
+				else if(scanner.isCharSequence('i', 'm', 'p', 'o', 'r', 't')) {
 					scanner.parseImportElement();
 				}
-				else if(scanner.check(name)) {
+				else if(scanner.isCharSequence(name)) {
 					scanner.parseConstructorElement();
 				}
 				else {

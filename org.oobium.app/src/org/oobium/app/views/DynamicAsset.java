@@ -37,6 +37,8 @@ public class DynamicAsset {
 	}
 
 	
+	protected ViewRenderer renderer;
+	
 	protected void doRender(StringBuilder sb) throws Exception {
 		// subclasses to override if necessary
 	}
@@ -59,4 +61,8 @@ public class DynamicAsset {
 		}
 	}
 
+	public void setRenderer(ViewRenderer renderer) {
+		this.renderer = renderer;
+	}
+	
 }

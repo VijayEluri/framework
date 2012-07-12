@@ -188,7 +188,7 @@ public class Scanner {
 		this.containments = new LinkedHashMap<EspPart, Containment>();
 	}
 
-	private void check() throws EspEndException {
+	public void check() throws EspEndException {
 		checkContainment();
 		checkJava();
 		try {
@@ -198,7 +198,7 @@ public class Scanner {
 		}
 	}
 	
-	public boolean check(char...c) {
+	public boolean isCharSequence(char...c) {
 		if(offset+c.length-1 < ca.length) {
 			for(int i = 0; i < c.length; i++) {
 				int j = offset+i;
@@ -625,6 +625,14 @@ public class Scanner {
 		return this;
 	}
 	
+	public Scanner findEndOfMarkupAttr() throws EspEndException {
+		check();
+		if(isWordChar()) {
+			while(next().isWordChar() || ca[offset] == '-' || ca[offset] == '[' || ca[offset] == ']');
+		}
+		return this;
+	}
+	
 	public Scanner findEndOfStylePropertyName() throws EspEndException {
 		while(offset < ca.length) {
 			switch(ca[offset]) {
@@ -1038,13 +1046,6 @@ public class Scanner {
 		} else {
 			if(part instanceof EspElement) {
 				levels.put(part, level);
-				EspPart parent = part.getParent();
-				while( ! (parent instanceof EspElement) && parent != null) {
-					parent = parent.getParent();
-				}
-				if(parent instanceof EspElement) {
-					((EspElement) part).setElement((EspElement) parent);
-				}
 			} 
 			else if(part.isA(Type.ScriptPart)) {
 				inScript = true;

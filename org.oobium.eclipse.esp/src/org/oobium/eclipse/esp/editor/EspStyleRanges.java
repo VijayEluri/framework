@@ -11,6 +11,7 @@
 package org.oobium.eclipse.esp.editor;
 
 import static org.oobium.build.esp.Constants.CSS_PROPERTIES;
+import static org.oobium.build.esp.Constants.DATA_BINDING;
 import static org.oobium.build.esp.Constants.DOM_EVENTS;
 import static org.oobium.build.esp.Constants.MARKUP_TAGS;
 import static org.oobium.build.esp.Constants.JAVA_KEYWORDS;
@@ -240,7 +241,8 @@ public class EspStyleRanges {
 	}
 	
 	private int evaluateVarName(EspPart part, int offset) {
-		if(DOM_EVENTS.contains(part.getText())) {
+		String text = part.getText();
+		if(DATA_BINDING.contains(text) || DOM_EVENTS.contains(text)) {
 			return addRange(part, offset, propertyName);
 		}
 		return startOfNext(part, offset);

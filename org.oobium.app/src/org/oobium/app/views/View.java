@@ -112,7 +112,6 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 	
 	private String layoutName;
 	private Class<? extends View> layout;
-	private int altCount;
 
 	
 	@Override
@@ -138,21 +137,6 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 	
 	public void addExternalStyle(StyleSheet asset) {
 		renderer.addExternalStyle(asset);
-	}
-	
-	public String alt() {
-		return alt("alt");
-	}
-	
-	public String alt(String s) {
-		return (altCount++ % 2 == 0) ? s : "";
-	}
-	
-	public String concat(String base, String opt, boolean condition) {
-		if(condition) {
-			return base.concat(opt);
-		}
-		return base;
 	}
 	
 	protected void errorsBlock(StringBuilder sb, Model model, String title, String message) {
@@ -386,10 +370,20 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 		renderer.includeScriptEnvironment = true;
 	}
 	
+	protected void includeScriptModel(Class<? extends Model> modelClass) {
+		includeScriptModel(modelClass, false);
+	}
+	
+	protected void includeScriptModel(Class<? extends Model> modelClass, boolean includeHasMany) {
+		renderer.includeScriptModel(modelClass, includeHasMany);
+	}
+	
 	protected void includeScriptModels() {
-		renderer.includeScriptEnvironment = true;
-		renderer.includeScriptModels = true;
-		addExternalScript("/models.js");
+		includeScriptModels(false);
+	}
+	
+	protected void includeScriptModels(boolean includeHasMany) {
+		renderer.includeScriptModel(Model.class, includeHasMany);
 	}
 	
 	@Override

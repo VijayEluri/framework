@@ -453,18 +453,21 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 	}
 
 	private List<ICompletionProposal> computeVarNameProposals(EspPart part, int offset) {
+		List<String> strings = new ArrayList<String>();
+		strings.addAll(Constants.DATA_BINDING);
+		strings.addAll(Constants.DOM_EVENTS);
 		List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
 		if(part.isA(Type.MethodArg)) {
-			for(String vname : Constants.DOM_EVENTS) {
-				String rtext = vname + ": ";
-				results.add(new EspCompletionProposal(rtext, offset+1, 0, rtext.length(), null, vname));
+			for(String string : strings) {
+				String rtext = string + ": ";
+				results.add(new EspCompletionProposal(rtext, offset+1, 0, rtext.length(), null, string));
 			}
 		} else {
 			int rlen = offset - part.getStart() + 1;
 			String prefix = part.substring(0, rlen);
-			for(String event : Constants.DOM_EVENTS) {
-				if(event.startsWith(prefix)) {
-					results.add(new EspCompletionProposal(event, part.getStart(), rlen, event.length(), null, event));
+			for(String string : strings) {
+				if(string.startsWith(prefix)) {
+					results.add(new EspCompletionProposal(string, part.getStart(), rlen, string.length(), null, string));
 				}
 			}
 		}

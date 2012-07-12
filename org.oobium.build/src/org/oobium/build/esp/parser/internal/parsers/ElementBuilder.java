@@ -16,11 +16,11 @@ public class ElementBuilder extends Builder {
 		while(scanner.hasNext()) {
 			if(scanner.isChar('-')) {
 				scanner.parseJavaElement();
-			} else if(scanner.check('s', 'c', 'r', 'i', 'p', 't')) {
+			} else if(scanner.isCharSequence('s', 'c', 'r', 'i', 'p', 't')) {
 				scanner.parseScriptElement();
-			} else if(scanner.check('s', 't', 'y', 'l', 'e')) {
+			} else if(scanner.isCharSequence('s', 't', 'y', 'l', 'e')) {
 				scanner.parseStyleElement();
-			} else if(scanner.check('!', '-', '-')) {
+			} else if(scanner.isCharSequence('!', '-', '-')) {
 				scanner.parseMarkupComment();
 			} else if(scanner.isChar('+')) {
 				parseInnerTextElement();

@@ -29,7 +29,7 @@ public class ShowAllPersistServices extends View {
 		} else {
 			__body__.append("<style>.alt{background-color:cyan}</style><table><tr><th>id</th><th>service</th></tr>");
 			for(int i = 0; i < list.size(); i++) {
-				__body__.append("<tr class=\"").append(h(alt())).append("\"><td>").append(h(i+1)).append("</td><td><a href=\"").append(pathTo("persist_service", i+1)).append("\">").append(h(list.get(i))).append("</a></td></tr>");
+				__body__.append("<tr class=\"").append("\"><td>").append(h(i+1)).append("</td><td><a href=\"").append(pathTo("persist_service", i+1)).append("\">").append(h(list.get(i))).append("</a></td></tr>");
 			}
 			__body__.append("</table>");
 		}

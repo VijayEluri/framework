@@ -31,10 +31,12 @@ import static org.oobium.utils.literal.Set;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.oobium.app.controllers.HttpController;
 import org.oobium.app.http.Action;
@@ -94,6 +96,7 @@ public class EspCompiler {
 	private StringBuilder body;
 	private List<EspLocation> bodyLocations;
 	
+	private char escapeChar;
 	private boolean inJava;
 	private boolean inAsset;
 	
@@ -133,14 +136,74 @@ public class EspCompiler {
 		return location;
 	}
 
+	private Set<EspPart> findDataFields(EspElement parent, Set<EspPart> dataFields) {
+		if(parent.hasChildren()) {
+			for(EspElement child : parent.getChildren()) {
+				if(child instanceof MarkupElement) {
+					MarkupElement element = (MarkupElement) child;
+					if(element.hasEntryValue("data-field")) {
+						dataFields.add(element.getEntryValue("data-field"));
+					}
+					if( ! element.hasEntry("data-model")) {
+						findDataFields(element, dataFields);
+					}
+				}
+			}
+		}
+		return dataFields;
+	}
+	
+	private void buildDataModel(EspPart value) {
+		Set<EspPart> dataFields = findDataFields(value.getElement(), new LinkedHashSet<EspPart>());
+		
+		body.append("=\\\"\");\n");
+		inJava = true;
+
+		indent(body);
+		body.append("includeScriptModel((");
+		build(value, body);
+		body.append(").getClass());\n");
+		
+		indent(body);
+		body.append(sbName).append(".append((");
+		build(value, body);
+		body.append(").getClass().getName());\n");
+
+		indent(body);
+		body.append(sbName).append(".append(' ');\n");
+
+		indent(body);
+		body.append(sbName).append(".append(h((");
+		build(value, body);
+		if(dataFields.isEmpty()) {
+			body.append(").toJson()));\n");
+		} else {
+			body.append(").toJson(");
+			for(Iterator<EspPart> iter = dataFields.iterator(); iter.hasNext(); ) {
+				build(iter.next(), body);
+				if(iter.hasNext()) body.append(", ");
+			}
+			body.append(")));\n");
+		}
+
+		prepForMarkup(body);
+		body.append("\\\"");
+		escapeChar = 0;
+	}
+	
 	private StringBuilder appendAttr(String name, EspPart value, boolean hidden) {
 		body.append(' ').append(name);
 		if(value != null) {
-			body.append("=\\\"");
-			build(value, body);
-			body.append("\\\"");
-			if(hidden && "style".equals(name)) {
-				body.insert(body.length()-2, ";display:none");
+			if("data-model".equals(name)) {
+				buildDataModel(value);
+			}
+			else {
+				body.append("=\\\"");
+				build(value, body);
+				body.append("\\\"");
+				if(hidden && "style".equals(name)) {
+					body.insert(body.length()-2, ";display:none");
+				}
 			}
 		}
 		return body;
@@ -150,19 +213,17 @@ public class EspCompiler {
 		return appendAttr(name, entry, false);
 	}
 	
-	/**
-	 * append an HTML attribute, ensuring that double quotes are around the value,
-	 * whether it is a simple string or Java expression
-	 */
 	private StringBuilder appendAttr(String name, MethodArg entry, boolean hidden) {
 		if(entry.hasCondition()) {
 			prepForJava(body);
 			body.append("if(");
 			build(entry.getCondition(), body);
 			body.append(") {\n");
-			indent(body).append('\t');
+			incJavaLevel();
+			indent(body);
 			prepForMarkup(body);
 			appendAttr(name, entry.getValue(), hidden);
+			decJavaLevel();
 			prepForJava(body);
 			body.append("}\n");
 			prepForMarkup(body);
@@ -604,7 +665,7 @@ public class EspCompiler {
 			stopContent();
 		}
 		else if("models".equals(tag)) {
-			scriptCompiler.buildModels();
+			scriptCompiler.buildModels(element);
 		}
 		else {
 			if("textarea".equalsIgnoreCase(tag)) tag = "textarea";
@@ -1479,9 +1540,8 @@ public class EspCompiler {
 	}
 	
 	private char getEscapeChar(EspPart container) {
-		if(inJava) {
-			return 0;
-		}
+		if(escapeChar != 0) return (escapeChar == 'r') ? 0 : escapeChar;
+		if(inJava) return 0;
 		
 		String text = container.getText();
 		if(text.isEmpty()) {

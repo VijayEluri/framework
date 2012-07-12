@@ -43,7 +43,7 @@ public class ShowQueryResults extends View {
 			}
 			__body__.append("</tr>");
 			for(Map<String, Object> map : results) {
-				__body__.append("<tr class=\"").append(h(alt())).append("\">");
+				__body__.append("<tr class=\"").append("\">");
 				for(Object v : map.values()) {
 					__body__.append("<td>").append(h(v)).append("</td>");
 				}

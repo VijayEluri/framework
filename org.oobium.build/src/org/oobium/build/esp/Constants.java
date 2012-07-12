@@ -19,6 +19,7 @@ public class Constants {
 
 	public static final Map<String, String> CSS_PROPERTIES;
 	public static final Map<String, String> MARKUP_TAGS;
+	public static final Set<String> DATA_BINDING;
 	public static final Set<String> DOM_EVENTS;
 	public static final Set<String> JAVA_KEYWORDS;
 	public static final Set<String> JS_KEYWORDS;
@@ -278,6 +279,11 @@ public class Constants {
 		MARKUP_TAGS.put("yield", "Yields rendering (ESP)\nUsage: yield - will yield rendering to the current view's child\n" +
 													   "       yield(view) - yield rendering to the given view\n" +
 													   "       yield(\"name\") - render the content defined by contentFor(\"name\")");
+
+		DATA_BINDING = new TreeSet<String>();
+		DATA_BINDING.add("data-model");
+		DATA_BINDING.add("data-field");
+		DATA_BINDING.add("data-editor");
 		
 	    DOM_EVENTS = new TreeSet<String>();
 	    DOM_EVENTS.add("onblur");

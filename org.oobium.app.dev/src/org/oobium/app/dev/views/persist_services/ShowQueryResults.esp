@@ -14,7 +14,7 @@ ShowQueryResults(int id, String query, List<Map<String, Object>> results = null)
 						th { k }
 				- }
 			- for(Map<String, Object> map : results) {
-					tr.{alt()}
+					tr
 						- for(Object v : map.values()) {
 								td { v }
 						- }

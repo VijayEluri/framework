@@ -6,7 +6,9 @@ import java.util.List;
 
 import org.oobium.build.esp.dom.EspPart;
 import org.oobium.build.esp.dom.common.AssetPart;
+import org.oobium.build.esp.dom.elements.MarkupElement;
 import org.oobium.build.esp.dom.elements.ScriptElement;
+import org.oobium.build.esp.dom.parts.MethodArg;
 import org.oobium.build.esp.dom.parts.ScriptPart;
 
 public class ScriptCompiler extends AssetCompiler {
@@ -137,10 +139,23 @@ public class ScriptCompiler extends AssetCompiler {
 		return false;
 	}
 	
-	public void buildModels() {
+	public void buildModels(MarkupElement element) {
 		StringBuilder body = parent.getBody();
 		parent.prepForJava(body);
-		body.append("includeScriptModels();\n");
+		if(element.hasArgs()) {
+			for(MethodArg arg : element.getArgs()) {
+				parent.indent(body);
+				body.append("includeScriptModel(");
+				parent.build(arg, body);
+				body.append(", ");
+				parent.build(element.getEntry("hasMany"), body);
+				body.append(");\n");
+			}
+		} else {
+			body.append("includeScriptModels(");
+			parent.build(element.getEntry("hasMany"), body);
+			body.append(");\n");
+		}
 	}
 
 }

@@ -33,6 +33,7 @@ public class ScriptBuilder extends MarkupBuilder {
 					scanner.setContainmentToEOE();
 					scanner.forward();
 					element.setAsset(scanner.push(new ScriptPart()));
+					scanner.check();
 					while(scanner.hasNext()) {
 						try {
 							scanner.next();

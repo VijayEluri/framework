@@ -1,8 +1,8 @@
 package org.oobium.app.views;
 
-import static org.oobium.utils.StringUtils.*;
 import static org.oobium.app.http.MimeType.CSS;
 import static org.oobium.app.http.MimeType.JS;
+import static org.oobium.utils.StringUtils.j;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -15,6 +15,7 @@ import org.oobium.app.controllers.HttpController;
 import org.oobium.app.request.Request;
 import org.oobium.app.routing.Router;
 import org.oobium.logging.Logger;
+import org.oobium.persist.Model;
 import org.oobium.pipeline.AssetPipeline;
 import org.oobium.pipeline.PipelinedAsset;
 import org.oobium.utils.Config.Mode;
@@ -53,7 +54,7 @@ public class ViewRenderer {
 	private Map<String, String> contentMap;
 
 	boolean includeScriptEnvironment;
-	boolean includeScriptModels;
+	private Map<Class<? extends Model>, Boolean> includedScriptModels;
 	private LinkedHashSet<String> externalScripts;
 	private List<ScriptFile> externalScriptFiles;
 	private LinkedHashSet<String> externalStyles;
@@ -107,7 +108,7 @@ public class ViewRenderer {
 		}
 		positions.add(new Position(name, body.length()));
 	}
-
+	
 	private void appendExternalScripts(StringBuilder sb) {
 		if(externalScripts != null && !externalScripts.isEmpty()) {
 			if(useScriptPipeline) {
@@ -131,7 +132,7 @@ public class ViewRenderer {
 			}
 		}
 	}
-	
+
 	private void appendExternalStyles(StringBuilder sb) {
 		if(externalStyles != null && !externalStyles.isEmpty()) {
 			if(useStylePipeline) {
@@ -159,9 +160,9 @@ public class ViewRenderer {
 	private void appendScriptEnvironment(StringBuilder sb) {
 		if(includeScriptEnvironment) {
 			sb.append("<script>window.$oobenv = {};");
-			if(includeScriptModels) {
+			if(includedScriptModels != null) {
 				sb.append("\n$oobenv.routes = ");
-				sb.append(j(controller.getRouter().getModelRouteMap()));
+				sb.append(j(controller.getRouter().getModelRouteMap(includedScriptModels)));
 				sb.append(';');
 			}
 			if(externalScriptFiles != null) {
@@ -219,6 +220,15 @@ public class ViewRenderer {
 	
 	boolean hasContent(String name) {
 		return (contentMap != null && contentMap.containsKey(name));
+	}
+	
+	void includeScriptModel(Class<? extends Model> modelClass, boolean includeHasMany) {
+		includeScriptEnvironment = true;
+		if(includedScriptModels == null) {
+			includedScriptModels = new HashMap<Class<? extends Model>, Boolean>();
+		}
+		includedScriptModels.put(modelClass, includeHasMany);
+		addExternalScript("/models.js");
 	}
 	
 	String putContent(String name, String content) {

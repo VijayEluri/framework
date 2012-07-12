@@ -15,7 +15,7 @@ title Persist Services
 				th id
 				th service
 			- for(int i = 0; i < list.size(); i++) {
-					tr.{alt()}
+					tr
 						td { i+1 }
 						td <- a("persist_service", i+1) { list.get(i) }
 			- }

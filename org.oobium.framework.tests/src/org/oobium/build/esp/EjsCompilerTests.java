@@ -38,6 +38,11 @@ public class EjsCompilerTests extends BaseEspTester {
 	}
 	
 	@Test
+	public void testIncludeExternalScript() throws Exception {
+		
+	}
+	
+	@Test
 	public void testConstructor() throws Exception {
 		String esp;
 		esp = "MyEjs(String arg1)";
@@ -52,40 +57,59 @@ public class EjsCompilerTests extends BaseEspTester {
 	public void testJsOnly() throws Exception {
 		assertEquals(
 				"",
-				erndr("alert('hello');"));
+				render("alert('hello');"));
 		assertEquals(
 				"alert('hello');",
 				asset("alert('hello');"));
 
 		assertEquals(
 				"",
-				erndr("if(true) {\n\talert('hello');\n}"));
+				render("if(true) {\n\talert('hello');\n}"));
 		assertEquals(
 				"if(true) {\n\talert('hello');\n}",
 				asset("if(true) {\n\talert('hello');\n}"));
 	}
 
 	@Test
-	public void testWithJava() throws Exception {
+	public void testWithJavaParts() throws Exception {
 		assertEquals(
-				"int width = 10;\n" +
-				"__body__.append(\"$oobenv.myEjsVar50 = \").append(j(width * 2)).append(\";\");",
-				erndr("-int width = 10;\nvar size = { height: 100, width: ${width * 2} };"));
-		assertEquals(
-				"var size = { height: 100, width: $oobenv.myEjsVar50 };",
-				asset("-int width = 10;\nvar size = { height: 100, width: ${width * 2} };"));
-
-		assertEquals(
-				"__body__.append(\"$oobenv.myEjsVar13 = \").append(j(width * 2)).append(\";\");",
-				erndr("var height = ${width * 2};"));
+				"__body__.append(\"$oobenv.myEjsVar13 = \");\n" +
+				"__body__.append(j(width * 2));\n" +
+				"__body__.append(\";\");",
+				render("var height = ${width * 2};"));
 		assertEquals(
 				"var height = $oobenv.myEjsVar13;",
 				asset("var height = ${width * 2};"));
 
 		assertEquals(
+				"__body__.append(\"$oobenv.myEjsVar0 = \");\n" +
+				"__body__.append(j(callMethod()));\n" +
+				"__body__.append(\";\");",
+				render("${callMethod()}"));
+		assertEquals(
+				"$oobenv.myEjsVar0",
+				asset("${callMethod()}"));
+
+	}
+	
+	@Test
+	public void testWithJavaLines() throws Exception {
+		assertEquals(
+				"int width = 10;\n" +
+				"__body__.append(\"$oobenv.myEjsVar50 = \");\n" +
+				"__body__.append(j(width * 2));\n" +
+				"__body__.append(\";\");",
+				render("-int width = 10;\nvar size = { height: 100, width: ${width * 2} };"));
+		assertEquals(
+				"var size = { height: 100, width: $oobenv.myEjsVar50 };",
+				asset("-int width = 10;\nvar size = { height: 100, width: ${width * 2} };"));
+
+		assertEquals(
 				"String msg = \"hello\";\n" +
-				"__body__.append(\"$oobenv.myEjsVar30 = \").append(j(msg)).append(\";\");",
-				erndr("-String msg = \"hello\";\n\nalert(${msg});"));
+				"__body__.append(\"$oobenv.myEjsVar30 = \");\n" +
+				"__body__.append(j(msg));\n" +
+				"__body__.append(\";\");",
+				render("-String msg = \"hello\";\n\nalert(${msg});"));
 		assertEquals(
 				"alert($oobenv.myEjsVar30);",
 				asset("-String msg = \"hello\";\n\nalert(${msg});"));

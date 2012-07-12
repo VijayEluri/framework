@@ -35,7 +35,7 @@ public class JavaBuilder extends Builder {
 				scanner.findEndOfWord();
 				scanner.pop(keyword);
 				scanner.forward();
-				if(scanner.check('s', 't', 'a', 't', 'i', 'c', ' ')) {
+				if(scanner.isCharSequence('s', 't', 'a', 't', 'i', 'c', ' ')) {
 					element.setStatic(true);
 					keyword = scanner.push(Type.JavaKeyword);
 					scanner.move(7);
