@@ -59,7 +59,7 @@ public class JavaBuilder extends Builder {
 				try {
 					scanner.findEndOfContainment();
 				} catch(EspEndException e) {
-					scanner.pop(element.getSource());
+					scanner.pop(element.getSource(), e.getOffset());
 				}
 				scanner.parseChildren();
 			}

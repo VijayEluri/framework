@@ -294,6 +294,7 @@ public class Scanner {
 				try {
 					findCloser();
 				} catch(EspEndException e) {
+					popTo(str);
 					move(1); // don't use next() because that may start another Java Part before we want to
 					pop(str);
 					move(-1); // move back so the call to next() hits the char following the closing quote
