@@ -548,7 +548,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	@Override
 	public <T> T flash(String name, Class<T> type) {
 		if(flash != null) {
-			return coerce(flash.get(name), type);
+			return coerce(flash.get(name)).to(type);
 		}
 		return null;
 	}
@@ -556,7 +556,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	@Override
 	public <T> T flash(String name, T defaultValue) {
 		if(flash != null) {
-			return coerce(flash.get(name), defaultValue);
+			return coerce(flash.get(name)).from(defaultValue);
 		}
 		return defaultValue;
 	}
@@ -656,12 +656,12 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	
 	@Override
 	public <T> T getParam(String name, Class<T> clazz) {
-		return coerce(getParam(name), clazz);
+		return coerce(getParam(name)).to(clazz);
 	}
 	
 	@Override
 	public <T> T getParam(String name, T defaultValue) {
-		return coerce(getParam(name), defaultValue);
+		return coerce(getParam(name)).from(defaultValue);
 	}
 	
 	@Override
@@ -888,7 +888,7 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 	
 	@Override
 	public String param(String name) {
-		return coerce(getParam(name), String.class);
+		return coerce(getParam(name)).to(String.class);
 	}
 	
 	@Override

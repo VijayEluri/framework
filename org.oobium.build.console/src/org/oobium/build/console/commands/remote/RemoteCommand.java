@@ -37,7 +37,7 @@ public class RemoteCommand extends BuilderCommand {
 			remoteConfig.dir = config.getString("path");
 			remoteConfig.username = config.getString("username");
 			remoteConfig.password = config.getString("password");
-			remoteConfig.sudo = coerce(config.get("sudo"), false);
+			remoteConfig.sudo = coerce(config.get("sudo")).from(false);
 			boolean valid = true;
 			if(blank(remoteConfig.host)) {
 				console.err.println("site.js is missing the \"host\" property");
@@ -73,7 +73,7 @@ public class RemoteCommand extends BuilderCommand {
 	
 				s = ask("  use sudo? [false]: ");
 				checkQuit(s);
-				remoteConfig.sudo = coerce(s, false);
+				remoteConfig.sudo = coerce(s).from(false);
 			} catch(IllegalStateException e) {
 				return null;
 			}

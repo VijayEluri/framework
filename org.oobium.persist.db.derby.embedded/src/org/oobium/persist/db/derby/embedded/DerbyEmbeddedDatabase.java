@@ -32,11 +32,11 @@ public class DerbyEmbeddedDatabase extends Database {
 	protected Map<String, Object> initProperties(Map<String, Object> properties) {
 		Map<String, Object> props = new HashMap<String, Object>(properties);
 
-		if(coerce(props.get("memory"), false)) {
+		if(coerce(props.get("memory")).from(false)) {
 			if(props.get("database") == null) {
 				props.put("database", client);
 			}
-			if(coerce(props.get("backup"), false)) {
+			if(coerce(props.get("backup")).from(false)) {
 				// only valid for an in-memory DB (needs another name...)
 				String location = getCanonicalPath(null);
 				props.put("location", location);
@@ -237,7 +237,7 @@ public class DerbyEmbeddedDatabase extends Database {
 	}
 	
 	public boolean inMemory() {
-		return coerce(properties.get("memory"), false);
+		return coerce(properties.get("memory")).from(false);
 	}
 	
 	private String getCanonicalPath(Object o) {
@@ -257,7 +257,7 @@ public class DerbyEmbeddedDatabase extends Database {
 	}
 
 	private boolean wantsBackup() {
-		return coerce(properties.get("backup"), false) && (properties.get("location") != null);
+		return coerce(properties.get("backup")).from(false) && (properties.get("location") != null);
 	}
 	
 }

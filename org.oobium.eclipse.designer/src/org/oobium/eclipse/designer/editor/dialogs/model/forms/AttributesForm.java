@@ -106,7 +106,7 @@ public class AttributesForm extends TableEditorForm {
 	private void createCheck(Composite parent, final String field, final String name, boolean defaultValue) {
 		Button b = new Button(parent, SWT.CHECK);
 		b.setText(name);
-		b.setSelection(coerce(getValidation(field, name), defaultValue));
+		b.setSelection(coerce(getValidation(field, name)).from(defaultValue));
 		b.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 2, 1));
 		b.addListener(SWT.Selection, new Listener() {
 			@Override
@@ -308,7 +308,7 @@ public class AttributesForm extends TableEditorForm {
 			Button b = new Button(propertiesComposite, SWT.CHECK);
 			b.setText("Read Only");
 			b.setToolTipText("This field is read only");
-			b.setSelection(coerce(getProperty(name, "readOnly"), DEFAULT_READONLY));
+			b.setSelection(coerce(getProperty(name, "readOnly")).from(DEFAULT_READONLY));
 			b.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
 			b.addListener(SWT.Selection, new Listener() {
 				@Override
@@ -320,7 +320,7 @@ public class AttributesForm extends TableEditorForm {
 			b = new Button(propertiesComposite, SWT.CHECK);
 			b.setText("Unique");
 			b.setToolTipText("Values for this field must be Unique");
-			b.setSelection(coerce(getProperty(name, "unique"), DEFAULT_UNIQUE));
+			b.setSelection(coerce(getProperty(name, "unique")).from(DEFAULT_UNIQUE));
 			b.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
 			b.addListener(SWT.Selection, new Listener() {
 				@Override
@@ -332,7 +332,7 @@ public class AttributesForm extends TableEditorForm {
 			b = new Button(propertiesComposite, SWT.CHECK);
 			b.setText("JSON");
 			b.setToolTipText("Include this field in JSON");
-			b.setSelection(coerce(getProperty(name, "json"), DEFAULT_JSON));
+			b.setSelection(coerce(getProperty(name, "json")).from(DEFAULT_JSON));
 			b.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
 			b.addListener(SWT.Selection, new Listener() {
 				@Override

@@ -43,7 +43,7 @@ public class LongCoercer extends AbstractCoercer {
 	}
 
 	public Long coerce(JsonModel model, Class<?> toType) {
-		return TypeCoercer.coerce(model.getId(), Long.class);
+		return TypeCoercer.coerce(model.getId()).to(Long.class);
 	}
 	
 	@Override

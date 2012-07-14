@@ -149,7 +149,7 @@ public abstract class TestCase {
 				throw new RuntimeException("cannot set readOnly field " + field + " in " + model);
 			}
 			if(adapter.hasAttribute(field)) {
-				model.set(field, coerce(fixture.get(field), adapter.getClass(field)));
+				model.set(field, coerce(fixture.get(field)).to(adapter.getClass(field)));
 			} else if(adapter.hasOne(field)) {
 				int fixtureId = (Integer) fixture.get(field);
 				model.set(field, load(adapter.getHasOneClass(field), fixtureId));
@@ -203,7 +203,7 @@ public abstract class TestCase {
 		for(String field : adapter.getFields()) {
 			if(fixture.containsKey(field)) {
 				if(adapter.hasOne(field)) {
-					Integer fId = coerce(fixture.get(field), Integer.class);
+					Integer fId = coerce(fixture.get(field)).to(Integer.class);
 					Class<? extends Model> fType = adapter.getHasOneClass(field);
 					String fName = fType.getSimpleName() + nf.format(fId);
 					saveFixture(fType, fName);
@@ -215,7 +215,7 @@ public abstract class TestCase {
 						logger.error("can't save ManyToOne relations yet...");
 					}
 				} else {
-					fields.put(field, coerce(fixture.get(field), adapter.getClass(field)));
+					fields.put(field, coerce(fixture.get(field)).to(adapter.getClass(field)));
 				}
 			}
 		}

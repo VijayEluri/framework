@@ -30,7 +30,7 @@ public class TimeCoercer extends AbstractCoercer {
 	}
 
 	public Time coerce(Map<?, ?> map, Class<?> toType) {
-		return new Time(TypeCoercer.coerce(map, Calendar.class).getTimeInMillis());
+		return new Time(TypeCoercer.coerce(map).to(Calendar.class).getTimeInMillis());
 	}
 	
 	public Time coerce(String str, Class<?> toType) {

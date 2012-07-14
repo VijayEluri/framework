@@ -344,7 +344,7 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		Connection connection = getConnection();
 		// TODO always an int for now?
 		DbPersistor persistor = new DbPersistor(connection);
-		return persistor.find(clazz, coerce(id, int.class));
+		return persistor.find(clazz, coerce(id).to(int.class));
 	}
 
 	@Override
@@ -367,7 +367,7 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 				Class<? extends Model> parentClass = ((Class<?>) map.get("$type")).asSubclass(Model.class);
 				Object id = map.get("$id");
 				String field = (String) map.get("$field");
-				String include = coerce(query.get("$include"), String.class);
+				String include = coerce(query.get("$include")).to(String.class);
 				include = (include == null) ? field : ("{" + field + ":" + include + "}");
 				Model parent = Model.getPersistService(parentClass).find(parentClass, "id:?,$include:?", id, include);
 				if(parent == null) {

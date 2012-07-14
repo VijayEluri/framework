@@ -102,11 +102,11 @@ public class PostgreSqlDatabase extends Database {
 	@Override
 	protected ConnectionPoolDataSource createDataSource() {
 		PGConnectionPoolDataSource ds = new PGConnectionPoolDataSource();
-		ds.setDatabaseName(coerce(properties.get("database"), String.class));
-		ds.setServerName(coerce(properties.get("host"), String.class));
-		ds.setPortNumber(coerce(properties.get("port"), int.class));
-		ds.setUser(coerce(properties.get("username"), String.class));
-		ds.setPassword(coerce(properties.get("password"), String.class));
+		ds.setDatabaseName(coerce(properties.get("database")).to(String.class));
+		ds.setServerName(coerce(properties.get("host")).to(String.class));
+		ds.setPortNumber(coerce(properties.get("port")).to(int.class));
+		ds.setUser(coerce(properties.get("username")).to(String.class));
+		ds.setPassword(coerce(properties.get("password")).to(String.class));
 		return ds;
 	}
 

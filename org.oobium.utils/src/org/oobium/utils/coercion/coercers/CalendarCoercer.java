@@ -31,15 +31,15 @@ public class CalendarCoercer extends AbstractCoercer {
 	}
 	
 	public Calendar coerce(Map<?,?> data, Class<?> toType) {
-		Locale locale = TypeCoercer.coerce(data.get("locale"), Locale.class);
-		TimeZone zone = TypeCoercer.coerce((String) (data.containsKey("Z") ? data.get("Z") : data.get("z")), TimeZone.class);
+		Locale locale = TypeCoercer.coerce(data.get("locale")).to(Locale.class);
+		TimeZone zone = TypeCoercer.coerce((String) (data.containsKey("Z") ? data.get("Z") : data.get("z"))).to(TimeZone.class);
 		Calendar cal = GregorianCalendar.getInstance(zone, locale);
 		for(Entry<?,?> entry : data.entrySet()) {
 			String key = (String) entry.getKey();
 			int field = getCalendarField(key.charAt(0));
 			if(field >= 0 && field < Calendar.FIELD_COUNT) {
 				try {
-					Integer value = TypeCoercer.coerce(entry.getValue(), Integer.class);
+					Integer value = TypeCoercer.coerce(entry.getValue()).to(Integer.class);
 					if(value != null) {
 						cal.set(field, value);
 					}

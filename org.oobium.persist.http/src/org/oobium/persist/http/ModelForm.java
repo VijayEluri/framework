@@ -105,7 +105,7 @@ public class ModelForm extends ModelFields {
 				String path = path(request.path, modelClass);
 				ClientResponse response = client.request(request.method, path);
 				if(response.isSuccess()) {
-					int id = coerce(response.getHeader("id"), int.class);
+					int id = coerce(response.getHeader("id")).to(int.class);
 					setId(id);
 				}else {
 					if(response.exceptionThrown()) {

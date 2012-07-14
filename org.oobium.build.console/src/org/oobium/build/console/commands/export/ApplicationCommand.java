@@ -33,7 +33,7 @@ public class ApplicationCommand extends BuilderCommand {
 		Application app = getApplication();
 		
 		Mode mode = Mode.parse(param("mode"));
-		boolean migrators = coerce(param("migrators"), false);
+		boolean migrators = coerce(param("migrators")).from(false);
 
 		if(flag('v')) {
 			console.out.println("exporting in " + mode + " mode");

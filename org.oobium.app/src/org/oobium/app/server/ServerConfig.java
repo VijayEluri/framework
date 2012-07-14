@@ -70,7 +70,7 @@ public class ServerConfig {
 			if(inputMap.containsKey("extend")) {
 				primary = false;
 				this.name = (String) inputMap.get("extend");
-				hosts = coerce(inputMap.get("host"), String[].class);
+				hosts = coerce(inputMap.get("host")).to(String[].class);
 				anyHost = anyHost(hosts);
 				ports = null;
 				securePorts = null;
@@ -80,10 +80,10 @@ public class ServerConfig {
 				primary = true;
 				this.name = name;
 	
-				hosts = coerce(inputMap.get("host"), String[].class);
+				hosts = coerce(inputMap.get("host")).to(String[].class);
 				anyHost = anyHost(hosts);
 	
-				ports = coerce(inputMap.get("port"), int[].class);
+				ports = coerce(inputMap.get("port")).to(int[].class);
 	
 				Map<?,?> sslMap = (Map<?,?>) inputMap.get("ssl");
 				if(sslMap == null) {
@@ -91,7 +91,7 @@ public class ServerConfig {
 					securePorts = new int[0];
 				} else {
 					ssl = Collections.unmodifiableMap(sslMap);
-					securePorts = coerce(ssl.get("port"), int[].class);
+					securePorts = coerce(ssl.get("port")).to(int[].class);
 				}
 				
 				Map<?,?> configMap = (Map<?,?>) inputMap.get("options");
@@ -111,7 +111,7 @@ public class ServerConfig {
 			this.name = name;
 			hosts = new String[0];
 			anyHost = true;
-			ports = coerce(input, int[].class);
+			ports = coerce(input).to(int[].class);
 			securePorts = new int[0];
 			ssl = new HashMap<String, Object>(0);
 			options = new HashMap<String, Object>(0);

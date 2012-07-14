@@ -30,7 +30,7 @@ public class TimestampCoercer extends AbstractCoercer {
 	}
 
 	public Timestamp coerce(Map<?, ?> map, Class<?> toType) {
-		return new Timestamp(TypeCoercer.coerce(map, Calendar.class).getTimeInMillis());
+		return new Timestamp(TypeCoercer.coerce(map).to(Calendar.class).getTimeInMillis());
 	}
 	
 	public Timestamp coerce(String str, Class<?> toType) {

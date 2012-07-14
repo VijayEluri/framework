@@ -62,11 +62,11 @@ public class Websocket implements IParams {
 	
 	@Override
 	public <T> T getParam(String name, Class<T> clazz) {
-		return coerce(getParam(name), clazz);
+		return coerce(getParam(name)).to(clazz);
 	}
 	
 	public <T> T getParam(String name, T defaultValue) {
-		return coerce(getParam(name), defaultValue);
+		return coerce(getParam(name)).from(defaultValue);
 	}
 	
 	@Override

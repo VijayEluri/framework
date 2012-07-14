@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.oobium.utils.coercion.coercers.ArrayCoercer;
@@ -115,6 +114,10 @@ public class TypeCoercer {
 		}
 	}
 
+	public static TypeCoercion coerce(Object object) {
+		return new TypeCoercion(object);
+	}
+
 	/**
 	 * Creates a new object that represents the given object once it
 	 * has been coerced into the given type.
@@ -125,7 +128,7 @@ public class TypeCoercer {
 	 * @throws UnsupportedOperationException if the given object cannot be coerced into the given type
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> T coerce(Object object, Class<T> type) {
+	static <T> T coerce(Object object, Class<T> type) {
 		if(type == null) {
 			throw new IllegalArgumentException("type cannot be null");
 		}
@@ -178,7 +181,6 @@ public class TypeCoercer {
 				throw new UnsupportedOperationException(coercer.getClass().getName() + " can not coerce type " + object.getClass().getName() + " to type "+ type.getName());
 			} else {
 				try {
-					// this type of cast handles Integer -> int... seems there should be a better way...
 					return (T) (method.invoke(coercer, object, type));
 				} catch(ClassCastException e) {
 					throw new UnsupportedOperationException(method + " in " + coercer.getClass().getName() + " does not return a type " + type.getName());
@@ -206,7 +208,7 @@ public class TypeCoercer {
 	 * @throws UnsupportedOperationException if the given object cannot be coerced into the given type
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> T coerce(Object object, T defaultValue) {
+	static <T> T coerce(Object object, T defaultValue) {
 		if(defaultValue != null) {
 			Object value = coerce(object, defaultValue.getClass());
 			if(value != null && defaultValue.getClass().isAssignableFrom(value.getClass())) {
@@ -218,33 +220,6 @@ public class TypeCoercer {
 		throw new IllegalArgumentException("defaultValue cannot be null");
 	}
 	
-	@SuppressWarnings("unchecked")
-	public static Map<String, Object> coerceToMap(Object object) {
-		return (Map<String, Object>) coerce(object, Map.class);
-	}
-
-	@SuppressWarnings("unchecked")
-	public static <V> Map<String, V> coerceToMap(Object object, Class<V> valueType) {
-		Map<String, Object> map = coerceToMap(object);
-		if(valueType != Object.class) {
-			for(Entry<String, Object> e : map.entrySet()) {
-				map.put(e.getKey(), coerce(e.getValue(), valueType));
-			}
-		}
-		return (Map<String, V>) map;
-	}
-
-	@SuppressWarnings("unchecked")
-	public static <K, V> Map<K, V> coerceToMap(Object object, Class<K> keyType, Class<V> valueType) {
-		Map<Object, Object> map = coerce(object, Map.class);
-		if(keyType != String.class || valueType != Object.class) {
-			for(Entry<Object, Object> e : map.entrySet()) {
-				map.put(coerce(e.getKey(), keyType), coerce(e.getValue(), valueType));
-			}
-		}
-		return (Map<K, V>) map;
-	}
-
 	private static Coercer getCoercer(Class<?> type) {
 		Coercer coercer = coercers.get(type);
 		if(coercer == null) {

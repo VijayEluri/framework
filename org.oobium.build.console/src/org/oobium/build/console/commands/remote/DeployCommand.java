@@ -136,7 +136,7 @@ public class DeployCommand extends RemoteCommand {
 			if("all".equals(param("keep"))) {
 				console.out.println("Keeping all previous installations.");
 			} else {
-				int i = coerce(param("keep"), KEEP);
+				int i = coerce(param("keep")).from(KEEP);
 				if(i >= previous.length) {
 					console.out.println("Keeping " + i + " previous installations; there are no older installations to remove.");
 				} else {

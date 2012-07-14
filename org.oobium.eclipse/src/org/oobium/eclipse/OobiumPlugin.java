@@ -238,7 +238,7 @@ public class OobiumPlugin extends AbstractUIPlugin {
 						@Override
 						public void run() {
 							try {
-								Eclipse.openType(event.getMessage(), coerce(event.getDetails(), int.class));
+								Eclipse.openType(event.getMessage(), coerce(event.getDetails()).to(int.class));
 							} catch(Exception e) {
 								logger.warn(e);
 							}

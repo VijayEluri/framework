@@ -78,7 +78,7 @@ public class MemoryPersistService implements PersistService {
 	public <T extends Model> T findById(Class<T> clazz, Object id) throws Exception {
 		Map<String, Object> map = models.get(id);
 		if(map != null && map.get("class") == clazz) {
-			return coerce(map, clazz);
+			return coerce(map).to(clazz);
 		}
 		return null;
 	}
@@ -105,7 +105,7 @@ public class MemoryPersistService implements PersistService {
 						}
 					}
 					if(match) {
-						return coerce(map, clazz);
+						return coerce(map).to(clazz);
 					}
 				}
 			}
@@ -119,7 +119,7 @@ public class MemoryPersistService implements PersistService {
 		List<T> list = new ArrayList<T>();
 		for(Map<String, Object> map : models.values()) {
 			if(map.get("class") == clazz) {
-				list.add(coerce(map, clazz));
+				list.add(coerce(map).to(clazz));
 			}
 		}
 		return list;
@@ -148,7 +148,7 @@ public class MemoryPersistService implements PersistService {
 						}
 					}
 					if(match) {
-						list.add(coerce(map, clazz));
+						list.add(coerce(map).to(clazz));
 					}
 				}
 			}

@@ -102,16 +102,16 @@ public class ModelRelation {
 		type(model.getType(entries.get("type")));
 		opposite(ModelUtils.getString(entries.get("opposite")));
 		through(ModelUtils.getString(entries.get("through")));
-		readOnly(coerce(entries.get("readOnly"), DEFAULT_READONLY));
-		unique(coerce(entries.get("unique"), DEFAULT_UNIQUE));
-		virtual(coerce(entries.get("virtual"), DEFAULT_VIRTUAL));
+		readOnly(coerce(entries.get("readOnly")).from(DEFAULT_READONLY));
+		unique(coerce(entries.get("unique")).from(DEFAULT_UNIQUE));
+		virtual(coerce(entries.get("virtual")).from(DEFAULT_VIRTUAL));
 		dependent(getReferential(entries.get("dependent"), DEFAULT_DEPENDENT));
 		onDelete(getReferential(entries.get("onDelete"), DEFAULT_ONDELETE));
 		onUpdate(getReferential(entries.get("onUpdate"), DEFAULT_ONUPDATE));
 		embed(ModelUtils.getString(entries.get("embed")));
-		embedded(coerce(entries.get("embedded"), DEFAULT_EMBEDDED));
-		hasKey(coerce(entries.get("hasKey"), DEFAULT_HASKEY));
-		include(coerce(entries.get("include"), DEFAULT_INCLUDE));
+		embedded(coerce(entries.get("embedded")).from(DEFAULT_EMBEDDED));
+		hasKey(coerce(entries.get("hasKey")).from(DEFAULT_HASKEY));
+		include(coerce(entries.get("include")).from(DEFAULT_INCLUDE));
 	}
 
 	private ModelRelation(ModelRelation original, ModelDefinition model, boolean hasMany) {
@@ -244,7 +244,7 @@ public class ModelRelation {
 	
 	private int getReferential(String referential, int defaultValue) {
 		try {
-			return coerce(referential, defaultValue);
+			return coerce(referential).from(defaultValue);
 		} catch(Exception e) {
 			String constant;
 			String type;

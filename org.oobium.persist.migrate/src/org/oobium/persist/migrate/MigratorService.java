@@ -394,14 +394,14 @@ public abstract class MigratorService extends AppService {
 											if(sa.length == 2) {
 												migrateRedo(-1);
 											} else {
-												migrateRedo("all".equals(sa[2]) ? -1 : coerce(sa[2], 1));
+												migrateRedo("all".equals(sa[2]) ? -1 : coerce(sa[2]).from(1));
 											}
 										}
 										else if("rollback".equals(sa[1])) {
 											if(sa.length == 2) {
 												migrateRollback();
 											} else {
-												migrateRollback("all".equals(sa[2]) ? -1 : coerce(sa[2], 1));
+												migrateRollback("all".equals(sa[2]) ? -1 : coerce(sa[2]).from(1));
 											}
 										}
 										else if("to".equals(sa[1])) {

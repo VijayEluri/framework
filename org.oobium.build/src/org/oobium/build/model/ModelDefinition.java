@@ -1056,11 +1056,11 @@ public class ModelDefinition {
 			parseRelations(v, true);
 		}
 		
-		datestamps = coerce(parameters.get("datestamps"), DEFAULT_DATESTAMPS);
-		timestamps = coerce(parameters.get("timestamps"), DEFAULT_TIMESTAMPS);
-		allowUpdate = coerce(parameters.get("allowUpdate"), DEFAULT_ALLOW_UPDATE);
-		allowDelete = coerce(parameters.get("allowDelete"), DEFAULT_ALLOW_DELETE);
-		embedded = coerce(parameters.get("embedded"), DEFAULT_EMBEDDED);
+		datestamps = coerce(parameters.get("datestamps")).from(DEFAULT_DATESTAMPS);
+		timestamps = coerce(parameters.get("timestamps")).from(DEFAULT_TIMESTAMPS);
+		allowUpdate = coerce(parameters.get("allowUpdate")).from(DEFAULT_ALLOW_UPDATE);
+		allowDelete = coerce(parameters.get("allowDelete")).from(DEFAULT_ALLOW_DELETE);
+		embedded = coerce(parameters.get("embedded")).from(DEFAULT_EMBEDDED);
 	}
 	
 	private void parseIndexes(char[] ca, int start, int end) {

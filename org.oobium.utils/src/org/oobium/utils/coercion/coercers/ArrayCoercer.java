@@ -29,7 +29,7 @@ public class ArrayCoercer extends AbstractCoercer {
 			int len = Array.getLength(object);
 			Object array = Array.newInstance(componentType, len);
 			for(int i = 0; i < len; i++) {
-				Array.set(array, i, TypeCoercer.coerce(Array.get(object, i), componentType));
+				Array.set(array, i, TypeCoercer.coerce(Array.get(object, i)).to(componentType));
 			}
 			return array;
 		}
@@ -54,7 +54,7 @@ public class ArrayCoercer extends AbstractCoercer {
 			Object array = Array.newInstance(componentType, collection.size());
 			Iterator<?> iter = collection.iterator();
 			for(int i = 0; i < collection.size(); i++) {
-				Array.set(array, i, TypeCoercer.coerce(iter.next(), componentType));
+				Array.set(array, i, TypeCoercer.coerce(iter.next()).to(componentType));
 			}
 			return array;
 		}
@@ -66,13 +66,13 @@ public class ArrayCoercer extends AbstractCoercer {
 			}
 			Object array = Array.newInstance(componentType, list.size());
 			for(int i = 0; i < list.size(); i++) {
-				Array.set(array, i, TypeCoercer.coerce(list.get(i), componentType));
+				Array.set(array, i, TypeCoercer.coerce(list.get(i)).to(componentType));
 			}
 			return array;
 		}
 		
 		Object array = Array.newInstance(componentType, 1);
-		Array.set(array, 0, TypeCoercer.coerce(object, componentType));
+		Array.set(array, 0, TypeCoercer.coerce(object).to(componentType));
 		return array;
 	}
 

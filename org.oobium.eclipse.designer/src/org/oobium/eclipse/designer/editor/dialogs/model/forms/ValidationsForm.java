@@ -69,7 +69,7 @@ public class ValidationsForm extends TableEditorForm {
 	private void createCheck(Composite parent, final String field, final String name, boolean defaultValue) {
 		Button b = new Button(parent, SWT.CHECK);
 		b.setText(name);
-		b.setSelection(coerce(getValidation(field, name), defaultValue));
+		b.setSelection(coerce(getValidation(field, name)).from(defaultValue));
 		b.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 2, 1));
 		b.addListener(SWT.Selection, new Listener() {
 			@Override
@@ -85,7 +85,7 @@ public class ValidationsForm extends TableEditorForm {
 		lbl.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 		
 		Spinner spnr = new Spinner(parent, SWT.BORDER);
-		spnr.setSelection(coerce(getValidation(field, name), defaultValue));
+		spnr.setSelection(coerce(getValidation(field, name)).from(defaultValue));
 		spnr.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
 		spnr.addListener(SWT.Selection, new Listener() {
 			@Override
@@ -102,7 +102,7 @@ public class ValidationsForm extends TableEditorForm {
 		
 		Combo c = new Combo(validationsComposite, SWT.DROP_DOWN | SWT.READ_ONLY);
 		c.setItems(DEPENDENT_CONSTANTS);
-		c.select(coerce(getValidation(field, name), defaultSelection) + 1);
+		c.select(coerce(getValidation(field, name)).from(defaultSelection) + 1);
 		c.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
 		c.addListener(SWT.Selection, new Listener() {
 			@Override
@@ -118,7 +118,7 @@ public class ValidationsForm extends TableEditorForm {
 		lbl.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 		
 		Text spnr = new Text(parent, SWT.BORDER);
-		spnr.setText(coerce(getValidation(field, name), defaultValue));
+		spnr.setText(coerce(getValidation(field, name)).from(defaultValue));
 		spnr.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
 		spnr.addListener(SWT.Modify, new Listener() {
 			@Override

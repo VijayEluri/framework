@@ -147,7 +147,7 @@ public class Config {
 	}
 	
 	public <T> T get(String name, Class<T> type) {
-		return TypeCoercer.coerce(get(name, mode), type);
+		return TypeCoercer.coerce(get(name, mode)).to(type);
 	}
 	
 	public Object get(String name, Mode mode) {
@@ -191,15 +191,15 @@ public class Config {
 	}
 	
 	public <T> T get(String name, Mode mode, Class<T> type) {
-		return TypeCoercer.coerce(get(name, mode), type);
+		return TypeCoercer.coerce(get(name, mode)).to(type);
 	}
 	
 	public <T> T get(String name, Mode mode, T defaultValue) {
-		return TypeCoercer.coerce(get(name, mode), defaultValue);
+		return TypeCoercer.coerce(get(name, mode)).from(defaultValue);
 	}
 	
 	public <T> T get(String name, T defaultValue) {
-		return TypeCoercer.coerce(get(name, mode), defaultValue);
+		return TypeCoercer.coerce(get(name, mode)).from(defaultValue);
 	}
 	
 	public String getPathToApp(String base) {

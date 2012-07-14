@@ -458,7 +458,7 @@ public abstract class Model implements JsonModel {
 			return -1;
 		}
 		ModelAdapter adapter = ModelAdapter.getAdapter(this);
-		Object v2 = coerce(validator, adapter.getClass(field));
+		Object v2 = coerce(validator).to(adapter.getClass(field));
 		if(value instanceof Comparable) {
 			return ((Comparable) value).compareTo(v2);
 		}
@@ -672,7 +672,7 @@ public abstract class Model implements JsonModel {
 			if(oid != null) {
 				if(id.getClass() != oid.getClass()) {
 					try {
-						oid = coerce(oid, id.getClass());
+						oid = coerce(oid).to(id.getClass());
 					} catch(Exception e) { /* discard */ }
 				}
 				return id.equals(oid);
@@ -797,19 +797,19 @@ public abstract class Model implements JsonModel {
 	}
 	
 	public <T> T get(String field, Class<T> type) {
-		return coerce(get(field), type);
+		return coerce(get(field)).to(type);
 	}
 	
 	public <T> T get(String field, Class<T> type, boolean load) {
-		return coerce(get(field, load), type);
+		return coerce(get(field, load)).to(type);
 	}
 
 	public <T> T get(String field, T defaultValue) {
-		return coerce(get(field), defaultValue);
+		return coerce(get(field)).from(defaultValue);
 	}
 
 	public <T> T get(String field, T defaultValue, boolean load) {
-		return coerce(get(field, load), defaultValue);
+		return coerce(get(field, load)).from(defaultValue);
 	}
 
 	/**
@@ -946,11 +946,11 @@ public abstract class Model implements JsonModel {
 		if(saveFirst && isNew()) {
 			save();
 		}
-		return coerce(id, clazz);
+		return coerce(id).to(clazz);
 	}
 	
 	public final <T> T getId(Class<T> clazz) {
-		return coerce(getId(false), clazz);
+		return coerce(getId(false)).to(clazz);
 	}
 
 	private int getLength(Object value, String tokenizer) {
@@ -1186,7 +1186,7 @@ public abstract class Model implements JsonModel {
 	}
 	
 	public <T> T peek(String field, Class<T> type) {
-		return coerce(fields.get(field), type);
+		return coerce(fields.get(field)).to(type);
 	}
 
     /**
@@ -1591,7 +1591,7 @@ public abstract class Model implements JsonModel {
 		} else if(Collection.class.isAssignableFrom(type)) {
 			ModelAdapter adapter = getAdapter(this);
 			Class<? extends Model> mtype = adapter.getHasManyMemberClass(field);
-			Model[] models = (Model[]) coerce(value, Array.newInstance(mtype, 0).getClass());
+			Model[] models = (Model[]) coerce(value).to(Array.newInstance(mtype, 0).getClass());
 			if(type == ModelList.class) {
 				List<Model> set = new ModelList<Model>(this, field, models);
 				if(adapter.isManyToOne(field)) {
@@ -1605,12 +1605,12 @@ public abstract class Model implements JsonModel {
 				fields.put(field, set);
 				return set;
 			} else {
-				Object o = coerce(models, type);
+				Object o = coerce(models).to(type);
 				fields.put(field, o);
 				return o;
 			}
 		} else {
-			Object coercedValue = coerce(value, type);
+			Object coercedValue = coerce(value).to(type);
 			if(Model.class.isAssignableFrom(type)) {
 				String opposite = getOpposite(field);
 				ModelAdapter adapter = getAdapter(type.asSubclass(Model.class));
@@ -1619,13 +1619,13 @@ public abstract class Model implements JsonModel {
 					if(newModel != null) {
 						newModel.put(opposite, this);
 					}
-					Model oldModel = (Model) coerce(fields.get(field), type);
+					Model oldModel = (Model) coerce(fields.get(field)).to(type);
 					if(oldModel != null) {
 						oldModel.put(opposite, null);
 					}
 				} else if(adapter.hasMany(opposite)) {
 					Model newModel = (Model) coercedValue;
-					Model oldModel = (Model) coerce(fields.get(field), type);
+					Model oldModel = (Model) coerce(fields.get(field)).to(type);
 					if(oldModel != null && !oldModel.equals(newModel)) {
 						Object o = oldModel.get(opposite);
 						if(o instanceof ModelList<?>) {
@@ -1706,7 +1706,7 @@ public abstract class Model implements JsonModel {
 			} else {
 				try {
 					Method setter = getClass().getMethod(StringUtils.setterName(field), type);
-					setter.invoke(this, coerce(value, type));
+					setter.invoke(this, coerce(value).to(type));
 				} catch(NoSuchMethodException e) {
 					set(field, value);
 				} catch(SecurityException e) {

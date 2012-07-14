@@ -99,11 +99,11 @@ public class MySqlDatabase extends Database {
 	@Override
 	protected ConnectionPoolDataSource createDataSource() {
 		MysqlConnectionPoolDataSource ds = new MysqlConnectionPoolDataSource();
-		ds.setDatabaseName(coerce(properties.get("database"), String.class));
-		ds.setServerName(coerce(properties.get("host"), String.class));
-		ds.setPortNumber(coerce(properties.get("port"), int.class));
-		ds.setUser(coerce(properties.get("username"), String.class));
-		ds.setPassword(coerce(properties.get("password"), String.class));
+		ds.setDatabaseName(coerce(properties.get("database")).to(String.class));
+		ds.setServerName(coerce(properties.get("host")).to(String.class));
+		ds.setPortNumber(coerce(properties.get("port")).to(int.class));
+		ds.setUser(coerce(properties.get("username")).to(String.class));
+		ds.setPassword(coerce(properties.get("password")).to(String.class));
 		
 		for(Method method : ConnectionProperties.class.getMethods()) {
 			String name = method.getName();
@@ -115,7 +115,7 @@ public class MySqlDatabase extends Database {
 						Class<?>[] types = method.getParameterTypes();
 						Object[] args = new Object[types.length];
 						for(int i = 0; i < types.length && i < args.length; i++) {
-							args[i] = coerce(val, types[i]);
+							args[i] = coerce(val).to(types[i]);
 						}
 						method.invoke(ds, args);
 					} catch(Exception e) {

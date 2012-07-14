@@ -87,7 +87,7 @@ public class SiteElement extends Element {
 			for(ModelElement model : app.getModels()) {
 				Map<String, Object> mData = model.save();
 				if(mData != null) {
-					if(coerce(mData.remove("recompile"), boolean.class)) {
+					if(coerce(mData.remove("recompile")).to(boolean.class)) {
 						recompile = true;
 					}
 					models.put(model.getName(), mData);

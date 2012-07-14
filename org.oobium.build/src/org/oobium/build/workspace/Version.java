@@ -37,11 +37,11 @@ public class Version implements Comparable<Version> {
 	public Version(String str) {
 		if(str != null && str.length() > 0) {
 			String[] sa = str.split("\\.");
-			major = coerce(sa[0], int.class);
+			major = coerce(sa[0]).to(int.class);
 			if(sa.length > 1) {
-				minor = coerce(sa[1], int.class);
+				minor = coerce(sa[1]).to(int.class);
 				if(sa.length > 2) {
-					micro = coerce(sa[2], int.class);
+					micro = coerce(sa[2]).to(int.class);
 					if(sa.length > 3) {
 						qualifier = sa[3];
 					} else {

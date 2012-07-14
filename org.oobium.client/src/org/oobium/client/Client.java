@@ -294,7 +294,7 @@ public class Client {
 						}
 						parts.put(key, (MessagePart) val);
 					} else {
-						params.put(key, coerce(val, String.class));
+						params.put(key, coerce(val).to(String.class));
 					}
 				}
 			}

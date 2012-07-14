@@ -298,18 +298,18 @@ public class MongoPersistService implements BundleActivator, PersistService {
 		DBCursor cursor = query.isEmpty() ? c.find() : c.find(new BasicDBObject(query));
 
 		if(order != null) {
-			cursor.sort(new BasicDBObject(coerce(order, Map.class)));
+			cursor.sort(new BasicDBObject(coerce(order).to(Map.class)));
 		}
 		
 		// follow MySQL LIMIT convention: http://dev.mysql.com/doc/refman/5.1/en/select.html
 		//   LIMIT {[offset,] row_count}
 		if(limit instanceof Map) {
 			Entry<?,?> e = (Entry<?,?>) ((Map<?,?>) limit).entrySet().iterator().next();
-			cursor.skip(coerce(e.getKey(), int.class));
+			cursor.skip(coerce(e.getKey()).to(int.class));
 		}
 		else if(limit instanceof String && ((String) limit).contains(",")) {
 			String[] sa = ((String) limit).split(",");
-			cursor.skip(coerce(sa[0], int.class));
+			cursor.skip(coerce(sa[0]).to(int.class));
 		}
 		
 		cursor.limit(1);
@@ -329,7 +329,7 @@ public class MongoPersistService implements BundleActivator, PersistService {
 	public Map<String, Object> find(String collection, Object id) throws Exception {
 		DB db = getDB();
 		DBCollection c = db.getCollection(collection);
-		DBObject dbo = c.findOne(coerce(id, ObjectId.class));
+		DBObject dbo = c.findOne(coerce(id).to(ObjectId.class));
 		return (dbo != null) ? dbo.toMap() : null;
 	}
 	
@@ -369,7 +369,7 @@ public class MongoPersistService implements BundleActivator, PersistService {
 		DBCursor cursor = query.isEmpty() ? c.find() : c.find(new BasicDBObject(query));
 
 		if(order != null) {
-			cursor.sort(new BasicDBObject(coerce(order, Map.class)));
+			cursor.sort(new BasicDBObject(coerce(order).to(Map.class)));
 		}
 		
 		if(limit != null) {
@@ -377,14 +377,14 @@ public class MongoPersistService implements BundleActivator, PersistService {
 			//   LIMIT {[offset,] row_count}
 			if(limit instanceof Map) {
 				Entry<?,?> e = (Entry<?,?>) ((Map<?,?>) limit).entrySet().iterator().next();
-				cursor.skip(coerce(e.getKey(), int.class)).limit(coerce(e.getValue(), int.class));
+				cursor.skip(coerce(e.getKey()).to(int.class)).limit(coerce(e.getValue()).to(int.class));
 			}
 			else if(limit instanceof String && ((String) limit).contains(",")) {
 				String[] sa = ((String) limit).split(",");
-				cursor.skip(coerce(sa[0], int.class)).limit(coerce(sa[1], int.class));
+				cursor.skip(coerce(sa[0]).to(int.class)).limit(coerce(sa[1]).to(int.class));
 			}
 			else {
-				cursor.limit(coerce(limit, int.class));
+				cursor.limit(coerce(limit).to(int.class));
 			}
 		}
 
@@ -405,7 +405,7 @@ public class MongoPersistService implements BundleActivator, PersistService {
 		DB db = getDB();
 		DBCollection c = db.getCollection(tableName(clazz));
 		
-		DBObject o = c.findOne(coerce(id, ObjectId.class));
+		DBObject o = c.findOne(coerce(id).to(ObjectId.class));
 		return (o != null) ? getModel(clazz, o.toMap()) : null;
 	}
 
@@ -470,7 +470,7 @@ public class MongoPersistService implements BundleActivator, PersistService {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private <T> T getModel(Class<T> clazz, Map data) {
 		data.put("id", data.remove("_id"));
-		return coerce(data, clazz);
+		return coerce(data).to(clazz);
 	}
 
 	public Object insert(String collection, String json, Object...values) throws Exception {

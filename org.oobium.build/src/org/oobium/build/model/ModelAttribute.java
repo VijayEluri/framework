@@ -88,15 +88,15 @@ public class ModelAttribute {
 			
 			name(ModelUtils.getString(entries.get("name")));
 			type(model.getType(entries.get("type")));
-			json(coerce(entries.get("json"), DEFAULT_JSON));
+			json(coerce(entries.get("json")).from(DEFAULT_JSON));
 			check(ModelUtils.getString(entries.get("check")));
 			init(ModelUtils.getString(entries.get("init")));
-			precision(coerce(entries.get("precision"), DEFAULT_PRECISION));
-			scale(coerce(entries.get("scale"), DEFAULT_SCALE));
-			indexed(coerce(entries.get("indexed"), DEFAULT_INDEXED));
-			readOnly(coerce(entries.get("readOnly"), DEFAULT_READONLY));
-			unique(coerce(entries.get("unique"), DEFAULT_UNIQUE));
-			virtual(coerce(entries.get("virtual"), DEFAULT_VIRTUAL));
+			precision(coerce(entries.get("precision")).from(DEFAULT_PRECISION));
+			scale(coerce(entries.get("scale")).from(DEFAULT_SCALE));
+			indexed(coerce(entries.get("indexed")).from(DEFAULT_INDEXED));
+			readOnly(coerce(entries.get("readOnly")).from(DEFAULT_READONLY));
+			unique(coerce(entries.get("unique")).from(DEFAULT_UNIQUE));
+			virtual(coerce(entries.get("virtual")).from(DEFAULT_VIRTUAL));
 		}
 	}
 	

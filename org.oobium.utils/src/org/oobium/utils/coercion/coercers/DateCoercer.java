@@ -29,7 +29,7 @@ public class DateCoercer extends AbstractCoercer {
 	}
 
 	public Date coerce(Map<?, ?> map, Class<?> toType) {
-		return TypeCoercer.coerce(map, Calendar.class).getTime();
+		return TypeCoercer.coerce(map).to(Calendar.class).getTime();
 	}
 	
 	public Date coerce(String str, Class<?> toType) {

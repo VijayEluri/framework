@@ -201,7 +201,7 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 			
 			ClientResponse response = client.request(request.method, path, params);
 			if(response.isSuccess()) {
-				int id = coerce(response.getHeader("id"), int.class);
+				int id = coerce(response.getHeader("id")).to(int.class);
 				model.setId(id);
 			}
 			else if(response.isConflict()) {
@@ -301,7 +301,7 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 			Client client = Client.client(request.url);
 			client.setAccepts(JSON.acceptsType);
 
-			T model = coerce(id, clazz);
+			T model = coerce(id).to(clazz);
 			String path = path(request.path, model);
 
 			Map<String, ?> params = null;
@@ -370,7 +370,7 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 				List<Object> list = toList(response.getBody());
 				List<T> models = new ArrayList<T>();
 				for(Object o : list) {
-					T model = coerce(o, clazz);
+					T model = coerce(o).to(clazz);
 					models.add(model);
 				}
 				return models;
@@ -401,7 +401,7 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 			try {
 				Class<?> clazz = loadClass(sa[0]);
 				int id = Integer.parseInt(sa[1]);
-				return (Model) coerce(id, clazz);
+				return (Model) coerce(id).to(clazz);
 			} catch(Exception e) {
 				// TODO log error
 			}
@@ -418,7 +418,7 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 			String field = entry.getKey();
 			if(adapter.hasField(field) && !adapter.isVirtual(field)) {
 				String key = fieldKey(name, field);
-				String value = coerce(entry.getValue(), String.class);
+				String value = coerce(entry.getValue()).to(String.class);
 				params.put(key, value);
 			}
 		}
@@ -503,7 +503,7 @@ public class HttpPersistService extends RemotePersistService implements PersistS
 				if(o instanceof List) {
 					List<Object> list = new ArrayList<Object>();
 					for(Object e : (List<?>) o) {
-						Model m = coerce(e, type);
+						Model m = coerce(e).to(type);
 						list.add(m);
 					}
 					model.put(field, list);

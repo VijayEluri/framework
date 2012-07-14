@@ -93,10 +93,10 @@ public class Websocket {
 	
 	public ChannelFuture register(Map<?,?> map) {
 		if(map.containsKey("id")) {
-			this.id = coerce(map.get("id"), String.class);
+			this.id = coerce(map.get("id")).to(String.class);
 		}
 		if(map.containsKey("group")) {
-			this.group = coerce(map.get("group"), String.class);
+			this.group = coerce(map.get("group")).to(String.class);
 		}
 		String json = "registration:" + toJson(map);
 		WebSocketFrame frame = new DefaultWebSocketFrame(json);

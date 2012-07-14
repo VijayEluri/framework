@@ -61,7 +61,7 @@ public class RollbackCommand extends RemoteCommand {
 			if("all".equalsIgnoreCase(param("step"))) {
 				to = installs.length - 1;
 			} else {
-				to = coerce(param("step"), 1);
+				to = coerce(param("step")).from(1);
 				if(to > installs.length - 1) {
 					to = installs.length - 1;
 				}

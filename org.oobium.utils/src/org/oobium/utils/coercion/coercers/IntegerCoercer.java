@@ -45,7 +45,7 @@ public class IntegerCoercer extends AbstractCoercer {
 	}
 	
 	public Integer coerce(JsonModel model, Class<?> toType) {
-		return TypeCoercer.coerce(model.getId(), Integer.class);
+		return TypeCoercer.coerce(model.getId()).to(Integer.class);
 	}
 
 	@Override

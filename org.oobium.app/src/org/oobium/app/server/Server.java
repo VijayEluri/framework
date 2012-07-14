@@ -82,8 +82,8 @@ public class Server {
 			ServerBootstrap server = new ServerBootstrap(channelFactory);
 			server.setPipelineFactory(new ServerPipelineFactory(this, secure));
 	
-	        server.setOption("child.tcpNoDelay", coerce(config.options().get("tcpNoDelay"), true));
-	        server.setOption("child.keepAlive", coerce(config.options().get("keepAlive"), true));
+	        server.setOption("child.tcpNoDelay", coerce(config.options().get("tcpNoDelay")).from(true));
+	        server.setOption("child.keepAlive", coerce(config.options().get("keepAlive")).from(true));
 	        for(Entry<?, ?> e : config.options().entrySet()) {
 	        	String option = (String) e.getKey();
 	        	if(!option.equals("tcpNoDelay") && !option.equals("keepAlive")) {

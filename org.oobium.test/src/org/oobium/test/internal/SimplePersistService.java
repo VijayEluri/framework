@@ -117,7 +117,7 @@ public class SimplePersistService implements PersistService {
 		if(models != null) {
 			List<T> list = new ArrayList<T>();
 			for(Map<String, Object> map : models.values()) {
-				list.add(coerce(map, clazz));
+				list.add(coerce(map).to(clazz));
 			}
 			return list;
 		}
@@ -138,7 +138,7 @@ public class SimplePersistService implements PersistService {
 	private <T> T get(Class<T> modelClass, Object id) {
 		Map<Object, Map<String, Object>> models = db.get(modelClass);
 		if(models != null) {
-			return coerce(models.get(id), modelClass);
+			return coerce(models.get(id)).to(modelClass);
 		}
 		return null;
 	}

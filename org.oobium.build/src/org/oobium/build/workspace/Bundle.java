@@ -91,7 +91,7 @@ public class Bundle extends Project {
 					}
 				} else {
 					Map<?, ?> map = (Map<?, ?>) list.get(0);
-					int id = coerce(map.get("id"), int.class);
+					int id = coerce(map.get("id")).to(int.class);
 					if(!bundle.version.equals(map.get("version"))) {
 						response = client.put("/bundles/" + id, literal.Map("location", location));
 						if(response.isSuccess()) {

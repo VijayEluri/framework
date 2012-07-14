@@ -416,7 +416,7 @@ public class ControllerTester {
 	}
 	
 	public <T> T getFlash(String name, Class<T> type) {
-		return coerce(getFlash(name), type);
+		return coerce(getFlash(name)).to(type);
 	}
 
 	

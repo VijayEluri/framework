@@ -50,14 +50,14 @@ public class ConnectionPool {
 			skipValidityCheck = true;
 		}
 		
-		int maxConnections = coerce(properties.get("maxConnections"), int.class);
+		int maxConnections = coerce(properties.get("maxConnections")).to(int.class);
 		if(maxConnections < 1) {
 			maxConnections = 10;
 		}
 
 		this.connections = new HashSet<PooledConnection>();
 		
-		int timeout = coerce(properties.get("timeout"), int.class);
+		int timeout = coerce(properties.get("timeout")).to(int.class);
 		this.timeout = (timeout < 1) ? 30 : timeout;
 		
 		pool = new Stack<PooledConnection>();

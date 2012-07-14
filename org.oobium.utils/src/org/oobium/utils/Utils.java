@@ -33,7 +33,7 @@ public class Utils {
 			if(o1.getClass() == o2.getClass()) {
 				return o1.equals(o2);
 			}
-			return o1.equals(TypeCoercer.coerce(o2, o1.getClass()));
+			return o1.equals(TypeCoercer.coerce(o2).to(o1.getClass()));
 		}
 	}
 	

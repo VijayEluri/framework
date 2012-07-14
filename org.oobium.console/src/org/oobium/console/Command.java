@@ -466,7 +466,7 @@ public abstract class Command {
 	 * Only valid during command execution
 	 */
 	public <T> T param(String name, Class<T> type) {
-		return coerce(params.map.get(name), type);
+		return coerce(params.map.get(name)).to(type);
 	}
 	
 	/**

@@ -25,7 +25,7 @@ public class ResourceCommand extends BuilderCommand {
 	
 	@Override
 	public void run() {
-		int line = coerce(param(1), int.class);
+		int line = coerce(param(1)).to(int.class);
 		Eclipse.openResource(param(0), line);
 	}
 

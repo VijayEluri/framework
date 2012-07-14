@@ -56,14 +56,14 @@ public class RequestHandlerTrackers {
 		
 		request500HandlerTracker = new ServiceTracker(context, HttpRequest500Handler.class.getName(), new ServiceTrackerCustomizer() {
 			public Object addingService(ServiceReference reference) {
-				int port = coerce(reference.getProperty("port"), -1);
+				int port = coerce(reference.getProperty("port")).from(-1);
 				return handlers.add500Handler((HttpRequest500Handler) context.getService(reference));
 			}
 			public void modifiedService(ServiceReference reference, Object service) {
 				// nothing to do
 			}
 			public void removedService(ServiceReference reference, Object service) {
-				int port = coerce(reference.getProperty("port"), -1);
+				int port = coerce(reference.getProperty("port")).from(-1);
 				handlers.remove500Handler((HttpRequest500Handler) service);
 			}
 		});
