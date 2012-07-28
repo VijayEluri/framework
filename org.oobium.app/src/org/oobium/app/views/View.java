@@ -370,12 +370,12 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 		renderer.includeScriptEnvironment = true;
 	}
 	
-	protected void includeScriptModel(Class<? extends Model> modelClass) {
-		includeScriptModel(modelClass, false);
+	protected String includeScriptModel(Model model, int position) {
+		return includeScriptModel(model, position, false);
 	}
 	
-	protected void includeScriptModel(Class<? extends Model> modelClass, boolean includeHasMany) {
-		renderer.includeScriptModel(modelClass, includeHasMany);
+	protected String includeScriptModel(Model model, int position, boolean includeHasMany) {
+		return renderer.includeScriptModel(model, position, includeHasMany);
 	}
 	
 	protected void includeScriptModels() {
@@ -383,7 +383,7 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 	}
 	
 	protected void includeScriptModels(boolean includeHasMany) {
-		renderer.includeScriptModel(Model.class, includeHasMany);
+		renderer.includeScriptModels(Model.class, includeHasMany);
 	}
 	
 	@Override

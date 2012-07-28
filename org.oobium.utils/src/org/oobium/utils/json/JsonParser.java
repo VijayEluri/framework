@@ -395,73 +395,78 @@ public class JsonParser {
 		Map<String, Object> map = keepOrder ? new LinkedHashMap<String, Object>() : new HashMap<String, Object>();
 		
 		s = findOutside(ca, ':', s1, e, '\'', '"');
-		int s2 = reverse(ca, s-1);
-
-		while(s1 > -1 && s1 <= s2 && s2 < e) {
-			if(ca[s1] == '\'' || ca[s1] == '"') {
-				s1 = forward(ca, s1+1, s2);
+		if(s == -1) {
+			if(e > s1) {
+				map.put(new String(ca, s1, e-s1), null);
 			}
-			if(ca[s2] == '\'' || ca[s2] == '"') {
-				s2 = reverse(ca, s2-1);
-			}
-			
-			String key = new String(ca, s1, s2-s1+1);
-			Object value = null;
-
-			s1 = forward(ca, s+1, e);
-			if(s1 == -1) {
-				s2 = e;
-			} else {
-				if(stringsOnly) {
-					s2 = findOutside(ca, ',', s1, e, '\'', '"', '[', '{');
-					if(s2 < 0 || s2 >= e) {
-						s2 = reverse(ca, e-1);
-					} else {
-						s2--;
-					}
-					if(ca[s1] == '\'' || ca[s1] == '"') {
-						s1++;
-					}
-					if(ca[s2] == '\'' || ca[s2] == '"') {
-						s2--;
-					}
-					value = new String(ca, s1, s2-s1+1);
+		} else {
+			int s2 = reverse(ca, s-1);
+			while(s1 > -1 && s1 <= s2 && s2 < e) {
+				if(ca[s1] == '\'' || ca[s1] == '"') {
+					s1 = forward(ca, s1+1, s2);
+				}
+				if(ca[s2] == '\'' || ca[s2] == '"') {
+					s2 = reverse(ca, s2-1);
+				}
+				
+				String key = new String(ca, s1, s2-s1+1);
+				Object value = null;
+	
+				s1 = forward(ca, s+1, e);
+				if(s1 == -1) {
+					s2 = e;
 				} else {
-					switch(ca[s1]) {
-					case '[':
-					case '{':
-					case '\'':
-					case '"':
-						s2 = closer(ca, s1, e) + 1;
-						if(s2 == 0) {
-							s2 = s1 + 1;
-							value = getEmptyObject(ca[s1]);
-						} else {
-							value = toObject(ca[s1], s1, s2);
-						}
-						break;
-					default:
-						s2 = find(ca, ',', s1, e);
+					if(stringsOnly) {
+						s2 = findOutside(ca, ',', s1, e, '\'', '"', '[', '{');
 						if(s2 < 0 || s2 >= e) {
-							s2 = reverse(ca, e-1) + 1;
+							s2 = reverse(ca, e-1);
+						} else {
+							s2--;
 						}
-						value = toObject(s1, s2);
-						break;
+						if(ca[s1] == '\'' || ca[s1] == '"') {
+							s1++;
+						}
+						if(ca[s2] == '\'' || ca[s2] == '"') {
+							s2--;
+						}
+						value = new String(ca, s1, s2-s1+1);
+					} else {
+						switch(ca[s1]) {
+						case '[':
+						case '{':
+						case '\'':
+						case '"':
+							s2 = closer(ca, s1, e) + 1;
+							if(s2 == 0) {
+								s2 = s1 + 1;
+								value = getEmptyObject(ca[s1]);
+							} else {
+								value = toObject(ca[s1], s1, s2);
+							}
+							break;
+						default:
+							s2 = find(ca, ',', s1, e);
+							if(s2 < 0 || s2 >= e) {
+								s2 = reverse(ca, e-1) + 1;
+							}
+							value = toObject(s1, s2);
+							break;
+						}
 					}
 				}
+				
+				map.put(key, value);
+		
+				s1 = find(ca, ',', s2, e);
+				if(s1 == -1) {
+					break;
+				}
+				s1 = forward(ca, s1+1, e);
+				s = findOutside(ca, ':', s1, e, '\'', '"');
+				s2 = reverse(ca, s-1);
 			}
-			
-			map.put(key, value);
-	
-			s1 = find(ca, ',', s2, e);
-			if(s1 == -1) {
-				break;
-			}
-			s1 = forward(ca, s1+1, e);
-			s = findOutside(ca, ':', s1, e, '\'', '"');
-			s2 = reverse(ca, s-1);
 		}
-	
+		
 		return map;
 	}
 	

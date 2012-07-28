@@ -1455,6 +1455,9 @@ public class HttpController implements IFlash, IParams, IPathRouting, IUrlRoutin
 			} catch(IOException e) {
 				logger.warn(e.getLocalizedMessage());
 			}
+			if("null".equals(o)) {
+				o = null;
+			}
 			map.put(name, o);
 			params.put(data.getName(), o);
 			data.delete();

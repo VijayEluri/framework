@@ -29,12 +29,16 @@ public abstract class ScriptFile {
 	
 	public abstract boolean hasInitializer();
 	
-	protected void includeScriptModel(Class<? extends Model> modelClass) {
-		includeScriptModel(modelClass, false);
+	protected void includeScriptEnvironment() {
+		renderer.includeScriptEnvironment = true;
 	}
 	
-	protected void includeScriptModel(Class<? extends Model> modelClass, boolean includeHasMany) {
-		renderer.includeScriptModel(modelClass, includeHasMany);
+	protected String includeScriptModel(Model model, int position) {
+		return includeScriptModel(model, position, false);
+	}
+	
+	protected String includeScriptModel(Model model, int position, boolean includeHasMany) {
+		return renderer.includeScriptModel(model, position, includeHasMany);
 	}
 	
 	protected void includeScriptModels() {
@@ -42,7 +46,7 @@ public abstract class ScriptFile {
 	}
 	
 	protected void includeScriptModels(boolean includeHasMany) {
-		renderer.includeScriptModel(Model.class, includeHasMany);
+		renderer.includeScriptModels(Model.class, includeHasMany);
 	}
 
 	public void render(ViewRenderer renderer, StringBuilder sb) {

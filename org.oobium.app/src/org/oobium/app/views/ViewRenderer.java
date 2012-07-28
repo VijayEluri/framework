@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.oobium.app.controllers.HttpController;
 import org.oobium.app.request.Request;
@@ -19,6 +20,7 @@ import org.oobium.persist.Model;
 import org.oobium.pipeline.AssetPipeline;
 import org.oobium.pipeline.PipelinedAsset;
 import org.oobium.utils.Config.Mode;
+import org.oobium.utils.StringUtils;
 
 public class ViewRenderer {
 
@@ -54,7 +56,8 @@ public class ViewRenderer {
 	private Map<String, String> contentMap;
 
 	boolean includeScriptEnvironment;
-	private Map<Class<? extends Model>, Boolean> includedScriptModels;
+	private Map<Model, String> includedScriptModels;
+	private Map<Class<? extends Model>, Boolean> includedScriptModelClasses;
 	private LinkedHashSet<String> externalScripts;
 	private List<ScriptFile> externalScriptFiles;
 	private LinkedHashSet<String> externalStyles;
@@ -159,16 +162,28 @@ public class ViewRenderer {
 	
 	private void appendScriptEnvironment(StringBuilder sb) {
 		if(includeScriptEnvironment) {
-			sb.append("<script>window.$oobenv = {};");
+			sb.append("<script>\n");
+			sb.append("window.Oobium = {};\n");
+			if(includedScriptModelClasses != null) {
+				sb.append("Oobium.routes = ");
+				sb.append(j(controller.getRouter().getModelRouteMap(includedScriptModelClasses)));
+				sb.append(";\n");
+			}
+			sb.append("Oobium.vars = {};\n");
 			if(includedScriptModels != null) {
-				sb.append("\n$oobenv.routes = ");
-				sb.append(j(controller.getRouter().getModelRouteMap(includedScriptModels)));
-				sb.append(';');
+				for(Entry<Model, String> entry : includedScriptModels.entrySet()) {
+					Model m = entry.getKey();
+					sb.append("Oobium.vars.");
+					sb.append(entry.getValue());
+					sb.append(" = ");
+					sb.append("{\"type\": \"" + m.getClass().getName() + "\", \"data\": " + m.toJson() + "}");
+					sb.append(";\n");
+				}
 			}
 			if(externalScriptFiles != null) {
 				for(ScriptFile script : externalScriptFiles) {
-					sb.append('\n');
 					script.render(this, sb);
+					sb.append('\n');
 				}
 			}
 			sb.append("</script>");
@@ -222,13 +237,29 @@ public class ViewRenderer {
 		return (contentMap != null && contentMap.containsKey(name));
 	}
 	
-	void includeScriptModel(Class<? extends Model> modelClass, boolean includeHasMany) {
-		includeScriptEnvironment = true;
+	String includeScriptModel(Model model, int position, boolean includeHasMany) {
+		includeScriptModels(model.getClass(), includeHasMany);
+		addExternalScript("/models-data_binding.js");
+		
 		if(includedScriptModels == null) {
-			includedScriptModels = new HashMap<Class<? extends Model>, Boolean>();
+			includedScriptModels = new HashMap<Model, String>();
 		}
-		includedScriptModels.put(modelClass, includeHasMany);
+		String name = includedScriptModels.get(model);
+		if(name == null) {
+			name = model.getClass().getSimpleName() + "_" + model.getId() + "$" + position;
+			includedScriptModels.put(model, name);
+		}
+		return name;
+	}
+	
+	void includeScriptModels(Class<? extends Model> modelClass, boolean includeHasMany) {
+		includeScriptEnvironment = true;
 		addExternalScript("/models.js");
+		
+		if(includedScriptModelClasses == null) {
+			includedScriptModelClasses = new HashMap<Class<? extends Model>, Boolean>();
+		}
+		includedScriptModelClasses.put(modelClass, includeHasMany);
 	}
 	
 	String putContent(String name, String content) {

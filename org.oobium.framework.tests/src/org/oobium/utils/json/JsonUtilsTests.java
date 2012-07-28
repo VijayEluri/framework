@@ -140,7 +140,9 @@ public class JsonUtilsTests {
 	public void testToMap() throws Exception {
 		assertEquals("{}", toMap(null).toString());
 		assertEquals("{}", toMap("").toString());
+		assertEquals("{}", toMap(" ").toString());
 		assertEquals("{}", toMap("{}").toString());
+		assertEquals("{}", toMap("{ }").toString());
 		assertEquals("{a=b}", toMap("{a:b}").toString());
 		assertEquals("{a=b}", toMap("a:b").toString());
 		assertEquals("{a=b, c=d, e=f}", toMap("{a:b, c:d, e:f}", true).toString());
@@ -160,6 +162,12 @@ public class JsonUtilsTests {
 
 		assertEquals("{a:b=b, c:d=d, e:=f}", toMap("\"a:b\":b, \"c:d\":d, \"e:\":f", true).toString());
 		assertEquals("{a:b=b, c:d=d, e:=f}", toMap("'a:b':b, 'c:d':d, 'e:':f", true).toString());
+	}
+	
+	@Test
+	public void testToMap_Implied() throws Exception {
+		assertTrue(toMap("a").containsKey("a"));
+		assertEquals(null, toMap("a").get("a"));
 		
 		assertEquals(1, toMap("a:1").get("a"));
 		assertEquals(-1, toMap("a:-1").get("a"));
