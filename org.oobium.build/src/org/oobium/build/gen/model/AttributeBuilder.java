@@ -17,6 +17,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.oobium.utils.StringUtils;
+
 
 public class AttributeBuilder extends PropertyBuilder {
 
@@ -54,7 +56,11 @@ public class AttributeBuilder extends PropertyBuilder {
 	private String getHasserMethod() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("public boolean ").append(descriptor.hasserName()).append("() {\n");
-		sb.append("\treturn get(").append(descriptor.enumProp()).append(") != null;\n");
+		if("String".equals(descriptor.type())) {
+			sb.append("\treturn !StringUtils.blank(get(").append(descriptor.enumProp()).append("));\n");
+		} else {
+			sb.append("\treturn get(").append(descriptor.enumProp()).append(") != null;\n");
+		}
 		sb.append("}");
 		return sb.toString();
 	}
@@ -65,13 +71,12 @@ public class AttributeBuilder extends PropertyBuilder {
 		if(descriptor.hasImport()) {
 			String fullType = descriptor.fullType();
 			imports.add(fullType);
-//			if("Map".equals(descriptor.type())) {
-//				imports.add(JsonUtils.class.getCanonicalName());
-//			}
-//			else 
-			if("Date".equals(descriptor.type())) {
-				imports.add(SimpleDateFormat.class.getCanonicalName());
-			}
+		}
+		if("String".equals(descriptor.type())) {
+			imports.add(StringUtils.class.getCanonicalName());
+		}
+		if("Date".equals(descriptor.type())) {
+			imports.add(SimpleDateFormat.class.getCanonicalName());
 		}
 		return imports;
 	}
