@@ -1,338 +1,441 @@
-function $Extend(clazz, superClass) {
-	function inheritance() {}
-	inheritance.prototype = superClass.prototype;
-	clazz.prototype = new inheritance();
-	clazz.prototype.constructor = clazz;
-	clazz.superConstructor = superClass;
-	clazz.superClass = superClass.prototype;
-}
+(function(){
+	var root = this;
+	var Oobium = root.Oobium = root.Oobium || {};
 
-function Monitor(interval) {
-	var self = this;
-	var commitInterval = interval || 0;
-	var operations = [];
-	var waiting = false;
-	var timerId = null;
-	var callbacks = {
-		queue: $.Callbacks(),
-		start: $.Callbacks(),
-		complete: $.Callbacks()
-	}
-	
-	this.add = function(request) {
-		if(operations.length == 0) {
-			fire('queue');
+	var Cache = Oobium.Cache = new function() {
+		var models = {};
+		
+		this.get = function(type, id) {
+			return models[type] ? models[type][id] : null;
+		};
+		
+		this.put = function(model) {
+			var type = model.getType();
+			if(!models[type]) {
+				models[type] = {};
+			}
+			models[type][model.getId()] = model;
 		}
-		startTimer();
-		var op;
-		for(var i in operations) {
-			var r = operations[i].req;
-			if(r.type == request.type && r.url == request.url) {
-				op = operations[i];
-				break;
+		
+		this.remove = function(model) {
+			var type = model.getType();
+			if(models[type]) {
+				delete models[type][model.getId()];
 			}
 		}
-		if(op) {
-			$.extend(true, op.req.data, request.data);
-		} else {
-			op = {
-					dfd: $.Deferred(),
-					fnc: function() {
-						$.ajax(this.req).always( this.dfd.resolve );
-					},
-					req: request
-			};
-			operations.push(op);
-		}
-		return op.dfd.promise();
-	};
-
-	this.auto = function() {
-		return commitInterval > 0;
 	};
 	
-	var clearTimer = function() {
-		if(timerId) {
-			clearTimeout(timerId);
-		}
-	};
 	
-	this.commit = function() {
-		clearTimer();
-		if(operations.length > 0) {
-			var deferreds = [];
-			for(var i in operations) {
-				var op = operations[i];
-				op.fnc();
-				deferreds.push(op.dfd);
-			}
-			$.when.apply($, deferreds)
-				.then(function() {
-					fire('complete');
-				});
-			operations = [];
-			fire('start');
-		} else {
-			fire('start');
-			fire('complete');
-		}
-	};
-
-	this.complete = function(callback) {
-		callbacks.complete.add(callback);
-	};
-	
-	this.dirty = function() {
-		return operations.length > 0;
-	};
-
-	var fire = function(eventName) {
-		callbacks[eventName].fire(self);
-	}
-	
-	this.queue = function(callback) {
-		callbacks.queue.add(callback);
-	};
-	
-	this.setInterval = function(interval) {
-		if(interval) {
-			commitInterval = parseInt(interval);
-			if(operations.length > 0) {
-				startTimer();
-			}
-		} else {
-			clearTimer();
-		}
-	};
-	
-	this.start = function(callback) {
-		callbacks.start.add(callback);
-	};
-	
-	var startTimer = function() {
-		clearTimer();
-		if(commitInterval > 0) {
-			timerId = setTimeout(self.commit, commitInterval);
-		}
-	};
-	
-	this.subscribe = function(eventName, callback) {
-		callbacks[eventName].add(callback);
-	};
-	
-	this.unsubscribe = function(eventName, callback) {
-		callbacks[eventName].remove(callback);
-	};
-	
-}
-
-var $Monitor = new Monitor($oobenv.commitInterval || 3000);
-
-
-var $Router = {
-	routesUrl: '/',
-	
-	loadRoutes: function() {
-		$.ajax({
-			type: 'HEAD',
-			async: true,
-			url: routesUrl,
-			complete: function(xhr, status) {
-				if('success'.equals(status)) {
-					var api = xhr.getResponseHeader('API-Location');
-					if(api) {
-						$.getJSON(api, function(data) {
-							$oobenv.routes = data;
-						});
-						return;
+	var Router = Oobium.Router = new function() {
+		var baseUrl = '/';
+		var routes = Oobium.routes || {};
+		
+		this.loadRoutes = function() {
+			$.ajax({
+				type: 'HEAD',
+				async: true,
+				url: baseUrl,
+				complete: function(xhr, status) {
+					if('success'.equals(status)) {
+						var api = xhr.getResponseHeader('API-Location');
+						if(api) {
+							$.getJSON(api, function(data) {
+								routes = data;
+							});
+							return;
+						}
 					}
+					alert('error loading routes');
 				}
-				alert('error loading routes');
+			});
+		};
+		
+		this.getMethod = function(action, model) {
+			var type = model.getType ? model.getType() : model;
+			return routes[type][action]['method'];
+		};
+		
+		this.getPath = function(action, model, id) {
+			var type = model.getType ? model.getType() : model;
+			var route = routes[type][action];
+			var path = route['path'];
+			if(route['fixed']) {
+				return path;
 			}
-		});
-	},
-	
-	getType: function(action, model) {
-		return $oobenv.routes[model.type || model][action]['method'];
-	},
-	
-	getPath: function(action, model, plural, id) {
-		var modelType, modelPlural, modelId;
-		if(plural) {
-			modelType = model;
-			modelPlural = plural;
-			modelId = id;
-		} else {
-			modelType = model.type;
-			modelPlural = model.plural;
-			modelId = model.id;
-		}
-		var route = $oobenv.routes[modelType][action];
-		var path = route['path'];
-		if(route['fixed']) {
+			path = path.replace("{models}", Model.types[type].models);
+			path = path.replace("{id}", id || model.getId());
 			return path;
+		};
+
+		this.getUrl = function() {
+			return baseUrl;
 		}
-		path = path.replace("{models}", modelPlural);
-		path = path.replace("{id}", modelId);
-		return path;
+
+		this.setRoutes = function(map) {
+			routes = map;
+			return this;
+		};
+		
+		this.setUrl = function(url) {
+			baseUrl = url;
+			return this;
+		}
 	}
-}
+	
+	
+	var Sync = Oobium.Sync = new function() {
+		var self = this;
+		var commitInterval = Oobium.commitInterval || 3000;
+		var operations = [];
+		var waiting = false;
+		var timerId = null;
+		var callbacks = {
+			queue: $.Callbacks(),
+			start: $.Callbacks(),
+			complete: $.Callbacks()
+		}
 
-
-function Model(params) {
-	this.data = {};
-	if(typeof params == 'number' || typeof params == 'string' ) {
-		this.id = params;
-	} else {
-		if(params) {
-			if(params.id) {
-				this.id = params.id;
-				delete params.id;
+		/**
+		 * @return a Promise object
+		 */
+		this.add = function(request) {
+			if(operations.length == 0) {
+				fire('queue');
 			}
-			for(var key in params) {
-				if(params.hasOwnProperty(key)) {
-					var val = params[key];				
-					if(typeof val == 'string' && val.indexOf('/Date(') == 0) {
-						this.data[key] = new Date(parseInt(val.substring(6, val.length-2)));
+			startTimer();
+			var op;
+			for(var i in operations) {
+				var r = operations[i].req;
+				if(r.type == request.type && r.url == request.url) {
+					op = operations[i];
+					break;
+				}
+			}
+			if(op) {
+				$.extend(true, op.req.data, request.data);
+			} else {
+				op = {
+						dfd: $.Deferred(),
+						fnc: function() {
+							$.ajax(this.req).always( this.dfd.resolve );
+						},
+						req: request
+				};
+				operations.push(op);
+			}
+			return op.dfd.promise();
+		};
+	
+		this.auto = function() {
+			return commitInterval > 0;
+		};
+		
+		var clearTimer = function() {
+			if(timerId) {
+				clearTimeout(timerId);
+			}
+		};
+		
+		this.commit = function() {
+			clearTimer();
+			if(operations.length > 0) {
+				var dfds = [];
+				for(var i in operations) {
+					var op = operations[i];
+					op.fnc();
+					dfds.push(op.dfd);
+				}
+				$.when.apply($, dfds)
+					.then(function() {
+						fire('complete');
+					});
+				operations = [];
+				fire('start');
+			} else {
+				fire('start');
+				fire('complete');
+			}
+		};
+	
+		this.complete = function(callback) {
+			callbacks.complete.add(callback);
+		};
+		
+		this.dirty = function() {
+			return operations.length > 0;
+		};
+	
+		var fire = function(eventName) {
+			callbacks[eventName].fire(self);
+		}
+		
+		this.queue = function(callback) {
+			callbacks.queue.add(callback);
+		};
+		
+		this.setInterval = function(interval) {
+			if(interval) {
+				commitInterval = parseInt(interval);
+				if(operations.length > 0) {
+					startTimer();
+				}
+			} else {
+				clearTimer();
+			}
+		};
+		
+		this.start = function(callback) {
+			callbacks.start.add(callback);
+		};
+		
+		var startTimer = function() {
+			clearTimer();
+			if(commitInterval > 0) {
+				timerId = setTimeout(self.commit, commitInterval);
+			}
+		};
+		
+		this.subscribe = function(eventName, callback) {
+			callbacks[eventName].add(callback);
+		};
+		
+		this.unsubscribe = function(eventName, callback) {
+			callbacks[eventName].remove(callback);
+		};
+		
+	};
+	
+	
+	var Model = Oobium.Model = function(type) {
+		var type = type;
+		var id = null;
+		var data = {};
+		var callbacks = $.Callbacks();
+
+		var asJsonData = function() {
+			var json = {};
+			for(var key in data) {
+				if(data.hasOwnProperty(key)) {
+					var val = data[key];				
+					if(val instanceof Date) {
+						json[key] = '/Date(' + val.getTime() + ')/';
 					} else {
-						this.data[key] = val;
+						json[key] = val;
 					}
 				}
 			}
+			var jsonData = {};
+			jsonData[Model.types[type].name] = json;
+			return jsonData;
+		};
+
+		this.addCallback = function(callback) {
+			callbacks.add(callback);
 		}
-	}
-}
+		
+		this.get = function(field) {
+			return data[field];
+		};
 
-<Model.newInstance>
-
-Model.find = function(params) {
-	var request = {};
-	request.type = $Router.getType('show', params.type);
-	request.url = $Router.getPath('show', params.type, params.plural, params.id);
-	request.dataType = 'json';
-	request.success = function(data, status, xhr) {
-		var model = Model.newInstance(params.type, data);
-		if(params.success) params.success(model, status, xhr);
-	}
-	if(params.error) {
-		request.error = function(xhr, status, errorThrown) {
-			params.error(xhr, status, errorThrown);
+		this.getId = function() {
+			return id;
 		}
-	}
-	$.ajax(request);
-}
 
-Model.findAll = function(params) {
-	var request = {};
-	request.type = $Router.getType('showAll', params.type);
-	request.url = $Router.getPath('showAll', params.type, params.plural);
-	request.dataType = 'json';
-	request.success = function(data, status, xhr) {
-		var models = [];
-		for(var i in data) {
-			models.push(Model.newInstance(params.type, data[i]));
+		this.getType = function() {
+			return type;
 		}
-		if(params.success) params.success(models, status, xhr);
-	}
-	if(params.error) {
-		request.error = function(xhr, status, errorThrown) {
-			params.error(xhr, status, errorThrown);
-		}
-	}
-	$.ajax(request);
-}
 
-/**
- * @return the jqXHR object (see JQuery $.ajax for more information)
- */
-Model.prototype.create = function() {
-	var model = this;
-	var request = {};
-	request.type = $Router.getType('create', model);
-	request.url = $Router.getPath('create', model),
-	request.data = {};
-	request.data[model.varName] = model.getJsonData();
-	request.dataType = 'json';
-	request.success = function(data, status, xhr) {
-		model.id = xhr.getResponseHeader('id');
-	}
-	if($Monitor && $Monitor.auto()) {
-		return $Monitor.add(request);
-	} else {
-		return $.ajax(request).promise();
-	}
-}
+		/**
+		 * @return a Promise object
+		 */
+		this.create = function() {
+			var dfd = $.Deferred();
+			var model = this;
+			var request = {
+					type: Router.getMethod('create', model),
+					url: Router.getPath('create', model),
+					data: asJsonData(),
+					dataType: 'json'
+			};
+			(Sync.auto() ? Sync.add(request) : $.ajax(request))
+				.done(function(data, status, xhr) {
+					model.setId(xhr.getResponseHeader('id'));
+					dfd.resolve(model);
+				})
+				.fail(function(data) { dfd.reject(model, data); });
+			return dfd.promise();
+		};
 
-/**
- * @return a Promise object
- */
-Model.prototype.destroy = function() {
-	var model = this;
-	var request = {};
-	request.type = $Router.getType('destroy', model);
-	request.url = $Router.getPath('destroy', model),
-	request.dataType = 'json';
-	request.success = function(data, status, xhr) {
-		model.id = 0;
-		model.data = null;
-		model.destroyed = true;
-	}
-	return $.ajax(request);
-}
-
-Model.prototype.getJsonData = function() {
-	var jdata = {};
-	for(var key in this.data) {
-		if(this.data.hasOwnProperty(key)) {
-			var val = this.data[key];				
-			if(val instanceof Date) {
-				jdata[key] = '/Date(' + val.getTime() + ')/';
+		/**
+		 * @return a Promise object
+		 */
+		this.destroy = function() {
+			var dfd = $.Deferred();
+			if(this.isNew()) {
+				data = null;
+				dfd.resolve(this);
 			} else {
-				jdata[key] = val;
+				var request = {
+						type: Router.getMethod('destroy', this),
+						url: Router.getPath('destroy', this),
+						dataType: 'json'
+				};
+				var prevId = id;
+				id = data = null;
+				$.ajax(request)
+					.done(function() { dfd.resolve(prevId) })
+					.fail(function(data) { dfd.reject(prevId, data) });
 			}
+			return dfd.promise();
+		};
+		
+		this.equals = function(otherModel) {
+			return (id && type == otherModel.getType()) && (id == otherModel.getId());
+		};
+
+		this.isNew = function() {
+			return id == null;
+		};
+		
+		/**
+		 * @return a Promise object
+		 */
+		this.load = function() {
+			var dfd = $.Deferred();
+			var model = this;
+			var request = {
+					type: Router.getMethod('show', this),
+					url: Router.getPath('show', this),
+					dataType: 'json'
+			};
+			$.ajax(request)
+				.done(function(data) {
+					model.data = data;
+					dfd.resolve(model);
+					callbacks.fire(this, $.extend({}, model.data));
+				})
+				.fail(function(data) { dfd.reject(model, data) });
+			return dfd.promise();
+		};
+		
+		/**
+		 * @return a Promise object
+		 */
+		this.save = function() {
+			return this.isNew() ? this.create() : this.update();
+		};
+
+		this.set = function(a, b) {
+			if(a) {
+				if(b != undefined) {
+					var c = {}; c[a] = b; a = c;
+				}
+				if(a.hasOwnProperty('id')) {
+					this.setId(a.id); delete a.id;
+				}
+				var changes = {};
+				for(var key in a) {
+					if(a.hasOwnProperty(key)) {
+						var val = a[key];
+						if(typeof val == 'string' && val.indexOf('/Date(') == 0) {
+							changes[key] = data[key] = new Date(parseInt(val.substring(6, val.length-2)));
+						} else {
+							changes[key] = data[key] = val;
+						}
+					}
+				}
+				callbacks.fire(this, changes);
+			}
+			return this;
+		};
+		
+		this.setId = function(newId) {
+			if(id != newId) {
+				if(newId == undefined || newId == 0 || newId == '' || newId == '0' || newId == 'null') {
+					id = null;
+				} else {
+					id = newId;
+				}
+				callbacks.empty();
+			}
+			return this;
+		};
+
+		/**
+		 * @return a Promise object
+		 */
+		this.update = function() {
+			var request = {
+					type: Router.getMethod('update', this),
+					url: Router.getPath('update', this),
+					data: asJsonData(),
+					dataType: 'json'
+			};
+			return Sync.auto() ? Sync.add(request) : $.ajax(request).promise();
+		};
+		
+	}
+
+	Model.extend = function(options) {
+		function F() {
+			Oobium.Model.call(this, options.type);
 		}
+		F.prototype = Oobium.Model.prototype;
+		F.find = function(id) { return Oobium.Model.find(options.type, id); }
+		F.findAll = function() { return Oobium.Model.findAll(options.type); }
+		Model.types = Model.types || {};
+		Model.types[options.type] = {'name': options.name, 'models': options.models};
+		return F;
 	}
-	return jdata;
-}
 
-Model.prototype.retrieve = function(success, error) {
-	var model = this;
-	var request = {};
-	request.type = $Router.getType('show', this);
-	request.url = $Router.getPath('show', this),
-	request.dataType = 'json';
-	request.success = function(data, status, xhr) {
-		model.data = data;
-		if(success) success(model, status, xhr);
-	}
-	if(error) {
-		request.error = function(data, status, xhr) {
-			error(data, status, xhr);
+	/**
+	 * @return a Promise object
+	 */
+	Model.find = function(type, id) {
+		var dfd = $.Deferred();
+		var model = Cache.get(type, id);
+		if(model) {
+			dfd.resolve(model);
+		} else {
+			var request = {};
+			request.type = Router.getMethod('show', type);
+			request.url = Router.getPath('show', type, id);
+			request.dataType = 'json';
+			$.ajax(request)
+				.done(function(data) { dfd.resolve(Model.newInstance(type, data)); })
+				.fail(function(data) { dfd.reject(data); });
 		}
+		return dfd.promise();
 	}
-	$.ajax(request);
-}
-
-/**
- * @return a Promise object
- */
-Model.prototype.update = function() {
-	var request = {};
-	request.type = $Router.getType('update', this);
-	request.url = $Router.getPath('update', this),
-	request.data = {};
-	request.data[this.varName] = this.getJsonData();
-	request.dataType = 'json';
-	if($Monitor && $Monitor.auto() > 0) {
-		return $Monitor.add(request);
-	} else {
-		return $.ajax(request).promise();
+	
+	/**
+	 * @return a Promise object
+	 */
+	Model.findAll = function(type) {
+		var dfd = $.Deferred();
+		var request = {};
+		request.type = Router.getMethod('showAll', type);
+		request.url = Router.getPath('showAll', type);
+		request.dataType = 'json';
+		$.ajax(request)
+			.done(function(data, status, xhr) {
+				var models = [];
+				for(var i in data) {
+					var model = Model.newInstance(type, data[i]);
+					Cache.put(model);
+					models.push(model);
+				}
+				dfd.resolve(models);
+			})
+			.fail(function(data) { dfd.reject(data); });
+		return dfd.promise();
 	}
-}
+	
+	<Model.newInstance>
+	
+	
+	var Observer = Oobium.Observer = function(modelType) {
+		
+	}
 
-/**
- * @return a Promise object
- */
-Model.prototype.save = function() {
-	return (this.id == 0) ? this.create() : this.update();
-}
+}).call(this);

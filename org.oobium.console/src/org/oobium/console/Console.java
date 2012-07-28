@@ -830,7 +830,11 @@ public class Console extends Composite {
 	}
 	
 	public String[] getCommandHistory() {
-		return commandHistory.toArray(new String[commandHistory.size()]);
+		int len = commandHistory.size();
+		if(len > 500) {
+			return commandHistory.subList(len-500, len).toArray(new String[500]);
+		}
+		return commandHistory.toArray(new String[len]);
 	}
 	
 	public Point getCommandSelection() {

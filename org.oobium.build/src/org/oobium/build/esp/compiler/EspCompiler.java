@@ -31,7 +31,6 @@ import static org.oobium.utils.literal.Set;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -135,56 +134,30 @@ public class EspCompiler {
 		return location;
 	}
 
-	private Set<EspPart> findDataFields(EspElement parent, Set<EspPart> dataFields) {
-		if(parent.hasChildren()) {
-			for(EspElement child : parent.getChildren()) {
-				if(child instanceof MarkupElement) {
-					MarkupElement element = (MarkupElement) child;
-					if(element.hasEntryValue("data-field")) {
-						dataFields.add(element.getEntryValue("data-field"));
-					}
-					if( ! element.hasEntry("data-model")) {
-						findDataFields(element, dataFields);
-					}
-				}
-			}
-		}
-		return dataFields;
-	}
-	
-	private void buildDataModel(EspPart value) {
-		Set<EspPart> dataFields = findDataFields(value.getElement(), new LinkedHashSet<EspPart>());
-		
+	private void buildDataBinding(EspPart value) {
 		body.append("=\\\"\");\n");
 		inJava = true;
 
 		indent(body);
-		body.append("includeScriptModel((");
+		body.append(sbName).append(".append(h(toJson(toMap(");
 		build(value, body);
-		body.append(").getClass());\n");
+		body.append("))));\n");
+
+		prepForMarkup(body);
+		body.append("\\\"");
+		escapeChar = 0;
+	}
+	
+	private void buildDataModel(EspPart value) {
+		body.append("=\\\"\");\n");
+		inJava = true;
+
+		indent(body);
+		body.append(sbName).append(".append(");
+		body.append("includeScriptModel(");
+		build(value, body);
+		body.append(", ").append(body.length()).append("));\n");
 		
-		indent(body);
-		body.append(sbName).append(".append((");
-		build(value, body);
-		body.append(").getClass().getName());\n");
-
-		indent(body);
-		body.append(sbName).append(".append(' ');\n");
-
-		indent(body);
-		body.append(sbName).append(".append(h((");
-		build(value, body);
-		if(dataFields.isEmpty()) {
-			body.append(").toJson()));\n");
-		} else {
-			body.append(").toJson(");
-			for(Iterator<EspPart> iter = dataFields.iterator(); iter.hasNext(); ) {
-				build(iter.next(), body);
-				if(iter.hasNext()) body.append(", ");
-			}
-			body.append(")));\n");
-		}
-
 		prepForMarkup(body);
 		body.append("\\\"");
 		escapeChar = 0;
@@ -195,6 +168,9 @@ public class EspCompiler {
 		if(value != null) {
 			if("data-model".equals(name)) {
 				buildDataModel(value);
+			}
+			else if("data-field".equals(name) || "data-editor".equals(name)) {
+				buildDataBinding(value);
 			}
 			else {
 				body.append("=\\\"");
@@ -931,10 +907,11 @@ public class EspCompiler {
 					body.append(")).append(\"\\\"");
 				}
 			}
-		} else if(link.getEntryCount() == 1 && link.hasEntry("onclick")) {
+		} else if(link.hasEntry("onclick") && !link.hasEntry("href")) {
 			body.append(" href=\\\"#\\\" onclick=\\\"");
 			build(link.getEntry("onclick"), body);
 			body.append(";return false;\\\"");
+			buildAttrs(link, "onclick");
 		} else {
 			buildAttrs(link);
 		}
@@ -1535,7 +1512,7 @@ public class EspCompiler {
 
 	String getCodeVar(EspPart var) {
 		String name = varName(var.getDom().getSimpleName().replace('.', '_'), false);
-		return "$oobenv." + name + "Var" + var.getStart();
+		return "Oobium.vars." + name + var.getStart();
 	}
 	
 	private char getEscapeChar(EspPart container) {

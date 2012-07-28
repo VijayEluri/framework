@@ -145,10 +145,12 @@ public class ScriptCompiler extends AssetCompiler {
 		if(element.hasArgs()) {
 			for(MethodArg arg : element.getArgs()) {
 				parent.indent(body);
-				body.append("includeScriptModel(");
+				body.append("includeScriptModels(");
 				parent.build(arg, body);
-				body.append(", ");
-				parent.build(element.getEntry("hasMany"), body);
+				if(element.hasEntryValue("hasMany")) {
+					body.append(", ");
+					parent.build(element.getEntry("hasMany"), body);
+				}
 				body.append(");\n");
 			}
 		} else {

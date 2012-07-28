@@ -283,7 +283,6 @@ public class Constants {
 		DATA_BINDING = new TreeSet<String>();
 		DATA_BINDING.add("data-model");
 		DATA_BINDING.add("data-field");
-		DATA_BINDING.add("data-editor");
 		
 	    DOM_EVENTS = new TreeSet<String>();
 	    DOM_EVENTS.add("onblur");
@@ -414,6 +413,7 @@ public class Constants {
 		JS_KEYWORDS.add("true");
 		JS_KEYWORDS.add("try");
 		JS_KEYWORDS.add("typeof");
+		JS_KEYWORDS.add("undefined");
 		JS_KEYWORDS.add("var");
 		JS_KEYWORDS.add("void");
 		JS_KEYWORDS.add("volatile");

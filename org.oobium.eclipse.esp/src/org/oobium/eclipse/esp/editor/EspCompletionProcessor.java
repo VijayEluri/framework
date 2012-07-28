@@ -43,6 +43,7 @@ import org.oobium.build.esp.compiler.ESourceFile;
 import org.oobium.build.esp.dom.EspDom;
 import org.oobium.build.esp.dom.EspPart;
 import org.oobium.build.esp.dom.EspPart.Type;
+import org.oobium.build.esp.dom.parts.MethodArg;
 import org.oobium.build.esp.dom.parts.style.Property;
 import org.oobium.build.esp.dom.parts.style.Selector;
 import org.oobium.eclipse.esp.EspCore;
@@ -67,8 +68,8 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 		switch(part.getType()) {
 		case DOM:               return computeDomProposals(doc, part, offset);
 		case JavaElement:
-		case JavaContainer:
-		case JavaSource:        return computeJavaProposals(doc, part, offset);
+		case JavaContainer:     return computeJavaProposals(doc, part, offset);
+		case JavaSource:		return computeJavaSourceProposals(doc, part, offset);
 		case MarkupElement:
 		case MarkupComment:     return computeMarkupProposals(doc, part, offset);
 		case MarkupTag:         return computeMarkupTagProposals(doc, part, offset);
@@ -304,6 +305,19 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 		return new ArrayList<ICompletionProposal>(0);
 	}
 	
+	private List<ICompletionProposal> computeJavaSourceProposals(IDocument doc, EspPart part, int offset) {
+		EspPart p = part.getParent().getParent();
+		if(p instanceof MethodArg) {
+			MethodArg arg = (MethodArg) p;
+			if( ! arg.hasName() && arg.getValue() == part.getParent()) {
+				List<ICompletionProposal> proposals = computeVarNameProposals(part, offset);
+				proposals.addAll(computeJavaProposals(doc, part, offset));
+				return proposals;
+			}
+		}
+		return computeJavaProposals(doc, part, offset);
+	}
+	
 	private List<ICompletionProposal> computeMarkupProposals(IDocument doc, EspPart part, int offset) {
 		return new ArrayList<ICompletionProposal>(0);
 	}
@@ -467,7 +481,8 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 			String prefix = part.substring(0, rlen);
 			for(String string : strings) {
 				if(string.startsWith(prefix)) {
-					results.add(new EspCompletionProposal(string, part.getStart(), rlen, string.length(), null, string));
+					String rtext = part.isA(Type.JavaSource) ? (string + ": ") : string;
+					results.add(new EspCompletionProposal(rtext, part.getStart(), rlen, rtext.length(), null, string));
 				}
 			}
 		}

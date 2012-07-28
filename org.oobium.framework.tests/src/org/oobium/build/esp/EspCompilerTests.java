@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010 Oobium, Inc.
+ * Copyright (c) 2010, 2012 Oobium, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -289,6 +289,10 @@ public class EspCompilerTests {
 				"includeScriptModels();",
 				render("models"));
 
+		assertEquals(
+				"includeScriptModels(Model.class);",
+				render("models(Model.class)"));
+
 		
 		AppRouter router = mock(AppRouter.class);
 		when(router.getModelRouteMap()).thenReturn(null);
@@ -296,8 +300,11 @@ public class EspCompilerTests {
 		assertEquals(
 				"<!DOCTYPE html><html>" +
 				"<head>" +
-				"<script>window.$oobenv = {};\n" +
-				"$oobenv.routes = {};</script>" +
+				"<script>\n" +
+				"window.Oobium = {};\n" +
+				"Oobium.routes = {};\n" +
+				"Oobium.vars = {};\n" +
+				"</script>" +
 				"<script type='text/javascript' src='/models.js'></script>" +
 				"</head>" +
 				"<body></body>" +
@@ -309,48 +316,67 @@ public class EspCompilerTests {
 	public void testDataBinding() throws Exception {
 		assertEquals(
 				"__body__.append(\"<div data-model=\\\"\");\n" +
-				"includeScriptModel((member).getClass());\n" +
-				"__body__.append((member).getClass().getName());\n" +
-				"__body__.append(' ');\n" +
-				"__body__.append(h((member).toJson()));\n" +
+				"__body__.append(includeScriptModel(member, 86));\n" +
 				"__body__.append(\"\\\"></div>\");",
 				render("div(data-model: member)"));
 
 		assertEquals(
 				"__body__.append(\"<div data-model=\\\"\");\n" +
-				"includeScriptModel((member).getClass());\n" +
-				"__body__.append((member).getClass().getName());\n" +
-				"__body__.append(' ');\n" +
-				"__body__.append(h((member).toJson(\"name\")));\n" +
-				"__body__.append(\"\\\"><div data-field=\\\"name\\\"></div></div>\");",
+				"__body__.append(includeScriptModel(member, 86));\n" +
+				"__body__.append(\"\\\"><div data-field=\\\"\");\n" +
+				"__body__.append(h(toJson(toMap(\"name\"))));\n" +
+				"__body__.append(\"\\\"></div></div>\");",
 				render("div(data-model: member) <- div(data-field: \"name\")"));
 
 		assertEquals(
 				"__body__.append(\"<div data-model=\\\"\");\n" +
-				"includeScriptModel((member).getClass());\n" +
-				"__body__.append((member).getClass().getName());\n" +
-				"__body__.append(' ');\n" +
-				"__body__.append(h((member).toJson(\"name\", \"age\")));\n" +
-				"__body__.append(\"\\\"><div data-field=\\\"name\\\"><div data-field=\\\"age\\\"></div></div></div>\");",
+				"__body__.append(includeScriptModel(member, 86));\n" +
+				"__body__.append(\"\\\"><div data-field=\\\"\");\n" +
+				"__body__.append(h(toJson(toMap(\"name\"))));\n" +
+				"__body__.append(\"\\\"><div data-field=\\\"\");\n" +
+				"__body__.append(h(toJson(toMap(\"age\"))));\n" +
+				"__body__.append(\"\\\"></div></div></div>\");",
 				render("div(data-model: member) <- div(data-field: \"name\") <- div(data-field: \"age\")"));
 
 		assertEquals(
 				"__body__.append(\"<div data-model=\\\"\");\n" +
-				"includeScriptModel((member).getClass());\n" +
-				"__body__.append((member).getClass().getName());\n" +
-				"__body__.append(' ');\n" +
-				"__body__.append(h((member).toJson(\"name\")));\n" +
-				"__body__.append(\"\\\"><div data-field=\\\"name\\\"><div data-model=\\\"\");\n" +
-				"includeScriptModel((account).getClass());\n" +
-				"__body__.append((account).getClass().getName());\n" +
-				"__body__.append(' ');\n" +
-				"__body__.append(h((account).toJson(\"value\")));\n" +
-				"__body__.append(\"\\\"><div data-field=\\\"value\\\"></div></div></div></div>\");",
+				"__body__.append(includeScriptModel(member, 86));\n" +
+				"__body__.append(\"\\\"><div data-field=\\\"\");\n" +
+				"__body__.append(h(toJson(toMap(\"name\"))));\n" +
+				"__body__.append(\"\\\"><div data-model=\\\"\");\n" +
+				"__body__.append(includeScriptModel(account, 271));\n" +
+				"__body__.append(\"\\\"><div data-field=\\\"\");\n" +
+				"__body__.append(h(toJson(toMap(\"value\"))));\n" +
+				"__body__.append(\"\\\"></div></div></div></div>\");",
 				render(
 						"div(data-model: member)\n" +
 						"\tdiv(data-field: \"name\")\n" +
 						"\t\tdiv(data-model: account)\n" +
 						"\t\t\tdiv(data-field: \"value\")"));
+	}
+	
+	@Test
+	public void testDataBinding_Page() throws Exception {
+		AppRouter router = mock(AppRouter.class);
+		when(router.getModelRouteMap()).thenReturn(null);
+		assertEquals(
+				"<!DOCTYPE html><html>" +
+				"<head>" +
+				"<script>\n" +
+				"window.Oobium = {};\n" +
+				"Oobium.routes = {};\n" +
+				"Oobium.vars = {};\n" +
+				"Oobium.vars._null$119 = {\"type\": \"com.test" + count + ".MyEsp$1\", \"data\": {}};\n" +
+				"</script>" +
+				"<script type='text/javascript' src='/models.js'></script>" +
+				"<script type='text/javascript' src='/models-data_binding.js'></script>" +
+				"</head>" +
+				"<body><div data-model=\"_null$119\"></div></body>" +
+				"</html>",
+				page(router,
+						"import org.oobium.persist.Model\n" +
+						"- Model member = new Model() {};\n" +
+						"div(data-model: member)"));
 	}
 	
 	@Test
@@ -361,41 +387,44 @@ public class EspCompilerTests {
 		assertEquals(
 				"Object obj = null;\n" +
 				"includeScriptEnvironment();\n" +
-				"__body__.append(\"<script>$oobenv.myEspVar37 = \");\n" +
+				"__body__.append(\"<script>Oobium.vars.myEsp37 = \");\n" +
 				"__body__.append(j(obj));\n" +
-				"__body__.append(\";var obj = $oobenv.myEspVar37;</script>\");",
+				"__body__.append(\";var obj = Oobium.vars.myEsp37;</script>\");",
 				render("-Object obj = null;\nscript var obj = ${obj};"));
 
 		assertEquals(
 				"int width = 10;\n" +
 				"includeScriptEnvironment();\n" +
-				"__body__.append(\"<script>$oobenv.myEspVar57 = \");\n" +
+				"__body__.append(\"<script>Oobium.vars.myEsp57 = \");\n" +
 				"__body__.append(j(width * 2));\n" +
-				"__body__.append(\";var size = { height: 100, width: $oobenv.myEspVar57 };</script>\");",
+				"__body__.append(\";var size = { height: 100, width: Oobium.vars.myEsp57 };</script>\");",
 				render("-int width = 10;\nscript var size = { height: 100, width: ${width * 2} };"));
 
 		assertEquals(
 				"int var = 10;\n" +
 				"includeScriptEnvironment();\n" +
-				"__body__.append(\"<script>$oobenv.myEspVar28 = \");\n" +
+				"__body__.append(\"<script>Oobium.vars.myEsp28 = \");\n" +
 				"__body__.append(j(var));\n" +
-				"__body__.append(\";alert($oobenv.myEspVar28);</script>\");",
+				"__body__.append(\";alert(Oobium.vars.myEsp28);</script>\");",
 				render("-int var = 10;\nscript alert(${var});"));
 		
 		assertEquals(
 				"int var = 10;\n" +
 				"includeScriptEnvironment();\n" +
-				"__body__.append(\"<script>$oobenv.myEspVar29 = \");\n" +
+				"__body__.append(\"<script>Oobium.vars.myEsp29 = \");\n" +
 				"__body__.append(j(var));\n" +
-				"__body__.append(\";alert($oobenv.myEspVar29);</script>\");",
+				"__body__.append(\";alert(Oobium.vars.myEsp29);</script>\");",
 				render("-int var = 10;\nscript\n\talert(${var});"));
 		
 		assertEquals(
 				"<!DOCTYPE html><html>" +
-				"<head><script>window.$oobenv = {};</script></head>" +
+				"<head><script>\n" +
+				"window.Oobium = {};\n" +
+				"Oobium.vars = {};\n" +
+				"</script></head>" +
 				"<body><script>" +
-				"$oobenv.myEspVar28 = 10;" +
-				"alert($oobenv.myEspVar28);" +
+				"Oobium.vars.myEsp28 = 10;" +
+				"alert(Oobium.vars.myEsp28);" +
 				"</script></body>" +
 				"</html>",
 				page("-int var = 10;\nscript alert(${var});"));
@@ -403,37 +432,46 @@ public class EspCompilerTests {
 		assertEquals(
 				"String var = \"10\";\n" +
 				"includeScriptEnvironment();\n" +
-				"__body__.append(\"<script>$oobenv.myEspVar34 = \");\n" +
+				"__body__.append(\"<script>Oobium.vars.myEsp34 = \");\n" +
 				"__body__.append(j(var));\n" +
-				"__body__.append(\";alert($oobenv.myEspVar34);</script>\");",
+				"__body__.append(\";alert(Oobium.vars.myEsp34);</script>\");",
 				render("-String var = \"10\";\nscript\n\talert(${var});"));
 		
 		assertEquals(
 				"<!DOCTYPE html><html>" +
-				"<head><script>window.$oobenv = {};</script></head>" +
+				"<head><script>\n" +
+				"window.Oobium = {};\n" +
+				"Oobium.vars = {};\n" +
+				"</script></head>" +
 				"<body><script>" +
-				"$oobenv.myEspVar33 = \"10\";" +
-				"alert($oobenv.myEspVar33);" +
+				"Oobium.vars.myEsp33 = \"10\";" +
+				"alert(Oobium.vars.myEsp33);" +
 				"</script></body>" +
 				"</html>",
 				page("-String var = \"10\";\nscript alert(${var});"));
 
 		assertEquals(
 				"<!DOCTYPE html><html>" +
-				"<head><script>window.$oobenv = {};</script></head>" +
+				"<head><script>\n" +
+				"window.Oobium = {};\n" +
+				"Oobium.vars = {};\n" +
+				"</script></head>" +
 				"<body><script>" +
-				"$oobenv.myEspVar28 = {\"k\": 10};" +
-				"alert($oobenv.myEspVar28);" +
+				"Oobium.vars.myEsp28 = {\"k\": 10};" +
+				"alert(Oobium.vars.myEsp28);" +
 				"</script></body>" +
 				"</html>",
 				page("-int var = 10;\nscript alert(${\"{\\\"k\\\": 10}\"});"));
 
 		assertEquals(
 				"<!DOCTYPE html><html>" +
-				"<head><script>window.$oobenv = {};</script></head>" +
+				"<head><script>\n" +
+				"window.Oobium = {};\n" +
+				"Oobium.vars = {};\n" +
+				"</script></head>" +
 				"<body><script>" +
-				"$oobenv.myEspVar34 = true;" +
-				"alert($oobenv.myEspVar34);" +
+				"Oobium.vars.myEsp34 = true;" +
+				"alert(Oobium.vars.myEsp34);" +
 				"</script></body>" +
 				"</html>",
 				page("-boolean var = true;\nscript alert(${var});"));
