@@ -15,10 +15,29 @@ public class TypeCoercion {
 		this.object = object;
 	}
 	
+	/**
+	 * Creates a new object that represents the given object once it
+	 * has been coerced into the given type.
+	 * @param object the object to be coerced
+	 * @param type the type to coerce the object into (also the return type)
+	 * @return the new coerced object
+	 * @throws IllegalArgumentException if the type is null or there is an error coercing the given object into the given type
+	 * @throws UnsupportedOperationException if the given object cannot be coerced into the given type
+	 */
 	public <T> T to(Class<T> type) {
 		return coerce(object, type);
 	}
 	
+	/**
+	 * If the given object is not null, then creates a new object that represents the given object once it has been coerced 
+	 * into the type of the given default value; otherwise, simply returns the default value.
+	 * @param object the object to be coerced
+	 * @param defaultValue the default to use if the given object is null; also the type to coerce the object into if it is not null.
+	 * <b>This value cannot be null</b>.
+	 * @return the new coerced object, or the default value if the given object is null
+	 * @throws IllegalArgumentException if the defaultValue is null or there is an error coercing the given object into the given type
+	 * @throws UnsupportedOperationException if the given object cannot be coerced into the given type
+	 */
 	public <T> T from(T defaultValue) {
 		if(defaultValue != null) {
 			Object value = to(defaultValue.getClass());

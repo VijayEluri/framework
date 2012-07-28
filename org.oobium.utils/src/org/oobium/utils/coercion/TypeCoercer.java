@@ -118,25 +118,13 @@ public class TypeCoercer {
 		return new TypeCoercion(object);
 	}
 
-	/**
-	 * Creates a new object that represents the given object once it
-	 * has been coerced into the given type.
-	 * @param object the object to be coerced
-	 * @param type the type to coerce the object into (also the return type)
-	 * @return the new coerced object
-	 * @throws IllegalArgumentException if the type is null or there is an error coercing the given object into the given type
-	 * @throws UnsupportedOperationException if the given object cannot be coerced into the given type
-	 */
 	@SuppressWarnings("unchecked")
 	static <T> T coerce(Object object, Class<T> type) {
 		if(type == null) {
 			throw new IllegalArgumentException("type cannot be null");
 		}
 		
-		if(type.isInstance(object)) {
-			return type.cast(object);
-		}
-		else if(object == null || object.equals(EMPTY_STRING) || object.equals(NULL_STRING)) {
+		if(isNull(object)) {
 			Coercer coercer = null;
 			lock.readLock().lock();
 			try {
@@ -147,77 +135,60 @@ public class TypeCoercer {
 			if(coercer == null) {
 				return null;
 			} else {
-				// this type of cast handles Integer -> int... seems there should be a better way...
 				return (T) coercer.coerceNull(type);
 			}
 		}
-		else {
-			Coercer coercer = null;
-			Method method = null;
-			lock.readLock().lock();
-			try {
-				coercer = getCoercer(type);
-				if(coercer != null) {
-					// methods are added per coercer: next line should never return null
-					Map<Class<?>, Method> map = methods.get(coercer);
-					method = map.get(object.getClass());
-					if(method == null) {
-						// there is no specific method, try for a generic coerce(Object) method
-						method = map.get(Object.class);
-					}
-				}
-			} finally {
-				lock.readLock().unlock();
-			}
-			if(coercer == null) {
-				if(object instanceof String) {
-					Object value = deserialize((String) object);
-					if(value != null && type.isAssignableFrom(value.getClass())) {
-						return (T) value;
-					}
-				}
-				throw new UnsupportedOperationException("no coercer for type " + type.getName());
-			} else if(methods == null) {
-				throw new UnsupportedOperationException(coercer.getClass().getName() + " can not coerce type " + object.getClass().getName() + " to type "+ type.getName());
-			} else {
-				try {
-					return (T) (method.invoke(coercer, object, type));
-				} catch(ClassCastException e) {
-					throw new UnsupportedOperationException(method + " in " + coercer.getClass().getName() + " does not return a type " + type.getName());
-				} catch(UnsupportedOperationException e) {
-					throw new UnsupportedOperationException(coercer.getClass().getName() + " can not coerce type " + object.getClass().getName() + " to type "+ type.getName());
-				} catch(IllegalArgumentException e) {
-					throw e;
-				} catch(IllegalAccessException e) {
-					throw new IllegalArgumentException(coercer.getClass().getName() + " can not coerce type " + object.getClass().getName() + " to type "+ type.getName(), e);
-				} catch(InvocationTargetException e) {
-					throw new IllegalArgumentException(coercer.getClass().getName() + " can not coerce type " + object.getClass().getName() + " to type "+ type.getName(), e);
-				}
-			}
+		
+		if(type.isInstance(object)) {
+			return type.cast(object);
 		}
-	}
-
-	/**
-	 * If the given object is not null, then creates a new object that represents the given object once it has been coerced 
-	 * into the type of the given default value; otherwise, simply returns the default value.
-	 * @param object the object to be coerced
-	 * @param defaultValue the default to use if the given object is null; also the type to coerce the object into if it is not null.
-	 * <b>This value cannot be null</b>.
-	 * @return the new coerced object, or the default value if the given object is null
-	 * @throws IllegalArgumentException if the defaultValue is null or there is an error coercing the given object into the given type
-	 * @throws UnsupportedOperationException if the given object cannot be coerced into the given type
-	 */
-	@SuppressWarnings("unchecked")
-	static <T> T coerce(Object object, T defaultValue) {
-		if(defaultValue != null) {
-			Object value = coerce(object, defaultValue.getClass());
-			if(value != null && defaultValue.getClass().isAssignableFrom(value.getClass())) {
-				return (T) value;
-			} else {
-				return defaultValue;
+		
+		Coercer coercer = null;
+		Method method = null;
+		
+		lock.readLock().lock();
+		try {
+			coercer = getCoercer(type);
+			if(coercer != null) {
+				// methods are added per coercer: next line should never return null
+				Map<Class<?>, Method> map = methods.get(coercer);
+				method = map.get(object.getClass());
+				if(method == null) {
+					// there is no specific method, try for a generic coerce(Object) method
+					method = map.get(Object.class);
+				}
 			}
+		} finally {
+			lock.readLock().unlock();
 		}
-		throw new IllegalArgumentException("defaultValue cannot be null");
+		
+		if(coercer == null) {
+			if(object instanceof String) {
+				Object value = deserialize((String) object);
+				if(value != null && type.isAssignableFrom(value.getClass())) {
+					return (T) value;
+				}
+			}
+			throw new UnsupportedOperationException("no coercer for type " + type.getName());
+		}
+		
+		if(methods == null) {
+			throw new UnsupportedOperationException(coercer.getClass().getName() + " can not coerce type " + object.getClass().getName() + " to type "+ type.getName());
+		}
+		
+		try {
+			return (T) (method.invoke(coercer, object, type));
+		} catch(ClassCastException e) {
+			throw new UnsupportedOperationException(method + " in " + coercer.getClass().getName() + " does not return a type " + type.getName());
+		} catch(UnsupportedOperationException e) {
+			throw new UnsupportedOperationException(coercer.getClass().getName() + " can not coerce type " + object.getClass().getName() + " to type "+ type.getName());
+		} catch(IllegalArgumentException e) {
+			throw e;
+		} catch(IllegalAccessException e) {
+			throw new IllegalArgumentException(coercer.getClass().getName() + " can not coerce type " + object.getClass().getName() + " to type "+ type.getName(), e);
+		} catch(InvocationTargetException e) {
+			throw new IllegalArgumentException(coercer.getClass().getName() + " can not coerce type " + object.getClass().getName() + " to type "+ type.getName(), e);
+		}
 	}
 	
 	private static Coercer getCoercer(Class<?> type) {
@@ -234,6 +205,13 @@ public class TypeCoercer {
 			}
 		}
 		return coercer;
+	}
+
+	private static boolean isNull(Object object) {
+		if(object == null) return true;
+		if(object.equals(EMPTY_STRING)) return true;
+		if(object.equals(NULL_STRING)) return true;
+		return false;
 	}
 
 
