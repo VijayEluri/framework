@@ -11,9 +11,9 @@ $(document).ready(function() {
 		var editor = null;
 		var trigger = null;
 		
-		this.bind = function(element) {
+		this.bind = function(element, model) {
 			element = $(element);
-			var model = Bnd.getModel(element);
+			model = model || Bnd.getModel(element);
 			element.data('model', model);
 			if(element.attr('onclick')) {
 				eval("var action = function(event, model) {" + element.attr('onclick') + "}")
@@ -21,7 +21,11 @@ $(document).ready(function() {
 					action.apply(this, [event, model]);
 				});
 			}
-			bindChildren(model, element);
+			var tag = element[0].tagName.toLowerCase();
+			if(tag != 'a' || tag != 'button' || tag != 'link') {
+				bindChildren(model, element);
+			}
+			return model
 		};
 		
 		var bindChild = function(model, e) {
