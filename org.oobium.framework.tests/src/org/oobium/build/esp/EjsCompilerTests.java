@@ -73,21 +73,21 @@ public class EjsCompilerTests extends BaseEspTester {
 	@Test
 	public void testWithJavaParts() throws Exception {
 		assertEquals(
-				"__body__.append(\"Oobium.myEjsVar13 = \");\n" +
+				"__body__.append(\"Oobium.vars.myEjs13 = \");\n" +
 				"__body__.append(j(width * 2));\n" +
 				"__body__.append(\";\");",
 				render("var height = ${width * 2};"));
 		assertEquals(
-				"var height = Oobium.myEjsVar13;",
+				"var height = Oobium.vars.myEjs13;",
 				asset("var height = ${width * 2};"));
 
 		assertEquals(
-				"__body__.append(\"Oobium.myEjsVar0 = \");\n" +
+				"__body__.append(\"Oobium.vars.myEjs0 = \");\n" +
 				"__body__.append(j(callMethod()));\n" +
 				"__body__.append(\";\");",
 				render("${callMethod()}"));
 		assertEquals(
-				"Oobium.myEjsVar0",
+				"Oobium.vars.myEjs0",
 				asset("${callMethod()}"));
 
 	}
@@ -96,22 +96,22 @@ public class EjsCompilerTests extends BaseEspTester {
 	public void testWithJavaLines() throws Exception {
 		assertEquals(
 				"int width = 10;\n" +
-				"__body__.append(\"Oobium.myEjsVar50 = \");\n" +
+				"__body__.append(\"Oobium.vars.myEjs50 = \");\n" +
 				"__body__.append(j(width * 2));\n" +
 				"__body__.append(\";\");",
 				render("-int width = 10;\nvar size = { height: 100, width: ${width * 2} };"));
 		assertEquals(
-				"var size = { height: 100, width: Oobium.myEjsVar50 };",
+				"var size = { height: 100, width: Oobium.vars.myEjs50 };",
 				asset("-int width = 10;\nvar size = { height: 100, width: ${width * 2} };"));
 
 		assertEquals(
 				"String msg = \"hello\";\n" +
-				"__body__.append(\"Oobium.myEjsVar30 = \");\n" +
+				"__body__.append(\"Oobium.vars.myEjs30 = \");\n" +
 				"__body__.append(j(msg));\n" +
 				"__body__.append(\";\");",
 				render("-String msg = \"hello\";\n\nalert(${msg});"));
 		assertEquals(
-				"alert(Oobium.myEjsVar30);",
+				"alert(Oobium.vars.myEjs30);",
 				asset("-String msg = \"hello\";\n\nalert(${msg});"));
 	}
 
