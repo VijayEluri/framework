@@ -76,6 +76,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 		case MarkupId:          return computeCssSelectorProposals(part, offset);
 		case MarkupClass:       return computeCssSelectorProposals(part, offset);
 		case MethodArg:         return computeVarNameProposals(part, offset);
+		case ScriptPart:		return computeDynAssetProposals(doc, part, offset);
 		case StylePropertyName: return computeStylePropertyNameProposals(part, offset);
 		case VarName:           return computeVarNameProposals(part, offset);
 		default:                return new ArrayList<ICompletionProposal>(0);
@@ -399,6 +400,86 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 			}
 		}
 		return new ArrayList<ICompletionProposal>(0);
+	}
+
+	private List<ICompletionProposal> computeDynAssetProposals(IDocument doc, EspPart part, int offset) {
+		EspDom dom = part.getDom();
+		String imp = "import";
+		String ctor = dom.getSimpleName();
+		List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
+		try {
+			int lineStart = doc.getLineOffset(doc.getLineOfOffset(offset));
+			if(dom.hasParts()) {
+				EspPart next = dom.getNextSubPart(offset);
+				if(next != null) {
+					if(next.getElement().isA(ImportElement)) {
+						if(offset == lineStart) {
+							Image image = JavaUI.getSharedImages().getImage(ISharedImages.IMG_OBJS_PACKAGE);
+							EspCompletionProposal proposal = new EspCompletionProposal("import ", offset, 0, 7, image, "import", null, "add a new import statement");
+							proposal.setRelevance(100);
+							proposals.add(proposal);
+						}
+						return proposals;
+					}
+					if(next.getElement().isA(Constructor)) {
+						if(offset == lineStart) {
+							Image image = JavaUI.getSharedImages().getImage(ISharedImages.IMG_OBJS_PACKAGE);
+							EspCompletionProposal proposal = new EspCompletionProposal("import ", offset, 0, 7, image, "import", null, "add a new import statement");
+							proposal.setRelevance(100);
+							proposals.add(proposal);
+							image = EspPlugin.getImage(EspPlugin.IMG_CTOR);
+							proposal = new EspCompletionProposal(ctor, offset, 0, ctor.length(), image, ctor, null, "add a new constructor");
+							proposal.setRelevance(90);
+							proposals.add(proposal);
+						}
+						return proposals;
+					}
+				}
+				int i = 0;
+				List<EspPart> parts = dom.getParts();
+				while(i < parts.size() && parts.get(i).getEnd() < offset) {
+					if(!parts.get(i).isA(ImportElement)) {
+						imp = null;
+						break;
+					}
+					i++;
+				}
+				while(i < parts.size() && parts.get(i).getEnd() < offset) {
+					if(!parts.get(i).isA(Constructor)) {
+						ctor = null;
+						break;
+					}
+					i++;
+				}
+			}
+			if(offset == lineStart) {
+				if(imp != null) {
+					Image image = JavaUI.getSharedImages().getImage(ISharedImages.IMG_OBJS_PACKAGE);
+					EspCompletionProposal proposal = new EspCompletionProposal("import ", offset, 0, 7, image, "import", null, "add a new import statement");
+					proposal.setRelevance(100);
+					proposals.add(proposal);
+				}
+				if(ctor != null) {
+					Image image = EspPlugin.getImage(EspPlugin.IMG_CTOR);
+					EspCompletionProposal proposal = new EspCompletionProposal(ctor, offset, 0, ctor.length(), image, ctor, null, "add a new constructor");
+					proposal.setRelevance(90);
+					proposals.add(proposal);
+				}
+			} else {
+				String s = dom.subSequence(lineStart, offset).toLowerCase();
+				if(imp != null && "import".startsWith(s)) {
+					Image image = JavaUI.getSharedImages().getImage(ISharedImages.IMG_OBJS_PACKAGE);
+					proposals.add(new EspCompletionProposal("import ", lineStart, offset-lineStart, 7, image, "import", null, "add a new import statement"));
+				} else if(ctor != null && ctor.toLowerCase().startsWith(s)) {
+					Image image = EspPlugin.getImage(EspPlugin.IMG_CTOR);
+					proposals.add(new EspCompletionProposal(ctor+"()", lineStart, offset-lineStart, ctor.length()+1, image, ctor, null, "add a new constructor"));
+				}
+			}
+		} catch(BadLocationException e) {
+			e.printStackTrace();
+		}
+
+		return proposals;
 	}
 
 	private List<ICompletionProposal> computeStylePropertyNameProposals(EspPart part, int offset) {
