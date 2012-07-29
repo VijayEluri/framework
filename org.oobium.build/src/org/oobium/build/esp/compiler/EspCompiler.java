@@ -1153,7 +1153,11 @@ public class EspCompiler {
 					indent(body);
 					body.append("\tyield(new ");
 					build(view.getJavaType(), body);
-					body.append('(').append(var).append("));\n");
+					body.append('(').append(var).append(')');
+					if(captureElement != null) {
+						body.append(", ").append(sbName);
+					}
+					body.append(");\n");
 					indent(body);
 					body.append("}\n");
 					
@@ -1169,10 +1173,17 @@ public class EspCompiler {
 						build(iter.next(), body);
 						if(iter.hasNext()) body.append(',').append(' ');
 					}
-					body.append("));\n");
+					body.append(')');
+					if(captureElement != null) {
+						body.append(", ").append(sbName);
+					}
 				} else {
-					body.append("());\n");
+					body.append("()");
+					if(captureElement != null) {
+						body.append(", ").append(sbName);
+					}
 				}
+				body.append(");\n");
 				inJava = true;
 			}
 		}

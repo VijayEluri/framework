@@ -671,13 +671,16 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 	}
 	
 	protected void yield(View view, StringBuilder __body__) {
-		try {
-			render(new StringBuilder(0), __body__);
-		} catch(Exception e) {
-			if(e instanceof RuntimeException) {
-				throw (RuntimeException) e;
-			} else {
-				throw new RuntimeException("Exception thrown during render", e);
+		if(view != null) {
+			try {
+				view.setRenderer(renderer);
+				view.render(new StringBuilder(0), __body__);
+			} catch(Exception e) {
+				if(e instanceof RuntimeException) {
+					throw (RuntimeException) e;
+				} else {
+					throw new RuntimeException("Exception thrown during render", e);
+				}
 			}
 		}
 	}

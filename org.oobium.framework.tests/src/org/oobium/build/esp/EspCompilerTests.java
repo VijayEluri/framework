@@ -1909,6 +1909,13 @@ public class EspCompilerTests {
 					 "test$6 = null;\n" +
 					 "__body__.append(\"<div>3</div>\");",
 				render("div 1\ncapture(test)\n\tdiv 2\ndiv 3"));
+
+		assertEquals("StringBuilder test$0 = new StringBuilder();\n" +
+				 "yield(new MyView(), test$0);\n" +
+				 "String test = test$0.toString();\n" +
+				 "test$0 = null;",
+			render("capture(test) <- view<MyView>"));
+
 	}
 	
 	@Test
