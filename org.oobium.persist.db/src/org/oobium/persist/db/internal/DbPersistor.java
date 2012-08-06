@@ -900,6 +900,35 @@ public class DbPersistor {
 		}
 	}
 
+	public List<Object> executeQueryValues(String sql, Object... values) throws SQLException {
+		if(logger.isLoggingDebug()) {
+			logger.debug("start executeQueryValues: " + sql + join(" [", values, "]", ", "));
+		}
+
+		Statement s = null;
+		try {
+			ResultSet rs;
+			if(values.length == 0) {
+				s = connection.createStatement();
+				rs = s.executeQuery(sql);
+			} else {
+				PreparedStatement ps = (PreparedStatement) (s = connection.prepareStatement(sql));
+				setStatementValues(ps, values);
+				rs = ps.executeQuery();
+			}
+			List<Object> results = new ArrayList<Object>();
+			while(rs.next()) {
+				results.add(SqlUtils.getValue(rs, 1));
+			}
+			return results;
+		} finally {
+			logger.debug("end executeQueryValue");
+			if(s != null) {
+				s.close();
+			}
+		}
+	}
+
 	public int executeUpdate(String sql, Object... values) throws SQLException {
 		PreparedStatement ps = null;
 		ResultSet rs = null;

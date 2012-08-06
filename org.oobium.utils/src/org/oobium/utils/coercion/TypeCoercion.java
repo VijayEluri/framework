@@ -31,12 +31,14 @@ public class TypeCoercion {
 	/**
 	 * If the given object is not null, then creates a new object that represents the given object once it has been coerced 
 	 * into the type of the given default value; otherwise, simply returns the default value.
+	 * <p>Synonym of {@link #with(Object)}; these semantics work better in some cases.</p>
 	 * @param object the object to be coerced
 	 * @param defaultValue the default to use if the given object is null; also the type to coerce the object into if it is not null.
 	 * <b>This value cannot be null</b>.
 	 * @return the new coerced object, or the default value if the given object is null
 	 * @throws IllegalArgumentException if the defaultValue is null or there is an error coercing the given object into the given type
 	 * @throws UnsupportedOperationException if the given object cannot be coerced into the given type
+	 * @see #with(Object)
 	 */
 	public <T> T from(T defaultValue) {
 		if(defaultValue != null) {
@@ -90,5 +92,13 @@ public class TypeCoercion {
 		Map<K, V> coercedMap = (Map<K, V>) map;
 		return coercedMap;
 	}
-	
+
+	/**
+	 * Synonym of {@link #from(Object)}; these semantics work better in some cases.
+	 * @see #from(Object)
+	 */
+	public <T> T with(T defaultValue) {
+		return from(defaultValue);
+	}
+
 }

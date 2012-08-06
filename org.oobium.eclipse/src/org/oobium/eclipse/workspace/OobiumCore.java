@@ -246,7 +246,7 @@ public class OobiumCore {
 			if(bundle instanceof Module) {
 				Workspace workspace = OobiumPlugin.getWorkspace();
 				Module module = (Module) bundle;
-				List<File> modified = module.generateModel(workspace, model);
+				List<File> modified = module.generateModel(workspace, model, false);
 				if(module.isApplication()) {
 					File schema = ((Application) module).createInitialMigration(workspace, workspace.getMode());
 					if(schema != null) { // there might not be a migrator project

@@ -52,6 +52,10 @@ public class JQueryClientGenerator {
 				sb.append("\tname:   '").append(varName(name)).append("',\n");
 				sb.append("\tmodels: '").append(tableName(name)).append("'\n");
 				sb.append("});\n");
+				sb.append("\n");
+				sb.append(name).append(".create = function(data) {\n");
+				sb.append("\treturn new ").append(name).append("().set(data);\n");
+				sb.append("};\n");
 			}
 		}
 		

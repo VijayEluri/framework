@@ -17,18 +17,15 @@ $(document).ready(function() {
 			element.data('model', model);
 			if(element.attr('onclick')) {
 				eval("var action = function(event, model) {" + element.attr('onclick') + "}")
-				element.removeAttr('onclick').click(function(event) {
-					action.apply(this, [event, model]);
+				element.removeAttr('onclick').unbind('click').bind('click', function(event) {
+					return action.apply(this, [event, model]);
 				});
 			}
-			var tag = element[0].tagName.toLowerCase();
-			if(tag != 'a' || tag != 'button' || tag != 'link') {
-				bindChildren(model, element);
-			}
+			bindFields(model, element);
 			return model
 		};
 		
-		var bindChild = function(model, e) {
+		var bindField = function(model, e) {
 			e.data('model', model);
 
 			model.addCallback(function(m,d) {
@@ -43,16 +40,16 @@ $(document).ready(function() {
 			}
 		};
 
-		var bindChildren = function(model, element) {
+		var bindFields = function(model, element) {
 			element.children().each(function() {
 				var e = $(this);
 				if(e.attr('data-model')) {
 					return;
 				}
 				if(e.attr('data-field')) {
-					bindChild(model, e);
+					bindField(model, e);
 				}
-				bindChildren(model, e);
+				bindFields(model, e);
 			})
 		};
 
@@ -292,8 +289,9 @@ $(document).ready(function() {
 		};
 
 		this.getModel = function(element) {
-			if( ! element) return null;
+			if( ! element || element == window) return null;
 			element = $(element);
+			if(element.length == 0) return null;
 			if( ! element.attr('data-model')) {
 				return this.getModel(element.closest('[data-model]'))
 			}
@@ -376,6 +374,11 @@ $(document).ready(function() {
 			this.setLabel(element, this.getLabel(element), overwrite);
 		};
 		
+	}
+	
+	Oobium.Model.prototype.bind = function(element) {
+		Bnd.bind(element, this);
+		return this;
 	}
 	
 }).call(this);

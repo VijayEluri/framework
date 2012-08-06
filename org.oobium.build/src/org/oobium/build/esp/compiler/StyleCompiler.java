@@ -151,6 +151,7 @@ public class StyleCompiler extends AssetCompiler {
 			sb.append('}');
 		}
 		if(ruleset.hasNestedRules()) {
+			// TODO fix EssTests test here
 			for(Ruleset nested : ruleset.getNestedRules()) {
 				buildStyleRuleset(nested, sb);
 			}

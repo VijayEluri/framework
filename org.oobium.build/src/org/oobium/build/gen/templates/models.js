@@ -104,11 +104,13 @@
 			}
 			startTimer();
 			var op;
-			for(var i in operations) {
-				var r = operations[i].req;
-				if(r.type == request.type && r.url == request.url) {
-					op = operations[i];
-					break;
+			if(request.type == 'PUT') {
+				for(var i in operations) {
+					var r = operations[i].req;
+					if(r.type == request.type && r.url == request.url) {
+						op = operations[i];
+						break;
+					}
 				}
 			}
 			if(op) {
@@ -205,6 +207,15 @@
 		
 	};
 	
+	Sync.Promise = function(dfd, model) {
+		var promise = dfd.promise();
+		promise.commit = function() {
+			Sync.commit();
+			return model;
+		}
+		return promise;
+	};
+
 	
 	var Model = Oobium.Model = function(type) {
 		var type = type;
@@ -231,19 +242,7 @@
 
 		this.addCallback = function(callback) {
 			callbacks.add(callback);
-		}
-		
-		this.get = function(field) {
-			return data[field];
 		};
-
-		this.getId = function() {
-			return id;
-		}
-
-		this.getType = function() {
-			return type;
-		}
 
 		/**
 		 * @return a Promise object
@@ -263,7 +262,7 @@
 					dfd.resolve(model);
 				})
 				.fail(function(data) { dfd.reject(model, data); });
-			return dfd.promise();
+			return Sync.Promise(dfd, this);
 		};
 
 		/**
@@ -272,7 +271,7 @@
 		this.destroy = function() {
 			var dfd = $.Deferred();
 			if(this.isNew()) {
-				data = null;
+				data = {};
 				dfd.resolve(this);
 			} else {
 				var request = {
@@ -281,16 +280,29 @@
 						dataType: 'json'
 				};
 				var prevId = id;
-				id = data = null;
+				id = null;
+				data = {};
 				$.ajax(request)
 					.done(function() { dfd.resolve(prevId) })
 					.fail(function(data) { dfd.reject(prevId, data) });
 			}
-			return dfd.promise();
+			return Sync.Promise(dfd, this);
 		};
 		
 		this.equals = function(otherModel) {
 			return (id && type == otherModel.getType()) && (id == otherModel.getId());
+		};
+		
+		this.get = function(field) {
+			return data[field];
+		};
+
+		this.getId = function() {
+			return id;
+		};
+
+		this.getType = function() {
+			return type;
 		};
 
 		this.isNew = function() {
@@ -310,7 +322,7 @@
 			};
 			$.ajax(request)
 				.done(function(data) {
-					model.data = data;
+					model.set(data);
 					dfd.resolve(model);
 					callbacks.fire(this, $.extend({}, model.data));
 				})
@@ -331,11 +343,11 @@
 					var c = {}; c[a] = b; a = c;
 				}
 				if(a.hasOwnProperty('id')) {
-					this.setId(a.id); delete a.id;
+					this.setId(a.id);
 				}
 				var changes = {};
 				for(var key in a) {
-					if(a.hasOwnProperty(key)) {
+					if(key != 'id' && a.hasOwnProperty(key)) {
 						var val = a[key];
 						if(typeof val == 'string' && val.indexOf('/Date(') == 0) {
 							changes[key] = data[key] = new Date(parseInt(val.substring(6, val.length-2)));
@@ -356,7 +368,6 @@
 				} else {
 					id = newId;
 				}
-				callbacks.empty();
 			}
 			return this;
 		};
@@ -365,13 +376,18 @@
 		 * @return a Promise object
 		 */
 		this.update = function() {
+			var dfd = $.Deferred();
+			var model = this;
 			var request = {
 					type: Router.getMethod('update', this),
 					url: Router.getPath('update', this),
 					data: asJsonData(),
 					dataType: 'json'
 			};
-			return Sync.auto() ? Sync.add(request) : $.ajax(request).promise();
+			(Sync.auto() ? Sync.add(request) : $.ajax(request))
+				.done(function(data, status, xhr) { dfd.resolve(model); })
+				.fail(function(data) { dfd.reject(model, data); });
+			return Sync.Promise(dfd, this);
 		};
 		
 	}
@@ -381,8 +397,9 @@
 			Oobium.Model.call(this, options.type);
 		}
 		F.prototype = Oobium.Model.prototype;
-		F.find = function(id) { return Oobium.Model.find(options.type, id); }
-		F.findAll = function() { return Oobium.Model.findAll(options.type); }
+		F.find = function(query, values) { return Oobium.Model.find(options.type, query, values); }
+		F.findAll = function(query, values) { return Oobium.Model.findAll(options.type, query, values); }
+		F.findById = function(id) { return Oobium.Model.find(options.type, id); }
 		Model.types = Model.types || {};
 		Model.types[options.type] = {'name': options.name, 'models': options.models};
 		return F;
@@ -391,7 +408,47 @@
 	/**
 	 * @return a Promise object
 	 */
-	Model.find = function(type, id) {
+	Model.find = function(type, query, values) {
+		var dfd = $.Deferred();
+		var request = {};
+		request.type = Router.getMethod('show', type);
+		request.url = Router.getPath('show', type, id);
+		request.dataType = 'json';
+		request.dataType = {'query': query, 'values': values};
+		$.ajax(request)
+			.done(function(data) { dfd.resolve(Model.newInstance(type, data)); })
+			.fail(function(data) { dfd.reject(data); });
+		return dfd.promise();
+	}
+	
+	/**
+	 * @return a Promise object
+	 */
+	Model.findAll = function(type, query, values) {
+		var dfd = $.Deferred();
+		var request = {};
+		request.type = Router.getMethod('showAll', type);
+		request.url = Router.getPath('showAll', type);
+		request.dataType = 'json';
+		request.data = {'query': query, 'values': values};
+		$.ajax(request)
+			.done(function(data, status, xhr) {
+				var models = [];
+				for(var i in data) {
+					var model = Model.newInstance(type, data[i]);
+					Cache.put(model);
+					models.push(model);
+				}
+				dfd.resolve(models);
+			})
+			.fail(function(data) { dfd.reject(data); });
+		return dfd.promise();
+	}
+	
+	/**
+	 * @return a Promise object
+	 */
+	Model.findById = function(type, id) {
 		var dfd = $.Deferred();
 		var model = Cache.get(type, id);
 		if(model) {
@@ -405,29 +462,6 @@
 				.done(function(data) { dfd.resolve(Model.newInstance(type, data)); })
 				.fail(function(data) { dfd.reject(data); });
 		}
-		return dfd.promise();
-	}
-	
-	/**
-	 * @return a Promise object
-	 */
-	Model.findAll = function(type) {
-		var dfd = $.Deferred();
-		var request = {};
-		request.type = Router.getMethod('showAll', type);
-		request.url = Router.getPath('showAll', type);
-		request.dataType = 'json';
-		$.ajax(request)
-			.done(function(data, status, xhr) {
-				var models = [];
-				for(var i in data) {
-					var model = Model.newInstance(type, data[i]);
-					Cache.put(model);
-					models.push(model);
-				}
-				dfd.resolve(models);
-			})
-			.fail(function(data) { dfd.reject(data); });
 		return dfd.promise();
 	}
 	

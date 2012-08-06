@@ -94,7 +94,7 @@ class UpdaterThread extends Thread {
 	
 	private volatile boolean running;
 	private volatile boolean paused;
-	private volatile boolean migratorPaused;
+	private volatile boolean autoMigrating;
 
 	private final Object waitLock;
 	private Map<Bundle, Set<File>> waitFor;
@@ -221,7 +221,7 @@ class UpdaterThread extends Thread {
 	}
 	
 	public boolean isAutoMigrating() {
-		return !migratorPaused;
+		return autoMigrating;
 	}
 
 	public void paused(boolean paused) {
@@ -230,7 +230,7 @@ class UpdaterThread extends Thread {
 
 	public void paused(boolean paused, boolean migratorOnly) {
 		if(migratorOnly) {
-			this.migratorPaused = paused;
+			this.autoMigrating = !paused;
 		} else {
 			this.paused = true;
 		}
@@ -282,7 +282,7 @@ class UpdaterThread extends Thread {
 					Bundle update = workspace.export(application, bundle);
 					logger.debug("updating {} ({} < {})", update, modified, lastModified);
 					bundles.put(bundle, lastModified);
-					if(!migratorPaused && update.isMigrator() && reMigListener == null) {
+					if(autoMigrating && update.isMigrator() && reMigListener == null) {
 						reMigListener = new ReMigrateListener();
 						RunnerService.addListener(reMigListener);
 					}

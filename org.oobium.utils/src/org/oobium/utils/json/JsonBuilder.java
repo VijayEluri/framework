@@ -89,6 +89,23 @@ public class JsonBuilder {
 		return sb.toString();
 	}
 
+	private String asEscapedString(Object value) {
+		char[] ca = value.toString().toCharArray();
+		StringBuilder sb = new StringBuilder(ca.length + 10);
+		sb.append('"');
+		for(int i = 0; i < ca.length; i++) {
+			switch(ca[i]) {
+			case '\\':	if(i == 0 || ca[i] != '\\') { sb.append("\\\\"); } break;
+			case '"':	if(i == 0 || ca[i] != '\\') { sb.append("\\\""); } break;
+			case '\t':	if(i == 0 || ca[i] != '\\') { sb.append("\\t"); } break;
+			case '\n':  if(i == 0 || ca[i] != '\\') { sb.append("\\n"); } break;
+			default:	sb.append(ca[i]); break;
+			}
+		}
+		sb.append('"');
+		return sb.toString();
+	}
+	
 	public String toJson(Object value) {
 		if(converter != null) {
 			value = converter.convert(value);
@@ -102,7 +119,8 @@ public class JsonBuilder {
 					((s.charAt(0) == '"' && s.charAt(s.length()-1) == '"') || (s.charAt(0) == '\'' && s.charAt(s.length()-1) == '\''))) {
 				return s;
 			}
-			return "\"" + value.toString().replaceAll("\\\\", "\\\\\\\\").replaceAll("\"", "\\\\\"") + "\"";
+//			return "\"" + value.toString().replaceAll("\\\\", "\\\\\\\\").replaceAll("\"", "\\\\\"") + "\"";
+			return asEscapedString(value);
 		}
 		if(value instanceof Character) {
 			return "'" + value + "'";

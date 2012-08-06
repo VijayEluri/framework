@@ -34,11 +34,10 @@ import org.oobium.utils.json.JsonParser;
 
 public class JsonUtilsTests {
 
-	private static class EmptyTestClass {
+	static class EmptyTestClass {
 	}
 	
-	@SuppressWarnings("unused")
-	private static class TestClass {
+	static class TestClass {
 		public static String StaticField = "static field";
 		public static String getStaticMethod() { return "static method"; }
 		public String publicField = "public field";

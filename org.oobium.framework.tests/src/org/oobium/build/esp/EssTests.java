@@ -161,7 +161,26 @@ public class EssTests {
 	}
 
 	@Test
-	public void testMultipleNested() throws Exception {
+	public void testNested_Combined() throws Exception {
+		String css =
+				"#header,#footer{}" +
+				"#header .class1{color:red}" +
+				"#header .class2{color:green}" +
+				"#footer .class1{color:red}" +
+				"#footer .class2{color:green}";
+
+		String ess =
+				("#header, #footer\n" +
+				 "  .class1\n" +
+				 "    color: red\n" +
+				 "  .class2\n" +
+				 "    color: green").replace("  ", "\t");
+
+		assertEquals(css, css(ess));
+	}
+
+	@Test
+	public void testNested_Multiple() throws Exception {
 		String css =
 				"#header{}" +
 				"#header .class1{color:red}" +

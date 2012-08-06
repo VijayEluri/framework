@@ -292,6 +292,12 @@ public abstract class DbPersistService implements BundleActivator, PersistServic
 		return persistor.executeQueryValue(sql, values);
 	}
 	
+	public List<Object> executeQueryValues(String sql, Object...values) throws SQLException {
+		Connection connection = getConnection();
+		DbPersistor persistor = new DbPersistor(connection);
+		return persistor.executeQueryValues(sql, values);
+	}
+	
 	public int executeUpdate(String sql, Object... values) throws SQLException {
 		Connection connection = getConnection();
 		DbPersistor persistor = new DbPersistor(connection);

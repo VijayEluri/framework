@@ -1153,11 +1153,7 @@ public class EspCompiler {
 					indent(body);
 					body.append("\tyield(new ");
 					build(view.getJavaType(), body);
-					body.append('(').append(var).append(')');
-					if(captureElement != null) {
-						body.append(", ").append(sbName);
-					}
-					body.append(");\n");
+					body.append('(').append(var).append(')').append(", ").append(sbName).append(");\n");
 					indent(body);
 					body.append("}\n");
 					
@@ -1174,16 +1170,10 @@ public class EspCompiler {
 						if(iter.hasNext()) body.append(',').append(' ');
 					}
 					body.append(')');
-					if(captureElement != null) {
-						body.append(", ").append(sbName);
-					}
 				} else {
 					body.append("()");
-					if(captureElement != null) {
-						body.append(", ").append(sbName);
-					}
 				}
-				body.append(");\n");
+				body.append(", ").append(sbName).append(");\n");
 				inJava = true;
 			}
 		}
@@ -1196,25 +1186,15 @@ public class EspCompiler {
 			if(element.hasArgs()) {
 				body.append("yield(");
 				build(element.getArg(0), body);
-				if(captureElement != null) {
-					body.append(", ").append(sbName);
-				}
-				body.append(");\n");
+				body.append(", ");
 			} else {
 				body.append("yield(");
-				if(captureElement != null) {
-					body.append(sbName);
-				}
-				body.append(");\n");
 			}
 		} else {
 			body.append("yield(");
-			if(captureElement != null) {
-				body.append(sbName);
-			}
-			body.append(");\n");
 		}
-
+		body.append(sbName).append(");\n");
+		
 		inJava = true;
 	}
 	

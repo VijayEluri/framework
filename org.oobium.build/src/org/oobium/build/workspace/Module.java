@@ -1179,10 +1179,10 @@ public class Module extends Bundle {
 	
 	/**
 	 * Generate the super class for the given model file.  This is a convenience method that
-	 * simply calls <code>generateModel(model, true)</code>.
+	 * simply calls <code>generateModel(workspace, model, true)</code>.
 	 * @param model the model file whose super class is to generated
 	 * @return a File object for the generated Java file, if it was generated; an empty list otherwise - never null.
-	 * @see Module#generateModel(File, boolean)
+	 * @see Module#generateModel(Workspace, File, boolean)
 	 */
 	public List<File> generateModel(Workspace workspace, File model) {
 		return generateModel(workspace, model, true);
