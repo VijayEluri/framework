@@ -223,11 +223,11 @@
 		var data = {};
 		var callbacks = $.Callbacks();
 
-		var asJsonData = function() {
+		var asJsonData = function(fields) {
 			var json = {};
 			for(var key in data) {
-				if(data.hasOwnProperty(key)) {
-					var val = data[key];				
+				if(isJsonField(data, key, fields)) {
+					var val = data[key];
 					if(val instanceof Date) {
 						json[key] = '/Date(' + val.getTime() + ')/';
 					} else {
@@ -238,6 +238,18 @@
 			var jsonData = {};
 			jsonData[Model.types[type].name] = json;
 			return jsonData;
+		};
+		
+		var isJsonField = function(data, key, fields) {
+			if(fields) {
+				if(key == fields) return true;
+				for(var i = 0; i < fields.length; i++) {
+					if(key == fields[i]) return true;
+				}
+				return false;
+			} else {
+				return data.hasOwnProperty(key);
+			}
 		};
 
 		this.addCallback = function(callback) {
@@ -375,13 +387,13 @@
 		/**
 		 * @return a Promise object
 		 */
-		this.update = function() {
+		this.update = function(fields) {
 			var dfd = $.Deferred();
 			var model = this;
 			var request = {
 					type: Router.getMethod('update', this),
 					url: Router.getPath('update', this),
-					data: asJsonData(),
+					data: asJsonData(fields),
 					dataType: 'json'
 			};
 			(Sync.auto() ? Sync.add(request) : $.ajax(request))

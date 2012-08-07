@@ -28,8 +28,11 @@ $(document).ready(function() {
 		var bindField = function(model, e) {
 			e.data('model', model);
 
+			var field = Bnd.getField(e);
 			model.addCallback(function(m,d) {
-				Bnd.updateLabel(e);
+				if(d[field]) {
+					Bnd.updateLabel(e);
+				}
 			});
 			Bnd.updateLabel(e, false);
 
@@ -78,7 +81,7 @@ $(document).ready(function() {
 				var oldValue = model.get(field);
 				var newValue = convertToModelValue(model, field, value, options);
 				if(notEqual(newValue, oldValue)) {
-					model.set(field, newValue).save();
+					model.set(field, newValue).update(field);
 				}
 
 				this.close();
@@ -367,7 +370,7 @@ $(document).ready(function() {
 			var field = this.getField(element);
 			var opts = this.getOptions(element);
 			model.set(field, convertToModelValue(model, field, value, options));
-			model.save();
+			model.update(field);
 		}
 		
 		this.updateLabel = function(element, overwrite) {
