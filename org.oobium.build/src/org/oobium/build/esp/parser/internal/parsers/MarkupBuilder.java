@@ -1,5 +1,7 @@
 package org.oobium.build.esp.parser.internal.parsers;
 
+import static org.oobium.build.esp.parser.internal.parsers.Scanner.EOL;
+
 import org.oobium.build.esp.dom.EspPart;
 import org.oobium.build.esp.dom.EspPart.Type;
 import org.oobium.build.esp.dom.common.MethodPart;
@@ -17,14 +19,15 @@ public class MarkupBuilder extends Builder {
 	public MarkupComment parseMarkupComment() throws EspEndException {
 		return push(new MarkupComment(), new BuildRunner<MarkupComment>() {
 			public void parse(MarkupComment element) throws EspEndException {
+				element.setTag(scanner.push(Type.MarkupTag));
+				scanner.setContainmentToEOL();
 				try {
-					scanner.setContainmentToEOL();
-					element.setTag(scanner.push(Type.MarkupTag));
 					scanner.move(3);
 					scanner.pop(element.getTag());
 					parseArgsAndEntries(element);
 					parseInnerText(element);
 				} catch(EspEndException e) {
+					scanner.handleContainmentEnd();
 					scanner.popTo(element);
 				}
 				scanner.setContainmentToEOE();
@@ -36,6 +39,7 @@ public class MarkupBuilder extends Builder {
 	public MarkupElement parseMarkupElement() throws EspEndException {
 		return push(new MarkupElement(), new BuildRunner<MarkupElement>() {
 			public void parse(MarkupElement element) throws EspEndException {
+				scanner.setContainmentToEOE();
 				try {
 					parseTag(element);
 					parseJavaType(element);
@@ -46,17 +50,17 @@ public class MarkupBuilder extends Builder {
 					parseStyles(element); // Styles (after arguments)
 					parseInnerText(element);
 				} catch(EspEndException e) {
+					scanner.handleContainmentEnd();
 					scanner.popTo(element);
 				}
-				scanner.setContainmentToEOE();
 				scanner.parseChildren();
 			}
 		});
 	}
 	
 	protected void parseTag(MarkupElement element) throws EspEndException {
-		scanner.setContainmentToEOL();
 		element.setTag(scanner.push(Type.MarkupTag));
+		scanner.setContainmentToEOL();
 		scanner.findEndOfWord();
 		scanner.pop(element.getTag());
 	}
@@ -64,8 +68,8 @@ public class MarkupBuilder extends Builder {
 	protected void parseArgsAndEntries(MethodPart method) throws EspEndException {
 		if(scanner.isChar('(')) {
 			method.initArgs();
-			scanner.setContainmentToEOL();
 			EspPart args = scanner.push(Type.MethodArgs);
+			scanner.setContainmentToEOL();
 			scanner.setContainmentToCloser();
 			try {
 				while(true) {
@@ -84,6 +88,7 @@ public class MarkupBuilder extends Builder {
 								try {
 									 scanner.findCloser();
 								} catch(EspEndException e) {
+									scanner.handleContainmentEnd();
 									scanner.popTo(arg.getCondition());
 									scanner.next();
 									scanner.pop(arg.getCondition());
@@ -108,9 +113,12 @@ public class MarkupBuilder extends Builder {
 				}
 			} catch(EspEndException e) {
 				if(scanner.isChar(')')) {
+					scanner.handleContainmentEnd();
 					scanner.next();
+					scanner.pop(args);
+				} else {
+					scanner.pop(args, e.getOffset());
 				}
-				scanner.pop(args);
 			}
 		}
 	}
@@ -139,26 +147,29 @@ public class MarkupBuilder extends Builder {
 	
 	protected void parseInnerText(MarkupElement element) throws EspEndException {
 		if(scanner.isChar(' ')) { // inner HTML
-			scanner.setContainmentToEOL();
-			if(scanner.isNext('{')) scanner.skip();
-			else scanner.next();
+			scanner.skip();
+			if(scanner.isChar(EOL)) {
+				return;
+			}
 			element.setInnerText(scanner.push(Type.InnerTextPart));
+			scanner.setContainmentToEOL();
 			try {
 				scanner.findEndOfContainment();
 			} catch(EspEndException e) {
-				scanner.pop(element.getInnerText());
+				scanner.pop(element.getInnerText(), e.getOffset());
 			}
 		}
 	}
 
 	protected void parseJavaType(MarkupElement element) throws EspEndException {
 		if(scanner.isChar('<')) { // Type
-			scanner.setContainmentToEOL();
 			element.setJavaType(scanner.push(Type.JavaContainer));
+			scanner.setContainmentToEOL();
 			try {
 				scanner.findCloser();
 			} catch(EspEndException e) {
 				if(scanner.isChar('>')) {
+					scanner.handleContainmentEnd();
 					scanner.popTo(element.getJavaType());
 					scanner.next();
 					scanner.pop(element.getJavaType(), scanner.getOffset());
@@ -171,9 +182,12 @@ public class MarkupBuilder extends Builder {
 
 	protected void parseStyles(MarkupElement element) throws EspEndException {
 		if(scanner.isChar('|')) { // Styles (after arguments)
-			scanner.setContainmentToEOL();
-			scanner.next();
+			scanner.skip();
+			if(scanner.isChar(EOL)) {
+				return;
+			}
 			EspPart part = scanner.push(Type.StylePart);
+			scanner.setContainmentToEOL();
 			if(scanner.isCharSequence('h','i','d','e') && scanner.move(4).isChar('(',' ')) {
 				element.setHidden(true);
 			}

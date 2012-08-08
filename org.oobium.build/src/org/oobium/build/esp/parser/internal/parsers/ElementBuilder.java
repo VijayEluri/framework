@@ -63,12 +63,9 @@ public class ElementBuilder extends Builder {
 						return;
 					}
 					element.setInnerText(scanner.push(Type.InnerTextPart));
-					try {
-						scanner.findEndOfContainment();
-					} catch(EspEndException e) {
-						scanner.pop(element.getInnerText());
-					}
+					scanner.findEndOfContainment();
 				} catch(EspEndException e) {
+					scanner.handleContainmentEnd();
 					scanner.popTo(element);
 				}
 				scanner.setContainmentToEOE();

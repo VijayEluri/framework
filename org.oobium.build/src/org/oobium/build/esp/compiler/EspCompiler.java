@@ -100,7 +100,6 @@ public class EspCompiler {
 	
 	private int javaLevel;
 	private String sbName;
-	private EspElement captureElement;
 	private String contentName;
 	private boolean enableEscaping;
 	private Map<StringBuilder, List<EspLocation>> locationsMap;
@@ -1786,8 +1785,6 @@ public class EspCompiler {
 		sbName = sbName + "$" + capture.getStart();
 		body.append("StringBuilder ").append(sbName).append(" = new StringBuilder();\n");
 
-		captureElement = capture;
-		
 		inJava = true;
 	}
 	
@@ -1806,8 +1803,6 @@ public class EspCompiler {
 		
 		sbName = sbName + "$" + content.getStart();
 		body.append("StringBuilder ").append(sbName).append(" = new StringBuilder();\n");
-
-		captureElement = content;
 		
 		inJava = true;
 	}
@@ -1823,7 +1818,6 @@ public class EspCompiler {
 			indent(body);
 			body.append(sbName).append(" = null;\n");
 			
-			captureElement = null;
 			sbName = SBBODY;
 			
 			inJava = true;
@@ -1837,7 +1831,6 @@ public class EspCompiler {
 		indent(body);
 		body.append(sbName).append(" = null;\n");
 		
-		captureElement = null;
 		contentName = null;
 		sbName = SBBODY;
 		

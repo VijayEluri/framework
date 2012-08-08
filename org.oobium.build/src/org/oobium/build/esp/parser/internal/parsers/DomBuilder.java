@@ -55,12 +55,13 @@ public class DomBuilder extends Builder {
 					scanner.parseScriptElement();
 				}
 			} catch(EspEndException e) {
+				scanner.handleContainmentEnd();
 				scanner.popTo(dom);
 			}
 		}
 	}
 	
-	private void parseEsp(EspDom dom) {
+	private void parseEsp(EspDom dom) throws EspEndException {
 		char[] name = dom.getSimpleName().toCharArray();
 		while(scanner.hasNext()) {
 			try {
@@ -87,6 +88,7 @@ public class DomBuilder extends Builder {
 					scanner.parseMarkupElement();
 				}
 			} catch(EspEndException e) {
+				scanner.handleContainmentEnd();
 				scanner.popTo(dom);
 			}
 		}
@@ -110,6 +112,7 @@ public class DomBuilder extends Builder {
 					scanner.parseStyleElement();
 				}
 			} catch(EspEndException e) {
+				scanner.handleContainmentEnd();
 				scanner.popTo(dom);
 			}
 		}

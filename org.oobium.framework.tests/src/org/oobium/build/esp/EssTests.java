@@ -163,7 +163,6 @@ public class EssTests {
 	@Test
 	public void testNested_Combined() throws Exception {
 		String css =
-				"#header,#footer{}" +
 				"#header .class1{color:red}" +
 				"#header .class2{color:green}" +
 				"#footer .class1{color:red}" +
@@ -182,7 +181,6 @@ public class EssTests {
 	@Test
 	public void testNested_Multiple() throws Exception {
 		String css =
-				"#header{}" +
 				"#header .class1{color:red}" +
 				"#header .class2{color:green}";
 
@@ -191,6 +189,22 @@ public class EssTests {
 				 "  .class1\n" +
 				 "    color: red\n" +
 				 "  .class2\n" +
+				 "    color: green").replace("  ", "\t");
+
+		assertEquals(css, css(ess));
+	}
+
+	@Test
+	public void testNested_Multiple_Elements() throws Exception {
+		String css =
+				"#header tr{color:red}" +
+				"#header td{color:green}";
+
+		String ess =
+				("#header\n" +
+				 "  tr\n" +
+				 "    color: red\n" +
+				 "  td\n" +
 				 "    color: green").replace("  ", "\t");
 
 		assertEquals(css, css(ess));

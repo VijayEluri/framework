@@ -106,14 +106,6 @@ public class Ruleset extends EspPart implements MethodSignature {
 		return selectorGroup;
 	}
 
-	public boolean isMerged() {
-		return merged;
-	}
-	
-	public boolean isNested() {
-		return (parent instanceof Declaration);
-	}
-
 	public boolean hasDeclaration() {
 		return declaration != null;
 	}
@@ -121,9 +113,25 @@ public class Ruleset extends EspPart implements MethodSignature {
 	public boolean hasNestedRules() {
 		return nestedRules != null;
 	}
+
+	public boolean hasParentRuleset() {
+		return getParentRuleset() != null;
+	}
+
+	public boolean hasProperties() {
+		return declaration != null && declaration.hasProperties();
+	}
 	
 	public boolean hasSelectors() {
 		return selectorGroup != null && selectorGroup.hasSelectors();
+	}
+
+	public boolean isMerged() {
+		return merged;
+	}
+	
+	public boolean isNested() {
+		return (parent instanceof Declaration);
 	}
 	
 	public void setDeclaration(Declaration declaration) {

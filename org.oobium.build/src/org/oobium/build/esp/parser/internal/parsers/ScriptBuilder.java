@@ -22,6 +22,7 @@ public class ScriptBuilder extends MarkupBuilder {
 						parseJavaType(element);
 						parseArgsAndEntries(element);
 					} catch(EspEndException e) {
+						scanner.handleContainmentEnd();
 						scanner.popTo(element);
 					}
 					scanner.setContainmentToEOE();
@@ -38,6 +39,7 @@ public class ScriptBuilder extends MarkupBuilder {
 						try {
 							scanner.next();
 						} catch(EspEndException e) {
+							scanner.handleContainmentEnd();
 							// keep going!
 						}
 					}

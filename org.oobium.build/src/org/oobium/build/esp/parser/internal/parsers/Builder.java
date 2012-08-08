@@ -32,13 +32,14 @@ public class Builder {
 				scanner.pop(args);
 			} catch(EspEndException e) {
 				if(scanner.isChar(')')) {
+					scanner.handleContainmentEnd();
 					scanner.popTo(args);
 					scanner.next();
 					scanner.pop(args);
 					scanner.findEndOfContainment();
 				} else {
-					scanner.pop(args);
-					throw e;
+					scanner.pop(args, e.getOffset());
+//					throw e;
 				}
 			}
 		}

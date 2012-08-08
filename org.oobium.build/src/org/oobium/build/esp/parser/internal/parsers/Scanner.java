@@ -19,7 +19,7 @@ public class Scanner {
 	private class Containment {
 		char opener, closer;
 		int level;
-		Containment sub;
+		Containment parent, sub;
 		
 		public Containment() {
 			opener = ca[offset];
@@ -38,6 +38,7 @@ public class Scanner {
 			} else {
 				sub = new Containment();
 			}
+			sub.parent = this;
 		}
 		
 		public void check() throws EspEndException {
@@ -48,10 +49,6 @@ public class Scanner {
 				try {
 					sub.check();
 				} catch(EspEndException e) {
-					if(e.getOffset() != -1) {
-						sub = null;
-						e.setOffset(-1);
-					}
 					checkBlock();
 					throw e;
 				}
@@ -74,42 +71,71 @@ public class Scanner {
 				if((closer != '"' && closer != '\'') || ca[offset-1] != '\\') { // check for escape char
 					level--;
 					if(level == 0) {
-						throw EspEndException.instance(offset);
+						throw EspEndException.instance(this, offset);
 					}
 				}
 				return;
 			}
 		}
 		
-		private void checkEnd() throws EspEndException {
-			if(ca[offset] == '\n') {
-				if(closer == '\n') {
-					throw EspEndException.instance(offset);
-				}
-				for(int j = ++offset; offset < ca.length; offset++) {
-					if(ca[offset] != '\t') {
-						int l2 = offset-j;
-						Scanner.this.level = l2;
-						if(l2 <= level) {
-							throw EspEndException.instance(j-1);
-						}
-						break;
-					}
-				}
-				if(offset >= ca.length) {
-					throw EspEndException.instance(offset);
-				}
-				return;
+		public void checkBlocks() {
+			if(sub != null) {
+				sub.checkBlocks();
 			}
 			
-			if(ca[offset] == '<') {
-				int next = offset + 1;
-				if(next < ca.length && ca[next] == '-') {
-					if(closer == EOL) {
-						throw EspEndException.instance(offset);
+			if(isBlock()) {
+				try {
+					checkBlock();
+				} catch(EspEndException e) {
+					// discard (running all block checks to handle nesting)
+				}
+			}
+		}
+		
+		private void checkEnd() throws EspEndException {
+			if(offset >= ca.length) {
+				throw EspEndException.instance(this, offset);
+			}
+			if(closer == EOL) {
+				if(ca[offset] == EOL) {
+					throw EspEndException.instance(this, offset);
+				}
+				else if(ca[offset] == '<') {
+					int next = offset + 1;
+					if(next < ca.length && ca[next] == '-') {
+						throw EspEndException.instance(this, offset);
 					}
 				}
 			}
+			else if(closer == EOE) {
+				if(ca[offset] == EOL) {
+					for(int j = ++offset; offset < ca.length; offset++) {
+						if(ca[offset] != '\t') {
+							int l2 = offset-j;
+							Scanner.this.level = l2;
+							if(l2 <= level) {
+								throw EspEndException.instance(this, j-1);
+							}
+							break;
+						}
+					}
+					if(offset >= ca.length) {
+						throw EspEndException.instance(this, offset);
+					}
+				}
+			}
+		}
+
+		public int remove() {
+			int count = 1;
+			while(sub != null) {
+				count++;
+				sub = sub.sub;
+			}
+			if(parent != null) {
+				parent = parent.sub = null;
+			} // else, top level
+			return count;
 		}
 		
 		public boolean isBlock() {
@@ -124,10 +150,17 @@ public class Scanner {
 				if(sub != null) sb.append(sub);
 				sb.append(closer);
 				return sb.toString();
+			} else {
+				if(sub == null) {
+					if(closer == EOL) return "EOL: " + level;
+					if(closer == EOE) return "EOE: " + level;
+					return closer + ": " + level;
+				} else {
+					if(closer == EOL) return "EOL: " + level + "," + sub;
+					if(closer == EOE) return "EOE: " + level + "," + sub;
+					return closer + ": " + level + "," + sub;
+				}
 			}
-			if(closer == EOL) return "EOL: " + level;
-			if(closer == EOE) return "EOE: " + level;
-			return closer + ": " + level;
 		}
 	}
 
@@ -167,11 +200,11 @@ public class Scanner {
 	private int level;
 	private final Map<EspPart, Integer> levels;
 	private final LinkedHashMap<EspPart, Containment> containments;
+	private int containmentEndCount;
 
 	private int mark;
 	private int offset;
 	
-	private boolean inScript;
 	private boolean inString;
 	private boolean inStyle;
 	
@@ -255,28 +288,44 @@ public class Scanner {
 		if(offset >= ca.length) throw EspEndException.instance(offset);
 
 		EspEndException exception = null;
-		Object[] ca = containments.keySet().toArray();
-		for(int i = ca.length-1; i >= 0; i--) {
-			Object key = ca[i];
+		Object[] keys = containments.keySet().toArray();
+		for(int i = keys.length-1; i >= 0; i--) {
+			Object key = keys[i];
 			Containment containment = containments.get(key);
-			if(exception == null || containment.isBlock()) { // run all block checks to handle nesting
+			if(exception == null) {
 				try {
 					containment.check();
 				} catch(EspEndException e) {
-					if(exception == null) {
-						exception = e;
-						if(e.getOffset() == -1) {
-							e.setOffset(offset); // thrown from a sub containment
-						}
-						else if(key != part.getDom()) {
+					exception = e;
+					if(key != part.getDom()) {
+						Containment c = e.getSourceAs(Containment.class);
+						containmentEndCount += c.remove();
+						if(c == containment) {
 							containments.remove(key);
 						}
-					} // else ignore - we only act on one at a time
+						for(int j = i+1; j < keys.length; j++) {
+							c = containments.get(keys[j]);
+							containmentEndCount += c.remove();
+							containments.remove(keys[j]);
+						}
+					}
 				}
+			}
+			else {
+				containment.checkBlocks();
 			}
 		}
 		if(exception != null) {
 			throw exception;
+		}
+	}
+	
+	public void handleContainmentEnd() throws EspEndException {
+		if(containmentEndCount > 0) {
+			containmentEndCount--;
+			if(containmentEndCount > 0) {
+				throw EspEndException.instance(offset);
+			}
 		}
 	}
 	
@@ -294,6 +343,7 @@ public class Scanner {
 				try {
 					findCloser();
 				} catch(EspEndException e) {
+					handleContainmentEnd();
 					popTo(str);
 					move(1); // don't use next() because that may start another Java Part before we want to
 					pop(str);
@@ -314,10 +364,10 @@ public class Scanner {
 			try {
 				findCloser();
 			} catch(EspEndException e) {
-				if(isNotChar(')', '}')) {
-					// hackish again... containments are better, but still not quite there
-					throw e;
-				} // else - fall through
+				handleContainmentEnd();
+//				if(isNotChar(')', '}')) {
+//					throw e;
+//				} // else - fall through
 			}
 		}
 		
@@ -339,6 +389,7 @@ public class Scanner {
 						try {
 							while(true) next();
 						} catch(EspEndException e) {
+							handleContainmentEnd();
 							popTo(container);
 							next();
 						}
@@ -368,6 +419,7 @@ public class Scanner {
 				try {
 					findCloser();
 				} catch(EspEndException e) {
+					handleContainmentEnd();
 					popTo(jpart);
 					next();
 					pop(jpart);
@@ -488,7 +540,9 @@ public class Scanner {
 				if(next < ca.length && ca[next] == '-') {
 					new EspPart(Type.Separator).setParent(part).setStart(offset).setEnd(next);
 					for(offset += 2; offset < ca.length && Character.isWhitespace(ca[offset]); offset++);
-					if(offset >= ca.length) throw EspEndException.instance(offset);
+					if(offset >= ca.length) {
+						throw EspEndException.instance(offset);
+					}
 					return true;
 				}
 			}
@@ -581,11 +635,12 @@ public class Scanner {
 		while(true) next();
 	}
 	
-	public Scanner findEndOfElement() {
+	public Scanner findEndOfElement() throws EspEndException {
 		try {
 			check();
 			while(next().hasNext());
 		} catch(EspEndException e) {
+			handleContainmentEnd();
 			offset = e.getOffset();
 		}
 		return this;
@@ -607,6 +662,7 @@ public class Scanner {
 				try {
 					findCloser();
 				} catch(EspEndException e) {
+					handleContainmentEnd();
 					next();
 				}
 			}
@@ -643,6 +699,7 @@ public class Scanner {
 				try {
 					findCloser();
 				} catch(EspEndException e) {
+					handleContainmentEnd();
 					continue;
 				}
 			default:
@@ -672,6 +729,7 @@ public class Scanner {
 				try {
 					findCloser();
 				} catch(EspEndException e) {
+					handleContainmentEnd();
 					continue;
 				}
 			}
@@ -990,9 +1048,6 @@ public class Scanner {
 		if(part.isA(Type.JavaContainer)) {
 			finishJavaContainer(part);
 		}
-		else if(part.isA(Type.ScriptPart)) {
-			inScript = false;
-		}
 		else if(part.isA(Type.StylePart)) {
 			inStyle = false;
 		}
@@ -1013,6 +1068,9 @@ public class Scanner {
 		T popped = pop(part);
 		this.offset = tmp;
 		popped.setEnd(offset);
+		
+		handleContainmentEnd();
+		
 		if(inStyle) {
 			if(level < levels.get(popped)) {
 				throw EspEndException.instance(offset);
@@ -1028,6 +1086,7 @@ public class Scanner {
 				throw EspEndException.instance(offset);
 			}
 		}
+		
 		return popped;
 	}
 	
@@ -1048,9 +1107,6 @@ public class Scanner {
 			if(part instanceof EspElement) {
 				levels.put(part, level);
 			} 
-			else if(part.isA(Type.ScriptPart)) {
-				inScript = true;
-			}
 			else if(part.isA(Type.StylePart)) {
 				inStyle = true;
 			}

@@ -22,12 +22,14 @@ public class StyleBuilder extends MarkupBuilder {
 	}
 
 	private void parseChild(Declaration declaration) throws EspEndException {
-		switch(scanner.scanForAny(';', '{', '(', EOL)) {
-		case '{': parseRuleset(declaration);  break;
-		case ';': parseProperty(declaration); break;
-		case '(': parseProperty(declaration); break;
-		case EOL:
-		case EOE:
+		switch(scanner.scanForAny(';', '{', '(', ':', '}', EOL)) {
+		case '{':
+			parseRuleset(declaration);
+			break;
+		case ';': case '(': case ':':
+			parseProperty(declaration);
+			break;
+		case EOL: case EOE:
 			if(scanner.hasDeclaration()) {
 				parseRuleset(declaration);
 			} else {
@@ -52,18 +54,25 @@ public class StyleBuilder extends MarkupBuilder {
 					scanner.next();
 				}
 				scanner.forward();
-				if(scanner.isChar('.','#')) {
-					parseChild(declaration);
-				}
-				else if(scanner.isChar('&',':')) {
+//				if(scanner.isChar('.','#')) {
+//					parseChild(declaration);
+//				}
+//				else if(scanner.isChar('&',':')) {
+//					parseRuleset(declaration);
+//				}
+//				else {
+//					parseProperty(declaration);
+//				}
+				if(scanner.isChar('&',':')) {
 					parseRuleset(declaration);
 				}
 				else {
-					parseProperty(declaration);
+					parseChild(declaration);
 				}
 			}
 		} catch(EspEndException e) {
 			if(scanner.isChar('}')) {
+				scanner.handleContainmentEnd();
 				scanner.move(1);
 				scanner.pop(declaration);
 				scanner.forward();
@@ -90,11 +99,11 @@ public class StyleBuilder extends MarkupBuilder {
 			scanner.find('{');
 			
 		} catch(EspEndException e) {
-			// fall through
+			scanner.handleContainmentEnd();
 		}
+		scanner.popTo(rule);
 		
 		scanner.setContainmentToEOE();
-		scanner.popTo(rule);
 		try {
 			parseDeclaration(rule);
 		} catch(EspException e) {
@@ -125,7 +134,8 @@ public class StyleBuilder extends MarkupBuilder {
 				try {
 					scanner.find(';');
 				} catch(EspEndException e) {
-					scanner.pop(property.getValue(), scanner.getTrimmedEndFrom(e.getOffset()));
+					scanner.pop(property.getValue());
+					property.getValue().setEnd(scanner.getTrimmedEndFrom(e.getOffset()));
 					throw e;
 				}
 				scanner.pop(property.getValue(), scanner.getTrimmedEnd());
@@ -152,7 +162,7 @@ public class StyleBuilder extends MarkupBuilder {
 			parseSelectorGroup(rule);
 			scanner.find('{');
 		} catch(EspEndException e) {
-			// fall through
+			scanner.handleContainmentEnd();
 		}
 		
 		scanner.setContainmentToEOE();
@@ -206,6 +216,7 @@ public class StyleBuilder extends MarkupBuilder {
 						parseJavaType(element);
 						parseArgsAndEntries(element);
 					} catch(EspEndException e) {
+						scanner.handleContainmentEnd();
 						scanner.popTo(element);
 					}
 				}
@@ -231,7 +242,10 @@ public class StyleBuilder extends MarkupBuilder {
 			} catch(EspEndException e) {
 				if(element.getDom().is(DocType.ESP)) {
 					throw e;
-				} // else - keep going!
+				} else {
+					scanner.handleContainmentEnd();
+					// keep going!
+				}
 			}
 		}
 	}

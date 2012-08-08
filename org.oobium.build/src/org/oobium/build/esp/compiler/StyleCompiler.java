@@ -131,31 +131,30 @@ public class StyleCompiler extends AssetCompiler {
 	}
 	
 	private void buildStyleRuleset(Ruleset ruleset, StringBuilder sb) {
+		buildStyleRuleset("", ruleset, sb);
+	}
+	
+	private void buildStyleRuleset(String path, Ruleset ruleset, StringBuilder sb) {
 		if(ruleset.hasDeclaration() && ruleset.hasSelectors()) {
 			List<Selector> selectors = ruleset.getSelectors();
 			for(int i = 0; i < selectors.size(); i++) {
-				if(i != 0) sb.append(',');
-				int ix = sb.length();
 				Selector selector = selectors.get(i);
-				sb.append(selector.getText().trim());
-				Ruleset rule = ruleset;
-				Ruleset parent = rule.getParentRuleset();
-				while(parent != null) {
-					if(!rule.isMerged()) sb.insert(ix, ' ');
-					sb.insert(ix, parent.getSelector());
-					parent = (rule = parent).getParentRuleset();
+				if(ruleset.hasProperties()) {
+					sb.append(path);
+					sb.append(selector.getText().trim());
+					sb.append('{');
+					buildStyleProperties(ruleset, sb);
+					sb.append('}');
 				}
-			}
-			sb.append('{');
-			buildStyleProperties(ruleset, sb);
-			sb.append('}');
-		}
-		if(ruleset.hasNestedRules()) {
-			// TODO fix EssTests test here
-			for(Ruleset nested : ruleset.getNestedRules()) {
-				buildStyleRuleset(nested, sb);
+				if(ruleset.hasNestedRules()) {
+					String text = path + selector.getText().trim();
+					for(Ruleset nested : ruleset.getNestedRules()) {
+						String nestedPath = nested.isMerged() ? text : (text + " ");
+						buildStyleRuleset(nestedPath, nested, sb);
+					}
+				}
 			}
 		}
 	}
-
+	
 }
