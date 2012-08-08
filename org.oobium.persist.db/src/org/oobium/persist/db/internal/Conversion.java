@@ -2,6 +2,7 @@ package org.oobium.persist.db.internal;
 
 import static org.oobium.utils.SqlUtils.safeSqlWord;
 import static org.oobium.utils.StringUtils.columnName;
+import static org.oobium.utils.json.JsonUtils.toJson;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -126,8 +127,12 @@ public class Conversion {
 		}
 		if(include != null) {
 			first = first(sb, first);
-			sb.append("include:").append(include);
-			if("?".equals(include)) list.add(inValues[v++]);
+			if("?".equals(include)) {
+				sb.append("include:?");
+				list.add(inValues[v++]);
+			} else {
+				sb.append("include:").append(toJson(include));
+			}
 		}
 	}
 
