@@ -223,11 +223,11 @@ public class ModelRelation {
 	}
 	
 	public String getOnDeleteConstant() {
-		return getDependentConstant(onDelete);
+		return getReferentialConstant(onDelete);
 	}
 	
 	public String getOnUpdateConstant() {
-		return getDependentConstant(onUpdate);
+		return getReferentialConstant(onUpdate);
 	}
 	
 	public Map<String, Object> getProperties() {
