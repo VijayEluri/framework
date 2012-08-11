@@ -257,7 +257,7 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 			i--;
 		}
 		int start = i;
-		ESourceFile jf = editor.getEspJavaFile();
+		ESourceFile jf = editor.getEspJavaFile(true);
 		int javaOffset = jf.getJavaOffset(offset) + 1;
 		if(javaOffset == 0) {
 			System.out.println("javaOffset not found");

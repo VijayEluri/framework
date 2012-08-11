@@ -58,7 +58,6 @@ import org.oobium.build.esp.compiler.ESourceFile;
 import org.oobium.build.esp.dom.EspDom;
 import org.oobium.build.esp.dom.EspElement;
 import org.oobium.build.esp.dom.EspPart;
-import org.oobium.build.esp.dom.EspPart.Type;
 import org.oobium.build.workspace.Module;
 import org.oobium.eclipse.esp.EspCore;
 import org.oobium.eclipse.esp.config.ConfigOutlinePage;
@@ -189,7 +188,7 @@ public class EspEditor extends TextEditor {
 
 		ProjectionViewer viewer= (ProjectionViewer) getSourceViewer();
 		textWidget = viewer.getTextWidget();
-		
+
 		updateDaemonFast.start();
 		updateDaemonSlow.start();
 		textWidget.addDisposeListener(new DisposeListener() {
@@ -363,7 +362,11 @@ public class EspEditor extends TextEditor {
 	}
 	
 	public ESourceFile getEspJavaFile() {
-		if(eSourceFile == null) {
+		return getEspJavaFile(false);
+	}
+	
+	public ESourceFile getEspJavaFile(boolean forceUpdate) {
+		if(eSourceFile == null || forceUpdate) {
 			updateSourceFiles();
 		}
 		return eSourceFile;
