@@ -54,15 +54,6 @@ public class StyleBuilder extends MarkupBuilder {
 					scanner.next();
 				}
 				scanner.forward();
-//				if(scanner.isChar('.','#')) {
-//					parseChild(declaration);
-//				}
-//				else if(scanner.isChar('&',':')) {
-//					parseRuleset(declaration);
-//				}
-//				else {
-//					parseProperty(declaration);
-//				}
 				if(scanner.isChar('&',':')) {
 					parseRuleset(declaration);
 				}

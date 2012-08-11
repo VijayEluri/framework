@@ -712,7 +712,7 @@ public class Scanner {
 	}
 	
 	public Scanner findEndOfStyleSelector() throws EspEndException {
-		boolean stopOnParen = true;
+		boolean stopOnParen = (ca[offset] != '@'); // @media
 		while(offset < ca.length) {
 			switch(ca[offset]) {
 			case ',': case '{':

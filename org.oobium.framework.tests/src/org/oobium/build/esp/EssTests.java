@@ -344,4 +344,21 @@ public class EssTests {
 		assertEquals(css, css(ess));
 	}
 
+	@Test
+	public void testMediaQuery() throws Exception {
+		assertEquals(
+				"@media screen and (device-width: 768px) and (orientation: landscape){" +
+				  "border-radius:6px;" +
+				  "-moz-border-radius:6px;" +
+				  "-webkit-border-radius:6px" +
+				"}",
+			css(
+				"@media screen and (device-width: 768px) and (orientation: landscape) {" +
+						  "border-radius:6px;" +
+						  "-moz-border-radius:6px;" +
+						  "-webkit-border-radius:6px" +
+						"}"
+		));
+	}
+
 }
