@@ -912,7 +912,7 @@ public class Scanner {
 	public boolean isNextEntry() {
 		int i = offset;
 		try {
-			while(i < ca.length && ca[i] != ',' && ca[i] != ')' && ca[i] != '\n') {
+			while(i < ca.length && ca[i] != '"' && ca[i] != ',' && ca[i] != ')' && ca[i] != '\n') {
 				if(ca[i] == ':') return true;
 				i = entryCheck(i);
 				i++;
