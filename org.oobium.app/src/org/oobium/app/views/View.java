@@ -241,10 +241,14 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 				return null; // probably a dynamic class in a unit test
 			}
 			String pname = pkg.getName();
-			int ix = pname.lastIndexOf('.');
+			int i1 = pname.indexOf(".views.") + 7;
+			if(i1 == -1) {
+				return null;
+			}
+			String lfolder = pname.substring(0, i1) + "_layouts.";
 			if(layoutName != null) {
 				try {
-					String fname = pname.substring(0, ix) + "._layouts." + layoutName;
+					String fname = lfolder + layoutName;
 					layout = Class.forName(fname, true, getClass().getClassLoader());
 				} catch(ClassNotFoundException e) {
 					// oh well...
@@ -252,12 +256,14 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 			} else {
 				// look for a view specific layout
 				try {
-					String fname = pname.substring(0, ix) + "._layouts." + camelCase(pname.substring(ix+1)) + "Layout";
+					int i2 = pname.lastIndexOf('.', i1);
+					String vname = camelCase(pname.substring(i2+1));
+					String fname = lfolder + vname + "Layout";
 					layout = Class.forName(fname, true, getClass().getClassLoader());
 				} catch(ClassNotFoundException e1) {
 					// look for the default view layout (cache...)
 					try {
-						String fname = pname.substring(0, ix) + "._layouts._Layout";
+						String fname = lfolder + "_Layout";
 						layout = Class.forName(fname, true, getClass().getClassLoader());
 					} catch(ClassNotFoundException e2) {
 						// oh well...
