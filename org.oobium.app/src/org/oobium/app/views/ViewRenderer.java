@@ -20,7 +20,6 @@ import org.oobium.persist.Model;
 import org.oobium.pipeline.AssetPipeline;
 import org.oobium.pipeline.PipelinedAsset;
 import org.oobium.utils.Config.Mode;
-import org.oobium.utils.StringUtils;
 
 public class ViewRenderer {
 

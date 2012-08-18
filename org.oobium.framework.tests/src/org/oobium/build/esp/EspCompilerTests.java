@@ -10,7 +10,8 @@
  ******************************************************************************/
 package org.oobium.build.esp;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -1193,7 +1194,7 @@ public class EspCompilerTests {
 	public void testDate() throws Exception {
 		assertEquals(
 				"__body__.append(\"<span>\");\n" +
-				"dateTimeTags(__body__, \"datetime\", \"MMM/dd/yyyy\");\n" +
+				"dateTimeTags(__body__, \"datetime\", \"MMM/dd/yyyy\", new java.util.Date());\n" +
 				"__body__.append(\"</span>\");",
 				render("date"));
 	}
@@ -1934,16 +1935,19 @@ public class EspCompilerTests {
 		assertEquals(
 				"__body__.append(\"<div>\");\n" +
 				"yield(__body__);\n" +
-				"__body__.append(\"</div>\");", 
+				"__body__.append(\"</div>\");",
 				render("div <- yield"));
 
 		assertEquals(
-				"yield(\"name\", __body__);",
-				render("yield(\"name\")"));
-		
-		assertEquals(
 				"yield(view, __body__);",
 				render("yield(view)"));
+	}
+	
+	@Test
+	public void testYieldTo() throws Exception {
+		assertEquals(
+				"yieldTo(\"name\");",
+				render("yieldTo(\"name\")"));
 	}
 	
 	@Test
@@ -1964,6 +1968,9 @@ public class EspCompilerTests {
 	@Test
 	public void testInnerText() throws Exception {
 		// regular (can contain java parts)
+		
+		assertEquals("__body__.append(\"<div>\\\"\\\"</div>\");", render("div\n\t+ \"{}\"")); // space required
+		
 		assertEquals("__body__.append(\"<div>start:</div>\");", render("div start:\n\t+end")); // space required
 		assertEquals("__body__.append(\"<div>start:end</div>\");", render("div start:\n\t+ end"));
 		assertEquals("__body__.append(\"<div>start : end</div>\");", render("div start :\n\t+  end"));

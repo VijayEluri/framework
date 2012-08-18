@@ -3,8 +3,10 @@ package org.oobium.build.esp.compiler;
 import static org.oobium.build.esp.dom.EspPart.Type.MarkupElement;
 import static org.oobium.utils.StringUtils.blank;
 import static org.oobium.utils.StringUtils.className;
+import static org.oobium.utils.StringUtils.getterName;
+import static org.oobium.utils.StringUtils.hasserName;
 import static org.oobium.utils.StringUtils.titleize;
-import static org.oobium.utils.StringUtils.*;
+import static org.oobium.utils.StringUtils.varName;
 
 import java.util.List;
 import java.util.regex.Matcher;
@@ -231,14 +233,16 @@ public class FormCompiler {
 		} else {
 			body.append("\"MMM/dd/yyyy\"");
 		}
+		body.append(", ");
 		if(date.hasArgs()) {
-			body.append(", ");
 			String model = getFormModel(date);
 			if(blank(model)) {
 				parent.build(date.getArg(0), body);
 			} else {
 				appendValueGetter(model, date.getArgs());
 			}
+		} else {
+			body.append("new java.util.Date()");
 		}
 		body.append(");\n");
 		parent.prepForMarkup(body);

@@ -132,6 +132,14 @@ public class EspCompiler {
 		}
 		return location;
 	}
+	
+	void addImport(String imp) {
+		esf.addImport(imp);
+	}
+
+	void addStaticImport(String imp) {
+		esf.addStaticImport(imp);
+	}
 
 	private void buildDataBinding(EspPart value) {
 		body.append("=\\\"\");\n");
@@ -318,10 +326,11 @@ public class EspCompiler {
 			for(int i = start; i < end; i++) {
 				char c = text.charAt(i);
 				switch(c) {
-				case '"':	if(i == 0 || text.charAt(i-1) != '\\') { sb.append("\\\""); } break;
-				case '\t':	if(i == 0 || text.charAt(i-1) != '\\') { sb.append("\\t"); } break;
-				case '\n':  if(i == 0 || text.charAt(i-1) != '\\') { sb.append("\\n"); } break;
-				default:	sb.append(c); break;
+				case '"':  if(i == 0 || text.charAt(i-1) != '\\') { sb.append("\\\""); } break;
+				case '\t': if(i == 0 || text.charAt(i-1) != '\\') { sb.append("\\t"); } break;
+				case '\n': if(i == 0 || text.charAt(i-1) != '\\') { sb.append("\\n"); } break;
+				case '\\': if(i+1 < end && text.charAt(i+1) == '{') break; 
+				default:   sb.append(c); break;
 				}
 			}
 		}
@@ -658,6 +667,7 @@ public class EspCompiler {
 		if("title".equals(tag))    { buildTitle(element);                      return; }
 		if("view".equals(tag))     { buildView(element);                       return; }
 		if("yield".equals(tag))    { buildYield((MarkupElement) element);      return; }
+		if("yieldTo".equals(tag))  { buildYieldTo((MarkupElement) element);    return; }
 
 		prepForMarkup(body);
 		
@@ -1197,6 +1207,22 @@ public class EspCompiler {
 		inJava = true;
 	}
 	
+	private void buildYieldTo(MarkupElement element) {
+		prepForJava(body);
+
+		if(dom.is(ESP)) {
+			if(element.hasArgs()) {
+				body.append("yieldTo(");
+				build(element.getArg(0), body);
+				body.append(");\n");
+			} else {
+				body.append("yieldTo();\n");
+			}
+		}
+		
+		inJava = true;
+	}
+	
 	private boolean canBuildPartMethodSignatures(List<MethodSigArg> args) {
 		for(MethodSigArg arg : args) {
 			if(!arg.hasVarType() || !arg.hasVarName()) {
@@ -1608,6 +1634,7 @@ public class EspCompiler {
 		if("title".equals(tag))      return false;
 		if("view".equals(tag))       return false;
 		if("yield".equals(tag))      return false;
+		if("yieldTo".equals(tag))      return false;
 		return true;
 	}
 	

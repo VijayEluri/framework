@@ -143,7 +143,7 @@ public class EspStyleRanges {
 		case MarkupTag:         return evaluateMarkupTag(part, offset);
 		case ScriptPart:        return evaluateScript(part, offset);
 		case StylePropertyName: return evaluateStylePropertyName(part, offset);
-		case StylePart:			return addRange(part, offset, propertyName);
+		case StylePart:			return evaluateStyle(part, offset);
 		case VarName:			return evaluateVarName(part, offset);
 		case InnerTextPart:     return evaluateInnerText(part, offset);
 		default:                return offset + 1;
@@ -199,6 +199,9 @@ public class EspStyleRanges {
 		else if("yield".equals(tag)) {
 			return addRange(part, offset, javaKeyword);
 		}
+		else if("yieldTo".equals(tag)) {
+			return addRange(part, offset, javaKeyword);
+		}
 		else if(MARKUP_TAGS.containsKey(tag)) {
 			return addRange(part, offset, markupTag);
 		}
@@ -228,6 +231,32 @@ public class EspStyleRanges {
 				} else {
 					s1 = s2;
 				}
+			}
+		}
+		return end;
+	}
+
+	private int evaluateStyle(EspPart part, int offset) {
+		EspPart next = part.getNextSubPart(offset);
+		int end = (next != null) ? next.getStart() : part.getEnd();
+		if(dom.isStyle()) {
+			return end;
+		}
+		for(int s1 = offset; s1 < end; s1++) {
+			if( ! dom.isStyle() && dom.charAt(s1) == '\n') {
+				int s2 = s1 + 1;
+				while(s2 < end && dom.charAt(s2) == '\t') {
+					s2++;
+				}
+				addRange(s1, s2-s1, level);
+				s1 = s2;
+			}
+			if(s1 < end) {
+				int s2 = s1;
+				while(s2 < end && Character.isLetter(dom.charAt(s2))) {
+					s2++;
+				}
+				s1 = addRange(s1, s2-s1, propertyName);
 			}
 		}
 		return end;

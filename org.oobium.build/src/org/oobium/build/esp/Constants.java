@@ -105,6 +105,8 @@ public class Constants {
 	    CSS_PROPERTIES.put("outline-style", "outline-style");
 	    CSS_PROPERTIES.put("outline-width", "outline-width");
 	    CSS_PROPERTIES.put("overflow", "overflow");
+	    CSS_PROPERTIES.put("overflow-x", "overflow in the x direction");
+	    CSS_PROPERTIES.put("overflow-y", "overflow in the y direction");
 	    CSS_PROPERTIES.put("padding", "padding");
 	    CSS_PROPERTIES.put("padding-top", "padding-top");
 	    CSS_PROPERTIES.put("padding-right", "padding-right");
@@ -176,8 +178,8 @@ public class Constants {
 		MARKUP_TAGS.put("col", "Specifies attributes for table columns ");
 		MARKUP_TAGS.put("colgroup", "Specifies groups of table columns");
 		MARKUP_TAGS.put("command", "Specifies a command (HTML 5)");
-		MARKUP_TAGS.put("contentFor", "Render the children of this element into the yield element of the same name (ESP)\n" +
-		                            "Usage: contentFor(\"name\") - will render its children into yield(\"name\")");
+		MARKUP_TAGS.put("contentFor", "Render the children of this element into the yieldTo element of the same name (ESP)\n" +
+		                            "Usage: contentFor(\"name\") - will render its children into yieldTo(\"name\")");
 		MARKUP_TAGS.put("date", "Creates a formatted set of date fields for a form (ESP)");
 		MARKUP_TAGS.put("datagrid", "Specifies data in a tree-list (HTML 5)");
 		MARKUP_TAGS.put("datalist", "Specifies an \"autocomplete\" dropdown list (HTML 5)");
@@ -277,8 +279,8 @@ public class Constants {
 		MARKUP_TAGS.put("video", "Specifies a video (HTML 5)");
 		MARKUP_TAGS.put("view", "Specifies a view of the given type (ESP)\nUsage: view<ViewName>(param1, param2, ...)");
 		MARKUP_TAGS.put("yield", "Yields rendering (ESP)\nUsage: yield - will yield rendering to the current view's child\n" +
-													   "       yield(view) - yield rendering to the given view\n" +
-													   "       yield(\"name\") - render the content defined by contentFor(\"name\")");
+													   "       yield(view) - will yield rendering to the given view");
+		MARKUP_TAGS.put("yieldTo", "Yields rendering (ESP)\nUsage: yieldTo(\"name\") - render the content defined by contentFor(\"name\")");
 
 		DATA_BINDING = new TreeSet<String>();
 		DATA_BINDING.add("data-model");

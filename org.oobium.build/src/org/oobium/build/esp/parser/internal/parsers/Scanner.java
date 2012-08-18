@@ -11,6 +11,7 @@ import org.oobium.build.esp.dom.EspElement;
 import org.oobium.build.esp.dom.EspPart;
 import org.oobium.build.esp.dom.EspDom.DocType;
 import org.oobium.build.esp.dom.EspPart.Type;
+import org.oobium.build.esp.dom.elements.InnerText;
 import org.oobium.build.esp.parser.exceptions.EspEndException;
 import org.oobium.logging.Logger;
 
@@ -101,9 +102,11 @@ public class Scanner {
 					throw EspEndException.instance(this, offset);
 				}
 				else if(ca[offset] == '<') {
-					int next = offset + 1;
-					if(next < ca.length && ca[next] == '-') {
-						throw EspEndException.instance(this, offset);
+					if(parseInlineElements()) {
+						int next = offset + 1;
+						if(next < ca.length && ca[next] == '-') {
+							throw EspEndException.instance(this, offset);
+						}
 					}
 				}
 			}
@@ -126,6 +129,10 @@ public class Scanner {
 			}
 		}
 
+		public boolean isBlock() {
+			return opener != 0;
+		}
+		
 		public int remove() {
 			int count = 1;
 			while(sub != null) {
@@ -136,10 +143,6 @@ public class Scanner {
 				parent = parent.sub = null;
 			} // else, top level
 			return count;
-		}
-		
-		public boolean isBlock() {
-			return opener != 0;
 		}
 		
 		@Override
@@ -231,20 +234,6 @@ public class Scanner {
 		}
 	}
 	
-	public boolean isCharSequence(char...c) {
-		if(offset+c.length-1 < ca.length) {
-			for(int i = 0; i < c.length; i++) {
-				int j = offset+i;
-				if((c[i] == ' ' && Character.isWhitespace(ca[j])) || c[i] == ca[j]) {
-					continue;
-				}
-				return false;
-			}
-			return true;
-		}
-		return false;
-	}
-	
 	/**
 	 * @return the position of the end of the comment
 	 * @throws EspEndException if comment consumes the rest of the document (in which case, this method
@@ -253,8 +242,9 @@ public class Scanner {
 	private int checkComment(int i) throws EspEndException {
 		return checkComment(i, false);
 	}
-
+	
 	private int checkComment(int i, boolean test) throws EspEndException {
+		if(part.isA(Type.InnerTextPart)) return i;
 		if(inString) return i;
 		if(i < 0) return i;
 		if(i >= ca.length) throw EspEndException.instance(i);
@@ -282,7 +272,7 @@ public class Scanner {
 		
 		return i;
 	}
-	
+
 	private void checkContainment() throws EspEndException {
 		if(offset < 0) return;
 		if(offset >= ca.length) throw EspEndException.instance(offset);
@@ -317,15 +307,6 @@ public class Scanner {
 		}
 		if(exception != null) {
 			throw exception;
-		}
-	}
-	
-	public void handleContainmentEnd() throws EspEndException {
-		if(containmentEndCount > 0) {
-			containmentEndCount--;
-			if(containmentEndCount > 0) {
-				throw EspEndException.instance(offset);
-			}
 		}
 	}
 	
@@ -365,9 +346,6 @@ public class Scanner {
 				findCloser();
 			} catch(EspEndException e) {
 				handleContainmentEnd();
-//				if(isNotChar(')', '}')) {
-//					throw e;
-//				} // else - fall through
 			}
 		}
 		
@@ -412,19 +390,26 @@ public class Scanner {
 			return;
 		}
 
-		if(ca[offset] == '{') {
+		if(ca[offset] == '{' && (offset == 0 || ca[offset-1] != '\\')) {
 			switch(part.getType()) {
-			case MarkupId: case MarkupClass: case InnerTextPart:
+			case InnerTextPart:
+				EspPart parent = part.getParent();
+				if(parent.isA(Type.InnerTextElement)) {
+					if(((InnerText) parent).isLiteral()) {
+						break;
+					}
+				}
+			case MarkupId: case MarkupClass:
 				EspPart jpart = push(Type.JavaContainer);
 				try {
 					findCloser();
 				} catch(EspEndException e) {
 					handleContainmentEnd();
 					popTo(jpart);
-					next();
+					move(1); // don't use next() because that may start another Java Part before we want to
 					pop(jpart);
+					check();
 				}
-				check();
 			}
 			return;
 		}
@@ -444,7 +429,7 @@ public class Scanner {
 			}
 		}
 	}
-
+	
 	private int entryCheck(int offset) throws EspEndException {
 		offset = checkComment(offset);
 
@@ -501,7 +486,7 @@ public class Scanner {
 		}
 		return this;
 	}
-
+	
 	public Scanner findAny(char...test) throws EspEndException {
 		if(offset < 0) offset = 0;
 		while(offset < ca.length) {
@@ -535,7 +520,7 @@ public class Scanner {
 				}
 				throw EspEndException.instance(offset);
 			}
-			if(ca[offset] == '<') {
+			if(ca[offset] == '<' && parseInlineElements()) {
 				int next = offset + 1;
 				if(next < ca.length && ca[next] == '-') {
 					new EspPart(Type.Separator).setParent(part).setStart(offset).setEnd(next);
@@ -551,45 +536,14 @@ public class Scanner {
 		throw EspEndException.instance(offset);
 	}
 
-//	public Scanner findCloser() throws EspEndException {
-//		if(offset >= 0 && offset+1 < ca.length) {
-//			findCloser(ca[offset]);
-//		}
-//		return this;
-//	}
-//
-//	public Scanner findCloser(char opener) throws EspEndException {
-//		if(offset >= 0 && offset+1 < ca.length) {
-//			char closer = getCloserChar(opener);
-//			if(closer != 0) {
-//				findCloser(opener, closer);
-//			}
-//		}
-//		return this;
-//	}
-//
-//	private Scanner findCloser1(char opener, char closer) throws EspEndException {
-//		checkContainment();
-//		int count = 1;
-//		while(true) {
-//			next();
-//			if(ca[offset] == opener && ca[offset] != closer) {
-//				count++;
-//			}
-//			else if(ca[offset] == closer) {
-//				if((closer != '"' && closer != '\'') || ca[offset-1] != '\\') { // check for escape char
-//					count--;
-//					if(count == 0) {
-//						return this;
-//					}
-//				}
-//			}
-//			else if(ca[offset] == '"') {
-//				findCloser('"', '"'); // just entered a string - get out of it
-//			}
-//		}
-//	}
-	
+	/**
+	 * ALWAYS throws an {@link EspEndException}
+	 */
+	public void findCloser() throws EspEndException {
+		setContainmentToCloser();
+		while(true) next();
+	}
+
 	public Scanner findDeclaration() throws EspEndException {
 		int parentLevel = level;
 		while(offset < ca.length) {
@@ -622,19 +576,11 @@ public class Scanner {
 	/**
 	 * ALWAYS throws an {@link EspEndException}
 	 */
-	public void findCloser() throws EspEndException {
-		setContainmentToCloser();
-		while(true) next();
-	}
-	
-	/**
-	 * ALWAYS throws an {@link EspEndException}
-	 */
 	public void findEndOfContainment() throws EspEndException {
 		check();
 		while(true) next();
 	}
-	
+
 	public Scanner findEndOfElement() throws EspEndException {
 		try {
 			check();
@@ -669,17 +615,9 @@ public class Scanner {
 		}
 		return this;
 	}
-
+	
 	public Scanner findEndOfLine() throws EspEndException {
 		return find(EOL);
-	}
-
-	public Scanner findEndOfMarkupId() throws EspEndException {
-		check();
-		if(isWordChar() || ca[offset] == '.' || ca[offset] == '#') {
-			while(next().isWordChar() || ca[offset] == '-' || ca[offset] == '[' || ca[offset] == ']');
-		}
-		return this;
 	}
 	
 	public Scanner findEndOfMarkupAttr() throws EspEndException {
@@ -689,7 +627,15 @@ public class Scanner {
 		}
 		return this;
 	}
-	
+
+	public Scanner findEndOfMarkupId() throws EspEndException {
+		check();
+		if(isWordChar() || ca[offset] == '.' || ca[offset] == '#') {
+			while(next().isWordChar() || ca[offset] == '-' || ca[offset] == '[' || ca[offset] == ']');
+		}
+		return this;
+	}
+
 	public Scanner findEndOfStylePropertyName() throws EspEndException {
 		while(offset < ca.length) {
 			switch(ca[offset]) {
@@ -801,19 +747,6 @@ public class Scanner {
 			default: return 0;
 		}
 	}
-
-	public int getTrimmedEnd() {
-		return getTrimmedEndFrom(offset);
-	}
-	
-	public int getTrimmedEndFrom(int offset) {
-		for(int i = offset - 1; i >= 0 && i < ca.length; i--) {
-			if( ! Character.isWhitespace(ca[i])) {
-				return i + 1;
-			}
-		}
-		throw new IllegalStateException("you didn't call this blind, did you?");
-	}
 	
 	public int getLevel() {
 		return level;
@@ -833,7 +766,7 @@ public class Scanner {
 		}
 		return i-j;
 	}
-	
+
 	public int getMark() {
 		return mark;
 	}
@@ -841,7 +774,29 @@ public class Scanner {
 	public int getOffset() {
 		return offset;
 	}
-
+	
+	public int getTrimmedEnd() {
+		return getTrimmedEndFrom(offset);
+	}
+	
+	public int getTrimmedEndFrom(int offset) {
+		for(int i = offset - 1; i >= 0 && i < ca.length; i--) {
+			if( ! Character.isWhitespace(ca[i])) {
+				return i + 1;
+			}
+		}
+		throw new IllegalStateException("you didn't call this blind, did you?");
+	}
+	
+	public void handleContainmentEnd() throws EspEndException {
+		if(containmentEndCount > 0) {
+			containmentEndCount--;
+			if(containmentEndCount > 0) {
+				throw EspEndException.instance(offset);
+			}
+		}
+	}
+	
 	public boolean hasDeclaration() {
 		try {
 			for(int i = offset; i < ca.length; i++) {
@@ -860,7 +815,7 @@ public class Scanner {
 		}
 		return false;
 	}
-	
+
 	public boolean hasNext() {
 		return offset < ca.length;
 	}
@@ -871,7 +826,7 @@ public class Scanner {
 		}
 		return c == EOL;
 	}
-
+	
 	public boolean isChar(char...c) {
 		if(offset >= 0 && offset < ca.length) {
 			return any(ca[offset], c);
@@ -882,6 +837,20 @@ public class Scanner {
 	public boolean isCharEscaped() {
 		if(offset >= 1) {
 			return ca[offset-1] == '\\' && ca[offset-2] == '\\';
+		}
+		return false;
+	}
+
+	public boolean isCharSequence(char...c) {
+		if(offset+c.length-1 < ca.length) {
+			for(int i = 0; i < c.length; i++) {
+				int j = offset+i;
+				if((c[i] == ' ' && Character.isWhitespace(ca[j])) || c[i] == ca[j]) {
+					continue;
+				}
+				return false;
+			}
+			return true;
 		}
 		return false;
 	}
@@ -1006,11 +975,20 @@ public class Scanner {
 		DomBuilder builder = new DomBuilder(this);
 		return builder.parse(doctype, new String(name), ca);
 	}
-
+	
 	public void parseImportElement() throws EspEndException {
 		JavaBuilder builder = new JavaBuilder(this);
 		builder.parseImportElement();
 	}
+
+	private boolean parseInlineElements() {
+		EspPart p = part;
+		if(p.isA(Type.InnerTextPart)) {
+			p = part.getParent();
+		}
+		return ! p.isA(Type.InnerTextElement);
+	}
+	
 	public void parseJavaElement() throws EspEndException {
 		JavaBuilder builder = new JavaBuilder(this);
 		builder.parseJavaElement();
