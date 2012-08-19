@@ -86,12 +86,17 @@ public class EspCompletionProcessor implements IContentAssistProcessor {
 	public ICompletionProposal[] computeCompletionProposals(ITextViewer viewer, int offset) {
 		IDocument doc = viewer.getDocument();
 		offset--;
-		EspPart part = EspCore.get(doc).getPart(offset);
-		if(part != null) {
-			List<ICompletionProposal> proposals = computeCompletionProposals(doc, part, offset);
+		if(offset < 0) {
+			List<ICompletionProposal> proposals = computeDomProposals(doc, EspCore.get(doc), 0);
 			return sorted(proposals);
+		} else {
+			EspPart part = EspCore.get(doc).getPart(offset);
+			if(part != null) {
+				List<ICompletionProposal> proposals = computeCompletionProposals(doc, part, offset);
+				return sorted(proposals);
+			}
+			return new ICompletionProposal[0];
 		}
-		return new ICompletionProposal[0];
 	}
 
 	public IContextInformation[] computeContextInformation(ITextViewer viewer, int documentOffset) {
