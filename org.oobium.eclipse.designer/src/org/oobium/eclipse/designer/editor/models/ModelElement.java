@@ -221,7 +221,8 @@ public class ModelElement extends Element {
 				data.put("recompile", true);
 			}
 		}
-		data.put("bounds", getBounds());
+		Rectangle r = getBounds();
+		data.put("bounds", "Rectangle("+r.x+","+r.y+","+r.width+","+r.height+")");
 		if(color != null) {
 			data.put("color", color);
 		}
