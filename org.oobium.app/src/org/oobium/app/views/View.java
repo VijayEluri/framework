@@ -112,8 +112,6 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 	
 	private String layoutName;
 	private Class<? extends View> layout;
-
-	private String title;
 	
 	@Override
 	public boolean accepts(MimeType type) {
@@ -326,12 +324,6 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 		return controller.getSession(include, create);
 	}
 
-	public String getTitle() {
-		if(title != null)    return title;
-		if(renderer != null) return renderer.title;
-		return "";
-	}
-	
 	public boolean hasChild() {
 		return child != null;
 	}
@@ -574,7 +566,7 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 		this.child = child;
 		return this;
 	}
-
+	
 	public View setLayout(Class<? extends View> layout) {
 		this.layout = layout;
 		return this;
@@ -598,9 +590,8 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 		}
 	}
 	
-	protected void setTitle(String title) {
+	protected void setTitle(Object title) {
 		renderer.setTitle(title);
-		this.title = renderer.title;
 	}
 	
 	@Override

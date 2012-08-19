@@ -327,11 +327,16 @@ public class ViewRenderer {
 		this.partial = partial;
 	}
 	
-	void setTitle(String title) {
-		if(title != null && title.startsWith("+=")) {
-			this.title += title;
+	void setTitle(Object title) {
+		if(title == null) {
+			this.title = null;
 		} else {
-			this.title = title;
+			String str = title.toString();
+			if(str != null && str.startsWith("+=")) {
+				this.title += str;
+			} else {
+				this.title = str;
+			}
 		}
 	}
 	
