@@ -333,7 +333,7 @@ public class ViewRenderer {
 		} else {
 			String str = title.toString();
 			if(str != null && str.startsWith("+=")) {
-				this.title += str;
+				this.title += str.substring(2);
 			} else {
 				this.title = str;
 			}
