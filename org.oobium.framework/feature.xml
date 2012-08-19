@@ -288,4 +288,18 @@ and web connected clients in Java and OSGi.
          version="0.0.0"
          unpack="false"/>
 
+   <plugin
+         id="org.oobium.pipeline"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.oobium.pipeline.service"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
 </feature>
