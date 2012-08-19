@@ -1137,9 +1137,21 @@ public class EspCompiler {
 	private void buildTitle(MarkupElement element) {
 		prepForJava(body);
 		if(element.hasInnerText()) {
-			body.append("setTitle(\"");
-			build(element.getInnerText(), body);
-			body.append("\");\n");
+			EspPart text = element.getInnerText();
+			if(text.hasParts()) {
+				String sbBak = sbName;
+				sbName = "sb$" + text.getStart();
+				body.append("StringBuilder ").append(sbName).append(" = new StringBuilder();\n");
+				prepForMarkup(body);
+				build(element.getInnerText(), body);
+				prepForJava(body);
+				body.append("setTitle(").append(sbName).append(");\n");
+				sbName = sbBak;
+			} else {
+				body.append("setTitle(\"");
+				build(element.getInnerText(), body);
+				body.append("\");\n");
+			}
 		} else {
 			body.append("setTitle(null);\n");
 		}

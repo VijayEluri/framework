@@ -237,7 +237,24 @@ public class EspCompilerTests {
 	
 	@Test
 	public void testTitle() throws Exception {
+		assertEquals("setTitle(null);", render("title"));
+		assertEquals("setTitle(\"hello\");", render("title hello"));
 		assertEquals("<title>hello</title>", head("title hello"));
+	}
+	
+	@Test
+	public void testTitleWithParts() throws Exception {
+		assertEquals(
+				"StringBuilder sb$6 = new StringBuilder();\n" +
+				"sb$6.append(\"he\");\n" +
+				"sb$6.append(h(l));\n" +
+				"sb$6.append(\"lo\");\n" +
+				"setTitle(sb$6);",
+				render("title he{l}lo"));
+
+		assertEquals(
+				"<title>hello</title>",
+				head("MyEsp(String title = \"hello\")\ntitle {title}"));
 	}
 	
 	@Test
