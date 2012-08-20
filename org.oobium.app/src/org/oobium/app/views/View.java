@@ -679,7 +679,7 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 		if(view != null) {
 			try {
 				view.setRenderer(renderer);
-				view.render(new StringBuilder(0), __body__);
+				view.render(renderer.head, __body__);
 			} catch(Exception e) {
 				if(e instanceof RuntimeException) {
 					throw (RuntimeException) e;
