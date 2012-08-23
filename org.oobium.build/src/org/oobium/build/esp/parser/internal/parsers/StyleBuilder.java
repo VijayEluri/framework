@@ -29,7 +29,7 @@ public class StyleBuilder extends MarkupBuilder {
 		case ';': case '(': case ':':
 			parseProperty(declaration);
 			break;
-		case EOL: case EOE:
+		 case '}': case EOL: case EOE:
 			if(scanner.hasDeclaration()) {
 				parseRuleset(declaration);
 			} else {
