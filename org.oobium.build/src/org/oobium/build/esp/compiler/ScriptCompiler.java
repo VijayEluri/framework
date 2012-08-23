@@ -33,7 +33,6 @@ public class ScriptCompiler extends AssetCompiler {
 		StringBuilder sb = parent.getBody();
 		if(parent.getDom().is(EJS)) {
 			parent.inAsset(true);
-			parent.prepForMarkup(sb);
 			parent.build(element.getAsset().getPart(), sb);
 			parent.inAsset(false);
 			return;

@@ -39,7 +39,9 @@ public class EjsCompilerTests extends BaseEspTester {
 	
 	@Test
 	public void testIncludeExternalScript() throws Exception {
-		
+		assertEquals(
+				"var test = 'hello';",
+				asset("- includeExternalScript(\"test\");\n\nvar test = 'hello';"));
 	}
 	
 	@Test

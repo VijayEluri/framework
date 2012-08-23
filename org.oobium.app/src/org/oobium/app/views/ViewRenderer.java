@@ -69,7 +69,7 @@ public class ViewRenderer {
 	
 	void addExternalScript(ScriptFile script) {
 		addExternalScript(Router.getAssetName(script.getClass(), "js"));
-		if(script.hasInitializer()) {
+		if(script.hasSource()) {
 			includeScriptEnvironment = true;
 			addExternalScriptFile(script);
 		}

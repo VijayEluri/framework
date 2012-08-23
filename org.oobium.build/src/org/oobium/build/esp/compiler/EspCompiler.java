@@ -1292,29 +1292,30 @@ public class EspCompiler {
 			}
 		}
 
+		boolean hasSource = false;
 		body.append("\t\t").append(SBBODY).append(".append(\"");
 		for( ; ix < parts.size(); ix++) {
 			EspPart part = parts.get(ix);
 			if(part.isA(JavaElement)) {
 				buildJava((JavaElement) part);
+				hasSource = true;
 			} else if(part instanceof EspElement) {
 				break;
 			}
 		}
 		
-		boolean hasInitializer = false;
 		for(int i = ix; i < parts.size(); i++) {
 			EspPart part = parts.get(ix);
 			if(part.isA(ScriptElement)) {
 				if(scriptCompiler.buildInitializer((ScriptElement) part)) {
-					hasInitializer = true;
+					hasSource = true;
 				}
 			}
 		}
 		
 		esf.addMethod(
-				"hasInitializer",
-				"\t@Override\n\tpublic boolean hasInitializer() {\n\t\treturn " + hasInitializer + ";\n\t}"
+				"hasSource",
+				"\t@Override\n\tpublic boolean hasSource() {\n\t\treturn " + hasSource + ";\n\t}"
 		);
 		
 		buildMethod(

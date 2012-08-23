@@ -95,7 +95,7 @@ public class RouterTests {
 	public static class AccountStyles extends StyleSheet { }
 	public static class AccountScripts extends ScriptFile {
 		protected void doRender(StringBuilder sb) throws Exception { /*do nothing*/ }
-		public boolean hasInitializer() { return false; }
+		public boolean hasSource() { return false; }
 	}
 	
 	

@@ -27,7 +27,7 @@ public abstract class ScriptFile {
 	
 	protected abstract void doRender(StringBuilder sb) throws Exception;
 	
-	public abstract boolean hasInitializer();
+	public abstract boolean hasSource();
 	
 	protected void includeScriptEnvironment() {
 		renderer.includeScriptEnvironment = true;
