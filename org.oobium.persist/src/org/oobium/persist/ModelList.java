@@ -103,6 +103,10 @@ public class ModelList<E extends Model> implements List<E> {
 		return false;
 	}
 	
+	public boolean any() {
+		return !isEmpty();
+	}
+	
 	@Override
 	public void clear() {
 		if(type == MANY_TO_NONE) {
