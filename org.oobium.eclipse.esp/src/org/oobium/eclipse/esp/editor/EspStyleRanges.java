@@ -219,7 +219,7 @@ public class EspStyleRanges {
 					s2++;
 				}
 				addRange(s1, s2-s1, level);
-				s1 = s2;
+				s1 = s2-1;
 			}
 			if(s1 < end) {
 				int s2 = s1;
@@ -228,8 +228,8 @@ public class EspStyleRanges {
 				}
 				if(JS_KEYWORDS.contains(part.getDom().subSequence(s1, s2))) {
 					s1 = addRange(s1, s2-s1, javaKeyword);
-				} else {
-					s1 = s2;
+				} else if(s2 > s1) {
+					s1 = s2-1;
 				}
 			}
 		}
