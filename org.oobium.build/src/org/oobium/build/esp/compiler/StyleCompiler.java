@@ -107,9 +107,10 @@ public class StyleCompiler extends AssetCompiler {
 	
 	private boolean buildStyleProperty(Property property, StringBuilder sb, boolean first) {
 		if(property.isParametric()) {
+			if(first) { first = false; } else { sb.append(';'); }
 			buildMethod(property);
 		}
-		else if(property.isMixin()) {
+		else if(property.isMixin()) { // parametric is a type of mixin, so must follow parametric check
 			EspResolver resolver = parent.getResolver();
 			String name = property.getName().getText();
 			Selector selector = (resolver != null) ? resolver.getCssSelector(name) : null;

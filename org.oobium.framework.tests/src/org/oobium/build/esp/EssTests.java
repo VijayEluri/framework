@@ -328,6 +328,7 @@ public class EssTests {
 	public void testParamMixin_Empty() throws Exception {
 		String css =
 				".button{" +
+				  "color:red;" +
 				  "border-radius:6px;" +
 				  "-moz-border-radius:6px;" +
 				  "-webkit-border-radius:6px" +
@@ -339,6 +340,7 @@ public class EssTests {
 				 "  -moz-border-radius: 6px\n" +
 				 "  -webkit-border-radius: 6px\n" +
 				 ".button\n" +
+				 "  color: red\n" +
 				 "  .border-radius()").replace("  ", "\t");
 
 		assertEquals(css, css(ess));
