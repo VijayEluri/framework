@@ -19,6 +19,7 @@ import static org.oobium.utils.CharStreamUtils.find;
 import static org.oobium.utils.CharStreamUtils.findAny;
 import static org.oobium.utils.CharStreamUtils.isEqual;
 import static org.oobium.utils.StringUtils.blank;
+import static org.oobium.utils.StringUtils.decode;
 import static org.oobium.utils.StringUtils.encode;
 import static org.oobium.utils.StringUtils.tableName;
 import static org.oobium.utils.StringUtils.varName;
@@ -264,7 +265,7 @@ public class AppRouter extends Router implements IPathRouting, IUrlRouting {
 				int group = 1;
 				for(int i = 0; i < params.length; i++) {
 					if(params[i][1] == null) {
-						params[i][1] = matcher.group(group++);
+						params[i][1] = decode(matcher.group(group++));
 					}
 				}
 			}
