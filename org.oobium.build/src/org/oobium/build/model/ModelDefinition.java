@@ -1065,6 +1065,9 @@ public class ModelDefinition {
 	
 	private void parseIndexes(char[] ca, int start, int end) {
 		String s = new String(ca, start, end-start+1).trim();
+		if(s.startsWith("{")) {
+			s = s.substring(1, s.lastIndexOf('}')).trim();
+		}
 		indexes.addAll(JsonUtils.toStringList(s));
 	}
 
