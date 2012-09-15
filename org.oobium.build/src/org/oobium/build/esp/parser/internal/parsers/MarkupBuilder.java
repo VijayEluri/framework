@@ -129,7 +129,7 @@ public class MarkupBuilder extends Builder {
 			do {
 				EspPart part = scanner.push(Type.MarkupClass);
 				element.addClass(part);
-				scanner.next().findEndOfWord();
+				scanner.next().findEndOfMarkupAttr();
 				scanner.pop(part);
 			}
 			while(scanner.isChar('.'));
