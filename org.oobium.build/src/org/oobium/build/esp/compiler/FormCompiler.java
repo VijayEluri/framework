@@ -57,13 +57,7 @@ public class FormCompiler {
 		if(form.hasEntry("as")) {
 			return form.getEntry("as").getText().trim();
 		}
-		String arg = form.getArg(0).getText().trim();
-		for(int i = 0; i < arg.length(); i++) {
-			if(!Character.isJavaIdentifierPart(arg.charAt(i))) {
-				return "varName((" + arg + ").getClass())";
-			}
-		}
-		return "\"" + arg + "\"";
+		return "varName((" + getFormModelVar(form) + ").getClass())";
 	}
 	
 	private static String getFormModelNameVar(int start) {
