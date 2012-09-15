@@ -199,16 +199,17 @@ class ModelJsonBuilder {
 	}
 
 	private void build(Map<String, Object> map, Model model, Object include) {
-		if(!model.isNew()) {
-			map.put("id", model.getId());
-		}
+		map.put("_type", model.getClass().getName());
+		map.put("id", model.isNew() ? null : model.getId());
 		if(model.hasErrors()) {
 			map.put("errors", model.getErrorsList());
 		}
-		ModelAdapter adapter = ModelAdapter.getAdapter(model);
-		for(String field : model.getAll().keySet()) {
-			if(adapter.isJson(field)) {
-				handleField(map, field, model.get(field), include);
+		if(include != null) {
+			ModelAdapter adapter = ModelAdapter.getAdapter(model);
+			for(String field : model.getAll().keySet()) {
+				if(adapter.isJson(field)) {
+					handleField(map, field, model.get(field), include);
+				}
 			}
 		}
 	}
@@ -443,15 +444,8 @@ class ModelJsonBuilder {
 				include(map, field, model, e.getValue());
 				return;
 			}
-		} else if(field.equals(include)) {
-			include(map, field, model, null);
-			return;
 		}
-		if(model.isNew()) {
-			map.put(field, null);
-		} else {
-			map.put(field, model.getId());
-		}
+		include(map, field, model, null);
 	}
 	
 	private void include(Map<String, Object> map, String field, Iterable<?> value, Object include) {

@@ -14,7 +14,11 @@ $(document).ready(function() {
 		this.bind = function(element, model) {
 			element = $(element);
 			model = model || Bnd.getModel(element);
+			(model.elements = model.elements || $()).push(element);
 			element.data('model', model);
+			if( ! element.attr('data-model')) {
+				element.attr('data-model', 'true');
+			}
 			if(element.attr('onclick')) {
 				eval("var action = function(event, model) {" + element.attr('onclick') + "}")
 				element.removeAttr('onclick').unbind('click').bind('click', function(event) {
@@ -22,15 +26,17 @@ $(document).ready(function() {
 				});
 			}
 			bindFields(model, element);
-			return model
+			return model;
 		};
 		
 		var bindField = function(model, e) {
 			e.data('model', model);
 
 			var field = Bnd.getField(e);
+			e.addClass(field);
+			
 			model.addCallback(function(m,d) {
-				if(d[field]) {
+				if(d.hasOwnProperty(field)) {
 					Bnd.updateLabel(e);
 				}
 			});
@@ -71,17 +77,28 @@ $(document).ready(function() {
 
 		this.commit = function(value) {
 			if(trigger) {
-				if(value == undefined && editor) {
-					value = editor.val();
+				if(value === undefined && editor) {
+						value = editor.val();
 				}
-				var model = this.getModel(trigger);
-				var field = this.getField(trigger);
-				var options = this.getOptions(trigger);
+
+				if(value !== undefined) {
+					var model = this.getModel(trigger);
+					var field = this.getField(trigger);
+					var options = this.getOptions(trigger);
 				
-				var oldValue = model.get(field);
-				var newValue = convertToModelValue(model, field, value, options);
-				if(notEqual(newValue, oldValue)) {
-					model.set(field, newValue).update(field);
+					var oldValue = model.get(field);
+					var newValue = convertToModelValue(model, field, value, options);
+					var doit = notEqual(newValue, oldValue);
+					if(doit && options.oncommit) {
+						var fn = window[options.oncommit];
+						if(fn == undefined) {
+							throw options.oncommit + ' is undefined';
+						}
+						doit = (fn.apply(trigger, [model, field, oldValue, newValue]) !== false);
+					}
+					if(doit) {
+						model.set(field, newValue).update(field);
+					}
 				}
 
 				this.close();
@@ -90,7 +107,7 @@ $(document).ready(function() {
 
 		var convertToEditorValue = function(value, options) {
 			// TODO plug-in editor value converters
-			if(!value) {
+			if(value === undefined) {
 				return '';
 			}
 			if(value instanceof Date) {
@@ -101,7 +118,7 @@ $(document).ready(function() {
 
 		var convertToLabel = function(value, options) {
 			// TODO plug-in label converters
-			if(!value) {
+			if(value === undefined || value === null || value === '') {
 				return (options && options.alt) ? h(options.alt) : '';
 			}
 			if(value instanceof Date) {
@@ -117,7 +134,7 @@ $(document).ready(function() {
 		var convertToModelValue = function(model, field, value, options) {
 			// TODO plug-in value converters
 			// TODO store type information?
-			if(value == undefined) {
+			if(value === undefined || value === '') {
 				return null;
 			}
 			if(model.get(field) instanceof Date) {
@@ -158,7 +175,7 @@ $(document).ready(function() {
 			} else {
 				var html = "<input class='editbox' type='text' />";
 			}
-			editor = $(html).appendTo(trigger.parent());
+			editor = $(html).appendTo($('body'));
 			editor.val(this.getEditorValue(trigger));
 			
 			editor.css('position', 'absolute');
@@ -167,12 +184,16 @@ $(document).ready(function() {
 			} else {
 				editor.addClass(this.getField(trigger));
 				if('text' == etype || 'combo' == etype) {
+					editor.css('height', trigger.outerHeight());
 					editor.css('width', trigger.outerWidth());
 				}
 				else if('textarea' == etype) {
 					editor.css('top', '0');
 					editor.css('left', '0');
 				}
+				editor.css('font-size', trigger.css('font-size'));
+				editor.css('font-weight', trigger.css('font-weight'));
+				editor.css('padding', trigger.css('padding'));
 			}
 			var hpos = (editor.css('left') != 'auto') ? 'left' : ((editor.css('right') != 'auto') ? 'right' : 'center');
 			var vpos = (editor.css('top') != 'auto') ? 'top' : ((editor.css('bottom') != 'auto') ? 'bottom' : 'center');
@@ -227,6 +248,7 @@ $(document).ready(function() {
 			}
 			
 			editor.focus();
+			editor.select();
 		};
 		
 		var getAutocompleteSource = function(source) {
@@ -254,7 +276,7 @@ $(document).ready(function() {
 		
 		this.getEditorType = function(element) {
 			var type = this.getOptions(element).editor;
-			if(type == undefined || type == true) {
+			if(type === undefined || type == true) {
 				return 'text';
 			}
 			if(type) {
@@ -296,7 +318,7 @@ $(document).ready(function() {
 			element = $(element);
 			if(element.length == 0) return null;
 			if( ! element.attr('data-model')) {
-				return this.getModel(element.closest('[data-model]'))
+				return this.getModel(element.closest('[data-model]'));
 			}
 			var model = element.data('model');
 			if(model instanceof Oobium.Model) {
@@ -308,15 +330,23 @@ $(document).ready(function() {
 				if(model instanceof Oobium.Model) {
 					 return model;
 				}
-				if(model instanceof Object && model.type) {
-					return Oobium.vars[name] = Oobium.Model.newInstance(model.type, model.data || model);
+				if(model instanceof Object && model._type) {
+					return Oobium.vars[name] = Oobium.Model.newInstance(model._type, model.data || model);
 				}
 			}
-			else if(model instanceof Object && model.type) {
-				return Oobium.Model.newInstance(model.type, model.data || model);
+			else if(model instanceof Object && model._type) {
+				return Oobium.Model.newInstance(model._type, model.data || model);
 			}
-			log('cannot create Oobium.Model for: ' + model);
+			console.log('cannot create Oobium.Model for: ' + model);
 			return null;
+		};
+
+		this.getModels = function(sel) {
+			var models = $();
+			$(sel).each(function() {
+				models.push(Bnd.getModel(this));
+			});
+			return models;
 		};
 		
 		this.getOptions = function(element) {
@@ -335,6 +365,7 @@ $(document).ready(function() {
 		}
 		
 		var h = function(s) {
+			if(s == undefined) return '';
 			return s.toString().replace('&', '&amp;').replace('>', '&gt;').replace('<', '&lt;').replace('"', '&quot;');
 		}
 
@@ -346,7 +377,7 @@ $(document).ready(function() {
 		
 		this.setLabel = function(element, label, overwrite) {
 			element = $(element);
-			if(overwrite == undefined) {
+			if(overwrite === undefined) {
 				overwrite = true;
 			}
 			if(this.getOptions(element).label == 'title') {

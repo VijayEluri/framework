@@ -5,8 +5,21 @@
 	var Cache = Oobium.Cache = new function() {
 		var models = {};
 		
-		this.get = function(type, id) {
-			return models[type] ? models[type][id] : null;
+		this.get = function(type, q) {
+			var a = models[type];
+			if(a) {
+				for(var id in a) {
+					if(a.hasOwnProperty(id)) {
+						for(var f in q) {
+							if(q.hasOwnProperty(f) && q[f] == a[id].get(f)) return a[id];
+						}
+					}
+				}
+			};
+		};
+		
+		this.getAll = function(type) {
+			return models[type];
 		};
 		
 		this.put = function(model) {
@@ -52,7 +65,10 @@
 		
 		this.getMethod = function(action, model) {
 			var type = model.getType ? model.getType() : model;
-			return routes[type][action]['method'];
+			if(routes[type]) {
+				return routes[type][action]['method'];
+			}
+			throw ("'"+type+"' has not been routed");
 		};
 		
 		this.getPath = function(action, model, id) {
@@ -306,7 +322,12 @@
 		};
 		
 		this.get = function(field) {
-			return data[field];
+			var v = data[field];
+			if(v && v._type) {
+				v = Cache.get(v._type, v.id) || Model.newInstance(v);
+				data[field] = v;
+			}
+			return v;
 		};
 
 		this.getId = function() {
@@ -351,7 +372,7 @@
 
 		this.set = function(a, b) {
 			if(a) {
-				if(b != undefined) {
+				if(b !== undefined) {
 					var c = {}; c[a] = b; a = c;
 				}
 				if(a.hasOwnProperty('id')) {
@@ -375,7 +396,7 @@
 		
 		this.setId = function(newId) {
 			if(id != newId) {
-				if(newId == undefined || newId == 0 || newId == '' || newId == '0' || newId == 'null') {
+				if(newId === undefined || newId === 0 || newId === '' || newId === '0' || newId === 'null') {
 					id = null;
 				} else {
 					id = newId;
@@ -478,10 +499,5 @@
 	}
 	
 	<Model.newInstance>
-	
-	
-	var Observer = Oobium.Observer = function(modelType) {
-		
-	}
 
 }).call(this);
