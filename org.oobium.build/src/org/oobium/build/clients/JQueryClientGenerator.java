@@ -31,7 +31,7 @@ public class JQueryClientGenerator {
 				String name = application.getModelName(model);
 				String pkg = application.packageName(model);
 				sb2.append("\t\t\tcase '").append(pkg).append('.').append(name).append("': ");
-				sb2.append("return new ").append(name).append("().set(data);\n");
+				sb2.append("return ").append(name).append(".create(data);\n");
 			}
 			sb2.append("\t\t}\n");
 			sb2.append("\t}");
@@ -54,7 +54,13 @@ public class JQueryClientGenerator {
 				sb.append("});\n");
 				sb.append("\n");
 				sb.append(name).append(".create = function(data) {\n");
-				sb.append("\treturn new ").append(name).append("().set(data);\n");
+				sb.append("\tvar m = new ").append(name).append("().set(data);\n");
+				sb.append("\tOobium.Cache.put(m);\n");
+				sb.append("\treturn m;\n");
+				sb.append("};\n");
+				sb.append("\n");
+				sb.append(name).append(".getType = function() {\n");
+				sb.append("\treturn '").append(pkg).append('.').append(name).append("';\n");
 				sb.append("};\n");
 			}
 		}
