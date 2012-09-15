@@ -17,9 +17,11 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.jar.Manifest;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.oobium.persist.migrate.db.AbstractDbMigration;
+import org.oobium.utils.CharStreamUtils;
 import org.oobium.utils.Config;
 import org.oobium.utils.FileUtils;
 import org.oobium.utils.Config.Mode;
@@ -107,10 +109,16 @@ public class Migrator extends Bundle {
 		String oldsrc = FileUtils.readFile(activator).toString();
 		String newsrc = oldsrc;
 		
-		if(!Pattern.compile("migrations.add\\s*\\(\\s*" + migrationName + ".class\\s*\\)\\s*;").matcher(newsrc).find()) {
-			newsrc = oldsrc.replaceFirst("public\\s+void\\s+addMigrations\\s*\\(\\s*Migrations\\s+migrations\\s*\\)\\s*\\{\\s*",
-											"public void addMigrations(Migrations migrations) {\n" +
-											"\t\tmigrations.add(" + migrationName + ".class); // TODO auto-generated\n\n\t\t");
+		Pattern p = Pattern.compile("public\\s+void\\s+addMigrations\\s*\\(\\s*Migrations\\s+migrations\\s*\\)\\s*\\{");
+		Matcher m = p.matcher(newsrc);
+		if(m.find()) {
+			String newline = "\n\t\tmigrations.add(" + migrationName + ".class);";
+			char[] ca = oldsrc.toCharArray();
+			int ix = CharStreamUtils.closer(ca, m.end()-1, ca.length, true, true);
+			if(ix != -1) {
+				while(--ix > 0 && ca[ix] != '\n');
+				newsrc = new StringBuilder(newsrc).insert(ix, newline).toString();
+			}
 		}
 		if(!Pattern.compile("import\\s+"+packageName(migrations)+"."+migrationName).matcher(newsrc).find()) {
 			newsrc = newsrc.replaceFirst("(package\\s+[\\w\\.]+;)", "$1\n\nimport "+packageName(migrations)+"."+migrationName+";");
