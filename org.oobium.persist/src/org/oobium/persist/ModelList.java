@@ -160,6 +160,17 @@ public class ModelList<E extends Model> implements List<E> {
 		return members.remove(model);
 	}
 	
+	public List<Object> field(String name) {
+		if(members.isEmpty()) {
+			return new ArrayList<Object>(0);
+		}
+		List<Object> list = new ArrayList<Object>(size());
+		for(E member : members) {
+			list.add(member.get(name));
+		}
+		return list;
+	}
+	
 	public E first() {
 		return members.isEmpty() ? null : members.get(0);
 	}
