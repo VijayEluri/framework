@@ -225,7 +225,6 @@ public class Console extends Composite {
 		createContextMenu();
 		
 		canvas.setCursor(getDisplay().getSystemCursor(SWT.CURSOR_IBEAM));
-		canvas.setBackground(getDisplay().getSystemColor(SWT.COLOR_WHITE));
 		setBackground(getDisplay().getSystemColor(SWT.COLOR_WHITE));
 
 		selection = new Selection();
