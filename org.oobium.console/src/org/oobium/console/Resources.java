@@ -61,7 +61,11 @@ public class Resources {
 				displays.add(display);
 			}
 			InputStream inputStream = Resources.class.getResourceAsStream(name);
-			img = new Image(display, inputStream);
+			if(inputStream == null) {
+				img = new Image(display, 16, 16);
+			} else {
+				img = new Image(display, inputStream);
+			}
 			images.put(name, img);
 		}
 		return img;
