@@ -49,6 +49,14 @@ public abstract class ScriptFile {
 		renderer.includeScriptModels(Model.class, includeHasMany);
 	}
 
+	protected void includeScriptModels(Class<? extends Model> modelClass) {
+		renderer.includeScriptModels(modelClass, false);
+	}
+	
+	protected void includeScriptModels(Class<? extends Model> modelClass, boolean includeHasMany) {
+		renderer.includeScriptModels(modelClass, includeHasMany);
+	}
+	
 	public void render(ViewRenderer renderer, StringBuilder sb) {
 		this.renderer = renderer;
 		try {

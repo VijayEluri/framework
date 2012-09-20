@@ -391,6 +391,14 @@ public class View implements IFlash, IParams, IPathRouting, IUrlRouting, ISessio
 		renderer.includeScriptModels(Model.class, includeHasMany);
 	}
 	
+	protected void includeScriptModels(Class<? extends Model> modelClass) {
+		renderer.includeScriptModels(modelClass, false);
+	}
+	
+	protected void includeScriptModels(Class<? extends Model> modelClass, boolean includeHasMany) {
+		renderer.includeScriptModels(modelClass, includeHasMany);
+	}
+	
 	@Override
 	public boolean isAction(Action action) {
 		return controller.isAction(action);

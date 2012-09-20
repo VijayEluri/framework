@@ -163,26 +163,26 @@ public class ViewRenderer {
 		if(includeScriptEnvironment) {
 			sb.append("<script>\n");
 			sb.append("window.Oobium = {};\n");
+			sb.append("Oobium.vars = {};\n");
+			if(externalScriptFiles != null) {
+				for(ScriptFile script : externalScriptFiles) {
+					script.render(this, sb);
+					sb.append('\n');
+				}
+			}
 			if(includedScriptModelClasses != null) {
 				sb.append("Oobium.routes = ");
 				sb.append(j(controller.getRouter().getModelRouteMap(includedScriptModelClasses)));
 				sb.append(";\n");
 			}
-			sb.append("Oobium.vars = {};\n");
 			if(includedScriptModels != null) {
 				for(Entry<Model, String> entry : includedScriptModels.entrySet()) {
 					Model m = entry.getKey();
 					sb.append("Oobium.vars.");
 					sb.append(entry.getValue());
 					sb.append(" = ");
-					sb.append("{\"type\": \"" + m.getClass().getName() + "\", \"data\": " + m.toJson() + "}");
+					sb.append(m.toJson());
 					sb.append(";\n");
-				}
-			}
-			if(externalScriptFiles != null) {
-				for(ScriptFile script : externalScriptFiles) {
-					script.render(this, sb);
-					sb.append('\n');
 				}
 			}
 			sb.append("</script>");
@@ -238,7 +238,6 @@ public class ViewRenderer {
 	
 	String includeScriptModel(Model model, int position, boolean includeHasMany) {
 		includeScriptModels(model.getClass(), includeHasMany);
-		addExternalScript("/models-data_binding.js");
 		
 		if(includedScriptModels == null) {
 			includedScriptModels = new HashMap<Model, String>();
@@ -254,6 +253,7 @@ public class ViewRenderer {
 	void includeScriptModels(Class<? extends Model> modelClass, boolean includeHasMany) {
 		includeScriptEnvironment = true;
 		addExternalScript("/models.js");
+		addExternalScript("/models-data_binding.js");
 		
 		if(includedScriptModelClasses == null) {
 			includedScriptModelClasses = new HashMap<Class<? extends Model>, Boolean>();
