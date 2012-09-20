@@ -40,43 +40,6 @@ import org.oobium.utils.json.JsonUtils;
 
 public abstract class Model implements JsonModel {
 
-	public static class ModelUtils {
-
-		@SuppressWarnings("unchecked")
-		public static <T extends Model> List<T> collectHasManyThrough(List<?> models, String field, Class<T> type) {
-			List<T> list = new ArrayList<T>();
-			for(Object o : models) {
-				if(o instanceof Model) {
-					Object value = ((Model) o).get(field);
-					if(value instanceof List) {
-						list.addAll((List<T>) value);
-					}
-					else if(value != null) {
-						list.add((T) value);
-					}
-				}
-			}
-			return list;
-		}
-		
-		@SuppressWarnings("unchecked")
-		public static <T extends Model> List<T> collectHasManyThrough(Model model, String field, Class<T> type) {
-			if(model == null) {
-				return new ArrayList<T>(0);
-			}
-			List<T> list = new ArrayList<T>();
-			Object value = model.get(field);
-			if(value instanceof List) {
-				list.addAll((List<T>) value);
-			}
-			else if(value != null) {
-				list.add((T) value);
-			}
-			return list;
-		}
-
-	}
-	
 	private static final ThreadLocal<Logger> logService = new ThreadLocal<Logger>();
 	private static final ThreadLocal<PersistServiceProvider> persistServiceProvider = new ThreadLocal<PersistServiceProvider>();
 	
@@ -751,7 +714,7 @@ public abstract class Model implements JsonModel {
 				return ((Model) through).get(sa[1]);
 			}
 			else if(through instanceof List) {
-				return ModelUtils.collectHasManyThrough((List<?>) through, sa[1], adapter.getRelationClass(field));
+				return ModelCollector.collectHasManyThrough((List<?>) through, sa[1], adapter.getRelationClass(field));
 			} else {
 				return adapter.hasMany(field) ? new ArrayList<Object>(0) : null;
 			}
